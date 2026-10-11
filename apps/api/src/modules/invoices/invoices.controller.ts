@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Inject, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, Inject, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { bulkInvoiceIdsSchema, createInvoiceSchema, updateInvoiceSchema, voidInvoiceSchema } from "@spine/shared";
 import type { Response } from "express";
@@ -7,6 +7,7 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { InvoicesService } from "./invoices.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
+import { InvoicePdfService } from "../pdf/invoice-pdf.service";
 import { InvoiceBulkPdfService } from "./invoice-bulk-pdf.service";
 import { IssueCreditService } from "./issue-credit.service";
 import { parseEmailOverride } from "../email/email-text";
@@ -37,6 +38,7 @@ export class InvoicesController {
     private readonly issuedPdf: IssuedPdfService,
     private readonly bulkPdfs: InvoiceBulkPdfService,
     private readonly issueCredit: IssueCreditService,
+    private readonly invoicePdf: InvoicePdfService,
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
@@ -46,10 +48,30 @@ export class InvoicesController {
     return this.invoicesService.list(orgId, { status, contactId });
   }
 
+  /**
+   * US-INV-34 (D-217) — the builder's Preview PDF: the invoice as it is on
+   * screen, saved or not, watermarked "DRAFT". Nothing is written, so it's
+   * a read sent as POST (the lines don't fit a URL): no Idempotency-Key.
+   * Declared before `:id` routes.
+   */
+  @Post("preview-pdf")
+  @HttpCode(200)
+  @RequireCapability("invoices.edit_own")
+  async previewPdf(@Session() session: UserSession, @Body() body: unknown, @Res() res: Response) {
+    const orgId = requireOrgId(session);
+    const { invoiceId, ...fields } = (body ?? {}) as { invoiceId?: unknown };
+    const input = createInvoiceSchema.parse(fields);
+    const draft = await this.invoicesService.previewDraft(orgId, session.user.id, input, typeof invoiceId === "string" ? invoiceId : undefined);
+    const buffer = await this.invoicePdf.renderInvoice(orgId, draft.invoice, draft.lines, draft.contactName, draft.contactEmail);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="invoice-draft.pdf"');
+    res.send(buffer);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.invoicesService.getOne(orgId, id);
+    return this.invoicesService.getDetail(orgId, id);
   }
 
   /** `GET /invoices/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "invoice"`), same pattern as ContactsController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
@@ -57,6 +79,20 @@ export class InvoicesController {
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.invoicesService.getHistory(orgId, id);
+  }
+
+  /** US-INV-32 (D-217) — the invoice's story for its Activity panel. Owners and Staff, like every invoice route. */
+  @Get(":id/activity")
+  async activity(@Session() session: UserSession, @Param("id") id: string) {
+    return this.invoicesService.activity(requireOrgId(session), id);
+  }
+
+  /** US-INV-35 (D-217) — a new draft from any invoice the caller can see; the draft is theirs. */
+  @Post(":id/duplicate")
+  @RequireCapability("invoices.edit_own")
+  @UseInterceptors(IdempotencyInterceptor)
+  async duplicate(@Session() session: UserSession, @Param("id") id: string) {
+    return this.invoicesService.duplicate(requireOrgId(session), id, session.user.id);
   }
 
   /** US-INV-17 — live for a draft; the PDF stored at issue for an issued invoice, same as QuotesController.getPdf. */

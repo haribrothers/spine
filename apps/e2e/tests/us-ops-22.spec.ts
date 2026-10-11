@@ -21,9 +21,11 @@ test.describe("US-OPS-22", () => {
     const groups = listbox.locator("[cmdk-group]");
     for (let i = 0; i < (await groups.count()); i++) expect(await groups.nth(i).getByRole("option").count()).toBeLessThanOrEqual(5);
 
-    // A document number is the first result.
-    await field.fill("INV-0002");
-    await expect(palette.getByRole("option").first()).toContainText("INV-0002");
+    // A document number is the first result — an overdue invoice's, looked up (other tests add invoices to this org).
+    const listed = (await (await page.request.get(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110"}/invoices`)).json()) as { number: string | null; isOverdue: boolean }[];
+    const overdueNumber = listed.find((i) => i.isOverdue && i.number)!.number!;
+    await field.fill(overdueNumber);
+    await expect(palette.getByRole("option").first()).toContainText(overdueNumber);
     await expect(palette.getByRole("option").first()).toContainText("Overdue");
 
     await field.fill("zzqqxx");

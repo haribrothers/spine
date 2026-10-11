@@ -28,7 +28,7 @@ test.describe("US-QUO-31", () => {
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(sent.number);
     await actions.getByRole("button", { name: "Copy customer link" }).click();
-    await expect(page.getByText("It works for 30 days, or until you revise the quote.")).toBeVisible();
+    await expect(page.getByText("It works for 30 days, or until you revise the quote.", { exact: true })).toBeVisible();
     expect(await page.evaluate<string>("navigator.clipboard.readText()")).toMatch(/\/quote\/.+/);
 
     await accept(page, await linkToken(page, draft.id));

@@ -1,16 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Alert,
   AlertDescription,
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
   Button,
   Card,
   Combobox,
@@ -30,7 +24,8 @@ import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../..
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "./quote-line-editor";
 import type { Quote, TaxGroupOption, TaxRateOption } from "./types";
-import { formatMoney } from "../../../lib/money";
+import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
+import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -85,7 +80,7 @@ function toEditableLines(quote: Quote): EditableQuoteLine[] {
  * Lines without a price stay one-off. Returns the same array when nothing
  * was created.
  */
-async function saveOneOffLinesToCatalogue(lines: EditableQuoteLine[], currency: string): Promise<EditableQuoteLine[]> {
+export async function saveOneOffLinesToCatalogue(lines: EditableQuoteLine[], currency: string): Promise<EditableQuoteLine[]> {
   if (!lines.some((l) => l.saveToCatalogue && !l.catalogItemId && l.unitPriceAmount > 0n)) return lines;
   const next: EditableQuoteLine[] = [];
   for (const line of lines) {
@@ -135,17 +130,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   const router = useRouter();
   const canSend = useCapability("quotes.send");
   // US-QUO-35: changes since the page opened; leaving asks first.
-  const [dirty, setDirty] = useState(false);
-  const dirtyRef = useRef(false);
-  dirtyRef.current = dirty;
-  const [leaveTo, setLeaveTo] = useState<string | "back" | null>(null);
-  // Fields can settle their own values as they load (a picker resolving its option, say); only a change after the person
-  // has pressed or typed in the form counts.
-  const interacted = useRef(false);
-  const touch = <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
-    if (interacted.current) setDirty(true);
-    fn(...args);
-  };
+  const { dirty, touch, interactionProps, markSaved, leaveTo, setLeaveTo, leave } = useUnsavedGuard("quoteBuilderGuard");
   const [title, setTitle] = useState(quote?.title ?? "");
   const [contactId, setContactId] = useState(quote?.contactId ?? "");
   const [lead, setLead] = useState<QuoteLead | null>(null);
@@ -202,53 +187,6 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       })
       .catch(() => setValidUntil((current) => current ?? daysFromToday(DEFAULT_QUOTE_VALID_DAYS)));
   }, [quote]);
-
-  // US-QUO-35: closing or reloading the tab with unsaved changes asks the browser to confirm.
-  useEffect(() => {
-    function onBeforeUnload(e: BeforeUnloadEvent) {
-      if (!dirtyRef.current) return;
-      e.preventDefault();
-      e.returnValue = "";
-    }
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, []);
-
-  // US-QUO-35: a link elsewhere in the app, or Back, asks first while there are unsaved changes.
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (!dirtyRef.current || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const anchor = (e.target as HTMLElement | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!anchor || anchor.target === "_blank" || anchor.origin !== window.location.origin) return;
-      if (anchor.pathname === window.location.pathname) return;
-      // Stopped here, before the link (and the route loader) see the click.
-      e.preventDefault();
-      e.stopPropagation();
-      setLeaveTo(anchor.pathname + anchor.search);
-    }
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, []);
-  useEffect(() => {
-    if (!dirty) return;
-    window.history.pushState({ quoteBuilderGuard: true }, "", window.location.href);
-    function onPopState() {
-      if (!dirtyRef.current) return;
-      window.history.pushState({ quoteBuilderGuard: true }, "", window.location.href);
-      setLeaveTo("back");
-    }
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [dirty]);
-
-  function leave() {
-    const target = leaveTo;
-    setDirty(false);
-    dirtyRef.current = false;
-    setLeaveTo(null);
-    if (target === "back") window.history.go(-2);
-    else if (target) router.push(target);
-  }
 
   useEffect(() => {
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
@@ -349,8 +287,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       const saved = quote
         ? await apiClient.put<Quote>(`/quotes/${quote.id}`, payload)
         : await apiClient.post<Quote>("/quotes", payload);
-      setDirty(false);
-      dirtyRef.current = false;
+      markSaved();
       const sendNow = then === "send" && !saved.discountRequiresApproval;
       router.push(`/quotes/${saved.id}${sendNow ? "?action=send" : ""}`);
     } catch (err) {
@@ -367,12 +304,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   const picked = pickedDays(validUntil, VALIDITY_PICKS);
 
   return (
-    <div
-      className="flex flex-col gap-4"
-      onPointerDownCapture={() => (interacted.current = true)}
-      onKeyDownCapture={() => (interacted.current = true)}
-      onInputCapture={() => (interacted.current = true)}
-    >
+    <div className="flex flex-col gap-4" {...interactionProps}>
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
@@ -444,20 +376,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       </Card>
 
       {/* US-QUO-35: totals and actions stay in view. */}
-      <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-border bg-surface px-5 py-3 shadow-[0_-6px_20px_rgba(0,0,0,0.06)]" data-testid="quote-builder-bar">
-        <dl className="flex gap-6">
-          <TotalRow label="Subtotal" value={totals.subtotal} currency={currency} />
-          <TotalRow label="Tax" value={totals.tax} currency={currency} />
-          <TotalRow label="Total" value={totals.total} currency={currency} emphasize />
-        </dl>
-        <span className="flex-1" />
-        {dirty && (
-          <span className="flex items-center gap-1.5 text-[12px] text-on-surface-muted" data-testid="quote-unsaved">
-            <span className="h-1.5 w-1.5 rounded-full bg-due-soon" aria-hidden />
-            Unsaved changes
-          </span>
-        )}
-        <div className="flex flex-wrap gap-2">
+      <DocumentBuilderBar totals={totals} currency={currency} dirty={dirty} testIdPrefix="quote">
           <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
             Cancel
           </Button>
@@ -474,46 +393,9 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
               Save and send
             </Button>
           )}
-        </div>
-      </div>
+      </DocumentBuilderBar>
 
-      <AlertDialog open={leaveTo !== null} onOpenChange={(open) => !open && setLeaveTo(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Leave without saving?</AlertDialogTitle>
-            <AlertDialogDescription>Your changes to this quote will be lost.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="secondary" onClick={leave}>
-              Leave
-            </Button>
-            <Button onClick={() => setLeaveTo(null)} autoFocus>
-              Keep editing
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-function TotalRow({
-  label,
-  value,
-  currency,
-  emphasize,
-}: {
-  label: string;
-  value: bigint;
-  currency: string;
-  emphasize?: boolean;
-}) {
-  return (
-    <div className="flex flex-col">
-      <dt className="text-[12px] text-on-surface-muted">{label}</dt>
-      <dd className={cn("tabular-nums text-on-surface", emphasize ? "text-[17px] font-bold" : "text-[13.5px] font-medium")} data-testid={`quote-total-${label.toLowerCase()}`}>
-        {formatMoney(value, currency)}
-      </dd>
+      <LeaveWithoutSavingDialog open={leaveTo !== null} document="quote" onLeave={leave} onStay={() => setLeaveTo(null)} />
     </div>
   );
 }

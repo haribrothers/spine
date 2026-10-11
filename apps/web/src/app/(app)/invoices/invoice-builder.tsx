@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -17,23 +17,33 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  cn,
 } from "@spine/ui";
+import { DEFAULT_INVOICE_DUE_DAYS, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
+import { Eye, Send } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useDocumentDefaults } from "../../../lib/document-defaults";
+import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
+import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
-import { ContactPicker } from "./contact-picker";
-import { blankLine, computeLinePreview, InvoiceLineEditor, type EditableInvoiceLine } from "./invoice-line-editor";
+import { ContactPicker } from "../quotes/contact-picker";
+import { useEntityToast } from "./entity-toast";
+import { DUE_PICKS, daysAfter, pickedDueDays } from "./due-terms";
+import { saveOneOffLinesToCatalogue } from "../quotes/quote-builder";
+import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "../quotes/quote-line-editor";
 import type { Invoice, InvoiceType, TaxGroupOption, TaxRateOption } from "./types";
-import { formatMoney } from "../../../lib/money";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
+
+/** US-INV-33 — the due-date quick picks, in days after the issue date (0 is on receipt). */
 
 interface CurrencyLocaleValue {
   code: string;
   locale: string;
 }
 
-function toEditableLines(invoice: Invoice): EditableInvoiceLine[] {
+function toEditableLines(invoice: Invoice): EditableQuoteLine[] {
   if (!invoice.lines?.length) return [];
   return invoice.lines
     .slice()
@@ -56,42 +66,48 @@ function toEditableLines(invoice: Invoice): EditableInvoiceLine[] {
     }));
 }
 
+/** A picked day as "2026-11-09", without shifting it across time zones. */
+function toDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /**
- * The invoice builder — a full page (not a Drawer), mirroring
- * quotes/quote-builder.tsx exactly: a multi-line editable table with add/
- * remove/reorder, a contact picker, and live totals need real width and
- * vertical space. Used for both `/invoices/new` (no `invoice` prop) and
- * `/invoices/:id/edit` (a draft only — see InvoicesService.update's own
- * guard; an issued invoice is immutable and has no edit route at all).
+ * The invoice builder (`/invoices/new`, and `/invoices/:id/edit` for a
+ * draft). US-INV-33, US-INV-34 (D-217): the quote builder's compact rows
+ * (bundles and "Also save to catalogue" included) and its bar at the
+ * bottom — totals, Cancel, Preview PDF (nothing saved, watermarked),
+ * Save draft and Save and issue — with the same guard against leaving
+ * unsaved changes. The due date starts from Settings › Documents ›
+ * "Invoices due in" with On receipt, +15, +30 and +60.
  *
- * There's no "valid until" concept here (that's quotes-only) — `dueDate`
- * drives S-05.9's overdue flag, and `issueDate` is optional (defaults to
- * the moment of issue if left blank, per InvoicesService.issue's own
- * fallback).
- *
- * Totals shown here are computed client-side via the SAME shared tax
- * engine the server uses, purely for instant feedback — every save
- * re-fetches the server-computed invoice afterward, since the server is
- * the sole source of truth for stored totals per CLAUDE.md.
+ * Totals here come from the same shared tax engine the server uses, for
+ * instant feedback; the server's totals are the ones stored.
  */
 export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   const router = useRouter();
+  const canIssue = useCapability("invoices.issue");
+  const { dirty, touch, interactionProps, markSaved, leaveTo, setLeaveTo, leave } = useUnsavedGuard("invoiceBuilderGuard");
   const [contactId, setContactId] = useState(invoice?.contactId ?? "");
   const [type, setType] = useState<InvoiceType>(invoice?.type ?? "standard");
   const [currency, setCurrency] = useState(invoice?.currency ?? "USD");
   const [issueDate, setIssueDate] = useState<Date | undefined>(invoice?.issueDate ? new Date(invoice.issueDate) : undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(invoice?.dueDate ? new Date(invoice.dueDate) : undefined);
+  const [dueDays, setDueDays] = useState(DEFAULT_INVOICE_DUE_DAYS);
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [terms, setTerms] = useState(invoice?.termsAndConditions ?? "");
   // US-SET-18 — a new invoice starts with the default terms and notes.
   useDocumentDefaults("invoice", !invoice, setNotes, setTerms);
-  const [lines, setLines] = useState<EditableInvoiceLine[]>(invoice ? toEditableLines(invoice) : [blankLine()]);
+  const [lines, setLines] = useState<EditableQuoteLine[]>(invoice ? toEditableLines(invoice) : [blankLine()]);
   // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
   const pos = usePlaceOfSupply({ contactId, initial: invoice ? invoice.placeOfSupply : undefined, lines, setLines });
   const [saving, setSaving] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
+  const { show: showToast, toast } = useEntityToast();
+  // US-INV-35: a duplicate opens here with ?duplicated=INV-0012 — dated today, due on the terms, and says where it came from.
+  const duplicatedFrom = useRef(useSearchParams().get("duplicated"));
 
   useEffect(() => {
     if (invoice) return; // only pre-fill the org default currency for a brand-new invoice
@@ -102,6 +118,29 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       })
       .catch(() => {});
   }, [invoice]);
+
+  // US-INV-33: the business's payment terms; a new invoice starts due that many days after today.
+  useEffect(() => {
+    apiClient
+      .get<{ value: DocumentLayout | null }>("/org/settings/document_layout")
+      .then((res) => {
+        const days = resolveDocumentLayout(res.value, "invoice").dueDays;
+        setDueDays(days);
+        if (!invoice || duplicatedFrom.current !== null) setDueDate((current) => current ?? daysAfter(undefined, days));
+      })
+      .catch(() => {
+        if (!invoice || duplicatedFrom.current !== null) setDueDate((current) => current ?? daysAfter(undefined, DEFAULT_INVOICE_DUE_DAYS));
+      });
+  }, [invoice]);
+
+  useEffect(() => {
+    const from = duplicatedFrom.current;
+    if (from === null) return;
+    setIssueDate((current) => current ?? new Date());
+    if (from) showToast("Duplicated", `Duplicated from ${from}. Check the dates and lines, then save.`);
+    router.replace(window.location.pathname, { scroll: false });
+    // Once, on open: duplicatedFrom is read from the address the builder opened with.
+  }, []);
 
   useEffect(() => {
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
@@ -126,17 +165,17 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
     return codes.map((code) => ({ value: code, label: code }));
   }, [currency]);
 
-  function buildPayload() {
+  function buildPayload(rows: EditableQuoteLine[]) {
     return {
       contactId,
       placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
       type,
       currency,
-      issueDate: issueDate ? issueDate.toISOString().slice(0, 10) : null,
-      dueDate: dueDate ? dueDate.toISOString().slice(0, 10) : null,
+      issueDate: issueDate ? toDay(issueDate) : null,
+      dueDate: dueDate ? toDay(dueDate) : null,
       notes: notes || null,
       termsAndConditions: terms || null,
-      lines: lines.map((line, index) => ({
+      lines: rows.map((line, index) => ({
         type: line.type,
         catalogItemId: line.catalogItemId,
         name: line.name,
@@ -156,7 +195,31 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
     };
   }
 
-  async function handleSaveDraft() {
+  /** US-INV-34 — the invoice as it is on screen, in a new tab; nothing is saved. */
+  async function preview() {
+    setError(null);
+    if (!contactId) {
+      setError("Select a contact to preview the invoice.");
+      return;
+    }
+    // Opened before the request so the browser doesn't block it as a pop-up.
+    const tab = window.open("", "_blank");
+    setPreviewing(true);
+    try {
+      const { blob } = await apiClient.download("/invoices/preview-pdf", { ...buildPayload(lines), ...(invoice ? { invoiceId: invoice.id } : {}) });
+      const url = URL.createObjectURL(blob);
+      if (tab) tab.location.href = url;
+      else window.open(url, "_blank");
+    } catch (err) {
+      tab?.close();
+      setError(err instanceof Error ? err.message : "Couldn't make the preview. Try again.");
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  /** Saves the draft; "issue" then opens Issue invoice on its page, with the same checks as there. */
+  async function save(then: "view" | "issue" = "view") {
     setError(null);
     if (!contactId) {
       setError("Select a contact before saving.");
@@ -164,114 +227,137 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
     }
     setSaving(true);
     try {
-      const payload = buildPayload();
-      const saved = invoice
-        ? await apiClient.put<Invoice>(`/invoices/${invoice.id}`, payload)
-        : await apiClient.post<Invoice>("/invoices", payload);
-      router.push(`/invoices/${saved.id}`);
+      // US-CAT-06: one-off lines marked "Also save to catalogue" become items first, so the invoice links to them.
+      const withItems = await saveOneOffLinesToCatalogue(lines, currency);
+      if (withItems !== lines) setLines(withItems);
+      const payload = buildPayload(withItems);
+      const saved = invoice ? await apiClient.put<Invoice>(`/invoices/${invoice.id}`, payload) : await apiClient.post<Invoice>("/invoices", payload);
+      markSaved();
+      router.push(`/invoices/${saved.id}${then === "issue" ? "?action=issue" : ""}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save invoice.");
       setSaving(false);
     }
   }
 
+  function cancel() {
+    if (dirty) setLeaveTo(invoice ? `/invoices/${invoice.id}` : "/invoices");
+    else router.back();
+  }
+
+  const picked = pickedDueDays(issueDate, dueDate);
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4" {...interactionProps}>
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <Card className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <FormField label="Contact" required>
-            {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
-          </FormField>
-          <FormField label="Currency" required>
-            {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} />}
-          </FormField>
-          <FormField label="Type">
+      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FormField label="Contact" required>
+          {(field) => <ContactPicker id={field.id} aria-describedby={field["aria-describedby"]} aria-invalid={field["aria-invalid"]} aria-required={field["aria-required"]} value={contactId} onValueChange={touch(setContactId)} />}
+        </FormField>
+        <FormField label="Type">
+          {() => (
+            <Select value={type} onValueChange={(v) => touch(setType)(v as InvoiceType)}>
+              <SelectTrigger aria-label="Type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="advance">Advance</SelectItem>
+                <SelectItem value="progress">Progress</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </FormField>
+        <FormField label="Currency" required>
+          {() => <Combobox options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
+        </FormField>
+        {pos.active ? (
+          <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />
+        ) : (
+          <div className="hidden xl:block" />
+        )}
+        <FormField label="Issue date" helperText="Today if left blank when issued.">
+          {() => <DatePicker value={issueDate} onChange={touch(setIssueDate)} aria-label="Issue date" />}
+        </FormField>
+        <div className="flex flex-col gap-1.5 sm:col-span-2 xl:col-span-3">
+          <FormField label="Due date" helperText={`Your terms: due ${dueDays === 0 ? "on receipt" : `${dueDays} days after issue`} (Settings › Documents).`}>
             {() => (
-              <Select value={type} onValueChange={(v) => setType(v as InvoiceType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="advance">Advance</SelectItem>
-                  <SelectItem value="progress">Progress</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="w-56">
+                  <DatePicker value={dueDate} onChange={touch(setDueDate)} aria-label="Due date" />
+                </div>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Due in">
+                  {DUE_PICKS.map((days) => (
+                    <button
+                      key={days}
+                      type="button"
+                      aria-pressed={picked === days}
+                      onClick={() => touch(setDueDate)(daysAfter(issueDate, days))}
+                      className={cn(
+                        "h-7 rounded-md border px-2.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                        picked === days ? "border-primary bg-info-bg text-primary" : "border-border bg-surface-sunken text-on-surface hover:border-border-strong",
+                      )}
+                    >
+                      {days === 0 ? "On receipt" : `+${days} days`}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </FormField>
-          <FormField label="Issue date" helperText="Defaults to today if left blank when issued.">
-            {() => <DatePicker value={issueDate} onChange={setIssueDate} />}
-          </FormField>
-          <FormField label="Due date" helperText="Drives the overdue flag once issued.">
-            {() => <DatePicker value={dueDate} onChange={setDueDate} />}
-          </FormField>
-          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         </div>
       </Card>
 
       <PlaceOfSupplyNotice notice={pos.notice} />
 
-      <Card className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
+      <Card className="flex flex-col gap-0 overflow-hidden p-0">
+        <div className="flex items-center justify-between px-4 pb-2 pt-4">
+          <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+          <a href="#invoice-notes" className="text-[12.5px] font-medium text-primary hover:underline">
+            Notes and terms ↓
+          </a>
+        </div>
+        <QuoteLineEditor lines={lines} onChange={touch(setLines)} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
-      <Card className="flex flex-col gap-4">
+      <Card id="invoice-notes" className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Notes" helperText="Visible to the customer on the invoice.">
-            {(field) => <RichTextEditor {...field} value={notes} onValueChange={setNotes} placeholder="Notes for the customer…" />}
+            {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder="Notes for the customer…" />}
           </FormField>
           <FormField label="Terms & conditions">
-            {(field) => <RichTextEditor {...field} value={terms} onValueChange={setTerms} placeholder="Payment terms, etc…" />}
+            {(field) => <RichTextEditor {...field} value={terms} onValueChange={touch(setTerms)} placeholder="Payment terms, etc…" />}
           </FormField>
         </div>
       </Card>
 
-      <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
-        <TotalRow label="Subtotal" value={totals.subtotal} currency={currency} />
-        <TotalRow label="Tax" value={totals.tax} currency={currency} />
-        <div className="border-t border-border pt-2">
-          <TotalRow label="Total" value={totals.total} currency={currency} emphasize />
-        </div>
-      </Card>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={() => router.back()} disabled={saving}>
+      {/* US-INV-34: totals and actions stay in view. */}
+      <DocumentBuilderBar totals={totals} currency={currency} dirty={dirty} testIdPrefix="invoice">
+        <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
           Cancel
         </Button>
-        <Button type="button" onClick={handleSaveDraft} disabled={saving}>
+        <Button type="button" variant="secondary" onClick={() => void preview()} disabled={saving || previewing} aria-busy={previewing}>
+          {previewing ? <Spinner size="sm" /> : <Eye size={14} aria-hidden />}
+          Preview PDF
+        </Button>
+        <Button type="button" variant={canIssue ? "secondary" : "primary"} onClick={() => void save("view")} disabled={saving}>
           {saving ? <Spinner size="sm" /> : invoice ? "Save draft" : "Save as draft"}
         </Button>
-      </div>
-    </div>
-  );
-}
+        {canIssue && (
+          <Button type="button" onClick={() => void save("issue")} disabled={saving}>
+            <Send size={14} aria-hidden />
+            Save and issue
+          </Button>
+        )}
+      </DocumentBuilderBar>
 
-function TotalRow({
-  label,
-  value,
-  currency,
-  emphasize,
-}: {
-  label: string;
-  value: bigint;
-  currency: string;
-  emphasize?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
-        {label}
-      </span>
-      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
-        {formatMoney(value, currency)}
-      </span>
+      <LeaveWithoutSavingDialog open={leaveTo !== null} document="invoice" onLeave={leave} onStay={() => setLeaveTo(null)} />
+      {toast}
     </div>
   );
 }

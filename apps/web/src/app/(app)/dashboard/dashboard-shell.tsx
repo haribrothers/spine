@@ -47,7 +47,6 @@ import {
   useCapabilities,
   useCapability,
 } from "../../../lib/capabilities-context";
-import { useEntityToast } from "../invoices/entity-toast";
 
 /** `YYYY-MM-DD` in the browser's own calendar. */
 function localToday(): string {
@@ -171,8 +170,6 @@ export function DashboardShell({
   const { modules } = useModules();
   const jobsOn = modules?.jobsField === true;
   const canSendReminder = useCapability("invoices.send_reminder");
-  const [reminding, setReminding] = useState(false);
-  const { show: showToast, toast } = useEntityToast();
 
   function loadAttention() {
     apiClient
@@ -182,9 +179,10 @@ export function DashboardShell({
   }
 
   /**
-   * US-DASH-13 (D-088) — each row's button. One overdue invoice: the
-   * reminder goes straight away. Several: the Invoices list, filtered to
-   * overdue with them ticked. Without the capability: "Open".
+   * US-DASH-13 (D-088, D-217) — each row's button. One overdue invoice:
+   * the invoice, with its reminder email to check and send. Several: the
+   * Invoices list, filtered to overdue with them ticked (sending asks
+   * first). Without the capability: "Open".
    */
   function actionFor(item: AttentionItem, label: string): AttentionRowAction {
     if (item.kind === "invoices_overdue") {
@@ -197,30 +195,8 @@ export function DashboardShell({
               ? `/invoices/${first.id}`
               : "/invoices?status=overdue",
         };
-      if (item.count === 1 && first) {
-        return {
-          label,
-          busy: reminding,
-          onClick: async () => {
-            setReminding(true);
-            try {
-              await apiClient.post(`/invoices/${first.id}/send-reminder`);
-              showToast(
-                `Reminder sent for ${first.number ?? "the invoice"}`,
-                "The customer gets the reminder email with the invoice attached.",
-              );
-              loadAttention();
-            } catch (err) {
-              showToast(
-                "Couldn't send the reminder",
-                err instanceof Error ? err.message : "Try again.",
-              );
-            } finally {
-              setReminding(false);
-            }
-          },
-        };
-      }
+      // One overdue invoice: open it with the reminder email ready to check and send.
+      if (item.count === 1 && first) return { label, href: `/invoices/${first.id}?action=remind` };
     }
     return { label, href: attentionHref(item) };
   }
@@ -448,7 +424,6 @@ export function DashboardShell({
             </>
           )}
         </div>
-        {toast}
       </div>
       </DashboardCurrencyProvider>
     </DashboardBasisProvider>

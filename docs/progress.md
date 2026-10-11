@@ -486,16 +486,16 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-ONB-25 · Explore quotes at every stage
 - [x] US-ONB-26 · Explore jobs that need something
 - [x] US-ONB-27 · Explore a catalogue and calendar that look kept
-- [ ] US-ONB-28 · Explore invoices at every stage
-- [ ] US-INV-27 · See what I'm owed, what's late and what's come in at a glance
-- [ ] US-INV-28 · Search, filter and come back to the same invoices list
-- [ ] US-INV-29 · Read an invoice's state in the list, and act on it from the row
-- [ ] US-INV-30 · See an invoice at a glance, with one next step
-- [ ] US-INV-31 · Read an invoice's lines and totals together
-- [ ] US-INV-32 · Follow what happened to an invoice
-- [ ] US-INV-33 · Give every invoice a due date from my payment terms
-- [ ] US-INV-34 · Build an invoice in compact rows, with a bar that stays in view
-- [ ] US-INV-35 · Duplicate an invoice
+- [x] US-ONB-28 · Explore invoices at every stage
+- [x] US-INV-27 · See what I'm owed, what's late and what's come in at a glance
+- [x] US-INV-28 · Search, filter and come back to the same invoices list
+- [x] US-INV-29 · Read an invoice's state in the list, and act on it from the row
+- [x] US-INV-30 · See an invoice at a glance, with one next step
+- [x] US-INV-31 · Read an invoice's lines and totals together
+- [x] US-INV-32 · Follow what happened to an invoice
+- [x] US-INV-33 · Give every invoice a due date from my payment terms
+- [x] US-INV-34 · Build an invoice in compact rows, with a bar that stays in view
+- [x] US-INV-35 · Duplicate an invoice
 
 ## Phase 10 · AI assistant
 

@@ -46,6 +46,24 @@ export class InvoicePdfService {
       .where(eq(invoiceLines.invoiceId, invoiceId))
       .orderBy(invoiceLines.sortOrder);
 
+    const buffer = await this.renderInvoice(orgId, row.invoice, lines, row.contactName, row.contactEmail);
+    const filename = `${row.invoice.number ?? "invoice-draft"}.pdf`;
+    return { buffer, filename };
+  }
+
+  /**
+   * Draws an invoice from its rows — a saved one, or US-INV-34's unsaved
+   * preview (InvoicesService.previewDraft). A draft carries the "DRAFT —
+   * Preview only" watermark.
+   */
+  async renderInvoice(
+    orgId: string,
+    invoice: typeof invoices.$inferSelect,
+    lines: (typeof invoiceLines.$inferSelect)[],
+    contactName: string | null,
+    contactEmail: string | null,
+  ): Promise<Buffer> {
+    const row = { invoice, contactName, contactEmail };
     const business = await this.settings.get<InvoicePdfBusinessProfile>(orgId, "business_profile");
 
     // US-SET-10 — document colour and footer for new and draft documents; issued ones are served from the stored PDF.
@@ -76,11 +94,10 @@ export class InvoicePdfService {
           { ...row.invoice, balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount },
           business,
         ),
+        watermark: row.invoice.status === "draft",
       }),
     );
-
-    const filename = `${row.invoice.number ?? "invoice-draft"}.pdf`;
-    return { buffer, filename };
+    return buffer;
   }
 
   /** US-JOB-29 — "Progress claim 3 · JOB-002" for an issued progress invoice on a job. */

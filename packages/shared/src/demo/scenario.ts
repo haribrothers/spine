@@ -101,17 +101,17 @@ export const INVOICE_TIMELINE = [
   { key: "inv03", slot: "regional", issue: -118, due: -88, paid: [[-92, "full"]] },
   { key: "inv04", slot: "institution", issue: -96, due: -66, paid: [[-70, "full"]] },
   { key: "inv05", slot: "sez", issue: -74, due: -44, paid: [[-50, "full"]] },
-  { key: "inv06", slot: "anchor", issue: -58, due: -28, paid: [[-35, 0.5]] },
+  { key: "inv06", slot: "anchor", issue: -58, due: -28, paid: [[-35, 0.5]], emailed: -58, reminded: -20 },
   // Raised by mistake and voided the same day: a void posts on the day it's made (D-185), so an earlier
   // invoice voided today would put this month's Tax Summary out of step with this month's GSTR-1.
   { key: "inv07", slot: "institution", issue: null, due: 30, voided: "Raised against the wrong purchase order — reissued." },
-  { key: "inv08", slot: "regional", issue: -26, due: -11 },
+  { key: "inv08", slot: "regional", issue: -26, due: -11, emailed: -26, reminded: -4 },
   // India: an SEZ supply under LUT, zero-rated by hand (SEWOP); the earlier one carried IGST (SEWP).
   { key: "inv09", slot: "sez", issue: -22, due: 8, zeroRatedInIndia: true },
   { key: "inv10", slot: "overseas", issue: -18, due: 12, paid: [[-4, "full"]] },
-  { key: "inv11", slot: "consumer_far", issue: -12, due: 2, paid: [[-5, 0.4]] },
+  { key: "inv11", slot: "consumer_far", issue: -12, due: 2, paid: [[-5, 0.4]], emailed: -12 },
   { key: "inv12", slot: "consumer", issue: -8, due: 6, paid: [[-2, "full"]] },
-  { key: "inv13", slot: "anchor", issue: -6, due: 24 },
+  { key: "inv13", slot: "anchor", issue: -6, due: 24, emailed: -6 },
   { key: "inv14", slot: "institution", issue: -3, due: 27 },
   { key: "inv15", slot: "anchor", issue: null, due: 30, draft: true },
 ] as const satisfies readonly {
@@ -123,6 +123,9 @@ export const INVOICE_TIMELINE = [
   voided?: string;
   draft?: boolean;
   zeroRatedInIndia?: boolean;
+  /** US-ONB-28: emailed on its issue day, and chased once it was late. */
+  emailed?: number;
+  reminded?: number;
 }[];
 export type InvoiceKey = (typeof INVOICE_TIMELINE)[number]["key"];
 
@@ -361,6 +364,8 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
       ...("paid" in step ? { payments: step.paid.map(([inDays, amount]) => ({ inDays, amount, method: india ? ("upi" as const) : ("bank_transfer" as const) })) } : {}),
       ...("voided" in step ? { voidReason: step.voided } : {}),
       ...(india && "zeroRatedInIndia" in step ? { zeroRated: true } : {}),
+      ...("emailed" in step ? { emailedInDays: step.emailed } : {}),
+      ...("reminded" in step ? { remindedInDays: step.reminded } : {}),
     };
   });
 

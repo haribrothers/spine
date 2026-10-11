@@ -213,13 +213,13 @@ Decision: D-087, D-088
 Decision: D-088
 
 **Acceptance criteria**
-- **Given** "1 invoice is overdue", **when** I press "Send reminder", **then** the reminder email for that invoice is sent and a toast reads "Reminder sent for INV-<number>".
+- **Given** "1 invoice is overdue", **when** I press "Send reminder", **then** that invoice opens with its reminder email ready to check and send (D-217: an email to a customer is always confirmed first).
 - **Given** several overdue invoices, **when** I press "Send reminder", **then** the Invoices list opens filtered to overdue with those invoices selected (US-INV-23).
 - **Given** "Review", "Approve", "Raise invoice", "Follow up" or "Pay bill", **when** I press it, **then** the matching record opens (expenses filtered to submitted, the quote, the completed milestone's job, the expiring quote, the bill's payment dialog).
 - **Given** I lack the capability for the action (e.g. `invoices.send_reminder`), **when** the row renders, **then** the button is replaced by "Open".
 
 **Implementation notes**
-- UI: actions route to existing screens; no new mutation endpoints except reusing `POST /invoices/:id/send-reminder`.
+- UI: actions route to existing screens (`/invoices/:id?action=remind` for one overdue invoice); no new mutation endpoints.
 
 ### US-DASH-14 · See key figures with a trend and a comparison
 **Feature:** F-DASH-07 · **Priority:** P1 · **Phase:** 7 · **Screens:** `DashboardOwnerRedesign`, `DashboardStaffRedesign`

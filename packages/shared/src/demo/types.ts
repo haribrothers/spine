@@ -155,6 +155,9 @@ export interface DemoPlanInvoice {
   voidReason?: string;
   /** India: lines carry no tax and are zero-rated, changed by hand (an SEZ supply under LUT, D-181). */
   zeroRated?: boolean;
+  /** US-ONB-28 — days from today it was emailed to the customer, and a reminder sent (null is today). */
+  emailedInDays?: number | null;
+  remindedInDays?: number | null;
 }
 
 export interface DemoPlanQuote {

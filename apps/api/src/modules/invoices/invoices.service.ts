@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass, percentageOf, type BulkResult, upiQrAmountFor, type BusinessProfile } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass, percentageOf, type BulkResult, upiQrAmountFor, type BusinessProfile, dueDateFor, resolveDocumentLayout, type DocumentLayout, type InvoiceActivityEntry } from "@spine/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, invoiceReminders, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings } from "../../db/schema";
+import { invoices, invoiceLines, invoiceReminders, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings, auditLog, user, payments, paymentAllocations, creditNotes, creditNoteAllocations } from "../../db/schema";
 import { daysBetween, orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
@@ -15,6 +15,7 @@ import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
+import { RateBook } from "../tax/line-tax-components";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import type { EmailJobOverride } from "../email/email-text";
@@ -220,10 +221,17 @@ export class InvoicesService {
       .where(and(...conditions))
       .orderBy(desc(invoices.createdAt));
 
+    // US-INV-28: what search reads beyond the number and customer — the lines' names and the job — and US-INV-29's "Paid <date>".
+    const ids = rows.map((r) => r.invoice.id);
+    const extras = await this.listExtras(orgId, ids, [...new Set(rows.map((r) => r.invoice.jobId).filter((j): j is string => Boolean(j)))]);
+
     const today = orgClock().date;
     let result = rows.map((r) => ({
       ...r.invoice,
       contactName: r.contactName,
+      lineNames: extras.lineNames.get(r.invoice.id) ?? [],
+      job: r.invoice.jobId ? (extras.jobs.get(r.invoice.jobId) ?? null) : null,
+      lastPaidAt: extras.lastPaid.get(r.invoice.id) ?? null,
       lastReminderOn: r.lastReminderOn,
       remindedToday: r.lastReminderOn === today,
       isOverdue: isOverdue(r.invoice),
@@ -238,11 +246,30 @@ export class InvoicesService {
     return result;
   }
 
+  /** US-INV-28, US-INV-29 — each invoice's item names, its job, and its last payment's date, in three queries. */
+  private async listExtras(orgId: string, ids: string[], jobIds: string[]) {
+    if (!ids.length) return { lineNames: new Map<string, string[]>(), jobs: new Map<string, { id: string; number: string | null; name: string }>(), lastPaid: new Map<string, string>() };
+    const [lineRows, jobRows, paidRows] = await Promise.all([
+      this.db.select({ invoiceId: invoiceLines.invoiceId, name: invoiceLines.name }).from(invoiceLines).where(and(inArray(invoiceLines.invoiceId, ids), eq(invoiceLines.type, "item"))),
+      jobIds.length ? this.db.select({ id: jobs.id, number: jobs.number, name: jobs.name }).from(jobs).where(and(eq(jobs.orgId, orgId), inArray(jobs.id, jobIds))) : Promise.resolve([]),
+      this.db
+        .select({ invoiceId: paymentAllocations.invoiceId, last: sql<string>`max(${payments.date})::text` })
+        .from(paymentAllocations)
+        .innerJoin(payments, eq(paymentAllocations.paymentId, payments.id))
+        .where(inArray(paymentAllocations.invoiceId, ids))
+        .groupBy(paymentAllocations.invoiceId),
+    ]);
+    const lineNames = new Map<string, string[]>();
+    for (const l of lineRows) lineNames.set(l.invoiceId, [...(lineNames.get(l.invoiceId) ?? []), l.name]);
+    return { lineNames, jobs: new Map(jobRows.map((j) => [j.id, j])), lastPaid: new Map(paidRows.map((p) => [p.invoiceId, p.last])) };
+  }
+
   async getOne(orgId: string, id: string) {
     const [row] = await this.db
-      .select({ invoice: invoices, contactName: contacts.name })
+      .select({ invoice: invoices, contactName: contacts.name, sourceQuoteNumber: quotes.number })
       .from(invoices)
       .leftJoin(contacts, eq(invoices.contactId, contacts.id))
+      .leftJoin(quotes, eq(invoices.sourceQuoteId, quotes.id))
       .where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!row) {
       throw new NotFoundException("Invoice not found");
@@ -254,14 +281,37 @@ export class InvoicesService {
       .where(eq(invoiceLines.invoiceId, id))
       .orderBy(invoiceLines.sortOrder);
 
+    const extras = await this.listExtras(orgId, [id], []);
     return {
       ...row.invoice,
       contactName: row.contactName,
+      // US-INV-30: "From QUO-0031" and the Paid figure's "last on 2 Oct".
+      sourceQuoteNumber: row.sourceQuoteNumber ?? null,
+      lastPaidAt: extras.lastPaid.get(id) ?? null,
       isOverdue: isOverdue(row.invoice),
       paymentStatus: paymentStatus(row.invoice),
       balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
       ...(await this.jobDetails(orgId, row.invoice)),
       lines,
+    };
+  }
+
+  /** US-INV-33 (D-217) — the due date an issued invoice without one gets: its issue date plus Settings › Documents › Invoices due in. */
+  private async termsDueDate(tx: Transaction, orgId: string, issueDate: string): Promise<Date> {
+    const [layoutRow] = await tx.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "document_layout")));
+    return new Date(`${dueDateFor(issueDate, resolveDocumentLayout(layoutRow?.value as DocumentLayout | undefined, "invoice").dueDays)}T00:00:00Z`);
+  }
+
+  /** `GET /invoices/:id` — the invoice, plus its tax by named rate (CGST and SGST, or IGST) for the totals under its lines (US-INV-31). */
+  async getDetail(orgId: string, id: string) {
+    const invoice = await this.getOne(orgId, id);
+    const book = await RateBook.load(this.db, orgId, invoice.lines);
+    return {
+      ...invoice,
+      taxLines: book.taxLines(
+        invoice.lines.filter((l) => l.type === "item"),
+        invoice.supplyType,
+      ),
     };
   }
 
@@ -305,6 +355,181 @@ export class InvoicesService {
   async getHistory(orgId: string, id: string) {
     await this.getOne(orgId, id);
     return this.auditLog.listForEntity(orgId, "invoice", id);
+  }
+
+  /**
+   * US-INV-32 (D-217) — the invoice's story for its Activity panel, newest
+   * first: its audit entries (created, edited, issued, emailed, reminders
+   * by hand and on schedule, voided, duplicated), the payments allocated
+   * to it, credit notes raised against it or applied to it, and its email
+   * status. "View history" keeps the field-level changes.
+   */
+  async activity(orgId: string, id: string): Promise<InvoiceActivityEntry[]> {
+    const invoice = await this.getOne(orgId, id);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const entries: InvoiceActivityEntry[] = [];
+    const [contact] = await this.db.select({ email: contacts.email }).from(contacts).where(eq(contacts.id, invoice.contactId));
+
+    const rows = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, createdAt: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "invoice"), eq(auditLog.entityId, id)));
+    for (const row of rows) {
+      const at = iso(row.createdAt);
+      const actorName = row.actorName ?? null;
+      const changes = (row.changes ?? []) as { field: string; from: unknown; to: unknown }[];
+      switch (row.action) {
+        case "created":
+          if (invoice.milestone) entries.push({ at, type: "created_from_milestone", actorName, detail: invoice.milestone.name, linkId: invoice.job?.id ?? null });
+          else if (invoice.sourceQuoteId) entries.push({ at, type: "created_from_quote", actorName, detail: invoice.sourceQuoteNumber, linkId: invoice.sourceQuoteId });
+          else entries.push({ at, type: "created", actorName, detail: null });
+          break;
+        case "duplicated": {
+          const from = changes.find((c) => c.field === "duplicatedFrom");
+          entries.push({ at, type: "duplicated", actorName, detail: typeof from?.from === "string" ? from.from : null, linkId: typeof from?.to === "string" ? from.to : null });
+          break;
+        }
+        case "updated":
+          entries.push({ at, type: "edited", actorName, detail: null });
+          break;
+        case "issued":
+          entries.push({ at, type: "issued", actorName, detail: null });
+          break;
+        case "email_queued":
+          entries.push({ at, type: "emailed", actorName, detail: contact?.email ?? null });
+          break;
+        case "reminder_queued":
+          entries.push({ at, type: "reminder_sent", actorName, detail: null });
+          break;
+        case "automatic_reminder_sent":
+          entries.push({ at, type: "auto_reminder_sent", actorName: null, detail: null });
+          break;
+        case "voided":
+          entries.push({ at, type: "voided", actorName, detail: invoice.voidReason ?? null });
+          break;
+        default:
+          break;
+      }
+    }
+    if (invoice.emailStatus === "failed") entries.push({ at: iso(invoice.updatedAt), type: "email_failed", actorName: null, detail: invoice.emailError ?? null });
+
+    const paid = await this.db
+      .select({ id: payments.id, number: payments.number, date: payments.date, method: payments.method, amount: paymentAllocations.amount, createdAt: paymentAllocations.createdAt, actorName: user.name })
+      .from(paymentAllocations)
+      .innerJoin(payments, eq(paymentAllocations.paymentId, payments.id))
+      .leftJoin(user, eq(payments.createdByUserId, user.id))
+      .where(eq(paymentAllocations.invoiceId, id));
+    for (const p of paid) entries.push({ at: iso(p.createdAt), type: "payment_recorded", actorName: p.actorName ?? null, detail: p.number, linkId: p.id, amount: p.amount.toString(), method: p.method });
+
+    const notes = await this.db
+      .select({ id: creditNotes.id, number: creditNotes.number, issuedAt: creditNotes.issuedAt, actorName: user.name })
+      .from(creditNotes)
+      .leftJoin(user, eq(creditNotes.createdByUserId, user.id))
+      .where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.invoiceId, id), eq(creditNotes.status, "issued")));
+    for (const n of notes) if (n.issuedAt) entries.push({ at: iso(n.issuedAt), type: "credit_note_issued", actorName: n.actorName ?? null, detail: n.number, linkId: n.id });
+    const applied = await this.db
+      .select({ creditNoteId: creditNoteAllocations.creditNoteId, number: creditNotes.number, sourceInvoiceId: creditNotes.invoiceId, amount: creditNoteAllocations.amount, createdAt: creditNoteAllocations.createdAt, actorName: user.name })
+      .from(creditNoteAllocations)
+      .innerJoin(creditNotes, eq(creditNoteAllocations.creditNoteId, creditNotes.id))
+      .leftJoin(user, eq(creditNoteAllocations.createdByUserId, user.id))
+      .where(eq(creditNoteAllocations.invoiceId, id));
+    // A credit note against another invoice, applied to this one.
+    for (const a of applied) if (a.sourceInvoiceId !== id) entries.push({ at: iso(a.createdAt), type: "credit_applied", actorName: a.actorName ?? null, detail: a.number, linkId: a.creditNoteId, amount: a.amount.toString() });
+
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /**
+   * US-INV-35 (D-217) — a new draft from any invoice: the same customer,
+   * currency, lines, notes and terms; a progress or retention-release
+   * invoice becomes standard (it isn't billing a milestone now); today's
+   * issue date and no due date, so issuing gives it one from the terms.
+   * An audit row on the copy names the source.
+   */
+  async duplicate(orgId: string, id: string, actorUserId: string) {
+    const source = await this.getOne(orgId, id);
+    const type = source.type === "advance" ? "advance" : "standard";
+    const copy = await this.create(orgId, actorUserId, {
+      contactId: source.contactId,
+      type,
+      currency: source.currency,
+      issueDate: null,
+      dueDate: null,
+      notes: source.notes,
+      termsAndConditions: source.termsAndConditions,
+      ...(source.placeOfSupply ? { placeOfSupply: source.placeOfSupply } : {}),
+      lines: source.lines.map((l) => ({
+        type: l.type,
+        catalogItemId: l.catalogItemId,
+        name: l.name,
+        description: l.description,
+        quantity: Number(l.quantity),
+        unitPriceAmount: l.unitPriceAmount,
+        unitPriceCurrency: l.unitPriceCurrency,
+        discountPercentage: Number(l.discountPercentage),
+        taxRatePercentage: Number(l.taxRatePercentage),
+        taxRateId: l.taxRateId,
+        taxGroupId: l.taxGroupId,
+        isTaxInclusive: l.isTaxInclusive,
+        supplyClass: l.supplyClass,
+        hsnSac: l.hsnSac,
+      })),
+    } as CreateInvoiceInput);
+    await this.auditLog.record(this.db, {
+      orgId,
+      actorUserId,
+      action: "duplicated",
+      entityType: "invoice",
+      entityId: copy.id,
+      contactId: copy.contactId,
+      changes: [{ field: "duplicatedFrom", from: source.number ?? "a draft invoice", to: source.id }],
+    });
+    return copy;
+  }
+
+  /**
+   * US-INV-34 (D-217) — "Preview PDF" in the builder: the invoice as it is
+   * on screen, saved or not. Nothing is written: totals, tax and the place
+   * of supply are worked out as a save would, then rendered from memory.
+   * `invoiceId` (an existing draft) keeps its own fields.
+   */
+  async previewDraft(orgId: string, actorUserId: string, input: CreateInvoiceInput, invoiceId?: string) {
+    const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
+    if (!contact) throw new BadRequestException("Contact not found");
+    const [existing] = invoiceId ? await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, invoiceId))) : [];
+    if (invoiceId && !existing) throw new NotFoundException("Invoice not found");
+    const totals = await computeInvoiceTotals(orgId, input.currency, withoutTaxIfAdvance(input.lines, input.type), this.taxResolver);
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "sale");
+    const now = new Date();
+    const id = existing?.id ?? "00000000-0000-0000-0000-000000000000";
+    const invoice = {
+      ...(existing ?? {}),
+      id,
+      orgId,
+      contactId: input.contactId,
+      number: null,
+      status: "draft",
+      type: input.type ?? existing?.type ?? "standard",
+      currency: input.currency,
+      issueDate: input.issueDate ?? null,
+      dueDate: input.dueDate ?? null,
+      subtotalAmount: totals.subtotalAmount,
+      discountAmount: totals.discountAmount,
+      taxAmount: totals.taxAmount,
+      retentionAmount: existing?.retentionAmount ?? 0n,
+      totalAmount: totals.totalAmount,
+      amountPaid: 0n,
+      creditedAmount: 0n,
+      notes: input.notes ?? null,
+      termsAndConditions: input.termsAndConditions ?? null,
+      placeOfSupply: supply.placeOfSupply,
+      supplyType: supply.supplyType,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    } as typeof invoices.$inferSelect;
+    const lines = totals.lines.map((line, index) => ({ ...line, id: `preview-${index}`, invoiceId: id })) as unknown as (typeof invoiceLines.$inferSelect)[];
+    return { invoice, lines, contactName: contact.name, contactEmail: contact.email };
   }
 
   /**
@@ -591,6 +816,8 @@ export class InvoicesService {
           number,
           issueDate: issuedAt,
           issuedAt,
+          // US-INV-33: due on the business's payment terms, like every issued invoice.
+          dueDate: await this.termsDueDate(tx, orgId, issueDateStr),
           currency: job.currency,
           subtotalAmount: releasable,
           totalAmount: releasable,
@@ -825,6 +1052,8 @@ export class InvoicesService {
       // same period in the ledger, the Tax Summary and GSTR-1. A date in a closed period is refused.
       const issueDate = existing.issueDate ?? issuedAt;
       const issueDateStr = issueDate.toISOString().slice(0, 10);
+      // US-INV-33 (D-217): every issued invoice has a due date — one without is due its issue date plus the business's terms.
+      const dueDate = existing.dueDate ?? (await this.termsDueDate(tx, orgId, issueDateStr));
 
       let journalEntryId: string | null = null;
       if (!isAdvance) {
@@ -907,6 +1136,7 @@ export class InvoicesService {
           // US-TAX-13: snapshotted at issue.
           ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "sale", tx)),
           issueDate,
+          dueDate,
           journalEntryId,
           paymentInstructions,
           upiQrAmount,

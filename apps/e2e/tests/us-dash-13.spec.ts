@@ -19,12 +19,16 @@ async function setGrant(page: Page, capability: string, granted: boolean) {
 }
 
 test.describe("US-DASH-13", () => {
-  test("one overdue invoice: 'Send reminder' sends it from the dashboard", async ({ page, seededOrg: _ }) => {
+  test("one overdue invoice: 'Send reminder' opens its reminder email to check and send", async ({ page, seededOrg: _ }) => {
     const overdue = (await rowsOf(page)).find((r) => r.kind === "invoices_overdue");
     expect(overdue?.count, "the demo data has one overdue invoice").toBe(1);
     await page.goto("/dashboard");
-    await page.locator('li[data-kind="invoices_overdue"]').getByRole("button", { name: "Send reminder" }).click();
-    await expect(page.getByText(`Reminder sent for ${overdue!.items[0]!.number}`).first()).toBeVisible();
+    await page.locator('li[data-kind="invoices_overdue"]').getByRole("link", { name: "Send reminder" }).click();
+    // Nothing is emailed from one click (D-217): the invoice opens with the reminder ready.
+    const dialog = page.getByRole("dialog", { name: `Send payment reminder — ${overdue!.items[0]!.number}` });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Send reminder" }).click();
+    await expect(page.getByText("Reminder sent", { exact: true }).first()).toBeVisible();
   });
 
   test("'Review' opens expenses waiting for approval", async ({ page, seededOrg: _ }) => {

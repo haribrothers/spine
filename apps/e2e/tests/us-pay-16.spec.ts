@@ -23,7 +23,9 @@ test.describe("US-PAY-16", () => {
     const open = await invoice("45425");
 
     await page.goto(`/invoices/${paid.id}`);
-    await page.getByRole("button", { name: "Issue credit note" }).click();
+    // US-INV-30: the paid invoice's next step is Download PDF; credit notes are under More.
+    await page.getByTestId("invoice-actions").getByRole("button", { name: "More" }).click();
+    await page.getByRole("menuitem", { name: "Issue credit note" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.locator('input[inputmode="decimal"]').fill("300");
     await expect(dialog.getByTestId("credit-split")).toHaveText(`$0.00 reduces what's owed on ${paid.number}; $300.00 becomes credit for Maple Ridge Developments.`);
@@ -31,7 +33,9 @@ test.describe("US-PAY-16", () => {
     await expect(page.getByText("Credit note issued").first()).toBeVisible();
 
     await page.goto(`/invoices/${open.id}`);
-    await page.getByRole("button", { name: "Apply credit" }).click();
+    const more = page.getByTestId("invoice-actions").getByRole("button", { name: "More" });
+    await more.click();
+    await page.getByRole("menuitem", { name: "Apply credit" }).click();
     const apply = page.getByRole("dialog");
     const source = apply.getByTestId("credit-source");
     await expect(source).toContainText(/Credit note CRN-/);
@@ -40,6 +44,8 @@ test.describe("US-PAY-16", () => {
     await apply.getByRole("button", { name: "Apply credit" }).click();
     await expect(page.getByText("Credit applied").first()).toBeVisible();
     await expect(page.getByText("$154.25").first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Apply credit" })).toHaveCount(0);
+    await more.click();
+    await expect(page.getByRole("menuitem", { name: "Issue credit note" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Apply credit" })).toHaveCount(0);
   });
 });

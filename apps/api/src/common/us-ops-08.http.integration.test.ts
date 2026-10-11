@@ -23,6 +23,8 @@ const EXEMPT = new Set([
   "POST /invoices/bulk/pdf",
   // US-QUO-35: renders the unsaved quote as a PDF; it writes nothing, and the PDF isn't replayable.
   "POST /quotes/preview-pdf",
+  // US-INV-34: the same for an invoice.
+  "POST /invoices/preview-pdf",
 ]);
 
 function controllerFiles(dir: string): string[] {

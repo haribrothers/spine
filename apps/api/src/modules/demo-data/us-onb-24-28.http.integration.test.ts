@@ -12,9 +12,9 @@ interface Quote { id: string; title: string | null; status: string; sentAt: stri
 interface Job { id: string; status: string; endDate: string | null; sourceQuoteId: string | null; costBudgetAmount: string | null; percentComplete: number | null; readyToBillCount?: number; budgetState?: string; contactId: string; createdAt: string }
 
 /**
- * US-ONB-24 to US-ONB-27 (D-216) — demo data that shows the refined
- * screens, for Riverstone Builders and a localised demo. Requires local
- * Postgres.
+ * US-ONB-24 to US-ONB-28 (D-216, D-217) — demo data that shows the
+ * refined screens, for Riverstone Builders and a localised demo. Requires
+ * local Postgres.
  */
 describe("Demo data that shows the refined screens (requires local Postgres)", () => {
   let testApp: TestApp;
@@ -130,6 +130,31 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(times.size).toBeGreaterThanOrEqual(3);
         const soon = meetings.filter((m) => new Date(m.startAt).getTime() > Date.now() - DAY && new Date(m.startAt).getTime() < Date.now() + 14 * DAY);
         expect(soon.length).toBeGreaterThanOrEqual(3);
+      });
+
+      it("US-ONB-28 · invoices at every stage", async () => {
+        const list = await get<{ id: string; status: string; dueDate: string | null; isOverdue: boolean; balanceDue: string }[]>("/invoices");
+        const issued = list.filter((i) => i.status === "issued");
+        expect(issued.every((i) => i.dueDate)).toBe(true);
+        const owed = issued.filter((i) => BigInt(i.balanceDue) > 0n);
+        expect(owed.some((i) => i.isOverdue)).toBe(true);
+        const days = (iso: string) => Math.round((new Date(iso).getTime() - Date.now()) / DAY);
+        expect(owed.some((i) => !i.isOverdue && days(i.dueDate!) >= 0 && days(i.dueDate!) <= 7)).toBe(true);
+
+        const activities = await Promise.all(issued.map((i) => get<{ type: string; at: string; detail: string | null }[]>(`/invoices/${i.id}/activity`)));
+        const emailed = activities.flat().filter((e) => e.type === "emailed");
+        const reminded = activities.find((a) => a.some((e) => e.type === "reminder_sent"));
+        expect(emailed.length).toBeGreaterThan(0);
+        expect(emailed.every((e) => e.detail)).toBe(true);
+        expect(reminded?.some((e) => e.type === "emailed")).toBe(true);
+        // A localised demo's history happened over weeks, on the days it says.
+        if (demo.name !== "Riverstone Builders") {
+          expect(new Set(emailed.map((e) => e.at.slice(0, 10))).size).toBeGreaterThan(1);
+          const remindedAt = reminded!.find((e) => e.type === "reminder_sent")!.at;
+          expect(remindedAt.slice(0, 10)).not.toBe(reminded!.find((e) => e.type === "emailed")!.at.slice(0, 10));
+          const issuedDays = new Set(activities.flat().filter((e) => e.type === "issued").map((e) => e.at.slice(0, 10)));
+          expect(issuedDays.size).toBeGreaterThan(5);
+        }
       });
 
       it("deletes the demo's bundles with it", async () => {

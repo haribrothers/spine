@@ -4,7 +4,7 @@ import { DEMO_COUNTRIES, DEMO_INDUSTRIES, type DemoPlan } from "./demo/types.ts"
 
 const plans: [string, DemoPlan][] = DEMO_COUNTRIES.flatMap((country) => DEMO_INDUSTRIES.map((industry): [string, DemoPlan] => [`${country} ${industry}`, buildDemoPlan(country, industry)]));
 
-/** US-ONB-24 to US-ONB-27 (D-216) — every demo plan, Riverstone included, carries what the refined screens show. */
+/** US-ONB-24 to US-ONB-28 (D-216, D-217) — every demo plan, Riverstone included, carries what the refined screens show. */
 describe.each(plans)("%s", (_name, plan) => {
   const leads = plan.contacts.flatMap((c) => [c.lead, c.lostLead].filter((l) => l !== undefined));
   const open = leads.filter((l) => l.stage !== "won" && l.stage !== "lost");
@@ -57,5 +57,19 @@ describe.each(plans)("%s", (_name, plan) => {
     expect(new Set(plan.meetings.map((m) => m.startTime)).size).toBeGreaterThanOrEqual(3);
     expect(plan.meetings.filter((m) => m.startInDays >= 1 && m.startInDays <= 14).length).toBeGreaterThanOrEqual(3);
     expect(plan.meetings.some((m) => m.startInDays === 1)).toBe(true);
+  });
+
+  it("US-ONB-28 · invoices due this week and overdue, emailed and reminded on their own days", () => {
+    const owed = plan.invoices.filter((inv) => inv.outcome === "issued" && !(inv.payments ?? []).some((p) => p.amount === "full"));
+    expect(owed.some((inv) => inv.dueInDays < 0)).toBe(true);
+    expect(owed.some((inv) => inv.dueInDays >= 0 && inv.dueInDays <= 7)).toBe(true);
+    const emailed = plan.invoices.filter((inv) => inv.emailedInDays !== undefined);
+    const reminded = plan.invoices.filter((inv) => inv.remindedInDays !== undefined);
+    expect(emailed.length).toBeGreaterThan(0);
+    expect(reminded.length).toBeGreaterThan(0);
+    for (const inv of [...emailed, ...reminded]) expect(inv.outcome).toBe("issued");
+    // Emailed on or after it was issued; reminded after it was emailed.
+    for (const inv of emailed) expect(inv.emailedInDays ?? 0).toBeGreaterThanOrEqual(inv.issueInDays ?? 0);
+    for (const inv of reminded) expect(inv.remindedInDays ?? 0).toBeGreaterThanOrEqual(inv.emailedInDays ?? 0);
   });
 });

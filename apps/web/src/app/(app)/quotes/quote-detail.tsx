@@ -39,7 +39,7 @@ import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
 import { orgLocaleTag } from "../../../lib/money";
 import { QuoteActivity } from "./quote-activity";
-import { QuoteLinesTable } from "./quote-lines-table";
+import { DocumentLinesTable } from "../../../components/document-lines-table";
 import { QuoteRelated } from "./quote-related";
 import { copyCustomerLink } from "./quote-row-actions";
 import { STATUS_BADGE_CLASS, ViewedChip } from "./quotes-table";
@@ -569,7 +569,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
           <AcceptancePanel quote={quote} />
 
-          <QuoteLinesTable quote={quote} />
+          <DocumentLinesTable doc={quote} testIdPrefix="quote" />
 
           {(quote.notes || quote.termsAndConditions) && (
             <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">

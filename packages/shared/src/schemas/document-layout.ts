@@ -56,6 +56,8 @@ export const documentTypeLayoutSchema = z.object({
   taxSummary: z.boolean().optional(),
   /** US-QUO-36 — quotes only: new quotes are valid for this many days. */
   validDays: z.coerce.number().int("Enter whole days.").min(1, "Enter 1 to 365 days.").max(365, "Enter 1 to 365 days.").optional(),
+  /** US-INV-33 — invoices only: an invoice is due this many days after it's issued (0 is on receipt). */
+  dueDays: z.coerce.number().int("Enter whole days.").min(0, "Enter 0 to 365 days.").max(365, "Enter 0 to 365 days.").optional(),
 }).strict();
 export type DocumentTypeLayout = z.infer<typeof documentTypeLayoutSchema>;
 
@@ -84,6 +86,8 @@ export interface ResolvedDocumentLayout {
   taxSummary: boolean;
   /** US-QUO-36 — how long a new quote is valid for, in days (30 unless set). */
   validDays: number;
+  /** US-INV-33 — how long after issue an invoice is due, in days (30 unless set; 0 is on receipt). */
+  dueDays: number;
 }
 
 const DEFAULT_TITLES: Record<DocumentType, string> = {
@@ -96,6 +100,15 @@ const DEFAULT_TITLES: Record<DocumentType, string> = {
 
 /** US-QUO-36 — a new quote is valid for 30 days unless Settings › Documents says otherwise. */
 export const DEFAULT_QUOTE_VALID_DAYS = 30;
+
+/** US-INV-33 — an invoice is due 30 days after issue unless Settings › Documents says otherwise. */
+export const DEFAULT_INVOICE_DUE_DAYS = 30;
+
+/** US-INV-33 — "2026-11-09": the issue day plus the terms' days, as a calendar date. */
+export function dueDateFor(issueDate: string, dueDays: number): string {
+  const [y, m, d] = issueDate.slice(0, 10).split("-").map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d! + dueDays)).toISOString().slice(0, 10);
+}
 
 /** The layout a document type prints with: what's saved, else the defaults (everything shown, A4, no extras). */
 export function resolveDocumentLayout(layout: DocumentLayout | null | undefined, type: DocumentType): ResolvedDocumentLayout {
@@ -110,5 +123,6 @@ export function resolveDocumentLayout(layout: DocumentLayout | null | undefined,
     amountInWords: saved.amountInWords ?? false,
     taxSummary: saved.taxSummary ?? false,
     validDays: saved.validDays ?? DEFAULT_QUOTE_VALID_DAYS,
+    dueDays: saved.dueDays ?? DEFAULT_INVOICE_DUE_DAYS,
   };
 }

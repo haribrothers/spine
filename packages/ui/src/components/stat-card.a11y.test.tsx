@@ -18,6 +18,12 @@ describe("StatCard a11y", () => {
     await expectNoA11yViolations(warn.container);
   });
 
+  it("has no violations with a critical tone (US-INV-27)", async () => {
+    const { container, getByText } = render(<StatCard label="Overdue" value="$4,125.00" detail="3 invoices" tone="critical" className="w-64" />);
+    expect(getByText("$4,125.00").className).toContain("text-overdue");
+    await expectNoA11yViolations(container);
+  });
+
   it.each(["up", "down", "neutral"] as const)("has no violations with a %s trend", async (direction) => {
     const { container } = render(
       <StatCard

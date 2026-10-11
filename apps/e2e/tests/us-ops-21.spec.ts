@@ -36,10 +36,12 @@ base.describe("US-OPS-21 · onboarding", () => {
 test.describe("US-OPS-21 · app", () => {
   test("a void invoice's balance shows '—'; Settings and builders have no developer wording", async ({ page, seededOrg }) => {
     void seededOrg;
-    await page.goto("/invoices");
+    // The shared org gains invoices as other tests run; filter to void ones (US-INV-28) so one is on the first page.
+    await page.goto("/invoices?status=void");
     const voidRow = page.locator("tbody tr", { hasText: /void/i }).first();
     await expect(voidRow).toBeVisible();
-    await expect(voidRow.locator("td").filter({ hasText: /^—$/ })).toHaveCount(1);
+    // Its Due and Balance due both read "—" (US-INV-29); the Balance due cell is the one before the menu.
+    await expect(voidRow.locator("td").nth(-2)).toHaveText("—");
 
     await page.goto("/quotes/new");
     await expect(page.getByText("Quote shows as expired after this date.")).toBeVisible();

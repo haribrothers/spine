@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, jobAssignments, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, quoteEvents, quotes, teamMemberships, user, account } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -487,13 +487,43 @@ export class DemoSeederService {
       const outstanding = invoice!.totalAmount - invoice!.retentionAmount - invoice!.amountPaid - invoice!.creditedAmount;
       const payAmount = amount === "full" ? (invoice!.amountPaid === 0n ? invoice!.totalAmount - invoice!.retentionAmount : outstanding) : (invoice!.totalAmount * BigInt(Math.round(amount * 100))) / 100n;
       if (payAmount <= 0n) return;
-      await this.paymentsService.create(
+      const payment = await this.paymentsService.create(
         orgId,
         actorUserId,
         { contactId: contactIds.get(contactKey)!, date: onDay === null ? new Date() : day(onDay), method, reference: null, currency, amount: payAmount, allocations: [{ invoiceId, amount: payAmount }] } as never,
         true,
       );
+      // US-ONB-28: recorded on its day, so the invoice's Activity shows it then.
+      if (onDay !== null) {
+        await this.db.update(payments).set({ createdAt: when(onDay) }).where(eq(payments.id, payment.id));
+        await this.db.update(paymentAllocations).set({ createdAt: when(onDay) }).where(eq(paymentAllocations.paymentId, payment.id));
+      }
       count("paymentsCreated");
+    };
+
+    /** US-ONB-28 — an invoice made and issued on its day: its audit rows and timestamps moved there. */
+    const issuedOn = async (invoiceId: string, offset: number) => {
+      const issuedAt = when(offset);
+      const createdAt = new Date(issuedAt.getTime() - 20 * 60 * 1000);
+      await this.db.update(invoices).set({ issuedAt, createdAt }).where(eq(invoices.id, invoiceId));
+      await backdateAudit(invoiceId, issuedAt, ["issued"]);
+      await backdateAudit(invoiceId, createdAt, ["created", "updated"]);
+    };
+    /**
+     * US-ONB-28 — emailed or reminded on its day, as the app records it, but
+     * without queueing a real email to the demo's made-up customers.
+     */
+    const emailedOn = async (invoiceId: string, contactKey: string, offset: number) => {
+      const at = when(offset);
+      await this.db.update(invoices).set({ emailStatus: "sent", emailSentAt: at }).where(eq(invoices.id, invoiceId));
+      await this.auditLog.record(this.db, { orgId, actorUserId, action: "email_queued", entityType: "invoice", entityId: invoiceId, contactId: contactIds.get(contactKey)!, changes: [{ field: "emailStatus", from: null, to: "pending" }] });
+      await backdateAudit(invoiceId, at, ["email_queued"]);
+    };
+    const remindedOn = async (invoiceId: string, contactKey: string, offset: number) => {
+      const at = when(offset);
+      await this.db.insert(invoiceReminders).values({ orgId, invoiceId, sentOn: day(offset).toISOString().slice(0, 10), kind: "manual" }).onConflictDoNothing();
+      await this.auditLog.record(this.db, { orgId, actorUserId, action: "reminder_queued", entityType: "invoice", entityId: invoiceId, contactId: contactIds.get(contactKey)!, changes: [{ field: "emailStatus", from: "sent", to: "pending" }] });
+      await backdateAudit(invoiceId, at, ["reminder_queued"]);
     };
 
     for (const seed of plan.invoices) {
@@ -525,6 +555,7 @@ export class DemoSeederService {
       at(seed.issueInDays, async () => {
         const id = await create();
         await this.invoicesService.issue(orgId, id, actorUserId);
+        if (seed.issueInDays !== null) await issuedOn(id, seed.issueInDays);
         count("invoicesIssued");
         if (seed.outcome === "voided") {
           await this.invoicesService.void(orgId, id, actorUserId, seed.voidReason ?? "Voided.");
@@ -532,6 +563,8 @@ export class DemoSeederService {
         }
       });
       for (const payment of seed.payments ?? []) at(payment.inDays, () => pay(invoiceIds.get(seed.key)!, seed.contact, payment.inDays, payment.amount, payment.method));
+      if (seed.emailedInDays !== undefined) at(seed.emailedInDays, () => emailedOn(invoiceIds.get(seed.key)!, seed.contact, seed.emailedInDays ?? 0));
+      if (seed.remindedInDays !== undefined) at(seed.remindedInDays, () => remindedOn(invoiceIds.get(seed.key)!, seed.contact, seed.remindedInDays ?? 0));
     }
 
     for (const seed of plan.jobs) {
@@ -571,7 +604,10 @@ export class DemoSeederService {
             } as never);
           }
           await this.invoicesService.issue(orgId, draft.id, actorUserId);
-          if (invoiceDay !== null) await backdateAudit(milestoneId, when(invoiceDay), ["milestone_invoiced"]);
+          if (invoiceDay !== null) {
+            await backdateAudit(milestoneId, when(invoiceDay), ["milestone_invoiced"]);
+            await issuedOn(draft.id, invoiceDay);
+          }
           count("milestonesInvoiced");
           if (m.paidAfterDays !== undefined) {
             const paidOn = (invoiceDay ?? 0) + m.paidAfterDays;

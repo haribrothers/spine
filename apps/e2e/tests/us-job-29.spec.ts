@@ -31,10 +31,12 @@ test.describe("US-JOB-29", () => {
     const draftId = (draft.id ?? (draft.invoice as { id: string } | undefined)?.id) as string;
 
     await page.goto(`/invoices/${draftId}`);
-    await expect(page.getByTestId("invoice-job-card")).toContainText("Claim number is given when the invoice is issued.");
+    await expect(page.getByText("Claim number is given when the invoice is issued.")).toBeVisible();
 
     await post(`/invoices/${draftId}/issue`);
     await page.reload();
-    await expect(page.getByTestId("invoice-job-card")).toContainText(`Progress claim ${expected} of this job`);
+    // US-INV-30: the claim number is a badge beside the status, and the job is in the header.
+    await expect(page.getByText(`Progress claim ${expected}`, { exact: true })).toBeVisible();
+    await expect(page.getByTestId("invoice-job-card")).toBeVisible();
   });
 });

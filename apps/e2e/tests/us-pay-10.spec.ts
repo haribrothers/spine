@@ -12,7 +12,8 @@ test.describe("US-PAY-10", () => {
     void seededOrg;
     await page.goto("/receivables");
     const rows = page.locator("tbody tr");
-    await expect(rows.first()).toBeVisible();
+    // Wait for the invoices themselves, not the loading skeleton's rows.
+    await expect(rows.first()).toContainText(/INV-/);
     const onScreen = await rows.count();
 
     const lines = await download(page);

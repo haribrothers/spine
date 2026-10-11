@@ -72,8 +72,10 @@ test("quote → send → customer accepts → convert to invoice → issue → r
   await page.waitForURL(/\/invoices\/[a-f0-9-]+$/);
 
   // --- Issue the invoice ---
-  await page.getByRole("button", { name: "Issue Invoice" }).click();
-  await expect(page.getByText(/^issued$/i).first()).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Issue invoice" }).click();
+  // Issuing can't be undone, so it asks first (D-217).
+  await page.getByRole("alertdialog", { name: "Issue this invoice?" }).getByRole("button", { name: "Issue invoice" }).click();
+  await expect(page.getByText("Invoice issued", { exact: true }).first()).toBeVisible({ timeout: 10_000 });
 
   // --- Record a full payment (the dialog pre-fills amount + allocation
   // from the invoice's own outstanding balance, so nothing to fill in) ---
@@ -90,7 +92,7 @@ test("quote → send → customer accepts → convert to invoice → issue → r
   // "paid" is derived from balanceDue reaching zero, not a stored status).
   // The real signal: once fully paid, "Record payment" is no longer
   // offered (InvoiceDetail's own canRecordPayment = balanceDue > 0n), and
-  // the totals block's "Balance due" row reads 0.00.
+  // the Balance due figure reads $0.00 (US-INV-30).
   await expect(page.getByRole("button", { name: "Record payment" })).toHaveCount(0, { timeout: 10_000 });
-  await expect(page.getByText("Balance due").locator("xpath=..").getByText("0.00")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("fig-balance")).toContainText(/Balance due\D*0\.00/, { timeout: 10_000 });
 });

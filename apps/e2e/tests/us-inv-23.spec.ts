@@ -48,6 +48,10 @@ test.describe("US-INV-23", () => {
     await expect(bar.getByRole("button", { name: "Clear" })).toBeVisible();
 
     await bar.getByRole("button", { name: "Send reminders (1)" }).click();
+    // Emailing customers asks first (D-217).
+    const confirm = page.getByRole("alertdialog", { name: "Send 1 payment reminder?" });
+    await expect(confirm.getByTestId("confirm-reminders")).toContainText("The customer gets the reminder email with the invoice attached, straight away. 2 of the selected invoices are skipped");
+    await confirm.getByRole("button", { name: "Send reminder" }).click();
     // Sending waits on the email going out.
     await expect(page.getByText("1 reminder sent").first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(new RegExp(`${paid!.number}: Nothing is owed on it\\.`)).first()).toBeVisible();

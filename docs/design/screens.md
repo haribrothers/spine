@@ -1040,6 +1040,8 @@ Shows: "INV-0013" · "Maple Ridge Developments · Progress claim 2 · due Oct 18
 ### InvoicesList — Invoices list (overdue flags)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-04, US-INV-12, US-INV-13, US-OPS-21 · **Source:** Captured
 
+Refined by `InvoicesListRefined` (D-217).
+
 ![InvoicesList](screens/InvoicesList.webp)
 
 Links to: `InvoiceDetail`, `InvoicesEmpty`, `OnbFinancialYear`, `OnbInviteTeam`, `QuoteBuilder`, `TeamPrivilegesExpanded`
@@ -1057,6 +1059,8 @@ Shows: "Billing > Invoices" · "OVERVIEW" · "Invoices" · "98 Dashboard" · "Bu
 
 ### InvoiceBuilder — New/edit invoice (standard/advance)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-01, US-OPS-21 · **Source:** Captured
+
+Refined by `InvoiceBuilderCompact` (D-217).
 
 ![InvoiceBuilder](screens/InvoiceBuilder.webp)
 
@@ -1076,6 +1080,8 @@ Shows: "Billing > Invoices > New" · "New invoice" · "Build a multi-line invoic
 ### InvoiceDetailDraft — Invoice detail — draft
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-02 · **Source:** Captured
 
+Refined by `InvoiceDetailDraftRefined` (D-217).
+
 ![InvoiceDetailDraft](screens/InvoiceDetailDraft.webp)
 
 Links to: —
@@ -1084,6 +1090,8 @@ Shows: "Billing > Invoices > Detail" · "OVERVIEW" · "Invoice" · "98 Dashboard
 
 ### InvoiceDetail — Invoice detail (payments, credit notes)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-03, US-INV-09, US-INV-11, US-INV-12, US-INV-13, US-INV-14, US-PAY-01, US-PAY-03 · **Source:** Captured
+
+Refined by `InvoiceDetailRefined` (D-217).
 
 ![InvoiceDetail](screens/InvoiceDetail.webp)
 
@@ -3173,6 +3181,55 @@ Shows: "Add photos" · "Site photos · 2" · "Site preparation · completed 7 Au
 Links to: `JobPhotosGrouped`
 
 Shows: "Steel structure · 2 of 3" · "Download" "Close" · previous and next · "Roof trusses" · "Added by Ravi Kumar with “Steel structure” · 2 Oct, 4:38 PM · ← → to move, Esc to close"
+
+## Invoices you can work from
+
+Drawn in Claude Design for US-INV-27 to US-INV-35 (D-217): project "Spine web — refinements before Phase 10", canvas "11 Invoices". The list's cards are Outstanding, Overdue and Due in 7 days (balance totals with counts, each filtering the list) and Paid this month; each row has one status badge, what kind of invoice it is under the number, the issue date, a due countdown or "Paid 2 Oct", and the balance with a bar of what's paid; the row menu acts. The invoice page has the number as its title, one primary button for the next step, a strip of Total, Paid, Retention held or Credited and Balance due, the lines as a table with the totals, Paid and Balance due under them, and Activity beside them. The builder has compact rows, due-date quick picks from the business's terms and a bar that stays in view. These refine `InvoicesList`, `InvoiceDetail`, `InvoiceDetailDraft` and `InvoiceBuilder`. In the built page, Paid this month counts payments rather than invoices; payments, credit notes and attachments follow the lines in the left column; a draft's More menu holds Duplicate, View history and Delete draft; and the duplicated draft's toast reads "Duplicated from INV-0031. Check the dates and lines, then save."
+
+### InvoicesListRefined — Cards that filter, one status per row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-27, US-INV-28, US-INV-29 · **Source:** Claude Design
+
+![InvoicesListRefined](screens/InvoicesListRefined.webp)
+
+Links to: `InvoiceDetailRefined`, `InvoiceBuilderCompact`
+
+Shows: "Outstanding" · "Overdue" · "Due in 7 days" · "Paid this month" "Received since 1 Oct" · "Updated just now" · "Search invoices, lines or jobs" · "Status" "All contacts" · "New invoice" · "Progress claim 2 · JOB-002" under the number · "Deposit" · "Due" "Part paid" "Paid" "Overdue" "Draft" badges · "in 2 days" · "Overdue 6 days" · "Paid 2 Oct" · a paid bar under the balance · the row menu "View" "Record payment" "Send reminder" "Download PDF" "Duplicate" "Void"
+
+### InvoicesListRefinedDark — "Overdue" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-27 · **Source:** Claude Design
+
+![InvoicesListRefinedDark](screens/InvoicesListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · the overdue invoices only
+
+### InvoiceDetailRefined — Issued, part paid, overdue: Send reminder next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-30, US-INV-31, US-INV-32 · **Source:** Claude Design
+
+![InvoiceDetailRefined](screens/InvoiceDetailRefined.webp)
+
+Links to: `InvoicesListRefined`, `JobDetailRefined`, `RecordPaymentDialog`
+
+Shows: "Billing › Invoices › INV-0038" · "INV-0038" "Overdue" "Progress claim 2" · "Sahyadri Retail Pvt Ltd" · "Issued 4 Sept" · "Due 4 Oct · Overdue 6 days" · "Maharashtra (inter-state)" · "JOB-002 · Steel structure" · "Download PDF" "Record payment" "Send reminder" "More" · "Total" "incl. IGST" · "Paid" "last on 2 Oct" · "Retention held" · "Balance due" · "Lines" "Item" "Qty" "Rate" "Disc." "Tax" "Amount" · "Retention held (5%)" "Paid" "Balance due" · "Payments" "RCP-0028" · "Activity" "Automatic reminder sent" "Payment recorded · RCP-0028" "Reminder sent" "Emailed to accounts@sahyadriretail.example" "Issued" "Created from milestone Steel structure" "View history"
+
+### InvoiceDetailDraftRefined — A duplicated draft: Issue invoice next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-30, US-INV-35 · **Source:** Claude Design
+
+![InvoiceDetailDraftRefined](screens/InvoiceDetailDraftRefined.webp)
+
+Links to: `InvoiceBuilderCompact`
+
+Shows: "Draft invoice" "Draft" · "Not issued yet · due 30 days after issue" · "Edit" "Preview PDF" "Issue invoice" "More" · "Activity" "Edited" "Duplicated from INV-0031"
+
+### InvoiceBuilderCompact — Compact rows, due-date picks, a bar that stays in view
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-33, US-INV-34 · **Source:** Claude Design
+
+![InvoiceBuilderCompact](screens/InvoiceBuilderCompact.webp)
+
+Links to: `InvoiceDetailRefined`
+
+Shows: "New invoice" · "Contact" "Type" "Currency" "Place of supply" · "Issue date" "Today if left blank when issued." · "Due date" "On receipt" "+15 days" "+30 days" "+60 days" · "Your terms: due 30 days after issue (Settings › Documents)." · "Lines" "Notes and terms ↓" · "Item" "Qty" "Rate" "Disc. %" "Tax" "Amount" · "HSN/SAC 995411" · "Add item" "Add heading" "Add text line" · "Enter adds a row · Alt + ↑/↓ moves it" · "Subtotal" "IGST" "Total" · "Unsaved changes" · "Cancel" "Preview PDF" "Save draft" "Save and issue"
 
 ## Mobile field companion
 

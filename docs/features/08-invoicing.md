@@ -365,7 +365,7 @@ Decision: D-097
 **Acceptance criteria**
 - **Given** the Invoices list, **when** I tick rows, **then** a bar shows "<n> selected · <amount> outstanding" with "Send reminders (<m>)", "Download PDFs" and "Clear".
 - **Given** a selection where only some invoices are eligible (issued, with a balance, not reminded today), **when** the bar renders, **then** the button counts only eligible ones.
-- **Given** I press "Send reminders (3)", **when** it finishes, **then** a toast reads "3 reminders sent" and lists any skipped with the reason.
+- **Given** I press "Send reminders (3)", **when** "Send 3 payment reminders?" asks (how many customers get the email, and how many of the ticked invoices are skipped) and I press "Send reminders", **then** when it finishes a toast reads "3 reminders sent" and lists any skipped with the reason; "Go back" sends nothing (D-217).
 - **Given** I lack `invoices.send_reminder`, **when** I select rows, **then** "Send reminders" isn't shown.
 
 **Implementation notes**
@@ -420,7 +420,7 @@ Decision: D-150
 Decision: D-217
 
 **Acceptance criteria**
-- **Given** Invoices, **when** it shows, **then** the cards read "Outstanding" (issued invoices with a balance, their total balance and count), "Overdue" (past their due date with a balance, total and count, in the overdue colour when above 0), "Due in 7 days" (not yet overdue, due within 7 days, total and count) and "Paid this month" (payments received this calendar month against invoices, with how many invoices).
+- **Given** Invoices, **when** it shows, **then** the cards read "Outstanding" (issued invoices with a balance, their total balance and count), "Overdue" (past their due date with a balance, total and count, in the overdue colour when above 0), "Due in 7 days" (not yet overdue, due within 7 days, total and count) and "Paid this month" (what payments dated this calendar month paid against invoices, with how many payments).
 - **Given** "Outstanding", "Overdue" or "Due in 7 days", **when** I press it, **then** the table shows just those invoices, the card shows pressed ("Showing these · press again to clear") and the address keeps it; pressing again clears it. With a keyboard or screen reader each is a button ("Show overdue invoices, 2") with its pressed state.
 - **Given** amounts in more than one currency, **when** a card shows a total, **then** it sums the business's currency and says "+ other currencies" when some invoices are in another.
 - **Given** a void, draft or opening-balance invoice, **when** the cards count, **then** drafts and voids are left out; opening balances count like any issued invoice.
@@ -450,7 +450,7 @@ Decision: D-217
 
 **Acceptance criteria**
 - **Given** the table, **when** a row shows, **then** it reads Number (a draft says "Draft" in italics; a progress invoice "Progress claim 3 · JOB-002" under it, a deposit "Deposit"), Contact, Status (one badge: Draft, Due, Part paid, Paid, Overdue or Void), Issued, Due ("in 5 days", "today", "Overdue 6 days" in the overdue colour, or "Paid 2 Oct"), Total and Balance due (with a small bar of what's paid when part paid); dates in the business's format.
-- **Given** a row's menu, **when** I open it, **then** it offers what fits: a draft View, Edit, Issue, Duplicate and Delete; an issued invoice View, Record payment, Email, Send reminder (when it has a balance), Download PDF, Duplicate and Void, each only with the right to do it.
+- **Given** a row's menu, **when** I open it, **then** it offers what fits: a draft View, Edit, Issue, Duplicate and Delete; an issued invoice View, Record payment, Email, Send reminder (when it has a balance), Download PDF, Duplicate and Void, each only with the right to do it. Issue, Record payment, Email, Send reminder and Void open the invoice with that step's dialog, so nothing is issued, emailed or voided from one click in the menu; Delete asks first.
 - **Given** Record payment or Email from a row, **when** I choose it, **then** the invoice's page opens with that dialog open.
 
 **Implementation notes**
@@ -466,6 +466,7 @@ Decision: D-217
 - **Given** an invoice, **when** its page opens, **then** the page title is its number ("Draft invoice" for a draft), with its status, the customer (a link), "Issued 12 Sept", "Due 12 Oct · in 2 days" or "Overdue 6 days", the place of supply and, when it has one, the job (and milestone) or quote it came from as links; there's no "Back to invoices".
 - **Given** the invoice, **when** the page shows, **then** one primary button offers the next step: "Issue invoice" for a draft, "Send reminder" when it's overdue, "Record payment" while it has a balance, else "Download PDF"; the others (Edit, Preview or Download PDF, Email invoice, Apply credit, Issue credit note, Duplicate, View history, Void, Delete draft) sit beside it or under More, each only with the right to do it.
 - **Given** an issued invoice, **when** the page shows, **then** a strip reads Total, Paid (with the last payment's date), Credited (when any) and Balance due (with a bar of what's paid).
+- **Given** a draft, **when** I press "Issue invoice" (on the page, from a row's menu or after "Save and issue"), **then** "Issue this invoice?" says who will owe what and when it's due, that it gets its permanent number and is posted to the books, and that it can then only be voided or credited; "Issue invoice" issues it and "Go back" leaves it a draft. When the HSN/SAC or customer-credit question is asked instead, answering it is the confirmation. Delete draft asks too (D-217).
 
 **Implementation notes**
 - UI: `invoice-detail.tsx` renders its own header (as `quote-detail.tsx`); `?action=` opens a dialog. API: `GET /invoices/:id` gains `sourceQuoteNumber` and `lastPaidAt`.
@@ -482,7 +483,7 @@ Decision: D-217
 - **Given** payments, credit notes and attachments, **when** the page shows, **then** they follow the lines and totals.
 
 **Implementation notes**
-- UI: reuse `QuoteLinesTable` (rename it `DocumentLinesTable` in `components/`).
+- UI: `components/document-lines-table.tsx` (`DocumentLinesTable`, was the quote page's `QuoteLinesTable`), with the rows after Total passed in. API: `GET /invoices/:id` gains `taxLines`.
 
 ### US-INV-32 · Follow what happened to an invoice
 **Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceDetailRefined`
@@ -525,7 +526,7 @@ Decision: D-214, D-217
 - **Given** unsaved changes, **when** I press Cancel, a link or Back, **then** "Leave without saving?" asks first; closing the tab asks too.
 
 **Implementation notes**
-- UI: the quote builder's line editor and bar shared (`components/document-line-editor.tsx`, `DocumentBuilderBar`); `invoice-builder.tsx` keeps its own fields (type, issue date, due date). API: `POST /invoices/preview-pdf` (`invoices.edit_own`; a read, no Idempotency-Key, as `POST /quotes/preview-pdf`); a draft invoice's PDF carries the watermark too.
+- UI: the invoice builder uses the quote builder's line editor (`QuoteLineEditor`) and the shared bar and leave guard (`components/document-builder-bar.tsx`, `lib/use-unsaved-guard.ts`); `invoice-builder.tsx` keeps its own fields (type, issue date, due date, with the quick picks in `invoices/due-terms.ts`). API: `POST /invoices/preview-pdf` (`invoices.edit_own`; a read, no Idempotency-Key, as `POST /quotes/preview-pdf`); a draft invoice's PDF carries the watermark too.
 
 ### US-INV-35 · Duplicate an invoice
 **Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceDetailRefined`
@@ -538,4 +539,4 @@ Decision: D-217
 - **Given** a line whose catalogue item is archived, **when** it's duplicated, **then** it's copied as typed.
 
 **Implementation notes**
-- API: `POST /invoices/:id/duplicate` (`invoices.edit_own`; Idempotency-Key) → the new draft; an audit row `duplicated` on it naming the source.
+- API: `POST /invoices/:id/duplicate` (`invoices.edit_own`; Idempotency-Key) → the new draft, with no number or dates; an audit row `duplicated` on it naming the source. UI: the builder opens it with `?duplicated=INV-0012`, fills today's issue date and the terms' due date, and shows the toast.

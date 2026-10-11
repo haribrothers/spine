@@ -68,7 +68,7 @@ test.describe("US-TAX-13", () => {
 
     await page.getByRole("button", { name: "Save as draft" }).click();
     await page.waitForURL(/\/invoices\/[0-9a-f-]{36}$/);
-    await expect(page.getByText("Place of supply Karnataka (29) (intra-state)")).toBeVisible();
+    await expect(page.getByTestId("invoice-meta")).toContainText("Karnataka (29) (intra-state)");
   });
 
   test("exports under LUT carry no IGST, and recurring invoices follow the customer's state (D-181, D-183)", async ({ page }) => {

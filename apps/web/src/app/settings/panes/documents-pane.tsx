@@ -142,6 +142,24 @@ export function DocumentsPane() {
                 )}
               </FormField>
             )}
+            {/* US-INV-33: invoices are due this many days after they're issued. */}
+            {type === "invoice" && (
+              <FormField label="Invoices due in" helperText="Days after issue, 0 to 365. 0 is on receipt. Issued invoices without a due date get one from this.">
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={365}
+                    step={1}
+                    value={layout.invoice?.dueDays ?? current.dueDays}
+                    onChange={(e) => update({ dueDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    className="w-32"
+                  />
+                )}
+              </FormField>
+            )}
           </div>
           {LINE_DOCUMENT_TYPES.includes(type) && (
             <fieldset className="flex flex-col gap-2">

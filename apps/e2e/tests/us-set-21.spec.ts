@@ -70,7 +70,9 @@ test.describe("US-SET-21", () => {
     await page.keyboard.press("Escape");
 
     await page.goto(`/invoices/${invoice.id}`);
-    await page.getByRole("button", { name: "Email invoice" }).click();
+    // US-INV-30: Email invoice is under More.
+    await page.getByTestId("invoice-actions").getByRole("button", { name: "More" }).click();
+    await page.getByRole("menuitem", { name: "Email invoice" }).click();
     dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: `Email invoice ${invoice.number}` })).toBeVisible();
     await expect(dialog.getByLabel("To")).toHaveValue(customerEmail);

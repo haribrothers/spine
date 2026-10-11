@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Spinner } from "@spine/ui";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, Button, Spinner } from "@spine/ui";
 import { BULK_MAX, type BulkResult } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -23,8 +23,8 @@ export function describeSkipped(skipped: BulkResult["skipped"]): string {
  * US-INV-23/24 (D-097) — the bar over the Invoices list while rows are
  * ticked (`InvoicesBulkSelect`): "<n> selected · <amount> outstanding",
  * "Send reminders (<m>)" counting only eligible invoices (hidden without
- * `invoices.send_reminder`), "Download PDFs" (a ZIP of the stored PDFs,
- * drafts skipped) and "Clear".
+ * `invoices.send_reminder`; it asks first, since each customer is emailed),
+ * "Download PDFs" (a ZIP of the stored PDFs, drafts skipped) and "Clear".
  */
 export function InvoicesBulkBar({
   selected,
@@ -38,9 +38,13 @@ export function InvoicesBulkBar({
 }) {
   const canSendReminder = useCapability("invoices.send_reminder");
   const [busy, setBusy] = useState(false);
+  const [confirmSend, setConfirmSend] = useState(false);
   const eligible = selected.filter(canBulkRemind);
   const currency = selected[0]?.currency ?? "USD";
   const outstanding = selected.filter((i) => i.status === "issued").reduce((sum, i) => sum + BigInt(i.balanceDue), 0n);
+
+  const customers = new Set(eligible.map((i) => i.contactId)).size;
+  const skipped = selected.length - eligible.length;
 
   async function downloadPdfs() {
     if (selected.length > BULK_MAX) {
@@ -68,6 +72,7 @@ export function InvoicesBulkBar({
   }
 
   async function sendReminders() {
+    setConfirmSend(false);
     setBusy(true);
     try {
       const result = await apiClient.post<BulkResult>("/invoices/bulk/send-reminders", { ids: selected.map((i) => i.id) });
@@ -88,7 +93,7 @@ export function InvoicesBulkBar({
       </p>
       <div className="flex flex-wrap items-center gap-2">
         {canSendReminder && (
-          <Button onClick={sendReminders} disabled={busy || eligible.length === 0}>
+          <Button onClick={() => setConfirmSend(true)} disabled={busy || eligible.length === 0}>
             {busy ? <Spinner size="sm" /> : `Send reminders (${eligible.length})`}
           </Button>
         )}
@@ -99,6 +104,23 @@ export function InvoicesBulkBar({
           Clear
         </Button>
       </div>
+      <AlertDialog open={confirmSend} onOpenChange={setConfirmSend}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Send {eligible.length} payment {eligible.length === 1 ? "reminder" : "reminders"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription data-testid="confirm-reminders">
+              {customers === 1 ? "The customer gets" : `${customers} customers get`} the reminder email with the invoice attached, straight away.
+              {skipped > 0 && ` ${skipped} of the selected ${skipped === 1 ? "invoice is" : "invoices are"} skipped — paid, void, a draft or already reminded today.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <Button onClick={() => void sendReminders()}>Send {eligible.length === 1 ? "reminder" : "reminders"}</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

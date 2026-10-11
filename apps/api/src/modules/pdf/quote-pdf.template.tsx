@@ -197,16 +197,16 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
 }
 
 /**
- * US-QUO-35 — "DRAFT" across the middle of every page of an unsent quote,
+ * US-QUO-35, US-INV-34 — "DRAFT" across the middle of every page of an unsent quote or a draft invoice,
  * faint and behind the content: drawn first, and `fixed` so it repeats on
  * each page.
  */
-export function DraftWatermark() {
+export function DraftWatermark({ document = "quote" }: { document?: "quote" | "invoice" }) {
   return (
     <View fixed style={watermarkStyles.layer}>
       <View style={watermarkStyles.rotated}>
         <Text style={watermarkStyles.big}>DRAFT</Text>
-        <Text style={watermarkStyles.small}>Preview only — not a valid quote</Text>
+        <Text style={watermarkStyles.small}>Preview only — not a valid {document}</Text>
       </View>
     </View>
   );

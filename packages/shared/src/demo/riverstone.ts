@@ -173,8 +173,8 @@ export function riverstonePlan(): DemoPlan {
     ],
     invoices: [
       { key: "kitchen", contact: "priya", issueInDays: null, dueInDays: -12, notes: "Kitchen renovation — final invoice.", lines: [l("labour", 60), l("flooring", 220), l("painting", 350)], outcome: "issued", payments: [{ inDays: null, amount: "full" }] },
-      { key: "marinaProgress", contact: "harborview", issueInDays: null, dueInDays: -5, notes: "Marina office fit-out — progress bill 1 of 3.", lines: [l("labour", 100), l("drywall", 400)], outcome: "issued", payments: [{ inDays: null, amount: 0.5 }] },
-      { key: "lobbyDeposit", contact: "bluewater", issueInDays: null, dueInDays: 21, notes: "Hotel lobby renovation — deposit invoice.", lines: [l("pm", 20)], outcome: "issued" },
+      { key: "marinaProgress", contact: "harborview", issueInDays: null, dueInDays: -5, notes: "Marina office fit-out — progress bill 1 of 3.", lines: [l("labour", 100), l("drywall", 400)], outcome: "issued", payments: [{ inDays: null, amount: 0.5 }], emailedInDays: null, remindedInDays: null },
+      { key: "lobbyDeposit", contact: "bluewater", issueInDays: null, dueInDays: 5, notes: "Hotel lobby renovation — deposit invoice.", lines: [l("pm", 20)], outcome: "issued", emailedInDays: null },
       { key: "storefront", contact: "sunstone", issueInDays: null, dueInDays: 30, notes: "Storefront remodel — location 1, draft pending final measurements.", lines: [l("windows", 4), l("cleanup", 1)], outcome: "draft" },
       { key: "duplicate", contact: "ridgeline", issueInDays: null, dueInDays: 15, notes: "Duplicate billing — voided, corrected invoice raised separately.", lines: [l("excavator", 5)], outcome: "voided", voidReason: "Duplicate billing — corrected invoice raised separately." },
     ],

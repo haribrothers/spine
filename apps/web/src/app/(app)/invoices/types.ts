@@ -77,6 +77,12 @@ export interface Invoice {
   balanceDue: string;
   /** US-INV-23 — on the list: whether a reminder (manual or automatic) already went out today, organisation time. */
   remindedToday?: boolean;
+  /** US-INV-28 — on the list: the item lines' names, for search. */
+  lineNames?: string[];
+  /** US-INV-29 — the last payment's date ("2026-10-02"), for "Paid 2 Oct". */
+  lastPaidAt?: string | null;
+  /** US-INV-30 — "From QUO-0031"; on the detail response. */
+  sourceQuoteNumber?: string | null;
   /** US-JOB-21 — present on the detail response for an invoice raised from a job. */
   job?: { id: string; name: string; number?: string | null } | null;
   /** US-JOB-29 — "Progress claim 3" on an issued progress invoice; null on drafts and other types. */
@@ -85,6 +91,8 @@ export interface Invoice {
   /** Retention as a percentage of the net amount ("10"), and retention held on the whole job so far. */
   retention?: { percent: string; heldOnJob: string } | null;
   lines?: InvoiceLine[];
+  /** US-INV-31 — the tax by named rate (CGST and SGST, or IGST), on the detail response. */
+  taxLines?: { label: string; amount: string }[];
 }
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
