@@ -1718,6 +1718,8 @@ Shows: "Expenses" · "Submit an expense for approval. Categories are managed fro
 
 ![VendorCreditsList](screens/VendorCreditsList.webp)
 
+Superseded by `VendorCreditsListRefined` (D-226).
+
 Links to: `VendorCreditBuilder`, `VendorCreditDetail`
 
 Shows: "Vendor credits — Spine" · "Purchases" · "Vendor Credits" · "Credit notes from vendors — for returns, overcharges and discounts after the bill." · "Total credits" · "4" · "Draft" · "1" · "Open" · "$412.00 to use" · "Used" · "Status" · "All vendors" · "New vendor credit" · "Search vendor credits" · "Columns" · "Number" · "Vendor's number" · "Vendor" · "Date" · "Amount" · "Balance" · "Actions" · "VCR-0003" · "CN-4471" · "Coastal Timber Supply" · "Oct 3, 2026" · "$412.00" · "VCR-0002" · "RTN-0912" · "Portland Electrical Wholesale" · "Sep 18, 2026" · "$96.40" · "$0.00" · "VCR-0001" · "CR-77" · "Harbor Plant Hire" · "Void" · "Aug 30, 2026" · "$250.00" · "— (unrecorded draft)" · "CN-4502" · "Oct 5, 2026" · "$58.00" · "1–4 of 4"
@@ -1726,6 +1728,8 @@ Shows: "Vendor credits — Spine" · "Purchases" · "Vendor Credits" · "Credit 
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-24 · **Source:** Drawn
 
 ![VendorCreditBuilder](screens/VendorCreditBuilder.webp)
+
+Superseded by `VendorCreditBuilderRefined` (D-226).
 
 Links to: —
 
@@ -1736,6 +1740,8 @@ Shows: "New vendor credit — Spine" · "Purchases" · "Vendor Credits" · "New"
 
 ![VendorCreditDetail](screens/VendorCreditDetail.webp)
 
+Superseded by `VendorCreditPage` (D-226).
+
 Links to: `ApplyVendorCreditDialog`, `VendorRefundDialog`
 
 Shows: "Vendor credit — Spine" · "Purchases" · "Vendor Credits" · "Detail" · "Vendor credit" · "Back to vendor credits" · "VCR-0003" · "Open" · "Coastal Timber Supply · their CN-4471 · Oct 3, 2026" · "Apply to bills" · "Record refund" · "Void" · "Lines" · "Returned: treated pine 90×45" · "20 × $18.92 · 5000 Cost of Materials · Sales Tax 8.875% · J-0012" · "$378.40" · "Applied to bills" · "Not applied to any bill yet." · "Refunds" · "No refunds recorded." · "Subtotal" · "Tax" · "$33.60" · "Total credit" · "$412.00" · "Applied" · "$0.00" · "Refunded" · "Balance" · "Void VCR-0003?" · "A reversing entry posts. Give a reason so the history explains it." · "Reason" · "*" · "Entered twice — duplicate of VCR-0002" · "Cancel" · "Void credit"
@@ -1744,6 +1750,8 @@ Shows: "Vendor credit — Spine" · "Purchases" · "Vendor Credits" · "Detail" 
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-25 · **Source:** Drawn
 
 ![ApplyVendorCreditDialog](screens/ApplyVendorCreditDialog.webp)
+
+Superseded by `VendorCreditApplyRefined` (D-226).
 
 Links to: —
 
@@ -3617,6 +3625,82 @@ Shows: "Drafts to record" pressed · "2 selected" "Record (2)" "Clear" · "Recor
 Links to: `VendorBillPage`
 
 Shows: the invoice builder's layout — header card "Vendor" "Bill number" "Job" "Currency" · "Apex Building Materials already has bill ABM-20587 — 1 Oct, ₹1,80,540.00, unpaid. Check it isn't the same bill before you save. Open ABM-20587" · "Bill date" "Due date" with "On receipt" "+15 days" "+30 days" "+60 days" · "Suggested: 30 days, as on this vendor's last bill" · "Place of supply" · Lines "Item" "Qty" "Rate" "Tax" "Account" "Amount" · "Add item" (no headings or text lines) · "Notes and attachments ↓" · bar "Subtotal" "GST" "Total" "Unsaved changes" "Cancel" "Save draft" "Save and record"
+
+## Vendor credits you can work from
+
+Drawn in Claude Design for US-PUR-37 to US-PUR-41 (D-226): project "Spine web — refinements before Phase 10", canvas "19 Vendor credits". A credit's page laid out like a bill's, with its state in words and one next step; a list that shows money and old unused credit, in the layout every refined list shares; entering a credit like a bill; raising a credit from its bill and using it there first.
+
+### VendorCreditPage — A credit at a glance
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-37 · **Source:** Claude Design
+
+![VendorCreditPage](screens/VendorCreditPage.webp)
+
+Links to: `VendorCreditApplyRefined`, `VendorRefundDialog`
+
+Shows: "Purchases › Vendor credits › VCR-0007" · "VCR-0007" "Partly used" · "Ridgeline Equipment Rentals Pvt Ltd" "Their CN-77" "3 Oct" "Against RTE-3302" "Wing C fit-out" "Karnataka (29)" · "Record refund" "Apply to bills" "More" · "Total" "Applied to bills" "Refunded" "Left to use" "Apply it or ask for a refund" · Lines with tax and account · "Applied to bills" "RPH-8790" · "Refunds" "None yet. Record a refund when Ridgeline pays you back." · Attachments · Activity "Applied ₹9,912.00 to RPH-8790" "Recorded · ₹17,700.00 off what you owe Ridgeline" "Created as a draft, against RTE-3302" · More: "View history" "Void credit"
+
+### VendorCreditsListRefined — What credit vendors owe us
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-38 · **Source:** Claude Design
+
+![VendorCreditsListRefined](screens/VendorCreditsListRefined.webp)
+
+Links to: `VendorCreditPage`, `VendorCreditBuilderRefined`
+
+Shows: "Vendor credits" · "Credit to use" "₹31,488.00" "3 credits open or partly used" · "Drafts to record" · "Partly used" · "Unused 60+ days" "ask for a refund?" · "Status" "All vendors" "All jobs" · "Updated just now" · "New vendor credit" · "Search numbers, vendors or bills" "Columns" · "Number" "Their no." "Vendor" "Date ↓" "Against bill" "Job" "State" "Total" "Left to use" · "—" on drafts and on a void credit's Left to use · row menu: "View" "Apply to bills" "Record refund" "Void"
+
+### VendorCreditsListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-38 · **Source:** Claude Design
+
+![VendorCreditsListDark](screens/VendorCreditsListDark.webp)
+
+Links to: `VendorCreditPage`
+
+Shows: the list on the dark app with "Unused 60+ days" pressed · "Showing these · press again to clear"
+
+### VendorCreditsBulkRecord — Record several draft credits
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-41 · **Source:** Claude Design
+
+![VendorCreditsBulkRecord](screens/VendorCreditsBulkRecord.webp)
+
+Links to: —
+
+Shows: "Drafts to record" pressed · "2 selected" "Record (2)" "Clear" · "Record 2 vendor credits?" "Coastline Steel Works' CN-4502 and Kaveri Sand & Earthmovers' CN-118 — ₹9,440.00 in all — are posted to your books, lowering what you owe them. After that they can't be edited, only voided." "Go back" "Record credits"
+
+### VendorCreditBuilderRefined — Enter a credit like a bill
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-39 · **Source:** Claude Design
+
+![VendorCreditBuilderRefined](screens/VendorCreditBuilderRefined.webp)
+
+Links to: `VendorCreditPage`
+
+Shows: the bill builder's layout — header card "Vendor" "Vendor's credit note number" "Against bill" "Currency" · "Ridgeline Equipment Rentals already has credit note CN-77 — VCR-0007, 3 Oct, ₹17,700.00, partly used. Check it isn't the same credit note before you save. Open VCR-0007" · "Date" "Job" "Place of supply" · Lines "Item" "Qty" "Rate" "Tax" "Account" "Amount" · "Add item" · "Notes and attachments ↓" · bar "Subtotal" "GST" "Total credit" "Unsaved changes" "Cancel" "Save draft" "Save and record"
+
+### VendorCreditReplaceLines — Ask before replacing lines
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-39 · **Source:** Claude Design
+
+![VendorCreditReplaceLines](screens/VendorCreditReplaceLines.webp)
+
+Links to: —
+
+Shows: "Replace your lines with RTE-3340's?" "The 2 lines you've entered are replaced by RTE-3340's 3 lines, for you to edit down. Keep yours to leave the lines as they are." "Keep my lines" "Replace lines"
+
+### VendorBillRecordCredit — Raise a credit from its bill
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-40 · **Source:** Claude Design
+
+![VendorBillRecordCredit](screens/VendorBillRecordCredit.webp)
+
+Links to: `VendorCreditBuilderRefined`
+
+Shows: the bill page's More menu: "View history" "Make recurring" "Duplicate" "Record vendor credit" "Void bill"
+
+### VendorCreditApplyRefined — Use a credit on its bill first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-40 · **Source:** Claude Design
+
+![VendorCreditApplyRefined](screens/VendorCreditApplyRefined.webp)
+
+Links to: —
+
+Shows: "Apply VCR-0007 to bills" "₹7,788.00 left to use. Nothing is posted; what you owe on each bill drops." · "Ridgeline's open bills — the one it's against first, then oldest first" · "Bill" "Due" "Balance" "Apply" · "RTE-3302" "Against this credit" "Bill date 25 Sept" "15 Oct" "Due in 4 days" · "RTE-3340" "Due in 21 days" · "Applying ₹7,788.00" "₹0.00 left on VCR-0007" · "Cancel" "Apply ₹7,788.00"
 
 ## Mobile field companion
 

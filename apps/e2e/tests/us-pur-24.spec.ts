@@ -24,25 +24,26 @@ test.describe("US-PUR-24", () => {
 
     await page.goto("/vendor-credits");
     await expect(page.getByText("No vendor credits yet")).toBeVisible();
-    await page.getByRole("link", { name: "New vendor credit" }).click();
+    await page.getByRole("link", { name: "New vendor credit" }).first().click();
     await page.waitForURL("**/vendor-credits/new");
     await page.getByRole("combobox").filter({ hasText: "Select a vendor…" }).click();
     await page.getByRole("option", { name: "Coastal Timber Supply" }).click();
     await page.getByPlaceholder("e.g. CN-4471").fill("CN-4471");
     await page.getByRole("combobox", { name: "Against bill" }).click();
-    await page.getByRole("option", { name: /^Bill 88213/ }).click();
-    await expect(page.getByPlaceholder("Item name").first()).toHaveValue("Treated pine 90×45");
+    await page.getByRole("option", { name: /^88213/ }).click();
+    await expect(page.getByRole("combobox", { name: "Item" }).first()).toHaveValue("Treated pine 90×45");
     await expect(page.getByText("$378.40").first()).toBeVisible();
     await page.getByRole("button", { name: "Save as draft" }).click();
     await page.waitForURL(/\/vendor-credits\/[0-9a-f-]{36}$/);
 
     await expect(page.getByRole("heading", { name: "Draft vendor credit" })).toBeVisible();
-    await expect(page.getByText("their CN-4471")).toBeVisible();
-    await page.getByRole("button", { name: "Record", exact: true }).click();
+    await expect(page.getByTestId("credit-meta")).toContainText("Their CN-4471");
+    await page.getByRole("button", { name: "Record credit" }).click();
     await page.getByRole("alertdialog", { name: "Record this vendor credit?" }).getByRole("button", { name: "Record credit" }).click();
     await expect(page.getByRole("heading", { name: "VCR-0001" })).toBeVisible();
-    await expect(page.getByTestId("credit-balance")).toHaveText("Open — $378.40 to use");
-    await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("credit-state")).toHaveText("Open");
+    await expect(page.getByTestId("fig-left")).toContainText("$378.40");
+    await expect(page.getByRole("link", { name: "Edit", exact: true })).toHaveCount(0);
 
     await page.goto("/vendor-credits");
     const row = page.getByTestId("vendor-credits-table").getByRole("row", { name: /VCR-0001/ });

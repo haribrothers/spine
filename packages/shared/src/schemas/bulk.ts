@@ -19,6 +19,11 @@ export const bulkVendorBillIdsSchema = z.object({
   ids: z.array(uuidSchema).min(1, "Select at least one bill.").max(BULK_MAX, `Select ${BULK_MAX} or fewer bills.`),
 });
 
+/** US-PUR-41 — recording several draft vendor credits at once. */
+export const bulkVendorCreditIdsSchema = z.object({
+  ids: z.array(uuidSchema).min(1, "Select at least one credit.").max(BULK_MAX, `Select ${BULK_MAX} or fewer credits.`),
+});
+
 /** US-PUR-21 — rejecting several expenses: one comment for all of them. */
 export const bulkRejectSchema = bulkIdsSchema.extend({
   comment: z.string().trim().min(1, "Add a comment — it's sent with every rejected expense."),

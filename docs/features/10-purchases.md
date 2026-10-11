@@ -20,7 +20,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-09 | Vendor credits | P1 | 8 | `VendorCreditsList`, `VendorCreditBuilder`, `VendorCreditDetail`, `ApplyVendorCreditDialog`, `VendorRefundDialog`, `TeamPrivilegesBooks` |
 | F-PUR-10 | Recurring bills | P2 | 8 | `RecurringBillDialog`, `RecurringBillsList` |
 | F-PUR-11 | Vendor bills you can work from: a page per bill, paying from it, a list that shows money, safer entry | P2 | Refinements | `VendorBillPage`, `VendorBillPayDialog`, `VendorBillsListRefined`, `VendorBillsListDark`, `VendorBillDuplicateWarning`, `VendorBillsBulkRecord` |
-| F-PUR-12 | Vendor credits you can work from: a page per credit, a list that shows money, entry like a bill, raised and used from the bill | P2 | Refinements | `VendorCreditPage`, `VendorCreditsListRefined`, `VendorCreditsBulkRecord`, `VendorCreditBuilderRefined`, `VendorCreditApplyRefined` |
+| F-PUR-12 | Vendor credits you can work from: a page per credit, a list that shows money, entry like a bill, raised and used from the bill | P2 | Refinements | `VendorCreditPage`, `VendorCreditsListRefined`, `VendorCreditsListDark`, `VendorCreditsBulkRecord`, `VendorCreditBuilderRefined`, `VendorCreditReplaceLines`, `VendorBillRecordCredit`, `VendorCreditApplyRefined` |
 
 ## User stories
 
@@ -567,7 +567,7 @@ Decision: D-218, D-222, D-223, D-226
 - UI: `vendor-credit-detail.tsx` rebuilt on the bill page's layout (D-225). "Partly used" is worked out from the balance and the total, never stored; the API's status stays `draft|open|used|void`.
 
 ### US-PUR-38 · See what credit vendors owe us at a glance
-**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditsListRefined`
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditsListRefined`, `VendorCreditsListDark`
 **As** an owner, **I want** the credits list to show money and old unused credit, **so that** I use it or ask for a refund.
 
 Decision: D-210, D-222, D-226
@@ -584,7 +584,7 @@ Decision: D-210, D-222, D-226
 - UI: the cards and the state come from the list.
 
 ### US-PUR-39 · Enter a vendor credit like a bill
-**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditBuilderRefined`
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditBuilderRefined`, `VendorCreditReplaceLines`
 **As** office staff, **I want** entering a credit to work like entering a bill, **so that** I don't learn two forms or enter one twice.
 
 Decision: D-218, D-223, D-225, D-226
@@ -601,7 +601,7 @@ Decision: D-218, D-223, D-225, D-226
 - UI: the builder reuses the bill builder's `VendorBillLines`, `DocumentBuilderBar` and `useUnsavedGuard`.
 
 ### US-PUR-40 · Raise and use a credit from its bill
-**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditApplyRefined`
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorBillRecordCredit`, `VendorCreditApplyRefined`
 **As** office staff, **I want** to start a credit from the bill it's for and use it there first, **so that** a return comes off the right bill.
 
 Decision: D-222, D-223, D-226

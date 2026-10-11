@@ -5,7 +5,7 @@ export default async function EditVendorCreditPage({ params }: { params: Promise
   const { id } = await params;
   return (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Purchases" }, { label: "Vendor Credits", href: "/vendor-credits" }, { label: "Edit" }]} title="Edit vendor credit" description="Only a draft can be edited." />
+      <AppShellHeader breadcrumb={[{ label: "Purchases" }, { label: "Vendor credits", href: "/vendor-credits" }, { label: "Edit" }]} title="Edit vendor credit" description="Only a draft can be edited." />
       <VendorCreditEditLoader creditId={id} />
     </>
   );

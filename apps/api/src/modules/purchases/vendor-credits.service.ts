@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { formatMoney, type createVendorCreditSchema, type updateVendorCreditSchema } from "@spine/shared";
-import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { formatMoney, type BulkResult, type createVendorCreditSchema, type PossibleDuplicateVendorCredit, type updateVendorCreditSchema, type VendorCreditActivityEntry } from "@spine/shared";
+import { and, asc, count, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, contacts, moneyAccounts, vendorBills, vendorCreditAllocations, vendorCreditLines, vendorCredits, vendorRefunds } from "../../db/schema";
+import { accounts, auditLog, contacts, jobs, moneyAccounts, user, vendorBills, vendorCreditAllocations, vendorCreditLines, vendorCredits, vendorRefunds } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
 import { orgMoneySettings } from "../../common/money-format";
@@ -45,9 +45,11 @@ export class VendorCreditsService {
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
     const rows = await this.db
-      .select({ credit: vendorCredits, contactName: contacts.name })
+      .select({ credit: vendorCredits, contactName: contacts.name, billNumber: vendorBills.billNumber, jobName: jobs.name })
       .from(vendorCredits)
       .leftJoin(contacts, eq(contacts.id, vendorCredits.contactId))
+      .leftJoin(vendorBills, eq(vendorBills.id, vendorCredits.billId))
+      .leftJoin(jobs, eq(jobs.id, vendorCredits.jobId))
       .where(
         and(
           eq(vendorCredits.orgId, orgId),
@@ -55,19 +57,29 @@ export class VendorCreditsService {
           options.status ? eq(vendorCredits.status, options.status as "draft" | "open" | "used" | "void") : undefined,
         ),
       )
-      .orderBy(desc(vendorCredits.createdAt));
-    return rows.map((r) => ({ ...r.credit, contactName: r.contactName }));
+      // US-PUR-38: newest by date first.
+      .orderBy(desc(vendorCredits.date), desc(vendorCredits.createdAt));
+    return rows.map((r) => ({ ...r.credit, contactName: r.contactName, billNumber: r.billNumber, jobName: r.jobName }));
   }
 
   async getOne(orgId: string, id: string) {
     const [row] = await this.db
-      .select({ credit: vendorCredits, contactName: contacts.name, billNumber: vendorBills.billNumber })
+      .select({ credit: vendorCredits, contactName: contacts.name, billNumber: vendorBills.billNumber, jobName: jobs.name })
       .from(vendorCredits)
       .leftJoin(contacts, eq(contacts.id, vendorCredits.contactId))
       .leftJoin(vendorBills, eq(vendorBills.id, vendorCredits.billId))
+      .leftJoin(jobs, eq(jobs.id, vendorCredits.jobId))
       .where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id)));
     if (!row) throw new NotFoundException("Vendor credit not found");
-    const lines = await this.db.select().from(vendorCreditLines).where(eq(vendorCreditLines.vendorCreditId, id)).orderBy(vendorCreditLines.sortOrder);
+    // US-PUR-37: each line names the account it credits.
+    const lines = (
+      await this.db
+        .select({ line: vendorCreditLines, accountCode: accounts.code, accountName: accounts.name })
+        .from(vendorCreditLines)
+        .leftJoin(accounts, eq(accounts.id, vendorCreditLines.accountId))
+        .where(eq(vendorCreditLines.vendorCreditId, id))
+        .orderBy(vendorCreditLines.sortOrder)
+    ).map((r) => ({ ...r.line, accountCode: r.accountCode, accountName: r.accountName }));
     const allocations = await this.db
       .select({ id: vendorCreditAllocations.id, billId: vendorCreditAllocations.billId, billNumber: vendorBills.billNumber, amount: vendorCreditAllocations.amount, createdAt: vendorCreditAllocations.createdAt })
       .from(vendorCreditAllocations)
@@ -80,7 +92,124 @@ export class VendorCreditsService {
       .innerJoin(moneyAccounts, eq(moneyAccounts.id, vendorRefunds.moneyAccountId))
       .where(eq(vendorRefunds.vendorCreditId, id))
       .orderBy(asc(vendorRefunds.createdAt));
-    return { ...row.credit, contactName: row.contactName, billNumber: row.billNumber, lines, allocations, refunds };
+    return { ...row.credit, contactName: row.contactName, billNumber: row.billNumber, jobName: row.jobName, lines, allocations, refunds };
+  }
+
+  /**
+   * US-PUR-37 (D-226) — what happened to the credit, newest first: created,
+   * recorded (with the total), removed from a bill, refund deleted and
+   * voided (with the reason) from the audit log; each application to a
+   * bill and each refund from their own rows, with who made them.
+   */
+  async activity(orgId: string, id: string): Promise<VendorCreditActivityEntry[]> {
+    const credit = await this.getOne(orgId, id);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const entries: VendorCreditActivityEntry[] = [];
+    const audit = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "vendor_credit"), eq(auditLog.entityId, id)));
+    for (const row of audit) {
+      const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown; to: unknown }[];
+      const change = (field: string) => changes.find((c) => c.field === field);
+      const moved = () => {
+        const c = change("balanceAmount");
+        return c ? (BigInt(String(c.to)) - BigInt(String(c.from))).toString() : null;
+      };
+      const actor = row.actorName ?? null;
+      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: actor });
+      else if (row.action === "recorded") entries.push({ type: "recorded", at: iso(row.at), actorName: actor, amount: credit.totalAmount.toString() });
+      else if (row.action === "application_removed") {
+        const bill = change("bill");
+        entries.push({ type: "unapplied", at: iso(row.at), actorName: actor, amount: moved(), detail: typeof bill?.from === "string" ? bill.from : null });
+      } else if (row.action === "refund_deleted") entries.push({ type: "refund_deleted", at: iso(row.at), actorName: actor, amount: moved() });
+      else if (row.action === "voided") {
+        const reason = change("voidReason")?.to;
+        entries.push({ type: "voided", at: iso(row.at), actorName: actor, detail: typeof reason === "string" ? reason : credit.voidReason });
+      }
+    }
+    const applied = await this.db
+      .select({ amount: vendorCreditAllocations.amount, at: vendorCreditAllocations.createdAt, billId: vendorBills.id, billNumber: vendorBills.billNumber, actorName: user.name })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorBills, eq(vendorBills.id, vendorCreditAllocations.billId))
+      .leftJoin(user, eq(vendorCreditAllocations.createdByUserId, user.id))
+      .where(eq(vendorCreditAllocations.vendorCreditId, id));
+    for (const a of applied) entries.push({ type: "applied", at: iso(a.at), actorName: a.actorName ?? null, amount: a.amount.toString(), detail: a.billNumber, linkId: a.billId });
+    const refunds = await this.db
+      .select({ amount: vendorRefunds.amount, at: vendorRefunds.createdAt, actorName: user.name })
+      .from(vendorRefunds)
+      .leftJoin(user, eq(vendorRefunds.createdByUserId, user.id))
+      .where(eq(vendorRefunds.vendorCreditId, id));
+    for (const r of refunds) entries.push({ type: "refunded", at: iso(r.at), actorName: r.actorName ?? null, amount: r.amount.toString() });
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /**
+   * US-PUR-39 — this vendor's credits (not void) with the same credit note
+   * number, ignoring case and spaces: a warning before entering one twice;
+   * the caller can still save.
+   */
+  async possibleDuplicates(orgId: string, query: { contactId: string; vendorReference: string; excludeId?: string }): Promise<PossibleDuplicateVendorCredit[]> {
+    const wanted = query.vendorReference.replace(/\s+/g, "").toLowerCase();
+    if (!wanted) return [];
+    const rows = await this.db
+      .select()
+      .from(vendorCredits)
+      .where(
+        and(
+          eq(vendorCredits.orgId, orgId),
+          eq(vendorCredits.contactId, query.contactId),
+          ne(vendorCredits.status, "void"),
+          sql`lower(regexp_replace(coalesce(${vendorCredits.vendorReference}, ''), '[[:space:]]', '', 'g')) = ${wanted}`,
+          query.excludeId ? ne(vendorCredits.id, query.excludeId) : undefined,
+        ),
+      )
+      .orderBy(desc(vendorCredits.date))
+      .limit(3);
+    return rows.map((c) => ({
+      id: c.id,
+      number: c.number,
+      vendorReference: c.vendorReference,
+      date: new Date(c.date).toISOString().slice(0, 10),
+      totalAmount: c.totalAmount.toString(),
+      currency: c.currency,
+      status: c.status,
+    }));
+  }
+
+  /**
+   * US-PUR-41 — records each draft in its own transaction (P11), so one
+   * that can't be recorded doesn't stop the rest; the skipped ones say why.
+   */
+  async bulkRecord(orgId: string, ids: string[], actorUserId: string): Promise<BulkResult> {
+    const done: string[] = [];
+    const skipped: BulkResult["skipped"] = [];
+    const rows = await this.db.select({ id: vendorCredits.id, number: vendorCredits.number, vendorReference: vendorCredits.vendorReference, status: vendorCredits.status }).from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), inArray(vendorCredits.id, [...new Set(ids)])));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    for (const id of [...new Set(ids)]) {
+      const credit = byId.get(id);
+      if (!credit) {
+        skipped.push({ id, label: null, reason: "Not found." });
+        continue;
+      }
+      const label = credit.number ?? credit.vendorReference;
+      if (credit.status === "void") {
+        skipped.push({ id, label, reason: "It's void." });
+        continue;
+      }
+      if (credit.status !== "draft") {
+        skipped.push({ id, label, reason: "It's already recorded." });
+        continue;
+      }
+      try {
+        await this.record(orgId, id, actorUserId);
+        done.push(id);
+      } catch (err) {
+        skipped.push({ id, label, reason: err instanceof Error ? err.message : "It couldn't be recorded." });
+      }
+    }
+    return { done, skipped };
   }
 
   async getHistory(orgId: string, id: string) {
@@ -266,7 +395,18 @@ export class VendorCreditsService {
       await tx.update(vendorBills).set({ creditedAmount: bill!.creditedAmount - allocation.amount, updatedAt: new Date() }).where(eq(vendorBills.id, bill!.id));
       const balance = credit.balanceAmount + allocation.amount;
       await tx.update(vendorCredits).set({ balanceAmount: balance, status: "open", updatedAt: new Date() }).where(eq(vendorCredits.id, id));
-      await this.auditLog.record(tx, { orgId, actorUserId, action: "application_removed", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "balanceAmount", from: credit.balanceAmount.toString(), to: balance.toString() }] });
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "application_removed",
+        entityType: "vendor_credit",
+        entityId: id,
+        contactId: credit.contactId,
+        changes: [
+          { field: "balanceAmount", from: credit.balanceAmount.toString(), to: balance.toString() },
+          { field: "bill", from: bill!.billNumber, to: null },
+        ],
+      });
     });
     return this.getOne(orgId, id);
   }

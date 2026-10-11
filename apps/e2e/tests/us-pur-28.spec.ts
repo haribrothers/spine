@@ -39,8 +39,8 @@ test.describe("US-PUR-28", () => {
     const staff = await context.newPage();
     await logIn(staff, DEMO_STAFF_USER);
     await staff.goto(`/vendor-credits/${credit.id}`);
-    await expect(staff.getByRole("button", { name: "Edit", exact: true })).toBeVisible();
-    await expect(staff.getByRole("button", { name: "Record", exact: true })).toHaveCount(0);
+    await expect(staff.getByRole("link", { name: "Edit", exact: true })).toBeVisible();
+    await expect(staff.getByRole("button", { name: "Record credit" })).toHaveCount(0);
     await context.close();
 
     expect((await setRecord(true)).ok()).toBe(true);

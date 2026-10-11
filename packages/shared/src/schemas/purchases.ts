@@ -204,6 +204,30 @@ export interface PossibleDuplicateVendorBill {
   status: "draft" | "recorded" | "void";
 }
 
+/** US-PUR-37 (D-226) — one line in a vendor credit's Activity: `GET /vendor-credits/:id/activity`. */
+export interface VendorCreditActivityEntry {
+  type: "created" | "recorded" | "applied" | "unapplied" | "refunded" | "refund_deleted" | "voided";
+  at: string;
+  actorName: string | null;
+  /** Minor units: the credit's total when recorded, an application's or refund's amount. */
+  amount?: string | null;
+  /** The bill number applied to or removed from; the reason a credit was voided. */
+  detail?: string | null;
+  /** The vendor bill it links to. */
+  linkId?: string | null;
+}
+
+/** US-PUR-39 — a credit this vendor already has with the same credit note number: `GET /vendor-credits/possible-duplicates`. */
+export interface PossibleDuplicateVendorCredit {
+  id: string;
+  number: string | null;
+  vendorReference: string | null;
+  date: string;
+  totalAmount: string;
+  currency: string;
+  status: "draft" | "open" | "used" | "void";
+}
+
 /** US-PUR-35 — a bill number compared the way the duplicate check does: no spaces, any case. */
 export function normaliseBillNumber(billNumber: string): string {
   return billNumber.replace(/\s+/g, "").toLowerCase();

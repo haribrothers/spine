@@ -111,14 +111,14 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   const [jobs, setJobs] = useState<JobOption[]>([]);
 
   useEffect(() => {
-    if (bill) return; // only pre-fill the org default currency for a brand-new bill
+    if (from) return; // only pre-fill the org default currency for a brand-new bill, not a copy
     apiClient
       .get<{ key: string; value: CurrencyLocaleValue | null }>("/org/settings/currency")
       .then((res) => {
         if (res.value?.code) setCurrency(res.value.code);
       })
       .catch(() => {});
-  }, [bill]);
+  }, [from]);
 
   useEffect(() => {
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});

@@ -528,11 +528,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-34 · See what we owe vendors at a glance
 - [x] US-PUR-35 · Enter a bill faster, without entering it twice
 - [x] US-PUR-36 · Record several draft bills at once
-- [ ] US-PUR-37 · See where a vendor credit stands, with one next step
-- [ ] US-PUR-38 · See what credit vendors owe us at a glance
-- [ ] US-PUR-39 · Enter a vendor credit like a bill
-- [ ] US-PUR-40 · Raise and use a credit from its bill
-- [ ] US-PUR-41 · Record several draft credits at once
+- [x] US-PUR-37 · See where a vendor credit stands, with one next step
+- [x] US-PUR-38 · See what credit vendors owe us at a glance
+- [x] US-PUR-39 · Enter a vendor credit like a bill
+- [x] US-PUR-40 · Raise and use a credit from its bill
+- [x] US-PUR-41 · Record several draft credits at once
 
 ## Phase 10 · AI assistant
 

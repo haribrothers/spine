@@ -4986,6 +4986,22 @@ Use an owner with the India demo. Check light and dark, and compare with the can
 9. From a bill's More, Duplicate opens a new bill with the same vendor, job, currency, place of supply and lines, today's date and an empty bill number.
 10. Regression: Recurring bills, the job filter's note and links, opening-balance bills (no lines, can't be voided), attachments on bills, and the dashboard's "Pay bill" all still work.
 
+## 218. Vendor credits you can work from (US-PUR-37 to US-PUR-41, refinements before Phase 10)
+
+Use an owner with a vendor who has two recorded bills. Check light and dark, and compare with the canvas "19 Vendor credits".
+
+1. From a recorded bill's More, choose "Record vendor credit": a new credit opens with the vendor, the bill under "Against bill", its currency, job and place of supply, and its lines copied. It looks like the new bill page — a header card, compact rows with Account, only "Add item", the bar at the bottom with Subtotal, tax and Total, "Unsaved changes", Cancel, Save draft and Save and record.
+2. Type a credit note number this vendor already used (any case, extra spaces): a warning names that credit with a link; you can still save. Leaving with changes asks "Leave without saving?".
+3. On a new credit, type a line, then choose a bill under "Against bill": it asks "Replace your lines with <bill>'s?"; "Keep my lines" keeps yours, "Replace lines" copies the bill's.
+4. "Save and record" asks "Record this vendor credit?", then opens the credit with "VCR-… recorded" in a toast.
+5. The credit's page: the title is its number with its state in words (Open, Partly used, Used, Void; "Draft vendor credit" before recording); under it the vendor (a link), "Their <number>", the date, "Against <bill>" (a link), job and place of supply, in the business's date format. One primary button (Apply to bills, or Record credit on a draft) with Record refund beside it; More holds View history and Void credit (and Delete draft on a draft), each with its icon. The strip reads Total, Applied to bills, Refunded and Left to use.
+6. Apply to bills: the bill it's against comes first, marked "Against this credit", and is filled first; each bill shows its due date with how late; "Applying … · … left" follows the amounts; ticking a bill fills it from what's left. Applying shows "Credit applied" with how much and how many bills.
+7. Record a refund, then remove the credit from a bill and delete the refund from their row menus: each removal asks first; every action shows a toast, and Activity lists applied, removed, refunded and refund deleted, newest first, with who and when. Void with a reason: the state reads "Void", Left to use "—", and Activity says why. Delete a draft: it asks first, then the list shows "Draft credit deleted".
+8. The list: title "Vendor credits"; cards Credit to use, Drafts to record, Partly used and Unused 60+ days with amounts; pressing the last three filters the list (in the address); press again to clear. Rows show the number ("—" on a draft), their number, vendor, date, the bill it's against, job, the state in words, total and Left to use ("—" when void); newest first. Filters (state, vendor, job), search, sort and page survive opening a credit and going Back; Refresh says "Updated just now".
+9. A row's menu has icons: View, Edit and Record (draft), Apply to bills and Record refund (credit left), Void (recorded), Delete (draft) — destructive last.
+10. Tick drafts: "Record (n)" counts only the drafts, asks "Record n vendor credits?" with their total, records them and toasts; any skipped are named.
+11. Regression: a bill's "Apply credit" and Credits applied, the vendor payment dialog's "Apply it first?" link to the credit, opening-balance vendor credits (Settings › Opening balances), and a Staff member without "Record" still seeing Edit but not Record credit.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

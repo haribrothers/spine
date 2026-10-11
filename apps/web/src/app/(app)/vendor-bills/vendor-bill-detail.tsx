@@ -69,6 +69,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const canPay = useCapability("vendor_payments.edit_own");
   const canApply = useCapability("vendor_credits.apply");
   const canCreate = useCapability("vendor_bills.edit_own");
+  const canCredit = useCapability("vendor_credits.edit_own");
   const canEditRight = useCanEditOwnership(bill?.createdByUserId ?? null, { own: "vendor_bills.edit_own", others: "vendor_bills.edit_others" });
   const canDeleteRight = useCanEditOwnership(bill?.createdByUserId ?? null, { own: "vendor_bills.delete_own", others: "vendor_bills.delete_others" });
   const showToast = useToast();
@@ -269,6 +270,13 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                   <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/new?from=${bill.id}`)}>
                     <MENU_ICONS.duplicate aria-hidden />
                     Duplicate
+                  </DropdownMenuItem>
+                )}
+                {/* US-PUR-40: a credit from this bill, its lines copied to edit down. */}
+                {canCredit && bill.status === "recorded" && !bill.isOpening && (
+                  <DropdownMenuItem onSelect={() => router.push(`/vendor-credits/new?billId=${bill.id}`)}>
+                    <MENU_ICONS.issueCreditNote aria-hidden />
+                    Record vendor credit
                   </DropdownMenuItem>
                 )}
                 {(canVoid || canDelete) && <DropdownMenuSeparator />}

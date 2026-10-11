@@ -35,16 +35,16 @@ test.describe("US-PUR-25", () => {
 
     await page.getByRole("button", { name: "Apply to bills" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByTestId("bill-to-apply").first()).toContainText("Bill 88213");
+    await expect(dialog.getByTestId("bill-to-apply").first()).toContainText("88213");
     await expect(dialog.getByRole("textbox", { name: "Amount to apply to bill 88213" })).toHaveValue("300.00");
     await expect(dialog.getByRole("textbox", { name: "Amount to apply to bill 88240" })).toHaveValue("100.00");
     await dialog.getByRole("textbox", { name: "Amount to apply to bill 88213" }).fill("301");
-    await dialog.getByRole("button", { name: "Apply credit" }).click();
-    await expect(dialog).toContainText("You can apply up to $300.00 to this bill.");
+    await dialog.getByRole("button", { name: /^Apply \$/ }).click();
+    await expect(dialog).toContainText("You can apply up to $300.00 to bill 88213.");
     await dialog.getByRole("textbox", { name: "Amount to apply to bill 88213" }).fill("300");
-    await dialog.getByRole("button", { name: "Apply credit" }).click();
+    await dialog.getByRole("button", { name: "Apply $400.00" }).click();
     await expect(page.getByText("Used", { exact: true }).first()).toBeVisible();
-    await expect(page.getByTestId("credit-allocations")).toContainText("Bill 88213");
+    await expect(page.getByTestId("credit-allocations")).toContainText("88213");
 
     await page.goto(`/vendor-bills/${older}`);
     await expect(page.getByTestId("credits-applied")).toContainText("VCR-0001 · their CN-4471");
