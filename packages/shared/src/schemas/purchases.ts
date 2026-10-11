@@ -180,3 +180,31 @@ export const createVendorRefundSchema = z.object({
   method: vendorPaymentMethodSchema,
   reference: z.string().trim().max(120).optional().nullable(),
 });
+
+/** US-PUR-32 (D-225) — one line of a vendor bill's Activity: `GET /vendor-bills/:id/activity`, newest first. */
+export interface VendorBillActivityEntry {
+  type: "created" | "recorded" | "paid" | "credit_applied" | "voided";
+  at: string;
+  actorName: string | null;
+  /** Minor units: the bill's total when recorded, a payment's or credit's amount on this bill. */
+  amount?: string | null;
+  /** The payment or credit number; the reason a bill was voided. */
+  detail?: string | null;
+  /** The vendor payment or vendor credit it links to. */
+  linkId?: string | null;
+}
+
+/** US-PUR-35 — a bill this vendor already has with the same number: `GET /vendor-bills/possible-duplicates`. */
+export interface PossibleDuplicateVendorBill {
+  id: string;
+  billNumber: string;
+  date: string;
+  totalAmount: string;
+  currency: string;
+  status: "draft" | "recorded" | "void";
+}
+
+/** US-PUR-35 — a bill number compared the way the duplicate check does: no spaces, any case. */
+export function normaliseBillNumber(billNumber: string): string {
+  return billNumber.replace(/\s+/g, "").toLowerCase();
+}

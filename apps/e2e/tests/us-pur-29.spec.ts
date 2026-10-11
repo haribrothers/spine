@@ -20,7 +20,9 @@ test.describe("US-PUR-29", () => {
     await page.goto("/vendor-bills");
     await expect(page.getByRole("link", { name: "Recurring bills" })).toBeVisible();
     await page.goto(`/vendor-bills/${bill.id}`);
-    await page.getByRole("button", { name: "Make recurring" }).click();
+    // US-PUR-32: Make recurring sits in the bill's More menu.
+    await page.getByRole("button", { name: "More" }).click();
+    await page.getByRole("menuitem", { name: "Make recurring" }).click();
     const dialog = page.getByRole("dialog", { name: "New recurring bill" });
     await expect(dialog).toContainText("Lines: Office rent × 1 · $2,400.00");
     await expect(dialog.getByRole("combobox", { name: "Repeat" })).toHaveText("Monthly");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -70,6 +70,7 @@ export function NewVendorPaymentDialog({
   onRecorded,
   prefill,
   initialContactId,
+  initialBillId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -79,6 +80,8 @@ export function NewVendorPaymentDialog({
   prefill?: StatementPrefill;
   /** US-DASH-13 — "Pay bill" opens the dialog on that bill's vendor. */
   initialContactId?: string;
+  /** US-PUR-33 — and with that bill ticked for its balance (the amount filled to match). */
+  initialBillId?: string;
 }) {
   const [contactId, setContactId] = useState("");
   // US-PUR-25: the vendor's open credit, offered before paying.
@@ -93,6 +96,8 @@ export function NewVendorPaymentDialog({
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // US-PUR-33: the amount the preset bill filled in; the oldest-first suggestion waits until the amount changes.
+  const pinnedAmount = useRef<bigint | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -104,6 +109,7 @@ export function NewVendorPaymentDialog({
     setOutstanding(null);
     setAllocations([]);
     setError(null);
+    pinnedAmount.current = null;
   }, [open, initialContactId, prefill]);
 
   useEffect(() => {
@@ -133,11 +139,21 @@ export function NewVendorPaymentDialog({
       .then((bills) => {
         setOutstanding(bills.map((b) => ({ id: b.id, billNumber: b.billNumber, balanceDue: b.balanceDue })));
         if (bills[0]?.currency) setCurrency(bills[0].currency);
+        const preset = initialBillId && contactId === initialContactId ? bills.find((b) => b.id === initialBillId) : undefined;
+        if (preset && !prefill) {
+          const balance = BigInt(preset.balanceDue);
+          pinnedAmount.current = balance;
+          setCurrency(preset.currency);
+          setAmount(balance);
+          setAllocations([{ billId: preset.id, billNumber: preset.billNumber, balanceDue: balance, amount: balance }]);
+        }
       })
       .catch(() => setOutstanding([]));
-  }, [open, contactId]);
+  }, [open, contactId, initialBillId, initialContactId, prefill]);
 
   useEffect(() => {
+    if (pinnedAmount.current !== null && amount === pinnedAmount.current) return;
+    pinnedAmount.current = null;
     if (!open || !contactId || !outstanding || amount <= 0n) {
       setAllocations([]);
       return;

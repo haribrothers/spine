@@ -16,15 +16,15 @@ test.describe("D-218", () => {
     const today = new Date().toISOString().slice(0, 10);
     const bill = await api(page, "POST", "/vendor-bills", { contactId: vendor.id, billNumber: "CT-1001", date: today, dueDate: today, currency: "USD", lines: [{ type: "item", name: "Timber", quantity: 1, unitPriceAmount: "124000", accountId: expense }] });
     await page.goto(`/vendor-bills/${bill.id}`);
-    await page.getByRole("button", { name: "Record", exact: true }).click();
+    await page.getByRole("button", { name: "Record bill", exact: true }).click();
     const ask = page.getByRole("alertdialog", { name: "Record this bill?" });
     await expect(ask.getByTestId("confirm-description")).toHaveText("Coastal Timber Supply's bill CT-1001 for $1,240.00 is posted to your books as owed. After that it can't be edited — only voided.");
     await ask.getByRole("button", { name: "Go back" }).click();
     await expect(ask).toHaveCount(0);
     expect(((await (await page.request.get(`${API_URL}/vendor-bills/${bill.id}`)).json()) as { status: string }).status).toBe("draft");
-    await page.getByRole("button", { name: "Record", exact: true }).click();
+    await page.getByRole("button", { name: "Record bill", exact: true }).click();
     await ask.getByRole("button", { name: "Record bill" }).click();
-    await expect(page.getByText("Vendor bill recorded").first()).toBeVisible();
+    await expect(page.getByText("CT-1001 recorded").first()).toBeVisible();
 
     // Revising a sent quote, from its row's menu: Esc leaves it alone.
     const c = await contact(page, "Ananya Rao");

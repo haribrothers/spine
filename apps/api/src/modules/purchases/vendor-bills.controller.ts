@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createVendorBillSchema, updateVendorBillSchema, voidVendorBillSchema } from "@spine/shared";
+import { BadRequestException } from "@nestjs/common";
+import { bulkVendorBillIdsSchema, createVendorBillSchema, updateVendorBillSchema, voidVendorBillSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -32,6 +33,31 @@ export class VendorBillsController {
     return this.vendorBillsService.list(orgId, { status, contactId, jobId });
   }
 
+  /** US-PUR-35 — this vendor's bills with the same number (not void), before entering one twice. A read, like every GET here. */
+  @Get("possible-duplicates")
+  async possibleDuplicates(
+    @Session() session: UserSession,
+    @Query("contactId") contactId?: string,
+    @Query("billNumber") billNumber?: string,
+    @Query("excludeId") excludeId?: string,
+  ) {
+    const orgId = requireOrgId(session);
+    const uuid = /^[0-9a-f-]{36}$/i;
+    if (!contactId || !uuid.test(contactId) || (excludeId && !uuid.test(excludeId))) throw new BadRequestException("Choose a vendor first.");
+    return this.vendorBillsService.possibleDuplicates(orgId, { contactId, billNumber: billNumber ?? "", excludeId });
+  }
+
+  /** US-PUR-36 — record several drafts; each in its own transaction, the skipped ones named. */
+  @Post("bulk/record")
+  @RequireCapability("vendor_bills.record")
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulkRecord(@Session() session: UserSession, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const parsed = bulkVendorBillIdsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select the bills to record.");
+    return this.vendorBillsService.bulkRecord(orgId, parsed.data.ids, session.user.id);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -43,6 +69,12 @@ export class VendorBillsController {
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.vendorBillsService.getHistory(orgId, id);
+  }
+
+  /** US-PUR-32 — the bill's Activity. A read, like every GET here. */
+  @Get(":id/activity")
+  async activity(@Session() session: UserSession, @Param("id") id: string) {
+    return this.vendorBillsService.activity(requireOrgId(session), id);
   }
 
   @Post()

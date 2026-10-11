@@ -24,6 +24,7 @@ import {
   PanelRightOpen,
   Pencil,
   Receipt,
+  Repeat,
   RotateCw,
   ScrollText,
   Send,
@@ -76,6 +77,8 @@ export const MENU_ICONS = {
   retry: RotateCw,
   moveUp: ArrowUp,
   moveDown: ArrowDown,
+  /** Start a recurring bill or invoice from this one (US-PUR-32). */
+  makeRecurring: Repeat,
   /** Send a customer a statement (US-PAY-28). */
   statement: ScrollText,
   /** Open a customer's or vendor's contact page. */

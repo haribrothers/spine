@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -652,23 +652,30 @@ export class DemoSeederService {
       at(seed.dateInDays, async () => {
         const bill = await create();
         count("vendorBillsCreated");
+        // US-PUR-32: the bill's Activity reads on its own days, entered then recorded on its bill date.
+        const enteredAt = when(seed.dateInDays);
+        await backdateAudit(bill.id, new Date(enteredAt.getTime() - 30 * 60 * 1000), ["created"]);
         if (seed.outcome === "draft") return;
         const recorded = await this.vendorBillsService.record(orgId, bill.id, actorUserId);
         count("vendorBillsRecorded");
+        await backdateAudit(bill.id, enteredAt, ["recorded"]);
         if (seed.outcome === "voided") {
           await this.vendorBillsService.void(orgId, recorded.id, actorUserId, seed.voidReason ?? "Voided.");
           count("vendorBillsVoided");
+          await backdateAudit(bill.id, when(Math.min(seed.dateInDays + 3, 0)), ["voided"]);
           return;
         }
         for (const payment of seed.payments ?? []) {
           at(Math.max(payment.inDays ?? 0, seed.dateInDays), async () => {
-            await this.vendorPaymentsService.create(
+            const paid = (await this.vendorPaymentsService.create(
               orgId,
               actorUserId,
               { contactId: contactIds.get(seed.contact)!, date: payment.inDays === null ? new Date() : day(payment.inDays), method: "bank_transfer", currency, amount: recorded.totalAmount, allocations: [{ billId: recorded.id, amount: recorded.totalAmount }] } as never,
               true,
-            );
+            )) as { id: string };
             count("vendorPaymentsCreated");
+            // US-PUR-32: "Paid" on the bill's Activity reads on the payment's day.
+            await this.db.update(vendorPaymentAllocations).set({ createdAt: when(Math.max(payment.inDays ?? 0, seed.dateInDays)) }).where(eq(vendorPaymentAllocations.vendorPaymentId, paid.id));
           });
         }
       });

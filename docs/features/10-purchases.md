@@ -524,10 +524,13 @@ Decision: D-218, D-225
 - **Given** I choose a vendor on a new bill, **when** the due date is empty, **then** it's suggested from that vendor's last bill (the same number of days after the bill date), saying so.
 - **Given** the builder, **when** I press "Save and record", **then** it asks "Record this bill?" (as Record does) and, on yes, saves the draft and records it; the bill's page opens with its toast.
 - **Given** "Duplicate" on a bill, **when** I choose it, **then** a new bill opens with the same vendor, job, currency, place of supply and lines, today's date and an empty bill number.
+- **Given** the new or edit bill page, **when** it opens, **then** it works like the invoice and quote builders: the header fields in one card (Vendor, Bill number, Job, Currency; Bill date, Due date with On receipt / +15 / +30 / +60, Place of supply), compact line rows (Item, Qty, Rate, Tax, Account, Amount, with the description and HSN/SAC under each) moved by drag, the row menu or Alt + ↑/↓, notes and attachments below the lines, and a bar that stays at the bottom with Subtotal, tax and Total, "Unsaved changes", Cancel, Save draft and Save and record.
+- **Given** the bill's lines, **when** I add one, **then** it's an item line — a bill isn't printed, so there's no Add heading or Add text line.
+- **Given** unsaved changes, **when** I leave the page, **then** "Leave without saving?" asks first, as on invoices.
 
 **Implementation notes**
 - API: `GET /vendor-bills/possible-duplicates?contactId=&billNumber=&excludeId=` → `[{ id, billNumber, date, totalAmount, currency, status }]` (the same access as `GET /vendor-bills`).
-- UI: `/vendor-bills/new?from=<id>` prefills from that bill.
+- UI: `/vendor-bills/new?from=<id>` prefills from that bill. The builder reuses the invoice builder's pieces — `QuoteLineEditor` (with an Account column in place of Disc. % and no heading or text lines), `DocumentBuilderBar`, `useUnsavedGuard` with `LeaveWithoutSavingDialog`, and the due picks from `invoices/due-terms.ts`.
 
 ### US-PUR-36 · Record several draft bills at once
 **Feature:** F-PUR-11 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `VendorBillsBulkRecord`

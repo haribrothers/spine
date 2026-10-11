@@ -18,7 +18,8 @@ test.describe("US-PUR-22", () => {
     await page.getByRole("option", { name: label }).click();
     await expect(page).toHaveURL(new RegExp(`jobId=${job.id}`));
     await expect(page.getByText(`Showing vendor bills on ${label}.`)).toBeVisible();
-    await expect(page.getByText("Total bills").locator("..")).toContainText(String(onJob));
+    // US-PUR-34: the list shows only that job's bills (heading row + one per bill).
+    await expect(page.getByRole("row")).toHaveCount(onJob + 1);
 
     await page.reload();
     await expect(page.getByText(`Showing vendor bills on ${label}.`)).toBeVisible();

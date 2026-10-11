@@ -197,6 +197,21 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(receipts).toHaveLength(0);
       });
 
+      it("D-225 · demo bills' Activity reads on their own days, in order", async () => {
+        const bills = await get<{ id: string; date: string; status: string }[]>("/vendor-bills");
+        const recordedBills = bills.filter((b) => b.status !== "draft");
+        expect(recordedBills.length).toBeGreaterThan(0);
+        for (const b of recordedBills) {
+          const activity = await get<{ type: string; at: string }[]>(`/vendor-bills/${b.id}/activity`);
+          const at = (type: string) => activity.find((a) => a.type === type)?.at;
+          // Entered and recorded on the bill date; paid and voided afterwards.
+          expect(at("recorded")!.slice(0, 10)).toBe(b.date.slice(0, 10));
+          expect(at("created")! <= at("recorded")!).toBe(true);
+          for (const a of activity.filter((x) => x.type === "paid" || x.type === "voided")) expect(a.at >= at("recorded")!).toBe(true);
+          expect(activity.map((a) => a.at)).toEqual([...activity.map((a) => a.at)].sort().reverse());
+        }
+      });
+
       it("deletes the demo's bundles with it", async () => {
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });
         expect(res.status).toBe(200);

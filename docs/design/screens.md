@@ -1447,6 +1447,8 @@ Shows: "Refund — Spine" · "Billing" · "Payments" · "Record payments against
 
 ![VendorBillsList](screens/VendorBillsList.webp)
 
+Superseded by `VendorBillsListRefined` (D-225).
+
 Links to: `ExpensesList`, `VendorBillsEmpty`
 
 Shows: "Purchases › Vendor Bills" · "OVERVIEW" · "Vendor Bills" · "98 Dashboard" · "Record what you owe a vendor. Save as a draft, then record it to post to the ledger." · "SALES" · "9, Contacts" · "Total bills" · "Draft" · "Recorded" · "Overdue" · "Pipeline" · "Meetings" · "Catalogue" · "Status" · "All vendors" · "New vendor bill" · "• Quotes" · "JOBS" · "Search vendor bills" · "*= Columns" · "• Jobs" · "Bill number tt" · "Vendor t" · "Due date tu" · "Total t1" · "Balance due Ti" · "BILLING" · "[Invoices" · "NEW-1190" · "Northline Electrical Wholesale" · "Void" · "9/13/2026" · "1350.00 USD" · "..." · "S Credit Notes" · "CSM-5502" · "Coastal Steel & Metal Works" · "10/30/2026" · "3360.00 USD" · "•.." · "• Payments" · "GSC-8834" · "Granite State Concrete" · "9/28/2026" · …
@@ -1482,6 +1484,8 @@ Shows: "Purchases › Vendor Bills › Detail" · "Vendor bill" · "< Back to ve
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-02 · **Source:** Captured
 
 ![VendorBillDetail](screens/VendorBillDetail.webp)
+
+Superseded by `VendorBillPage` (D-225).
 
 Links to: —
 
@@ -3555,6 +3559,64 @@ Shows: "4 selected" "Send reminders (3)" "Clear" · "Send 3 payment reminders?" 
 Links to: —
 
 Shows: the By customer view on the dark app, every row closed
+
+## Vendor bills you can work from
+
+Drawn in Claude Design for US-PUR-32 to US-PUR-36 (D-225): project "Spine web — refinements before Phase 10", canvas "18 Vendor bills". A bill's page laid out like a payment's, with its state in words and one next step; paying and applying credit from it; a list that shows money, in the layout every refined list shares; a warning before entering a bill twice.
+
+### VendorBillPage — A bill at a glance
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-32 · **Source:** Claude Design
+
+![VendorBillPage](screens/VendorBillPage.webp)
+
+Links to: `VendorBillPayDialog`, `VendorBillDuplicateWarning`
+
+Shows: "Purchases › Vendor bills › RTE-3302" · "RTE-3302" "Partly paid" · "Ridgeline Equipment Rentals Pvt Ltd" "Bill date 25 Sept" "Due 15 Oct · Due in 4 days" "Wing C fit-out" "Karnataka (29)" · "Apply credit" "Pay bill" "More" · "Total" "Paid" "Credits applied" "Balance due" · Lines with totals · Payments "VPY-0014" · Attachments · Activity "Paid ₹75,000.00 by VPY-0014" "Recorded" "Created as a draft" · More: "View history" "Make recurring" "Duplicate" "Void bill"
+
+### VendorBillPayDialog — Pay from the bill
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-33 · **Source:** Claude Design
+
+![VendorBillPayDialog](screens/VendorBillPayDialog.webp)
+
+Links to: `VendorBillPage`
+
+Shows: the vendor payment dialog on Ridgeline with RTE-3302 ticked for ₹40,640.00 · the vendor's credit to use
+
+### VendorBillsListRefined — What we owe, what's due, what's paid
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-34 · **Source:** Claude Design
+
+![VendorBillsListRefined](screens/VendorBillsListRefined.webp)
+
+Links to: `VendorBillPage`, `VendorBillsBulkRecord`
+
+Shows: "To pay" "Overdue" "Due in 7 days" "Drafts to record" · State, All vendors, All jobs · Updated, Refresh, "Recurring bills", "New vendor bill" · "Search bill numbers, vendors or jobs" "Columns" · "Bill" "Vendor" "Bill date" "Due" "Job" "State" "Total" "Balance" · "Draft" "Unpaid" "Partly paid" "Overdue" "Paid" "Void" · "30 days late" · row menu "View" "Pay bill" "Duplicate" "Void"
+
+### VendorBillsListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-34 · **Source:** Claude Design
+
+![VendorBillsListDark](screens/VendorBillsListDark.webp)
+
+Links to: —
+
+Shows: the list on the dark app with Overdue pressed
+
+### VendorBillsBulkRecord — Record several drafts
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-36 · **Source:** Claude Design
+
+![VendorBillsBulkRecord](screens/VendorBillsBulkRecord.webp)
+
+Links to: —
+
+Shows: "Drafts to record" pressed · "2 selected" "Record (2)" "Clear" · "Record 2 bills?" "CSW-5611 and KSE-771 — ₹3,06,800.00 in all — are posted to your books as owed. After that they can't be edited, only voided." "Go back" "Record bills"
+
+### VendorBillDuplicateWarning — Enter a bill without entering it twice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-35 · **Source:** Claude Design
+
+![VendorBillDuplicateWarning](screens/VendorBillDuplicateWarning.webp)
+
+Links to: `VendorBillPage`
+
+Shows: the invoice builder's layout — header card "Vendor" "Bill number" "Job" "Currency" · "Apex Building Materials already has bill ABM-20587 — 1 Oct, ₹1,80,540.00, unpaid. Check it isn't the same bill before you save. Open ABM-20587" · "Bill date" "Due date" with "On receipt" "+15 days" "+30 days" "+60 days" · "Suggested: 30 days, as on this vendor's last bill" · "Place of supply" · Lines "Item" "Qty" "Rate" "Tax" "Account" "Amount" · "Add item" (no headings or text lines) · "Notes and attachments ↓" · bar "Subtotal" "GST" "Total" "Unsaved changes" "Cancel" "Save draft" "Save and record"
 
 ## Mobile field companion
 

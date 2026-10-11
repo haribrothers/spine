@@ -4971,6 +4971,21 @@ Use an owner with the India demo. Check light and dark, and compare with the can
 10. Export with an age chosen — the CSV, Excel and PDF hold only that age's invoices.
 11. Regression: Payables still shows its "Show" filter and unpressable cards; the dashboard's Receivables and Overdue cards still open this page; a Staff member without "View receivables" sees the no-access page.
 
+## 217. Vendor bills you can work from (US-PUR-32 to US-PUR-36, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, and compare with the canvas "18 Vendor bills".
+
+1. Open a part-paid bill: the title is its number with "Partly paid"; under it the vendor (a link), bill date, due date with how late, job and place of supply, in the business's date format. One primary button (Pay bill); More holds View history, Make recurring, Duplicate and Void bill, each with its icon. The strip reads Total, Paid, Credits applied and Balance due.
+2. Activity lists created, recorded and each payment, newest first, with who and when — on the bill's own days for demo bills. A payment row opens that payment.
+3. With vendor credit open, "Apply credit" shows; it fills the credits oldest first up to the balance; applying shows a toast and the balance drops. Pay bill opens the vendor payment dialog with this bill ticked for its balance; recording it shows a toast and the bill reads "Paid".
+4. Void an unpaid bill: a dialog needs a reason; afterwards the state is "Void", the balance "—" and Activity says why. A draft offers Record bill (asks first) and Delete draft (asks first).
+5. The list: cards To pay, Overdue, Due in 7 days and Drafts to record with amounts; pressing Overdue, Due in 7 days or Drafts filters the list (in the address); press again to clear. Rows show bill date, due with how late, job, the state in words, and "—" for a void bill's balance; newest first. Filters, search (bill number, vendor or job), sort and page survive opening a bill and going Back; Refresh says "Updated just now".
+6. A row's menu has icons: View, Edit and Record (draft), Pay bill (owed), Duplicate, Void (recorded), Delete (draft) — destructive last.
+7. Tick drafts: "Record (n)" counts only the drafts, asks "Record n bills?" with their total, records them and toasts; any skipped are named.
+8. New vendor bill: it looks like the new invoice page — a header card, compact line rows with Account (no Disc. %), only "Add item" (no headings or text lines), the bar at the bottom with the totals, Cancel, Save draft and Save and record; due quick picks set the due date; leaving with changes asks "Leave without saving?". Choose a vendor with an earlier bill — the due date is suggested ("Suggested: 30 days, as on this vendor's last bill"). Type a number this vendor already used (any case, extra spaces) — a warning names it with a link; you can still save. "Save and record" asks first, then opens the recorded bill with its toast.
+9. From a bill's More, Duplicate opens a new bill with the same vendor, job, currency, place of supply and lines, today's date and an empty bill number.
+10. Regression: Recurring bills, the job filter's note and links, opening-balance bills (no lines, can't be voided), attachments on bills, and the dashboard's "Pay bill" all still work.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
