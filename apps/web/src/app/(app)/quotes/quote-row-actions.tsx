@@ -19,10 +19,11 @@ import {
   useConfirm,
 } from "@spine/ui";
 import type { QuoteCustomerLink } from "@spine/shared";
-import { Copy, Download, Eye, GitBranch, HardHat, Link2, MoreHorizontal, Pencil, Receipt, Send, Trash2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { useModule } from "../../../lib/modules-context";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { Quote } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -111,41 +112,49 @@ export function QuoteRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}`)}>
-            <Eye size={14} aria-hidden /> View
+            <MENU_ICONS.view aria-hidden />
+            View
           </DropdownMenuItem>
           {draft && canEdit && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}/edit`)}>
-              <Pencil size={14} aria-hidden /> Edit
+              <MENU_ICONS.edit aria-hidden />
+              Edit
             </DropdownMenuItem>
           )}
           {draft && canSend && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}?action=send`)}>
-              <Send size={14} aria-hidden /> Send
+              <MENU_ICONS.send aria-hidden />
+              Send
             </DropdownMenuItem>
           )}
           {quote.status === "sent" && current && canSend && (
             <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, onNotify)}>
-              <Link2 size={14} aria-hidden /> Copy customer link
+              <MENU_ICONS.copyLink aria-hidden />
+              Copy customer link
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
             <a href={`${API_URL}/quotes/${quote.id}/pdf`} target="_blank" rel="noreferrer">
-              <Download size={14} aria-hidden /> {draft ? "Preview PDF" : "Download PDF"}
+              <MENU_ICONS.download aria-hidden />
+              {draft ? "Preview PDF" : "Download PDF"}
             </a>
           </DropdownMenuItem>
           {canCreate && (
             <DropdownMenuItem onSelect={() => void post(`/quotes/${quote.id}/duplicate`, "Couldn't duplicate the quote")}>
-              <Copy size={14} aria-hidden /> Duplicate
+              <MENU_ICONS.duplicate aria-hidden />
+              Duplicate
             </DropdownMenuItem>
           )}
           {quote.status === "accepted" && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}?action=convert-invoice`)}>
-              <Receipt size={14} aria-hidden /> Convert to invoice
+              <MENU_ICONS.convertToInvoice aria-hidden />
+              Convert to invoice
             </DropdownMenuItem>
           )}
           {quote.status === "accepted" && canCreateJob && jobsOn && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}?action=convert-job`)}>
-              <HardHat size={14} aria-hidden /> Convert to job
+              <MENU_ICONS.convertToJob aria-hidden />
+              Convert to job
             </DropdownMenuItem>
           )}
           {!draft && current && canRevise && (
@@ -157,7 +166,8 @@ export function QuoteRowActions({
                   if (ok) void post(`/quotes/${quote.id}/revise`, "Couldn't revise the quote");
                 }}
               >
-                <GitBranch size={14} aria-hidden /> Revise
+                <MENU_ICONS.revise aria-hidden />
+                Revise
               </DropdownMenuItem>
             </>
           )}
@@ -165,7 +175,8 @@ export function QuoteRowActions({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
-                <Trash2 size={14} aria-hidden /> Delete
+                <MENU_ICONS.delete aria-hidden />
+                Delete
               </DropdownMenuItem>
             </>
           )}

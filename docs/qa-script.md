@@ -4927,6 +4927,17 @@ Use an owner on the India demo, a Staff member without "Apply credit" and "Refun
    - The receipt PDF lists only what's still applied; Receivables, aging, the customer statement and job revenue agree after a move-off.
    - The invoice page's Record payment, the demo payments and the bank statement's payment form still record correctly.
 
+## 214. Menus that read at a glance (US-OPS-37, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, and compare with the canvas "15 Menus".
+
+1. Open each row menu and page "More" menu in Contacts, Catalogue (items and bundles), the Pipeline (a lead card), Meetings (the quick view), Quotes (row, page, a line's menu), Jobs (page), Invoices (row, page, a Payments row), Credit notes (row, page), Payments (row, page, an "Applied to" row) and the Email log: every action has an icon, 14 px and grey, the same distance before its label in every menu; rows are the same height; the hover/keyboard highlight covers the whole row.
+2. The same action has the same icon everywhere: View an eye, Edit a pencil, Duplicate two sheets, Delete a bin, Email an envelope, Send reminder a bell, Record payment and Refund a banknote, Void and Cancel a ban sign, Download PDF a down arrow, View history a clock.
+3. Destructive actions (Delete, Void, Delete payment, Cancel an email, Remove line) are red — icon and text — and last, after a divider.
+4. Choice menus keep their markers: a lead's "Move to…" stages (the current one ticked), a job's status dots, the catalogue's tax picker.
+5. With a screen reader, an item is read by its label alone ("Record payment, menu item").
+6. Regression: banking, expenses, vendor bills and payments, team and settings menus still work; any icon they have is spaced the new way.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

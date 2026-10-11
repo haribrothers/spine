@@ -25,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   EmptyState,
   FormField,
@@ -39,6 +40,7 @@ import { BUNDLE_NAME_REQUIRED, type CatalogBundle } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { useEntityToast } from "./entity-toast";
 
 const STATUS_OPTIONS = [
@@ -201,9 +203,27 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {canEdit && <DropdownMenuItem onSelect={() => onEdit(bundle)}>Edit</DropdownMenuItem>}
-          {canDelete && <DropdownMenuItem onSelect={toggleArchived}>{bundle.archivedAt ? "Restore" : "Archive"}</DropdownMenuItem>}
-          {canDelete && <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>Delete</DropdownMenuItem>}
+          {canEdit && (
+            <DropdownMenuItem onSelect={() => onEdit(bundle)}>
+              <MENU_ICONS.edit aria-hidden />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem onSelect={toggleArchived}>
+              {bundle.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
+              {bundle.archivedAt ? "Restore" : "Archive"}
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                <MENU_ICONS.delete aria-hidden />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

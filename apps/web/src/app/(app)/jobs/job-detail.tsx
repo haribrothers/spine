@@ -68,6 +68,7 @@ import { STATUS_BADGE_CLASS } from "./jobs-table";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { JOB_STATUS_LABELS, type Job, type JobCostingReport, type JobStatus, type JobVariationOrder, type Milestone } from "./types";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { BUDGET_NOT_NEGATIVE, PERCENT_COMPLETE_RANGE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
@@ -459,12 +460,21 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setActiveTab("photos")}>Add photos</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setActiveTab("photos")}>
+                  <MENU_ICONS.addPhotos aria-hidden />
+                  Add photos
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                  <MENU_ICONS.history aria-hidden />
+                  View history
+                </DropdownMenuItem>
                 {canRelease && step?.kind !== "release" && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setReleaseOpen(true)}>Release retention</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setReleaseOpen(true)}>
+                      <MENU_ICONS.releaseRetention aria-hidden />
+                      Release retention
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>

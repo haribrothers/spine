@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   FormField,
   Spinner,
@@ -28,7 +29,7 @@ import {
   useConfirm,
 } from "@spine/ui";
 import type { EmailOverride, PaymentAppliedTo } from "@spine/shared";
-import { ArrowRightLeft, Banknote, CalendarDays, ChevronDown, Download, FileText, Hash, Landmark, Mail, MoreHorizontal, Undo2, User } from "lucide-react";
+import { ArrowRightLeft, Banknote, CalendarDays, ChevronDown, Download, Hash, Landmark, Mail, MoreHorizontal, Undo2, User } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
@@ -40,6 +41,7 @@ import { useEntityToast } from "./entity-toast";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { PaymentActivity } from "./payment-activity";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type PaymentDetailData } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -241,12 +243,24 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {canSend && primary.key !== "email" && <DropdownMenuItem onSelect={() => setEmailOpen(true)}>Email receipt</DropdownMenuItem>}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
-                {canDelete && (
-                  <DropdownMenuItem destructive onSelect={() => void deletePayment()}>
-                    Delete payment
+                {canSend && primary.key !== "email" && (
+                  <DropdownMenuItem onSelect={() => setEmailOpen(true)}>
+                    <MENU_ICONS.email aria-hidden />
+                    Email receipt
                   </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                  <MENU_ICONS.history aria-hidden />
+                  View history
+                </DropdownMenuItem>
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem destructive onSelect={() => void deletePayment()}>
+                      <MENU_ICONS.delete aria-hidden />
+                      Delete payment
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -302,12 +316,12 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => router.push(`/invoices/${a.invoiceId}`)}>
-                                <FileText size={14} aria-hidden />
+                                <MENU_ICONS.open aria-hidden />
                                 Open {a.invoiceNumber ?? "invoice"}
                               </DropdownMenuItem>
                               {canMoveOff(a) && (
                                 <DropdownMenuItem onSelect={() => setUnapplying(a)}>
-                                  <Undo2 size={14} aria-hidden />
+                                  <MENU_ICONS.moveOff aria-hidden />
                                   Move off {a.invoiceNumber ?? "this invoice"}
                                 </DropdownMenuItem>
                               )}

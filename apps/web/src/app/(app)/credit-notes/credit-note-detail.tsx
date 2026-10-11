@@ -32,6 +32,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import type { CreditNote } from "../invoices/types";
 import { ApplyCreditNoteDialog } from "./apply-credit-note-dialog";
 import { CreditNoteActivity } from "./credit-note-activity";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { CREDIT_NOTE_STATE_LABELS, creditNoteState } from "./credit-notes-list-state";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -236,10 +237,14 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
               <DropdownMenuContent align="end">
                 {inMore.map((a) => (
                   <DropdownMenuItem key={a.key} onSelect={a.onClick}>
+                    {a.icon}
                     {a.label}
                   </DropdownMenuItem>
                 ))}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                  <MENU_ICONS.history aria-hidden />
+                  View history
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <HistorySection endpoint={`/credit-notes/${note.id}/history`} subjectLabel="this credit note" open={historyOpen} onOpenChange={setHistoryOpen} />

@@ -22,9 +22,10 @@ import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, typ
 import { LineTaxWarning } from "../../../components/place-of-supply";
 import { HsnSacField } from "../../../components/hsn-sac-field";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
-import { ArrowDown, ArrowUp, EllipsisVertical, GripVertical, Heading, Plus, Trash2, Type } from "lucide-react";
+import { EllipsisVertical, GripVertical, Heading, Plus, Type } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { CatalogItemOption, QuoteLineType, TaxGroupOption, TaxRateOption } from "./types";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney } from "../../../lib/money";
 
 /** Client-side line shape while editing — money fields as `bigint` (never a float), matching MoneyInput's own contract. Not the same as the API's QuoteLine (which serializes bigints as strings and includes server-computed fields this component doesn't need pre-save). */
@@ -430,10 +431,12 @@ function LineRow({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(index - 1)}>
-          <ArrowUp size={14} aria-hidden /> Move up
+          <MENU_ICONS.moveUp aria-hidden />
+          Move up
         </DropdownMenuItem>
         <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(index + 1)}>
-          <ArrowDown size={14} aria-hidden /> Move down
+          <MENU_ICONS.moveDown aria-hidden />
+          Move down
         </DropdownMenuItem>
         {line.type === "item" && (
           <DropdownMenuCheckboxItem checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })}>
@@ -442,7 +445,8 @@ function LineRow({
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive onSelect={onRemove}>
-          <Trash2 size={14} aria-hidden /> Remove line
+          <MENU_ICONS.delete aria-hidden />
+          Remove line
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

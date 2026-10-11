@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge, DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, cn, type TableColumn, type TableSort } from "@spine/ui";
 import { EMAIL_KIND_LABELS, EMAIL_LOG_STATUS_LABELS, emailRecordHref, type EmailLogEntry, type EmailLogStatus } from "@spine/shared";
-import { Ban, FileText, MoreHorizontal, RotateCw } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { emailNote } from "./emails-list-state";
 
 const STATUS_CLASS: Record<EmailLogStatus, string> = {
@@ -178,22 +179,24 @@ function EmailRowActions({ email, onRetry, onCancel }: { email: EmailLogEntry; o
       <DropdownMenuContent align="end">
         {email.canRetry && (
           <DropdownMenuItem onSelect={() => onRetry(email)}>
-            <RotateCw size={14} aria-hidden />
+            <MENU_ICONS.retry aria-hidden />
             Retry now
           </DropdownMenuItem>
         )}
-        {email.canCancel && (
-          <DropdownMenuItem onSelect={() => onCancel(email)}>
-            <Ban size={14} aria-hidden />
-            Cancel
-          </DropdownMenuItem>
-        )}
-        {(email.canRetry || email.canCancel) && record && <DropdownMenuSeparator />}
         {record && (
           <DropdownMenuItem onSelect={() => router.push(href)}>
-            <FileText size={14} aria-hidden />
+            <MENU_ICONS.open aria-hidden />
             Open {email.recordLabel}
           </DropdownMenuItem>
+        )}
+        {email.canCancel && (
+          <>
+            {(email.canRetry || record) && <DropdownMenuSeparator />}
+            <DropdownMenuItem destructive onSelect={() => onCancel(email)}>
+              <MENU_ICONS.cancel aria-hidden />
+              Cancel
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

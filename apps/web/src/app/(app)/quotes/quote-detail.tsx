@@ -45,6 +45,7 @@ import { QuoteRelated } from "./quote-related";
 import { copyCustomerLink } from "./quote-row-actions";
 import { STATUS_BADGE_CLASS, ViewedChip } from "./quotes-table";
 import { calendarDate, shortDate, validityNote } from "./quotes-list-state";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
@@ -504,18 +505,45 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {canDuplicate && <DropdownMenuItem onSelect={handleDuplicate}>Duplicate as new draft</DropdownMenuItem>}
-                {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && <DropdownMenuItem onSelect={() => setBundleOpen(true)}>Save lines as a bundle…</DropdownMenuItem>}
-                {quote.status === "sent" && hasSendCapability && <DropdownMenuItem onSelect={() => setSendDialog("resend")}>Email again</DropdownMenuItem>}
-                {canCopyLink && primary?.key !== "link" && (
-                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast)}>Copy customer link</DropdownMenuItem>
+                {canDuplicate && (
+                  <DropdownMenuItem onSelect={handleDuplicate}>
+                    <MENU_ICONS.duplicate aria-hidden />
+                    Duplicate as new draft
+                  </DropdownMenuItem>
                 )}
-                {canRevise && primary?.key !== "revise" && !secondary.some((a) => a.key === "revise") && <DropdownMenuItem onSelect={() => void handleRevise()}>Revise</DropdownMenuItem>}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
+                {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
+                  <DropdownMenuItem onSelect={() => setBundleOpen(true)}>
+                    <MENU_ICONS.saveBundle aria-hidden />
+                    Save lines as a bundle…
+                  </DropdownMenuItem>
+                )}
+                {quote.status === "sent" && hasSendCapability && (
+                  <DropdownMenuItem onSelect={() => setSendDialog("resend")}>
+                    <MENU_ICONS.email aria-hidden />
+                    Email again
+                  </DropdownMenuItem>
+                )}
+                {canCopyLink && primary?.key !== "link" && (
+                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast)}>
+                    <MENU_ICONS.copyLink aria-hidden />
+                    Copy customer link
+                  </DropdownMenuItem>
+                )}
+                {canRevise && primary?.key !== "revise" && !secondary.some((a) => a.key === "revise") && (
+                  <DropdownMenuItem onSelect={() => void handleRevise()}>
+                    <MENU_ICONS.revise aria-hidden />
+                    Revise
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                  <MENU_ICONS.history aria-hidden />
+                  View history
+                </DropdownMenuItem>
                 {canDelete && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
+                      <MENU_ICONS.delete aria-hidden />
                       Delete draft
                     </DropdownMenuItem>
                   </>

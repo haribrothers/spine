@@ -18,9 +18,10 @@ import {
   cn,
 } from "@spine/ui";
 import { LOST_REASON_LABELS, type LeadStage } from "@spine/shared";
-import { ArrowRightLeft, Calendar, Check, Ellipsis, Hourglass, ListTodo, MapPin, NotebookPen, PanelRightOpen, Phone, Trash2 } from "lucide-react";
+import { Calendar, Check, Ellipsis, Hourglass, ListTodo, MapPin, NotebookPen, Phone } from "lucide-react";
 import type { ActivityType, Lead } from "../contacts/types";
 import { formatMoney } from "../../../lib/money";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { coldDays, daysInStage, daysLabel, initials, isOverdue } from "./pipeline-state";
 
 const FOLLOW_UP_ICON: Record<ActivityType, typeof Phone> = { call: Phone, meeting: MapPin, note: NotebookPen, task: ListTodo };
@@ -89,14 +90,14 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
         <DropdownMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
           <CardMenuTrigger lead={title} />
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="gap-2" onSelect={onOpen}>
-              <PanelRightOpen size={14} aria-hidden />
+            <DropdownMenuItem onSelect={onOpen}>
+              <MENU_ICONS.openDrawer aria-hidden />
               Open
             </DropdownMenuItem>
             {canMove && (
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <ArrowRightLeft size={14} aria-hidden />
+                <DropdownMenuSubTrigger>
+                  <MENU_ICONS.moveTo aria-hidden />
                   Move to…
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-44">
@@ -116,8 +117,8 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
             {canDelete && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem destructive className="gap-2" onSelect={onDelete}>
-                  <Trash2 size={14} aria-hidden />
+                <DropdownMenuItem destructive onSelect={onDelete}>
+                  <MENU_ICONS.delete aria-hidden />
                   Delete
                 </DropdownMenuItem>
               </>

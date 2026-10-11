@@ -19,7 +19,7 @@ export const ContextMenuContent = forwardRef<
     <ContextMenuPrimitive.Content
       ref={ref}
       className={cn(
-        "z-[var(--z-popover)] min-w-[10rem] overflow-hidden rounded-md border border-border bg-surface p-1 shadow-raised",
+        "z-[var(--z-popover)] min-w-48 overflow-hidden rounded-md border border-border bg-surface p-1 shadow-raised",
         className,
       )}
       {...props}
@@ -35,8 +35,9 @@ export const ContextMenuItem = forwardRef<
   <ContextMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-sunken data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      destructive ? "text-overdue" : "text-on-surface",
+      // US-OPS-37 (D-222): the menu owns its icon's size, colour and spacing — screens never add their own.
+      "flex min-h-8 cursor-pointer select-none items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] outline-none data-[highlighted]:bg-surface-sunken data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-3.5 [&>svg]:shrink-0",
+      destructive ? "text-overdue [&>svg]:text-overdue" : "text-on-surface [&>svg]:text-on-surface-muted",
       className,
     )}
     {...props}
@@ -51,7 +52,7 @@ export const ContextMenuCheckboxItem = forwardRef<
   <ContextMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-7 pr-2 text-[13px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken",
+      "relative flex min-h-8 cursor-pointer select-none items-center rounded-sm py-1.5 pl-7 pr-2 text-[13px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken",
       className,
     )}
     {...props}
@@ -73,7 +74,7 @@ export const ContextMenuRadioItem = forwardRef<
   <ContextMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-7 pr-2 text-[13px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken",
+      "relative flex min-h-8 cursor-pointer select-none items-center rounded-sm py-1.5 pl-7 pr-2 text-[13px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken",
       className,
     )}
     {...props}
@@ -115,7 +116,7 @@ export const ContextMenuSubTrigger = forwardRef<
   <ContextMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      "flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[13px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken data-[state=open]:bg-surface-sunken",
+      "flex min-h-8 cursor-pointer select-none items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken data-[state=open]:bg-surface-sunken [&>svg]:size-3.5 [&>svg]:shrink-0 [&>svg]:text-on-surface-muted",
       className,
     )}
     {...props}

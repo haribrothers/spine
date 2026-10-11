@@ -7,6 +7,7 @@ import {
 } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
+import { Copy, Pencil, Trash2 } from "lucide-react";
 import { ApiTable, DocLead, DocSection, DocTitle, FeatureList, KeyboardTable } from "@/components/doc-page";
 
 export default function ContextMenuPage() {
@@ -25,15 +26,25 @@ export default function ContextMenuPage() {
             Right-click here
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem>Duplicate</ContextMenuItem>
+            <ContextMenuItem>
+              <Pencil aria-hidden />
+              Edit
+            </ContextMenuItem>
+            <ContextMenuItem>
+              <Copy aria-hidden />
+              Duplicate
+            </ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem destructive>Delete</ContextMenuItem>
+            <ContextMenuItem destructive>
+              <Trash2 aria-hidden />
+              Delete
+            </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       </ComponentPreview>
 
       <DocSection id="features" title="Features">
-        <FeatureList items={["Supports submenus, checkable items, and groups — the same sub-part shapes as DropdownMenu.", "Full keyboard navigation with typeahead."]} />
+        <FeatureList items={["Items style their icon like DropdownMenu's: 14 px, muted, 10 px before the label, red when destructive (US-OPS-37).", "Supports submenus, checkable items, and groups — the same sub-part shapes as DropdownMenu.", "Full keyboard navigation with typeahead."]} />
       </DocSection>
 
       <DocSection id="anatomy" title="Anatomy">

@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { Card, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Spinner } from "@spine/ui";
 import type { PaymentAppliedTo } from "@spine/shared";
-import { MoreHorizontal, Undo2 } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { UnapplyDialog } from "../payments/payment-detail";
 import { calendarDate } from "../quotes/quotes-list-state";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type InvoicePaymentRow } from "./types";
 
 /**
@@ -101,7 +102,7 @@ export function PaymentsSection({
                           })
                         }
                       >
-                        <Undo2 size={14} aria-hidden />
+                        <MENU_ICONS.moveOff aria-hidden />
                         Move off this invoice
                       </DropdownMenuItem>
                     </DropdownMenuContent>

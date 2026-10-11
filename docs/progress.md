@@ -515,7 +515,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-24 · Be warned before recording the same payment twice
 - [x] US-PAY-25 · Find a payment from search
 - [x] US-PAY-26 · Move a payment off the wrong invoice
-- [ ] US-OPS-37 · See what each menu action does at a glance
+- [x] US-OPS-37 · See what each menu action does at a glance
 
 ## Phase 10 · AI assistant
 

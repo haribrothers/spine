@@ -57,6 +57,7 @@ import { InvoiceActivity } from "./invoice-activity";
 import { STATE_BADGE_CLASS } from "./invoices-table";
 import { INVOICE_STATE_LABELS, dueNote, invoiceState } from "./invoices-list-state";
 import { EmailFailedAlert } from "../../../components/email-failed-alert";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { calendarDate } from "../quotes/quotes-list-state";
 
 /**
@@ -567,24 +568,55 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 {pdf && primary?.key !== "pdf" && !secondary.some((a) => a.key === "pdf") && (
                   <DropdownMenuItem asChild>
                     <a href={pdf.href} target="_blank" rel="noreferrer">
+                      <MENU_ICONS.download aria-hidden />
                       {pdf.label}
                     </a>
                   </DropdownMenuItem>
                 )}
-                {canSendEmail && <DropdownMenuItem onSelect={() => setSendDialog("invoice")}>Email invoice</DropdownMenuItem>}
-                {canRecordPayment && primary?.key !== "pay" && !secondary.some((a) => a.key === "pay") && <DropdownMenuItem onSelect={() => setPaymentOpen(true)}>Record payment</DropdownMenuItem>}
-                {canApplyCredit && <DropdownMenuItem onSelect={() => setApplyCreditOpen(true)}>Apply credit</DropdownMenuItem>}
-                {canIssueCreditNote && <DropdownMenuItem onSelect={() => setCreditNoteOpen(true)}>Issue credit note</DropdownMenuItem>}
-                {canDuplicate && <DropdownMenuItem onSelect={() => void handleDuplicate()}>Duplicate as new draft</DropdownMenuItem>}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
+                {canSendEmail && (
+                  <DropdownMenuItem onSelect={() => setSendDialog("invoice")}>
+                    <MENU_ICONS.email aria-hidden />
+                    Email invoice
+                  </DropdownMenuItem>
+                )}
+                {canRecordPayment && primary?.key !== "pay" && !secondary.some((a) => a.key === "pay") && (
+                  <DropdownMenuItem onSelect={() => setPaymentOpen(true)}>
+                    <MENU_ICONS.recordPayment aria-hidden />
+                    Record payment
+                  </DropdownMenuItem>
+                )}
+                {canApplyCredit && (
+                  <DropdownMenuItem onSelect={() => setApplyCreditOpen(true)}>
+                    <MENU_ICONS.applyCredit aria-hidden />
+                    Apply credit
+                  </DropdownMenuItem>
+                )}
+                {canIssueCreditNote && (
+                  <DropdownMenuItem onSelect={() => setCreditNoteOpen(true)}>
+                    <MENU_ICONS.issueCreditNote aria-hidden />
+                    Issue credit note
+                  </DropdownMenuItem>
+                )}
+                {canDuplicate && (
+                  <DropdownMenuItem onSelect={() => void handleDuplicate()}>
+                    <MENU_ICONS.duplicate aria-hidden />
+                    Duplicate as new draft
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                  <MENU_ICONS.history aria-hidden />
+                  View history
+                </DropdownMenuItem>
                 {(canVoid || canDelete) && <DropdownMenuSeparator />}
                 {canVoid && (
                   <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
+                    <MENU_ICONS.void aria-hidden />
                     Void invoice
                   </DropdownMenuItem>
                 )}
                 {canDelete && (
                   <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
+                    <MENU_ICONS.delete aria-hidden />
                     Delete draft
                   </DropdownMenuItem>
                 )}

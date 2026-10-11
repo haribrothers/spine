@@ -14,9 +14,10 @@ import {
   type CalendarEventInstance,
   type CalendarRecurrenceRule,
 } from "@spine/ui";
-import { Copy, Eye, MapPin, MoreVertical, Pencil, Repeat, Trash2, Users, X } from "lucide-react";
+import { Eye, MapPin, MoreVertical, Pencil, Repeat, Trash2, Users, X } from "lucide-react";
 import { STATUS_CLASSNAME, STATUS_LABEL } from "./meeting-attendee-status";
 import type { Meeting, MeetingAttendee } from "./types";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { useMeetingRespond } from "./use-meeting-respond";
 
 interface Member {
@@ -124,7 +125,7 @@ export function MeetingQuickViewPopover({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onDuplicate}>
-                  <Copy size={14} />
+                  <MENU_ICONS.duplicate aria-hidden />
                   Duplicate
                 </DropdownMenuItem>
               </DropdownMenuContent>

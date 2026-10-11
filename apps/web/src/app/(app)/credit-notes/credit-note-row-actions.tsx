@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { useCapability } from "../../../lib/capabilities-context";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { CreditNoteRow } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -36,12 +37,31 @@ export function CreditNoteRowActions({ note }: { note: CreditNoteRow }) {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => open()}>View</DropdownMenuItem>
-        {issued && left && canApply && <DropdownMenuItem onSelect={() => open("apply")}>Apply credit</DropdownMenuItem>}
-        {issued && left && canRefund && <DropdownMenuItem onSelect={() => open("refund")}>Refund</DropdownMenuItem>}
-        {issued && canSend && <DropdownMenuItem onSelect={() => open("email")}>Email credit note</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={() => open()}>
+          <MENU_ICONS.view aria-hidden />
+          View
+        </DropdownMenuItem>
+        {issued && left && canApply && (
+          <DropdownMenuItem onSelect={() => open("apply")}>
+            <MENU_ICONS.applyCredit aria-hidden />
+            Apply credit
+          </DropdownMenuItem>
+        )}
+        {issued && left && canRefund && (
+          <DropdownMenuItem onSelect={() => open("refund")}>
+            <MENU_ICONS.refund aria-hidden />
+            Refund
+          </DropdownMenuItem>
+        )}
+        {issued && canSend && (
+          <DropdownMenuItem onSelect={() => open("email")}>
+            <MENU_ICONS.email aria-hidden />
+            Email credit note
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <a href={`${API_URL}/credit-notes/${note.id}/pdf`} target="_blank" rel="noreferrer">
+            <MENU_ICONS.download aria-hidden />
             {issued ? "Download PDF" : "Preview PDF"}
           </a>
         </DropdownMenuItem>

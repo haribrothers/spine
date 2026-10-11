@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-11 — Menus that read at a glance (US-OPS-37, D-222)
+
+- **One menu style:** `DropdownMenuItem`, `DropdownMenuSubTrigger` and the `ContextMenu` items now set their icon's size (14 px), colour (muted; red on a destructive item) and spacing (10 px before the label), with rows at least 32 px tall; menus are at least 12rem wide. Before, each screen spaced its own icons — a typed space on the quotes menu, `gap-2` on the lead card, nothing on the email log and the payment page — and most refined menus had none.
+- **One icon per action (D-222):** `apps/web/src/lib/menu-icons.ts`, used by every action menu in the refined modules: Contacts and Catalogue (rows, bundles), the Pipeline lead card, the meeting quick view, Quotes (row, page's More, line), Jobs (page's More), Invoices (row, page's More, Payments), Credit notes (row, page's More), Payments (row, page's More, Applied to) and the Email log. Destructive items come last after a divider (the bundles menu's Delete is now marked destructive; the email log's Cancel is red and last). Choice menus keep their dots and ticks. Other modules get the spacing now and their icons when refined.
+- **Docs:** the DropdownMenu and ContextMenu doc pages show icons, a destructive item and a divider; the component docs, `09-design-system.md` and CLAUDE.md carry the rule.
+- **Tests:** UI a11y `dropdown-menu` (icons hidden from assistive tech, the classes), web unit `us-ops-37`, E2E `us-ops-37` (measures the gap, row height, icon size and colours on the invoice menus). QA script section 214.
+
 ### 2026-10-11 — Payments you can work from (US-PAY-19 to US-PAY-26, D-221)
 
 - **A payment page (US-PAY-19, US-PAY-20):** `/payments/:id` replaces the drawer — its state (Fully applied, Credit left, Refunded), one next step (Apply credit, else Email receipt, else Download PDF), a strip of Received, Applied, Refunded and Credit left, "Applied to" with what each invoice still owes, notes, refunds, attachments and Activity (`GET /payments/:id/activity`: recorded, applied, moved off, receipt emailed, refunded). This fixes links that went nowhere: the "Payment received" notification, ledger drill-downs, the bank register, invoices' Payments and Activity and the email log now open the page; `/payments?id=` redirects to it.

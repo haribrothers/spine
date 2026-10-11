@@ -3434,6 +3434,37 @@ Links to: `PaymentDetailRefined`
 
 Shows: "Payments" · "RCP-0031 · Halcyon Tech Parks Pvt Ltd · ₹45,000.00 · 10 Oct"
 
+## Menus that read at a glance
+
+Drawn in Claude Design for US-OPS-37 (D-222): project "Spine web — refinements before Phase 10", canvas "15 Menus". One menu style owned by the `@spine/ui` menu components — a 14 px muted icon 10 px before the label, rows at least 32 px tall, the highlight across the whole row, destructive actions red and last after a divider — and one icon per action across the refined modules. Choice menus (a lead's stage, a job's status, the catalogue's tax picker) keep their markers.
+
+### MenuIcons — The refined modules' menus
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-37 · **Source:** Claude Design
+
+![MenuIcons](screens/MenuIcons.webp)
+
+Links to: —
+
+Shows: "Invoices · row" "View" "Record payment" "Send reminder" "Email invoice" "Download PDF" "Duplicate" "Void" · "Invoice page · More" "Issue credit note" "View history" "Void invoice" · "Quotes · row" "Send" "Copy customer link" "Delete" · "Quote page · More" "Save lines as a bundle" "Email again" "Revise" · "Payments · row" "Apply credit" "Refund" "Email receipt" "Delete payment" · "Payment page · Applied to" "Open INV-0037" "Move off INV-0037" · "Credit notes · row" · "Email log · row" "Retry now" "Open QUO-0034" "Cancel" · "Contacts · row" "Edit" "Archive" "Delete" · "Catalogue · row" "Restore" · "Job page · More" "Add photos" "Release retention" · "Pipeline · lead card" "Open" "Move to" stages with dots and a tick
+
+### MenuIconsDark — The same menus, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-37 · **Source:** Claude Design
+
+![MenuIconsDark](screens/MenuIconsDark.webp)
+
+Links to: —
+
+Shows: the same menus on the dark surface; red destructive items; muted icons
+
+### MenuAnatomy — One item, close up
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-37 · **Source:** Claude Design
+
+![MenuAnatomy](screens/MenuAnatomy.webp)
+
+Links to: —
+
+Shows: "min height 32 px · padding 6 px 8 px" · "highlight covers the whole row" · "icon 14 px, muted — 10 px before the label" · "divider before destructive actions" · "destructive: red icon and label, last"
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

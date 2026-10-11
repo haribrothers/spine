@@ -3,11 +3,12 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
+import { DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -179,19 +180,42 @@ function PaymentRowActions({ payment }: { payment: Payment }) {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => open()}>View</DropdownMenuItem>
-        {left && canApply && <DropdownMenuItem onSelect={() => open("apply")}>Apply credit</DropdownMenuItem>}
-        {left && canRefund && <DropdownMenuItem onSelect={() => open("refund")}>Refund</DropdownMenuItem>}
-        {canSend && <DropdownMenuItem onSelect={() => open("email")}>Email receipt</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={() => open()}>
+          <MENU_ICONS.view aria-hidden />
+          View
+        </DropdownMenuItem>
+        {left && canApply && (
+          <DropdownMenuItem onSelect={() => open("apply")}>
+            <MENU_ICONS.applyCredit aria-hidden />
+            Apply credit
+          </DropdownMenuItem>
+        )}
+        {left && canRefund && (
+          <DropdownMenuItem onSelect={() => open("refund")}>
+            <MENU_ICONS.refund aria-hidden />
+            Refund
+          </DropdownMenuItem>
+        )}
+        {canSend && (
+          <DropdownMenuItem onSelect={() => open("email")}>
+            <MENU_ICONS.email aria-hidden />
+            Email receipt
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <a href={`${API_URL}/payments/${payment.id}/pdf`} target="_blank" rel="noreferrer">
+            <MENU_ICONS.download aria-hidden />
             Download PDF
           </a>
         </DropdownMenuItem>
         {canDelete && (
-          <DropdownMenuItem destructive onSelect={() => open("delete")}>
-            Delete payment
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem destructive onSelect={() => open("delete")}>
+              <MENU_ICONS.delete aria-hidden />
+              Delete payment
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

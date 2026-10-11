@@ -13,12 +13,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { CatalogItemUsage } from "@spine/shared";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { CatalogItem } from "./types";
 
 /**
@@ -107,17 +109,32 @@ export function CatalogRowActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          {canEdit && <DropdownMenuItem onSelect={() => onEdit(item)}>Edit</DropdownMenuItem>}
-          {canCreate && onDuplicate && <DropdownMenuItem onSelect={() => onDuplicate(item)}>Duplicate</DropdownMenuItem>}
+          {canEdit && (
+            <DropdownMenuItem onSelect={() => onEdit(item)}>
+              <MENU_ICONS.edit aria-hidden />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {canCreate && onDuplicate && (
+            <DropdownMenuItem onSelect={() => onDuplicate(item)}>
+              <MENU_ICONS.duplicate aria-hidden />
+              Duplicate
+            </DropdownMenuItem>
+          )}
           {canDelete && (
             <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
+              {item.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
               {item.archivedAt ? "Restore" : "Archive"}
             </DropdownMenuItem>
           )}
           {canDelete && (
-            <DropdownMenuItem destructive onSelect={openConfirm}>
-              Delete
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onSelect={openConfirm}>
+                <MENU_ICONS.delete aria-hidden />
+                Delete
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
