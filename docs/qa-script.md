@@ -4938,6 +4938,23 @@ Use an owner with the India demo. Check light and dark, and compare with the can
 5. With a screen reader, an item is read by its label alone ("Record payment, menu item").
 6. Regression: banking, expenses, vendor bills and payments, team and settings menus still work; any icon they have is spaced the new way.
 
+## 215. Every action says when it's done (US-OPS-38, US-CAT-16, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, a phone-width window, and compare with the canvas "16 Toasts".
+
+1. Payments → Record payment, tick less than the amount: the payment's page opens with "RCP-… recorded" and "₹… is credit for … — apply it or refund it." Record one that pays an invoice exactly: "It paid INV-…".
+2. Pipeline: delete a lead (asks first) — "Lead deleted"; move a lead to Lost and Skip — "Lead marked lost … add why from the lead when you know"; move another and save a reason — the toast names the reason.
+3. Meetings: delete a meeting — "Meeting deleted"; on a repeating meeting delete "This event" — the toast names the day and says the rest of the series stays.
+4. Quotes: from a sent quote's page Revise, from a row Duplicate and Revise, from an accepted quote Convert to invoice and Convert to job, and delete a draft from its page: each asks where it did before, and the page that opens shows the toast.
+5. Invoices: delete a draft from its page — the list says "Invoice deleted". Credit notes: New credit note from the list — the credit note's page opens with "CN-… issued".
+6. Jobs: complete a milestone — "… completed"; Invoice it — the draft invoice opens with "… invoiced"; apply a variation — "Variation applied"; remove someone from the crew — "… removed". Create a job from the Jobs list — its Milestones tab opens with "Job … created" and the address has no `created=`.
+7. Contacts: create a contact and delete one from its page — each toast shows on the page that opens. A payment deleted from its page — the list says "Payment deleted" and the address has no `deleted=`.
+8. Delete a refund on a payment and remove an attachment anywhere — each has its toast.
+9. Do four quick actions (or record, email and delete in a row): toasts stack bottom-right, newest on top, three at most — the fourth closes the oldest at once. Each closes after about 5 seconds; hovering the stack pauses them; × or Escape closes one. At phone width they span the bottom, two at most. With Reduce Motion, they appear without sliding. A screen reader reads each without moving focus.
+10. Catalogue: tick items, Set tax → a rate: "Change the tax on N items?" with the new tax and "Quotes and invoices already issued keep their tax." Go back — nothing changes and the items stay ticked; Change tax — "Updated N items". Set category → "Move N items to “…”?" with Move items and Go back. Set income account → "Change the income account on N items?" with Change account and Go back. Archive and Restore don't ask.
+11. A failed action (e.g. stop the API, then delete a payment, retry an email, revise a quote from a row, or Set tax on items) shows a red message above the page or list saying what went wrong, with a × — no toast; a failed bulk change keeps the items ticked.
+12. Regression: an action you're not allowed to do still shows the permission toast; failed actions in dialogs still show their error in the dialog; Settings' "Saved" toast still shows; toasts don't cover a dialog's buttons.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

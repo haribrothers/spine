@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -51,7 +51,6 @@ import { CalendarDays, Check, ChevronDown, Flag, GitBranch, LockOpen, MapPin, Pe
 import { apiClient } from "../../../lib/api-client";
 import { authClient } from "../../../lib/auth-client";
 import { useCanEditOwnership, useCapabilities, useCapability } from "../../../lib/capabilities-context";
-import { replaceQuery } from "../../../lib/replace-query";
 import { HistorySection } from "../../../components/history-section";
 import { CompleteMilestoneDialog } from "./[id]/complete-milestone-dialog";
 import { CostingSection } from "./[id]/costing-section";
@@ -61,7 +60,7 @@ import { MilestonesSection } from "./[id]/milestones-section";
 import { NotesSection } from "./[id]/notes-section";
 import { PhotosSection } from "./[id]/photos-section";
 import { VariationOrdersSection } from "./[id]/variation-orders-section";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { completePct } from "./jobs-list-state";
 import { nextStep } from "./job-page-state";
 import { STATUS_BADGE_CLASS } from "./jobs-table";
@@ -107,7 +106,6 @@ function mapLink(address: string): string {
  */
 export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: string; currentUserId: string | null }) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const initialTab: JobTab = JOB_TABS.includes(requestedTab as JobTab) ? (requestedTab as JobTab) : "milestones";
@@ -130,7 +128,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
   const [refreshKey, setRefreshKey] = useState(0);
   // US-DASH-20: the dashboard's "Release" opens ?release=1 — the dialog, once the job shows it can be released.
   const wantsRelease = searchParams.get("release") === "1";
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const now = useMemo(() => new Date(), []);
   const locale = orgLocaleTag();
 
@@ -193,18 +191,6 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
       .catch(() => {});
   }, []);
 
-  // US-JOB-30: a job just created from the list says so, once.
-  const createdShown = useRef(false);
-  useEffect(() => {
-    const created = searchParams.get("created");
-    if (created === null || createdShown.current) return;
-    createdShown.current = true;
-    showToast(created ? `Job ${created} created` : "Job created", "Add its milestones to bill it as the work is done.");
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("created");
-    replaceQuery(pathname, params.toString());
-  }, [searchParams, pathname, showToast]);
-
   const held = BigInt(job?.retentionHeld ?? "0");
   const canRelease = canReleaseRetention && held > 0n;
   const releaseAsked = useRef(false);
@@ -237,6 +223,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
     setInvoicingId(m.id);
     try {
       const invoice = await apiClient.post<{ id: string }>(`/jobs/${job.id}/milestones/${m.id}/invoice`);
+      showToast(`${m.name} invoiced`, "The draft invoice is open — check it, then issue it.");
       router.push(`/invoices/${invoice.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not raise an invoice for this milestone.");
@@ -543,6 +530,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         milestone={completing}
         onOpenChange={(open) => !open && setCompleting(null)}
         onCompleted={() => {
+          if (completing) showToast(`${completing.name} completed`, "It's ready to invoice.");
           setCompleting(null);
           load();
         }}
@@ -595,7 +583,6 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </AlertDialogContent>
       </AlertDialog>
 
-      {toast}
     </div>
   );
 }

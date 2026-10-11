@@ -8,7 +8,7 @@ import { Receipt } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import type { MemberRow } from "../../../lib/members";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { ExpenseDetailDrawer } from "./expense-detail-drawer";
 import { ExpenseForm } from "./expense-form";
 import { ExpensesSkeleton } from "./expenses-skeleton";
@@ -65,7 +65,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
     setEditing(null);
     setFormOpen(true);
   }
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   // US-PUR-21 — bulk approval. Staff can't review their own expenses (D-085); Owners can.
   const role = useMyRole();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -268,7 +268,6 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         onChanged={loadExpenses}
         onDeleted={handleDeleted}
       />
-      {toast}
     </div>
   );
 }

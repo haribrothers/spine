@@ -27,7 +27,7 @@ import { AttachmentsSection } from "../../../components/attachments-section";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { CustomerRefundDialog, RefundsSection, refundToast } from "../../../components/customer-refund-dialog";
 import { DocumentLinesTable, type AfterTotalRow } from "../../../components/document-lines-table";
-import { useEntityToast } from "../invoices/entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { calendarDate } from "../quotes/quotes-list-state";
 import type { CreditNote } from "../invoices/types";
 import { ApplyCreditNoteDialog } from "./apply-credit-note-dialog";
@@ -63,7 +63,7 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
   const [refundOpen, setRefundOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const canApply = useCapability("payments.apply_credit");
   const canRefund = useCapability("payments.refund");
   const canSend = useCapability("invoices.send");
@@ -328,7 +328,6 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
           }}
         />
       )}
-      {toast}
     </div>
   );
 }

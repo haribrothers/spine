@@ -50,7 +50,8 @@ import {
 } from "./catalog-list-state";
 import { MakeBundleDialog } from "./make-bundle-dialog";
 import type { Account, AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
+import { ActionError } from "../../../components/action-error";
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
@@ -89,6 +90,7 @@ export function CatalogExplorer({
   const [gst, setGst] = useState(false);
   const [orgCurrency, setOrgCurrency] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
@@ -102,7 +104,7 @@ export function CatalogExplorer({
   const [bundleOpen, setBundleOpen] = useState(false);
   const [priceDraft, setPriceDraft] = useState({ min: state.min, max: state.max });
   const loading = useRef(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   /** Sets part of the list state and writes it to the address; a new filter or page clears the selection. */
   function update(patch: Partial<CatalogListState>) {
@@ -210,12 +212,11 @@ export function CatalogExplorer({
     else showToast("Item deleted", `${item.name} has been permanently removed.`);
   }
 
-  function handleBulkFinished(title: string, description: string, changed: boolean) {
+  function handleBulkFinished(title: string, description: string) {
+    setActionError(null);
     showToast(title, description);
-    if (changed) {
-      setSelected(new Set());
-      void load("refresh");
-    }
+    setSelected(new Set());
+    void load("refresh");
   }
 
   // US-CAT-12 — the list as filtered, in Import's columns plus Category.
@@ -416,8 +417,10 @@ export function CatalogExplorer({
             onClear={() => setSelected(new Set())}
             onMakeBundle={() => setBundleOpen(true)}
             onFinished={handleBulkFinished}
+            onFailed={(title, message) => setActionError({ title, message })}
           />
         )}
+        {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
       </div>
 
       {!items ? (
@@ -479,7 +482,6 @@ export function CatalogExplorer({
           onBundleSaved?.(bundle);
         }}
       />
-      {toast}
     </div>
   );
 }

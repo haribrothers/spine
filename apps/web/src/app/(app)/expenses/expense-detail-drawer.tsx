@@ -34,7 +34,7 @@ import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-co
 import { useSession } from "../../../lib/auth-client";
 import { useMyRole } from "../../../lib/role-context";
 import { HistorySection } from "../../../components/history-section";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { formatMoney } from "../../../lib/money";
@@ -98,7 +98,7 @@ export function ExpenseDetailDrawer({
   const [rejectComment, setRejectComment] = useState("");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [billOpen, setBillOpen] = useState(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const hasDeleteCapability = useCanEditOwnership(expense?.submittedByUserId ?? null, {
     own: "expenses.delete_own",
     others: "expenses.delete_others",
@@ -451,7 +451,6 @@ export function ExpenseDetailDrawer({
           }}
         />
       )}
-      {toast}
     </>
   );
 }

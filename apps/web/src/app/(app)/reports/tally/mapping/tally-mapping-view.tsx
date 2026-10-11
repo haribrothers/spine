@@ -5,7 +5,7 @@ import { Alert, AlertDescription, Button, DataTable, ReportFilter, ReportToolbar
 import { FINANCIAL_STATEMENTS_NO_ACCESS, TALLY_GROUPS, type TallyGroup, type TallyMappingRow } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
 import { useMyRole } from "../../../../../lib/role-context";
-import { useEntityToast } from "../../../payments/entity-toast";
+import { useToast } from "../../../../../components/toast-host";
 import { ReportFootnote, useReport } from "../../report-kit";
 
 const TYPE_LABELS: Record<TallyMappingRow["type"], string> = { asset: "Asset", liability: "Liability", equity: "Equity", income: "Income", expense: "Expense" };
@@ -24,7 +24,7 @@ export function TallyMappingView() {
   const [type, setType] = useState<TypeFilter>("all");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   useEffect(() => {
     if (data) setRows(data);
@@ -128,7 +128,6 @@ export function TallyMappingView() {
         </div>
       )}
       <ReportFootnote>Defaults come from each account&apos;s type and code. Customers go under Sundry Debtors and vendors under Sundry Creditors.</ReportFootnote>
-      {toast}
     </>
   );
 }

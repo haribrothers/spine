@@ -45,7 +45,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { StatementImportDialog } from "./statement-import-dialog";
 
@@ -105,7 +105,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   // US-BANK-07
   const canReconcile = useCapability("banking.reconcile");
   const [importOpen, setImportOpen] = useState(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   useEffect(() => {
     apiClient
@@ -332,7 +332,6 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
           <DrawerBody>{filesFor && <AttachmentsSection entityType="bank_transaction" entityId={filesFor.sourceId} />}</DrawerBody>
         </DrawerContent>
       </Drawer>
-      {toast}
     </>
   );
 }

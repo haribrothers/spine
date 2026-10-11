@@ -20,7 +20,7 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 | F-OPS-09 | File storage | P1 | 6 | `UpgradeNotice` |
 | F-OPS-10 | Attachments on records | P1 | 8 | `VendorBillAttachments` |
 | F-OPS-11 | Menus that read at a glance: an icon for every action, one spacing | P2 | Refinements | `MenuIcons`, `MenuIconsDark` |
-| F-OPS-12 | Every major action asks first and says when it's done | P2 | Refinements | `ToastAfterNavigate`, `ToastStack`, `ToastStackDark` |
+| F-OPS-12 | Every major action asks first and says when it's done | P2 | Refinements | `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`, `ToastStackPhone` |
 
 ## User stories
 
@@ -597,7 +597,7 @@ Decision: D-222
 - No API change.
 
 ### US-OPS-38 · Know an action worked, wherever it takes me
-**Feature:** F-OPS-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`
+**Feature:** F-OPS-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`, `ToastStackPhone`
 **As** any member, **I want** a short message every time a major action finishes — even when it takes me to another page, **so that** I never wonder whether a delete, a conversion or a payment went through.
 
 Decision: D-218, D-223
@@ -610,9 +610,9 @@ Decision: D-218, D-223
 - **Given** a toast, **when** it's shown, **then** it closes after its own interval (5 seconds by default, set on the component), so older toasts leave first; hovering the stack or focusing a toast pauses every timer; each can be closed with its × or Escape.
 - **Given** phone width, **when** toasts show, **then** they span the bottom of the screen and at most two show, whatever the maximum.
 - **Given** a screen reader, **when** a toast shows, **then** it's announced politely without moving focus; with Reduce Motion, it appears without sliding.
-- **Given** an action that fails, **when** it does, **then** the error stays where the action was (in the dialog or above the list), as today — a toast never carries an error.
+- **Given** an action that fails, **when** it does, **then** the error stays where the action was — in the dialog, or above the list or page with a × to close it, cleared by the next action — saying what to do next; a toast never carries an error.
 
 **Implementation notes**
-- UI: one `ToastHost` in the app layout (`components/toast-host.tsx`, `<ToastHost max={3} duration={5000} />`) with `useToast()` → `toast(title, description)`; the layout stays mounted across pages, so a toast shown before `router.push` stays. The host keeps a queue: newest first, trimmed to `max` (2 below the `sm` breakpoint), each toast with its own `duration`. Every `entity-toast.tsx` copy (and its `{toast}` element), the contacts `sessionStorage` hand-off and the payments `?deleted=` hand-off give way to it. `@spine/ui` `ToastViewport` lays the stack out newest on top; its doc page shows a stack and the a11y test covers it.
+- UI: one `ToastHost` in the app layout (`components/toast-host.tsx`, `<ToastHost max={3} duration={5000}>…</ToastHost>` around the app's pages) with `useToast()` → `toast(title, description, { duration?, testId? })`; the layout stays mounted across pages, so a toast shown before `router.push` stays. The host keeps a queue: newest last in the page (the viewport shows it on top), trimmed to `max` (2 below the `sm` breakpoint), each toast with its own `duration`. Every `entity-toast.tsx` copy (and its `{toast}` element), the contacts `sessionStorage` hand-off, the payments `?deleted=` hand-off and the new job's `?created=` hand-off give way to it; the permission toast (US-OPS-12) shows through it too. The errors that used to be toasts in the refined modules — deleting a payment from its page, Retry now and Cancel on the email log, a failed row or bulk action on the invoices list, a failed revise, duplicate or customer link on the quotes list or a quote's page, a failed bulk change on the catalogue, pausing or resuming a recurring invoice or bill — show above the list or page instead (`components/action-error.tsx`: a critical `Alert` with a close; a failed bulk change keeps the selection). Modules not yet refined (banking, expenses) keep theirs until they are. `@spine/ui` `ToastViewport` lays the stack out newest on top; its doc page shows a stack and the a11y test covers it.
 - No API change.
 

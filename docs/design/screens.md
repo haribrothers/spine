@@ -3465,6 +3465,55 @@ Links to: —
 
 Shows: "min height 32 px · padding 6 px 8 px" · "highlight covers the whole row" · "icon 14 px, muted — 10 px before the label" · "divider before destructive actions" · "destructive: red icon and label, last"
 
+## Every action says when it's done
+
+Drawn in Claude Design for US-OPS-38 and US-CAT-16 (D-223): project "Spine web — refinements before Phase 10", canvas "16 Toasts". One toast host in the app layout: a toast shown just before a page opens shows on that page. Toasts stack in the bottom-right corner newest on top, three at most by default (a new one over the maximum closes the oldest at once), each closing after 5 seconds by default, paused while the stack is hovered or a toast focused. On a phone they span the bottom, two at most. A bulk change to the catalogue's tax or category asks first.
+
+### ToastAfterNavigate — The toast on the page an action opens
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastAfterNavigate](screens/ToastAfterNavigate.webp)
+
+Links to: —
+
+Shows: the payment's page after Record payment on the payments list · "RCP-0032 recorded" "₹38,000.00 is credit for Lakshmi Multispeciality Hospital — apply it or refund it." with a close ×
+
+### ToastStack — Three in a row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastStack](screens/ToastStack.webp)
+
+Links to: —
+
+Shows: "RCP-0032 recorded" on top, "Receipt sent", "Lead deleted" at the bottom · "newest — on top" · "oldest — closes first; a 4th toast closes it at once" · "max 3 · 5 s each · paused while hovered or focused"
+
+### ToastStackDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastStackDark](screens/ToastStackDark.webp)
+
+Links to: —
+
+Shows: the same stack on the dark app, each toast with a thin outline
+
+### ToastStackPhone — Phone width
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastStackPhone](screens/ToastStackPhone.webp)
+
+Links to: —
+
+Shows: two toasts spanning the bottom of the screen — "RCP-0032 recorded", "Receipt sent"
+
+### CatalogBulkConfirm — A change to many items asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-16 · **Source:** Claude Design
+
+![CatalogBulkConfirm](screens/CatalogBulkConfirm.webp)
+
+Links to: `CatalogBulkSelect`
+
+Shows: "3 selected" · "Change the tax on 3 items?" "They'll use GST 18% (9% + 9%) on new quotes and invoices. Quotes and invoices already issued keep their tax." · "Go back" "Change tax"
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

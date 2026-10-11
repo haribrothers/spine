@@ -10,7 +10,8 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { CreateCreditNoteDialog } from "../invoices/create-credit-note-dialog";
+import { CreateCreditNoteDialog, creditNoteIssuedToast } from "../invoices/create-credit-note-dialog";
+import { useToast } from "../../../components/toast-host";
 import type { Invoice } from "../invoices/types";
 import { CreditNotesSkeleton } from "./credit-notes-skeleton";
 import { CreditNotesTable } from "./credit-notes-table";
@@ -45,6 +46,7 @@ const ALL_CONTACTS = "__all__";
 export function CreditNotesExplorer() {
   const canIssue = useCapability("credit_notes.issue");
   const router = useRouter();
+  const showToast = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [state, setState] = useState<CreditNotesListState>(() => parseCreditNotesState(new URLSearchParams(searchParams.toString())));
@@ -280,7 +282,10 @@ export function CreditNotesExplorer() {
           invoiceId={crediting.id}
           invoiceNumber={crediting.number}
           customerName={crediting.contactName}
-          onIssued={(note) => router.push(`/credit-notes/${note.id}`)}
+          onIssued={(note) => {
+            showToast(...creditNoteIssuedToast(note, crediting.contactName));
+            router.push(`/credit-notes/${note.id}`);
+          }}
         />
       )}
     </div>

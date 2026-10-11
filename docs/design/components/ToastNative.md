@@ -21,7 +21,7 @@ import { ToastMessage, Toast } from "@spine/ui-native";
 
 ## Rules and behaviour
 
-- useToast(duration) is a single-message-at-a-time hook, matching the pattern apps/web actually uses per-screen (entity-toast.tsx) rather than a shared global queue — no Radix ToastProvider/Viewport equivalent needed.
+- useToast(duration) is a single-message-at-a-time hook per screen — no Radix ToastProvider/Viewport equivalent needed. (The web app now uses one stacking `ToastHost` instead, D-223; the field app keeps one message at a time.)
 - Calling show() again while a toast is visible replaces the message and resets the auto-dismiss timer, rather than queuing a second toast.
 - Chrome stays dark regardless of the app's own light/dark theme — it reads raw light-mode neutral900/neutral50 values directly rather than theme-reactive dark: classNames, avoiding the contrast collapse those would cause in dark mode.
 

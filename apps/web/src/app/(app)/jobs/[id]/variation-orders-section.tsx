@@ -23,6 +23,7 @@ import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobVariationOrder } from "../types";
 import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLine } from "./variation-order-line-editor";
 import { formatMoney } from "../../../../lib/money";
+import { useToast } from "../../../../components/toast-host";
 
 const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -45,6 +46,7 @@ const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], str
 export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: { job: Job; onJobChanged: () => void; raiseRequest?: number }) {
   const canCreate = useCapability("variation_orders.edit_own");
   const canApply = useCapability("variation_orders.apply");
+  const showToast = useToast();
   const [variations, setVariations] = useState<JobVariationOrder[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -126,6 +128,10 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
     setApplyingId(variationOrderId);
     try {
       await apiClient.post(`/jobs/${job.id}/variation-orders/${variationOrderId}/apply`);
+      showToast(
+        "Variation applied",
+        v ? `${formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)} from ${v.quote.number ?? "the variation quote"} is now part of ${job.name}'s contract value.` : `${job.name}'s contract value has been updated.`,
+      );
       load();
       onJobChanged();
     } catch (err) {

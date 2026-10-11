@@ -30,6 +30,7 @@ import { apiClient } from "../lib/api-client";
 import { loadCustomerCredit, type CustomerCredit } from "../lib/customer-credit";
 import { formatMoney } from "../lib/money";
 import { MoneyAccountPicker } from "./money-account-picker";
+import { useToast } from "./toast-host";
 
 const METHODS: { value: string; label: string }[] = [
   { value: "bank_transfer", label: "Bank transfer" },
@@ -246,6 +247,7 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
   }, [contactId, sourceId, refreshKey]);
 
   const { confirm, dialog: confirmDialog } = useConfirm();
+  const showToast = useToast();
   if (!refunds.length) return null;
 
   async function remove(refund: CustomerRefund) {
@@ -260,6 +262,7 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
     setBusyId(refund.id);
     try {
       await apiClient.delete(`/customer-refunds/${refund.id}`);
+      showToast("Refund deleted", `${formatMoney(BigInt(refund.amount), refund.currency)} is back in ${refund.contactName}'s credit and the refund is reversed in your books.`);
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't delete this refund.");

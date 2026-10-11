@@ -30,7 +30,7 @@ import { formatMoney } from "../../../lib/money";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { formatDay } from "./dates";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { MoneyAccountDialog } from "./money-account-dialog";
 import { MoneyInOutDialog } from "./money-in-out-dialog";
 import { TransferDialog } from "./transfer-dialog";
@@ -67,7 +67,7 @@ export function BankingExplorer() {
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MoneyAccount | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const load = useCallback(() => {
     apiClient
@@ -307,7 +307,6 @@ export function BankingExplorer() {
       />
       <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} accounts={rows ?? []} currency={currency} onRecorded={handleTransferred} />
       <MoneyAccountDialog open={dialogOpen} onOpenChange={setDialogOpen} account={editing} onSaved={handleSaved} />
-      {toast}
     </div>
   );
 }

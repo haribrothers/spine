@@ -26,10 +26,19 @@ import { useModule } from "../../../lib/modules-context";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { Quote } from "./types";
 
+/** US-OPS-38 — the toasts for a quote's actions that open another page, shown there (D-223). */
+export const QUOTE_TOASTS = {
+  revised: (quote: Quote): [string, string] => [`${quote.number ?? "Quote"} revised`, `Version ${quote.version + 1} is a draft — edit it, then send it to replace version ${quote.version}.`],
+  duplicated: (quote: Quote): [string, string] => ["Quote duplicated", `A new draft from ${quote.number ?? "the quote"} — change what you need, then send it.`],
+  toInvoice: (quote: Quote): [string, string] => [`${quote.number ?? "Quote"} converted to an invoice`, "The draft invoice is open — check it, then issue it."],
+  toJob: (quote: Quote, jobNumber: string | null): [string, string] => [`${quote.number ?? "Quote"} converted to a job`, `${jobNumber ?? "The job"} is open — set up its milestones next.`],
+  deleted: (quote: Quote): [string, string] => ["Quote deleted", `${quote.number ?? "Draft quote"} has been permanently removed.`],
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /** US-QUO-31 — copies a fresh customer link and says so (or shows it when the clipboard is unavailable). */
-export async function copyCustomerLink(quoteId: string, notify: (title: string, description: string) => void) {
+export async function copyCustomerLink(quoteId: string, notify: (title: string, description: string) => void, fail: (title: string, message: string) => void) {
   try {
     const link = await apiClient.post<QuoteCustomerLink>(`/quotes/${quoteId}/link`);
     try {
@@ -39,7 +48,7 @@ export async function copyCustomerLink(quoteId: string, notify: (title: string, 
       notify("Here's the customer link", link.url);
     }
   } catch (err) {
-    notify("Couldn't make a link", err instanceof Error ? err.message : "Try again.");
+    fail("Couldn't make a link.", err instanceof Error ? err.message : "Try again.");
   }
 }
 
@@ -54,10 +63,13 @@ export function QuoteRowActions({
   quote,
   onDeleted,
   onNotify,
+  onFailed,
 }: {
   quote: Quote;
   onDeleted: (quote: Quote) => void;
   onNotify: (title: string, description: string) => void;
+  /** An action failed: shown above the list (US-OPS-38). */
+  onFailed: (title: string, message: string) => void;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -88,12 +100,13 @@ export function QuoteRowActions({
     }
   }
 
-  async function post(path: string, failure: string) {
+  async function post(path: string, failure: string, done: [string, string]) {
     try {
       const next = await apiClient.post<Quote>(path);
+      onNotify(...done);
       router.push(`/quotes/${next.id}`);
     } catch (err) {
-      onNotify(failure, err instanceof Error ? err.message : "Try again.");
+      onFailed(failure, err instanceof Error ? err.message : "Try again.");
     }
   }
 
@@ -128,7 +141,7 @@ export function QuoteRowActions({
             </DropdownMenuItem>
           )}
           {quote.status === "sent" && current && canSend && (
-            <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, onNotify)}>
+            <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, onNotify, onFailed)}>
               <MENU_ICONS.copyLink aria-hidden />
               Copy customer link
             </DropdownMenuItem>
@@ -140,7 +153,7 @@ export function QuoteRowActions({
             </a>
           </DropdownMenuItem>
           {canCreate && (
-            <DropdownMenuItem onSelect={() => void post(`/quotes/${quote.id}/duplicate`, "Couldn't duplicate the quote")}>
+            <DropdownMenuItem onSelect={() => void post(`/quotes/${quote.id}/duplicate`, "Couldn't duplicate the quote.", QUOTE_TOASTS.duplicated(quote))}>
               <MENU_ICONS.duplicate aria-hidden />
               Duplicate
             </DropdownMenuItem>
@@ -163,7 +176,7 @@ export function QuoteRowActions({
               <DropdownMenuItem
                 onSelect={async () => {
                   const ok = await confirm({ title: "Revise this quote?", description: `${quote.number ?? "This quote"} version ${quote.version + 1} is made as a draft from this one. Once it's sent, this version is superseded and the customer can only answer the newest.`, confirmLabel: "Revise quote" });
-                  if (ok) void post(`/quotes/${quote.id}/revise`, "Couldn't revise the quote");
+                  if (ok) void post(`/quotes/${quote.id}/revise`, "Couldn't revise the quote.", QUOTE_TOASTS.revised(quote));
                 }}
               >
                 <MENU_ICONS.revise aria-hidden />

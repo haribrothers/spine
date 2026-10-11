@@ -31,7 +31,7 @@ import { Info, TriangleAlert } from "lucide-react";
 import { apiClient } from "../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../lib/money";
 import { ContactPicker } from "../app/(app)/payments/contact-picker";
-import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../app/(app)/payments/types";
+import { PAYMENT_METHOD_LABELS, type Payment, type PaymentMethod } from "../app/(app)/payments/types";
 import { MoneyAccountPicker } from "./money-account-picker";
 import { localIsoDate, prefillDate, type StatementPrefill } from "./statement-prefill";
 
@@ -54,6 +54,22 @@ interface InvoiceRow {
   type: string;
   currency: string;
   status: string;
+}
+
+/** What `POST /payments` returns — the payment as its page shows it. */
+export type RecordedPayment = Pick<Payment, "id" | "number" | "contactName" | "currency" | "unallocatedAmount" | "appliedTo">;
+
+/** US-OPS-38 — "RCP-0032 recorded", then the credit left or what it paid. */
+export function paymentRecordedToast(payment: RecordedPayment): [string, string] {
+  const left = BigInt(payment.unallocatedAmount);
+  const paid = (payment.appliedTo ?? []).map((a) => a.number).filter(Boolean);
+  const description =
+    left > 0n
+      ? `${formatMoney(left, payment.currency)} is credit for ${payment.contactName ?? "the customer"} — apply it or refund it.`
+      : paid.length === 1
+        ? `It paid ${paid[0]}.`
+        : `It paid ${paid.length} invoices.`;
+  return [`${payment.number ?? "Payment"} recorded`, description];
 }
 
 /** Oldest due first; no due date last. */
@@ -114,7 +130,7 @@ export function RecordPaymentDialog({
   presetInvoiceId?: string;
   /** US-BANK-09 — from a statement line: amount, date and account are fixed. */
   prefill?: StatementPrefill;
-  onRecorded: (payment: { id: string; number: string | null }) => void;
+  onRecorded: (payment: RecordedPayment) => void;
 }) {
   const [contactId, setContactId] = useState(presetContactId ?? "");
   const [contactName, setContactName] = useState<string | null>(presetContactName ?? null);
@@ -277,7 +293,7 @@ export function RecordPaymentDialog({
     if (applied > amount) return setError("The invoices add up to more than the payment. Lower a line or raise the amount.");
     setSaving(true);
     try {
-      const recorded = await apiClient.post<{ id: string; number: string | null }>("/payments", {
+      const recorded = await apiClient.post<RecordedPayment>("/payments", {
         contactId,
         date: localIsoDate(date ?? new Date()),
         method,

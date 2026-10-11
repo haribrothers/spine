@@ -51,6 +51,12 @@ export function creditNoteLines(creditable: Creditable, mode: Mode, quantities: 
   return creditable.lines.flatMap((l, i) => (parts[i]! > 0n ? [{ invoiceLineId: l.invoiceLineId, creditAmount: parts[i]!.toString(), name: l.name }] : []));
 }
 
+/** US-OPS-38 — what an issued credit note's toast says, from the invoice or the credit notes list. */
+export function creditNoteIssuedToast(note: CreditNote, customerName: string | null): [string, string] {
+  const left = BigInt(note.creditRemainingAmount ?? "0");
+  return [`${note.number ?? "Credit note"} issued`, left > 0n ? `${formatMoney(left, note.currency)} became credit for ${customerName ?? "the customer"}.` : "The invoice's balance has been updated."];
+}
+
 /**
  * US-INV-36 (D-219) — issue a credit note against an invoice, taking the
  * tax back with the amount. "Credit lines" ticks the invoice's item lines

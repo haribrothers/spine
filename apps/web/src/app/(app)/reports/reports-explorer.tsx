@@ -63,7 +63,7 @@ import { BsCompareTable, PlCompareTable } from "./compare-tables";
 import { ReportExportMenu } from "../../../components/report-export-menu";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { TaxPaymentDialog, TaxPaymentsList } from "./tax-payment-dialog";
-import { useEntityToast } from "../payments/entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { ReportTabs, useCurrency } from "./analysis-shared";
 import { marginText, RangeFilters, ReportChart, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "./report-kit";
 import { useReportDetail } from "./report-shell";
@@ -812,7 +812,7 @@ export function TaxSummaryTab() {
   // US-TAX-08
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentsVersion, setPaymentsVersion] = useState(0);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const url = `/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`;
   const { data: report, error, loading } = useReport<TaxSummaryReport>(url, FINANCIAL_STATEMENTS_NO_ACCESS);
@@ -927,7 +927,6 @@ export function TaxSummaryTab() {
           />
         </>
       )}
-      {toast}
     </>
   );
 }

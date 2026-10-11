@@ -44,9 +44,9 @@ import { HistorySection } from "../../../components/history-section";
 import { ApplyCustomerCreditDialog } from "./apply-customer-credit-dialog";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { loadCustomerCredit } from "../../../lib/customer-credit";
-import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
+import { CreateCreditNoteDialog, creditNoteIssuedToast } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "../../../components/record-payment-dialog";
 import type { Invoice } from "./types";
@@ -93,7 +93,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const [paymentsRefreshKey, setPaymentsRefreshKey] = useState(0);
   const [creditNoteOpen, setCreditNoteOpen] = useState(false);
   const [creditNotesRefreshKey, setCreditNotesRefreshKey] = useState(0);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const hasEditCapability = useCanEditOwnership(invoice?.createdByUserId ?? null, { own: "invoices.edit_own", others: "invoices.edit_others" });
   const hasDeleteCapability = useCanEditOwnership(invoice?.createdByUserId ?? null, { own: "invoices.delete_own", others: "invoices.delete_others" });
@@ -316,6 +316,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     setError(null);
     try {
       await apiClient.delete(`/invoices/${invoice.id}`);
+      showToast("Invoice deleted", `${invoice.number ?? "Draft invoice"} has been permanently removed.`);
       router.push("/invoices");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete this invoice.");
@@ -830,7 +831,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         onIssued={(note) => {
           load();
           setCreditNotesRefreshKey((key) => key + 1);
-          showToast(`${note.number ?? "Credit note"} issued`, BigInt(note.creditRemainingAmount ?? "0") > 0n ? `${formatMoney(BigInt(note.creditRemainingAmount!), note.currency)} became credit for ${invoice.contactName ?? "the customer"}.` : "The invoice's balance has been updated.");
+          showToast(...creditNoteIssuedToast(note, invoice.contactName ?? null));
         }}
       />
 
@@ -861,7 +862,6 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           onSend={(email) => (sendDialog === "invoice" ? handleSendEmail(email) : handleSendReminder(email))}
         />
       )}
-      {toast}
     </div>
   );
 }

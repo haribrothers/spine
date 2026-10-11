@@ -30,11 +30,14 @@ export function InvoicesBulkBar({
   selected,
   onClear,
   onFinished,
+  onFailed,
 }: {
   selected: Invoice[];
   onClear: () => void;
   /** A bulk action finished: what to tell the person. */
   onFinished: (title: string, description: string) => void;
+  /** It didn't: shown above the list, the selection kept (US-OPS-38). */
+  onFailed: (title: string, message: string) => void;
 }) {
   const canSendReminder = useCapability("invoices.send_reminder");
   const [busy, setBusy] = useState(false);
@@ -48,7 +51,7 @@ export function InvoicesBulkBar({
 
   async function downloadPdfs() {
     if (selected.length > BULK_MAX) {
-      onFinished("Too many invoices", `Select ${BULK_MAX} or fewer invoices.`);
+      onFailed("Too many invoices.", `Select ${BULK_MAX} or fewer invoices.`);
       return;
     }
     setBusy(true);
@@ -65,7 +68,7 @@ export function InvoicesBulkBar({
       const count = selected.length - skipped.length;
       onFinished(`Downloaded ${count} ${count === 1 ? "PDF" : "PDFs"}`, skipped.length ? `${filename}. Skipped — ${describeSkipped(skipped)}` : filename);
     } catch (err) {
-      onFinished("Couldn't download the PDFs", err instanceof Error ? err.message : "Try again.");
+      onFailed("Couldn't download the PDFs.", err instanceof Error ? err.message : "Try again.");
     } finally {
       setBusy(false);
     }
@@ -79,7 +82,7 @@ export function InvoicesBulkBar({
       const title = result.done.length ? `${result.done.length} ${result.done.length === 1 ? "reminder" : "reminders"} sent` : "No reminders sent";
       onFinished(title, result.skipped.length ? `Skipped — ${describeSkipped(result.skipped)}` : "Each customer gets the reminder email with the invoice attached.");
     } catch (err) {
-      onFinished("Couldn't send the reminders", err instanceof Error ? err.message : "Try again.");
+      onFailed("Couldn't send the reminders.", err instanceof Error ? err.message : "Try again.");
     } finally {
       setBusy(false);
     }

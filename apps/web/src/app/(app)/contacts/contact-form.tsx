@@ -19,6 +19,7 @@ import { ContactGstFields, contactGstError, useTaxCountry } from "./contact-gst-
 import { apiClient } from "../../../lib/api-client";
 import { ContactLogo } from "./contact-logo";
 import type { Contact, ContactType, SpineFile } from "./types";
+import { useToast } from "../../../components/toast-host";
 
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: "Customer" },
@@ -48,6 +49,7 @@ const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
  */
 export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId: string; onSubmittingChange?: (saving: boolean) => void; onSuccess?: (contact: Contact) => void }) {
   const router = useRouter();
+  const showToast = useToast();
   const [type, setType] = useState<ContactType>("customer");
   const [isCompany, setIsCompany] = useState(false);
   const [name, setName] = useState("");
@@ -88,12 +90,8 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
         onSuccess(contact);
         return;
       }
-      // The create form navigates straight to the new contact's detail page,
-      // so there's no moment to show a toast here — set a one-shot flag the
-      // detail page picks up on mount instead (see contact-detail.tsx).
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("spine:contact-created", contact.name);
-      }
+      // The app's toast host stays mounted, so it shows on the contact's page (D-223).
+      showToast("Contact created", `${contact.name} has been added to your contacts.`);
       router.push(`/contacts/${contact.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create contact.");

@@ -10,7 +10,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { InvoicesSkeleton } from "./invoices-skeleton";
 import { InvoicesTable } from "./invoices-table";
 import { InvoicesBulkBar } from "./invoices-bulk-bar";
@@ -30,6 +30,7 @@ import {
   type PaymentForStats,
 } from "./invoices-list-state";
 import type { Invoice } from "./types";
+import { ActionError } from "../../../components/action-error";
 
 const STATUS_OPTIONS = (Object.keys(INVOICE_STATE_LABELS) as InvoiceState[]).map((value) => ({ value, label: INVOICE_STATE_LABELS[value] }));
 const ALL_CONTACTS = "__all__";
@@ -56,6 +57,7 @@ export function InvoicesExplorer() {
   const [payments, setPayments] = useState<PaymentForStats[] | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
@@ -63,7 +65,7 @@ export function InvoicesExplorer() {
   const [announcement, setAnnouncement] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const loading = useRef(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   /** Sets part of the list state and writes it to the address. */
   function update(patch: Partial<InvoicesListState>) {
@@ -268,6 +270,7 @@ export function InvoicesExplorer() {
             </AlertDescription>
           </Alert>
         )}
+        {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
       </div>
 
       {selectedInvoices.length > 0 && (
@@ -275,10 +278,12 @@ export function InvoicesExplorer() {
           selected={selectedInvoices}
           onClear={() => setSelectedIds(new Set())}
           onFinished={(title, description) => {
+            setActionError(null);
             setSelectedIds(new Set());
             void load("refresh");
             showToast(title, description);
           }}
+          onFailed={(title, message) => setActionError({ title, message })}
         />
       )}
 
@@ -328,12 +333,11 @@ export function InvoicesExplorer() {
             void load("refresh");
             showToast("Invoice deleted", `${invoice.number ?? "Draft invoice"} has been permanently removed.`);
           }}
-          onActionFailed={(_invoice, message) => showToast("Couldn't do that", message)}
+          onActionFailed={(invoice, message) => setActionError({ title: `Couldn't do that to ${invoice.number ?? "the draft invoice"}.`, message })}
           selected={selectedIds}
           onToggleSelected={toggleSelected}
         />
       )}
-      {toast}
     </div>
   );
 }

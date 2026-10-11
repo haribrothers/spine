@@ -37,12 +37,12 @@ import { EmailFailedAlert } from "../../../components/email-failed-alert";
 import { SaveBundleDialog } from "./save-bundle-dialog";
 import { AcceptancePanel } from "./acceptance-panel";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { QuoteActivity } from "./quote-activity";
 import { DocumentLinesTable } from "../../../components/document-lines-table";
 import { QuoteRelated } from "./quote-related";
-import { copyCustomerLink } from "./quote-row-actions";
+import { copyCustomerLink, QUOTE_TOASTS } from "./quote-row-actions";
 import { STATUS_BADGE_CLASS, ViewedChip } from "./quotes-table";
 import { calendarDate, shortDate, validityNote } from "./quotes-list-state";
 import { MENU_ICONS } from "../../../lib/menu-icons";
@@ -112,7 +112,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     action: "invoice" | "job";
     body: ConversionGuardBody;
   } | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const hasEditCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.edit_own", others: "quotes.edit_others" });
   const hasDeleteCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.delete_own", others: "quotes.delete_others" });
   const hasSendCapability = useCapability("quotes.send");
@@ -203,6 +203,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setBusy(true);
     try {
       const copy = await apiClient.post<Quote>(`/quotes/${quote.id}/duplicate`);
+      showToast(...QUOTE_TOASTS.duplicated(quote));
       router.push(`/quotes/${copy.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not duplicate this quote.");
@@ -232,6 +233,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setError(null);
     try {
       const revised = await apiClient.post<Quote>(`/quotes/${quote.id}/revise`);
+      showToast(...QUOTE_TOASTS.revised(quote));
       router.push(`/quotes/${revised.id}/edit`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not revise this quote.");
@@ -265,6 +267,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     try {
       const invoice = await apiClient.post<{ id: string }>(`/invoices/from-quote/${quote.id}`, { confirm });
       setConversionConfirm(null);
+      showToast(...QUOTE_TOASTS.toInvoice(quote));
       router.push(`/invoices/${invoice.id}`);
     } catch (err) {
       if (isConversionGuardConflict(err)) {
@@ -300,8 +303,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setBusy(true);
     setError(null);
     try {
-      const job = await apiClient.post<{ id: string }>(`/jobs/from-quote/${quote.id}`, { confirm });
+      const job = await apiClient.post<{ id: string; number: string | null }>(`/jobs/from-quote/${quote.id}`, { confirm });
       setConversionConfirm(null);
+      showToast(...QUOTE_TOASTS.toJob(quote, job.number));
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       if (isConversionGuardConflict(err)) {
@@ -343,6 +347,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setError(null);
     try {
       await apiClient.delete(`/quotes/${quote.id}`);
+      showToast(...QUOTE_TOASTS.deleted(quote));
       router.push("/quotes");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete this quote.");
@@ -405,7 +410,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     if (canEdit) secondary.push({ key: "edit", label: "Edit", icon: <Pencil size={14} aria-hidden />, href: `/quotes/${quote.id}/edit` });
     secondary.push(pdf);
   } else if (quote.status === "sent" && !quote.isExpired && current) {
-    if (canCopyLink) primary = { key: "link", label: "Copy customer link", icon: <Link2 size={14} aria-hidden />, onClick: () => void copyCustomerLink(quote.id, (t, d) => { showToast(t, d); setActivityKey((k) => k + 1); }) };
+    if (canCopyLink) primary = { key: "link", label: "Copy customer link", icon: <Link2 size={14} aria-hidden />, onClick: () => void copyCustomerLink(quote.id, (t, d) => { showToast(t, d); setActivityKey((k) => k + 1); }, (t, m) => setError(`${t} ${m}`)) };
     secondary.push(pdf);
     if (canRevise) secondary.push({ key: "revise", label: "Revise", icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() });
   } else if (quote.status === "accepted") {
@@ -524,7 +529,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   </DropdownMenuItem>
                 )}
                 {canCopyLink && primary?.key !== "link" && (
-                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast)}>
+                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast, (t, m) => setError(`${t} ${m}`))}>
                     <MENU_ICONS.copyLink aria-hidden />
                     Copy customer link
                   </DropdownMenuItem>
@@ -721,7 +726,6 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
         />
       )}
       {confirmDialog}
-      {toast}
     </div>
   );
 }

@@ -516,8 +516,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-25 · Find a payment from search
 - [x] US-PAY-26 · Move a payment off the wrong invoice
 - [x] US-OPS-37 · See what each menu action does at a glance
-- [ ] US-OPS-38 · Know an action worked, wherever it takes me
-- [ ] US-CAT-16 · Confirm a change to many items before it happens
+- [x] US-OPS-38 · Know an action worked, wherever it takes me
+- [x] US-CAT-16 · Confirm a change to many items before it happens
 
 ## Phase 10 · AI assistant
 

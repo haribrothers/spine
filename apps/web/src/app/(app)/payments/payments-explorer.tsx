@@ -27,9 +27,9 @@ import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
-import { RecordPaymentDialog } from "../../../components/record-payment-dialog";
+import { paymentRecordedToast, RecordPaymentDialog } from "../../../components/record-payment-dialog";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { PaymentsSkeleton } from "./payments-skeleton";
 import { PaymentsTable } from "./payments-table";
 import {
@@ -78,20 +78,12 @@ export function PaymentsExplorer() {
   const [announcement, setAnnouncement] = useState("");
   const [recordOpen, setRecordOpen] = useState(false);
   const loading = useRef(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
-  // US-PAY-19: `/payments?id=` (old links) opens the payment's own page; a deleted payment says so.
+  // US-PAY-19: `/payments?id=` (old links) opens the payment's own page.
   useEffect(() => {
     const id = searchParams.get("id");
-    if (id) {
-      router.replace(`/payments/${id}`);
-      return;
-    }
-    const deleted = searchParams.get("deleted");
-    if (deleted !== null) {
-      showToast("Payment deleted", `${deleted || "The payment"} was deleted and its journal entry reversed.`);
-      replaceQuery(pathname, paymentsQuery(state));
-    }
+    if (id) router.replace(`/payments/${id}`);
     // Once, on arrival.
   }, []);
 
@@ -309,8 +301,10 @@ export function PaymentsExplorer() {
         <PaymentsTable payments={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={search} />
       )}
 
-      <RecordPaymentDialog open={recordOpen} onOpenChange={setRecordOpen} onRecorded={(p) => router.push(`/payments/${p.id}`)} />
-      {toast}
+      <RecordPaymentDialog open={recordOpen} onOpenChange={setRecordOpen} onRecorded={(p) => {
+          showToast(...paymentRecordedToast(p));
+          router.push(`/payments/${p.id}`);
+        }} />
     </div>
   );
 }

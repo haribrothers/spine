@@ -7,6 +7,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import type { MemberRow } from "../../../../lib/members";
 import type { Job, JobAssignee } from "../types";
+import { useToast } from "../../../../components/toast-host";
 
 /**
  * Phase 5 (Mobile) — who's assigned to this job's crew, backing S-11.2's
@@ -20,6 +21,7 @@ import type { Job, JobAssignee } from "../types";
 /** `onChanged` lets the job page refresh its tab count and Activity (US-JOB-35, US-JOB-37). */
 export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => void }) {
   const canAssign = useCapability("jobs.assign");
+  const showToast = useToast();
   const [assignees, setAssignees] = useState<JobAssignee[] | null>(null);
   const [members, setMembers] = useState<MemberRow[] | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -75,6 +77,7 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
     setError(null);
     try {
       await apiClient.delete(`/jobs/${job.id}/assignees/${userId}`);
+      showToast(`${name} removed`, `They no longer see ${job.name}.`);
       load();
       onChanged?.();
     } catch (err) {

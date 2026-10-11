@@ -52,6 +52,8 @@ import { MeetingQuickViewPopover } from "./meeting-quick-view-popover";
 import { MeetingScopeChoiceDialog } from "./meeting-scope-choice-dialog";
 import type { Meeting, MeetingAttendee } from "./types";
 import { useFillHeight } from "../../../lib/use-fill-height";
+import { orgLocaleTag } from "../../../lib/money";
+import { useToast } from "../../../components/toast-host";
 import {
   DEFAULT_VIEW,
   UPCOMING_DAYS,
@@ -225,6 +227,7 @@ function toMeetingPayload(
  * whenever `date` moves outside the already-loaded window.
  */
 export function MeetingsCalendar() {
+  const showToast = useToast();
   const { data: session } = useSession();
   const { capabilities } = useCapabilities();
   const router = useRouter();
@@ -626,6 +629,7 @@ export function MeetingsCalendar() {
     if (!pendingDelete) return;
     setDeleteBusy(true);
     setDeleteError(null);
+    const title = meetings?.find((m) => m.id === pendingDelete.eventId)?.title ?? "The meeting";
     try {
       if (pendingDelete.scope === "occurrence" && pendingDelete.occurrenceDate) {
         await apiClient.delete(
@@ -633,9 +637,12 @@ export function MeetingsCalendar() {
         );
         const refreshed = await apiClient.get<Meeting>(`/meetings/${pendingDelete.eventId}`);
         setMeetings((prev) => prev?.map((m) => (m.id === refreshed.id ? refreshed : m)) ?? prev);
+        const day = pendingDelete.occurrenceDate.toLocaleDateString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short" });
+        showToast("Meeting deleted", `${title} on ${day} is off the calendar; the rest of the series stays.`);
       } else {
         await apiClient.delete(`/meetings/${pendingDelete.eventId}`);
         setMeetings((prev) => prev?.filter((m) => m.id !== pendingDelete.eventId) ?? prev);
+        showToast("Meeting deleted", `${title} is off the calendar${pendingDelete.scope === "series" ? ", every time it repeats" : ""}.`);
       }
       setPendingDelete(null);
     } catch (err) {

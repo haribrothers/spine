@@ -19,6 +19,7 @@ import { RoleProvider } from "../lib/role-context";
 import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
 import { SessionExpiredDialog } from "./session-expired-dialog";
+import { ToastHost } from "./toast-host";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -68,10 +69,13 @@ export function AppLayout(props: AppLayoutProps) {
   return (
     <RoleProvider value={props.role}>
       <CapabilitiesProvider>
-        <ModulesProvider>
-          <AppLayoutShell {...props} />
-        </ModulesProvider>
-        <PermissionToast />
+        {/* US-OPS-38 (D-223): the one toast host, mounted across pages. */}
+        <ToastHost max={3} duration={5000}>
+          <ModulesProvider>
+            <AppLayoutShell {...props} />
+          </ModulesProvider>
+          <PermissionToast />
+        </ToastHost>
         <SessionExpiredDialog email={props.userEmail} />
       </CapabilitiesProvider>
     </RoleProvider>

@@ -28,7 +28,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { NoAccess } from "../../../components/no-access";
 import { formatDay } from "./dates";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 
 const finishedAt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 
@@ -45,7 +45,7 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [undoing, setUndoing] = useState<ReconciliationSummary | null>(null);
   const [busy, setBusy] = useState(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -162,7 +162,6 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {toast}
     </>
   );
 }

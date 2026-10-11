@@ -6,7 +6,7 @@ import { apiClient } from "../../../lib/api-client";
 import Link from "next/link";
 import { formatMoney } from "../../../lib/money";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
-import { useEntityToast } from "../payments/entity-toast";
+import { useToast } from "../../../components/toast-host";
 
 interface CreditNoteRow {
   id: string;
@@ -28,7 +28,7 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
   const [creditNotes, setCreditNotes] = useState<CreditNoteRow[] | null>(null);
   // US-SET-21 — emailing a credit note, from the "Credit note" email template.
   const [emailing, setEmailing] = useState<CreditNoteRow | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,7 +91,6 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
           }}
         />
       )}
-      {toast}
     </>
   );
 }

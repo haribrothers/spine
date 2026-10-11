@@ -23,7 +23,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { QuotesSkeleton } from "./quotes-skeleton";
 import { QuotesTable } from "./quotes-table";
 import {
@@ -39,6 +39,8 @@ import {
   type QuotesListState,
 } from "./quotes-list-state";
 import type { Quote } from "./types";
+import { QUOTE_TOASTS } from "./quote-row-actions";
+import { ActionError } from "../../../components/action-error";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
@@ -68,13 +70,14 @@ export function QuotesExplorer() {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const loading = useRef(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   /** Sets part of the list state and writes it to the address. */
   function update(patch: Partial<QuotesListState>) {
@@ -134,7 +137,7 @@ export function QuotesExplorer() {
 
   function handleDeleted(quote: Quote) {
     void load("refresh");
-    showToast("Quote deleted", `${quote.number ?? "Draft quote"} has been permanently removed.`);
+    showToast(...QUOTE_TOASTS.deleted(quote));
   }
 
   if (error) {
@@ -254,6 +257,7 @@ export function QuotesExplorer() {
             </AlertDescription>
           </Alert>
         )}
+        {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
       </div>
 
       {!rows ? (
@@ -299,10 +303,13 @@ export function QuotesExplorer() {
           onPageChange={(page) => update({ page })}
           toolbarStart={search}
           onDeleted={handleDeleted}
-          onNotify={showToast}
+          onNotify={(title, description) => {
+            setActionError(null);
+            showToast(title, description);
+          }}
+          onActionFailed={(title, message) => setActionError({ title, message })}
         />
       )}
-      {toast}
     </div>
   );
 }

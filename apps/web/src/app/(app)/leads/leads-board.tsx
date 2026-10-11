@@ -40,7 +40,7 @@ import {
   TooltipTrigger,
   cn,
 } from "@spine/ui";
-import type { LeadStage, LostReason } from "@spine/shared";
+import { LOST_REASON_LABELS, type LeadStage, type LostReason } from "@spine/shared";
 import { ArrowUpDown, ChevronsRightLeft, Plus, RefreshCw, Search, SlidersHorizontal, Target } from "lucide-react";
 import { type Contact, type Lead } from "../contacts/types";
 import { STAGE_DOT_CLASS, useLeadStages } from "../contacts/use-lead-stages";
@@ -53,6 +53,7 @@ import { formatMoney } from "../../../lib/money";
 import { LeadCard } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
 import { LeadLostDialog, LeadWonDialog } from "./lead-closed-dialogs";
+import { useToast } from "../../../components/toast-host";
 import { PipelineSummaryStrip } from "./pipeline-summary";
 import {
   CLOSED_WINDOW_DAYS,
@@ -113,6 +114,7 @@ function Totals({ leads, empty }: { leads: Lead[]; empty?: string }) {
  */
 export function LeadsBoard() {
   const router = useRouter();
+  const showToast = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: session } = authClient.useSession();
@@ -142,6 +144,7 @@ export function LeadsBoard() {
   const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null);
   const [createStage, setCreateStage] = useState<string | undefined>(undefined);
   const [lostLead, setLostLead] = useState<Lead | null>(null);
+  const lostToasted = useRef(false);
   const [wonLead, setWonLead] = useState<Lead | null>(null);
   const [deleteLead, setDeleteLead] = useState<Lead | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -283,7 +286,8 @@ export function LeadsBoard() {
 
   /** After a lead lands in a closed stage: ask why it was lost, or offer a quote for a win. */
   function afterMove(lead: Lead) {
-    if (lead.stageKind === "lost" && !lead.lostReason) setLostLead(lead);
+    if (lead.stageKind === "lost" && lead.lostReason) toastLost(lead, lead.lostReason);
+    else if (lead.stageKind === "lost") setLostLead(lead);
     else if (lead.stageKind === "won" && canQuote) setWonLead(lead);
   }
 
@@ -307,10 +311,25 @@ export function LeadsBoard() {
     }
   }
 
+  /** US-OPS-38: a lead marked lost says so — with its reason, or where to add one. */
+  function toastLost(lead: Lead, reason: LostReason | null) {
+    const title = lead.title ?? "The lead";
+    showToast("Lead marked lost", reason ? `${title} — reason: ${LOST_REASON_LABELS[reason].toLowerCase()}.` : `${title} is in ${lead.stageName}; add why from the lead when you know.`);
+  }
+
   async function saveLostReason(reason: LostReason | null, note: string) {
     if (!lostLead) return;
     const saved = await apiClient.put<Lead>(`/leads/${lostLead.id}`, { lostReason: reason, lostNote: note || null });
     replaceLead(saved);
+    lostToasted.current = true;
+    toastLost(saved, reason);
+  }
+
+  /** Skip (or Save, which has already said so) closes the reason dialog. */
+  function closeLostDialog() {
+    if (lostLead && !lostToasted.current) toastLost(lostLead, null);
+    lostToasted.current = false;
+    setLostLead(null);
   }
 
   function createQuote(lead: Lead) {
@@ -336,6 +355,7 @@ export function LeadsBoard() {
       await apiClient.delete(`/leads/${deleteLead.id}`);
       setLeads((prev) => prev?.filter((l) => l.id !== deleteLead.id) ?? prev);
       setAnnouncement(`Deleted ${deleteLead.title ?? "the lead"}`);
+      showToast("Lead deleted", `“${deleteLead.title ?? "The lead"}” is gone from the pipeline.`);
       if (drawerLeadId === deleteLead.id) setDrawerOpen(false);
       setDeleteLead(null);
     } finally {
@@ -635,7 +655,7 @@ export function LeadsBoard() {
         onCreateQuote={createQuote}
       />
 
-      <LeadLostDialog lead={lostLead} contactName={lostLead ? contactName(lostLead) : null} onSave={saveLostReason} onClose={() => setLostLead(null)} />
+      <LeadLostDialog lead={lostLead} contactName={lostLead ? contactName(lostLead) : null} onSave={saveLostReason} onClose={closeLostDialog} />
       <LeadWonDialog
         lead={wonLead}
         contactName={wonLead ? contactName(wonLead) : null}

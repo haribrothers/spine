@@ -8,9 +8,10 @@ import { Mail, RefreshCw, Search, X } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { useEntityToast } from "../invoices/entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { EmailSetupWarning } from "./email-setup-warning";
 import { EmailsTable } from "./emails-table";
+import { ActionError } from "../../../components/action-error";
 import {
   EMAIL_RANGES,
   EMAIL_RANGE_LABELS,
@@ -51,6 +52,7 @@ export function EmailsExplorer() {
   const [emails, setEmails] = useState<EmailLogEntry[] | null>(null);
   const [status, setStatus] = useState<EmailLogStatusSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
@@ -58,7 +60,7 @@ export function EmailsExplorer() {
   const [announcement, setAnnouncement] = useState("");
   const loading = useRef(false);
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const apiQuery = emailsApiQuery(state, new Date(now));
 
   function update(patch: Partial<EmailsListState>) {
@@ -128,12 +130,13 @@ export function EmailsExplorer() {
       confirmLabel: "Retry email",
     });
     if (!ok) return;
+    setActionError(null);
     try {
       await apiClient.post(`/emails/${email.id}/retry`, {});
       showToast("Email queued again", `${emailDescription(email)} will be sent to ${email.toAddress} shortly.`);
       void load("refresh");
     } catch (err) {
-      showToast("Couldn't retry the email", err instanceof Error ? err.message : "Try again.");
+      setActionError({ title: "Couldn't retry the email.", message: err instanceof Error ? err.message : "Try again." });
     }
   }
 
@@ -145,12 +148,13 @@ export function EmailsExplorer() {
       danger: true,
     });
     if (!ok) return;
+    setActionError(null);
     try {
       await apiClient.post(`/emails/${email.id}/cancel`, {});
       showToast("Email cancelled", `${emailDescription(email)} won't be sent.`);
       void load("refresh");
     } catch (err) {
-      showToast("Couldn't cancel the email", err instanceof Error ? err.message : "Try again.");
+      setActionError({ title: "Couldn't cancel the email.", message: err instanceof Error ? err.message : "Try again." });
     }
   }
 
@@ -272,6 +276,7 @@ export function EmailsExplorer() {
             </AlertDescription>
           </Alert>
         )}
+        {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
       </div>
 
       {!rows ? (
@@ -303,7 +308,6 @@ export function EmailsExplorer() {
         <EmailsTable emails={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={search} onRetry={(e) => void retry(e)} onCancel={(e) => void cancel(e)} />
       )}
       {confirmDialog}
-      {toast}
     </div>
   );
 }

@@ -32,6 +32,7 @@ import {
 } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 import { PHOTO_OR_PDF_ACCEPT } from "../lib/upload-types";
+import { useToast } from "./toast-host";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -104,6 +105,7 @@ export function AttachmentsSection({
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
+  const showToast = useToast();
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -178,6 +180,7 @@ export function AttachmentsSection({
     setBusy(true);
     try {
       await apiClient.delete(`/attachments/${removing.id}`, withReason ? { reason: reason.trim() } : {});
+      showToast("Attachment removed", `${removing.name} is no longer attached.`);
       setRemoving(null);
       load();
     } catch (err) {

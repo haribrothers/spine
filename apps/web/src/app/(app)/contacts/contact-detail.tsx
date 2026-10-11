@@ -45,7 +45,7 @@ import { LeadsSection } from "./leads-section";
 import { ActivitiesSection } from "./activities-section";
 import { HistorySection } from "../../../components/history-section";
 import { TimelineSection } from "./timeline-section";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { StatementDialog } from "./statement-dialog";
 import { CustomerRefundDialog, refundToast } from "../../../components/customer-refund-dialog";
 import { loadCustomerCredit } from "../../../lib/customer-credit";
@@ -109,7 +109,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   const [showGstErrors, setShowGstErrors] = useState(false);
   const [website, setWebsite] = useState("");
 
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const canEdit = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.edit_own", others: "contacts.edit_others" });
   // US-PAY-14 — statements show what a customer owes, so they follow the receivables report's capability.
   const canSendStatement = useCapability("reports.view_receivables");
@@ -165,18 +165,6 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     reloadLeads();
     reloadActivities();
   }, [contactId]);
-
-  useEffect(() => {
-    // One-shot flag set by contact-form.tsx right before it navigates here —
-    // the create form has no moment of its own to show a toast since it
-    // redirects immediately, so the detail page shows it instead.
-    if (typeof window === "undefined") return;
-    const createdName = window.sessionStorage.getItem("spine:contact-created");
-    if (createdName) {
-      window.sessionStorage.removeItem("spine:contact-created");
-      showToast("Contact created", `${createdName} has been added to your contacts.`);
-    }
-  }, []);
 
   function startEdit() {
     if (!contact) return;
@@ -267,12 +255,8 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     try {
       const deletedName = contact?.name ?? "Contact";
       await apiClient.delete(`/contacts/${contactId}`);
-      // Toast fires from the list page after this navigation, not here —
-      // this page is about to unmount, so a one-shot flag hands the message
-      // off the same way contact-form.tsx does for create.
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("spine:contact-deleted", deletedName);
-      }
+      // Shown on the list this opens (D-223).
+      showToast("Contact deleted", `${deletedName} has been permanently removed.`);
       router.push("/contacts");
     } catch (err) {
       setDeleteError(
@@ -574,7 +558,6 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           showToast("Statement sent", `Statement sent to ${sentTo}`);
         }}
       />
-      {toast}
     </div>
   );
 }

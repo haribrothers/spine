@@ -249,17 +249,18 @@ Decision: D-213
 
 ### US-CAT-16 · Confirm a change to many items before it happens
 **Feature:** F-CAT-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CatalogBulkConfirm`
-**As** an owner, **I want** to be asked before a bulk change to tax or category, **so that** a slip on the selection doesn't re-tax half the catalogue.
+**As** an owner, **I want** to be asked before a bulk change to tax, category or income account, **so that** a slip on the selection doesn't re-tax half the catalogue.
 
 Decision: D-218, D-223
 
 **Acceptance criteria**
 - **Given** items ticked, **when** I choose a tax rate or group (or "No tax") from "Set tax", **then** "Change the tax on 12 items?" says the new tax, that it applies to new quotes and invoices only (issued documents keep theirs), and offers "Change tax" and "Go back".
 - **Given** items ticked, **when** I set a category, **then** "Move 12 items to “Labour”?" asks first, with "Move items" and "Go back".
+- **Given** items ticked, **when** I choose an income account from "Set income account", **then** "Change the income account on 12 items?" says new quotes and invoices post their sales there (issued documents keep theirs), with "Change account" and "Go back".
 - **Given** I confirm, **when** it finishes, **then** the toast says how many changed, as today; Go back changes nothing and keeps the selection.
 - **Given** bulk Archive or Restore, **when** I choose it, **then** it doesn't ask (Restore undoes it, D-218) and toasts as today.
 
 **Implementation notes**
-- UI: `catalog-bulk-bar.tsx` asks with `useConfirm()` before `POST /catalog-items/bulk`.
+- UI: `catalog-bulk-bar.tsx` asks with `useConfirm()` before `POST /catalog-items/bulk` for Set tax, Set category and Set income account.
 - No API change.
 

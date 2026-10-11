@@ -25,7 +25,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
 import { formatMoney } from "../../../lib/money";
@@ -68,7 +68,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   // a future inline-record flow can wire a real setter without changing
   // VendorPaymentsSection's own contract.
   const paymentsRefreshKey = 0;
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const load = useCallback(() => {
     apiClient
@@ -378,7 +378,6 @@ export function VendorBillDetail({ billId }: { billId: string }) {
       </Dialog>
 
       {confirmDialog}
-      {toast}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import { formatMoney } from "../../../lib/money";
 import { ContactPicker } from "../quotes/contact-picker";
 import type { Quote } from "../quotes/types";
 import type { Address } from "../contacts/types";
+import { useToast } from "../../../components/toast-host";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -70,6 +71,7 @@ export function NewJobDrawer({
   convertedQuoteIds: Set<string>;
 }) {
   const router = useRouter();
+  const showToast = useToast();
   const [mode, setMode] = useState<"blank" | "quote">("blank");
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
@@ -193,11 +195,12 @@ export function NewJobDrawer({
     }
   }
 
-  /** Opens the new job on Milestones, where its toast says it was created. */
+  /** Opens the new job on Milestones; its toast shows there (D-223). */
   function opened(job: { id: string; number: string | null }) {
     onOpenChange(false);
     setSaving(false);
-    router.push(`/jobs/${job.id}?tab=milestones&created=${encodeURIComponent(job.number ?? "")}`);
+    showToast(job.number ? `Job ${job.number} created` : "Job created", "Add its milestones to bill it as the work is done.");
+    router.push(`/jobs/${job.id}?tab=milestones`);
   }
 
   return (

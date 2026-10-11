@@ -41,7 +41,7 @@ import {
 } from "./contacts-list-state";
 import type { Contact, ContactType, Lead } from "./types";
 import { useContactStats } from "./use-contact-stats";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: "Customer" },
@@ -87,7 +87,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
   const [importOpen, setImportOpen] = useState(false);
   const loading = useRef(false);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   useEffect(() => {
     const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
@@ -152,19 +152,6 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    // One-shot flag set by contact-detail.tsx right before it navigates
-    // back here on delete — that page unmounts immediately, so it has no
-    // moment of its own to show the toast (same pattern as
-    // "spine:contact-created" in contact-form.tsx).
-    if (typeof window === "undefined") return;
-    const deletedName = window.sessionStorage.getItem("spine:contact-deleted");
-    if (deletedName) {
-      window.sessionStorage.removeItem("spine:contact-deleted");
-      showToast("Contact deleted", `${deletedName} has been permanently removed.`);
-    }
   }, []);
 
   const contacts = useMemo(() => (all ? filterContacts(all, state) : null), [all, state]);
@@ -385,7 +372,6 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
 
       <ContactCreateDrawer open={drawerOpen} onOpenChange={setDrawerOpen} onCreated={handleCreated} />
       <ImportContactsDialog open={importOpen} onOpenChange={setImportOpen} existingContacts={all ?? []} onImported={handleImported} />
-      {toast}
     </div>
   );
 }

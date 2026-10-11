@@ -21,6 +21,7 @@ test.describe("US-CAT-12", () => {
     await expect(bar).toContainText("2 selected");
     await bar.getByRole("button", { name: "Set tax" }).click();
     await page.getByRole("menuitem", { name: /Sales tax 8%/ }).click();
+    await page.getByRole("alertdialog", { name: "Change the tax on 2 items?" }).getByRole("button", { name: "Change tax" }).click(); // US-CAT-16
     await expect(page.getByText("Updated 2 items", { exact: true })).toBeVisible();
     await expect(table.getByRole("row", { name: /Painting/ })).toContainText("Sales tax 8%");
     await expect(table.getByTestId("catalog-no-tax")).toHaveCount(0);

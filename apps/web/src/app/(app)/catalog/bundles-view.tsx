@@ -41,7 +41,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
@@ -59,7 +59,7 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
   const [editing, setEditing] = useState<CatalogBundle | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const load = useCallback(() => {
     apiClient
@@ -161,7 +161,6 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
         </>
       )}
       <EditBundleDialog bundle={editing} onClose={() => setEditing(null)} onSaved={() => (showToast("Bundle saved", "Your changes have been saved."), load())} />
-      {toast}
     </div>
   );
 }

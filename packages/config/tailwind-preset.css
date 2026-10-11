@@ -453,4 +453,13 @@
       scale: 0.97;
     }
   }
+
+  /* US-OPS-38 — a toast's entrance from the right; used only with motion-safe:, so reduced motion shows it at once. */
+  --animate-toast-in: toast-in var(--duration-base) var(--easing-decelerate);
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      translate: 16px 0;
+    }
+  }
 }

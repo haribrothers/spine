@@ -53,6 +53,7 @@ export function QuotesTable({
   toolbarStart,
   onDeleted,
   onNotify,
+  onActionFailed,
 }: {
   quotes: Quote[];
   now: Date;
@@ -63,6 +64,7 @@ export function QuotesTable({
   toolbarStart?: React.ReactNode;
   onDeleted: (quote: Quote) => void;
   onNotify: (title: string, description: string) => void;
+  onActionFailed: (title: string, message: string) => void;
 }) {
   const locale = orgLocaleTag();
   const columns: TableColumn<Quote>[] = [
@@ -139,7 +141,7 @@ export function QuotesTable({
       header: "",
       render: (row) => (
         <div className="flex justify-end">
-          <QuoteRowActions quote={row} onDeleted={onDeleted} onNotify={onNotify} />
+          <QuoteRowActions quote={row} onDeleted={onDeleted} onNotify={onNotify} onFailed={onActionFailed} />
         </div>
       ),
     },

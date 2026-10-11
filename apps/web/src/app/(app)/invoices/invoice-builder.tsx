@@ -28,7 +28,7 @@ import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "../quotes/contact-picker";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { DUE_PICKS, daysAfter, pickedDueDays } from "./due-terms";
 import { saveOneOffLinesToCatalogue } from "../quotes/quote-builder";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "../quotes/quote-line-editor";
@@ -105,7 +105,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   const [error, setError] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   // US-INV-35: a duplicate opens here with ?duplicated=INV-0012 — dated today, due on the terms, and says where it came from.
   const duplicatedFrom = useRef(useSearchParams().get("duplicated"));
 
@@ -357,7 +357,6 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       </DocumentBuilderBar>
 
       <LeaveWithoutSavingDialog open={leaveTo !== null} document="invoice" onLeave={leave} onStay={() => setLeaveTo(null)} />
-      {toast}
     </div>
   );
 }

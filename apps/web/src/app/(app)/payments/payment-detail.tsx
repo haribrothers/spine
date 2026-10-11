@@ -37,12 +37,13 @@ import { HistorySection } from "../../../components/history-section";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { CustomerRefundDialog, RefundsSection, refundToast } from "../../../components/customer-refund-dialog";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { PaymentActivity } from "./payment-activity";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type PaymentDetailData } from "./types";
+import { ActionError } from "../../../components/action-error";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -72,13 +73,14 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   const router = useRouter();
   const [payment, setPayment] = useState<PaymentDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [unapplying, setUnapplying] = useState<PaymentAppliedTo | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const canApply = useCapability("payments.apply_credit");
   const canRefund = useCapability("payments.refund");
@@ -110,11 +112,13 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
       danger: true,
     });
     if (!ok) return;
+    setActionError(null);
     try {
       await apiClient.delete(`/payments/${payment.id}`);
-      router.push(`/payments?deleted=${encodeURIComponent(payment.number ?? "")}`);
+      showToast("Payment deleted", `${payment.number ?? "The payment"} was deleted and its journal entry reversed.`);
+      router.push("/payments");
     } catch (err) {
-      showToast("Couldn't delete the payment", err instanceof Error ? err.message : "Try again.");
+      setActionError({ title: "Couldn't delete the payment.", message: err instanceof Error ? err.message : "Try again." });
     }
   }
 
@@ -269,6 +273,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
         </div>
       </div>
 
+      {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
       <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3")} data-testid="payment-figures">
         {figures}
       </div>
@@ -401,7 +406,6 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
         }}
       />
       {confirmDialog}
-      {toast}
     </div>
   );
 }

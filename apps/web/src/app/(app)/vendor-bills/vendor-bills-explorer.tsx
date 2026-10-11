@@ -7,7 +7,7 @@ import { ClipboardList } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { VendorBillsSkeleton } from "./vendor-bills-skeleton";
 import { VendorBillsTable } from "./vendor-bills-table";
 import type { ContactOption, VendorBill } from "./types";
@@ -41,7 +41,7 @@ export function VendorBillsExplorer() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   // US-PUR-22 — filter by job, kept in the URL.
   const job = useJobFilter();
   const canViewCosting = useCapability("reports.view_job_profitability");
@@ -214,7 +214,6 @@ export function VendorBillsExplorer() {
       ) : (
         <VendorBillsTable bills={filteredBills} onDeleted={handleDeleted} onRecorded={handleRecorded} />
       )}
-      {toast}
     </div>
   );
 }

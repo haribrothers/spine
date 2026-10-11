@@ -6,7 +6,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from 
 import { HandCoins } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
-import { useEntityToast } from "./entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { NewVendorPaymentDialog } from "./new-vendor-payment-dialog";
 import { VendorPaymentDetailDrawer } from "./vendor-payment-detail-drawer";
 import { VendorPaymentsSkeleton } from "./vendor-payments-skeleton";
@@ -35,7 +35,7 @@ export function VendorPaymentsExplorer() {
   const [newPaymentOpen, setNewPaymentOpen] = useState(Boolean(payFor));
   // US-BANK-02: a register row opens the payment as ?id=<payment>.
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(() => searchParams.get("id"));
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const stats = useVendorPaymentStats(payments);
 
@@ -148,7 +148,6 @@ export function VendorPaymentsExplorer() {
         paymentId={selectedPaymentId}
         onDeleted={handleDeleted}
       />
-      {toast}
     </div>
   );
 }
