@@ -16,7 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
-| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -539,3 +539,20 @@ Decision: D-216, D-219
 
 **Implementation notes**
 - Shared: plan credit notes gain `issuedInDays`, `applyInDays` and `refundInDays`; credit notes are seeded through `CreditNotesService` with `invoiceLineId` (issued and applied on the plan's day), refunds through `CustomerRefundsService`. A refund of a demo credit note's credit is demo money: its entry is flagged demo, and deleting the demo removes it and any applied credit with the credit note.
+
+### US-ONB-30 · Explore bills and vendor credits at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`VendorBillsListRefined`, `VendorBillPage`, `VendorCreditsListRefined`, `VendorCreditPage`, `RecurringBillsList` with demo data)
+**As** an evaluator, **I want** the demo's bills and vendor credits to be at every stage, **so that** the cards, states and Activity on Vendor bills and Vendor credits show what they do.
+
+Decision: D-216, D-225, D-226
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** its bills cover every state: one paid, one overdue, one partly paid and due within 7 days (on a job), one void with its reason, and two drafts — so every Vendor bills card has something in it and "Record (2)" shows.
+- **Given** an industry demo, **when** it's loaded, **then** it has four vendor credits, each on its own day with its Activity on those days: one raised against the overdue bill and partly applied to it (Partly used), one open and dated about 70 days ago (Unused 60+ days), one used up by a refund from the vendor (Refunds shows it), and one draft. The overdue bill shows "Apply credit" and its Credits applied.
+- **Given** Riverstone Builders, **when** it's loaded, **then** one bill is partly paid and due within 7 days, it has a second draft bill, and it has two vendor credits — one partly used against the overdue bill and one draft.
+- **Given** any demo, **when** it's loaded, **then** "Recurring bills" has one active monthly schedule for a vendor, with its next run date.
+- **Given** "Delete all demo data", **when** it runs, **then** the demo vendor credits, their applications and refunds, and the demo recurring bill go with the rest, and the bills a demo schedule created count as demo too.
+
+**Implementation notes**
+- Data: `vendor_credits.is_demo`, `vendor_refunds.is_demo` and `recurring_bills.is_demo` (`boolean default false`, migration `0115`); the ledger treats `vendor_credit*` and `vendor_refund*` entries of demo rows as demo; a demo schedule's runs create demo bills.
+- Shared: plan bills gain partial `payments[].amount`; plans gain `vendorCredits` (`billKey?`, `dateInDays`, `outcome: draft | open`, `applyInDays?`, `applyAmount?`, `refundInDays?`) and `recurringBills`. Credits are seeded through `VendorCreditsService` (record, apply, refund) and the schedule through `RecurringBillsService`, with their audit entries on the plan's days.

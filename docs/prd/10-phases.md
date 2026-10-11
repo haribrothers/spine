@@ -848,6 +848,7 @@ Total: 525 stories.
 - US-ONB-27 · Explore a catalogue and calendar that look kept (P2)
 - US-ONB-28 · Explore invoices at every stage (P2)
 - US-ONB-29 · Explore credit notes at every stage (P2)
+- US-ONB-30 · Explore bills and vendor credits at every stage (P2)
 
 *Invoices*
 

@@ -497,6 +497,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-INV-34 · Build an invoice in compact rows, with a bar that stays in view
 - [x] US-INV-35 · Duplicate an invoice
 - [x] US-ONB-29 · Explore credit notes at every stage
+- [ ] US-ONB-30 · Explore bills and vendor credits at every stage
 - [x] US-INV-36 · Credit an invoice's lines, with their tax
 - [x] US-INV-37 · Start a credit note from the credit notes list
 - [x] US-INV-38 · See a credit note at a glance, with one next step
