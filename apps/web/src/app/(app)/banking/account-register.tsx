@@ -68,7 +68,7 @@ function sourceHref(row: AccountRegisterRow): string | null {
     case "vendor_payment_delete":
       return `/vendor-payments?id=${row.sourceId}`;
     case "expense":
-      return `/expenses?id=${row.sourceId}`;
+      return `/expenses/${row.sourceId}`;
     case "manual_journal":
     case "manual_journal_reversal":
       return `/journals/${row.sourceId}`;

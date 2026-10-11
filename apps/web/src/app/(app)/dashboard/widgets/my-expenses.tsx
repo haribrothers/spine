@@ -55,7 +55,7 @@ export function MyExpenses() {
           <ul className="flex flex-col divide-y divide-border">
             {expenses.map((e) => (
               <li key={e.id}>
-                <Link href={`/expenses?id=${e.id}`} className="flex items-center justify-between gap-3 rounded-sm py-2.5 hover:bg-surface-sunken">
+                <Link href={`/expenses/${e.id}`} className="flex items-center justify-between gap-3 rounded-sm py-2.5 hover:bg-surface-sunken">
                   <span className="flex flex-col">
                     <span className="text-[14px] text-on-surface">{e.categoryName ?? "Expense"}</span>
                     <span className="text-[12px] text-on-surface-muted">{new Date(`${e.date.slice(0, 10)}T00:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</span>

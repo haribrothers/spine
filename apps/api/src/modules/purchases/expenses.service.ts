@@ -1,14 +1,14 @@
 import { moduleOn } from "../../common/modules";
 import { getMemberRole } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { BulkResult, createExpenseSchema, updateExpenseSchema } from "@spine/shared";
+import type { BulkResult, createExpenseSchema, ExpenseActivityEntry, PossibleDuplicateExpense, updateExpenseSchema } from "@spine/shared";
 import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenses, expenseCategories, expenseLabourLines, accounts, invoiceLines, jobs, jobAssignments, user } from "../../db/schema";
+import { expenses, expenseCategories, expenseLabourLines, accounts, auditLog, invoiceLines, invoices, jobs, jobAssignments, user } from "../../db/schema";
 import type { Transaction } from "../../db/client";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
@@ -67,17 +67,32 @@ export class ExpensesService {
     if (options.submittedByUserId) conditions.push(eq(expenses.submittedByUserId, options.submittedByUserId));
 
     const reviewer = alias(user, "reviewer");
+    const submitter = alias(user, "submitter");
     const rows = await this.db
-      .select({ expense: expenses, categoryName: expenseCategories.name, reviewerName: reviewer.name })
+      .select({ expense: expenses, categoryName: expenseCategories.name, reviewerName: reviewer.name, submittedByName: submitter.name, jobName: jobs.name, billedInvoiceId: invoices.id, billedInvoiceNumber: invoices.number })
       .from(expenses)
       .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
       // US-MOB-12: who approved or rejected it ("— Sarah Mendes" under a rejection).
       .leftJoin(reviewer, eq(reviewer.id, sql`coalesce(${expenses.rejectedByUserId}, ${expenses.approvedByUserId})`))
+      // US-PUR-42: who submitted it, its job and the invoice it was billed on.
+      .leftJoin(submitter, eq(submitter.id, expenses.submittedByUserId))
+      .leftJoin(jobs, eq(jobs.id, expenses.jobId))
+      .leftJoin(invoiceLines, eq(invoiceLines.id, expenses.billedOnInvoiceLineId))
+      .leftJoin(invoices, eq(invoices.id, invoiceLines.invoiceId))
       .where(and(...conditions))
-      .orderBy(desc(expenses.createdAt));
+      .orderBy(desc(expenses.date), desc(expenses.createdAt));
     // US-OPS-33: the paperclip on the list.
     const counts = await attachmentCounts(this.db, orgId, "expense", rows.map((r) => r.expense.id));
-    return rows.map((r) => ({ ...r.expense, categoryName: r.categoryName, reviewerName: r.reviewerName ?? null, attachmentCount: counts.get(r.expense.id) ?? 0 }));
+    return rows.map((r) => ({
+      ...r.expense,
+      categoryName: r.categoryName,
+      reviewerName: r.reviewerName ?? null,
+      submittedByName: r.submittedByName ?? null,
+      jobName: r.jobName ?? null,
+      billedInvoiceId: r.billedInvoiceId ?? null,
+      billedInvoiceNumber: r.billedInvoiceNumber ?? null,
+      attachmentCount: counts.get(r.expense.id) ?? 0,
+    }));
   }
 
   /**
@@ -91,10 +106,17 @@ export class ExpensesService {
 
   /** `onlySubmittedBy` (from `readScope`) makes anyone else's expense a 404. */
   async getOne(orgId: string, id: string, onlySubmittedBy?: string) {
+    const reviewer = alias(user, "reviewer");
+    const submitter = alias(user, "submitter");
     const [row] = await this.db
-      .select({ expense: expenses, categoryName: expenseCategories.name })
+      .select({ expense: expenses, categoryName: expenseCategories.name, accountId: expenseCategories.accountId, reviewerName: reviewer.name, submittedByName: submitter.name, jobName: jobs.name, billedInvoiceId: invoices.id, billedInvoiceNumber: invoices.number })
       .from(expenses)
       .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .leftJoin(reviewer, eq(reviewer.id, sql`coalesce(${expenses.rejectedByUserId}, ${expenses.approvedByUserId})`))
+      .leftJoin(submitter, eq(submitter.id, expenses.submittedByUserId))
+      .leftJoin(jobs, eq(jobs.id, expenses.jobId))
+      .leftJoin(invoiceLines, eq(invoiceLines.id, expenses.billedOnInvoiceLineId))
+      .leftJoin(invoices, eq(invoices.id, invoiceLines.invoiceId))
       .where(
         and(
           eq(expenses.orgId, orgId),
@@ -111,7 +133,83 @@ export class ExpensesService {
         ? await this.db.select().from(expenseLabourLines).where(eq(expenseLabourLines.expenseId, id)).orderBy(asc(expenseLabourLines.sortOrder))
         : [];
     const refs = await this.moneyAccounts.refs(orgId, [row.expense.moneyAccountId]);
-    return { ...row.expense, categoryName: row.categoryName, moneyAccount: row.expense.moneyAccountId ? (refs.get(row.expense.moneyAccountId) ?? null) : null, labourLines };
+    // US-PUR-43: the account its category posts to.
+    const [account] = row.accountId ? await this.db.select({ code: accounts.code, name: accounts.name }).from(accounts).where(eq(accounts.id, row.accountId)) : [];
+    return {
+      ...row.expense,
+      categoryName: row.categoryName,
+      categoryAccount: account ? `${account.code} ${account.name}` : null,
+      reviewerName: row.reviewerName ?? null,
+      submittedByName: row.submittedByName ?? null,
+      jobName: row.jobName ?? null,
+      billedInvoiceId: row.billedInvoiceId ?? null,
+      billedInvoiceNumber: row.billedInvoiceNumber ?? null,
+      moneyAccount: row.expense.moneyAccountId ? (refs.get(row.expense.moneyAccountId) ?? null) : null,
+      labourLines,
+    };
+  }
+
+  /**
+   * US-PUR-43 (D-227) — what happened to the expense, newest first, from
+   * the audit log: submitted, edited (what changed), rejected and approved
+   * (with the comment), resubmitted, and billed (with the invoice). The
+   * same access as `getOne`, so Field reads only their own.
+   */
+  async activity(orgId: string, id: string, onlySubmittedBy?: string): Promise<ExpenseActivityEntry[]> {
+    const expense = await this.getOne(orgId, id, onlySubmittedBy);
+    const rows = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "expense"), eq(auditLog.entityId, id)));
+    const labels: Record<string, string> = { receiptFileId: "receipt", amount: "amount", taxAmount: "tax", categoryId: "category", jobId: "job", date: "date", description: "description", paidBy: "who paid", isBillable: "billable", entryMode: "entry", currency: "currency", moneyAccountId: "account", taxRateId: "tax rate" };
+    const entries: ExpenseActivityEntry[] = [];
+    for (const row of rows) {
+      const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown; to: unknown }[];
+      const comment = changes.find((c) => c.field === "reviewComment")?.to;
+      const base = { at: new Date(row.at).toISOString(), actorName: row.actorName ?? null };
+      if (row.action === "created") entries.push({ ...base, type: "submitted" });
+      else if (row.action === "resubmitted") entries.push({ ...base, type: "resubmitted" });
+      else if (row.action === "updated") {
+        const what = [...new Set(changes.map((c) => labels[c.field]).filter(Boolean))];
+        entries.push({ ...base, type: "edited", detail: what.length ? what.join(", ") : null });
+      } else if (row.action === "rejected") entries.push({ ...base, type: "rejected", detail: typeof comment === "string" ? comment : expense.status === "rejected" ? expense.reviewComment : null });
+      else if (row.action === "approved") entries.push({ ...base, type: "approved", amount: expense.amount.toString(), detail: typeof comment === "string" ? comment : expense.reviewComment });
+      else if (row.action === "billed") entries.push({ ...base, type: "billed", detail: expense.billedInvoiceNumber, linkId: expense.billedInvoiceId });
+    }
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /**
+   * US-PUR-44 — my own expenses (not rejected) with the same amount on the
+   * same day: a warning before submitting one twice; it still submits.
+   */
+  async possibleDuplicates(orgId: string, userId: string, query: { amount: bigint; date: string; excludeId?: string }): Promise<PossibleDuplicateExpense[]> {
+    const rows = await this.db
+      .select({ expense: expenses, categoryName: expenseCategories.name })
+      .from(expenses)
+      .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .where(
+        and(
+          eq(expenses.orgId, orgId),
+          eq(expenses.submittedByUserId, userId),
+          eq(expenses.amount, query.amount),
+          eq(expenses.date, new Date(`${query.date}T00:00:00Z`)),
+          inArray(expenses.status, ["submitted", "approved"]),
+          query.excludeId ? ne(expenses.id, query.excludeId) : undefined,
+        ),
+      )
+      .orderBy(desc(expenses.createdAt))
+      .limit(3);
+    return rows.map((r) => ({
+      id: r.expense.id,
+      number: r.expense.number,
+      date: new Date(r.expense.date).toISOString().slice(0, 10),
+      amount: r.expense.amount.toString(),
+      currency: r.expense.currency,
+      categoryName: r.categoryName,
+      status: r.expense.status,
+    }));
   }
 
   /**
@@ -233,9 +331,11 @@ export class ExpensesService {
       { own: "expenses.edit_own", others: "expenses.edit_others" },
       "own",
     );
-    if (existing.status !== "submitted") {
-      throw new BadRequestException("Only a submitted expense can be edited — an approved expense has already posted to the ledger.");
+    // US-PUR-45 (D-227): a rejected expense can be fixed and resubmitted; an approved one has posted and can't change.
+    if (existing.status === "approved") {
+      throw new BadRequestException("Only a waiting or rejected expense can be edited — an approved expense has already posted to the ledger.");
     }
+    const resubmitting = existing.status === "rejected";
     // US-PUR-23: switching mode or changing labour rows re-checks the whole labour entry.
     const mode = input.entryMode ?? existing.entryMode;
     const labourChanged = input.entryMode !== undefined || input.labourLines !== undefined;
@@ -274,6 +374,7 @@ export class ExpensesService {
           ...(input.receiptFileId !== undefined ? { receiptFileId: input.receiptFileId } : {}),
           ...(input.isBillable !== undefined ? { isBillable: input.isBillable } : {}),
           ...(input.entryMode !== undefined ? { entryMode: input.entryMode } : {}),
+          ...(resubmitting ? { status: "submitted" as const, rejectedByUserId: null, rejectedAt: null, reviewComment: null } : {}),
           updatedAt: new Date(),
         })
         .where(eq(expenses.id, id))
@@ -284,7 +385,9 @@ export class ExpensesService {
       // Labour rows aren't a field; the amount change already says what moved.
       const { labourLines: _rows, ...fields } = input;
       const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>);
-      if (changes.length) {
+      if (resubmitting) {
+        await this.auditLog.record(tx, { orgId, actorUserId, action: "resubmitted", entityType: "expense", entityId: id, contactId: null, changes: [{ field: "status", from: "rejected", to: "submitted" }, ...changes] });
+      } else if (changes.length) {
         await this.auditLog.record(tx, {
           orgId,
           actorUserId,
@@ -403,7 +506,8 @@ export class ExpensesService {
         entityType: "expense",
         entityId: id,
         contactId: null,
-        changes: [{ field: "status", from: "submitted", to: "approved" }],
+        // US-PUR-43: the comment stays with the approval in Activity.
+        changes: [{ field: "status", from: "submitted", to: "approved" }, ...(comment ? [{ field: "reviewComment", from: null, to: comment }] : [])],
       });
 
       return row;
@@ -485,7 +589,8 @@ export class ExpensesService {
         entityType: "expense",
         entityId: id,
         contactId: null,
-        changes: [{ field: "status", from: "submitted", to: "rejected" }],
+        // US-PUR-45: the reason stays in Activity after the expense is resubmitted.
+        changes: [{ field: "status", from: "submitted", to: "rejected" }, { field: "reviewComment", from: null, to: comment }],
       });
 
       return row;

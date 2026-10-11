@@ -277,6 +277,8 @@ export interface DemoPlanExpense {
   outcome: "submitted" | "approved" | "rejected";
   job?: string;
   rejectReason?: string;
+  /** US-ONB-31 — a receipt the demo prints for it: the shop and its town. */
+  receipt?: { merchant: string; place: string };
 }
 
 export interface DemoPlanCreditNote {

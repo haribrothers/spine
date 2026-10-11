@@ -1541,6 +1541,8 @@ Shows: "VPY-0001" · "Purchases › Vendor Payments" · "Apex Timber Supply" · 
 
 ![ExpensesList](screens/ExpensesList.webp)
 
+Superseded by `ExpensesListRefined` (D-227).
+
 Links to: `VendorBillsList`, `ExpenseDialog`, `ExpensesEmpty`
 
 Shows: "Purchases › Expenses" · "OVERVIEW" · "Expenses" · "98 Dashboard" · "Submit an expense for approval. Categories are managed from Settings → Purchases." · "SALES" · "9, Contacts" · "Total expenses" · "Submitted" · "Approved" · "Rejected" · "Pipeline" · "Meetings" · "Catalogue" · "Status" · "My expenses only" · "Submit expense" · "• Quotes" · "JOBS" · "Search expenses" · "*= Columns" · "• Jobs" · "Date tu" · "Category T" · "Job Tu" · "Amount 11" · "Submitted by t" · "BILLING" · "E Invoices" · "9/25/2026" · "Site Meals" · "120.00 USD" · "Alex Morgan" · "..." · "S Credit Notes" · "10/1/2026" · "Fuel & Vehicle" · "60.00 USD" · "••." · "• Payments" · "9/13/2026" · "Tools & Small Equipment" · "150.00 USD" · "• Receivables" · "9/21/2026" · …
@@ -1570,6 +1572,8 @@ Shows: "Purchases > Expenses" · "OVERVIEW" · "Expenses" · "98 Dashboard" · "
 
 ![ExpenseDialog](screens/ExpenseDialog.webp)
 
+Superseded by `ExpenseFormRefined` (D-227).
+
 Links to: `ExpensesList`, `ExpensesEmpty`, `ExpenseCategoryDialog`, `ExpenseCategories`
 
 Shows: "Purchases › Expenses" · "Expenses" · "Submit an expense for approval. Categories are managed from Settings → Purchases." · "Submit an expense" · "ejected" · "A submitted expense doesn't post to the ledger until an owner or staff member approves it." · "Category *" · "Job" · "Select a category..." · "No job" · "Submit expense" · "Optional — flows into job costing once approved." · "Date *" · "Currency *" · "= Columns" · "10/4/2026" · "USD" · "Submitted by t" · "Amount*" · "Tax rate" · "Alex Morgan" · "0.00" · "No tax" · "••." · "Tax amount" · "Paid by*" · "Company" · "Included in the amount above, not added on top." · "Description" · "What was this for?" · "Receipt" · "Upload receipt" · "Cancel" · "Save expense"
@@ -1578,6 +1582,8 @@ Shows: "Purchases › Expenses" · "Expenses" · "Submit an expense for approval
 **Priority:** P1 · **Phase:** 7 · **Stories:** US-PUR-23 · **Source:** Drawn
 
 ![ExpenseDialogLabour](screens/ExpenseDialogLabour.webp)
+
+Superseded by `ExpenseFormLabour` (D-227).
 
 Links to: `ExpensesList`, `ExpenseDrawerSubmitted`
 
@@ -1589,6 +1595,8 @@ The "Amount" side of the switch is today's `ExpenseDialog`.
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-08, US-PUR-10 · **Source:** Captured
 
 ![ExpenseDrawerSubmitted](screens/ExpenseDrawerSubmitted.webp)
+
+Superseded by `ExpensePage` (D-227).
 
 Links to: `ExpenseApproveConfirm`, `EmailExpenseApproved`
 
@@ -1616,6 +1624,8 @@ Shows: "Expense Submitted" · "Purchases > Expenses" · "Fuel & Vehicle" · "Exp
 **Priority:** P2 · **Phase:** 4 · **Stories:** US-PUR-11, US-PUR-12 · **Source:** Captured
 
 ![ExpenseDrawerApproved](screens/ExpenseDrawerApproved.webp)
+
+Superseded by `ExpensePage` (D-227).
 
 Links to: `ExpenseBillToCustomer`
 
@@ -1708,6 +1718,8 @@ The note shows once, after the template is applied. `OnbIndustryTemplate`'s Cons
 **Priority:** P1 · **Phase:** 6 · **Stories:** US-PUR-20 · **Source:** Drawn
 
 ![ExpenseDrawerOwn](screens/ExpenseDrawerOwn.webp)
+
+Superseded by `ExpensePage` (D-227).
 
 Links to: `ExpenseApproveConfirm`
 
@@ -3701,6 +3713,82 @@ Shows: the bill page's More menu: "View history" "Make recurring" "Duplicate" "R
 Links to: —
 
 Shows: "Apply VCR-0007 to bills" "₹7,788.00 left to use. Nothing is posted; what you owe on each bill drops." · "Ridgeline's open bills — the one it's against first, then oldest first" · "Bill" "Due" "Balance" "Apply" · "RTE-3302" "Against this credit" "Bill date 25 Sept" "15 Oct" "Due in 4 days" · "RTE-3340" "Due in 21 days" · "Applying ₹7,788.00" "₹0.00 left on VCR-0007" · "Cancel" "Apply ₹7,788.00"
+
+## Expenses you can work from
+
+Drawn in Claude Design for US-PUR-42 to US-PUR-45 (D-227): project "Spine web — refinements before Phase 10", canvases "20 Expenses" and "20b Expenses labour". A list that shows what's waiting and what it's cost, in the layout every refined list shares; an expense on its own page with the receipt beside what was claimed; a faster form with a files pane that scrolls on its own; fixing and resubmitting a rejected expense; headcount × day rate new, on its page and edited.
+
+### ExpensesListRefined — What's waiting and what it's cost
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-42 · **Source:** Claude Design
+
+![ExpensesListRefined](screens/ExpensesListRefined.webp)
+
+Links to: `ExpensePage`, `ExpenseFormRefined`
+
+Shows: "Purchases › Expenses" · tabs "Expenses" "Categories" · "Waiting for approval" "₹6,650.00" "2 expenses from others" · "Approved this month" · "Ready to bill" "billable, not invoiced" · "Rejected" "to fix and resubmit" · "State" "All categories" "Submitted by" "All jobs" · "Updated just now" · "Submit expense" · "Search numbers, descriptions, jobs or people" "Columns" · "Date ↓" "Number" "Description" "Job" "Submitted by" "Paid by" "State" "Amount" · "—" before a number · "Waiting for approval" "Approved" "Billable" "Billed" "Rejected" · row menu: "View" "Edit" "Approve" "Reject" "Delete"
+
+### ExpensesListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-42 · **Source:** Claude Design
+
+![ExpensesListDark](screens/ExpensesListDark.webp)
+
+Links to: `ExpensePage`
+
+Shows: the list on the dark app with "Waiting for approval" pressed · "Showing these · press again to clear"
+
+### ExpensePage — An expense on its own page
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-43 · **Source:** Claude Design
+
+![ExpensePage](screens/ExpensePage.webp)
+
+Links to: `ExpensesListRefined`, `ExpenseApproveConfirm`, `ExpenseRejectDialog`, `ExpenseBillToCustomer`
+
+Shows: "Purchases › Expenses › Expense" · "Expense" "Waiting for approval" · "Fuel & freight" "11 Oct" "Submitted by Arjun Mehta" "Wing C fit-out" "Paid by employee" · "Reject" "Approve and next" "Approve" "More" · "Amount" "Tax" "GST 18%, included" "Paid from" "Billable" · "Receipt" "Open full size" with the receipt previewed beside "Description" "Category · posts to 6100 Fuel & Travel" "Date on the receipt" · "Attachments" "Add files" the receipt tagged "Receipt" · Activity "Edited · receipt added" "Submitted for approval"
+
+### ExpenseRejectedResubmit — Fix and resubmit a rejected expense
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-43, US-PUR-45 · **Source:** Claude Design
+
+![ExpenseRejectedResubmit](screens/ExpenseRejectedResubmit.webp)
+
+Links to: `ExpenseFormRefined`
+
+Shows: "Expense" "Rejected" · "Submitted by you" · "Fix and resubmit" "More" · "Rejected by Priya Raman on 4 Oct: “Use the site van for supplier runs — a taxi isn't covered.” Fix it and resubmit, or delete it if it shouldn't be claimed." · "Paid from" "Chosen when approved" · Activity "Rejected · “…”" "Submitted for approval"
+
+### ExpenseFormRefined — Submit an expense in seconds
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-44 · **Source:** Claude Design
+
+![ExpenseFormRefined](screens/ExpenseFormRefined.webp)
+
+Links to: `ExpensePage`
+
+Shows: "Submit an expense" "Drop the receipt, check the amounts, and it goes to an approver." · files pane, scrolling on its own: "Receipt and files" "Add files" · the receipt previewed with "Replace" "Remove" "diesel-11-oct.jpg · the receipt" · further files listed, each with a remove button · "Drop more photos or PDFs to add them." · "Enter as" "Amount" "Headcount × day rate" · "Category" "Job" "Date" "Currency" (a picker) "Amount" "Tax rate" "Tax amount" "Worked out from GST 18%, included in the amount." "Paid by" · "You submitted ₹4,850.00 on 11 Oct already — Fuel & freight, waiting for approval. Check it isn't the same receipt before you submit. Open it →" · "Description" · "Billable to a customer" · "Cancel" "Submit and add another" "Submit expense"
+
+### ExpenseFormLabour — A day's labour, new
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-23, US-PUR-44 · **Source:** Claude Design
+
+![ExpenseFormLabour](screens/ExpenseFormLabour.webp)
+
+Links to: `ExpenseLabourPage`
+
+Shows: "Submit an expense" "A day's labour on site: workers per trade × their day rate." · "Receipt and files" "Add files" · "Drop a muster sheet or site photo here, or choose files. Optional for labour." · "Headcount × day rate" · "Category" "Direct labour" "Preselected: posts to 5200 Direct Labour." · "Job*" "Labour is always for a job." · "Trade" "Workers" "Day rate" "Total" · a trade suggested: "Helper" "last ₹650.00 a day" · "Add trade" · "Total for the day · 7 workers" · "Only headcounts and day rates are recorded — no names, attendance or hours." · "Paid by" "Paid from"
+
+### ExpenseLabourPage — A labour expense's page
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-23, US-PUR-43 · **Source:** Claude Design
+
+![ExpenseLabourPage](screens/ExpenseLabourPage.webp)
+
+Links to: `ExpenseBillToCustomer`
+
+Shows: "EXP-0044" "Approved" "Billable" · "Direct labour" · "Bill to customer" "More" · "Amount" "15 workers · 3 trades" "Tax" "No tax on labour" · "Labour · headcount × day rate" "Trade" "Workers" "Day rate" "Total" · "Total for the day · 15 workers" · "Details" "Review comment" · "Attachments" "No receipt — a labour day doesn't need one." · Activity "Approved · posted ₹11,700.00 from HDFC Current"
+
+### ExpenseFormLabourEdit — Edit a waiting labour expense
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-23, US-PUR-44 · **Source:** Claude Design
+
+![ExpenseFormLabourEdit](screens/ExpenseFormLabourEdit.webp)
+
+Links to: `ExpenseLabourPage`
+
+Shows: "Edit expense" "It stays waiting for approval. Changing the rows changes the amount." · "Receipt and files" "Add files" · a muster sheet as the receipt with a site photo listed under it · the rows filled in · "Total for the day · 17 workers" · "Cancel" "Save changes"
 
 ## Mobile field companion
 

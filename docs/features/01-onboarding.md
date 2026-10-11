@@ -16,7 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
-| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -556,3 +556,21 @@ Decision: D-216, D-225, D-226
 **Implementation notes**
 - Data: `vendor_credits.is_demo`, `vendor_refunds.is_demo` and `recurring_bills.is_demo` (`boolean default false`, migration `0115`), set by the demo for what it loads — a credit or schedule a person records for a demo vendor stays theirs and keeps that vendor (D-191 (5)); a refund takes its credit's flag; the ledger treats a demo credit's entries, and its refunds', as demo; a demo schedule is for a demo vendor, so its runs create demo bills.
 - Shared: plan bills gain partial `payments[].amount`; plans gain `vendorCredits` (`billKey?`, `dateInDays`, `outcome: draft | open`, `applyInDays?`, `applyAmount?`, `refundInDays?`) and `recurringBills`. Credits are seeded through `VendorCreditsService` (record, apply, refund) and the schedule through `RecurringBillsService`, with their audit entries on the plan's days.
+
+### US-ONB-31 · Explore expenses with their receipts
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`ExpensesListRefined`, `ExpensePage`, `ExpenseRejectedResubmit` with demo data)
+**As** an evaluator, **I want** the demo's expenses to come with their receipts and read on their own days, **so that** an expense's page shows the receipt beside what was claimed, and its Activity, the way it will for real ones.
+
+Decision: D-216, D-227
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** each of its five expenses (approved, waiting and rejected) has a receipt: a till-roll PDF from a shop that fits what it was for (a café for a lunch, a fuel station for fuel, a hire company for hire), in the business's town, with the date, what was bought, the tax inside the amount and the total, in the demo's currency and formats.
+- **Given** Riverstone Builders, **when** it's loaded, **then** four of its expenses have a receipt and "Fuel — no receipt attached" still has none.
+- **Given** a demo expense, **when** I open its page, **then** the receipt previews beside the details and opens full size; it's served only through the expense's own checks, like any upload.
+- **Given** a demo expense, **when** I look at its Activity, **then** it was submitted on its date and approved or rejected the day after (never later than today), not all at the moment the demo loaded.
+- **Given** "Delete all demo data", **when** it runs, **then** the demo's receipts go with its expenses.
+- **Given** no file storage is set up, **when** the demo loads, **then** the expenses load without receipts and nothing fails.
+
+**Implementation notes**
+- Shared: plan expenses gain `receipt?: { merchant, place }`; industry plans pick the merchant from the category and description (`receiptMerchant`) and the place from the country's business town.
+- API: the seeder prints each receipt with `@react-pdf` (`demo-receipt.tsx`, 80 mm wide, light) and stores it through `FilesService.upload` before creating the expense with `receiptFileId`; the created, approved and rejected audit entries and `approvedAt` / `rejectedAt` are set to the plan's days. Deleting the demo removes each deleted demo expense's receipt once nothing else points at it (`FilesService.deleteStored`).

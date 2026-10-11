@@ -222,11 +222,12 @@ export function riverstonePlan(): DemoPlan {
     ],
     recurringBills: [{ contact: "ridgeline", name: "Equipment yard rental", startsInDays: 5, dueDays: 14, lines: [{ name: "Equipment yard — monthly rental", quantity: 1, price: 95000n, tax: null }] }],
     expenses: [
-      { category: "Fuel & freight", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved", job: "marina" },
-      { category: "Site overheads & permits", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved" },
-      { category: "Plant & equipment hire", amount: 15000n, paidBy: "company", description: "Replacement power tools", dateInDays: -20, outcome: "approved" },
+      // US-ONB-31: receipts, except the fuel that says it has none.
+      { category: "Fuel & freight", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved", job: "marina", receipt: { merchant: "Highway Fuel Centre", place: "Portland" } },
+      { category: "Site overheads & permits", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved", receipt: { merchant: "Corner Café", place: "Portland" } },
+      { category: "Plant & equipment hire", amount: 15000n, paidBy: "company", description: "Replacement power tools", dateInDays: -20, outcome: "approved", receipt: { merchant: "Trade Supplies Co.", place: "Portland" } },
       { category: "Fuel & freight", amount: 6000n, paidBy: "employee", description: "Fuel — no receipt attached", dateInDays: -2, outcome: "submitted" },
-      { category: "Site overheads & permits", amount: 12000n, paidBy: "employee", description: "Client lunch (over policy limit)", dateInDays: -8, outcome: "rejected", rejectReason: "Over the org's per-meal policy limit — please resubmit with an itemised receipt." },
+      { category: "Site overheads & permits", amount: 12000n, paidBy: "employee", description: "Client lunch (over policy limit)", dateInDays: -8, outcome: "rejected", rejectReason: "Over the org's per-meal policy limit — please resubmit with an itemised receipt.", receipt: { merchant: "Harbourside Grill", place: "Portland" } },
     ],
     // US-ONB-29: off its invoice; on the paid kitchen invoice, credit kept for the customer; and credit refunded.
     creditNotes: [

@@ -498,6 +498,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-INV-35 · Duplicate an invoice
 - [x] US-ONB-29 · Explore credit notes at every stage
 - [x] US-ONB-30 · Explore bills and vendor credits at every stage
+- [x] US-ONB-31 · Explore expenses with their receipts
 - [x] US-INV-36 · Credit an invoice's lines, with their tax
 - [x] US-INV-37 · Start a credit note from the credit notes list
 - [x] US-INV-38 · See a credit note at a glance, with one next step
@@ -534,10 +535,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-39 · Enter a vendor credit like a bill
 - [x] US-PUR-40 · Raise and use a credit from its bill
 - [x] US-PUR-41 · Record several draft credits at once
-- [ ] US-PUR-42 · See what's waiting and what it's cost at a glance
-- [ ] US-PUR-43 · Review an expense on its own page
-- [ ] US-PUR-44 · Submit an expense faster
-- [ ] US-PUR-45 · Fix and resubmit a rejected expense
+- [x] US-PUR-42 · See what's waiting and what it's cost at a glance
+- [x] US-PUR-43 · Review an expense on its own page
+- [x] US-PUR-44 · Submit an expense faster
+- [x] US-PUR-45 · Fix and resubmit a rejected expense
 
 ## Phase 10 · AI assistant
 

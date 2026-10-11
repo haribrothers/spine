@@ -20,12 +20,14 @@ test.describe("US-PUR-20", () => {
     expect(created.ok()).toBe(true);
 
     await page.goto("/expenses");
-    await page.getByRole("row").filter({ hasText: "123.45" }).first().getByRole("button").first().click();
+    // US-PUR-43: the row opens the expense's page.
+    await page.getByRole("row").filter({ hasText: "123.45" }).first().getByRole("link").first().click();
+    await page.waitForURL(/\/expenses\/[0-9a-f-]{36}$/);
 
     await expect(page.getByTestId("self-review-note")).toHaveText("Someone else needs to approve your own expense.");
     await expect(page.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Reject", exact: true })).toHaveCount(0);
-    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
+    await page.getByTestId("expense-actions").getByRole("button", { name: "More" }).click();
     await expect(page.getByRole("menuitem", { name: "Delete expense" })).toBeVisible();
     await context.close();
   });

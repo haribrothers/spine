@@ -71,10 +71,14 @@ describe("US-PUR-10 · edit or delete my submitted expense (requires local Postg
     await json(await call(owner, "POST", `/expenses/${approved.id}/approve`, {}));
     const rejected = await submit(staff);
     await json(await call(owner, "POST", `/expenses/${rejected.id}/reject`, { comment: "Duplicate" }));
-    for (const id of [approved.id, rejected.id]) {
+    // US-PUR-45 (D-227): a rejected expense is fixed and resubmitted; an approved one can't change.
+    const resubmitted = await call(owner, "PUT", `/expenses/${rejected.id}`, { amount: "1" });
+    expect(resubmitted.status).toBe(200);
+    expect(((await resubmitted.json()) as { status: string }).status).toBe("submitted");
+    for (const id of [approved.id]) {
       const res = await call(owner, "PUT", `/expenses/${id}`, { amount: "1" });
       expect(res.status).toBe(400);
-      expect(((await res.json()) as { message: string }).message).toBe("Only a submitted expense can be edited — an approved expense has already posted to the ledger.");
+      expect(((await res.json()) as { message: string }).message).toBe("Only a waiting or rejected expense can be edited — an approved expense has already posted to the ledger.");
     }
   });
 

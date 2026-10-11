@@ -143,6 +143,18 @@ export const BILL_TIMELINE = [
 ] as const satisfies readonly { key: string; vendor: VendorSlot; date: number; due: number; paid?: number; part?: number; voided?: string; draft?: boolean; job?: "a" | "b" | "c" }[];
 export type BillKey = (typeof BILL_TIMELINE)[number]["key"];
 
+/** US-ONB-31 — the kind of shop a demo expense's receipt comes from, by what it was for. */
+export function receiptMerchant(category: string, description: string): string {
+  const text = `${category} ${description}`.toLowerCase();
+  if (/lunch|meal|dinner|coffee|café|cafe/.test(text)) return "Corner Café";
+  if (/fuel|diesel|petrol|mileage/.test(text)) return "Highway Fuel Centre";
+  if (/permit|council|licence fee|filing/.test(text)) return "City Council — Permits";
+  if (/hire|rental|vibrator|scaffold/.test(text)) return "Tool & Plant Hire Co.";
+  if (/software|licence|subscription|cloud|domain/.test(text)) return "Cloud Software Ltd";
+  if (/travel|taxi|train|flight|parking/.test(text)) return "City Cabs";
+  return "Trade Supplies Co.";
+}
+
 export const EXPENSE_TIMELINE = [
   { key: "exp1", date: -120, outcome: "approved" },
   { key: "exp2", date: -60, outcome: "approved" },
@@ -470,6 +482,8 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
       outcome: step.outcome,
       ...("job" in step && pack.jobs ? { job: step.job } : {}),
       ...(step.outcome === "rejected" ? { rejectReason: "Over the meal limit in the expenses policy — resubmit the itemised receipt." } : {}),
+      // US-ONB-31: every demo expense comes with its receipt.
+      receipt: { merchant: receiptMerchant(content.category, content.description), place: country.business.place.city },
     };
   });
 

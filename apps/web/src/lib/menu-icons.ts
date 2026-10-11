@@ -8,6 +8,7 @@ import {
   Banknote,
   Bell,
   Camera,
+  Check,
   Copy,
   Download,
   Eye,
@@ -31,6 +32,7 @@ import {
   Trash2,
   Undo2,
   User,
+  X,
   type LucideIcon,
 } from "lucide-react";
 
@@ -83,4 +85,7 @@ export const MENU_ICONS = {
   statement: ScrollText,
   /** Open a customer's or vendor's contact page. */
   contact: User,
+  /** Approve or reject something waiting on me (an expense, US-PUR-42). */
+  approve: Check,
+  reject: X,
 } satisfies Record<string, LucideIcon>;

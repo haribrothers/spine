@@ -47,18 +47,19 @@ test.describe("US-BANK-03", () => {
     const today = new Date();
     const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const expense = await post("/expenses", { categoryId: category.id, date: iso, currency: "USD", amount: "6400", description: "Fuel" });
-    await page.goto(`/expenses?id=${expense.id}`);
-    const drawer = page.getByRole("dialog");
-    await expect(drawer).toContainText("Paid from");
-    await expect(drawer).toContainText("Bank Account");
-    await drawer.getByRole("button", { name: "Approve" }).click();
-    const approve = page.getByRole("alertdialog");
+    // US-PUR-43: the expense opens on its own page.
+    await page.goto(`/expenses/${expense.id}`);
+    const figures = page.getByTestId("fig-paid-from");
+    await expect(figures).toContainText("Paid from");
+    await expect(figures).toContainText("Bank Account");
+    await page.getByTestId("expense-actions").getByRole("button", { name: "Approve", exact: true }).click();
+    const approve = page.getByRole("dialog", { name: "Approve this expense?" });
     const paidFrom = approve.getByRole("combobox", { name: "Paid from" });
     await expect(paidFrom).toHaveText("Bank Account");
     await paidFrom.click();
     await page.getByRole("option", { name: /Business Visa/ }).click();
-    await approve.getByRole("button", { name: "Approve" }).click();
-    await expect(page.getByRole("dialog")).toContainText("Business Visa");
+    await approve.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect(figures).toContainText("Business Visa");
 
     await page.goto("/banking");
     await expect(page.getByTestId("money-accounts-table").getByRole("row", { name: /Business Visa/ })).toContainText("$64.00 owed");

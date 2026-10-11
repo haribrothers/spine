@@ -35,8 +35,9 @@ test.describe("US-DASH-13", () => {
     test.skip(!(await rowsOf(page)).some((r) => r.kind === "expenses_awaiting_approval"), "no expenses waiting in the demo data");
     await page.goto("/dashboard");
     await page.locator('li[data-kind="expenses_awaiting_approval"]').getByRole("link", { name: "Review" }).click();
-    await expect(page).toHaveURL(/\/expenses\?status=submitted/);
-    await expect(page.getByRole("combobox", { name: "Filter by status" })).toContainText("Submitted");
+    // US-PUR-42: the Waiting for approval card, pressed.
+    await expect(page).toHaveURL(/\/expenses\?card=wait/);
+    await expect(page.getByRole("button", { name: "Show waiting for approval only" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("several overdue invoices: 'Send reminder' opens Invoices filtered to overdue with them selected", async ({ page, seededOrg: _ }) => {

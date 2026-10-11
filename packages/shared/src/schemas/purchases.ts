@@ -204,6 +204,30 @@ export interface PossibleDuplicateVendorBill {
   status: "draft" | "recorded" | "void";
 }
 
+/** US-PUR-43 (D-227) — one line in an expense's Activity: `GET /expenses/:id/activity`. */
+export interface ExpenseActivityEntry {
+  type: "submitted" | "edited" | "rejected" | "resubmitted" | "approved" | "billed";
+  at: string;
+  actorName: string | null;
+  /** The amount approved. */
+  amount?: string | null;
+  /** The review comment; what was edited; the invoice number it was billed on. */
+  detail?: string | null;
+  /** The invoice it was billed on. */
+  linkId?: string | null;
+}
+
+/** US-PUR-44 — an expense of mine with the same amount on the same day: `GET /expenses/possible-duplicates`. */
+export interface PossibleDuplicateExpense {
+  id: string;
+  number: string | null;
+  date: string;
+  amount: string;
+  currency: string;
+  categoryName: string | null;
+  status: "submitted" | "approved" | "rejected";
+}
+
 /** US-PUR-37 (D-226) — one line in a vendor credit's Activity: `GET /vendor-credits/:id/activity`. */
 export interface VendorCreditActivityEntry {
   type: "created" | "recorded" | "applied" | "unapplied" | "refunded" | "refund_deleted" | "voided";

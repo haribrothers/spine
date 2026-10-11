@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-11 — Demo expenses with their receipts (US-ONB-31, D-216)
+
+- **Receipts:** every demo expense has a receipt PDF printed for it — a till roll from a shop that fits what it was for, in the business's town, with the date, what was bought, the tax inside the amount and the total — stored like any upload and shown on the expense's page. Riverstone's "Fuel — no receipt attached" still has none. Without file storage the demo loads without receipts.
+- **Their days:** a demo expense is submitted on its date and approved or rejected the day after, so its Activity reads like a real one's.
+- **Removing it:** "Delete all demo data" removes the receipts of the demo expenses it deletes.
+- **Tests:** `us-onb-24-28` checks the receipts, their file type and access, the Activity days and that the receipts go with the demo. QA script section 221.
+
+### 2026-10-11 — Expenses you can work from (US-PUR-42 to US-PUR-45, D-227)
+
+- **A list that shows money (US-PUR-42):** cards Waiting for approval (a Staff approver's counts other people's; an Owner's counts all), Approved this month, Ready to bill and Rejected, in the business's currency; rows with the date, the number once approved, description over category, job, who submitted it, who paid, the state in words (Billed worked out from the invoice line, never stored) with Billable, and the amount, newest first; the list layout every refined list shares, with state, category, submitted by, job, card, search, sort and page in the address and Refresh; a row menu with icons (View, Edit or Fix and resubmit, Approve, Reject, Bill to customer, Delete). `GET /expenses` gains `submittedByName`, `reviewerName`, `jobName` and the invoice it was billed on.
+- **An expense's own page (US-PUR-43):** `/expenses/:id` replaces the drawer (old `?id=` links open it): the state in words, who and what, Reject / Approve and next / Approve for an approver, Bill to customer when ready, a strip of Amount, Tax, Paid from and Billable, the receipt previewed beside the details, Attachments and Activity (`GET /expenses/:id/activity`). Approve and reject now record the comment in the audit trail.
+- **Submitting faster (US-PUR-44):** a currency picker; tax worked out as included in the amount from the rate until typed over; a warning when you already submitted the same amount on the same day (`GET /expenses/possible-duplicates`); several files at once ("Add files" or drop) — the first is the receipt, the rest are attached — in a files pane that scrolls on its own; "Submit and add another".
+- **Fix and resubmit (US-PUR-45):** editing a rejected expense resubmits it (waiting again, the review cleared, "Fixed and resubmitted" in Activity); an approved expense can no longer be edited, since it has posted.
+- **Icons (D-222):** Approve — `Check`; Reject — `X`.
+- **Tests:** API integration `us-pur-42-45` and `us-pur-10`; web unit `us-pur-42-45`; E2E `us-pur-42-45`, with `us-pur-10`, `us-pur-20`, `us-pur-22`, `us-pur-23`, `us-bank-03` and `us-ops-34` moved to the new list and page. QA script section 220.
+
 ### 2026-10-11 — Demo bills and vendor credits at every stage (US-ONB-30, D-216)
 
 - **Bills:** every demo has a part-paid bill due within the week (Riverstone's AT-20441, 40% paid) and a second draft, so Due in 7 days, Partly paid and "Record (2)" show something. Industry demos gain a draft from the services vendor.

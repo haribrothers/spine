@@ -22,7 +22,15 @@ export interface Expense {
   number: string | null;
   categoryId: string;
   categoryName: string | null;
+  /** US-PUR-43 — "5200 Direct Labour", the account its category posts to (on the page). */
+  categoryAccount?: string | null;
   jobId: string | null;
+  /** US-PUR-42 — the job's name, who submitted it, who reviewed it, and the invoice it was billed on. */
+  jobName?: string | null;
+  submittedByName?: string | null;
+  reviewerName?: string | null;
+  billedInvoiceId?: string | null;
+  billedInvoiceNumber?: string | null;
   date: string;
   currency: string;
   amount: string;

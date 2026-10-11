@@ -637,7 +637,7 @@ Decision: D-218, D-223, D-226
 Decision: D-210, D-222, D-227
 
 **Acceptance criteria**
-- **Given** the list, **when** it shows, **then** the cards read "Waiting for approval" (amount and count — for an approver, other people's only), "Approved this month" (amount and count), "Ready to bill" (approved, billable and not on an invoice yet) and "Rejected" (count); all but "Approved this month" filter the list when pressed, and pressing again clears. "Ready to bill" replaces the dashboard's banner (`?card=bill`; the old `?billable=unbilled` link still works).
+- **Given** the list, **when** it shows, **then** the cards read "Waiting for approval" (amount and count — for a Staff approver, other people's only; an Owner, who may approve their own, sees all), "Approved this month" (amount and count), "Ready to bill" (approved, billable and not on an invoice yet) and "Rejected" (count); all but "Approved this month" filter the list when pressed, and pressing again clears. "Ready to bill" replaces the dashboard's banner (`?card=bill`; the old `?billable=unbilled` link still works).
 - **Given** an expense row, **when** it shows, **then** it has the date in the business's format, the number once approved, the description over the category, the job, who submitted it, who paid (Company or Employee), the state in words — Waiting for approval, Approved, Billed or Rejected, never colour alone — and the amount; newest first by date.
 - **Given** the list layout every refined list shares, **when** it shows, **then** the filters (state, category, submitted by — with "Me" first — and job) sit on the left of the filter bar with Updated, Refresh and Submit expense on the right, and search (number, description, category, job or person) with Columns below; filters, card, search, sort and page are kept in the address.
 - **Given** a row's menu, **when** I open it, **then** it offers View, Edit (waiting or rejected, mine or with the right), Approve and Reject (waiting, not my own unless I'm an Owner), Bill to customer (ready to bill) and Delete (waiting), each with its icon and right, destructive last; Approve, Reject, Bill to customer and Delete ask first.
@@ -673,7 +673,7 @@ Decision: D-218, D-227
 **Acceptance criteria**
 - **Given** the form, **when** it opens, **then** the currency is a picker set to the business's currency.
 - **Given** a tax rate, **when** I choose it or change the amount, **then** the tax amount is worked out as included in the amount (rounded once, half-up), and I can still change it; it says "Worked out from <rate>" until I do.
-- **Given** a photo or PDF, **when** I drop it on the form or choose it, **then** it uploads as the receipt and shows a preview, with Replace and Remove.
+- **Given** photos or PDFs, **when** I drop them on the form or choose them ("Add files", any number at once), **then** the first uploads as the receipt and shows a preview, with Replace and Remove, and the rest are listed under it and attached to the expense when it's saved; "Add files" adds more at any time. The files pane scrolls on its own, apart from the form.
 - **Given** I've already submitted an expense with the same amount on the same day (not rejected), **when** I enter it again, **then** a warning names it with a link; I can still submit.
 - **Given** the form, **when** I submit, **then** the button reads "Submit expense", and "Submit and add another" submits and opens a fresh form with the same date, currency, paid-by and job.
 

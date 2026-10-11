@@ -5013,6 +5013,32 @@ Load the India construction demo, then Riverstone Builders on another organisati
 5. Record a vendor credit of your own for a demo vendor, then "Delete all demo data": the demo's bills, credits (with their applications and refunds) and schedule go; yours stays with its vendor, and the deletion says it kept that vendor.
 6. Regression: Payables, Profit & Loss and the dashboard's bills to pay match the demo's bills; nothing of the demo is left in reports after deleting it.
 
+## 220. Expenses you can work from (US-PUR-42 to US-PUR-45, refinements before Phase 10)
+
+Use an owner and a Staff member who approves expenses, each with a few expenses of their own (one rejected, one billable on a job). Check light and dark, and compare with the canvases "20 Expenses" and "20b Expenses labour".
+
+1. The list: title "Expenses" with the Categories tab; cards Waiting for approval (a Staff approver's counts other people's only; an Owner's counts all), Approved this month, Ready to bill and Rejected, in money; pressing Waiting, Ready to bill or Rejected filters the list (in the address), press again to clear. Rows show the date (a link), the number once approved ("—" before), the description over its category ("headcount × day rate" for labour), job, who submitted it ("You" for yours), who paid, the state in words (Waiting for approval, Approved, Billed, Rejected) with "Billable" when it's ready to bill, and the amount; newest first. State, category, submitted by, job, search, sort and page survive opening an expense and going Back; Refresh says "Updated just now". The dashboard's links (waiting, my rejected, ready to bill) open the list filtered.
+2. A row's menu has icons: View, Edit (or "Fix and resubmit" on your rejected one), Approve, Reject, Bill to customer, Delete — destructive last. Approving or rejecting from it opens the same dialogs as the page; Delete asks first.
+3. Tick expenses: a box is disabled on one you can't review (your own as Staff, or one already reviewed); "Approve" and "Reject" for the ticked ones ask first and toast.
+4. An expense's page (`/expenses/<id>`; an old `?id=` link opens it): the number (or "Expense") with its state; under it category, date, "Submitted by …", job (a link) and who paid. An approver sees Reject, "Approve and next" and Approve; a ready-to-bill expense shows "Bill to customer"; More holds Edit, View history and Delete expense. The strip reads Amount, Tax, Paid from and Billable; the receipt previews beside the description and category account, and opens full size; Attachments and Activity follow (submitted, edited with what changed, approved with what posted, rejected with the reason, resubmitted, billed with a link to the invoice).
+5. "Approve and next": asks first, approves, and opens the oldest expense still waiting on you, with a toast; when none is left it stays on the page and says "That was the last one waiting for approval."
+6. Reject with no reason: "Say why it's rejected, so it can be fixed." With a reason, the page shows it at the top. As the submitter, "Fix and resubmit" opens the form with the reason; change it, add a receipt and "Resubmit": it's waiting again, with "Fixed and resubmitted" in Activity. An approved expense can't be edited ("…already posted to the ledger").
+7. The form: the currency is a picker on the business's currency; choosing a tax rate works out the tax as included in the amount ("Worked out from <rate>, included in the amount."), and typing over it keeps yours. The same amount on the same day as one of yours (not rejected) warns with "Open it"; you can still submit.
+8. Files: drop or choose several photos and PDFs at once ("Add files"): the first becomes the receipt with a preview, Replace and Remove; the rest are listed under it, each removable; "Add files" adds more at any time. With many files the files pane scrolls on its own while the form stays put (and the form scrolls on its own on a short window). After saving, the extra files are under Attachments on the expense's page.
+9. "Submit and add another": submits with a toast and leaves the form open, emptied, keeping the date, currency, paid by and job.
+10. Headcount × day rate: the labour category is preselected and the job required; rows of trade, workers and day rate add up; the page lists the trades with the day's total; editing a waiting one opens the rows filled in.
+11. Regression: Field users see only their own expenses and pages; the field app's My expenses and new expense still work; Bank › an account's register opens an expense's page; Profit & Loss and job costing match what was approved; billing an expense from its page or the menu adds it to the customer's invoice.
+
+## 221. Demo expenses with their receipts (US-ONB-31, refinements before Phase 10)
+
+Load the India construction demo, then Riverstone Builders on another organisation.
+
+1. Expenses: each of the five demo expenses (Riverstone: four, not "Fuel — no receipt attached") opens with a receipt previewed — a till-roll PDF from a fitting shop in the business's town, with the date, what was bought, any tax inside the amount and the total, in the demo's currency.
+2. Activity reads on the expense's own days: submitted on its date, approved or rejected the day after (never later than today).
+3. As the demo Field person, open another person's demo receipt by its file link: it's refused.
+4. "Delete all demo data": the expenses and their receipts go.
+5. With no file storage set up, the demo still loads, with expenses and without receipts.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

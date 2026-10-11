@@ -50,6 +50,7 @@ import {
 } from "../../db/schema";
 import { AuditLogService, type AuditEntityType } from "../audit/audit-log.service";
 import { SettingsService } from "../org/settings.service";
+import { FilesService } from "../files/files.service";
 import { DemoSeederService } from "./demo-seeder.service";
 
 /** `settings.demo_data` — which demo is loaded, and the setup it added (D-192). */
@@ -91,6 +92,7 @@ export class DemoDataService {
     private readonly auditLog: AuditLogService,
     private readonly settingsService: SettingsService,
     private readonly seeder: DemoSeederService,
+    private readonly filesService: FilesService,
   ) {}
 
   /** Whether the business has records of its own: any journal entry that isn't demo. */
@@ -144,7 +146,9 @@ export class DemoDataService {
    * documents before their jobs and contacts.
    */
   async deleteAll(orgId: string, actorUserId: string) {
-    return this.db.transaction(async (tx) => {
+    // US-ONB-31: the receipts printed for demo expenses go with them, once nothing points at them.
+    const receiptFileIds: string[] = [];
+    const result = await this.db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('spine.deleting_demo', 'on', true)`);
       const kept = new Set<string>();
 
@@ -209,8 +213,12 @@ export class DemoDataService {
         (r) => remove(r.id, (sp) => sp.delete(vendorBills).where(eq(vendorBills.id, r.id)), { entityType: "vendor_bill", contactId: r.contactId, field: "billNumber", from: r.billNumber }),
       );
       const expensesDeleted = await count(
-        await tx.select({ id: expenses.id, number: expenses.number }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true))),
-        (r) => remove(r.id, (sp) => sp.delete(expenses).where(eq(expenses.id, r.id)), { entityType: "expense", contactId: null, field: "number", from: r.number }),
+        await tx.select({ id: expenses.id, number: expenses.number, receiptFileId: expenses.receiptFileId }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true))),
+        async (r) => {
+          const deleted = await remove(r.id, (sp) => sp.delete(expenses).where(eq(expenses.id, r.id)), { entityType: "expense", contactId: null, field: "number", from: r.number });
+          if (deleted && r.receiptFileId) receiptFileIds.push(r.receiptFileId);
+          return deleted;
+        },
       );
       const quotesDeleted = await count(
         await tx.select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId }).from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true))),
@@ -292,6 +300,11 @@ export class DemoDataService {
         kept: { contacts: demoContacts.length - contactsDeleted },
       };
     });
+    for (const id of receiptFileIds) {
+      if ((await this.filesService.owningRecords(orgId, id)).length) continue;
+      await this.filesService.deleteStored(orgId, id).catch(() => undefined);
+    }
+    return result;
   }
 
   /**

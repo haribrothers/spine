@@ -35,7 +35,7 @@ test.describe("US-PUR-22", () => {
 
     await page.goto(`/expenses?jobId=${empty.id}`);
     await expect(page.getByText("No expenses on this job")).toBeVisible();
-    await page.getByRole("button", { name: "Clear filter" }).click();
+    await page.getByRole("button", { name: "Clear filters" }).first().click();
     await expect(page).not.toHaveURL(/jobId=/);
 
     await page.goto(`/jobs/${jobs[0]!.id}?tab=costing`);

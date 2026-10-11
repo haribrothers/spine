@@ -849,6 +849,7 @@ Total: 525 stories.
 - US-ONB-28 · Explore invoices at every stage (P2)
 - US-ONB-29 · Explore credit notes at every stage (P2)
 - US-ONB-30 · Explore bills and vendor credits at every stage (P2)
+- US-ONB-31 · Explore expenses with their receipts (P2)
 
 *Invoices*
 

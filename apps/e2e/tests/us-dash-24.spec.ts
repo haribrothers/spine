@@ -25,12 +25,13 @@ test.describe("US-DASH-24", () => {
     await page.reload();
     await expect(card).toContainText("$612.40");
     await card.getByRole("link", { name: "Approved billable expenses not billed · 2" }).click();
-    await expect(page).toHaveURL(/\/expenses\?billable=unbilled$/);
-    await expect(page.getByText("Showing approved billable expenses not yet on an invoice.")).toBeVisible();
+    // US-PUR-42: the Ready to bill card, pressed.
+    await expect(page).toHaveURL(/\/expenses\?card=bill$/);
+    await expect(page.getByRole("button", { name: "Show ready to bill only" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("table")).toContainText("$500.00");
     await expect(page.getByRole("table")).toContainText("$112.40");
     await expect(page.getByRole("table")).not.toContainText("$700.00");
-    await page.getByRole("button", { name: "Show all" }).click();
+    await page.getByRole("button", { name: "Show ready to bill only" }).click();
     await expect(page.getByRole("table")).toContainText("$700.00");
   });
 });

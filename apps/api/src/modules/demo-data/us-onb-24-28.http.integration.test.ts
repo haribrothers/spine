@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDb, type Database } from "../../db/client";
-import { accounts, emailLog, member, user } from "../../db/schema";
+import { accounts, emailLog, files, member, user } from "../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -251,7 +251,27 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(daysTo(recurring[0]!.nextRunOn)).toBeGreaterThan(0);
       });
 
+      it("US-ONB-31 · demo expenses come with receipts and read on their own days", async () => {
+        const riverstone = demo.name === "Riverstone Builders";
+        const list = await get<{ id: string; date: string; status: string; description: string | null; receiptFileId: string | null; approvedAt: string | null }[]>("/expenses");
+        const withReceipt = list.filter((e) => e.receiptFileId);
+        expect(withReceipt).toHaveLength(riverstone ? 4 : 5);
+        if (riverstone) expect(list.find((e) => e.description === "Fuel — no receipt attached")!.receiptFileId).toBeNull();
+        // The receipt is a PDF served through the expense's own checks.
+        const file = await fetch(`${testApp.baseUrl}/files/${withReceipt[0]!.receiptFileId}`, { headers: { cookie } });
+        expect(file.status).toBe(200);
+        expect(file.headers.get("content-type")).toContain("application/pdf");
+        // Submitted on its date; approved the day after, never later than today.
+        for (const e of list.filter((x) => x.status === "approved")) {
+          const activity = await get<{ type: string; at: string }[]>(`/expenses/${e.id}/activity`);
+          expect(activity.find((a) => a.type === "submitted")!.at.slice(0, 10)).toBe(e.date.slice(0, 10));
+          expect(activity.find((a) => a.type === "approved")!.at >= activity.find((a) => a.type === "submitted")!.at).toBe(true);
+          expect(new Date(e.approvedAt!).getTime()).toBeLessThanOrEqual(Date.now());
+        }
+      });
+
       it("deletes the demo's bundles, vendor credits and recurring bill with it", async () => {
+        const receipts = (await get<{ receiptFileId: string | null }[]>("/expenses")).map((e) => e.receiptFileId).filter((id): id is string => !!id);
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });
         expect(res.status).toBe(200);
         const result = (await res.json()) as { bundlesDeleted: number; vendorCreditsDeleted: number; recurringBillsDeleted: number };
@@ -262,6 +282,9 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(await get<unknown[]>("/vendor-credits")).toHaveLength(0);
         expect(await get<unknown[]>("/recurring-bills")).toHaveLength(0);
         expect(await get<unknown[]>("/vendor-bills")).toHaveLength(0);
+        // US-ONB-31: the demo's receipts go with its expenses.
+        const left = await db.select({ id: files.id }).from(files).where(inArray(files.id, receipts));
+        expect(left).toHaveLength(0);
       });
     });
   }

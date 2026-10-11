@@ -29,7 +29,7 @@ export function attentionHref(item: AttentionItem): string {
     case "invoices_overdue":
       return one ? `/invoices/${first.id}` : "/invoices?status=overdue&select=overdue";
     case "expenses_awaiting_approval":
-      return "/expenses?status=submitted";
+      return "/expenses?card=wait";
     case "quotes_discount_approval":
     case "quotes_expiring":
       return one ? `/quotes/${first.id}` : "/quotes";
@@ -45,7 +45,7 @@ export function attentionHref(item: AttentionItem): string {
       // The oldest one's contact, where its Activities live; a lead without a contact opens the pipeline.
       return first?.contactId ? `/contacts/${first.contactId}` : "/leads";
     case "expenses_rejected":
-      return one ? `/expenses?id=${first.id}` : "/expenses?mine=true&status=rejected";
+      return one ? `/expenses/${first.id}` : "/expenses?by=me&state=rej";
     case "emails_failed":
       // US-DASH-30: the email log, filtered to the failed ones.
       return "/emails?card=failed";

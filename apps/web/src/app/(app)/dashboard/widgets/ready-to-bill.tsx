@@ -60,7 +60,7 @@ export function ReadyToBillCard() {
             )}
             {data.billableExpenses.count > 0 && (
               <li className="flex items-center justify-between gap-3 py-3 first:pt-0">
-                <Link href="/expenses?billable=unbilled" className="text-primary hover:underline">
+                <Link href="/expenses?card=bill" className="text-primary hover:underline">
                   Approved billable expenses not billed · {data.billableExpenses.count}
                 </Link>
                 <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-on-surface">{money(data.billableExpenses.amount)}</span>

@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations, vendorCreditAllocations, vendorCredits, vendorRefunds } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -29,6 +29,7 @@ import { VendorBillsService } from "../purchases/vendor-bills.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
 import { VendorCreditsService } from "../purchases/vendor-credits.service";
 import { RecurringBillsService } from "../purchases/recurring-bills.service";
+import { renderDemoReceipt } from "./demo-receipt";
 import { PublicQuotesService } from "../quotes/public-quotes.service";
 import { QuotePublicTokenService } from "../quotes/quote-public-token.service";
 import { QuotesService } from "../quotes/quotes.service";
@@ -759,6 +760,25 @@ export class DemoSeederService {
       at(seed.dateInDays, async () => {
         const category = categoryId(seed.category);
         if (!category) return;
+        // US-ONB-31: its receipt, printed for it, stored like any upload.
+        let receiptFileId: string | null = null;
+        if (seed.receipt && this.filesService.isStorageConfigured()) {
+          const buffer = await renderDemoReceipt({
+            merchant: seed.receipt.merchant,
+            place: seed.receipt.place,
+            date: day(seed.dateInDays),
+            description: seed.description,
+            amount: seed.amount,
+            tax: seed.tax?.amount ?? 0n,
+            currency,
+            locale: plan.currency.locale,
+            paidWith: seed.paidBy === "company" ? "Company card" : "Card",
+          });
+          const slug = seed.receipt.merchant.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+          const file = await this.filesService.upload(orgId, { originalFilename: `receipt-${slug}.pdf`, mimeType: "application/pdf", buffer, uploadedByUserId: actorUserId });
+          receiptFileId = file.id;
+          count("receiptsAttached");
+        }
         const expense = await this.expensesService.create(
           orgId,
           actorUserId,
@@ -773,16 +793,26 @@ export class DemoSeederService {
             paidBy: seed.paidBy,
             description: seed.description,
             isBillable: false,
+            receiptFileId,
           } as never,
           true,
         );
         count("expensesSubmitted");
+        // US-ONB-31: submitted on its day, reviewed the next (never after today), so Activity and "Approved this month" read true.
+        const submittedAt = when(seed.dateInDays);
+        const reviewedAt = when(Math.min(seed.dateInDays + 1, 0));
+        await this.db.update(expenses).set({ createdAt: submittedAt }).where(eq(expenses.id, expense.id));
+        await backdateAudit(expense.id, submittedAt, ["created"]);
         if (seed.outcome === "approved") {
           await this.expensesService.approve(orgId, expense.id, actorUserId, null);
           count("expensesApproved");
+          await this.db.update(expenses).set({ approvedAt: reviewedAt }).where(eq(expenses.id, expense.id));
+          await backdateAudit(expense.id, reviewedAt, ["approved"]);
         } else if (seed.outcome === "rejected") {
           await this.expensesService.reject(orgId, expense.id, actorUserId, seed.rejectReason ?? "Rejected.");
           count("expensesRejected");
+          await this.db.update(expenses).set({ rejectedAt: reviewedAt }).where(eq(expenses.id, expense.id));
+          await backdateAudit(expense.id, reviewedAt, ["rejected"]);
         }
       });
     }
