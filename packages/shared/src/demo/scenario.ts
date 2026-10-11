@@ -89,6 +89,8 @@ export interface IndustryPack {
   variationOrder?: { notes: string; lines: IndustryFreeLine[] };
   vendors: Record<VendorSlot, { name: string; inName: string; title: string; type?: "vendor" | "both" }>;
   bills: Record<BillKey, { ref: string; lines: IndustryFreeLine[] }>;
+  /** US-ONB-30 — a monthly bill from the services vendor. */
+  recurringBill: { name: string; line: IndustryFreeLine };
   expenses: Record<ExpenseKey, { category: string; amount: number; inAmount: number; description: string; paidBy: "company" | "employee" }>;
   creditNote: { reason: string; line: number; quantity: number };
   meetings: { title: string; slot: CustomerSlot | null; startInDays: number; durationHours: number; atSite: boolean; description: string | null }[];
@@ -134,9 +136,11 @@ export const BILL_TIMELINE = [
   { key: "bill2", vendor: "supplier_far", date: -60, due: -30 },
   { key: "bill3", vendor: "local", date: -40, due: -40, paid: -38 },
   { key: "bill4", vendor: "services", date: -90, due: -60, voided: "Entered twice — the vendor's statement shows one charge." },
-  { key: "bill5", vendor: "supplier", date: -10, due: 20, job: "a" },
+  // US-ONB-30: part-paid and due this week.
+  { key: "bill5", vendor: "supplier", date: -10, due: 4, paid: -2, part: 0.4, job: "a" },
   { key: "bill6", vendor: "supplier_far", date: -3, due: 27, draft: true },
-] as const satisfies readonly { key: string; vendor: VendorSlot; date: number; due: number; paid?: number; voided?: string; draft?: boolean; job?: "a" | "b" | "c" }[];
+  { key: "bill7", vendor: "services", date: -2, due: 28, draft: true },
+] as const satisfies readonly { key: string; vendor: VendorSlot; date: number; due: number; paid?: number; part?: number; voided?: string; draft?: boolean; job?: "a" | "b" | "c" }[];
 export type BillKey = (typeof BILL_TIMELINE)[number]["key"];
 
 export const EXPENSE_TIMELINE = [
@@ -422,10 +426,35 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
       }),
       outcome: "draft" in step ? ("draft" as const) : "voided" in step ? ("voided" as const) : ("recorded" as const),
       ...("job" in step && pack.jobs ? { job: step.job } : {}),
-      ...("paid" in step ? { payments: [{ inDays: step.paid }] } : {}),
+      ...("paid" in step ? { payments: [{ inDays: step.paid, ...("part" in step ? { amount: step.part } : {}) }] } : {}),
       ...("voided" in step ? { voidReason: step.voided } : {}),
     };
   });
+
+  // US-ONB-30 (D-216): vendor credits at every stage, each a share of the bill it's against.
+  const billRef = (key: BillKey) => pack.bills[key].ref;
+  const creditLine = (key: BillKey, label: string, share: number) => {
+    const line = pack.bills[key].lines[0]!;
+    const scaled: IndustryFreeLine =
+      line.quantity >= 10
+        ? { ...line, name: `${label}: ${line.name}`, quantity: Math.max(1, Math.round(line.quantity * share)) }
+        : { ...line, name: `${label}: ${line.name}`, price: Math.round(line.price * share * 100) / 100, in: { ...line.in, price: Math.round(line.in.price * share) } };
+    const typed = freeLine(scaled);
+    // A sole trader under the registration threshold charges no tax, anywhere (as on its bill).
+    const vendor = BILL_TIMELINE.find((b) => b.key === key)!.vendor;
+    return vendor === "local" ? { name: typed.name, quantity: typed.quantity, price: typed.price, tax: { intra: null, supplyClass: "non_taxable" as const } } : typed;
+  };
+  const vendorCredits = [
+    // Partly used: raised against the overdue bill and part of it applied there.
+    { contact: "supplier_far", vendorReference: `CN-${billRef("bill2").split("-").pop()}`, dateInDays: -20, againstBill: billRef("bill2"), lines: [creditLine("bill2", "Returned", 0.1)], outcome: "recorded" as const, apply: { inDays: -18, fraction: 0.6 } },
+    // Unused for over 60 days: credit to use, or to ask back.
+    { contact: "supplier", vendorReference: `CR-${billRef("bill1").split("-").pop()}`, dateInDays: -70, againstBill: billRef("bill1"), lines: [creditLine("bill1", "Overcharged", 0.05)], outcome: "recorded" as const },
+    // Used: the sole trader paid it back.
+    { contact: "local", vendorReference: `${billRef("bill3")}-R`, dateInDays: -30, againstBill: billRef("bill3"), lines: [creditLine("bill3", "Work not done", 0.1)], outcome: "recorded" as const, refundInDays: -25 },
+    // A draft to record.
+    { contact: "supplier", vendorReference: `CN-${billRef("bill5").split("-").pop()}`, dateInDays: -1, againstBill: billRef("bill5"), lines: [creditLine("bill5", "Short delivery", 0.1)], outcome: "draft" as const },
+  ];
+  const recurringBills = [{ contact: "services", name: pack.recurringBill.name, startsInDays: 5, dueDays: 14, lines: [freeLine(pack.recurringBill.line)] }];
 
   const expenses = EXPENSE_TIMELINE.map((step) => {
     const content = pack.expenses[step.key];
@@ -509,6 +538,8 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     jobs,
     ...(pack.jobs && pack.variationOrder ? { variationOrder: { job: "a", notes: pack.variationOrder.notes, lines: pack.variationOrder.lines.map(freeLine) } } : {}),
     bills,
+    vendorCredits,
+    recurringBills,
     expenses,
     // US-ONB-29 (D-219): one only off its invoice, one whose spare credit was partly applied to the customer's
     // overdue invoice (the rest still to use), and one whose spare credit was refunded — each crediting lines with their tax.

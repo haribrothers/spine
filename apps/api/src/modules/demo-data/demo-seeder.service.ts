@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations, vendorCreditAllocations, vendorCredits, vendorRefunds } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -27,6 +27,8 @@ import { PaymentsService } from "../payments/payments.service";
 import { ExpensesService } from "../purchases/expenses.service";
 import { VendorBillsService } from "../purchases/vendor-bills.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
+import { VendorCreditsService } from "../purchases/vendor-credits.service";
+import { RecurringBillsService } from "../purchases/recurring-bills.service";
 import { PublicQuotesService } from "../quotes/public-quotes.service";
 import { QuotePublicTokenService } from "../quotes/quote-public-token.service";
 import { QuotesService } from "../quotes/quotes.service";
@@ -107,6 +109,8 @@ export class DemoSeederService {
     private readonly variationOrdersService: VariationOrdersService,
     private readonly vendorBillsService: VendorBillsService,
     private readonly vendorPaymentsService: VendorPaymentsService,
+    private readonly vendorCreditsService: VendorCreditsService,
+    private readonly recurringBillsService: RecurringBillsService,
     private readonly expensesService: ExpensesService,
     private readonly meetingsService: MeetingsService,
     private readonly filesService: FilesService,
@@ -630,6 +634,7 @@ export class DemoSeederService {
     // Purchases. The template's categories hold the expenses.
     const categoryRows = await this.db.select({ id: expenseCategories.id, name: expenseCategories.name }).from(expenseCategories).where(eq(expenseCategories.orgId, orgId));
     const categoryId = (name: string) => categoryRows.find((c) => c.name.toLowerCase() === name.toLowerCase())?.id;
+    const billIds = new Map<string, string>();
     for (const seed of plan.bills) {
       const create = async () => {
         const supply = await supplyFor(seed.contact, "purchase");
@@ -651,6 +656,7 @@ export class DemoSeederService {
       };
       at(seed.dateInDays, async () => {
         const bill = await create();
+        billIds.set(seed.billNumber, bill.id);
         count("vendorBillsCreated");
         // US-PUR-32: the bill's Activity reads on its own days, entered then recorded on its bill date.
         const enteredAt = when(seed.dateInDays);
@@ -667,10 +673,12 @@ export class DemoSeederService {
         }
         for (const payment of seed.payments ?? []) {
           at(Math.max(payment.inDays ?? 0, seed.dateInDays), async () => {
+            // US-ONB-30: full, or a share of the total (a partly paid bill).
+            const amount = payment.amount === undefined || payment.amount === "full" ? recorded.totalAmount : (recorded.totalAmount * BigInt(Math.round(payment.amount * 100))) / 100n;
             const paid = (await this.vendorPaymentsService.create(
               orgId,
               actorUserId,
-              { contactId: contactIds.get(seed.contact)!, date: payment.inDays === null ? new Date() : day(payment.inDays), method: "bank_transfer", currency, amount: recorded.totalAmount, allocations: [{ billId: recorded.id, amount: recorded.totalAmount }] } as never,
+              { contactId: contactIds.get(seed.contact)!, date: payment.inDays === null ? new Date() : day(payment.inDays), method: "bank_transfer", currency, amount, allocations: [{ billId: recorded.id, amount }] } as never,
               true,
             )) as { id: string };
             count("vendorPaymentsCreated");
@@ -678,6 +686,73 @@ export class DemoSeederService {
             await this.db.update(vendorPaymentAllocations).set({ createdAt: when(Math.max(payment.inDays ?? 0, seed.dateInDays)) }).where(eq(vendorPaymentAllocations.vendorPaymentId, paid.id));
           });
         }
+      });
+    }
+    // US-ONB-30 (D-216): vendor credits through the real service — entered and recorded on their day, applied and refunded on theirs.
+    for (const seed of plan.vendorCredits ?? []) {
+      at(seed.dateInDays, async () => {
+        const supply = await supplyFor(seed.contact, "purchase");
+        const billId = seed.againstBill ? (billIds.get(seed.againstBill) ?? null) : null;
+        const credit = await this.vendorCreditsService.create(orgId, actorUserId, {
+          contactId: contactIds.get(seed.contact)!,
+          vendorReference: seed.vendorReference,
+          billId,
+          jobId: null,
+          date: day(seed.dateInDays),
+          currency,
+          notes: null,
+          lines: lineInputs(seed.lines, supply.supplyType),
+          ...(supply.placeOfSupply ? { placeOfSupply: supply.placeOfSupply } : {}),
+        } as never, true);
+        count("vendorCreditsCreated");
+        const enteredAt = when(seed.dateInDays);
+        await this.db.update(vendorCredits).set({ createdAt: new Date(enteredAt.getTime() - 30 * 60 * 1000) }).where(eq(vendorCredits.id, credit.id));
+        await backdateAudit(credit.id, new Date(enteredAt.getTime() - 30 * 60 * 1000), ["created"]);
+        if (seed.outcome === "draft") return;
+        const recorded = await this.vendorCreditsService.record(orgId, credit.id, actorUserId);
+        count("vendorCreditsRecorded");
+        await this.db.update(vendorCredits).set({ recordedAt: enteredAt }).where(eq(vendorCredits.id, credit.id));
+        await backdateAudit(credit.id, enteredAt, ["recorded"]);
+        if (seed.apply && billId) {
+          const amount = (recorded.totalAmount * BigInt(Math.round(seed.apply.fraction * 100))) / 100n;
+          await this.vendorCreditsService.apply(orgId, actorUserId, credit.id, [{ billId, amount }]);
+          const appliedAt = when(seed.apply.inDays);
+          await this.db.update(vendorCreditAllocations).set({ createdAt: appliedAt }).where(eq(vendorCreditAllocations.vendorCreditId, credit.id));
+          await backdateAudit(credit.id, appliedAt, ["applied"]);
+          await backdateAudit(billId, appliedAt, ["credit_applied"]);
+        }
+        if (seed.refundInDays !== undefined) {
+          const left = BigInt((await this.vendorCreditsService.getOne(orgId, credit.id)).balanceAmount);
+          await this.vendorCreditsService.recordRefund(orgId, actorUserId, credit.id, { amount: left, date: day(seed.refundInDays), method: "bank_transfer", reference: null });
+          const refundedAt = when(seed.refundInDays);
+          await this.db.update(vendorRefunds).set({ createdAt: refundedAt }).where(eq(vendorRefunds.vendorCreditId, credit.id));
+          await backdateAudit(credit.id, refundedAt, ["refunded"]);
+        }
+      });
+    }
+    // US-ONB-30: a monthly recurring bill that starts soon; every line debits the business's rent or other-expenses account.
+    for (const seed of plan.recurringBills ?? []) {
+      at(0, async () => {
+        const supply = await supplyFor(seed.contact, "purchase");
+        const expenseAccounts = await this.db.select({ id: accounts.id, code: accounts.code, name: accounts.name }).from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.type, "expense")));
+        const accountId = (expenseAccounts.find((a) => /rent/i.test(a.name)) ?? expenseAccounts.find((a) => a.code === "6900") ?? expenseAccounts[0])?.id;
+        if (!accountId) return;
+        const startsOn = day(seed.startsInDays);
+        await this.recurringBillsService.create(orgId, actorUserId, {
+          name: seed.name,
+          contactId: contactIds.get(seed.contact)!,
+          currency,
+          frequency: "monthly",
+          dayRule: String(Math.min(28, startsOn.getUTCDate())),
+          startsOn: startsOn.toISOString().slice(0, 10),
+          endsOn: null,
+          maxCount: null,
+          dueDays: seed.dueDays,
+          moneyAccountId: null,
+          mode: "record",
+          lines: lineInputs(seed.lines, supply.supplyType).map((line) => ({ ...line, accountId })),
+        } as never, true);
+        count("recurringBillsCreated");
       });
     }
     for (const seed of plan.expenses) {

@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-11 — Demo bills and vendor credits at every stage (US-ONB-30, D-216)
+
+- **Bills:** every demo has a part-paid bill due within the week (Riverstone's AT-20441, 40% paid) and a second draft, so Due in 7 days, Partly paid and "Record (2)" show something. Industry demos gain a draft from the services vendor.
+- **Vendor credits:** industry demos have four — partly used against the overdue bill, unused for about 70 days, used up by a refund, and a draft; Riverstone has two (partly used against GSC-8834, and a draft). They're entered, recorded, applied and refunded through the real services on their own days, with Activity on those days.
+- **Recurring bills:** every demo has one active monthly schedule starting in a few days (Riverstone: Ridgeline "Equipment yard rental").
+- **Removing it:** `vendor_credits`, `vendor_refunds` and `recurring_bills` gain `is_demo` (migration `0115`), set only for what the demo loads; a demo credit's ledger entries are demo entries; "Delete all demo data" removes demo credits with their applications and refunds, and the demo schedule. A credit or schedule a person records for a demo vendor stays theirs and keeps that vendor (D-191).
+- **Tests:** `us-onb-24-28` checks bills, credits and the schedule for Riverstone, India construction and UK IT services, and that deleting the demo removes them. QA script section 219.
+
 ### 2026-10-11 — Vendor credits you can work from (US-PUR-37 to US-PUR-41, D-226)
 
 - **A credit's page (US-PUR-37):** the credit number as the title ("Draft vendor credit" before it's recorded) with its state in words — Draft, Open, Partly used, Used, Void (Partly used worked out from what's left, never stored) — the vendor, their credit note number, the date, the bill it's against, job and place of supply in the business's formats; one primary action (Record credit, or Apply to bills while credit is left) with Record refund beside it; View history, Edit, Void credit and Delete draft with their icons; a strip of Total, Applied to bills, Refunded and Left to use ("—" when void); lines with their tax, account and HSN/SAC; the bills it was applied to and its refunds, each removable from its row menu after asking; attachments; Activity (`GET /vendor-credits/:id/activity`: created, recorded, applied, removed from a bill, refunded, refund deleted, voided with the reason). Every action now says what happened in a toast, and "Delete draft" asks first (it deleted at once). `GET /vendor-credits/:id` gains `jobName` and each line's `accountCode` and `accountName`; removing a credit from a bill now records which bill.

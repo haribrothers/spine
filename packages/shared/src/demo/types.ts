@@ -236,8 +236,32 @@ export interface DemoPlanBill {
   lines: Extract<DemoPlanLine, { name: string }>[];
   outcome: "draft" | "recorded" | "voided";
   job?: string;
-  payments?: { inDays: number | null }[];
+  /** Full unless `amount` is a fraction of the total (US-ONB-30: a partly paid bill). */
+  payments?: { inDays: number | null; amount?: "full" | number }[];
   voidReason?: string;
+}
+
+/** US-ONB-30 — a vendor credit, by the bill it's against (its number). */
+export interface DemoPlanVendorCredit {
+  contact: string;
+  vendorReference: string;
+  dateInDays: number;
+  againstBill?: string;
+  lines: Extract<DemoPlanLine, { name: string }>[];
+  outcome: "draft" | "recorded";
+  /** Applied to its bill on that day, this fraction of the credit. */
+  apply?: { inDays: number; fraction: number };
+  /** Refunded in full by the vendor on that day. */
+  refundInDays?: number;
+}
+
+/** US-ONB-30 — a monthly recurring bill; it starts in the future, so it hasn't run yet. */
+export interface DemoPlanRecurringBill {
+  contact: string;
+  name: string;
+  startsInDays: number;
+  dueDays: number;
+  lines: Extract<DemoPlanLine, { name: string }>[];
 }
 
 export interface DemoPlanExpense {
@@ -301,6 +325,8 @@ export interface DemoPlan {
   jobs: DemoPlanJob[];
   variationOrder?: DemoPlanVariationOrder;
   bills: DemoPlanBill[];
+  vendorCredits: DemoPlanVendorCredit[];
+  recurringBills: DemoPlanRecurringBill[];
   expenses: DemoPlanExpense[];
   creditNotes: DemoPlanCreditNote[];
   meetings: DemoPlanMeeting[];

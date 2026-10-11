@@ -12,7 +12,7 @@ interface Quote { id: string; title: string | null; status: string; sentAt: stri
 interface Job { id: string; status: string; endDate: string | null; sourceQuoteId: string | null; costBudgetAmount: string | null; percentComplete: number | null; readyToBillCount?: number; budgetState?: string; contactId: string; createdAt: string }
 
 /**
- * US-ONB-24 to US-ONB-28 (D-216, D-217) — demo data that shows the
+ * US-ONB-24 to US-ONB-28 and US-ONB-30 (D-216, D-217) — demo data that shows the
  * refined screens, for Riverstone Builders and a localised demo. Requires
  * local Postgres.
  */
@@ -212,11 +212,56 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         }
       });
 
-      it("deletes the demo's bundles with it", async () => {
+      it("US-ONB-30 · bills and vendor credits at every stage, and a recurring bill", async () => {
+        const riverstone = demo.name === "Riverstone Builders";
+        const bills = await get<{ id: string; billNumber: string; status: string; dueDate: string | null; totalAmount: string; amountPaid: string; balanceDue: string }[]>("/vendor-bills");
+        const daysTo = (d: string | null) => (d ? Math.round((new Date(`${d.slice(0, 10)}T00:00:00Z`).getTime() - Date.now()) / DAY) : null);
+        expect(bills.filter((b) => b.status === "draft")).toHaveLength(2);
+        expect(bills.filter((b) => b.status === "void")).toHaveLength(1);
+        const partly = bills.filter((b) => b.status === "recorded" && BigInt(b.amountPaid) > 0n && BigInt(b.balanceDue) > 0n);
+        expect(partly).toHaveLength(1);
+        expect(daysTo(partly[0]!.dueDate)).toBeGreaterThanOrEqual(0);
+        expect(daysTo(partly[0]!.dueDate)).toBeLessThanOrEqual(7);
+        expect(bills.some((b) => b.status === "recorded" && BigInt(b.balanceDue) > 0n && (daysTo(b.dueDate) ?? 0) < 0)).toBe(true);
+
+        const credits = await get<{ id: string; status: string; date: string; totalAmount: string; balanceAmount: string; billId: string | null }[]>("/vendor-credits");
+        expect(credits).toHaveLength(riverstone ? 2 : 4);
+        expect(credits.filter((c) => c.status === "draft")).toHaveLength(1);
+        const partlyUsed = credits.filter((c) => c.status === "open" && BigInt(c.balanceAmount) < BigInt(c.totalAmount));
+        expect(partlyUsed).toHaveLength(1);
+        // It was raised against the overdue bill and applied there, on its own day after it was recorded.
+        const overdue = bills.find((b) => b.id === partlyUsed[0]!.billId)!;
+        expect((daysTo(overdue.dueDate) ?? 0) < 0).toBe(true);
+        const activity = await get<{ type: string; at: string; linkId?: string | null }[]>(`/vendor-credits/${partlyUsed[0]!.id}/activity`);
+        const at = (type: string) => activity.find((a) => a.type === type)!.at;
+        expect(at("recorded").slice(0, 10)).toBe(partlyUsed[0]!.date.slice(0, 10));
+        expect(at("applied") > at("recorded")).toBe(true);
+        expect(activity.find((a) => a.type === "applied")!.linkId).toBe(overdue.id);
+        if (!riverstone) {
+          const unused = credits.filter((c) => c.status === "open" && c.balanceAmount === c.totalAmount && (daysTo(c.date) ?? 0) <= -60);
+          expect(unused).toHaveLength(1);
+          const used = credits.find((c) => c.status === "used")!;
+          const refunds = (await get<{ refunds: { deletedAt: string | null }[] }>(`/vendor-credits/${used.id}`)).refunds;
+          expect(refunds).toHaveLength(1);
+        }
+
+        const recurring = await get<{ status: string; nextRunOn: string | null; frequency: string }[]>("/recurring-bills");
+        expect(recurring).toHaveLength(1);
+        expect(recurring[0]).toMatchObject({ status: "active", frequency: "monthly" });
+        expect(daysTo(recurring[0]!.nextRunOn)).toBeGreaterThan(0);
+      });
+
+      it("deletes the demo's bundles, vendor credits and recurring bill with it", async () => {
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });
         expect(res.status).toBe(200);
-        expect(((await res.json()) as { bundlesDeleted: number }).bundlesDeleted).toBe(2);
+        const result = (await res.json()) as { bundlesDeleted: number; vendorCreditsDeleted: number; recurringBillsDeleted: number };
+        expect(result.bundlesDeleted).toBe(2);
+        expect(result.vendorCreditsDeleted).toBe(demo.name === "Riverstone Builders" ? 2 : 4);
+        expect(result.recurringBillsDeleted).toBe(1);
         expect(await get<unknown[]>("/catalog-bundles")).toHaveLength(0);
+        expect(await get<unknown[]>("/vendor-credits")).toHaveLength(0);
+        expect(await get<unknown[]>("/recurring-bills")).toHaveLength(0);
+        expect(await get<unknown[]>("/vendor-bills")).toHaveLength(0);
       });
     });
   }

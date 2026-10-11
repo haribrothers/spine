@@ -154,7 +154,8 @@ export class RecurringBillsService {
     };
   }
 
-  async create(orgId: string, actorUserId: string, input: CreateRecurringBillInput): Promise<RecurringBill> {
+  /** `isDemo` (US-ONB-30): the demo's schedule; one a person sets up for a demo vendor stays theirs (D-191). */
+  async create(orgId: string, actorUserId: string, input: CreateRecurringBillInput, isDemo = false): Promise<RecurringBill> {
     const today = orgClock().date;
     if (input.startsOn < today) throw new BadRequestException(START_IN_PAST);
     await this.checkReferences(orgId, input);
@@ -163,7 +164,7 @@ export class RecurringBillsService {
     const id = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .insert(recurringBills)
-        .values({ orgId, ...this.fields(input), status: "active", nextRunOn, totalAmount: totals.totalAmount, createdByUserId: actorUserId })
+        .values({ orgId, ...this.fields(input), status: "active", nextRunOn, totalAmount: totals.totalAmount, createdByUserId: actorUserId, isDemo })
         .returning();
       await this.writeLines(tx, row!.id, input);
       await this.auditLog.record(tx, { orgId, actorUserId, action: "created", entityType: "recurring_bill", entityId: row!.id, contactId: input.contactId, changes: [{ field: "name", from: null, to: row!.name }] });

@@ -93,7 +93,9 @@ export const TRADES: IndustryPack = {
     bill4: { ref: "RTH-2205", lines: [{ name: "Scissor lift hire — 4 days", quantity: 4, price: 180, service: true, in: { price: 5500, hsnSac: "9973", slab: 18 } }] },
     bill5: { ref: "NEW-1288", lines: [{ name: "Ducting and insulation", quantity: 140, price: 22, in: { price: 780, hsnSac: "7306", slab: 18 } }] },
     bill6: { ref: "CAD-4502", lines: [{ name: "Cassette AC units", quantity: 4, price: 950, in: { price: 52000, hsnSac: "8415", slab: 18 } }] },
+    bill7: { ref: "RTH-2261", lines: [{ name: "Pipe threader hire — 2 days", quantity: 2, price: 75, service: true, in: { price: 2200, hsnSac: "9973", slab: 18 } }] },
   },
+  recurringBill: { name: "Van tool storage", line: { name: "Tool storage unit — monthly", quantity: 1, price: 210, service: true, in: { price: 6000, hsnSac: "997212", slab: 18 } } },
   expenses: {
     exp1: { category: "Vehicle & fuel", amount: 210, inAmount: 7200, description: "Van fuel — month", paidBy: "company" },
     exp2: { category: "Permits & certification", amount: 320, inAmount: 9500, description: "Electrical safety certificate renewal", paidBy: "company" },

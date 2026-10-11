@@ -43,6 +43,10 @@ import {
   taxRates,
   vendorBills,
   vendorPayments,
+  vendorCredits,
+  vendorCreditAllocations,
+  vendorRefunds,
+  recurringBills,
 } from "../../db/schema";
 import { AuditLogService, type AuditEntityType } from "../audit/audit-log.service";
 import { SettingsService } from "../org/settings.service";
@@ -186,6 +190,20 @@ export class DemoDataService {
         await tx.select({ id: invoices.id, number: invoices.number, contactId: invoices.contactId }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(invoices).where(eq(invoices.id, r.id)), { entityType: "invoice", contactId: r.contactId, field: "number", from: r.number }),
       );
+      // US-ONB-30: demo vendor credits, with their applications and refunds (whose entries are demo entries), go before the bills.
+      const demoCreditIds = (await tx.select({ id: vendorCredits.id }).from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.isDemo, true)))).map((r) => r.id);
+      if (demoCreditIds.length) {
+        await tx.delete(vendorCreditAllocations).where(inArray(vendorCreditAllocations.vendorCreditId, demoCreditIds));
+        await tx.delete(vendorRefunds).where(inArray(vendorRefunds.vendorCreditId, demoCreditIds));
+      }
+      const vendorCreditsDeleted = await count(
+        await tx.select({ id: vendorCredits.id, number: vendorCredits.number, vendorReference: vendorCredits.vendorReference, contactId: vendorCredits.contactId }).from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(vendorCredits).where(eq(vendorCredits.id, r.id)), { entityType: "vendor_credit", contactId: r.contactId, field: "number", from: r.number ?? r.vendorReference }),
+      );
+      const recurringBillsDeleted = await count(
+        await tx.select({ id: recurringBills.id, name: recurringBills.name, contactId: recurringBills.contactId }).from(recurringBills).where(and(eq(recurringBills.orgId, orgId), eq(recurringBills.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(recurringBills).where(eq(recurringBills.id, r.id)), { entityType: "recurring_bill", contactId: r.contactId, field: "name", from: r.name }),
+      );
       const vendorBillsDeleted = await count(
         await tx.select({ id: vendorBills.id, billNumber: vendorBills.billNumber, contactId: vendorBills.contactId }).from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(vendorBills).where(eq(vendorBills.id, r.id)), { entityType: "vendor_bill", contactId: r.contactId, field: "billNumber", from: r.billNumber }),
@@ -265,6 +283,8 @@ export class DemoDataService {
         jobsDeleted,
         vendorPaymentsDeleted,
         vendorBillsDeleted,
+        vendorCreditsDeleted,
+        recurringBillsDeleted,
         expensesDeleted,
         creditNotesDeleted,
         meetingsDeleted,

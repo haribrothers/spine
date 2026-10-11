@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException }
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, bankReconciliations, bankStatementLineMatches, bankStatementLines, creditNotes, expenses, invoices, journalEntries, journalLines, moneyAccounts, payments, vendorBills, vendorPayments } from "../../db/schema";
+import { accounts, bankReconciliations, bankStatementLineMatches, bankStatementLines, creditNotes, expenses, invoices, journalEntries, journalLines, moneyAccounts, payments, vendorBills, vendorCredits, vendorPayments } from "../../db/schema";
 import { RECONCILED_ENTRY_LOCKED } from "@spine/shared";
 import { orgMoneySettings } from "../../common/money-format";
 import { PeriodsService } from "./periods.service";
@@ -56,6 +56,8 @@ const DEMO_SOURCES = [
   { prefix: "credit_note", table: creditNotes },
   { prefix: "vendor_payment", table: vendorPayments },
   { prefix: "vendor_bill", table: vendorBills },
+  // US-ONB-30: a demo vendor credit, and its void.
+  { prefix: "vendor_credit", table: vendorCredits },
   { prefix: "invoice", table: invoices },
   { prefix: "payment", table: payments },
   { prefix: "expense", table: expenses },

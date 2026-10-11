@@ -217,7 +217,8 @@ export class VendorCreditsService {
     return this.auditLog.listForEntity(orgId, "vendor_credit", id);
   }
 
-  async create(orgId: string, actorUserId: string, input: CreateVendorCreditInput) {
+  /** `isDemo` (US-ONB-30): a credit the demo loads; one a person records for a demo vendor stays theirs (D-191). */
+  async create(orgId: string, actorUserId: string, input: CreateVendorCreditInput, isDemo = false) {
     await this.requireVendorAndBill(orgId, input.contactId, input.billId ?? null);
     const totals = await computeBillTotals(orgId, input.currency, input.lines, this.taxResolver);
     // US-TAX-13: the vendor's state, unless one is given.
@@ -227,6 +228,7 @@ export class VendorCreditsService {
         .insert(vendorCredits)
         .values({
           orgId,
+          isDemo,
           contactId: input.contactId,
           vendorReference: input.vendorReference,
           billId: input.billId ?? null,
@@ -430,12 +432,14 @@ export class VendorCreditsService {
         narration: `Refund from vendor against ${credit.number}`,
         sourceType: "vendor_refund",
         sourceId: refundId,
+        // US-ONB-30: a refund of a demo credit is demo money (its row isn't written yet).
+        isDemo: credit.isDemo,
         lines: [
           { accountId: moneyAccount.accountId, debit: input.amount, credit: 0n, contactId: credit.contactId },
           { accountId: ap, debit: 0n, credit: input.amount, contactId: credit.contactId },
         ],
       });
-      await tx.insert(vendorRefunds).values({ id: refundId, orgId, vendorCreditId: id, moneyAccountId: moneyAccount.id, amount: input.amount, date: input.date, method: input.method, reference: input.reference || null, entryId, createdByUserId: actorUserId });
+      await tx.insert(vendorRefunds).values({ id: refundId, orgId, vendorCreditId: id, moneyAccountId: moneyAccount.id, amount: input.amount, date: input.date, method: input.method, reference: input.reference || null, entryId, createdByUserId: actorUserId, isDemo: credit.isDemo });
       const balance = credit.balanceAmount - input.amount;
       await tx.update(vendorCredits).set({ balanceAmount: balance, status: balance === 0n ? "used" : "open", updatedAt: new Date() }).where(eq(vendorCredits.id, id));
       await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "refund", moneyAccount.id);

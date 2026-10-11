@@ -208,11 +208,19 @@ export function riverstonePlan(): DemoPlan {
     ],
     variationOrder: { job: "marina", notes: "Additional scope requested on site — see attached line items.", lines: [{ name: "Additional electrical outlets (site-requested)", quantity: 6, price: 8500n, tax: null }] },
     bills: [
-      { contact: "apexTimber", billNumber: "AT-20441", dateInDays: -10, dueInDays: 20, lines: [{ name: "Framing lumber delivery", quantity: 500, price: 850n, tax: null }], outcome: "recorded", job: "marina", payments: [{ inDays: null }] },
+      // US-ONB-30: part-paid and due this week.
+      { contact: "apexTimber", billNumber: "AT-20441", dateInDays: -10, dueInDays: 4, lines: [{ name: "Framing lumber delivery", quantity: 500, price: 850n, tax: null }], outcome: "recorded", job: "marina", payments: [{ inDays: null, amount: 0.4 }] },
       { contact: "graniteState", billNumber: "GSC-8834", dateInDays: -35, dueInDays: -5, lines: [{ name: "Ready-mix concrete pour", quantity: 12, price: 18000n, tax: null }], outcome: "recorded" },
       { contact: "coastalSteel", billNumber: "CSM-5502", dateInDays: -3, dueInDays: 27, lines: [{ name: "Structural steel beams", quantity: 80, price: 4200n, tax: null }], outcome: "draft" },
       { contact: "northline", billNumber: "NEW-1190", dateInDays: -50, dueInDays: -20, lines: [{ name: "Electrical rough-in materials", quantity: 3, price: 45000n, tax: null }], outcome: "voided", voidReason: "Duplicate bill entered in error" },
+      { contact: "apexTimber", billNumber: "AT-20502", dateInDays: -1, dueInDays: 29, lines: [{ name: "Treated decking boards", quantity: 120, price: 1150n, tax: null }], outcome: "draft" },
     ],
+    // US-ONB-30: one credit partly used against the overdue concrete bill, and one draft.
+    vendorCredits: [
+      { contact: "graniteState", vendorReference: "GSC-CR-112", dateInDays: -12, againstBill: "GSC-8834", lines: [{ name: "Returned: ready-mix concrete — 2 yd³ unused", quantity: 2, price: 18000n, tax: null }], outcome: "recorded", apply: { inDays: -10, fraction: 0.5 } },
+      { contact: "coastalSteel", vendorReference: "CSM-CR-0410", dateInDays: -1, lines: [{ name: "Short delivery: structural steel beams", quantity: 4, price: 4200n, tax: null }], outcome: "draft" },
+    ],
+    recurringBills: [{ contact: "ridgeline", name: "Equipment yard rental", startsInDays: 5, dueDays: 14, lines: [{ name: "Equipment yard — monthly rental", quantity: 1, price: 95000n, tax: null }] }],
     expenses: [
       { category: "Fuel & freight", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved", job: "marina" },
       { category: "Site overheads & permits", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved" },

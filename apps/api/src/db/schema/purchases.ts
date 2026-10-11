@@ -168,6 +168,8 @@ export const recurringBills = pgTable(
     status: recurringStatusEnum("status").notNull().default("active"),
     nextRunOn: date("next_run_on", { mode: "string" }),
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    /** US-ONB-30 — a demo schedule, removed with the demo; its runs create demo bills. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -459,6 +461,8 @@ export const vendorCredits = pgTable(
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
     balanceAmount: bigint("balance_amount", { mode: "bigint" }).notNull().default(sql`0`),
     /** Brought in at the cutover date (US-RPT-18): no lines, posts P20 instead of P24. */
+    /** US-ONB-30 — a demo credit, removed with the demo. */
+    isDemo: boolean("is_demo").notNull().default(false),
     isOpening: boolean("is_opening").notNull().default(false),
     notes: text("notes"),
     voidReason: text("void_reason"),
@@ -571,6 +575,8 @@ export const vendorRefunds = pgTable(
       .notNull()
       .references(() => journalEntries.id),
     reversalEntryId: uuid("reversal_entry_id").references(() => journalEntries.id),
+    /** US-ONB-30 — a refund of a demo credit, removed with it. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

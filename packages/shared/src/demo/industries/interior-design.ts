@@ -90,7 +90,9 @@ export const INTERIOR_DESIGN: IndustryPack = {
     bill4: { ref: "CAD-1190", lines: [{ name: "Design software — annual licence", quantity: 2, price: 1100, service: true, in: { price: 42000, hsnSac: "997331", slab: 18 } }] },
     bill5: { ref: "WPL-3402", lines: [{ name: "Laminates and edge band", quantity: 80, price: 28, in: { price: 1350, hsnSac: "4823", slab: 18 } }] },
     bill6: { ref: "LLC-7901", lines: [{ name: "Cove lighting strips", quantity: 50, price: 22, in: { price: 900, hsnSac: "9405", slab: 18 } }] },
+    bill7: { ref: "CAD-1244", lines: [{ name: "Rendering plug-in — 3 seats", quantity: 3, price: 160, service: true, in: { price: 5200, hsnSac: "997331", slab: 18 } }] },
   },
+  recurringBill: { name: "Design software subscription", line: { name: "Design software — monthly seats", quantity: 4, price: 85, service: true, in: { price: 2900, hsnSac: "997331", slab: 18 } } },
   expenses: {
     exp1: { category: "Design software & samples", amount: 160, inAmount: 4800, description: "Fabric and laminate samples", paidBy: "company" },
     exp2: { category: "Freight & delivery", amount: 220, inAmount: 6500, description: "Delivery of sofas to the hospital", paidBy: "company" },

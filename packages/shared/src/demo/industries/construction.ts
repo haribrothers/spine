@@ -92,7 +92,9 @@ export const CONSTRUCTION: IndustryPack = {
     bill4: { ref: "RPH-8834", lines: [{ name: "Excavator hire — 6 days", quantity: 6, price: 320, service: true, in: { price: 11000, hsnSac: "9973", slab: 18 } }] },
     bill5: { ref: "ABM-20587", lines: [{ name: "Ready-mix concrete (M25)", quantity: 30, price: 130, in: { price: 5100, hsnSac: "3824", slab: 18 } }] },
     bill6: { ref: "CSW-5611", lines: [{ name: "Structural steel sections", quantity: 3500, price: 1.1, in: { price: 64, hsnSac: "7216", slab: 18 } }] },
+    bill7: { ref: "RPH-8902", lines: [{ name: "Plate compactor hire — 3 days", quantity: 3, price: 95, service: true, in: { price: 2800, hsnSac: "9973", slab: 18 } }] },
   },
+  recurringBill: { name: "Site office cabin rental", line: { name: "Site office cabin — monthly rental", quantity: 1, price: 650, service: true, in: { price: 18000, hsnSac: "997212", slab: 18 } } },
   expenses: {
     exp1: { category: "Fuel & freight", amount: 180, inAmount: 6500, description: "Diesel for the site generator", paidBy: "company" },
     exp2: { category: "Site overheads & permits", amount: 650, inAmount: 18000, description: "Building permit fee — warehouse extension", paidBy: "company" },

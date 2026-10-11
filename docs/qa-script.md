@@ -5002,6 +5002,17 @@ Use an owner with a vendor who has two recorded bills. Check light and dark, and
 10. Tick drafts: "Record (n)" counts only the drafts, asks "Record n vendor credits?" with their total, records them and toasts; any skipped are named.
 11. Regression: a bill's "Apply credit" and Credits applied, the vendor payment dialog's "Apply it first?" link to the credit, opening-balance vendor credits (Settings › Opening balances), and a Staff member without "Record" still seeing Edit but not Record credit.
 
+## 219. Demo bills and vendor credits at every stage (US-ONB-30, refinements before Phase 10)
+
+Load the India construction demo, then Riverstone Builders on another organisation; check light and dark.
+
+1. Vendor bills: every card has something in it — To pay, Overdue, Due in 7 days (the part-paid bill, on job A) and Drafts to record (2). The list shows Paid, Overdue, Partly paid, Void and two Drafts; "Record (2)" records both drafts after asking.
+2. The overdue bill shows "Apply credit" and, under Credits applied, the vendor credit raised against it; its Activity has "Credit applied" on the credit's day.
+3. Vendor credits: four credits (two in Riverstone) — Partly used (against the overdue bill, applied part), Open and dated about 70 days ago (counted in Unused 60+ days), Used (with a refund under Refunds), and a Draft. Each credit's Activity reads on its own days: created and recorded on its date, applied and refunded afterwards.
+4. Recurring bills: one active monthly schedule for the services vendor (Riverstone: Ridgeline, "Equipment yard rental"), with its next run date a few days ahead.
+5. Record a vendor credit of your own for a demo vendor, then "Delete all demo data": the demo's bills, credits (with their applications and refunds) and schedule go; yours stays with its vendor, and the deletion says it kept that vendor.
+6. Regression: Payables, Profit & Loss and the dashboard's bills to pay match the demo's bills; nothing of the demo is left in reports after deleting it.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

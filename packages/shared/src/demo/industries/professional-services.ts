@@ -84,7 +84,9 @@ export const PROFESSIONAL_SERVICES: IndustryPack = {
     bill4: { ref: "MCS-3019", lines: [{ name: "Meeting room hire", quantity: 4, price: 120, service: true, in: { price: 3500, hsnSac: "997212", slab: 18 } }] },
     bill5: { ref: "LLS-5611", lines: [{ name: "Document management add-on", quantity: 8, price: 40, service: true, in: { price: 1400, hsnSac: "997331", slab: 18 } }] },
     bill6: { ref: "JRS-0533", lines: [{ name: "Company filings search pack", quantity: 1, price: 450, service: true, in: { price: 14000, hsnSac: "9983", slab: 18 } }] },
+    bill7: { ref: "MCS-3088", lines: [{ name: "Training room hire — full day", quantity: 1, price: 380, service: true, in: { price: 9500, hsnSac: "997212", slab: 18 } }] },
   },
+  recurringBill: { name: "Co-working desks", line: { name: "Dedicated desks — monthly", quantity: 3, price: 290, service: true, in: { price: 8500, hsnSac: "997212", slab: 18 } } },
   expenses: {
     exp1: { category: "Subscriptions & research", amount: 280, inAmount: 8500, description: "Professional journal subscriptions", paidBy: "company" },
     exp2: { category: "Insurance", amount: 1400, inAmount: 42000, description: "Professional indemnity premium — instalment", paidBy: "company" },

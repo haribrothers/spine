@@ -90,7 +90,9 @@ export const IT_SERVICES: IndustryPack = {
     bill4: { ref: "CSH-7781", lines: [{ name: "Laptops for resale", quantity: 2, price: 880, in: { price: 56000, hsnSac: "8471", slab: 18 } }] },
     bill5: { ref: "CBH-INV-3402", lines: [{ name: "Managed database — portal", quantity: 1, price: 380, service: true, in: { price: 13500, hsnSac: "998315", slab: 18 } }] },
     bill6: { ref: "DHT-1003", lines: [{ name: "Contract QA engineer — 80 hours", quantity: 80, price: 45, service: true, in: { price: 1100, hsnSac: "998314", slab: 18 } }] },
+    bill7: { ref: "CSH-7835", lines: [{ name: "Docking stations", quantity: 6, price: 140, in: { price: 7800, hsnSac: "8471", slab: 18 } }] },
   },
+  recurringBill: { name: "Device leasing", line: { name: "Test devices — monthly lease", quantity: 5, price: 45, service: true, in: { price: 1600, hsnSac: "997315", slab: 18 } } },
   expenses: {
     exp1: { category: "Software subscriptions", amount: 240, inAmount: 7200, description: "Design tool seats — quarter", paidBy: "company" },
     exp2: { category: "Training & certification", amount: 450, inAmount: 15000, description: "Cloud certification exam", paidBy: "company" },

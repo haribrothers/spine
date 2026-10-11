@@ -44,6 +44,6 @@ import { RecurringBillRunWorker } from "./recurring-bill-run.worker";
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
   controllers: [RecurringBillsController, VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
   providers: [RecurringBillsService, RecurringBillRunService, RecurringBillRunWorker, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
-  exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
+  exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService, RecurringBillsService],
 })
 export class PurchasesModule {}

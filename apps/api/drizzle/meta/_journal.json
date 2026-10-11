@@ -806,6 +806,13 @@
       "when": 1791703397685,
       "tag": "0114_email_log",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1791737353379,
+      "tag": "0115_demo_purchases",
+      "breakpoints": true
     }
   ]
 }

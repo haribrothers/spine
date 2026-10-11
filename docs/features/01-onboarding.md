@@ -554,5 +554,5 @@ Decision: D-216, D-225, D-226
 - **Given** "Delete all demo data", **when** it runs, **then** the demo vendor credits, their applications and refunds, and the demo recurring bill go with the rest, and the bills a demo schedule created count as demo too.
 
 **Implementation notes**
-- Data: `vendor_credits.is_demo`, `vendor_refunds.is_demo` and `recurring_bills.is_demo` (`boolean default false`, migration `0115`); the ledger treats `vendor_credit*` and `vendor_refund*` entries of demo rows as demo; a demo schedule's runs create demo bills.
+- Data: `vendor_credits.is_demo`, `vendor_refunds.is_demo` and `recurring_bills.is_demo` (`boolean default false`, migration `0115`), set by the demo for what it loads — a credit or schedule a person records for a demo vendor stays theirs and keeps that vendor (D-191 (5)); a refund takes its credit's flag; the ledger treats a demo credit's entries, and its refunds', as demo; a demo schedule is for a demo vendor, so its runs create demo bills.
 - Shared: plan bills gain partial `payments[].amount`; plans gain `vendorCredits` (`billKey?`, `dateInDays`, `outcome: draft | open`, `applyInDays?`, `applyAmount?`, `refundInDays?`) and `recurringBills`. Credits are seeded through `VendorCreditsService` (record, apply, refund) and the schedule through `RecurringBillsService`, with their audit entries on the plan's days.
