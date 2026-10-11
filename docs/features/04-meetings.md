@@ -231,7 +231,7 @@ Decision: D-212
 - **Given** a meeting near the bottom or right edge of the window, **when** I open its quick view, **then** the popover flips or shifts so all of it, attendees included, stays inside the window.
 
 **Implementation notes**
-- UI: `Calendar` (`@spine/ui`) gains a toolbar slot for the button and a way to open its create dialog with a start and end, a scroll-to-hour on Week and Day, and the now line; the quick view's `PopoverContent` uses collision padding.
+- UI: `Calendar` (`@spine/ui`) gains a toolbar slot for the button and a way to open its create dialog with a start and end, a scroll-to-hour on Week and Day, and the now line; the quick view's `PopoverContent` uses collision padding, and shows a placeholder attendee row while attendees load so it's placed at its full height from the start (it used to open short, run past the window for a frame, then jump).
 
 ### US-MTG-15 · Get to a meeting or a contact from the sidebar lists
 **Feature:** F-MTG-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MeetingsWeekRefined`

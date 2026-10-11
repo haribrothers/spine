@@ -10,6 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Skeleton,
   type CalendarEventInstance,
   type CalendarRecurrenceRule,
 } from "@spine/ui";
@@ -176,6 +177,23 @@ export function MeetingQuickViewPopover({
         </div>
       )}
 
+      {/* US-MTG-14: while attendees load, a row the size of one keeps the quick view at its full height, so it's
+          placed to fit the window once instead of opening short and jumping when they arrive. */}
+      {attendees === null && (
+        <div className="flex flex-col gap-2 border-t border-border pt-3" aria-busy="true" data-testid="quick-view-attendees-loading">
+          <p className="flex items-center gap-1.5 text-[12px] font-medium text-on-surface">
+            <Users size={12} />
+            Attendees
+          </p>
+          <ul className="flex flex-col gap-1.5" aria-hidden>
+            <li className="flex items-center gap-2">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-5.5 w-16 rounded-full" />
+            </li>
+          </ul>
+        </div>
+      )}
       {attendees && attendees.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           <p className="flex items-center gap-1.5 text-[12px] font-medium text-on-surface">

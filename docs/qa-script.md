@@ -4674,7 +4674,7 @@ Use an owner on a business with demo data and a second member, with a few meetin
 2. **New meeting and the working day (US-MTG-14):**
    - "New meeting" sits before Day / Week / Month / Agenda. On today it opens "New event" at the next half hour for 30 minutes; on another day at 9:00 AM. A Staff member without the right to create meetings has no button.
    - Week and Day open with 8 AM at the top, or, on today after 9 AM, the hour before now; the day headers stay in view as you scroll. A red line marks the current time on today's column and moves each minute; other weeks have none.
-   - Open a meeting low on the screen or near the right edge: its quick view opens above or beside it and never runs off the window; the attendees are always readable.
+   - Open a meeting low on the screen or near the right edge: its quick view opens above or beside it and never runs off the window; the attendees are always readable. It opens in its final place — it doesn't jump up when the attendees appear (a placeholder row shows while they load).
 3. **Sidebar lists (US-MTG-15):**
    - Upcoming: "Next 60 days", up to 8 meetings with "Today · 1:00 PM", "Tomorrow · 9:00 AM", "Tue 13 Oct · 9:00 AM" or "All day". Press one: the calendar moves to its day and its quick view opens. The people button still opens Manage attendees. With none: "Nothing in the next 60 days."
    - Meetings by contact counts the range in the heading ("This week", "Week of 11 Oct", "This month", "From 10 Oct"); each name opens the contact. With none: "No meetings linked to a contact in this range."

@@ -37,14 +37,30 @@ test.describe("US-MTG-14", () => {
     await page.goto("/meetings?view=week&date=2027-03-10");
     const event = page.getByRole("button", { name: /^Late review, 10:00 PM to 11:00 PM/ });
     await event.scrollIntoViewIfNeeded();
+    // Every frame from the click on, record the quick view's edges: it must never cross the window, not even
+    // for the moment before its attendees load (it opens at its full height, with a placeholder row).
+    await page.evaluate(`(() => {
+      window.__edges = [];
+      const start = performance.now();
+      const frame = () => {
+        const content = document.querySelector("[data-radix-popper-content-wrapper]")?.firstElementChild;
+        if (content) {
+          const r = content.getBoundingClientRect();
+          window.__edges.push({ top: r.top, bottom: r.bottom, right: r.right });
+        }
+        if (performance.now() - start < 2000) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    })()`);
     await event.click();
     const pop = page.getByRole("dialog").filter({ hasText: "Late review" });
-    await expect(pop).toBeVisible();
-    await expect(pop.getByText("Attendees")).toBeVisible();
-    const box = (await pop.boundingBox())!;
-    expect(box.y).toBeGreaterThanOrEqual(0);
-    expect(box.y + box.height).toBeLessThanOrEqual(720);
-    expect(box.x + box.width).toBeLessThanOrEqual(1280);
+    await expect(pop.getByText("Priya Raman (organizer)")).toBeVisible();
+    await page.waitForTimeout(300);
+    const edges = await page.evaluate<{ top: number; bottom: number; right: number }[]>("window.__edges");
+    expect(edges.length).toBeGreaterThan(0);
+    expect(Math.min(...edges.map((e) => e.top))).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...edges.map((e) => e.bottom))).toBeLessThanOrEqual(720);
+    expect(Math.max(...edges.map((e) => e.right))).toBeLessThanOrEqual(1280);
   });
 
   test("without the right to create meetings there's no New meeting button", async ({ page }) => {
