@@ -161,6 +161,10 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 /** Mirrors GET /payments?invoiceId=:id's response shape (PaymentsService.listForInvoice) — a payment row plus how much of it was allocated specifically to this invoice, since one payment can span several invoices (S-06.2). */
 export interface InvoicePaymentRow {
   id: string;
+  /** US-PAY-26: the allocation of this payment to this invoice. */
+  allocationId: string;
+  allocatedAt: string;
+  contactName: string | null;
   number: string | null;
   date: string;
   method: PaymentMethod;

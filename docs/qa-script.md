@@ -4900,6 +4900,33 @@ Use an owner with email set up (MailDev locally), a Staff member and the demo Fi
    - Sending a quote, emailing or reminding an invoice and automatic reminders still send, and the quote's and invoice's email status and Activity still update.
    - Notifications by email, the daily digest, data export's "ready" email and password reset emails still arrive.
 
+## 213. Payments you can work from (US-PAY-19 to US-PAY-26, refinements before Phase 10)
+
+Use an owner on the India demo, a Staff member without "Apply credit" and "Refund customers", and the demo Field user. Have a customer with two open invoices (one overdue), a payment applied to two invoices with credit left, one fully applied, one refunded in part, and one reconciled. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "14 Payments".
+
+1. **The payment page (US-PAY-19):**
+   - Open a payment from the list: the receipt number is the title with "Credit left" (amber), "Fully applied" (green) or "Refunded"; under it the customer (a link), "Cheque · 7 Oct", "Paid into …" and the reference. No drawer any more.
+   - One primary button: Apply credit while credit is left, else Email receipt, else Download PDF; Refund (with credit) and Download PDF beside it; More has Email receipt, View history and Delete payment (only when nothing is applied or refunded).
+   - The strip: Received ("Cheque · 7 Oct"), Applied ("To INV-…" or "To 2 invoices"), Refunded (when any) and Credit left. "Applied to" lists each invoice's total, what this payment put on it, what it still owes ("Paid" at zero) and the date.
+   - Links: the "Payment received" notification, a ledger drill-down on a payment entry, a bank register row, an invoice's Payments row and Activity, the email log's receipt row and an old `/payments?id=…` link all open the page. As the Field user, `/payments/<id>` says it isn't found.
+2. **Activity (US-PAY-20):** newest first, with who and when: "Recorded · … by cheque into …", "Applied … to INV-…" (a link), "Receipt emailed to …", "Moved … off INV-… · “reason”", "Refunded · … · UPI", "Refund deleted". "Show N earlier" past six; View history opens the field-level history.
+3. **The list (US-PAY-21, US-PAY-22):**
+   - Cards: Received this month (total and count, "Received since 1 Oct"), Credit to use (amber, customers count; press it to filter, `card=credit` in the address) and Refunded this month.
+   - Rows: the reference under the number, the date in the business's format, the customer, the method with the account under it, the amount, "Applied to" (links, "3 invoices" or "Not applied") and the credit left. Newest first.
+   - The row menu: View; Apply credit and Refund while credit is left; Email receipt; Download PDF; Delete payment (nothing applied or refunded) — each needs its right. Apply, Refund, Email and Delete open the page with that dialog.
+   - Filter by contact, method and date range (All time, This month, Last month, Last 90 days, This financial year); search by receipt number, reference, customer or an invoice it paid. Reload, or open one and press Back: the same list. "Clear filters"; Refresh and "Updated just now".
+4. **Recording (US-PAY-23, US-PAY-24):**
+   - From the list, an invoice's "Record payment" and a bank statement line's Create › Payment: the same dialog. From an invoice the customer is fixed and the invoice is ticked with its balance; from a statement line the amount, date and account are fixed.
+   - Choose a customer: open invoices oldest due first, "12 days late" in red, "Deposit" for an advance invoice. Tick one: the amount fills; "Pay all" ticks all. Type an amount: it spreads oldest first and the rest is credit — "… goes on 2 invoices; … becomes credit for …". Lines above their balance are capped; more on the invoices than the amount is refused with what to do.
+   - "Email a receipt to …" is on for a customer with an email address; turned off, no receipt goes. Recording opens the new payment's page.
+   - Enter the same customer, amount and a date within 3 days of an existing payment (or its reference): "This looks like RCP-… — …" with "Open RCP-…"; recording still works.
+5. **Search (US-PAY-25):** ⌘K, type a receipt number, a reference or a customer: a Payments group lists "RCP-… · customer · amount · date"; Enter opens the page. The Field user gets no Payments group.
+6. **Move off (US-PAY-26):** on a payment's "Applied to" row (or an invoice's Payments row), "Move off INV-…" asks "Move … off INV-…?" with what the invoice will owe again and an optional reason; Go back does nothing. Confirm: "… is now credit", the row goes, Credit left rises, Activity shows "Moved … off …", the invoice owes it again and its Activity says so. Reports › account drill-down on 1100 and 2200 shows the P30 entry dated today. A deposit invoice's payment has no "Move off"; the Staff member without "Apply credit" sees no "Move off". A reconciled payment can still be moved off.
+7. Regression:
+   - Apply credit, refunds (US-PAY-17), deleting an unapplied payment (US-PAY-06) and a reconciled one refused (US-BANK-10) work from the page.
+   - The receipt PDF lists only what's still applied; Receivables, aging, the customer statement and job revenue agree after a move-off.
+   - The invoice page's Record payment, the demo payments and the bank statement's payment form still record correctly.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

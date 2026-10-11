@@ -43,8 +43,8 @@ test.describe("US-BANK-02", () => {
     await expect(register.getByRole("row", { name: /Payment RCP-/ })).toBeVisible();
 
     await entry.getByRole("link", { name: /Payment RCP-/ }).click();
-    await page.waitForURL(/\/payments\?id=/);
-    await expect(page.getByRole("dialog")).toContainText("Maple Ridge Developments");
+    await page.waitForURL(/\/payments\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("payment-meta")).toContainText("Maple Ridge Developments");
 
     // An empty account, and a card's own column names.
     await page.goto("/banking");

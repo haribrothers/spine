@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Res, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query, Res, UseInterceptors } from "@nestjs/common";
 import { parseEmailOverride } from "../email/email-text";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { applyPaymentCreditSchema, createPaymentSchema } from "@spine/shared";
+import { applyPaymentCreditSchema, createPaymentSchema, unapplyPaymentSchema } from "@spine/shared";
 import type { Response } from "express";
 import { z } from "zod";
 import { RequireCapability } from "../../auth/require-capability.decorator";
@@ -49,6 +49,16 @@ export class PaymentsController {
     return this.paymentsService.suggestAllocation(orgId, contactId, parsedAmount);
   }
 
+  /** US-PAY-24 — payments that look like the one about to be recorded (same customer and amount within 3 days, or the same reference). */
+  @Get("possible-duplicates")
+  async possibleDuplicates(@Session() session: UserSession, @Query() query: Record<string, string | undefined>) {
+    const orgId = requireOrgId(session);
+    const parsed = z
+      .object({ contactId: z.string().uuid(), amount: z.coerce.bigint().positive(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), reference: z.string().optional() })
+      .parse(query);
+    return this.paymentsService.possibleDuplicates(orgId, parsed);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -60,6 +70,12 @@ export class PaymentsController {
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.paymentsService.getHistory(orgId, id);
+  }
+
+  /** US-PAY-20 — what happened to the payment, newest first. */
+  @Get(":id/activity")
+  async activity(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.paymentsService.activity(requireOrgId(session), id);
   }
 
   /** S-06.6 / US-INV-17 — the receipt PDF stored when the payment was recorded, same as InvoicesController.getPdf. */
@@ -100,6 +116,16 @@ export class PaymentsController {
     const orgId = requireOrgId(session);
     const input = applyPaymentCreditSchema.parse(body);
     return this.paymentsService.applyCredit(orgId, session.user.id, id, input);
+  }
+
+  /** US-PAY-26 (D-221) — moves the payment off an invoice; the amount becomes the customer's credit (P30). */
+  @Post(":id/allocations/:allocationId/unapply")
+  @RequireCapability("payments.apply_credit")
+  @UseInterceptors(IdempotencyInterceptor)
+  async unapply(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Param("allocationId", ParseUUIDPipe) allocationId: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = unapplyPaymentSchema.parse(body ?? {});
+    return this.paymentsService.unapply(orgId, session.user.id, id, allocationId, input.reason);
   }
 
   /** Only an unallocated payment is ever deletable — see PaymentsService.delete's own comment. */

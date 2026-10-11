@@ -47,11 +47,10 @@ test.describe("US-BANK-10", () => {
     await expect(page.getByText("Never reconciled")).toHaveCount(1); // Cash in Hand only
 
     // A reconciled payment can't be deleted.
-    await page.goto(`/payments?id=${payment.id}`);
-    const drawer = page.getByRole("dialog");
-    await drawer.getByRole("button", { name: "More actions" }).click();
+    await page.goto(`/payments/${payment.id}`);
+    await page.getByTestId("payment-actions").getByRole("button", { name: "More" }).click();
     await page.getByRole("menuitem", { name: "Delete payment" }).click();
-    await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
-    await expect(drawer).toContainText(/This entry is part of a finished reconciliation of Bank Account to .+\. Undo that reconciliation first\./);
+    await page.getByRole("alertdialog", { name: "Delete this payment?" }).getByRole("button", { name: "Delete payment" }).click();
+    await expect(page.getByText(/This entry is part of a finished reconciliation of Bank Account to .+\. Undo that reconciliation first\./).first()).toBeVisible();
   });
 });

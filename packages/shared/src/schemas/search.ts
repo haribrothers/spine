@@ -1,11 +1,11 @@
 /**
  * US-OPS-22 (D-095) — global search: contacts, quotes, jobs, invoices,
- * credit notes (US-INV-38), vendor bills and expenses, up to 5 each, filtered by the same read rules
+ * credit notes (US-INV-38), payments (US-PAY-25), vendor bills and expenses, up to 5 each, filtered by the same read rules
  * as each module. A document number ("INV-0010", "QUO-4") puts that
  * document first.
  */
 
-export const SEARCH_GROUPS = ["contacts", "quotes", "jobs", "invoices", "credit_notes", "vendor_bills", "expenses"] as const;
+export const SEARCH_GROUPS = ["contacts", "quotes", "jobs", "invoices", "credit_notes", "payments", "vendor_bills", "expenses"] as const;
 export type SearchGroupType = (typeof SEARCH_GROUPS)[number];
 
 export const SEARCH_GROUP_LABELS: Record<SearchGroupType, string> = {
@@ -14,6 +14,7 @@ export const SEARCH_GROUP_LABELS: Record<SearchGroupType, string> = {
   jobs: "Jobs",
   invoices: "Invoices",
   credit_notes: "Credit notes",
+  payments: "Payments",
   vendor_bills: "Vendor bills",
   expenses: "Expenses",
 };

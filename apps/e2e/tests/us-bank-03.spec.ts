@@ -29,17 +29,14 @@ test.describe("US-BANK-03", () => {
     await paidInto.click();
     await page.getByRole("option", { name: "First Coastal — Operating" }).click();
     await dialog.getByRole("button", { name: "Record payment" }).click();
-    await expect(dialog).toHaveCount(0);
+    // US-PAY-23: the new payment's page opens; it shows the account.
+    await page.waitForURL(/\/payments\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("payment-meta")).toContainText("Paid into First Coastal — Operating");
 
+    await page.goto("/payments");
     await page.getByRole("button", { name: "Record payment" }).first().click();
     await expect(dialog.getByRole("combobox", { name: "Paid into" })).toHaveText("First Coastal — Operating");
     await expect(dialog).toContainText("Last used by you. Change it if the money went into another account.");
-    await page.keyboard.press("Escape");
-
-    // The recorded payment shows its account read-only.
-    await page.getByRole("button", { name: /^RCP-/ }).first().click();
-    await expect(page.getByRole("dialog")).toContainText("Paid into");
-    await expect(page.getByRole("dialog")).toContainText("First Coastal — Operating");
     await page.keyboard.press("Escape");
 
     await page.goto("/banking");

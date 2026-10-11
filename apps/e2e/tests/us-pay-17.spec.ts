@@ -18,9 +18,8 @@ test.describe("US-PAY-17", () => {
     const payment = await post<{ id: string; number: string }>("/payments", { contactId: contact.id, date: today, method: "bank_transfer", currency: "USD", amount: "50000" });
 
     await clearInbox();
-    await page.goto(`/payments?id=${payment.id}`);
-    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
-    await page.getByRole("menuitem", { name: "Refund", exact: true }).click();
+    await page.goto(`/payments/${payment.id}`);
+    await page.getByTestId("payment-actions").getByRole("button", { name: "Refund", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Refund Maple Ridge Developments" });
     await expect(dialog.getByRole("combobox", { name: "Refund from" })).toHaveText(`Payment ${payment.number}`);
     await expect(dialog).toContainText("$500.00 of credit");
@@ -35,14 +34,13 @@ test.describe("US-PAY-17", () => {
     const email = await waitForEmail((e) => e.to.some((t) => t.address === customerEmail));
     expect(email.subject).toContain("refunded $200.00");
 
-    const drawer = page.getByRole("dialog").filter({ has: page.getByTestId("refunds") });
-    await expect(drawer.getByTestId("refunds")).toContainText("RF-0001");
-    await expect(drawer).toContainText("$300.00");
-    await drawer.getByRole("button", { name: "Delete refund of $200.00" }).click();
+    await expect(page.getByTestId("refunds")).toContainText("RF-0001");
+    await expect(page.getByTestId("fig-left")).toContainText("$300.00");
+    await page.getByRole("button", { name: "Delete refund of $200.00" }).click();
     // D-218: deleting a refund asks first.
     await page.getByRole("alertdialog", { name: "Delete this refund?" }).getByRole("button", { name: "Delete refund" }).click();
-    await expect(drawer.getByTestId("refunds")).toContainText("Deleted");
-    await expect(drawer).toContainText("$500.00");
+    await expect(page.getByTestId("refunds")).toContainText("Deleted");
+    await expect(page.getByTestId("fig-left")).toContainText("$500.00");
 
     await page.goto(`/contacts/${contact.id}`);
     await expect(page.getByRole("button", { name: "Refund", exact: true })).toBeVisible();

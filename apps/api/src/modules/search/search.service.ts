@@ -18,7 +18,7 @@ import { orgClock } from "../../common/org-clock";
 import { orgLocale } from "../../common/money-format";
 import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
-import { contacts, creditNotes, expenseCategories, expenses, invoices, jobAssignments, jobs, quotes, user, vendorBills } from "../../db/schema";
+import { contacts, creditNotes, expenseCategories, expenses, invoices, jobAssignments, jobs, payments, quotes, user, vendorBills } from "../../db/schema";
 
 const MAX_PER_GROUP = 5;
 
@@ -67,6 +67,8 @@ export class SearchService {
       invoices: field ? [] : await this.invoices(ctx),
       // US-INV-38: credit notes are Owner and Staff only, like invoices.
       credit_notes: field ? [] : await this.creditNotes(ctx),
+      // US-PAY-25: payments are Owner and Staff only.
+      payments: field ? [] : await this.payments(ctx),
       vendor_bills: field ? [] : await this.vendorBills(ctx),
       expenses: await this.expenses(ctx, field),
     };
@@ -201,6 +203,29 @@ export class SearchService {
       href: `/credit-notes/${r.id}`,
       exact: isNumberMatch(r.number, c.q),
     }));
+  }
+
+  /** US-PAY-25 — by receipt number, reference or customer: "Halcyon Tech Parks · ₹45,000.00 · 10 Oct", with the credit left. */
+  private async payments(c: Ctx) {
+    const rows = await this.db
+      .select({ id: payments.id, number: payments.number, date: payments.date, currency: payments.currency, amount: payments.amount, allocated: payments.allocatedAmount, refunded: payments.refundedAmount, contact: contacts.name })
+      .from(payments)
+      .leftJoin(contacts, eq(payments.contactId, contacts.id))
+      .where(and(eq(payments.orgId, c.orgId), this.numberOrText(payments.number, c.q, contacts.name, payments.reference)))
+      .orderBy(...this.rank(payments.number, contacts.name, c.q), desc(payments.date), desc(payments.createdAt))
+      .limit(c.n);
+    return rows.map((r) => {
+      const left = r.amount - r.allocated - r.refunded;
+      const day = new Date(`${typeof r.date === "string" ? r.date : new Date(r.date).toISOString().slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+      return {
+        id: r.id,
+        title: r.number ?? "Payment",
+        subtitle: [r.contact, c.money(r.amount, r.currency), day].filter(Boolean).join(" · "),
+        status: left > 0n ? `${c.money(left, r.currency)} credit left` : null,
+        href: `/payments/${r.id}`,
+        exact: isNumberMatch(r.number, c.q),
+      };
+    });
   }
 
   private async vendorBills(c: Ctx) {

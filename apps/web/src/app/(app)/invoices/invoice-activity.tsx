@@ -75,7 +75,7 @@ function hrefFor(item: InvoiceActivityEntry): string | null {
   if (item.type === "created_from_quote") return `/quotes/${item.linkId}`;
   if (item.type === "created_from_milestone") return `/jobs/${item.linkId}`;
   if (item.type === "duplicated") return `/invoices/${item.linkId}`;
-  if (item.type === "payment_recorded") return `/payments?id=${item.linkId}`;
+  if (item.type === "payment_recorded") return `/payments/${item.linkId}`;
   // US-INV-38: credit notes have their own page.
   if (item.type === "credit_note_issued" || item.type === "credit_applied") return `/credit-notes/${item.linkId}`;
   return null;

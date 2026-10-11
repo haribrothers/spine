@@ -23,7 +23,7 @@ test.describe("US-INV-32", () => {
     await expect(entries.last()).toContainText("Created");
     await expect(activity).toContainText("Priya Raman");
     await entries.first().getByRole("link").click();
-    await expect(page).toHaveURL(/\/payments\?id=/);
+    await expect(page).toHaveURL(/\/payments\/[0-9a-f-]{36}$/);
 
     await page.goBack();
     await page.getByTestId("invoice-activity").getByRole("button", { name: "View history" }).click();

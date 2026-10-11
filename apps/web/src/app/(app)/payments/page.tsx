@@ -2,16 +2,16 @@ import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { PaymentsExplorer } from "./payments-explorer";
 
-/** PRD F6 Payments (S-06.1–S-06.5) — the standalone home for recording/viewing payments, alongside the invoice-triggered "Record payment" dialog on the invoice detail page. */
+/** US-PAY-21 (D-221) — every payment: what came in, the credit customers can still use, and what each payment paid. */
 export default function PaymentsPage() {
   return (
     <>
       <AppShellHeader
         breadcrumb={[{ label: "Billing" }, { label: "Payments" }]}
         title="Payments"
-        description="Record payments against invoices, or hold unallocated credit for a customer."
+        description="Money customers paid you — what it paid, and the credit they can still use."
       />
-      {/* PaymentsExplorer reads ?id= via useSearchParams, which needs a Suspense boundary. */}
+      {/* US-PAY-22: the explorer reads its state (and an old ?id= link) from the address. */}
       <Suspense>
         <PaymentsExplorer />
       </Suspense>

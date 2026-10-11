@@ -83,11 +83,9 @@ test("quote → send → customer accepts → convert to invoice → issue → r
   // from the invoice's own outstanding balance, so nothing to fill in) ---
   await page.getByRole("button", { name: "Record payment" }).click();
   await expect(page.getByText("Record a payment")).toBeVisible();
-  // The dialog fetches its own suggested allocation asynchronously — wait
-  // for that to resolve (visible as "Unallocated: 0.00") before submitting,
-  // otherwise a click that lands before the fetch resolves silently
-  // submits against a still-empty allocation list.
-  await expect(page.getByText(/Unallocated:\s*\$0\.00/)).toBeVisible({ timeout: 10_000 });
+  // The dialog loads the customer's open invoices and ticks this one (US-PAY-23) —
+  // wait for that before submitting, or the payment would go in as credit.
+  await expect(page.getByTestId("record-payment-summary")).toContainText("nothing becomes credit", { timeout: 10_000 });
   await page.getByRole("button", { name: "Record payment" }).last().click();
 
   // Invoices have no "paid" status of their own (draft/issued/void only —

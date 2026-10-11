@@ -507,14 +507,14 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-28 · Retry or cancel an email
 - [x] US-SET-29 · Know when email isn't set up
 - [x] US-DASH-30 · See failed emails in Needs your attention
-- [ ] US-PAY-19 · See a payment at a glance, with one next step
-- [ ] US-PAY-20 · Follow what happened to a payment
-- [ ] US-PAY-21 · See money received at a glance
-- [ ] US-PAY-22 · Search, filter and come back to the same payments list
-- [ ] US-PAY-23 · Record a payment by ticking what it pays
-- [ ] US-PAY-24 · Be warned before recording the same payment twice
-- [ ] US-PAY-25 · Find a payment from search
-- [ ] US-PAY-26 · Move a payment off the wrong invoice
+- [x] US-PAY-19 · See a payment at a glance, with one next step
+- [x] US-PAY-20 · Follow what happened to a payment
+- [x] US-PAY-21 · See money received at a glance
+- [x] US-PAY-22 · Search, filter and come back to the same payments list
+- [x] US-PAY-23 · Record a payment by ticking what it pays
+- [x] US-PAY-24 · Be warned before recording the same payment twice
+- [x] US-PAY-25 · Find a payment from search
+- [x] US-PAY-26 · Move a payment off the wrong invoice
 
 ## Phase 10 · AI assistant
 

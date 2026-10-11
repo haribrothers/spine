@@ -1284,6 +1284,8 @@ Shows: "Tax Invoice PDF — Spine" · "KI" · "Kaveri Interiors Pvt Ltd" · "14 
 ### PaymentsList — Payments list
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-PAY-04, US-PAY-12 · **Source:** Captured
 
+**Refined** by `PaymentsListRefined` (US-PAY-21, D-221).
+
 ![PaymentsList](screens/PaymentsList.webp)
 
 Links to: `PaymentDrawer`, `PaymentsEmpty`
@@ -1302,6 +1304,8 @@ Shows: "Billing > Payments" · "OVERVIEW" · "Payments" · "98 Dashboard" · "Re
 ### NewPaymentDialog — Record a payment (allocate, oldest-first)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-PAY-02, US-PAY-05, US-PAY-13 · **Source:** Captured
 
+**Replaced** by `RecordPaymentRefined` (US-PAY-23, D-221).
+
 ![NewPaymentDialog](screens/NewPaymentDialog.webp)
 
 Links to: `PaymentDrawerCredit`, `RecordPaymentDialog`
@@ -1310,6 +1314,8 @@ Shows: "Billing > Payments" · "OVERVIEW" · "Payments" · "98 Dashboard" · "Re
 
 ### RecordPaymentDialog — Record payment from an invoice
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-PAY-01, US-PAY-13 · **Source:** Captured
+
+**Replaced** by `RecordPaymentRefined` (US-PAY-23, D-221): one dialog everywhere.
 
 ![RecordPaymentDialog](screens/RecordPaymentDialog.webp)
 
@@ -1320,6 +1326,8 @@ Shows: "Billing > Invoices > Detail" · "OVERVIEW" · "Invoice" · "B8 Dashboard
 ### PaymentDrawer — Payment detail
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-PAY-04, US-PAY-07, US-PAY-11, US-PAY-12 · **Source:** Captured
 
+**Replaced** by the payment page, `PaymentDetailRefined` (US-PAY-19, D-221).
+
 ![PaymentDrawer](screens/PaymentDrawer.webp)
 
 Links to: `PaymentsList`, `PaymentsEmpty`, `ReceiptPdf`, `EmailReceipt`
@@ -1328,6 +1336,8 @@ Shows: "RCP-0001" · "Billing > Payments" · "Priya Nair" · "Payments" · "Reco
 
 ### PaymentDrawerCredit — Payment drawer — customer credit
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-PAY-05, US-PAY-13 · **Source:** Captured
+
+**Replaced** by `PaymentDetailCredit` (US-PAY-19, D-221).
 
 ![PaymentDrawerCredit](screens/PaymentDrawerCredit.webp)
 
@@ -3347,6 +3357,82 @@ Shows: "Email isn't set up — 12 emails are waiting. Set SMTP_HOST (and SMTP_US
 Links to: `EmailLog` (filtered to Failed)
 
 Shows: "2 emails failed" · "Reminder INV-0039 to accounts@halcyontech.example" · "Review"
+
+## Payments you can work from
+
+Drawn in Claude Design for US-PAY-19 to US-PAY-26 (D-221): project "Spine web — refinements before Phase 10", canvas "14 Payments". A payment gets its own page — where its money stands, one next step, a strip of Received, Applied, Refunded and Credit left, "Applied to" with what each invoice still owes, and Activity — and can be moved off the wrong invoice. The list's cards are Received this month, Credit to use (a filter) and Refunded this month; each row says what the payment was applied to. One "Record payment" dialog ticks the invoices it pays, says what becomes credit, and flags a likely duplicate. Search finds payments. These replace `PaymentDrawer`, `PaymentDrawerCredit`, `NewPaymentDialog` and `RecordPaymentDialog`, and refine `PaymentsList`. In the built screens the date range defaults to All time, and the Record dialog's amount boxes show plain figures (1000.00) as every money input does.
+
+### PaymentsListRefined — Cards, what each payment paid, a row's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-21, US-PAY-22 · **Source:** Claude Design
+
+![PaymentsListRefined](screens/PaymentsListRefined.webp)
+
+Links to: `PaymentDetailRefined`, `RecordPaymentRefined`
+
+Shows: "Received this month" "5 payments" "Received since 1 Oct" · "Credit to use" "2 customers" "Show these payments" · "Refunded this month" "1 refund" · "All contacts" "Method" "This month" · "Updated just now" · "Record payment" · "Search receipts, references, customers or invoices" · the reference under the receipt number ("UTR 4471 2280") · the account under the method ("HDFC Current") · "Applied to" "INV-0041, INV-0042" / "Not applied" / "3 invoices" · "Credit left" "₹38,000.00" · the row menu "View" "Apply credit" "Refund" "Email receipt" "Download PDF"
+
+### PaymentsListRefinedDark — "Credit to use" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-21 · **Source:** Claude Design
+
+![PaymentsListRefinedDark](screens/PaymentsListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · only payments with credit left
+
+### PaymentDetailRefined — A payment, fully applied
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-19, US-PAY-20 · **Source:** Claude Design
+
+![PaymentDetailRefined](screens/PaymentDetailRefined.webp)
+
+Links to: the invoices, the customer
+
+Shows: "Billing › Payments › RCP-0030" · "RCP-0030" "Fully applied" · "Sahyadri Retail Pvt Ltd" · "Bank transfer · 9 Oct" · "Paid into HDFC Current" · "NEFT HDFCN52023" · "Download PDF" "Email receipt" "More" · "Received" "Applied" "To 2 invoices" "Credit left" "Nothing left to apply" · "Applied to": "Invoice" "Invoice total" "From this payment" "Still owes" ("Paid") "Applied" · "Activity" "View history": "Applied ₹38,384.00 to INV-0042", "Recorded · ₹5,00,000.00 by bank transfer into HDFC Current"
+
+### PaymentDetailCredit — Credit left, an applied invoice's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-19, US-PAY-26 · **Source:** Claude Design
+
+![PaymentDetailCredit](screens/PaymentDetailCredit.webp)
+
+Links to: `PaymentUnapplyConfirm`
+
+Shows: "RCP-0029" "Credit left" · "Download PDF" "Refund" "Apply credit" "More" · "Credit left" "₹38,000.00" "To apply or refund" · the menu "Open INV-0037" "Move off INV-0037" · "Notes" · "Receipt emailed to accounts@lakshmihospital.example"
+
+### PaymentUnapplyConfirm — Move a payment off an invoice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-26 · **Source:** Claude Design
+
+![PaymentUnapplyConfirm](screens/PaymentUnapplyConfirm.webp)
+
+Links to: `PaymentDetailCredit`
+
+Shows: "Move ₹42,000.00 off INV-0037?" · "INV-0037 will owe ₹96,000.00 again, and ₹42,000.00 becomes credit for Lakshmi Multispeciality Hospital to apply to the right invoice or refund. The receipt already sent isn't changed." · "Reason · optional, kept in the history" · "Go back" "Move off invoice"
+
+### RecordPaymentRefined — Record a payment by ticking what it pays
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-23 · **Source:** Claude Design
+
+![RecordPaymentRefined](screens/RecordPaymentRefined.webp)
+
+Links to: `PaymentDetailRefined`
+
+Shows: "Record a payment" · "Tick what it pays; anything over becomes the customer's credit, to apply later or refund." · "Customer" "Amount" "Date" "Method" "Paid into" "Reference" · "What it pays" "Pay all" · "Invoice" "Due" "Balance" "Pay" · "Due 28 Sept" "13 days late" · "Deposit" · "₹3,55,000.00 goes on 2 invoices; ₹45,000.00 becomes credit for Halcyon Tech Parks Pvt Ltd." · "Email a receipt to accounts@halcyontech.example" · "It gets a receipt number and is posted to your books when recorded." · "Cancel" "Record payment"
+
+### RecordPaymentDuplicate — A payment that looks already recorded
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-24 · **Source:** Claude Design
+
+![RecordPaymentDuplicate](screens/RecordPaymentDuplicate.webp)
+
+Links to: the payment it looks like
+
+Shows: "This looks like RCP-0031 — ₹45,000.00 from Halcyon Tech Parks Pvt Ltd on 10 Oct (UPI · UTR 4471 2280). Record it anyway if it's a second payment." · "Open RCP-0031"
+
+### SearchPayments — Search finds payments
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PAY-25 · **Source:** Claude Design
+
+![SearchPayments](screens/SearchPayments.webp)
+
+Links to: `PaymentDetailRefined`
+
+Shows: "Payments" · "RCP-0031 · Halcyon Tech Parks Pvt Ltd · ₹45,000.00 · 10 Oct"
 
 ## Mobile field companion
 

@@ -48,7 +48,7 @@ import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
 import { PaymentsSection } from "./payments-section";
-import { RecordPaymentDialog } from "./record-payment-dialog";
+import { RecordPaymentDialog } from "../../../components/record-payment-dialog";
 import type { Invoice } from "./types";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { AttachmentsSection } from "../../../components/attachments-section";
@@ -655,7 +655,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             </Card>
           )}
 
-          <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
+          <PaymentsSection
+            invoice={invoice}
+            refreshKey={paymentsRefreshKey}
+            onChanged={({ title, description }) => {
+              load();
+              setPaymentsRefreshKey((key) => key + 1);
+              showToast(title, description);
+            }}
+          />
           <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} canEmail={hasSendCapability} />
           <AttachmentsSection entityType="invoice" entityId={invoice.id} />
         </div>
@@ -774,7 +782,6 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         contactId={invoice.contactId}
         contactName={invoice.contactName}
         presetInvoiceId={invoice.id}
-        presetBalanceDue={balanceDue}
         onRecorded={() => {
           load();
           setPaymentsRefreshKey((key) => key + 1);

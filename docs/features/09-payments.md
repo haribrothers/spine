@@ -311,7 +311,7 @@ Decision: D-221
 - **Given** more than six entries, **when** the panel shows, **then** "Show N earlier" reveals the rest; "View history" keeps the field-level changes.
 
 **Implementation notes**
-- API: `GET /payments/:id/activity` → `PaymentActivityEntry[]` `{ type: recorded|applied|unapplied|emailed|refunded|refund_deleted, at, actorName, amount?, detail?, linkId? }`, from the audit log, the allocations, refunds and the email log.
+- API: `GET /payments/:id/activity` → `PaymentActivityEntry[]` `{ type: recorded|applied|unapplied|emailed|refunded|refund_deleted, at, actorName, amount?, detail?, linkId?, account?, reason? }`, from the audit log, the allocations, refunds and the email log (receipts sent). An allocation moved off (US-PAY-26) keeps its "Applied" line: the `unapplied` audit entry records when it was applied.
 
 ### US-PAY-21 · See money received at a glance
 **Feature:** F-PAY-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PaymentsListRefined`
@@ -335,7 +335,7 @@ Decision: D-221
 Decision: D-210, D-221
 
 **Acceptance criteria**
-- **Given** the toolbar, **when** it shows, **then** it has Contact (only contacts with a payment), Method and a date range (This month, Last month, Last 90 days, This financial year, All time), "Updated … ago", Refresh and "Record payment", with search on its own row beside Columns.
+- **Given** the toolbar, **when** it shows, **then** it has Contact (only contacts with a payment), Method and a date range (All time — the default — This month, Last month, Last 90 days, This financial year), "Updated … ago", Refresh and "Record payment", with search on its own row beside Columns.
 - **Given** a search, filter, card, sort or page, **when** I set it, **then** the address keeps it (for example `/payments?method=upi&range=this_month&q=halcyon`), so Back and bookmarks return to the same list; "Clear filters" clears them; Refresh reloads in place, and coming back after 30 seconds away refreshes quietly.
 - **Given** a search, **when** I type, **then** it matches the receipt number, the reference, the customer and the invoices it was applied to.
 
@@ -349,7 +349,7 @@ Decision: D-210, D-221
 Decision: D-218, D-221
 
 **Acceptance criteria**
-- **Given** "Record payment" on the payments list, a contact or an invoice, **when** the dialog opens, **then** it's the same dialog everywhere; from an invoice, its customer is chosen and the invoice is ticked with its balance.
+- **Given** "Record payment" on the payments list, an invoice or a bank statement line, **when** the dialog opens, **then** it's the same dialog everywhere; from an invoice, its customer is chosen and the invoice is ticked with its balance.
 - **Given** a customer, **when** I choose them, **then** their open invoices are listed oldest due first, each with its number, due date (or "12 days late"), balance and a tick box; a deposit (advance) invoice says "Deposit".
 - **Given** I tick invoices before typing an amount, **when** I tick, **then** the amount is their total and each line takes its balance; "Pay all" ticks every invoice.
 - **Given** I type an amount first, **when** I do, **then** it's spread oldest first over the invoices, ticking them, and I can change any line (up to its balance).
@@ -359,7 +359,7 @@ Decision: D-218, D-221
 - **Given** a bank statement line (US-BANK-09), **when** the dialog opens from it, **then** the amount, date and account stay fixed as today.
 
 **Implementation notes**
-- UI: one `RecordPaymentDialog` in `components/` replaces `payments/new-payment-dialog.tsx` and `invoices/record-payment-dialog.tsx`.
+- UI: one `RecordPaymentDialog` in `components/` replaces `payments/new-payment-dialog.tsx` and `invoices/record-payment-dialog.tsx`. The receipt switch shows only when the customer has an email address; if email isn't set up the receipt isn't sent (D-015) and the email log says so (US-SET-27).
 - API: `POST /payments` gains `sendReceipt?: boolean` (omitted: sent when the customer has an email, as before).
 
 ### US-PAY-24 · Be warned before recording the same payment twice

@@ -1,40 +1,58 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Spinner } from "@spine/ui";
+import { Card, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Spinner } from "@spine/ui";
+import type { PaymentAppliedTo } from "@spine/shared";
+import { MoreHorizontal, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { UnapplyDialog } from "../payments/payment-detail";
+import { calendarDate } from "../quotes/quotes-list-state";
 import { PAYMENT_METHOD_LABELS, type InvoicePaymentRow } from "./types";
-import { formatMoney } from "../../../lib/money";
 
 /**
  * Every payment allocated against this invoice — `GET /payments?invoiceId=`
  * (`PaymentsService.listForInvoice`, a real join through
- * `payment_allocations`, not a `contactId` filter that would also surface
- * a payment touching a different invoice for the same contact). Read-only:
- * a payment's own detail/delete lives on the standalone `/payments` page
- * (linked via each row's number), not duplicated here.
+ * `payment_allocations`). Each row opens the payment's page (US-PAY-19);
+ * its menu moves the payment off this invoice (US-PAY-26), asking first,
+ * except on a deposit or void invoice.
  *
  * Shows nothing when the invoice has never received a payment — a bare
  * "no payments yet" line, not a whole empty-state illustration, since this
  * is a subsection of the detail page, not its own page.
  */
-export function PaymentsSection({ invoiceId, refreshKey }: { invoiceId: string; refreshKey: number }) {
+export function PaymentsSection({
+  invoice,
+  refreshKey,
+  onChanged,
+}: {
+  invoice: { id: string; number: string | null; type: string; status: string; totalAmount: string; balanceDue: string };
+  refreshKey: number;
+  onChanged?: (message: { title: string; description: string }) => void;
+}) {
   const [payments, setPayments] = useState<InvoicePaymentRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [moving, setMoving] = useState<{ payment: InvoicePaymentRow; target: PaymentAppliedTo } | null>(null);
+  const canApply = useCapability("payments.apply_credit");
+  const canMoveOff = canApply && invoice.type !== "advance" && invoice.status !== "void";
 
   useEffect(() => {
     setPayments(null);
     apiClient
-      .get<InvoicePaymentRow[]>(`/payments?invoiceId=${invoiceId}`)
+      .get<InvoicePaymentRow[]>(`/payments?invoiceId=${invoice.id}`)
       .then(setPayments)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load payments."));
-  }, [invoiceId, refreshKey]);
+  }, [invoice.id, refreshKey]);
 
   if (error) return null; // non-critical subsection — a failure here shouldn't block the rest of the invoice page
 
+  const today = new Date();
+  const locale = orgLocaleTag();
+
   return (
-    <Card className="flex flex-col gap-3">
+    <Card className="flex flex-col gap-3" data-testid="invoice-payments">
       <h3 className="text-[14px] font-semibold text-on-surface">Payments</h3>
       {!payments ? (
         <div className="flex justify-center py-6">
@@ -45,23 +63,68 @@ export function PaymentsSection({ invoiceId, refreshKey }: { invoiceId: string; 
       ) : (
         <div className="flex flex-col divide-y divide-border">
           {payments.map((payment) => (
-            <div key={payment.id} className="flex items-center justify-between gap-4 py-2">
+            <div key={payment.allocationId} className="flex items-center justify-between gap-4 py-2" data-testid="invoice-payment-row">
               <div>
-                <Link href="/payments" className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
+                <Link href={`/payments/${payment.id}`} className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
                   {payment.number ?? "Payment"}
                 </Link>
                 <p className="text-[12px] text-on-surface-muted">
-                  {new Date(payment.date).toLocaleDateString()} · {PAYMENT_METHOD_LABELS[payment.method]}
+                  {calendarDate(payment.date.slice(0, 10), today, locale)} · {PAYMENT_METHOD_LABELS[payment.method]}
                   {payment.reference && <> · {payment.reference}</>}
                 </p>
               </div>
-              <span className="shrink-0 text-[13px] tabular-nums text-on-surface">
-                {formatMoney(BigInt(payment.allocatedToThisInvoice), payment.currency)}
-              </span>
+              <div className="flex shrink-0 items-center gap-1">
+                <span className="text-[13px] tabular-nums text-on-surface">{formatMoney(BigInt(payment.allocatedToThisInvoice), payment.currency)}</span>
+                {canMoveOff && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" aria-label={`Actions for ${payment.number ?? "this payment"}`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                        <MoreHorizontal size={16} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          setMoving({
+                            payment,
+                            target: {
+                              allocationId: payment.allocationId,
+                              invoiceId: invoice.id,
+                              invoiceNumber: invoice.number,
+                              invoiceTotal: invoice.totalAmount,
+                              invoiceBalance: invoice.balanceDue,
+                              invoiceType: invoice.type,
+                              invoiceStatus: invoice.status,
+                              amount: payment.allocatedToThisInvoice,
+                              at: payment.allocatedAt,
+                            },
+                          })
+                        }
+                      >
+                        <Undo2 size={14} aria-hidden />
+                        Move off this invoice
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           ))}
         </div>
       )}
+      <UnapplyDialog
+        target={moving?.target ?? null}
+        payment={{ id: moving?.payment.id ?? "", currency: moving?.payment.currency ?? "USD", contactName: moving?.payment.contactName ?? null }}
+        onClose={() => setMoving(null)}
+        onDone={(a) => {
+          const p = moving?.payment;
+          setMoving(null);
+          onChanged?.({
+            title: `${formatMoney(BigInt(a.amount), p?.currency ?? "USD")} is now credit`,
+            description: `${p?.number ?? "The payment"} was moved off ${invoice.number ?? "this invoice"}; apply it to the right invoice or refund it.`,
+          });
+        }}
+      />
     </Card>
   );
 }

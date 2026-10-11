@@ -5,12 +5,13 @@ import { renderEmail } from "../email/email-layout";
 import { paymentConfirmationEmail, receiptEmail } from "../email/email-templates";
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { applyPaymentCreditSchema, createPaymentSchema } from "@spine/shared";
-import { formatMoney } from "@spine/shared";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { formatMoney, type PaymentActivityEntry, type PossibleDuplicatePayment } from "@spine/shared";
+import { orgClock } from "../../common/org-clock";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { payments, paymentAllocations, invoices, contacts } from "../../db/schema";
+import { auditLog, customerRefunds, emailLog, payments, paymentAllocations, invoices, contacts, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -57,17 +58,33 @@ export class PaymentsService {
     const conditions = [eq(payments.orgId, orgId)];
     if (options.contactId) conditions.push(eq(payments.contactId, options.contactId));
 
+    // US-PAY-21: newest first, with what each was applied to and the account it went into.
     const rows = await this.db
       .select({ payment: payments, contactName: contacts.name })
       .from(payments)
       .leftJoin(contacts, eq(payments.contactId, contacts.id))
       .where(and(...conditions))
-      .orderBy(asc(payments.date));
+      .orderBy(desc(payments.date), desc(payments.createdAt));
+
+    const ids = rows.map((r) => r.payment.id);
+    const applied = ids.length
+      ? await this.db
+          .select({ paymentId: paymentAllocations.paymentId, invoiceId: paymentAllocations.invoiceId, number: invoices.number })
+          .from(paymentAllocations)
+          .innerJoin(invoices, eq(paymentAllocations.invoiceId, invoices.id))
+          .where(and(eq(paymentAllocations.orgId, orgId), inArray(paymentAllocations.paymentId, ids)))
+          .orderBy(asc(paymentAllocations.createdAt))
+      : [];
+    const appliedBy = new Map<string, { invoiceId: string; number: string | null }[]>();
+    for (const a of applied) appliedBy.set(a.paymentId, [...(appliedBy.get(a.paymentId) ?? []), { invoiceId: a.invoiceId, number: a.number }]);
+    const accounts = await this.moneyAccounts.refs(orgId, rows.map((r) => r.payment.moneyAccountId));
 
     return rows.map((r) => ({
       ...r.payment,
       contactName: r.contactName,
       unallocatedAmount: r.payment.amount - r.payment.allocatedAmount - r.payment.refundedAmount,
+      appliedTo: appliedBy.get(r.payment.id) ?? [],
+      moneyAccountName: r.payment.moneyAccountId ? (accounts.get(r.payment.moneyAccountId)?.name ?? null) : null,
     }));
   }
 
@@ -86,7 +103,7 @@ export class PaymentsService {
    */
   async listForInvoice(orgId: string, invoiceId: string) {
     const rows = await this.db
-      .select({ payment: payments, contactName: contacts.name, allocatedToThisInvoice: paymentAllocations.amount })
+      .select({ payment: payments, contactName: contacts.name, allocatedToThisInvoice: paymentAllocations.amount, allocationId: paymentAllocations.id, allocatedAt: paymentAllocations.createdAt })
       .from(paymentAllocations)
       .innerJoin(payments, eq(paymentAllocations.paymentId, payments.id))
       .leftJoin(contacts, eq(payments.contactId, contacts.id))
@@ -98,6 +115,9 @@ export class PaymentsService {
       contactName: r.contactName,
       unallocatedAmount: r.payment.amount - r.payment.allocatedAmount - r.payment.refundedAmount,
       allocatedToThisInvoice: r.allocatedToThisInvoice,
+      // US-PAY-26: the allocation, to move the payment off this invoice.
+      allocationId: r.allocationId,
+      allocatedAt: r.allocatedAt,
     }));
   }
 
@@ -112,10 +132,11 @@ export class PaymentsService {
     }
 
     const allocations = await this.db
-      .select({ allocation: paymentAllocations, invoiceNumber: invoices.number, invoiceTotal: invoices.totalAmount })
+      .select({ allocation: paymentAllocations, invoice: invoices })
       .from(paymentAllocations)
-      .leftJoin(invoices, eq(paymentAllocations.invoiceId, invoices.id))
-      .where(eq(paymentAllocations.paymentId, id));
+      .innerJoin(invoices, eq(paymentAllocations.invoiceId, invoices.id))
+      .where(eq(paymentAllocations.paymentId, id))
+      .orderBy(asc(paymentAllocations.createdAt));
 
     const refs = await this.moneyAccounts.refs(orgId, [row.payment.moneyAccountId]);
     return {
@@ -125,10 +146,172 @@ export class PaymentsService {
       unallocatedAmount: row.payment.amount - row.payment.allocatedAmount - row.payment.refundedAmount,
       allocations: allocations.map((a) => ({
         ...a.allocation,
-        invoiceNumber: a.invoiceNumber,
-        invoiceTotal: a.invoiceTotal,
+        invoiceNumber: a.invoice.number,
+        invoiceTotal: a.invoice.totalAmount,
+      })),
+      // US-PAY-19: each invoice with what this payment put on it and what it still owes.
+      appliedTo: allocations.map(({ allocation, invoice }) => ({
+        allocationId: allocation.id,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.number,
+        invoiceTotal: invoice.totalAmount.toString(),
+        invoiceBalance: (invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount).toString(),
+        invoiceType: invoice.type,
+        invoiceStatus: invoice.status,
+        amount: allocation.amount.toString(),
+        at: allocation.createdAt.toISOString(),
       })),
     };
+  }
+
+  /**
+   * US-PAY-20 (D-221) — what happened to a payment, newest first: recorded,
+   * applied to each invoice (as recorded or later), moved off one, the
+   * receipt emailed, refunded and refunds deleted.
+   */
+  async activity(orgId: string, id: string): Promise<PaymentActivityEntry[]> {
+    const payment = await this.getOne(orgId, id);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const entries: PaymentActivityEntry[] = [];
+    const audit = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "payment"), eq(auditLog.entityId, id), inArray(auditLog.action, ["created", "updated", "unapplied"])));
+    for (const row of audit) {
+      if (row.action === "created") {
+        entries.push({ at: iso(row.at), type: "recorded", actorName: row.actorName ?? null, amount: payment.amount.toString(), detail: payment.method, account: payment.moneyAccount?.name ?? null });
+      } else if (row.action === "unapplied") {
+        const c = (row.changes ?? {}) as { invoiceId?: string; invoiceNumber?: string | null; amount?: string; reason?: string | null };
+        entries.push({ at: iso(row.at), type: "unapplied", actorName: row.actorName ?? null, amount: c.amount ?? null, detail: c.invoiceNumber ?? null, linkId: c.invoiceId ?? null, reason: c.reason ?? null });
+      }
+    }
+    // Who applied it: the audit entry written in the same moment (recorded, or credit applied later).
+    const nearestActor = (at: Date) => {
+      let best: { gap: number; name: string | null } | null = null;
+      for (const row of audit) {
+        if (row.action === "unapplied") continue;
+        const gap = Math.abs(row.at.getTime() - at.getTime());
+        if (gap <= 60_000 && (!best || gap < best.gap)) best = { gap, name: row.actorName ?? null };
+      }
+      return best?.name ?? null;
+    };
+    for (const a of payment.appliedTo) {
+      entries.push({ at: a.at, type: "applied", actorName: nearestActor(new Date(a.at)), amount: a.amount, detail: a.invoiceNumber, linkId: a.invoiceId });
+    }
+    // Applied, then moved off: the allocation is gone, its "unapplied" entry remembers when it was applied.
+    for (const row of audit) {
+      const c = (row.changes ?? {}) as { invoiceId?: string; invoiceNumber?: string | null; amount?: string; appliedAt?: string };
+      if (row.action !== "unapplied" || !c.appliedAt) continue;
+      entries.push({ at: c.appliedAt, type: "applied", actorName: nearestActor(new Date(c.appliedAt)), amount: c.amount ?? null, detail: c.invoiceNumber ?? null, linkId: c.invoiceId ?? null });
+    }
+    const emails = await this.db
+      .select({ to: emailLog.toAddress, at: emailLog.sentAt, actorName: user.name })
+      .from(emailLog)
+      .leftJoin(user, eq(emailLog.createdByUserId, user.id))
+      .where(and(eq(emailLog.orgId, orgId), eq(emailLog.kind, "receipt"), eq(emailLog.entityId, id), eq(emailLog.status, "sent")));
+    for (const e of emails) if (e.at) entries.push({ at: iso(e.at), type: "emailed", actorName: e.actorName ?? null, detail: e.to });
+    const refunds = await this.db
+      .select({ id: customerRefunds.id, amount: customerRefunds.amount, method: customerRefunds.method, at: customerRefunds.createdAt, deletedAt: customerRefunds.deletedAt, actorName: user.name })
+      .from(customerRefunds)
+      .leftJoin(user, eq(customerRefunds.createdByUserId, user.id))
+      .where(eq(customerRefunds.sourcePaymentId, id));
+    for (const r of refunds) {
+      entries.push({ at: iso(r.at), type: "refunded", actorName: r.actorName ?? null, detail: r.method, linkId: r.id, amount: r.amount.toString() });
+      if (r.deletedAt) entries.push({ at: iso(r.deletedAt), type: "refund_deleted", actorName: null, detail: r.method, linkId: r.id, amount: r.amount.toString() });
+    }
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /**
+   * US-PAY-24 — payments that look like the one about to be recorded: the
+   * same customer and amount within 3 days of the date, or the same
+   * reference. A warning only; the caller can still record.
+   */
+  async possibleDuplicates(orgId: string, query: { contactId: string; amount: bigint; date: string; reference?: string | null }): Promise<PossibleDuplicatePayment[]> {
+    const ref = query.reference?.trim();
+    const rows = await this.db
+      .select()
+      .from(payments)
+      .where(
+        and(
+          eq(payments.orgId, orgId),
+          eq(payments.contactId, query.contactId),
+          or(
+            and(eq(payments.amount, query.amount), sql`${payments.date} between (${query.date}::date - 3) and (${query.date}::date + 3)`),
+            ref ? sql`lower(trim(${payments.reference})) = ${ref.toLowerCase()}` : undefined,
+          ),
+        ),
+      )
+      .orderBy(desc(payments.date))
+      .limit(3);
+    return rows.map((p) => ({
+      id: p.id,
+      number: p.number,
+      date: typeof p.date === "string" ? p.date : new Date(p.date).toISOString().slice(0, 10),
+      amount: p.amount.toString(),
+      currency: p.currency,
+      method: p.method,
+      reference: p.reference,
+    }));
+  }
+
+  /**
+   * US-PAY-26 (D-221) — moves a payment off an invoice it was put on by
+   * mistake: the allocation goes (the trigger lowers the payment's applied
+   * total), the invoice owes it again, and P30 turns the amount back into
+   * the customer's credit (Dr 1100 AR / Cr 2200 Customer Advances, dated
+   * today). The bank line is untouched, so a reconciled payment can move.
+   */
+  async unapply(orgId: string, actorUserId: string, paymentId: string, allocationId: string, reason?: string | null) {
+    await this.db.transaction(async (tx) => {
+      const [payment] = await tx.select().from(payments).where(and(eq(payments.orgId, orgId), eq(payments.id, paymentId))).for("update");
+      if (!payment) throw new NotFoundException("Payment not found");
+      const [allocation] = await tx
+        .select()
+        .from(paymentAllocations)
+        .where(and(eq(paymentAllocations.orgId, orgId), eq(paymentAllocations.id, allocationId), eq(paymentAllocations.paymentId, paymentId)));
+      if (!allocation) throw new NotFoundException("This payment isn't applied to that invoice.");
+      const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, allocation.invoiceId)).for("update");
+      if (!invoice) throw new NotFoundException("Invoice not found");
+      const label = invoice.number ?? "This invoice";
+      if (invoice.type === "advance") throw new BadRequestException("A deposit invoice's payment can't be moved off it.");
+      if (invoice.status === "void") throw new BadRequestException(`${label} is void.`);
+
+      await tx.delete(paymentAllocations).where(eq(paymentAllocations.id, allocation.id));
+      await tx
+        .update(invoices)
+        .set({ amountPaid: invoice.amountPaid - allocation.amount, updatedAt: new Date() })
+        .where(eq(invoices.id, invoice.id));
+
+      const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
+      const advancesAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances");
+      await this.ledger.postEntry(tx, {
+        orgId,
+        date: orgClock().date,
+        narration: `Payment ${payment.number ?? payment.id} moved off ${label}`,
+        sourceType: "payment_unapply",
+        sourceId: payment.id,
+        lines: [
+          { accountId: arAccountId, debit: allocation.amount, credit: 0n, contactId: payment.contactId, jobId: invoice.jobId ?? null },
+          { accountId: advancesAccountId, debit: 0n, credit: allocation.amount, contactId: payment.contactId },
+        ],
+      });
+
+      // `appliedAt` keeps the "Applied" line in the payment's Activity once the allocation is gone.
+      const changes = { invoiceId: invoice.id, invoiceNumber: invoice.number, amount: allocation.amount.toString(), reason: reason?.trim() || null, appliedAt: allocation.createdAt.toISOString() };
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "unapplied", entityType: "payment", entityId: payment.id, contactId: payment.contactId, changes });
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "unapplied",
+        entityType: "invoice",
+        entityId: invoice.id,
+        contactId: invoice.contactId,
+        changes: { ...changes, paymentId: payment.id, paymentNumber: payment.number },
+      });
+    });
+    return this.getOne(orgId, paymentId);
   }
 
   /** `GET /payments/:id/history` — same pattern as InvoicesService.getHistory. */
@@ -339,7 +522,7 @@ export class PaymentsService {
     const arAllocatedTotal = input.allocations
       .filter((a) => invoiceById.get(a.invoiceId)!.type !== "advance")
       .reduce((sum, a) => sum + a.amount, 0n);
-    await this.sendConfirmation(orgId, created!.id, contact, input.amount, arAllocatedTotal);
+    await this.sendConfirmation(orgId, created!.id, contact, input.amount, arAllocatedTotal, input.sendReceipt !== false);
 
     await this.issuedPdf.queueStore(orgId, "payment", created!.id);
     return this.getOne(orgId, created!.id);
@@ -476,13 +659,15 @@ export class PaymentsService {
     contact: { id: string; name: string; email: string | null },
     amount: bigint,
     totalAllocated: bigint,
+    /** US-PAY-23: the dialog's "Email a receipt" switch. */
+    emailCustomer = true,
   ): Promise<void> {
     const [payment] = await this.db.select().from(payments).where(eq(payments.id, paymentId));
     if (!payment) return; // shouldn't happen — just committed — but never let a confirmation failure surface as a real error
 
     const currency = payment.currency;
     const amountText = formatMoney(amount, currency, await orgLocale(this.db, orgId));
-    if (contact.email && this.email.isConfigured()) {
+    if (emailCustomer && contact.email && this.email.isConfigured()) {
       try {
         const brand = await loadEmailBrand(this.db, orgId);
         const template = paymentConfirmationEmail({
