@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 512 stories.
+Total: 513 stories.
 
 ## Phase 0 · Foundation
 
@@ -887,6 +887,10 @@ Total: 512 stories.
 - US-PAY-24 · Be warned before recording the same payment twice (P2)
 - US-PAY-25 · Find a payment from search (P3)
 - US-PAY-26 · Move a payment off the wrong invoice (P2)
+
+*Menus*
+
+- US-OPS-37 · See what each menu action does at a glance (P2)
 
 ## Phase 10 · AI assistant
 

@@ -19,6 +19,7 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 | F-OPS-08 | Global search | P1 | 7 | `SearchPalette` |
 | F-OPS-09 | File storage | P1 | 6 | `UpgradeNotice` |
 | F-OPS-10 | Attachments on records | P1 | 8 | `VendorBillAttachments` |
+| F-OPS-11 | Menus that read at a glance: an icon for every action, one spacing | P2 | Refinements | `MenuIcons`, `MenuIconsDark` |
 
 ## User stories
 
@@ -575,3 +576,22 @@ Decision: D-210
 **Implementation notes**
 - UI: `packages/ui` `ToggleGroup` draws the track and `ToggleGroupItem` the chip (one style, no per-screen overrides; the expense form, Profile, the user menu and the dashboard drop theirs). `Toggle` and `ToggleGroupItem` take an optional `tooltip`; an icon-only item uses its `aria-label`. The chosen style keys off `aria-checked` / `aria-pressed` (a tooltip trigger sets its own `data-state`). A new token, `control-selected` (white in light, `#2C2B26` in dark), fills the chip. `TooltipProvider` is mounted once in the web app's root layout and the design-system app, and each `ToggleGroup` carries its own so it works anywhere. Doc pages (`toggle`, `toggle-group`, `tooltip`) and a11y tests change in the same commit.
 - No API change.
+
+### US-OPS-37 · See what each menu action does at a glance
+**Feature:** F-OPS-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MenuIcons`, `MenuIconsDark`
+**As** any member, **I want** every action in a row's or a page's menu to have the same kind of icon, spaced the same way, **so that** I can find "Record payment" or "Delete" without reading every line, and every menu looks like one product.
+
+Decision: D-222
+
+**Acceptance criteria**
+- **Given** any menu built on `DropdownMenu` (or `ContextMenu`), **when** an item has an icon, **then** the icon is 14 px, sits 10 px before the label, is vertically centred with it and is muted grey; on a destructive item (Delete, Void, Remove, Cancel) the icon and the label are both red. Items are at least 32 px tall with the same padding everywhere, so no screen adds its own spacing.
+- **Given** the action menus in the refined modules — Contacts (row), Catalogue (row, bundles), Pipeline (lead card), Meetings (quick view), Quotes (row, page's More, line), Jobs (page's More), Invoices (row, page's More, Payments), Credit notes (row, page's More), Payments (row, page's More, Applied to) and the Email log (row) — **when** a menu opens, **then** every action has the icon D-222 gives it, the same action has the same icon on every screen ("View" is always an eye, "Delete" always a bin), and a destructive action sits last after a divider.
+- **Given** a menu of choices rather than actions (a job's status, a lead's stage, the catalogue's tax picker, checkbox or radio items), **when** it opens, **then** it keeps its dot, tick or radio marker and isn't given action icons.
+- **Given** keyboard or screen-reader use, **when** an item is focused, **then** the focus highlight covers the whole row and the icon is hidden from assistive technology (`aria-hidden`), so the item is read by its label alone.
+- **Given** light and dark mode, **when** a menu opens, **then** the icons, text, red items and dividers meet the contrast rules (4.5:1 text, 3:1 icons) in both.
+
+**Implementation notes**
+- UI: `packages/ui` `DropdownMenuItem`, `DropdownMenuSubTrigger` and the `ContextMenu` items style a direct `svg` child (`gap-2.5`, `size-3.5`, `shrink-0`, `text-on-surface-muted`; `text-overdue` when destructive) and get `min-h-8`; `DropdownMenuContent` is at least 12rem wide. Screens drop their own spacing (typed spaces, `gap-2`). The doc page (`dropdown-menu`, `context-menu`) shows items with icons, a destructive item and a divider; the a11y tests cover them.
+- Web: `lib/menu-icons.ts` maps each action to its Lucide icon (D-222) and the menus listed above use it. Menus outside the refined modules (banking, expenses, vendor bills and payments, team, settings, report export) get the new spacing now and their icons when they're refined.
+- No API change.
+
