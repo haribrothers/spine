@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 504 stories.
+Total: 512 stories.
 
 ## Phase 0 · Foundation
 
@@ -876,6 +876,17 @@ Total: 504 stories.
 - US-SET-28 · Retry or cancel an email (P2)
 - US-SET-29 · Know when email isn't set up (P2)
 - US-DASH-30 · See failed emails in Needs your attention (P2)
+
+*Payments*
+
+- US-PAY-19 · See a payment at a glance, with one next step (P2)
+- US-PAY-20 · Follow what happened to a payment (P2)
+- US-PAY-21 · See money received at a glance (P2)
+- US-PAY-22 · Search, filter and come back to the same payments list (P2)
+- US-PAY-23 · Record a payment by ticking what it pays (P2)
+- US-PAY-24 · Be warned before recording the same payment twice (P2)
+- US-PAY-25 · Find a payment from search (P3)
+- US-PAY-26 · Move a payment off the wrong invoice (P2)
 
 ## Phase 10 · AI assistant
 

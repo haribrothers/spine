@@ -2,7 +2,7 @@
 
 Money in: record a payment against one or more invoices with an oldest-first suggestion, hold any remainder as customer credit, send a receipt, and see who owes what and for how long. Allocation limits are enforced by the database.
 
-**Screens:** `PaymentsList` (P1), `PaymentsEmpty` (P1), `NewPaymentDialog` (P1), `RecordPaymentDialog` (P1), `PaymentDrawer` (P2), `PaymentDrawerCredit` (P2), `PaymentDeleteConfirm` (P2), `ReceiptPdf` (P2), `EmailReceipt` (P2), `EmailPaymentReceivedOwner` (P3), `Receivables` (P1), `ReceivablesEmpty` (P1), `InvoiceDetail` (P1), `ContactStatementDialog` (P2), `StatementPdf` (P2), `CreditNoteDialogExcess` (P1), `CustomerRefundDialog` (P1)
+**Screens:** `PaymentsList` (P1), `PaymentsEmpty` (P1), `NewPaymentDialog` (P1), `RecordPaymentDialog` (P1), `PaymentDrawer` (P2), `PaymentDetailRefined` (P2), `PaymentsListRefined` (P2), `RecordPaymentRefined` (P2), `PaymentUnapplyConfirm` (P2), `PaymentDrawerCredit` (P2), `PaymentDeleteConfirm` (P2), `ReceiptPdf` (P2), `EmailReceipt` (P2), `EmailPaymentReceivedOwner` (P3), `Receivables` (P1), `ReceivablesEmpty` (P1), `InvoiceDetail` (P1), `ContactStatementDialog` (P2), `StatementPdf` (P2), `CreditNoteDialogExcess` (P1), `CustomerRefundDialog` (P1)
 **Depends on:** 08 Invoicing, 03 Contacts, 14 Notifications, 12 Reports (aging derives from the ledger).
 
 ## Features
@@ -16,6 +16,9 @@ Money in: record a payment against one or more invoices with an oldest-first sug
 | F-PAY-05 | Own/others and workflow rights | P1 | 4 | `PaymentDrawer`, `PaymentsList` |
 | F-PAY-06 | Customer statements | P2 | 7 | `ContactStatementDialog`, `StatementPdf` |
 | F-PAY-07 | Refunds and credit from credit notes | P1 | 8 | `CreditNoteDialogExcess`, `CustomerRefundDialog`, `TeamPrivilegesBooks` |
+| F-PAY-08 | Payments you can work from: a page per payment, a list that shows where the money went, search | P2 | Refinements | `PaymentDetailRefined`, `PaymentDetailCredit`, `PaymentsListRefined`, `PaymentsListRefinedDark`, `SearchPayments` |
+| F-PAY-09 | Recording a payment by ticking what it pays, with a duplicate warning | P2 | Refinements | `RecordPaymentRefined`, `RecordPaymentDuplicate` |
+| F-PAY-10 | Moving a payment off the wrong invoice | P2 | Refinements | `PaymentUnapplyConfirm` |
 
 ## User stories
 
@@ -77,6 +80,7 @@ Legacy: S-06.5
 
 **Implementation notes**
 - API: `GET /payments`, `GET /payments/:id`.
+- Refined by US-PAY-19 and US-PAY-21 (D-221): the drawer gives way to the payment's page, and the list's cards and rows change.
 
 ### US-PAY-05 · Hold a payment as customer credit
 **Feature:** F-PAY-02 · **Priority:** P1 · **Phase:** 2 · **Screens:** `NewPaymentDialog`, `PaymentDrawerCredit`
@@ -276,3 +280,127 @@ Decision: D-142
 
 **Implementation notes**
 - Capability `payments.refund` (General Staff default ✗) with migration.
+
+### US-PAY-19 · See a payment at a glance, with one next step
+**Feature:** F-PAY-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PaymentDetailRefined`, `PaymentDetailCredit`
+**As** office staff, **I want** a payment to have its own page, **so that** I can see what it paid and act on it, and other pages can link to it.
+
+Decision: D-221
+
+**Acceptance criteria**
+- **Given** a payment, **when** its page (`/payments/:id`) opens, **then** the title is its receipt number with its state — "Fully applied" (green), "Credit left" (amber) or "Refunded" (all its credit paid back) — and under it the customer (a link), the date, the method, "Paid into <account>" and the reference.
+- **Given** the page, **when** it shows, **then** one primary button offers the next step: "Apply credit" while credit is left (with the right to apply credit), else "Email receipt" (with the right to send receipts), else "Download PDF"; Refund (while credit is left), Email receipt, Download PDF, Delete payment (only when nothing is applied or refunded, with the right) and View history sit beside it or under More.
+- **Given** the page, **when** it shows, **then** a strip reads Received, Applied (to INV-0041, or "To 3 invoices"), Refunded (when any) and Credit left.
+- **Given** "Applied to", **when** it shows, **then** each invoice is a row: the invoice (a link), its total, what this payment put on it, what it still owes ("Paid" at zero) and when it was applied.
+- **Given** refunds, attachments and notes, **when** the payment has them, **then** they show under "Applied to".
+- **Given** the "Payment received" notification, a ledger drill-down, a bank register row, an invoice's Payments and Activity, the email log or an old `/payments?id=` link, **when** it names a payment, **then** it opens this page.
+- **Given** a Field user, **when** they could reach a payment, **then** they can't (404).
+
+**Implementation notes**
+- UI: `payment-detail.tsx` replaces `payment-detail-drawer.tsx`; `?action=apply|refund|email|delete` opens that dialog (from the list's row menu). `/payments?id=<id>` redirects to `/payments/<id>`.
+- API: `GET /payments/:id` gains `refundedAmount`, `moneyAccount` and `appliedTo` (`[{ allocationId, invoiceId, invoiceNumber, invoiceTotal, invoiceBalance, invoiceType, amount, at }]`).
+
+### US-PAY-20 · Follow what happened to a payment
+**Feature:** F-PAY-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PaymentDetailRefined`
+**As** an owner, **I want** a payment's story in one place, **so that** I know where the money went and whether the customer got a receipt.
+
+Decision: D-221
+
+**Acceptance criteria**
+- **Given** a payment, **when** its Activity shows, **then** it lists, newest first with who and when: "Recorded · ₹50,000.00 by UPI into HDFC Current", "Applied ₹30,000.00 to INV-0041" (a link; one per invoice, as recorded or applied later), "Receipt emailed to …", "Moved ₹12,000.00 off INV-0039 · <reason>", "Refunded ₹5,900.00 · Bank transfer" and "Refund deleted".
+- **Given** more than six entries, **when** the panel shows, **then** "Show N earlier" reveals the rest; "View history" keeps the field-level changes.
+
+**Implementation notes**
+- API: `GET /payments/:id/activity` → `PaymentActivityEntry[]` `{ type: recorded|applied|unapplied|emailed|refunded|refund_deleted, at, actorName, amount?, detail?, linkId? }`, from the audit log, the allocations, refunds and the email log.
+
+### US-PAY-21 · See money received at a glance
+**Feature:** F-PAY-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PaymentsListRefined`
+**As** office staff, **I want** the payments list to show money and where it went, **so that** I know what came in and what's still to apply.
+
+Decision: D-221
+
+**Acceptance criteria**
+- **Given** the list, **when** it shows, **then** the cards read "Received this month" (the total and how many, "Received since 1 Oct"), "Credit to use" (credit left on payments and for how many customers; pressing it filters the list) and "Refunded this month" (refunds of payment credit).
+- **Given** a payment, **when** its row shows, **then** it has the receipt number with the reference under it, the date in the business's format, the customer, the method with the account under it, the amount, "Applied to" ("INV-0041", "INV-0041, INV-0042", "3 invoices" or "Not applied") and the credit left (amber) or "—".
+- **Given** no sort chosen, **when** the list shows, **then** the newest payment is first.
+- **Given** a row's menu, **when** I open it, **then** it offers View, Apply credit and Refund (while credit is left), Email receipt, Download PDF and Delete payment (nothing applied or refunded) — each only with the right to do it; Apply, Refund, Email and Delete open the payment's page with that dialog, so nothing happens in one click (D-218).
+
+**Implementation notes**
+- API: `GET /payments` rows gain `refundedAmount`, `moneyAccountName` and `appliedTo` (`[{ invoiceId, number }]`), newest first.
+
+### US-PAY-22 · Search, filter and come back to the same payments list
+**Feature:** F-PAY-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PaymentsListRefined`, `PaymentsListRefinedDark`
+**As** office staff, **I want** the list to keep my search and filters, **so that** I can open a payment and come back to the same list.
+
+Decision: D-210, D-221
+
+**Acceptance criteria**
+- **Given** the toolbar, **when** it shows, **then** it has Contact (only contacts with a payment), Method and a date range (This month, Last month, Last 90 days, This financial year, All time), "Updated … ago", Refresh and "Record payment", with search on its own row beside Columns.
+- **Given** a search, filter, card, sort or page, **when** I set it, **then** the address keeps it (for example `/payments?method=upi&range=this_month&q=halcyon`), so Back and bookmarks return to the same list; "Clear filters" clears them; Refresh reloads in place, and coming back after 30 seconds away refreshes quietly.
+- **Given** a search, **when** I type, **then** it matches the receipt number, the reference, the customer and the invoices it was applied to.
+
+**Implementation notes**
+- UI: `payments-list-state.ts` (parse/query/filter, as `credit-notes-list-state.ts`).
+
+### US-PAY-23 · Record a payment by ticking what it pays
+**Feature:** F-PAY-09 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `RecordPaymentRefined`
+**As** office staff, **I want** to tick the invoices a payment covers, **so that** recording it takes one look at what the customer owes.
+
+Decision: D-218, D-221
+
+**Acceptance criteria**
+- **Given** "Record payment" on the payments list, a contact or an invoice, **when** the dialog opens, **then** it's the same dialog everywhere; from an invoice, its customer is chosen and the invoice is ticked with its balance.
+- **Given** a customer, **when** I choose them, **then** their open invoices are listed oldest due first, each with its number, due date (or "12 days late"), balance and a tick box; a deposit (advance) invoice says "Deposit".
+- **Given** I tick invoices before typing an amount, **when** I tick, **then** the amount is their total and each line takes its balance; "Pay all" ticks every invoice.
+- **Given** I type an amount first, **when** I do, **then** it's spread oldest first over the invoices, ticking them, and I can change any line (up to its balance).
+- **Given** the amount is more than the ticked lines, **when** the dialog totals it, **then** it reads "<applied> goes on <n> invoices; <rest> becomes credit for <customer>." before the button; the payment's currency is the customer's.
+- **Given** the customer has an email address and email is set up, **when** the dialog shows, **then** "Email a receipt to <address>" is on; turned off, nothing is sent.
+- **Given** I press "Record payment", **when** it saves, **then** the toast reads "RCP-0029 recorded" and the payment's page (from the list) or the invoice (from an invoice) shows it; the totals shown before the button are the confirmation (D-218).
+- **Given** a bank statement line (US-BANK-09), **when** the dialog opens from it, **then** the amount, date and account stay fixed as today.
+
+**Implementation notes**
+- UI: one `RecordPaymentDialog` in `components/` replaces `payments/new-payment-dialog.tsx` and `invoices/record-payment-dialog.tsx`.
+- API: `POST /payments` gains `sendReceipt?: boolean` (omitted: sent when the customer has an email, as before).
+
+### US-PAY-24 · Be warned before recording the same payment twice
+**Feature:** F-PAY-09 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `RecordPaymentDuplicate`
+**As** office staff, **I want** to be told when a payment looks already recorded, **so that** the same money isn't counted twice.
+
+Decision: D-221
+
+**Acceptance criteria**
+- **Given** a customer, amount and date, **when** a payment from that customer for the same amount within 3 days (or with the same reference) exists, **then** the dialog warns "This looks like RCP-0028 — ₹45,000.00 from Halcyon Tech Parks on 9 Oct (UPI · 4471)." with a link to open it.
+- **Given** the warning, **when** I still press "Record payment", **then** it records (two real payments of the same amount happen).
+
+**Implementation notes**
+- API: `GET /payments/possible-duplicates?contactId&amount&date&reference` → `[{ id, number, date, amount, currency, method, reference }]`.
+
+### US-PAY-25 · Find a payment from search
+**Feature:** F-PAY-08 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `SearchPayments`
+**As** office staff, **I want** search to find payments, **so that** "did they pay?" is one search away.
+
+Decision: D-221
+
+**Acceptance criteria**
+- **Given** ⌘K search, **when** I type a receipt number, a reference or a customer's name, **then** a Payments group lists matches as "RCP-0028 · Halcyon Tech Parks · ₹45,000.00 · 9 Oct", opening the payment's page.
+- **Given** a Field user, **when** they search, **then** there's no Payments group.
+
+**Implementation notes**
+- API: `GET /search` gains a `payments` group (Owner and Staff).
+
+### US-PAY-26 · Move a payment off the wrong invoice
+**Feature:** F-PAY-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PaymentUnapplyConfirm`
+**As** office staff, **I want** to take money off an invoice it was put on by mistake, **so that** I can apply it to the right one without deleting the payment.
+
+Decision: D-080, D-218, D-221
+
+**Acceptance criteria**
+- **Given** a payment applied to an invoice, **when** I choose "Move off INV-0039" on its "Applied to" row (or "Move off this invoice" on the invoice's Payments row), **then** "Move ₹12,000.00 off INV-0039?" says INV-0039 will owe it again and the money becomes credit for <customer> to apply or refund, with an optional reason; "Go back" does nothing.
+- **Given** I confirm, **when** it saves, **then** P30 posts (dated today), the invoice's paid amount drops and its balance rises, the payment's credit left rises by the same amount, the toast reads "₹12,000.00 is now credit for <customer>", and "Apply credit" is offered.
+- **Given** an allocation to a deposit (advance) invoice or a void invoice, **when** I look for "Move off", **then** it isn't offered and the API refuses with what to do instead. A reconciled payment can be moved off: the money in the bank doesn't change.
+- **Given** a payment moved off an invoice, **when** its receipt PDF renders, **then** it lists only what's still applied; the receipt already emailed isn't changed.
+- **Given** a member without "Apply credit", **when** they open the payment, **then** "Move off" is hidden and the API returns 403.
+
+**Implementation notes**
+- API: `POST /payments/:id/allocations/:allocationId/unapply { reason? }` (`payments.apply_credit`; Idempotency-Key) → the payment. Under locks on the payment and the invoice: the allocation row is removed, `payments.allocated_amount` and `invoices.amount_paid` drop, P30 posts (`payment_unapply`); audited `unapplied` on the payment and the invoice with the amount and reason.
+
