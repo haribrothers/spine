@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 515 stories.
+Total: 520 stories.
 
 ## Phase 0 · Foundation
 
@@ -896,6 +896,14 @@ Total: 515 stories.
 
 - US-OPS-38 · Know an action worked, wherever it takes me (P2)
 - US-CAT-16 · Confirm a change to many items before it happens (P2)
+
+*Receivables*
+
+- US-PAY-27 · See who owes me most, customer by customer (P2)
+- US-PAY-28 · Chase a customer without leaving Receivables (P2)
+- US-PAY-29 · Filter receivables by age (P2)
+- US-PAY-30 · Read a receivable at a glance (P2)
+- US-PAY-31 · Trust what Receivables counts (P2)
 
 ## Phase 10 · AI assistant
 

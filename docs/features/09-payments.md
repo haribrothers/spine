@@ -2,7 +2,7 @@
 
 Money in: record a payment against one or more invoices with an oldest-first suggestion, hold any remainder as customer credit, send a receipt, and see who owes what and for how long. Allocation limits are enforced by the database.
 
-**Screens:** `PaymentsList` (P1), `PaymentsEmpty` (P1), `NewPaymentDialog` (P1), `RecordPaymentDialog` (P1), `PaymentDrawer` (P2), `PaymentDetailRefined` (P2), `PaymentsListRefined` (P2), `RecordPaymentRefined` (P2), `PaymentUnapplyConfirm` (P2), `PaymentDrawerCredit` (P2), `PaymentDeleteConfirm` (P2), `ReceiptPdf` (P2), `EmailReceipt` (P2), `EmailPaymentReceivedOwner` (P3), `Receivables` (P1), `ReceivablesEmpty` (P1), `InvoiceDetail` (P1), `ContactStatementDialog` (P2), `StatementPdf` (P2), `CreditNoteDialogExcess` (P1), `CustomerRefundDialog` (P1)
+**Screens:** `PaymentsList` (P1), `PaymentsEmpty` (P1), `NewPaymentDialog` (P1), `RecordPaymentDialog` (P1), `PaymentDrawer` (P2), `PaymentDetailRefined` (P2), `PaymentsListRefined` (P2), `RecordPaymentRefined` (P2), `PaymentUnapplyConfirm` (P2), `PaymentDrawerCredit` (P2), `PaymentDeleteConfirm` (P2), `ReceiptPdf` (P2), `EmailReceipt` (P2), `EmailPaymentReceivedOwner` (P3), `Receivables` (P1), `ReceivablesEmpty` (P1), `InvoiceDetail` (P1), `ContactStatementDialog` (P2), `StatementPdf` (P2), `CreditNoteDialogExcess` (P1), `CustomerRefundDialog` (P1), `ReceivablesByCustomer` (P2), `ReceivablesByInvoice` (P2), `ReceivablesRemindConfirm` (P2), `ReceivablesDark` (P2)
 **Depends on:** 08 Invoicing, 03 Contacts, 14 Notifications, 12 Reports (aging derives from the ledger).
 
 ## Features
@@ -19,6 +19,7 @@ Money in: record a payment against one or more invoices with an oldest-first sug
 | F-PAY-08 | Payments you can work from: a page per payment, a list that shows where the money went, search | P2 | Refinements | `PaymentDetailRefined`, `PaymentDetailCredit`, `PaymentsListRefined`, `PaymentsListRefinedDark`, `SearchPayments` |
 | F-PAY-09 | Recording a payment by ticking what it pays, with a duplicate warning | P2 | Refinements | `RecordPaymentRefined`, `RecordPaymentDuplicate` |
 | F-PAY-10 | Moving a payment off the wrong invoice | P2 | Refinements | `PaymentUnapplyConfirm` |
+| F-PAY-11 | Receivables you can chase from: customer by customer, by age, acting from the row | P2 | Refinements | `ReceivablesByCustomer`, `ReceivablesByInvoice`, `ReceivablesRemindConfirm`, `ReceivablesDark` |
 
 ## User stories
 
@@ -143,7 +144,7 @@ Legacy: S-06.7, S-09.5 (AR half)
 
 **Acceptance criteria**
 - **Given** open invoices, **when** I open Receivables, **then** I see buckets Current, 1–30 days, 31–60 days, 61–90 days and 90+ days with totals, "Total outstanding", and a table of number, contact, due date, aging and balance.
-- **Given** a bucket, **when** I click it, **then** the table filters to that bucket.
+- **Given** a bucket, **when** I click it, **then** the table filters to that bucket (built by US-PAY-29).
 - **Given** held retention, **when** the report renders, **then** it's excluded from the buckets.
 - **Given** nothing is owed, **when** I open the page, **then** I see "Nothing outstanding" / "Every issued invoice has been paid in full.".
 - **Given** a Staff user without `reports.view_receivables`, **when** they open the page, **then** they see the no-access page.
@@ -404,3 +405,82 @@ Decision: D-080, D-218, D-221
 **Implementation notes**
 - API: `POST /payments/:id/allocations/:allocationId/unapply { reason? }` (`payments.apply_credit`; Idempotency-Key) → the payment. Under locks on the payment and the invoice: the allocation row is removed, `payments.allocated_amount` and `invoices.amount_paid` drop, P30 posts (`payment_unapply`); audited `unapplied` on the payment and the invoice with the amount and reason.
 
+### US-PAY-27 · See who owes me most, customer by customer
+**Feature:** F-PAY-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReceivablesByCustomer`, `ReceivablesDark`
+**As** an owner, **I want** Receivables to add up what each customer owes, **so that** I know who to call first.
+
+Decision: D-224
+
+**Acceptance criteria**
+- **Given** open invoices, **when** I open Receivables, **then** tabs "By customer" and "By invoice" sit above the list and "By customer" is open (the tab is kept in the address; the dashboard's links still open the page).
+- **Given** "By customer", **when** it shows, **then** each customer who owes has one row: the customer (opening the contact), how many open invoices ("3 invoices"), the oldest ("45 days late", or "Not due yet"), the overdue amount, the total owed, credit to use (unapplied payments and credit notes; "—" when none) and when they were last sent a reminder ("3 Oct", or "Never").
+- **Given** no sort chosen, **when** the list shows, **then** the most overdue money comes first, then the most owed; a totals row adds up overdue, owed and credit.
+- **Given** a customer row, **when** I expand it, **then** their open invoices show under it, oldest due first — number, due date, how late, balance — each opening the invoice.
+- **Given** search, **when** I type, **then** "By customer" matches the customer's name and "By invoice" the number or customer.
+- **Given** Export, **when** I use it on either tab, **then** it downloads the invoices on screen, one row each (US-PAY-10).
+
+**Implementation notes**
+- API: `GET /reports/receivables` gains `customers` — `[{ contactId, name, email, invoiceCount, overdueAmount, totalOutstanding, oldestDaysOverdue, credit, lastReminderOn }]`, credit from unallocated payments (`amount − allocated − refunded`) and issued credit notes' `creditRemaining` for that customer. Same totals as the buckets (retention excluded).
+- `@spine/ui` `Table`/`DataTable` gain `renderExpanded(row)` — a chevron button (`aria-expanded`) in the first cell and a full-width row under it; its doc page and a11y test change with it.
+
+### US-PAY-28 · Chase a customer without leaving Receivables
+**Feature:** F-PAY-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReceivablesByInvoice`, `ReceivablesRemindConfirm`
+**As** office staff, **I want** to remind, record a payment or send a statement from Receivables, **so that** chasing doesn't mean hunting for each invoice.
+
+Decision: D-218, D-223, D-224
+
+**Acceptance criteria**
+- **Given** an invoice row's menu, **when** I open it, **then** it offers Record payment (the "Record a payment" dialog for that customer with this invoice ticked), Apply credit (while the customer has credit), Send reminder (the reminder dialog, which asks first), Download PDF and Open invoice — each only with the right to do it; Send reminder says why when it can't be sent ("Already reminded today.", "The customer has no email address.").
+- **Given** a customer row's menu, **when** I open it, **then** it offers Send statement (the statement dialog), Record payment (the dialog with the customer chosen) and Open contact, each only with the right to do it.
+- **Given** invoices ticked on "By invoice", **when** I choose "Send reminders (n)", **then** "Send n payment reminders?" asks first and names the ones skipped and why; confirming sends them, the toast reads "n reminders sent" and the selection clears.
+- **Given** any of these finishes, **when** it does, **then** the page refreshes in place, the toast says what happened (D-223) and a failure shows above the list.
+
+**Implementation notes**
+- Reuses `RecordPaymentDialog`, `ApplyCustomerCreditDialog`, the invoice's reminder dialog (`POST /invoices/:id/send-reminder`), `StatementDialog` and `POST /invoices/bulk/send-reminders` (US-INV-23). Rights: `payments.edit_own`, `payments.apply_credit`, `invoices.send_reminder`, `reports.view_receivables` (statement).
+
+### US-PAY-29 · Filter receivables by age
+**Feature:** F-PAY-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReceivablesByInvoice`
+**As** an owner, **I want** to press an age to see what's in it, **so that** I can work through the oldest money first.
+
+Decision: D-180, D-224
+
+**Acceptance criteria**
+- **Given** the cards, **when** I press Current, Overdue or 90+ days, **then** both tabs show only that age (Overdue: every overdue age); pressing it again shows all; the chosen card is outlined and announced as pressed.
+- **Given** the age bar, **when** I press an age (or reach it with Tab and press Enter), **then** the list shows that age.
+- **Given** "Show", **when** I open it, **then** it offers All outstanding, Overdue, Current, 1–30 days, 31–60 days, 61–90 days and 90+ days; the age is kept in the address (`?age=31-60`; the dashboard's `?overdue=1` still opens Overdue).
+- **Given** an age with nothing in it, **when** it's chosen, **then** the list says "Nothing 31–60 days late." with "Show all".
+- **Given** an age is chosen, **when** I export, **then** the file has only that age.
+- **Given** the cards and bar, **when** an age is chosen, **then** they still show every age — only the list narrows.
+
+**Implementation notes**
+- `AgingSummary` gains an optional `age`/`onAgeChange`; Payables doesn't pass them and is unchanged. `SegmentedBar` gains optional `onSegmentClick` and `selectedKey` (its doc page and a11y test change with it).
+- API: `GET /reports/receivables/export.csv` accepts `age=current|overdue|0-30|31-60|61-90|90+`.
+
+### US-PAY-30 · Read a receivable at a glance
+**Feature:** F-PAY-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReceivablesByInvoice`
+**As** office staff, **I want** each invoice to say how late it is and when the customer was last reminded, **so that** I don't open it to find out.
+
+Decision: D-224
+
+**Acceptance criteria**
+- **Given** "By invoice", **when** a row shows, **then** it has the number (with the job under it, and "Deposit" for a deposit invoice), the customer (opening the contact), the due date in the business's format with "Last reminded 3 Oct" under it, how late in words ("12 days late", "Due in 5 days", "No due date") beside its coloured age, and the balance due.
+- **Given** Columns, **when** I open it, **then** Issued, Invoice total and Paid so far can be shown; they're hidden at first.
+- **Given** no sort chosen, **when** the list shows, **then** the most days late comes first, as today.
+
+**Implementation notes**
+- API: `GET /reports/receivables` invoice rows gain `issueDate`, `type`, `paidAmount` (paid and credited), `jobId`, `jobName`, `lastReminderOn`, `remindedToday` and `contactHasEmail`.
+
+### US-PAY-31 · Trust what Receivables counts
+**Feature:** F-PAY-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReceivablesByCustomer`
+**As** an owner, **I want** Receivables to say what it counts and how fresh it is, **so that** I can rely on the number.
+
+Decision: D-210, D-224
+
+**Acceptance criteria**
+- **Given** the page, **when** it opens, **then** the description reads "What customers owe you, by how late it is · as of 11 Oct 2026".
+- **Given** retention held on jobs, **when** the page shows, **then** a note under the age bar reads "₹2,40,000.00 retention held on 3 jobs isn't counted here — it's owed once you release it on the job." with "See jobs".
+- **Given** the toolbar, **when** it shows, **then** it has Refresh with "Updated just now"; the page also refreshes after 30 seconds away.
+- **Given** a tab, search, sort, page or age, **when** I open an invoice and go Back, **then** the page comes back the same.
+
+**Implementation notes**
+- API: `GET /reports/receivables` gains `retention: { held, jobCount }` from `journal_lines` on 1150 (as `GET /dashboard/retention`).
