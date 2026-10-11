@@ -81,6 +81,8 @@ export interface Invoice {
   lineNames?: string[];
   /** US-INV-29 — the last payment's date ("2026-10-02"), for "Paid 2 Oct". */
   lastPaidAt?: string | null;
+  /** US-INV-37 — what's left to credit (total less issued credit notes); on the list. */
+  leftToCredit?: string;
   /** US-INV-30 — "From QUO-0031"; on the detail response. */
   sourceQuoteNumber?: string | null;
   /** US-JOB-21 — present on the detail response for an invoice raised from a job. */
@@ -187,6 +189,12 @@ export interface CreditNoteLine {
   unitPriceAmount: string;
   unitPriceCurrency: string;
   taxRatePercentage: number;
+  /** US-INV-36 — the invoice line it credits, and that line's rate or group. */
+  invoiceLineId?: string | null;
+  taxRateId?: string | null;
+  taxGroupId?: string | null;
+  supplyClass?: SupplyClass | null;
+  hsnSac?: string | null;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -215,7 +223,51 @@ export interface CreditNote {
   updatedAt: string;
   contactName: string | null;
   invoiceNumber: string | null;
+  placeOfSupply?: string | null;
+  supplyType?: "intra" | "inter" | "export" | null;
+  /** US-INV-38, US-INV-40 (D-219) — where its money went. */
+  offInvoiceAmount: string;
+  appliedAmount: string;
+  refundedAmount: string;
+  lastEmailedAt: string | null;
+  lineNames?: string[];
+  taxLines?: { label: string; amount: string }[];
+  allocations?: { invoiceId: string; invoiceNumber: string | null; amount: string; at: string }[];
   lines: CreditNoteLine[];
+}
+
+/** US-INV-36 — `GET /credit-notes/creditable?invoiceId=`: an invoice's item lines and what's left to credit on each. */
+export interface CreditableLine {
+  invoiceLineId: string;
+  position: number;
+  name: string;
+  description: string | null;
+  quantity: number;
+  creditedQuantity: number;
+  leftQuantity: number;
+  unitPriceAmount: string;
+  taxRatePercentage: number;
+  hsnSac: string | null;
+  lineTotalAmount: string;
+  leftAmount: string;
+}
+export interface Creditable {
+  invoiceId: string;
+  invoiceNumber: string | null;
+  currency: string;
+  balanceDue: string;
+  leftToCredit: string;
+  lines: CreditableLine[];
+}
+/** `POST /credit-notes/preview`. */
+export interface CreditNotePreview {
+  subtotalAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  taxLines: { label: string; amount: string }[];
+  owedPart: string;
+  creditPart: string;
+  lines: { invoiceLineId: string | null; lineSubtotalAmount: string; lineTaxAmount: string; lineTotalAmount: string }[];
 }
 
 /** US-PAY-13 — shown next to the status badge once anything has been paid. */

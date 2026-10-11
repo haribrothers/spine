@@ -54,8 +54,11 @@ export class CustomerRefundsService {
       }
       const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
       const advances = await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances");
+      // US-ONB-29 (D-219): a refund of a demo credit note's credit is demo money — the credit only exists in the demo.
+      const isDemo = source.kind === "credit_note" ? ((await tx.select({ isDemo: creditNotes.isDemo }).from(creditNotes).where(eq(creditNotes.id, source.id)))[0]?.isDemo ?? false) : false;
       const entryId = await this.ledger.postEntry(tx, {
         orgId,
+        isDemo,
         date: input.date,
         narration: `Refund to customer from ${source.label}`,
         sourceType: "customer_refund",

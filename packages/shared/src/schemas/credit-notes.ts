@@ -19,6 +19,14 @@ export const creditNoteLineInputSchema = z.object({
   supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
   /** US-TAX-14 — the line's HSN/SAC code, copied from its item. */
   hsnSac: hsnSacSchema.optional().nullable(),
+  /**
+   * US-INV-36 (D-219) — the invoice line this credits. The server copies
+   * its name, price, rate or group, HSN/SAC and supply class, and works the
+   * credit out from the invoice line's own figures: `quantity` of it, or —
+   * with `creditAmount` — that amount, tax included.
+   */
+  invoiceLineId: uuidSchema.optional().nullable(),
+  creditAmount: z.coerce.bigint().positive().optional().nullable(),
 });
 
 /**
@@ -40,3 +48,44 @@ export const createCreditNoteSchema = z.object({
 /** A draft-only update — see CreditNotesService.update's own guard against editing an issued credit note. */
 // Without the create default: a partial update must not clear the lines.
 export const updateCreditNoteSchema = createCreditNoteSchema.omit({ invoiceId: true }).partial().extend({ lines: z.array(creditNoteLineInputSchema).optional() });
+
+/** US-INV-39 — what `GET /credit-notes/:id/activity` returns, newest first. */
+export const CREDIT_NOTE_ACTIVITY_TYPES = ["issued", "emailed", "applied", "refunded", "refund_deleted"] as const;
+export type CreditNoteActivityType = (typeof CREDIT_NOTE_ACTIVITY_TYPES)[number];
+export interface CreditNoteActivityEntry {
+  at: string;
+  type: CreditNoteActivityType;
+  actorName: string | null;
+  /** The invoice number (issued, applied), the email address, or the refund's method. */
+  detail: string | null;
+  /** The invoice (issued, applied) or the refund. */
+  linkId?: string | null;
+  /** Minor units: what came off the invoice (issued), was applied or refunded. */
+  amount?: string | null;
+  /** On "issued": the part that became the customer's credit, minor units. */
+  creditPart?: string | null;
+}
+
+/**
+ * US-INV-36 (D-219) — an amount (tax included) spread over invoice lines in
+ * proportion to what's left to credit on each. Each part is rounded down
+ * and the last line with something left takes the remainder, so the parts
+ * add up to the amount exactly; no part is more than its line has left.
+ * Returns null when the amount is more than all the lines have left.
+ */
+export function spreadCreditAmount(leftAmounts: readonly bigint[], amount: bigint): bigint[] | null {
+  const totalLeft = leftAmounts.reduce((sum, left) => sum + (left > 0n ? left : 0n), 0n);
+  if (amount <= 0n) return leftAmounts.map(() => 0n);
+  if (amount > totalLeft) return null;
+  const parts = leftAmounts.map((left) => (left > 0n ? (amount * left) / totalLeft : 0n));
+  let remainder = amount - parts.reduce((sum, part) => sum + part, 0n);
+  // Hand the pennies left over to the lines from the last one up, each up to what it has left.
+  for (let i = leftAmounts.length - 1; i >= 0 && remainder > 0n; i--) {
+    const room = (leftAmounts[i]! > 0n ? leftAmounts[i]! : 0n) - parts[i]!;
+    const add = room < remainder ? room : remainder;
+    parts[i] = parts[i]! + add;
+    remainder -= add;
+  }
+  return parts;
+}
+

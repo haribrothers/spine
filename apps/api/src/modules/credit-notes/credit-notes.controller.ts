@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { applyPaymentCreditSchema, createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
@@ -41,6 +41,27 @@ export class CreditNotesController {
   async list(@Session() session: UserSession, @Query("invoiceId") invoiceId?: string, @Query("contactId") contactId?: string) {
     const orgId = requireOrgId(session);
     return this.creditNotesService.list(orgId, { invoiceId, contactId });
+  }
+
+  /** `GET /credit-notes/creditable?invoiceId=` (US-INV-36) — an invoice's item lines and what's left to credit on each. */
+  @Get("creditable")
+  async creditable(@Session() session: UserSession, @Query("invoiceId") invoiceId?: string) {
+    if (!invoiceId) throw new BadRequestException("Choose the invoice to credit.");
+    return this.creditNotesService.creditable(requireOrgId(session), invoiceId);
+  }
+
+  /** `POST /credit-notes/preview` (US-INV-36) — the totals, tax by name and split for an unsaved credit note. A read: nothing is written, so no Idempotency-Key. */
+  @Post("preview")
+  @HttpCode(200)
+  @RequireCapability("credit_notes.edit_own")
+  async preview(@Session() session: UserSession, @Body() body: unknown) {
+    return this.creditNotesService.preview(requireOrgId(session), createCreditNoteSchema.parse(body));
+  }
+
+  /** `GET /credit-notes/:id/activity` (US-INV-39) — the credit note's story, newest first. */
+  @Get(":id/activity")
+  async activity(@Session() session: UserSession, @Param("id") id: string) {
+    return this.creditNotesService.activity(requireOrgId(session), id);
   }
 
   @Get(":id")

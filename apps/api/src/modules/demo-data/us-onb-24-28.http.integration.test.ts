@@ -157,6 +157,23 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         }
       });
 
+      it("US-ONB-29 · credit notes off the invoice, kept, applied or refunded, with their tax", async () => {
+        type Note = { id: string; status: string; totalAmount: string; taxAmount: string; creditRemainingAmount: string; offInvoiceAmount: string; appliedAmount: string; refundedAmount: string; issuedAt: string };
+        const notes = (await get<Note[]>("/credit-notes")).filter((n) => n.status === "issued");
+        expect(notes.length).toBe(3);
+        expect(notes.some((n) => BigInt(n.offInvoiceAmount) > 0n)).toBe(true);
+        expect(notes.some((n) => BigInt(n.refundedAmount) > 0n)).toBe(true);
+        expect(notes.some((n) => BigInt(n.creditRemainingAmount) > 0n)).toBe(true);
+        if (demo.name !== "Riverstone Builders") {
+          expect(notes.some((n) => BigInt(n.appliedAmount) > 0n)).toBe(true);
+          // Their tax is taken back, and they were issued on their own days this month.
+          expect(notes.every((n) => BigInt(n.taxAmount) > 0n)).toBe(true);
+          expect(new Set(notes.map((n) => n.issuedAt.slice(0, 10))).size).toBeGreaterThan(1);
+          const month = new Date().toISOString().slice(0, 7);
+          expect(notes.every((n) => n.issuedAt.slice(0, 7) === month)).toBe(true);
+        }
+      });
+
       it("deletes the demo's bundles with it", async () => {
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });
         expect(res.status).toBe(200);

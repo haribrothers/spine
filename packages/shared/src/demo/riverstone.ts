@@ -220,7 +220,12 @@ export function riverstonePlan(): DemoPlan {
       { category: "Fuel & freight", amount: 6000n, paidBy: "employee", description: "Fuel — no receipt attached", dateInDays: -2, outcome: "submitted" },
       { category: "Site overheads & permits", amount: 12000n, paidBy: "employee", description: "Client lunch (over policy limit)", dateInDays: -8, outcome: "rejected", rejectReason: "Over the org's per-meal policy limit — please resubmit with an itemised receipt." },
     ],
-    creditNotes: [{ invoice: "lobbyDeposit", reason: "Overbilled hours — corrected per client review.", lines: [{ line: 0, quantity: 4 }] }],
+    // US-ONB-29: off its invoice; on the paid kitchen invoice, credit kept for the customer; and credit refunded.
+    creditNotes: [
+      { invoice: "lobbyDeposit", reason: "Overbilled hours — corrected per client review.", lines: [{ line: 0, quantity: 4 }] },
+      { invoice: "kitchen", reason: "Six labour hours not worked — credit kept for the next job.", lines: [{ line: 0, quantity: 6 }] },
+      { invoice: "kitchen", reason: "Paint touch-up not needed — refunded.", lines: [{ line: 2, quantity: 20 }], refundInDays: null },
+    ],
     meetings: [
       { title: "Site walkthrough — Marina office fit-out", contact: "harborview", startInDays: -3, startTime: "10:00", durationHours: 1, location: "48 Harbor Way, Portland, ME 04101", description: "Walk the space with the client before framing sign-off." },
       { title: "Kickoff call — kitchen renovation scope", contact: "priya", startInDays: -10, startTime: "15:30", durationHours: 1, location: null, description: "Confirm final material selections and schedule." },

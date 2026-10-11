@@ -24,7 +24,9 @@ import {
   catalogBundles,
   catalogItems,
   contacts,
+  creditNoteAllocations,
   creditNotes,
+  customerRefunds,
   expenseCategories,
   expenses,
   invoices,
@@ -170,6 +172,12 @@ export class DemoDataService {
         await tx.select({ id: payments.id, number: payments.number, contactId: payments.contactId }).from(payments).where(and(eq(payments.orgId, orgId), eq(payments.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(payments).where(eq(payments.id, r.id)), { entityType: "payment", contactId: r.contactId, field: "number", from: r.number }),
       );
+      // US-ONB-29: a demo credit note's applied credit and refunds go with it (their entries are demo entries).
+      const demoNoteIds = (await tx.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true)))).map((r) => r.id);
+      if (demoNoteIds.length) {
+        await tx.delete(creditNoteAllocations).where(inArray(creditNoteAllocations.creditNoteId, demoNoteIds));
+        await tx.delete(customerRefunds).where(inArray(customerRefunds.sourceCreditNoteId, demoNoteIds));
+      }
       const creditNotesDeleted = await count(
         await tx.select({ id: creditNotes.id, number: creditNotes.number, contactId: creditNotes.contactId }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(creditNotes).where(eq(creditNotes.id, r.id)), { entityType: "credit_note", contactId: r.contactId, field: "number", from: r.number }),

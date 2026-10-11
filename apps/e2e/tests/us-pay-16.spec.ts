@@ -27,10 +27,12 @@ test.describe("US-PAY-16", () => {
     await page.getByTestId("invoice-actions").getByRole("button", { name: "More" }).click();
     await page.getByRole("menuitem", { name: "Issue credit note" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.locator('input[inputmode="decimal"]').fill("300");
+    // US-INV-36: credit an amount, spread over the invoice's lines.
+    await dialog.getByRole("tab", { name: "Credit an amount" }).click();
+    await dialog.getByLabel("Amount to credit").fill("300");
     await expect(dialog.getByTestId("credit-split")).toHaveText(`$0.00 reduces what's owed on ${paid.number}; $300.00 becomes credit for Maple Ridge Developments.`);
     await dialog.getByRole("button", { name: "Issue credit note" }).click();
-    await expect(page.getByText("Credit note issued").first()).toBeVisible();
+    await expect(page.getByText(/^CRN-\d{4} issued$/).first()).toBeVisible();
 
     await page.goto(`/invoices/${open.id}`);
     const more = page.getByTestId("invoice-actions").getByRole("button", { name: "More" });

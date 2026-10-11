@@ -232,6 +232,7 @@ export class InvoicesService {
       lineNames: extras.lineNames.get(r.invoice.id) ?? [],
       job: r.invoice.jobId ? (extras.jobs.get(r.invoice.jobId) ?? null) : null,
       lastPaidAt: extras.lastPaid.get(r.invoice.id) ?? null,
+      leftToCredit: r.invoice.status === "issued" && r.invoice.type !== "advance" ? r.invoice.totalAmount - (extras.credited.get(r.invoice.id) ?? 0n) : 0n,
       lastReminderOn: r.lastReminderOn,
       remindedToday: r.lastReminderOn === today,
       isOverdue: isOverdue(r.invoice),
@@ -248,8 +249,8 @@ export class InvoicesService {
 
   /** US-INV-28, US-INV-29 — each invoice's item names, its job, and its last payment's date, in three queries. */
   private async listExtras(orgId: string, ids: string[], jobIds: string[]) {
-    if (!ids.length) return { lineNames: new Map<string, string[]>(), jobs: new Map<string, { id: string; number: string | null; name: string }>(), lastPaid: new Map<string, string>() };
-    const [lineRows, jobRows, paidRows] = await Promise.all([
+    if (!ids.length) return { lineNames: new Map<string, string[]>(), jobs: new Map<string, { id: string; number: string | null; name: string }>(), lastPaid: new Map<string, string>(), credited: new Map<string, bigint>() };
+    const [lineRows, jobRows, paidRows, creditRows] = await Promise.all([
       this.db.select({ invoiceId: invoiceLines.invoiceId, name: invoiceLines.name }).from(invoiceLines).where(and(inArray(invoiceLines.invoiceId, ids), eq(invoiceLines.type, "item"))),
       jobIds.length ? this.db.select({ id: jobs.id, number: jobs.number, name: jobs.name }).from(jobs).where(and(eq(jobs.orgId, orgId), inArray(jobs.id, jobIds))) : Promise.resolve([]),
       this.db
@@ -258,10 +259,16 @@ export class InvoicesService {
         .innerJoin(payments, eq(paymentAllocations.paymentId, payments.id))
         .where(inArray(paymentAllocations.invoiceId, ids))
         .groupBy(paymentAllocations.invoiceId),
+      // US-INV-37: what issued credit notes have taken off each invoice, for "Left to credit".
+      this.db
+        .select({ invoiceId: creditNotes.invoiceId, total: sql<string>`sum(${creditNotes.totalAmount})::text` })
+        .from(creditNotes)
+        .where(and(inArray(creditNotes.invoiceId, ids), eq(creditNotes.status, "issued")))
+        .groupBy(creditNotes.invoiceId),
     ]);
     const lineNames = new Map<string, string[]>();
     for (const l of lineRows) lineNames.set(l.invoiceId, [...(lineNames.get(l.invoiceId) ?? []), l.name]);
-    return { lineNames, jobs: new Map(jobRows.map((j) => [j.id, j])), lastPaid: new Map(paidRows.map((p) => [p.invoiceId, p.last])) };
+    return { lineNames, jobs: new Map(jobRows.map((j) => [j.id, j])), lastPaid: new Map(paidRows.map((p) => [p.invoiceId, p.last])), credited: new Map(creditRows.map((c) => [c.invoiceId, BigInt(c.total ?? "0")])) };
   }
 
   async getOne(orgId: string, id: string) {
@@ -288,6 +295,8 @@ export class InvoicesService {
       // US-INV-30: "From QUO-0031" and the Paid figure's "last on 2 Oct".
       sourceQuoteNumber: row.sourceQuoteNumber ?? null,
       lastPaidAt: extras.lastPaid.get(id) ?? null,
+      // US-INV-36: what's left to credit, so "Issue credit note" shows only while there's something left.
+      leftToCredit: row.invoice.totalAmount - (extras.credited.get(id) ?? 0n),
       isOverdue: isOverdue(row.invoice),
       paymentStatus: paymentStatus(row.invoice),
       balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount,

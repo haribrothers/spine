@@ -25,6 +25,7 @@ const EXEMPT = new Set([
   "POST /quotes/preview-pdf",
   // US-INV-34: the same for an invoice.
   "POST /invoices/preview-pdf",
+  "POST /credit-notes/preview",
 ]);
 
 function controllerFiles(dir: string): string[] {

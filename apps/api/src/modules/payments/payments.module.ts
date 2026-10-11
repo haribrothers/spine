@@ -30,6 +30,6 @@ import { PaymentsService } from "./payments.service";
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, EmailModule, NotificationsModule, OrgModule, PdfModule],
   controllers: [PaymentsController, CustomerRefundsController],
   providers: [PaymentsService, CustomerRefundsService],
-  exports: [PaymentsService],
+  exports: [PaymentsService, CustomerRefundsService],
 })
 export class PaymentsModule {}

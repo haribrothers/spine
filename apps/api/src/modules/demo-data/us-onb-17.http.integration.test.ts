@@ -61,7 +61,8 @@ describe("US-ONB-17 · keep demo data out of my real numbers and books (requires
     expect((await numbers(invoices)).every((n) => n.startsWith("DEMO-INV-"))).toBe(true);
     expect((await numbers(quotes)).every((n) => n.startsWith("DEMO-QUO-"))).toBe(true);
     expect(await numbers(quotes)).toContain("DEMO-QUO-0001");
-    expect(await numbers(creditNotes)).toEqual(["DEMO-CRN-0001"]);
+    // US-ONB-29: three credit notes.
+    expect((await numbers(creditNotes)).sort()).toEqual(["DEMO-CRN-0001", "DEMO-CRN-0002", "DEMO-CRN-0003"]);
     expect((await numbers(payments)).every((n) => n.startsWith("DEMO-RCP-"))).toBe(true);
     expect(await numbers(vendorPayments)).toEqual(["DEMO-VPY-0001"]);
     expect((await numbers(expenses)).every((n) => n.startsWith("DEMO-EXP-"))).toBe(true);

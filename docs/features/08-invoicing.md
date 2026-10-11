@@ -558,11 +558,11 @@ Decision: D-219
 - **Given** an invoice with no item lines left to credit and nothing left to credit, **when** I open the invoice, **then** "Issue credit note" isn't offered.
 
 **Implementation notes**
-- API: `GET /invoices/:id/creditable` → `{ lines: [{ invoiceLineId, name, description, quantity, creditedQuantity, unitPriceAmount, taxRatePercentage, taxRateId, taxGroupId, hsnSac, supplyClass, leftAmount }], leftToCredit, balanceDue }`. `POST /credit-notes` lines take `invoiceLineId` (the server copies name, price, rate or group, HSN/SAC and supply class from that line and refuses a quantity above what's left: 400 "Line <n> has <q> left to credit."). `POST /credit-notes/preview` (a read, no Idempotency-Key) → `{ subtotalAmount, taxAmount, totalAmount, taxLines, owedPart, creditPart }`. `spreadCreditAmount` in `@spine/shared` splits an amount over lines, rounding once per line half-up, the last line taking the remainder.
+- API: `GET /credit-notes/creditable?invoiceId=` → `{ lines: [{ invoiceLineId, position, name, description, quantity, creditedQuantity, leftQuantity, unitPriceAmount, taxRatePercentage, taxRateId, taxGroupId, hsnSac, supplyClass, lineTotalAmount, leftAmount }], leftToCredit, balanceDue }`. `POST /credit-notes` lines take `invoiceLineId` with `quantity`, or with `creditAmount` (tax included); the credit is worked out from the invoice line's own figures in proportion, so discounts, tax-inclusive prices and compound groups credit exactly as invoiced (the server copies name, price, rate or group, HSN/SAC and supply class from that line and refuses a quantity above what's left: 400 "Line <n> has <q> left to credit."). `POST /credit-notes/preview` (a read, no Idempotency-Key) → `{ subtotalAmount, taxAmount, totalAmount, taxLines, owedPart, creditPart }`. `spreadCreditAmount` in `@spine/shared` splits an amount over lines, rounding once per line half-up, the last line taking the remainder.
 - Data: `credit_note_lines.invoice_line_id` (nullable FK), `tax_rate_id`, `tax_group_id`.
 
 ### US-INV-37 · Start a credit note from the credit notes list
-**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNotesListRefined`
+**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNotesListRefined`, `CreditNotesNewPicker`
 **As** office staff, **I want** to start a credit note where I keep them, **so that** I don't have to find the invoice first.
 
 Decision: D-219
@@ -572,7 +572,7 @@ Decision: D-219
 - **Given** I can't issue credit notes, **when** the page shows, **then** there's no "New credit note".
 
 **Implementation notes**
-- UI: the invoice picker reads `GET /invoices` (issued, not advance or opening, with `leftToCredit` > 0); the dialog is US-INV-36's.
+- UI: the invoice picker reads `GET /invoices` (issued, not advance or opening, with `leftToCredit` > 0); the dialog is US-INV-36's; once issued, the credit note's page opens.
 
 ### US-INV-38 · See a credit note at a glance, with one next step
 **Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNoteDetailRefined`

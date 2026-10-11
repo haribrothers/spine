@@ -4848,6 +4848,36 @@ For each action below: press it, check the question says what happens to the dat
 10. **Team:** Cancel a pending invitation ("Keep invitation" / "Cancel invitation").
 11. Regression: Save, Save draft, creating drafts, Archive and Restore a contact, and Resend an invitation don't ask; the actions that already asked (void with a reason, delete from row menus, deactivate a user, reverse a journal, release retention, cancel a job, delete demo data) ask once, as before.
 
+## 211. Credit notes you can work from (US-INV-36 to US-INV-41, US-ONB-29, refinements before Phase 10)
+
+Use an owner on a GST business (India demo) and a non-GST one, a Staff member without "Apply credit" and "Refund a customer", and the demo Field user. Have a taxed invoice with a balance, a paid one, one already partly credited, and credit notes off an invoice, with credit left, applied and refunded. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "12 Credit notes".
+
+1. **Issuing (US-INV-36):**
+   - On an issued invoice, More › Issue credit note: "Issue a credit note" says which invoice, the customer and what's still owed. "Credit lines" lists the item lines with "N of M left"; a line already credited in full is greyed with "Fully credited".
+   - Tick a line, set how many: the row's amount, Subtotal, the tax by name (CGST and SGST, or IGST, on a GST invoice; the rate's name elsewhere) and Total appear. A quantity above what's left says "Line 2 has 3 left to credit." and Issue stays off.
+   - "Credit an amount": enter an amount (tax included); it's spread over the lines by what's left on each, each part's before-tax, tax and part shown; the parts add up exactly. More than the invoice has left says "You can credit up to … on this invoice.".
+   - When the total is more than what's owed, "… reduces what's owed on INV-…; … becomes credit for …" shows beside the totals.
+   - Issue credit note: the toast says "CRN-0007 issued" (and how much became credit); the invoice's balance, Credited and credit notes update. Open Reports › Tax Summary and (India) GSTR-1 for the month: the credit note's tax reduces the tax owed, by component, and the two agree.
+   - An invoice with nothing left to credit has no "Issue credit note".
+2. **New credit note (US-INV-37):** Credit Notes › New credit note asks "Which invoice?"; search by number, customer or job; only issued invoices with something left to credit show, each with "Left to credit". Continue opens the issue dialog; issuing opens the new credit note's page. Without "Issue credit notes" there's no New credit note.
+3. **The credit note page (US-INV-38):**
+   - The number is the title with "Credit left" (amber) or "Credited" (green); the customer, "Against INV-…" (links), the date, place of supply and reason. No drawer any more.
+   - One primary button: Apply credit while credit is left (with the right), else Email credit note if it hasn't been emailed, else Download PDF; Refund and Download PDF beside it; Email and View history under More.
+   - The strip: Credited ("incl. CGST + SGST …"), Off INV-… (when any), Applied (to INV-… or "To 2 invoices"), Refunded (when any) and Credit left. The lines table shows tax by name, then Off INV-…, Applied to INV-…, Refunded and Credit left under Total.
+   - Apply credit lists the customer's open invoices in the credit note's currency, prefilled oldest first; applying updates the strip and toasts. Refund opens the refund dialog for this credit note; refunds and attachments follow the lines.
+   - Links: the invoice's credit notes rows and its Activity ("Credit note issued · CRN-…", "Credit applied · CRN-…") open the page; a ledger drill-down on a credit note entry opens it; search (⌘K) finds credit notes by number, customer, invoice and reason. As the Field user, `/credit-notes/<id>` says it isn't found.
+4. **Activity (US-INV-39):** newest first, with who and when: "Issued against INV-… · … off it, … as credit", "Emailed to …", "Credit applied · … to INV-…" (a link), "Refunded · … · UPI", "Refund deleted". "Show N earlier" past six; View history opens the field-level history.
+5. **The list (US-INV-40, US-INV-41):**
+   - Cards: Credited this month (total and count, "Issued since 1 Oct"), Credit to use (amber, customers count; press it to filter, "Showing these · press again to clear", `card=left` in the address) and Refunded this month.
+   - Rows: the reason under the number, the customer, the invoice (a link), the date in the business's format, the total, and "Where it went" — "Off INV-…", "Applied …", "Refunded …" (green), "… left" (amber), or a mix. A draft left unissued says "Draft — not issued".
+   - The row menu: View; Apply credit and Refund while credit is left; Email credit note; Download PDF — each needs its right (the Staff member sees no Apply credit or Refund). Apply, Refund and Email open the page with that dialog.
+   - Search by number, customer, invoice, reason or a line's name; filter by where it went and contact. Reload, or open one and press Back: the same list. "Clear filters"; Refresh and "Updated just now"; come back after a minute away and it refreshes.
+6. **Demo (US-ONB-29):** load an industry demo: three credit notes this month on their own days — one off its invoice, one applied to the customer's overdue invoice with credit left, one refunded. Riverstone: one off its invoice, one with credit left, one refunded. Delete demo data: the credit notes, their applied credit and refunds all go, and the Trial Balance balances.
+7. Regression:
+   - Apply credit on an invoice (US-PAY-16), refunds from a payment (US-PAY-17), the customer statement's credit lines, Receivables and the Credit notes and refunds report (US-RPT-31) read the same figures.
+   - Emailing a credit note from the invoice's credit notes section (US-SET-21) still works.
+   - The invoice page's Paid bar counts payments only; credit notes show under Credited.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

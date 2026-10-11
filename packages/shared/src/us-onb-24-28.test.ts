@@ -72,4 +72,16 @@ describe.each(plans)("%s", (_name, plan) => {
     for (const inv of emailed) expect(inv.emailedInDays ?? 0).toBeGreaterThanOrEqual(inv.issueInDays ?? 0);
     for (const inv of reminded) expect(inv.remindedInDays ?? 0).toBeGreaterThanOrEqual(inv.emailedInDays ?? 0);
   });
+
+  it("US-ONB-29 · credit notes off the invoice, applied and refunded, each crediting invoice lines", () => {
+    const notes = plan.creditNotes;
+    expect(notes.length).toBe(3);
+    for (const n of notes) {
+      expect(n.lines.length).toBeGreaterThan(0);
+      expect(plan.invoices.some((inv) => inv.key === n.invoice)).toBe(true);
+    }
+    expect(notes.some((n) => n.refundInDays !== undefined)).toBe(true);
+    // Riverstone keeps its spare credit to use rather than applying it; every industry demo applies some.
+    if (plan.business.name !== "Riverstone Builders") expect(notes.some((n) => n.applyInDays !== undefined)).toBe(true);
+  });
 });

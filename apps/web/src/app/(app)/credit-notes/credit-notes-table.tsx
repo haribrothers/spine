@@ -1,54 +1,65 @@
 "use client";
 
-import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import type { CreditNoteRow, CreditNoteStatus } from "./types";
-import { formatMoney } from "../../../lib/money";
+import Link from "next/link";
+import { DataTable, cn, type TableColumn, type TableSort } from "@spine/ui";
+import { calendarDate } from "../quotes/quotes-list-state";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { CreditNoteRowActions } from "./credit-note-row-actions";
+import { whereItWent } from "./credit-notes-list-state";
+import type { CreditNoteRow } from "./types";
 
-const STATUS_BADGE_CLASS: Record<CreditNoteStatus, string> = {
-  draft: "bg-draft-bg text-draft",
-  issued: "bg-due-soon-bg text-due-soon",
-};
-
-const STATUS_LABEL: Record<CreditNoteStatus, string> = {
-  draft: "Draft",
-  issued: "Issued",
-};
+const WHERE_TONE = { off: "text-on-surface-muted", applied: "text-on-surface-muted", refunded: "font-medium text-paid", left: "font-semibold text-due-soon" } as const;
 
 /**
- * The list view for the org-wide `/credit-notes` page — mirrors
- * payments-table.tsx's flat, no-grouping shape. Clicking the Number cell
- * opens `CreditNoteDetailDrawer` rather than navigating to its own route,
- * same "small record, drawer not page" precedent Payments/Catalogue
- * already established.
+ * US-INV-40 (D-219) — the credit notes table: the number with the reason
+ * under it, the customer, the invoice it corrects, the date, the total and
+ * "Where it went" (off the invoice, applied, refunded, credit left), with a
+ * row menu. The page keeps the sort and page in the address (US-INV-41).
  */
-export function CreditNotesTable({ creditNotes, onOpen }: { creditNotes: CreditNoteRow[]; onOpen: (creditNote: CreditNoteRow) => void }) {
+export function CreditNotesTable({
+  creditNotes,
+  now,
+  sort,
+  onSortChange,
+  page,
+  onPageChange,
+  toolbarStart,
+}: {
+  creditNotes: CreditNoteRow[];
+  now: Date;
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort | null) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  toolbarStart?: React.ReactNode;
+}) {
+  const locale = orgLocaleTag();
   const columns: TableColumn<CreditNoteRow>[] = [
     {
       key: "number",
       header: "Number",
       render: (row) => (
-        <button type="button" onClick={() => onOpen(row)} className="text-left font-medium text-on-surface hover:text-primary hover:underline">
-          {row.number ?? <span className="italic text-on-surface-muted">Draft</span>}
-        </button>
+        <div className="flex max-w-[18rem] flex-col whitespace-normal">
+          <Link href={`/credit-notes/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
+            {row.number ?? <span className="font-medium italic text-on-surface-muted">Draft</span>}
+          </Link>
+          {row.reason && (
+            <span className="truncate text-[12.5px] text-on-surface-muted" title={row.reason}>
+              {row.reason}
+            </span>
+          )}
+        </div>
       ),
       sortValue: (row) => row.number ?? "",
     },
     {
-      key: "status",
-      header: "Status",
-      render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{STATUS_LABEL[row.status]}</Badge>,
-      sortValue: (row) => row.status,
-    },
-    {
-      key: "date",
-      header: "Date",
-      render: (row) => (row.issuedAt ? new Date(row.issuedAt).toLocaleDateString() : row.date ? new Date(row.date).toLocaleDateString() : "—"),
-      sortValue: (row) => row.issuedAt ?? row.date ?? "",
-    },
-    {
       key: "contact",
-      header: "Contact",
-      render: (row) => row.contactName ?? "—",
+      header: "Customer",
+      render: (row) => (
+        <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
+          {row.contactName ?? "—"}
+        </span>
+      ),
       sortValue: (row) => row.contactName ?? "",
     },
     {
@@ -56,24 +67,57 @@ export function CreditNotesTable({ creditNotes, onOpen }: { creditNotes: CreditN
       header: "Invoice",
       render: (row) =>
         row.invoiceNumber ? (
-          <a href={`/invoices/${row.invoiceId}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+          <Link href={`/invoices/${row.invoiceId}`} className="text-primary hover:underline">
             {row.invoiceNumber}
-          </a>
+          </Link>
         ) : (
           "—"
         ),
       sortValue: (row) => row.invoiceNumber ?? "",
     },
     {
+      key: "date",
+      header: "Date",
+      render: (row) => {
+        const day = (row.issuedAt ?? row.date ?? "").slice(0, 10);
+        return day ? calendarDate(day, now, locale) : <span className="text-on-surface-muted">—</span>;
+      },
+      sortValue: (row) => row.issuedAt ?? row.date ?? row.createdAt,
+    },
+    {
       key: "total",
       header: "Total",
       align: "right",
+      render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
+      sortValue: (row) => BigInt(row.totalAmount),
+    },
+    {
+      key: "where",
+      header: "Where it went",
+      render: (row) => {
+        if (row.status !== "issued") return <span className="text-[12.5px] italic text-on-surface-muted">Draft — not issued</span>;
+        const parts = whereItWent(row);
+        return (
+          <span className="flex flex-wrap items-center gap-x-1.5 text-[12.5px]" data-testid="where-it-went">
+            {parts.map((p, i) => (
+              <span key={p.kind} className={cn(WHERE_TONE[p.kind])}>
+                {p.text}
+                {i < parts.length - 1 ? " ·" : ""}
+              </span>
+            ))}
+          </span>
+        );
+      },
+      sortValue: (row) => BigInt(row.creditRemainingAmount ?? "0"),
+    },
+    {
+      key: "actions",
+      header: "",
       render: (row) => (
-        <span className="tabular-nums text-overdue">
-          {formatMoney(-BigInt(row.totalAmount), row.currency)}
-        </span>
+        <div className="flex justify-end">
+          <CreditNoteRowActions note={row} />
+        </div>
       ),
-      sortValue: (row) => Number(row.totalAmount),
     },
   ];
 
@@ -82,9 +126,12 @@ export function CreditNotesTable({ creditNotes, onOpen }: { creditNotes: CreditN
       columns={columns}
       data={creditNotes}
       rowKey={(row) => row.id}
-      searchPlaceholder="Search credit notes"
-      searchKey={(row) => `${row.number ?? ""} ${row.contactName ?? ""} ${row.invoiceNumber ?? ""} ${row.reason ?? ""}`}
       configurablePageSize
+      toolbarStart={toolbarStart}
+      sort={sort}
+      onSortChange={onSortChange}
+      page={page}
+      onPageChange={onPageChange}
     />
   );
 }

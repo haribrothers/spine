@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -16,6 +16,7 @@ import { MeetingsService } from "../contacts/meetings.service";
 import { CreditNotesService } from "../credit-notes/credit-notes.service";
 import { FilesService } from "../files/files.service";
 import { InvoicesService } from "../invoices/invoices.service";
+import { CustomerRefundsService } from "../payments/customer-refunds.service";
 import { costByJob } from "../jobs/job-costing.service";
 import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
@@ -113,6 +114,7 @@ export class DemoSeederService {
     private readonly catalogBundles: CatalogBundlesService,
     private readonly publicQuotes: PublicQuotesService,
     private readonly publicTokens: QuotePublicTokenService,
+    private readonly customerRefunds: CustomerRefundsService,
   ) {}
 
   async run(orgId: string, actorUserId: string, plan: DemoPlan, options: { locked: boolean }): Promise<SeedResult> {
@@ -743,39 +745,62 @@ export class DemoSeederService {
       }
     }
 
-    // 8. Credit notes, issued today.
+    // 8. Credit notes (US-ONB-29, D-219): crediting the invoice's lines with their tax, on their own days this month;
+    // some spare credit applied to the customer's other open invoices, some refunded.
     for (const seed of plan.creditNotes) {
       const invoiceId = invoiceIds.get(seed.invoice);
       if (!invoiceId) continue;
-      const lines = await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, invoiceId)).orderBy(asc(invoiceLines.sortOrder));
+      const lines = (await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, invoiceId)).orderBy(asc(invoiceLines.sortOrder))).filter((l) => l.type === "item");
+      const issuedIn = seed.issuedInDays == null ? null : thisMonth(seed.issuedInDays);
       const note = await this.creditNotesService.create(
         orgId,
         actorUserId,
         {
           invoiceId,
           reason: seed.reason,
-          lines: seed.lines.map(({ line, quantity }) => {
-            const from = lines[line]!;
-            return {
-              type: "item",
-              catalogItemId: from.catalogItemId,
-              name: from.name,
-              description: from.description,
-              quantity: Math.min(quantity, Number(from.quantity)),
-              unitPriceAmount: from.unitPriceAmount,
-              unitPriceCurrency: from.unitPriceCurrency,
-              taxRatePercentage: from.taxRatePercentage,
-              taxRateId: from.taxRateId,
-              taxGroupId: from.taxGroupId,
-              supplyClass: from.supplyClass,
-              hsnSac: from.hsnSac,
-            };
+          lines: seed.lines.flatMap(({ line, quantity }) => {
+            const from = lines[line];
+            return from ? [{ type: "item", invoiceLineId: from.id, name: from.name, quantity: Math.min(quantity, Number(from.quantity)) }] : [];
           }),
         } as never,
         true,
       );
-      await this.creditNotesService.issue(orgId, note.id, actorUserId);
+      const issued = await this.creditNotesService.issue(orgId, note.id, actorUserId, undefined, issuedIn === null ? undefined : day(issuedIn));
+      if (issuedIn !== null) {
+        await this.db.update(creditNotes).set({ issuedAt: when(issuedIn), createdAt: when(issuedIn) }).where(eq(creditNotes.id, note.id));
+        await backdateAudit(note.id, when(issuedIn), ["created", "issued"]);
+      }
       count("creditNotesIssued");
+
+      const contactId = issued.contactId;
+      if (seed.applyInDays !== undefined && issued.creditRemainingAmount > 0n) {
+        const applyIn = seed.applyInDays === null ? null : thisMonth(seed.applyInDays);
+        let left = issued.creditRemainingAmount / 2n;
+        const open = (await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.contactId, contactId), eq(invoices.status, "issued"))))
+          .filter((i) => i.type !== "advance" && i.id !== invoiceId)
+          .map((i) => ({ id: i.id, due: i.dueDate, balance: i.totalAmount - i.retentionAmount - i.amountPaid - i.creditedAmount }))
+          .filter((i) => i.balance > 0n)
+          .sort((a, b) => (a.due?.getTime() ?? 0) - (b.due?.getTime() ?? 0));
+        const allocations: { invoiceId: string; amount: bigint }[] = [];
+        for (const inv of open) {
+          if (left <= 0n) break;
+          const amount = inv.balance < left ? inv.balance : left;
+          allocations.push({ invoiceId: inv.id, amount });
+          left -= amount;
+        }
+        if (allocations.length) {
+          await this.creditNotesService.applyCredit(orgId, actorUserId, note.id, { allocations } as never, applyIn === null ? undefined : when(applyIn));
+          if (applyIn !== null) await backdateAudit(note.id, when(applyIn), ["credit_applied"]);
+        }
+      }
+      if (seed.refundInDays !== undefined) {
+        const [now] = await this.db.select({ left: creditNotes.creditRemainingAmount }).from(creditNotes).where(eq(creditNotes.id, note.id));
+        if (now && now.left > 0n) {
+          const refundIn = seed.refundInDays === null ? 0 : thisMonth(seed.refundInDays);
+          const refund = await this.customerRefunds.create(orgId, actorUserId, { sourceCreditNoteId: note.id, amount: now.left, date: day(refundIn).toISOString().slice(0, 10), method: "bank_transfer", sendConfirmation: false } as never);
+          await this.db.update(customerRefunds).set({ createdAt: when(refundIn) }).where(eq(customerRefunds.id, refund.id));
+        }
+      }
     }
 
     // 9. Meetings.

@@ -510,7 +510,13 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     ...(pack.jobs && pack.variationOrder ? { variationOrder: { job: "a", notes: pack.variationOrder.notes, lines: pack.variationOrder.lines.map(freeLine) } } : {}),
     bills,
     expenses,
-    creditNotes: [{ invoice: "inv13", reason: pack.creditNote.reason, lines: [{ line: pack.creditNote.line, quantity: pack.creditNote.quantity }] }],
+    // US-ONB-29 (D-219): one only off its invoice, one whose spare credit was partly applied to the customer's
+    // overdue invoice (the rest still to use), and one whose spare credit was refunded — each crediting lines with their tax.
+    creditNotes: [
+      { invoice: "inv13", reason: pack.creditNote.reason, lines: [{ line: pack.creditNote.line, quantity: pack.creditNote.quantity }], issuedInDays: -3 },
+      { invoice: "inv01", reason: "Agreed reduction on finished work — credit kept against the next invoice.", lines: [{ line: 0, quantity: 1 }], issuedInDays: -9, applyInDays: -7 },
+      { invoice: "inv12", reason: "Charged for work that wasn't needed — refunded to the customer.", lines: [{ line: 0, quantity: 1 }], issuedInDays: -1, refundInDays: 0 },
+    ],
     meetings: [
       ...pack.meetings.map((m, i) => {
         const contact = m.slot ? contacts.find((c) => c.key === m.slot) : undefined;

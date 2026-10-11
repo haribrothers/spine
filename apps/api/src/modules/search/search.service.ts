@@ -18,7 +18,7 @@ import { orgClock } from "../../common/org-clock";
 import { orgLocale } from "../../common/money-format";
 import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
-import { contacts, expenseCategories, expenses, invoices, jobAssignments, jobs, quotes, user, vendorBills } from "../../db/schema";
+import { contacts, creditNotes, expenseCategories, expenses, invoices, jobAssignments, jobs, quotes, user, vendorBills } from "../../db/schema";
 
 const MAX_PER_GROUP = 5;
 
@@ -65,6 +65,8 @@ export class SearchService {
       // US-SET-24: no Jobs group while Jobs & field is switched off.
       jobs: (await moduleOn(this.db, orgId, "jobsField")) ? await this.jobs(ctx, field) : [],
       invoices: field ? [] : await this.invoices(ctx),
+      // US-INV-38: credit notes are Owner and Staff only, like invoices.
+      credit_notes: field ? [] : await this.creditNotes(ctx),
       vendor_bills: field ? [] : await this.vendorBills(ctx),
       expenses: await this.expenses(ctx, field),
     };
@@ -179,6 +181,26 @@ export class SearchService {
       const amount = r.status === "issued" && due > 0n ? `${c.money(due, r.currency)} due` : c.money(r.total, r.currency);
       return { id: r.id, title: r.number ?? "Draft invoice", subtitle: [r.contact, amount].filter(Boolean).join(" · "), status, href: `/invoices/${r.id}`, exact: isNumberMatch(r.number, c.q) };
     });
+  }
+
+  /** US-INV-38 — by number, customer, the invoice's number or the reason; "₹7,856.00 credit left" while credit is left. */
+  private async creditNotes(c: Ctx) {
+    const rows = await this.db
+      .select({ id: creditNotes.id, number: creditNotes.number, status: creditNotes.status, currency: creditNotes.currency, total: creditNotes.totalAmount, left: creditNotes.creditRemainingAmount, contact: contacts.name, invoice: invoices.number })
+      .from(creditNotes)
+      .leftJoin(contacts, eq(creditNotes.contactId, contacts.id))
+      .leftJoin(invoices, eq(creditNotes.invoiceId, invoices.id))
+      .where(and(eq(creditNotes.orgId, c.orgId), this.numberOrText(creditNotes.number, c.q, contacts.name, invoices.number, creditNotes.reason)))
+      .orderBy(...this.rank(creditNotes.number, contacts.name, c.q), desc(creditNotes.createdAt))
+      .limit(c.n);
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.number ?? "Draft credit note",
+      subtitle: [r.contact, r.invoice ? `against ${r.invoice}` : null, c.money(r.total, r.currency)].filter(Boolean).join(" · "),
+      status: r.status === "draft" ? "Draft" : r.left > 0n ? `${c.money(r.left, r.currency)} credit left` : "Credited",
+      href: `/credit-notes/${r.id}`,
+      exact: isNumberMatch(r.number, c.q),
+    }));
   }
 
   private async vendorBills(c: Ctx) {

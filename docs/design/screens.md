@@ -1129,6 +1129,8 @@ Shows: "Billing > Invoices" · "Invoices" · "Build multi-line invoices, issue t
 ### CreditNoteDialog — Issue a credit note
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-09 · **Source:** Captured
 
+Refined by `CreditNoteDialogLines` and `CreditNoteDialogAmount` (D-219).
+
 ![CreditNoteDialog](screens/CreditNoteDialog.webp)
 
 Links to: `InvoiceDetail`
@@ -1137,6 +1139,8 @@ Shows: "Billing > Invoices > Detail" · "Invoice" · "< Back to invoices" · "IN
 
 ### CreditNotesList — Credit notes list
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-INV-10 · **Source:** Captured
+
+Refined by `CreditNotesListRefined` (D-219).
 
 ![CreditNotesList](screens/CreditNotesList.webp)
 
@@ -1155,6 +1159,8 @@ Shows: "Billing > Credit Notes" · "Credit Notes" · "Every credit note issued a
 
 ### CreditNoteDrawer — Credit note detail
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-INV-10 · **Source:** Captured
+
+Replaced by the page `CreditNoteDetailRefined` (D-219).
 
 ![CreditNoteDrawer](screens/CreditNoteDrawer.webp)
 
@@ -1401,6 +1407,8 @@ Shows: "RB" · "Riverstone Builders" · "12 Quarry Lane, Portland, ME 04101" · 
 
 ### CreditNoteDialogExcess — Credit note larger than the invoice's balance
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-PAY-16 · **Source:** Drawn
+
+Refined by `CreditNoteDialogLines`: the split now sits beside the totals (D-219).
 
 ![CreditNoteDialogExcess](screens/CreditNoteDialogExcess.webp)
 
@@ -3230,6 +3238,64 @@ Shows: "Draft invoice" "Draft" · "Not issued yet · due 30 days after issue" ·
 Links to: `InvoiceDetailRefined`
 
 Shows: "New invoice" · "Contact" "Type" "Currency" "Place of supply" · "Issue date" "Today if left blank when issued." · "Due date" "On receipt" "+15 days" "+30 days" "+60 days" · "Your terms: due 30 days after issue (Settings › Documents)." · "Lines" "Notes and terms ↓" · "Item" "Qty" "Rate" "Disc. %" "Tax" "Amount" · "HSN/SAC 995411" · "Add item" "Add heading" "Add text line" · "Enter adds a row · Alt + ↑/↓ moves it" · "Subtotal" "IGST" "Total" · "Unsaved changes" · "Cancel" "Preview PDF" "Save draft" "Save and issue"
+
+## Credit notes you can work from
+
+Drawn in Claude Design for US-INV-36 to US-INV-41 (D-219): project "Spine web — refinements before Phase 10", canvas "12 Credit notes". Issuing credits the invoice's own lines — ticked lines and how many, or an amount spread over the lines by what's left on each — with each part's tax taken back at its line's rate, the totals and tax by name shown before the button, and the split between what comes off the invoice and what becomes the customer's credit. A credit note has its own page with one next step, a strip of where its money went, the lines with tax and an Activity panel. The list's cards are Credited this month, Credit to use (a filter) and Refunded this month; each row says where the credit went; New credit note picks the invoice first. These refine `CreditNoteDialog`, `CreditNoteDialogExcess`, `CreditNotesList` and replace `CreditNoteDrawer`. In the built screens, "Where it went" says "Applied ₹10,000.00" rather than naming the invoice (the page names it), and the amount-mode figures in `CreditNoteDialogAmount` are drawn slightly off: ₹50,000 over those lines is ₹30,674.84 and ₹19,325.16.
+
+### CreditNotesListRefined — Cards, where each credit went, a row's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-37, US-INV-40, US-INV-41 · **Source:** Claude Design
+
+![CreditNotesListRefined](screens/CreditNotesListRefined.webp)
+
+Links to: `CreditNoteDetailRefined`, `CreditNotesNewPicker`
+
+Shows: "Credited this month" "3 credit notes" "Issued since 1 Oct" · "Credit to use" "2 customers" "Show these credit notes" · "Refunded this month" "Paid back since 1 Oct" · "Where it went" "All contacts" · "Updated just now" · "New credit note" · "Search credit notes, invoices or reasons" · the reason under the number · "Off INV-0045" · "Refunded ₹5,900.00" · "₹7,856.00 left" · the row menu "View" "Apply credit" "Refund" "Email credit note" "Download PDF"
+
+### CreditNotesListRefinedDark — "Credit to use" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-40 · **Source:** Claude Design
+
+![CreditNotesListRefinedDark](screens/CreditNotesListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · only credit notes with credit left
+
+### CreditNotesNewPicker — New credit note: which invoice?
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-37 · **Source:** Claude Design
+
+![CreditNotesNewPicker](screens/CreditNotesNewPicker.webp)
+
+Links to: `CreditNoteDialogLines`
+
+Shows: "New credit note" · "Which invoice does it correct? Only issued invoices with something left to credit are listed." · a search · each invoice's customer, issue date and "Left to credit" · "Cancel" "Continue"
+
+### CreditNoteDetailRefined — Part off its invoice, part applied, credit left
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-38, US-INV-39 · **Source:** Claude Design
+
+![CreditNoteDetailRefined](screens/CreditNoteDetailRefined.webp)
+
+Links to: `CreditNotesListRefined`, `InvoiceDetailRefined`, `CustomerRefundDialog`
+
+Shows: "Billing › Credit notes › CRN-0007" · "CRN-0007" "Credit left" · the customer · "Against INV-0041" · "Issued 6 Oct" · the place of supply · the reason · "Download PDF" "Refund" "Apply credit" "More" · "Credited" "incl. CGST + SGST" · "Off INV-0041" "What was still owed on it" · "Applied" "To INV-0044" · "Credit left" "To apply or refund" · "Lines" with CGST (9%) and SGST (9%) · "Total credited" "Off INV-0041" "Applied to INV-0044" "Credit left" · "Activity" "Credit applied" "Emailed to …" "Issued against INV-0041 · ₹41,616.00 off it, ₹17,856.00 as credit" "View history"
+
+### CreditNoteDialogLines — Credit lines, with their tax
+**Priority:** P1 · **Phase:** Refinements · **Stories:** US-INV-36 · **Source:** Claude Design
+
+![CreditNoteDialogLines](screens/CreditNoteDialogLines.webp)
+
+Links to: `CreditNoteDetailRefined`
+
+Shows: "Issue a credit note" · "Against INV-0041 · Sahyadri Retail Pvt Ltd · ₹41,616.00 still owed. Takes back the tax with the amount, without editing the issued invoice." · "Credit lines" "Credit an amount" · "1 of 1 left" · "12 of 36 left" · "Fully credited · CRN-0003" · "Reason" · "₹41,616.00 reduces what's owed on INV-0041; ₹17,856.00 becomes credit for …" · "Subtotal" "CGST (9%)" "SGST (9%)" "Total" · "It gets a number and is posted to your books when issued; it can't be edited after." · "Cancel" "Issue credit note"
+
+### CreditNoteDialogAmount — Credit an amount, spread over the lines
+**Priority:** P1 · **Phase:** Refinements · **Stories:** US-INV-36 · **Source:** Claude Design
+
+![CreditNoteDialogAmount](screens/CreditNoteDialogAmount.webp)
+
+Links to: `CreditNoteDetailRefined`
+
+Shows: "Amount · tax included" · "Spread over the invoice's lines by what's left to credit on each; each part's tax is taken back at that line's rate." · "Left to credit" "Before tax" "Tax" "Part" · the totals and the split
 
 ## Mobile field companion
 

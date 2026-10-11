@@ -260,6 +260,12 @@ export interface DemoPlanCreditNote {
   reason: string;
   /** Which invoice line (by position) and how many to credit. */
   lines: { line: number; quantity: number }[];
+  /** US-ONB-29 — days from today it was issued (kept within this month; null or absent is today). */
+  issuedInDays?: number | null;
+  /** Half of its spare credit applied to the customer's other open invoices that day (null is today). */
+  applyInDays?: number | null;
+  /** What's left of its spare credit refunded to the customer that day (null is today). */
+  refundInDays?: number | null;
 }
 
 export interface DemoPlanMeeting {

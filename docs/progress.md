@@ -496,13 +496,13 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-INV-33 · Give every invoice a due date from my payment terms
 - [x] US-INV-34 · Build an invoice in compact rows, with a bar that stays in view
 - [x] US-INV-35 · Duplicate an invoice
-- [ ] US-ONB-29 · Explore credit notes at every stage
-- [ ] US-INV-36 · Credit an invoice's lines, with their tax
-- [ ] US-INV-37 · Start a credit note from the credit notes list
-- [ ] US-INV-38 · See a credit note at a glance, with one next step
-- [ ] US-INV-39 · Follow what happened to a credit note
-- [ ] US-INV-40 · See where each credit went, at a glance
-- [ ] US-INV-41 · Search, filter and come back to the same credit notes list
+- [x] US-ONB-29 · Explore credit notes at every stage
+- [x] US-INV-36 · Credit an invoice's lines, with their tax
+- [x] US-INV-37 · Start a credit note from the credit notes list
+- [x] US-INV-38 · See a credit note at a glance, with one next step
+- [x] US-INV-39 · Follow what happened to a credit note
+- [x] US-INV-40 · See where each credit went, at a glance
+- [x] US-INV-41 · Search, filter and come back to the same credit notes list
 
 ## Phase 10 · AI assistant
 

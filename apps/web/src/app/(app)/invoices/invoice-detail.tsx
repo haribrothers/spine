@@ -55,7 +55,7 @@ import { AttachmentsSection } from "../../../components/attachments-section";
 import { DocumentLinesTable, type AfterTotalRow } from "../../../components/document-lines-table";
 import { InvoiceActivity } from "./invoice-activity";
 import { STATE_BADGE_CLASS } from "./invoices-table";
-import { INVOICE_STATE_LABELS, dueNote, invoiceState, paidShare } from "./invoices-list-state";
+import { INVOICE_STATE_LABELS, dueNote, invoiceState } from "./invoices-list-state";
 import { calendarDate } from "../quotes/quotes-list-state";
 
 /**
@@ -354,7 +354,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   // instead, not through this invoice.
   const canRecordPayment = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasRecordPaymentCapability;
   // US-PAY-16 (D-142): a paid invoice can be credited too; the excess becomes customer credit.
-  const canIssueCreditNote = invoice.status === "issued" && invoice.type !== "advance" && hasIssueCreditNoteCapability;
+  // US-INV-36: only while something is left to credit on it.
+  const canIssueCreditNote = invoice.status === "issued" && invoice.type !== "advance" && invoice.type !== "opening" && hasIssueCreditNoteCapability && BigInt(invoice.leftToCredit ?? invoice.totalAmount) > 0n;
   const canApplyCredit = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasApplyCreditCapability && customerCredit > 0n;
   const creditedAmount = BigInt(invoice.creditedAmount);
   const locale = orgLocaleTag();
@@ -415,7 +416,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     );
 
   // US-INV-30: Total, Paid, Retention held or Credited, Balance due — once issued.
-  const share = paidShare(invoice);
+  // D-219: the bar under Paid counts payments only; credit shows under Credited.
+  const dueTotal = BigInt(invoice.totalAmount) - retentionAmount;
+  const share = dueTotal > 0n ? Math.min(100, Number((amountPaid * 100n) / dueTotal)) : 0;
   const taxNote = (invoice.taxLines ?? []).length === 1 ? `incl. ${invoice.taxLines![0]!.label} ${money(BigInt(invoice.taxLines![0]!.amount))}` : BigInt(invoice.taxAmount) > 0n ? `incl. tax ${money(BigInt(invoice.taxAmount))}` : "No tax";
   const figure = (label: string, value: string, note: React.ReactNode, testId: string, opts: { bar?: number; tone?: string } = {}) => (
     <div key={label} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
@@ -792,13 +795,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         invoiceId={invoice.id}
         invoiceNumber={invoice.number}
         customerName={invoice.contactName ?? null}
-        currency={invoice.currency}
-        invoiceTotal={BigInt(invoice.totalAmount)}
-        balanceDue={balanceDue}
-        onIssued={() => {
+        onIssued={(note) => {
           load();
           setCreditNotesRefreshKey((key) => key + 1);
-          showToast("Credit note issued", "The invoice's balance has been updated.");
+          showToast(`${note.number ?? "Credit note"} issued`, BigInt(note.creditRemainingAmount ?? "0") > 0n ? `${formatMoney(BigInt(note.creditRemainingAmount!), note.currency)} became credit for ${invoice.contactName ?? "the customer"}.` : "The invoice's balance has been updated.");
         }}
       />
 

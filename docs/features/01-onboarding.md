@@ -533,8 +533,9 @@ Decision: D-216, D-217
 Decision: D-216, D-219
 
 **Acceptance criteria**
-- **Given** any demo, **when** it's loaded, **then** it has three credit notes, each crediting invoice lines with their tax: one only off its invoice, one larger than its invoice's balance whose spare credit was applied to another invoice of the customer, and one whose spare credit was refunded; at least one is dated this month, and their activity is on their own days.
+- **Given** an industry demo, **when** it's loaded, **then** it has three credit notes, each crediting invoice lines with their tax and dated this month on their own days: one only off its invoice, one on a paid invoice whose spare credit was partly applied to the customer's overdue invoice (the rest still to use), and one whose spare credit was refunded.
+- **Given** Riverstone Builders, **when** it's loaded, **then** it has one credit note off its invoice and two on the paid kitchen invoice — one whose credit is kept to use and one refunded (its customers have no other open invoice to apply credit to).
 - **Given** a GST demo, **when** I open the Tax Summary or GSTR-1, **then** the credit notes' CGST/SGST (or IGST) reduce the tax owed.
 
 **Implementation notes**
-- Shared: plan credit notes gain `issuedInDays`, `appliedTo` and `refundedInDays`; credit notes are seeded through `CreditNotesService` with `invoiceLineId`, credit applied through `apply-credit` and refunds through `CustomerRefundsService`, dates moved to the plan's days.
+- Shared: plan credit notes gain `issuedInDays`, `applyInDays` and `refundInDays`; credit notes are seeded through `CreditNotesService` with `invoiceLineId` (issued and applied on the plan's day), refunds through `CustomerRefundsService`. A refund of a demo credit note's credit is demo money: its entry is flagged demo, and deleting the demo removes it and any applied credit with the credit note.
