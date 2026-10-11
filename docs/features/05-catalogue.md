@@ -13,7 +13,7 @@ The goods and services a business quotes and invoices, each with a unit, default
 | F-CAT-02 | Items on document lines | P1 | 1 | `QuoteBuilder` |
 | F-CAT-03 | Own/others catalogue rights | P1 | 4 | `CatalogList`, `TeamPrivilegesExpanded` |
 | F-CAT-04 | Import items from CSV | P2 | 8 | `ImportCatalogDialog` |
-| F-CAT-05 | A catalogue that's easy to keep: setup gaps you can act on, a table that says more, many items at once, export, bundles from items, and an item's use | P2 | Refinements | `CatalogListRefined`, `CatalogListRefinedDark`, `CatalogBulkSelect`, `CatalogMakeBundle`, `CatalogBundlesEmpty`, `CatalogItemDrawerRefined` |
+| F-CAT-05 | A catalogue that's easy to keep: setup gaps you can act on, a table that says more, many items at once, export, bundles from items, and an item's use | P2 | Refinements | `CatalogListRefined`, `CatalogListRefinedDark`, `CatalogBulkSelect`, `CatalogMakeBundle`, `CatalogBundlesEmpty`, `CatalogItemDrawerRefined`, `CatalogBulkConfirm` |
 
 ## User stories
 
@@ -246,4 +246,20 @@ Decision: D-213
 **Implementation notes**
 - API: `GET /catalog-items/:id/usage` → `{ quotes, invoices, lastQuotedAt }` (distinct documents with a line from the item); Owner and Staff only.
 - UI: `catalog-form.tsx`, `catalog-item-drawer.tsx`, `catalog-row-actions.tsx`.
+
+### US-CAT-16 · Confirm a change to many items before it happens
+**Feature:** F-CAT-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CatalogBulkConfirm`
+**As** an owner, **I want** to be asked before a bulk change to tax or category, **so that** a slip on the selection doesn't re-tax half the catalogue.
+
+Decision: D-218, D-223
+
+**Acceptance criteria**
+- **Given** items ticked, **when** I choose a tax rate or group (or "No tax") from "Set tax", **then** "Change the tax on 12 items?" says the new tax, that it applies to new quotes and invoices only (issued documents keep theirs), and offers "Change tax" and "Go back".
+- **Given** items ticked, **when** I set a category, **then** "Move 12 items to “Labour”?" asks first, with "Move items" and "Go back".
+- **Given** I confirm, **when** it finishes, **then** the toast says how many changed, as today; Go back changes nothing and keeps the selection.
+- **Given** bulk Archive or Restore, **when** I choose it, **then** it doesn't ask (Restore undoes it, D-218) and toasts as today.
+
+**Implementation notes**
+- UI: `catalog-bulk-bar.tsx` asks with `useConfirm()` before `POST /catalog-items/bulk`.
+- No API change.
 

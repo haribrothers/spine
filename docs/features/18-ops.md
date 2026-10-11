@@ -20,6 +20,7 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 | F-OPS-09 | File storage | P1 | 6 | `UpgradeNotice` |
 | F-OPS-10 | Attachments on records | P1 | 8 | `VendorBillAttachments` |
 | F-OPS-11 | Menus that read at a glance: an icon for every action, one spacing | P2 | Refinements | `MenuIcons`, `MenuIconsDark` |
+| F-OPS-12 | Every major action asks first and says when it's done | P2 | Refinements | `ToastAfterNavigate`, `ToastStack`, `ToastStackDark` |
 
 ## User stories
 
@@ -593,5 +594,25 @@ Decision: D-222
 **Implementation notes**
 - UI: `packages/ui` `DropdownMenuItem`, `DropdownMenuSubTrigger` and the `ContextMenu` items style a direct `svg` child (`gap-2.5`, `size-3.5`, `shrink-0`, `text-on-surface-muted`; `text-overdue` when destructive) and get `min-h-8`; `DropdownMenuContent` is at least 12rem wide. Screens drop their own spacing (typed spaces, `gap-2`). The doc page (`dropdown-menu`, `context-menu`) shows items with icons, a destructive item and a divider; the a11y tests cover them.
 - Web: `lib/menu-icons.ts` maps each action to its Lucide icon (D-222) and the menus listed above use it. Menus outside the refined modules (banking, expenses, vendor bills and payments, team, settings, report export) get the new spacing now and their icons when they're refined.
+- No API change.
+
+### US-OPS-38 · Know an action worked, wherever it takes me
+**Feature:** F-OPS-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`
+**As** any member, **I want** a short message every time a major action finishes — even when it takes me to another page, **so that** I never wonder whether a delete, a conversion or a payment went through.
+
+Decision: D-218, D-223
+
+**Acceptance criteria**
+- **Given** any major action in the refined modules (D-218: issuing, recording, voiding, applying, deleting or removing, emailing, converting or revising, bulk changes), **when** it finishes, **then** a toast says what happened, titled with the thing and the past tense ("QUO-0034 revised", "Lead deleted", "RCP-0029 recorded") and a line that says what changed or what to do next.
+- **Given** an action that opens another page (converting a quote, revising it, deleting from a record's own page, issuing a credit note or recording a payment from a list, invoicing a milestone, duplicating), **when** the new page opens, **then** the toast shows there.
+- **Given** the actions that finish without a toast today — deleting a lead or marking it lost; deleting a meeting or an occurrence; deleting a quote or an invoice from its page; revising, converting to an invoice or a job and duplicating a quote from a row; issuing a credit note from the list; recording a payment from the list; completing or invoicing a milestone, applying a variation and removing someone from a job's crew; deleting a refund; removing an attachment — **when** each finishes, **then** it has its toast.
+- **Given** several actions in a row, **when** their toasts show, **then** they stack in the bottom-right corner with the newest on top, up to the host's maximum (3 by default, set on the component); a new toast over the maximum closes the oldest at once.
+- **Given** a toast, **when** it's shown, **then** it closes after its own interval (5 seconds by default, set on the component), so older toasts leave first; hovering the stack or focusing a toast pauses every timer; each can be closed with its × or Escape.
+- **Given** phone width, **when** toasts show, **then** they span the bottom of the screen and at most two show, whatever the maximum.
+- **Given** a screen reader, **when** a toast shows, **then** it's announced politely without moving focus; with Reduce Motion, it appears without sliding.
+- **Given** an action that fails, **when** it does, **then** the error stays where the action was (in the dialog or above the list), as today — a toast never carries an error.
+
+**Implementation notes**
+- UI: one `ToastHost` in the app layout (`components/toast-host.tsx`, `<ToastHost max={3} duration={5000} />`) with `useToast()` → `toast(title, description)`; the layout stays mounted across pages, so a toast shown before `router.push` stays. The host keeps a queue: newest first, trimmed to `max` (2 below the `sm` breakpoint), each toast with its own `duration`. Every `entity-toast.tsx` copy (and its `{toast}` element), the contacts `sessionStorage` hand-off and the payments `?deleted=` hand-off give way to it. `@spine/ui` `ToastViewport` lays the stack out newest on top; its doc page shows a stack and the a11y test covers it.
 - No API change.
 
