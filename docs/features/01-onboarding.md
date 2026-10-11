@@ -526,3 +526,15 @@ Decision: D-216, D-217
 **Implementation notes**
 - Shared: plan invoices gain `emailedInDays` and `remindedInDays`; Riverstone's deposit invoice is due in 5 days.
 
+### US-ONB-29 · Explore credit notes at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`CreditNotesListRefined`, `CreditNoteDetailRefined` with demo data)
+**As** an evaluator, **I want** the demo's credit notes to show where credit goes, **so that** the cards and "Where it went" show what they do.
+
+Decision: D-216, D-219
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** it has three credit notes, each crediting invoice lines with their tax: one only off its invoice, one larger than its invoice's balance whose spare credit was applied to another invoice of the customer, and one whose spare credit was refunded; at least one is dated this month, and their activity is on their own days.
+- **Given** a GST demo, **when** I open the Tax Summary or GSTR-1, **then** the credit notes' CGST/SGST (or IGST) reduce the tax owed.
+
+**Implementation notes**
+- Shared: plan credit notes gain `issuedInDays`, `appliedTo` and `refundedInDays`; credit notes are seeded through `CreditNotesService` with `invoiceLineId`, credit applied through `apply-credit` and refunds through `CustomerRefundsService`, dates moved to the plan's days.

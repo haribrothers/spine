@@ -20,6 +20,7 @@ Standard, advance (deposit), progress and retention-release invoices. Drafts are
 | F-INV-09 | Bulk invoice actions | P2 | 7 | `InvoicesBulkSelect` |
 | F-INV-10 | UPI QR code on invoices | P1 | 9 | `SettingsPaymentInstructionsUpi`, `InvoicePdfGst` |
 | F-INV-11 | Invoices you can work from: cards that filter, rows that read at a glance, a page with one next step and its story, payment terms, a compact builder and duplicate | P2 | Refinements | `InvoicesListRefined`, `InvoicesListRefinedDark`, `InvoiceDetailRefined`, `InvoiceDetailDraftRefined`, `InvoiceBuilderCompact` |
+| F-INV-12 | Credit notes you can work from: crediting lines with their tax, a page with one next step and its story, cards and "Where it went", a list that keeps its place | P1 | Refinements | `CreditNoteDialogLines`, `CreditNoteDialogAmount`, `CreditNotesListRefined`, `CreditNotesListRefinedDark`, `CreditNoteDetailRefined` |
 
 ## User stories
 
@@ -465,7 +466,7 @@ Decision: D-217
 **Acceptance criteria**
 - **Given** an invoice, **when** its page opens, **then** the page title is its number ("Draft invoice" for a draft), with its status, the customer (a link), "Issued 12 Sept", "Due 12 Oct · in 2 days" or "Overdue 6 days", the place of supply and, when it has one, the job (and milestone) or quote it came from as links; there's no "Back to invoices".
 - **Given** the invoice, **when** the page shows, **then** one primary button offers the next step: "Issue invoice" for a draft, "Send reminder" when it's overdue, "Record payment" while it has a balance, else "Download PDF"; the others (Edit, Preview or Download PDF, Email invoice, Apply credit, Issue credit note, Duplicate, View history, Void, Delete draft) sit beside it or under More, each only with the right to do it.
-- **Given** an issued invoice, **when** the page shows, **then** a strip reads Total, Paid (with the last payment's date), Credited (when any) and Balance due (with a bar of what's paid).
+- **Given** an issued invoice, **when** the page shows, **then** a strip reads Total, Paid (with the last payment's date), Credited (when any) and Balance due (with a bar of what's paid). The bar under Paid counts payments only; credit notes and applied credit show under Credited (D-219).
 - **Given** a draft, **when** I press "Issue invoice" (on the page, from a row's menu or after "Save and issue"), **then** "Issue this invoice?" says who will owe what and when it's due, that it gets its permanent number and is posted to the books, and that it can then only be voided or credited; "Issue invoice" issues it and "Go back" leaves it a draft. When the HSN/SAC or customer-credit question is asked instead, answering it is the confirmation. Delete draft asks too (D-217).
 
 **Implementation notes**
@@ -540,3 +541,95 @@ Decision: D-217
 
 **Implementation notes**
 - API: `POST /invoices/:id/duplicate` (`invoices.edit_own`; Idempotency-Key) → the new draft, with no number or dates; an audit row `duplicated` on it naming the source. UI: the builder opens it with `?duplicated=INV-0012`, fills today's issue date and the terms' due date, and shows the toast.
+
+### US-INV-36 · Credit an invoice's lines, with their tax
+**Feature:** F-INV-12 · **Priority:** P1 · **Phase:** Refinements · **Screens:** `CreditNoteDialogLines`, `CreditNoteDialogAmount`
+**As** office staff, **I want** a credit note to take back the tax with the amount, **so that** what I owe the tax office drops with what the customer owes me.
+
+Decision: D-219
+
+**Acceptance criteria**
+- **Given** an issued invoice, **when** I choose "Issue credit note", **then** the dialog offers "Credit lines" (the default) and "Credit an amount".
+- **Given** "Credit lines", **when** it shows, **then** each item line of the invoice is listed with its rate, its tax and how many are left to credit ("3 of 5 left"); I tick lines and set a quantity up to what's left; a line already fully credited is shown, unticked and disabled, with "Fully credited".
+- **Given** "Credit an amount", **when** I enter an amount (tax included), **then** it's spread over the invoice's item lines in proportion to what's left to credit on each, each part's tax is taken back at that line's rate, and the parts add up to the amount entered exactly.
+- **Given** either way, **when** the dialog totals it, **then** it shows Subtotal, the tax by name (CGST and SGST, IGST, VAT…) and Total, and — when the total is more than what's owed — "<balance> reduces what's owed on <invoice>; <excess> becomes credit for <customer>." (D-142).
+- **Given** a quantity above what's left, or a total above what's left to credit on the invoice, **when** I issue it, **then** I see "Line 2 has 3 left to credit." or "You can credit up to ₹1,200.00 on this invoice." and nothing is issued.
+- **Given** I press "Issue credit note", **when** it's issued, **then** each line carries its invoice line, rate or tax group, HSN/SAC and supply class, P8 takes the tax back from 2100 Output Tax, the PDF and GSTR-1 show the tax by component, and a toast says "CRN-0007 issued".
+- **Given** an invoice with no item lines left to credit and nothing left to credit, **when** I open the invoice, **then** "Issue credit note" isn't offered.
+
+**Implementation notes**
+- API: `GET /invoices/:id/creditable` → `{ lines: [{ invoiceLineId, name, description, quantity, creditedQuantity, unitPriceAmount, taxRatePercentage, taxRateId, taxGroupId, hsnSac, supplyClass, leftAmount }], leftToCredit, balanceDue }`. `POST /credit-notes` lines take `invoiceLineId` (the server copies name, price, rate or group, HSN/SAC and supply class from that line and refuses a quantity above what's left: 400 "Line <n> has <q> left to credit."). `POST /credit-notes/preview` (a read, no Idempotency-Key) → `{ subtotalAmount, taxAmount, totalAmount, taxLines, owedPart, creditPart }`. `spreadCreditAmount` in `@spine/shared` splits an amount over lines, rounding once per line half-up, the last line taking the remainder.
+- Data: `credit_note_lines.invoice_line_id` (nullable FK), `tax_rate_id`, `tax_group_id`.
+
+### US-INV-37 · Start a credit note from the credit notes list
+**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNotesListRefined`
+**As** office staff, **I want** to start a credit note where I keep them, **so that** I don't have to find the invoice first.
+
+Decision: D-219
+
+**Acceptance criteria**
+- **Given** I may issue credit notes, **when** Credit Notes shows, **then** the toolbar has "New credit note"; it asks "Which invoice?" with a search over issued invoices (number, customer, total) that have something left to credit, then opens the issue dialog for that invoice.
+- **Given** I can't issue credit notes, **when** the page shows, **then** there's no "New credit note".
+
+**Implementation notes**
+- UI: the invoice picker reads `GET /invoices` (issued, not advance or opening, with `leftToCredit` > 0); the dialog is US-INV-36's.
+
+### US-INV-38 · See a credit note at a glance, with one next step
+**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNoteDetailRefined`
+**As** office staff, **I want** a credit note to have its own page, **so that** I can see where its money went and act on it, and other pages can link to it.
+
+Decision: D-219
+
+**Acceptance criteria**
+- **Given** a credit note, **when** its page (`/credit-notes/:id`) opens, **then** the title is its number, with the customer (a link), "Against INV-0016" (a link), the issue date and the reason.
+- **Given** the page, **when** it shows, **then** one primary button offers the next step: "Apply credit" while credit is left (with the right to apply credit), else "Email credit note" if it hasn't been emailed (with the right to send), else "Download PDF"; Refund (while credit is left), Email, Download PDF and View history sit beside it or under More, each only with the right to do it.
+- **Given** the page, **when** it shows, **then** a strip reads Credited (with its tax), Off <invoice> (what it took off that invoice), Applied (to other invoices), Refunded and Credit left — each only when it isn't zero, except Credited and Credit left.
+- **Given** the lines, **when** they show, **then** they're a table (Item with its description, Qty, Rate, Tax, Amount) with Subtotal, the tax by name and Total under it, as on the invoice.
+- **Given** "Apply credit", **when** I press it, **then** the customer's open invoices are listed with their balances and I set how much goes on each (up to the credit left and each balance); applying it posts P6 and the strip updates.
+- **Given** the invoice's credit notes, its Activity, a payment's or refund's source, or search, **when** they name a credit note, **then** they link to its page; search finds credit notes by number, customer, invoice and reason.
+- **Given** a Field user, **when** they could reach a credit note, **then** they can't (404), on web or mobile.
+
+**Implementation notes**
+- UI: `credit-note-detail.tsx` replaces `credit-note-detail-drawer.tsx`; the lines use `DocumentLinesTable` (US-INV-31). API: `GET /credit-notes/:id` gains `taxLines`, `offInvoiceAmount`, `appliedAmount`, `refundedAmount` and `allocations` (`[{ invoiceId, invoiceNumber, amount, at }]`); `GET /search` gains a credit notes group. Apply credit uses `POST /credit-notes/:id/apply-credit` (US-PAY-16).
+
+### US-INV-39 · Follow what happened to a credit note
+**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNoteDetailRefined`
+**As** an owner, **I want** a credit note's story in one place, **so that** I know whether the customer has it and where the money went.
+
+Decision: D-219
+
+**Acceptance criteria**
+- **Given** a credit note's page, **when** it shows, **then** an "Activity" panel lists, newest first: issued against <invoice> (by whom), emailed to … (or "Email failed: …"), credit applied to <invoice> (amount, as a link), refunded (amount, method, as a link to the refund), refund deleted, with who and when. "View history" keeps the field-level history.
+
+**Implementation notes**
+- API: `GET /credit-notes/:id/activity` → `[{ at, type: issued | emailed | email_failed | applied | refunded | refund_deleted, actorName, detail, linkId, amount }]` (`CreditNoteActivityEntry` in `@spine/shared`), from the audit log, the credit note's allocations and its refunds (roles: owner, staff).
+
+### US-INV-40 · See where each credit went, at a glance
+**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNotesListRefined`, `CreditNotesListRefinedDark`
+**As** an owner, **I want** the credit notes list to show money and where it went, **so that** I know what customers can still use or be paid back.
+
+Decision: D-219
+
+**Acceptance criteria**
+- **Given** Credit Notes, **when** it shows, **then** the cards read "Credited this month" (the total of credit notes issued this calendar month, with how many), "Credit to use" (credit customers still hold from credit notes, with how many customers) and "Refunded this month" (refunds of credit-note credit dated this month); "Credit to use" filters the list to credit notes with credit left, pressed and kept in the address like the invoice cards.
+- **Given** a row, **when** it shows, **then** it has the number with the reason under it, the customer, the invoice (a link), the date in the business's format, the total, and "Where it went": "Off INV-0016", "₹4,000.00 credit left", "Applied to INV-0021", "Refunded" or a mix ("Off INV-0016 · ₹4,000.00 left"); there's no Draft or Issued badge (a draft only shows, with "Draft", if one was left unissued).
+- **Given** a row's menu, **when** I open it, **then** it offers View, Apply credit and Refund (while credit is left), Email credit note and Download PDF, each only with the right to do it; Apply, Refund and Email open the credit note's page with that dialog.
+- **Given** amounts in more than one currency, **when** a card totals them, **then** it sums the business's currency and says "+ other currencies".
+
+**Implementation notes**
+- API: `GET /credit-notes` rows gain `offInvoiceAmount`, `appliedAmount`, `refundedAmount`, `lastEmailedAt` and `lineNames`; "Refunded this month" from `GET /customer-refunds` (source credit notes, by date). UI: `credit-notes-list-state.ts` replaces `use-credit-note-stats.ts`.
+
+### US-INV-41 · Search, filter and come back to the same credit notes list
+**Feature:** F-INV-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreditNotesListRefined`
+**As** office staff, **I want** the credit notes list to keep my search and filters, **so that** I can open one and come back to where I was.
+
+Decision: D-210, D-219
+
+**Acceptance criteria**
+- **Given** a search, a "Where it went" filter (Off the invoice, Credit left, Applied, Refunded), a contact, a card, a sort or a page, **when** I set it, **then** the address keeps it; reloading, or opening a credit note and pressing Back, shows the same list.
+- **Given** a search, **when** I type, **then** it matches the number, customer, invoice number, reason and line names.
+- **Given** the list, **when** I press Refresh or come back after 30 seconds away, **then** it reloads in place and says "Updated just now".
+- **Given** filters, **when** any is set, **then** "Clear filters" clears them.
+
+**Implementation notes**
+- UI: as the invoices list (US-INV-28): `replaceQuery`, `REFRESH_ON_RETURN_MS`.
