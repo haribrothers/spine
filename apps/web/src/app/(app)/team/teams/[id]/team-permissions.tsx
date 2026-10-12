@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, CircleCheck, CircleMinus, LayoutGrid, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, CircleCheck, CircleMinus, Eye, LayoutGrid, Search } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -26,7 +26,9 @@ import { apiClient } from "../../../../../lib/api-client";
 import type { MemberRow } from "../../../../../lib/members";
 import { useModules } from "../../../../../lib/modules-context";
 import type { TeamDetail, TeamPrivileges } from "../../../../../lib/teams";
-import { applyToDraft, changeReason, draftChanges, matchesSearch, permissionGroups, sectionsOpened } from "../teams-state";
+import { applyToDraft, changeReason, draftChanges, matchesSearch, permissionGroups, sectionChanges, sectionsOpened } from "../teams-state";
+
+const ACCESS_WORDS = { work: " — can work here", view: " — view only", none: " — can't open" } as const;
 
 const granted = (p: TeamPrivileges) => Object.entries(p).filter(([, on]) => on).map(([c]) => c);
 
@@ -68,8 +70,7 @@ export function TeamPermissions({
   const groups = useMemo(() => permissionGroups(modules), [modules]);
   const before = useMemo(() => sectionsOpened(granted(detail.privileges), modules), [detail.privileges, modules]);
   const after = useMemo(() => sectionsOpened(granted(draft), modules), [draft, modules]);
-  const gained = after.all.filter((s) => s.open && !before.all.find((b) => b.href === s.href)?.open);
-  const lost = after.all.filter((s) => !s.open && before.all.find((b) => b.href === s.href)?.open);
+  const moved = useMemo(() => sectionChanges(before, after), [before, after]);
 
   function change(list: { capability: Capability; granted: boolean }[]) {
     const next = applyToDraft(draft, list);
@@ -190,23 +191,30 @@ export function TeamPermissions({
 
         <aside className="rounded-lg border border-border bg-surface px-4 py-3.5" data-testid="members-will-open">
           <h3 className="text-[13.5px] font-semibold text-on-surface">What members will open</h3>
-          <p className="mb-2.5 text-[12.5px] text-on-surface-muted">Their sidebar with these permissions — before any other Team adds to it.</p>
+          <p className="mb-2.5 text-[12.5px] text-on-surface-muted">Their sidebar with these permissions — before any other Team adds to it. Reading records never needs a permission.</p>
           <ul className="flex flex-col gap-1.5 text-[13px]">
             {after.all.map((s) => {
-              const added = gained.some((x) => x.href === s.href);
-              const gone = lost.some((x) => x.href === s.href);
+              const change = moved.find((m) => m.href === s.href);
+              const Icon = s.access === "work" ? CircleCheck : s.access === "view" ? Eye : CircleMinus;
               return (
-                <li key={s.href} className={cn("flex items-center gap-2", s.open ? "text-on-surface" : "text-on-surface-muted")}>
-                  {s.open ? <CircleCheck size={15} aria-hidden className="text-paid" /> : <CircleMinus size={15} aria-hidden />}
-                  {s.label}
-                  <span className="sr-only">{s.open ? " — can open" : " — can't open"}</span>
-                  {added && <Badge className="ml-auto bg-paid-bg text-paid">Added</Badge>}
-                  {gone && <Badge className="ml-auto bg-overdue-bg text-overdue">Lost</Badge>}
+                <li key={s.href} className={cn("flex items-center gap-2", s.access === "work" ? "text-on-surface" : "text-on-surface-muted")} data-access={s.access}>
+                  <Icon size={15} aria-hidden className={s.access === "work" ? "text-paid" : undefined} />
+                  <span className="min-w-0 flex-1">
+                    {s.label}
+                    {s.access === "view" && <span className="text-[12px]"> · view only</span>}
+                  </span>
+                  <span className="sr-only">{ACCESS_WORDS[s.access]}</span>
+                  {change && <Badge className={change.up ? "bg-paid-bg text-paid" : "bg-overdue-bg text-overdue"}>{change.up ? "Added" : "Lost"}</Badge>}
                 </li>
               );
             })}
           </ul>
-          <p className="mt-3 text-[12.5px] text-on-surface-muted">{members.length ? `Applies to ${members.length === 1 ? "1 person" : `${members.length} people`} at their next request.` : "No one is on this Team yet."}</p>
+          <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-on-surface-muted" aria-hidden>
+            <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />Can work here</span>
+            <span className="flex items-center gap-1"><Eye size={13} />View only</span>
+            <span className="flex items-center gap-1"><CircleMinus size={13} />Can&apos;t open</span>
+          </p>
+          <p className="mt-2 text-[12.5px] text-on-surface-muted">{members.length ? `Applies to ${members.length === 1 ? "1 person" : `${members.length} people`} at their next request.` : "No one is on this Team yet."}</p>
         </aside>
       </div>
 
@@ -252,19 +260,11 @@ export function TeamPermissions({
                 </li>
               );
             })}
-            {gained.map((s) => (
-              <li key={`+${s.href}`} className="flex items-start gap-2">
+            {moved.map((s) => (
+              <li key={`s${s.href}`} className="flex items-start gap-2">
                 <LayoutGrid size={15} aria-hidden className="mt-0.5 shrink-0 text-on-surface-muted" />
                 <span>
-                  They&apos;ll open <b className="font-semibold">{s.label}</b>
-                </span>
-              </li>
-            ))}
-            {lost.map((s) => (
-              <li key={`-${s.href}`} className="flex items-start gap-2">
-                <LayoutGrid size={15} aria-hidden className="mt-0.5 shrink-0 text-on-surface-muted" />
-                <span>
-                  They&apos;ll no longer open <b className="font-semibold">{s.label}</b>
+                  {s.access === "work" ? "They'll work in" : s.access === "view" ? "They'll only view" : "They'll no longer open"} <b className="font-semibold">{s.label}</b>
                 </span>
               </li>
             ))}

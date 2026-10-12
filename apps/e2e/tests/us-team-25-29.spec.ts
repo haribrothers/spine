@@ -22,6 +22,7 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
     await expect(teamRow(page, "General Staff")).toContainText("Default");
     await expect(teamRow(page, "Accounts")).toContainText("Demo");
     await expect(teamRow(page, "Accounts")).toContainText(/\d+ of \d+ sections/);
+    await expect(page.getByTestId("teams-table").getByRole("columnheader", { name: /Works in/ })).toBeVisible();
     await expect(teamRow(page, "Accounts")).toContainText("1 person");
     await page.getByRole("searchbox", { name: "Search Teams" }).fill("the books");
     await expect(page).toHaveURL(/q=the(\+|%20)books/);
@@ -44,7 +45,10 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
     await expect(toasts(page).filter({ hasText: "Accounts (copy) created" })).toBeVisible();
     await page.waitForURL(/\/team\/teams\/[0-9a-f-]{36}\?tab=permissions/);
     await expect(page.getByRole("tab", { name: "Permissions" })).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByTestId("members-will-open")).toContainText("Banking");
+    const panel = page.getByTestId("members-will-open");
+    await expect(panel.getByRole("listitem").filter({ hasText: "Banking" })).toContainText("can work here");
+    // Reading quotes needs no permission, but Accounts allows nothing there.
+    await expect(panel.getByRole("listitem").filter({ hasText: "Quotes" })).toContainText("view only");
 
     // A taken name is refused under the field.
     await page.goto("/team/teams");

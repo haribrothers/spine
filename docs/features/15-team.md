@@ -303,7 +303,7 @@ Decision: D-232
 **Acceptance criteria**
 - **Given** a Staff member's row, **when** it shows, **then** their Teams are listed as chips (opening the Team); with none it reads "No Team — can't open anything" in the warning colour. Owners read "Everything"; Field reads "Field access".
 - **Given** Manage Teams, **when** the dialog opens, **then** it lists every Team with a tick for those they're on and each Team's member count; saving updates their Teams at once and the toast says what changed ("Sarah Mendes is on General Staff and Accounts").
-- **Given** "What they can open", **when** the drawer opens, **then** it shows their role, Teams, the sections of Spine they can open (as the sidebar would show them) and how many permissions they have of each group, with "Edit on <Team>" links; for an Owner it says "Owners can open everything", for Field "Field access is fixed".
+- **Given** "What they can open", **when** the drawer opens, **then** it shows their role, Teams, each section of Spine as "Can work here", "View only" or "Can't open" (as their sidebar and permissions decide) and how many permissions they have of each group, with "Edit on <Team>" links; for an Owner it says "Owners can open everything", for Field "Field access is fixed".
 
 **Implementation notes**
 - API: `PUT /org/members/:id/teams { teamIds }` (Owner; Staff only, else 400 "Only Staff are on Teams."); `GET /org/members/:id/access` → `{ role, teams, capabilities }` (Owner) — the same effective list the API enforces.
@@ -381,7 +381,7 @@ Decision: D-210, D-222, D-234
 
 **Acceptance criteria**
 - **Given** Teams, **when** it opens, **then** the header has "Create Team"; below it the cards Teams (count), Staff on no Team (opens Users filtered to them; warning when not zero) and Staff on several Teams; then search (Team name or description) with Columns. The search is kept in the address.
-- **Given** a row, **when** it shows, **then** it has the Team's name with "Default" and "Demo" badges and its description; its members as avatars with a count ("4 people", or "No one yet"); "Opens 9 of 16 sections" (as members' sidebars would show them); and "38 of 105 permissions".
+- **Given** a row, **when** it shows, **then** it has the Team's name with "Default" and "Demo" badges and its description; its members as avatars with a count ("4 people", or "No one yet"); "Works in 7 of 18 sections" (sections where it allows at least one action, or a report it opens — reading records never needs a permission, so a section can be in members' sidebars and still be view only); and "38 of 105 permissions".
 - **Given** a row's menu, **when** I open it, **then** each item has its icon (D-222): Open, Rename, Duplicate and Delete; Delete isn't offered on the default Team or the only Team.
 - **Given** Delete, **when** I choose it, **then** "Delete <Team>?" names how many people lose what it allowed and who'd be left on no Team ("Kavya Iyer will be on no Team — they can't open anything"); confirming deletes it and the toast says so (D-218, D-223).
 
@@ -426,7 +426,7 @@ Decision: D-218, D-234
 **Acceptance criteria**
 - **Given** Permissions, **when** I switch something, **then** nothing is saved yet: the switch is marked "Changed", a bar sticks to the bottom ("5 changes · Discard · Save changes"), and leaving the page with unsaved changes asks first.
 - **Given** a group, **when** it shows, **then** it reads "4 of 6" with its "toggle all" switch; "Expand all" / "Collapse all", a search over names and descriptions, and "Show changed only" sit above the list.
-- **Given** a change, **when** I make it, **then** the panel "What members will open" beside the list shows the sections of Spine members will see (as their sidebar would), marking ones the draft adds or takes away.
+- **Given** a change, **when** I make it, **then** the panel "What members will open" beside the list shows each section of Spine as "Can work here", "View only" (in their sidebar, nothing allowed there — reading never needs a permission) or "Can't open", marking sections the draft adds to or takes from.
 - **Given** Save changes, **when** I press it, **then** "Save <n> changes to <Team>?" lists what turns on and off — including ones turned on or off with them (US-BANK-12) — and that it applies to its <n> people at their next request; confirming saves them in one request and the toast says so.
 
 ### US-TEAM-29 · See a Team's history

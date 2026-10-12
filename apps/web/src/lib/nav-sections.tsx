@@ -183,3 +183,67 @@ function sectionsForRole(role: string | null, capabilities: Partial<Record<Capab
     }),
   })).filter((section) => section.items.length > 0);
 }
+
+/**
+ * Where a person stands in a section of Spine: they can work there (an
+ * action is allowed, or the section is a report they may open), only view
+ * it (it's in their sidebar — reading records needs no permission — but
+ * nothing there is allowed), or can't open it at all.
+ */
+export type SectionAccess = "work" | "view" | "none";
+
+/** The permissions that act in each section, by capability prefix. Report-like sections are work once they open. */
+const SECTION_ACTIONS: Record<string, string[] | "opens"> = {
+  "/contacts": ["contacts"],
+  "/leads": ["leads", "activities"],
+  "/meetings": ["meetings"],
+  "/catalog": ["catalog"],
+  "/quotes": ["quotes"],
+  "/jobs": ["jobs", "milestones", "job_notes", "job_photos", "variation_orders"],
+  "/invoices": ["invoices"],
+  "/credit-notes": ["credit_notes"],
+  "/payments": ["payments"],
+  "/receivables": "opens",
+  "/vendor-bills": ["vendor_bills"],
+  "/vendor-credits": ["vendor_credits"],
+  "/expenses": ["expenses", "expense_categories"],
+  "/vendor-payments": ["vendor_payments"],
+  "/payables": "opens",
+  "/banking": ["banking.record", "banking.reconcile"],
+  "/reports": "opens",
+  "/journals": "opens",
+};
+
+/** Field always works in the sections their sidebar shows (US-TEAM-18). */
+const FIELD_HREFS = new Set(FIELD_NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href)));
+
+/**
+ * US-TEAM-20, US-TEAM-25, US-TEAM-28 — every section the business uses (not
+ * Dashboard or the Owner-only Team section) with where this person stands
+ * in it.
+ */
+export function sectionAccessFor(
+  role: string | null,
+  capabilities: Partial<Record<Capability, boolean>> | null,
+  modules: ModuleSettings | null = DEFAULT_MODULES,
+): { href: string; label: string; access: SectionAccess }[] {
+  const all = navSectionsFor("owner", null, modules)
+    .flatMap((s) => s.items)
+    .filter((i) => i.href !== "/dashboard" && !i.href.startsWith("/team/"));
+  const shown = new Set(navSectionsFor(role, capabilities, modules).flatMap((s) => s.items.map((i) => i.href)));
+  const granted = Object.entries(capabilities ?? {})
+    .filter(([, on]) => on)
+    .map(([c]) => c);
+  return all.map((item) => {
+    let access: SectionAccess;
+    if (role === "owner") access = "work";
+    else if (role === "field") access = FIELD_HREFS.has(item.href) ? "work" : "none";
+    else if (!shown.has(item.href)) access = "none";
+    else {
+      const rule = SECTION_ACTIONS[item.href];
+      const works = rule === "opens" || (rule ?? []).some((p) => granted.some((c) => c === p || c.startsWith(`${p}.`)));
+      access = works ? "work" : "view";
+    }
+    return { href: item.href, label: String(item.label), access };
+  });
+}

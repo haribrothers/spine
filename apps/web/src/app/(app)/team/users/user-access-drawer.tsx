@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CircleCheck, CircleMinus } from "lucide-react";
+import { CircleCheck, CircleMinus, Eye } from "lucide-react";
 import { Alert, AlertDescription, Button, Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, Spinner } from "@spine/ui";
 import { capabilityGroupCounts, type Capability, type MemberAccess } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { useModules } from "../../../../lib/modules-context";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import type { MemberRow } from "../../../../lib/members";
-import { NAV_SECTIONS, navSectionsFor } from "../../../../lib/nav-sections";
+import { sectionAccessFor } from "../../../../lib/nav-sections";
 import { ROLE_LABELS } from "./users-list-state";
 
 /**
@@ -35,9 +35,8 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
 
   const caps = access?.capabilities as Partial<Record<Capability, boolean>> | undefined;
   // Every section the business uses, ticked where their sidebar shows it.
-  const allowed = new Set(access ? navSectionsFor(access.role, caps ?? null, modules).flatMap((s) => s.items.map((i) => i.href)) : []);
-  const inUse = new Set(navSectionsFor("owner", null, modules).flatMap((s) => s.items.map((i) => i.href)));
-  const sections = NAV_SECTIONS.flatMap((s) => s.items).filter((item) => item.href !== "/dashboard" && inUse.has(item.href));
+  // Work there, only view (reading needs no permission), or can't open.
+  const sections = access ? sectionAccessFor(access.role, caps ?? null, modules) : [];
 
   return (
     <Drawer open={member !== null} onOpenChange={onOpenChange}>
@@ -75,16 +74,22 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
                 <h3 className="text-[13px] font-semibold text-on-surface">Sections</h3>
                 <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13.5px]" aria-label="Sections">
                   {sections.map((item) => {
-                    const can = allowed.has(item.href);
+                    const Icon = item.access === "work" ? CircleCheck : item.access === "view" ? Eye : CircleMinus;
                     return (
-                      <li key={item.href} className={can ? "flex items-center gap-2 text-on-surface" : "flex items-center gap-2 text-on-surface-muted"}>
-                        {can ? <CircleCheck size={15} aria-hidden className="text-paid" /> : <CircleMinus size={15} aria-hidden />}
+                      <li key={item.href} className={item.access === "work" ? "flex items-center gap-2 text-on-surface" : "flex items-center gap-2 text-on-surface-muted"} data-access={item.access}>
+                        <Icon size={15} aria-hidden className={item.access === "work" ? "text-paid" : undefined} />
                         {item.label}
-                        <span className="sr-only">{can ? " — can open" : " — can't open"}</span>
+                        {item.access === "view" && <span className="text-[12px]">· view only</span>}
+                        <span className="sr-only">{item.access === "work" ? " — can work here" : item.access === "view" ? " — view only" : " — can't open"}</span>
                       </li>
                     );
                   })}
                 </ul>
+                <p className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-on-surface-muted" aria-hidden>
+                  <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />Can work here</span>
+                  <span className="flex items-center gap-1"><Eye size={13} />View only — reading needs no permission</span>
+                  <span className="flex items-center gap-1"><CircleMinus size={13} />Can&apos;t open</span>
+                </p>
               </section>
               {access.role === "staff" && (
                 <section className="flex flex-col gap-1">

@@ -1,6 +1,6 @@
 import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, capabilitiesOff, withImpliedPrivileges, type Capability, type ModuleSettings } from "@spine/shared";
 import type { MemberRow } from "../../../../lib/members";
-import { navSectionsFor } from "../../../../lib/nav-sections";
+import { sectionAccessFor, type SectionAccess } from "../../../../lib/nav-sections";
 import type { TeamPrivileges, TeamSummary } from "../../../../lib/teams";
 
 /** US-TEAM-25 (D-234) — the list's search, kept in the address (`?q=`). */
@@ -10,17 +10,25 @@ export function filterTeams(rows: TeamSummary[], q: string): TeamSummary[] {
 }
 
 /**
- * Sections of Spine a set of grants opens, as a Staff member's sidebar would
- * show them; out of every section the business uses (not the Owner-only
- * Team section, which no Team can open).
+ * Where a Team's members stand in each section of Spine with these grants
+ * (before any other Team adds to them): work there, only view it, or can't
+ * open it — and how many sections they work in, out of every section the
+ * business uses.
  */
 export function sectionsOpened(granted: Iterable<string>, modules: ModuleSettings | null) {
   const caps = Object.fromEntries([...granted].map((c) => [c, true])) as Partial<Record<Capability, boolean>>;
-  const all = navSectionsFor("owner", null, modules)
-    .flatMap((s) => s.items)
-    .filter((i) => i.href !== "/dashboard" && !i.href.startsWith("/team/"));
-  const open = new Set(navSectionsFor("staff", caps, modules).flatMap((s) => s.items.map((i) => i.href)));
-  return { all: all.map((i) => ({ href: i.href, label: i.label, open: open.has(i.href) })), opened: all.filter((i) => open.has(i.href)).length, total: all.length };
+  const all = sectionAccessFor("staff", caps, modules);
+  return { all, works: all.filter((s) => s.access === "work").length, total: all.length };
+}
+
+const ACCESS_RANK: Record<SectionAccess, number> = { none: 0, view: 1, work: 2 };
+
+/** Sections whose access the draft raises or lowers, with the new access. */
+export function sectionChanges(before: ReturnType<typeof sectionsOpened>, after: ReturnType<typeof sectionsOpened>) {
+  return after.all
+    .map((s) => ({ ...s, was: before.all.find((b) => b.href === s.href)?.access ?? "none" }))
+    .filter((s) => s.was !== s.access)
+    .map((s) => ({ ...s, up: ACCESS_RANK[s.access] > ACCESS_RANK[s.was] }));
 }
 
 /** "38 of 105" — over the permissions the business's modules use (US-SET-24). */

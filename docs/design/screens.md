@@ -4294,7 +4294,7 @@ Drawn in Claude Design for US-TEAM-25 to US-TEAM-29 (D-234): project "Spine web 
 
 Links to: `TeamPageMembers`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamUsersRefined`
 
-Shows: "Team › Teams" · "What each group of Staff can open and do. Someone on several Teams gets everything any of them allows." · "Create Team" · cards "Teams" (default · with no one yet) "Staff on no Team" (opens Users filtered to them) "Staff on several Teams" · "Search Teams" "Columns" · "Team" (name, "Default"/"Demo", description) "Members" (avatars, "2 people" or "No one yet") "Opens" ("16 of 18 sections") "Permissions" ("30 of 104") · row menu "Open" "Rename" "Duplicate" · "Delete" (not on the default Team or the only Team). As built, Opens counts the sections members' sidebars show (the Owner-only Team section isn't counted), and the totals follow the business's modules.
+Shows: "Team › Teams" · "What each group of Staff can open and do. Someone on several Teams gets everything any of them allows." · "Create Team" · cards "Teams" (default · with no one yet) "Staff on no Team" (opens Users filtered to them) "Staff on several Teams" · "Search Teams" "Columns" · "Team" (name, "Default"/"Demo", description) "Members" (avatars, "2 people" or "No one yet") "Works in" ("7 of 18 sections") "Permissions" ("30 of 104") · row menu "Open" "Rename" "Duplicate" · "Delete" (not on the default Team or the only Team). As built, the column is "Works in": sections where the Team allows at least one action, or a report it opens (reading records never needs a permission, so the rest are view only; the Owner-only Team section isn't counted); the totals follow the business's modules.
 
 ### TeamsListDark — The same, dark
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
@@ -4357,7 +4357,7 @@ Shows: "Remove <name> from <Team>?" "They lose what <Team> allowed at their next
 
 Links to: `SavePermissionsConfirm`
 
-Shows: "Search permissions" "Show changed only" "Expand all"/"Collapse all" · groups with "<on> of <total>" (and "· was <n>" once changed) and their "toggle all" switch · each permission's label, description, "Changed" and switch · side panel "What members will open" (sections ticked, "Added"/"Lost") "Applies to <n> people at their next request." · bar "<n> changes · Discard · Save changes" · a notice when a switch brings another with it (US-BANK-12). Leaving the tab or the page with changes asks "Discard <n> unsaved changes?".
+Shows: "Search permissions" "Show changed only" "Expand all"/"Collapse all" · groups with "<on> of <total>" (and "· was <n>" once changed) and their "toggle all" switch · each permission's label, description, "Changed" and switch · side panel "What members will open" — each section "Can work here" (tick), "View only" (eye) or "Can't open" (minus), with a key, and "Added"/"Lost" when the draft changes it "Applies to <n> people at their next request." · bar "<n> changes · Discard · Save changes" · a notice when a switch brings another with it (US-BANK-12). Leaving the tab or the page with changes asks "Discard <n> unsaved changes?".
 
 ### SavePermissionsConfirm — Save after review
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-28 · **Source:** Claude Design
@@ -4366,7 +4366,7 @@ Shows: "Search permissions" "Show changed only" "Expand all"/"Collapse all" · g
 
 Links to: `TeamPageHistory`
 
-Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." · "Turn on/off <permission>" (with why, for one that came with another) · "They'll open <section>" / "They'll no longer open <section>" · "Go back" "Save changes" · toast "<Team> saved".
+Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." · "Turn on/off <permission>" (with why, for one that came with another) · "They'll work in <section>" / "They'll only view <section>" / "They'll no longer open <section>" · "Go back" "Save changes" · toast "<Team> saved".
 
 ### TeamPageHistory — Who changed what
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-29 · **Source:** Claude Design

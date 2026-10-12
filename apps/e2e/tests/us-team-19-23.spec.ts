@@ -67,7 +67,7 @@ test.describe("US-TEAM-19 to US-TEAM-23", () => {
     await menu(page, "Marcus Webb", "What they can open");
     const drawer = page.getByTestId("user-access-drawer");
     await expect(page.getByRole("dialog", { name: "What Marcus Webb can open" })).toContainText("Staff · on General Staff.");
-    await expect(drawer.getByRole("listitem").filter({ hasText: "Contacts" })).toContainText("can open");
+    await expect(drawer.getByRole("listitem").filter({ hasText: "Contacts" })).toContainText("can work here");
     await expect(drawer.getByTestId("access-groups")).toContainText("Banking");
     await expect(drawer.getByRole("link", { name: "Edit on General Staff →" })).toBeVisible();
     await page.keyboard.press("Escape");

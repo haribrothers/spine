@@ -38,7 +38,7 @@ import { filterTeams, leftWithoutTeam, peopleLabel, permissionCount, sectionsOpe
 const COLUMNS = [
   { key: "name", header: "Team", width: "w-56" },
   { key: "members", header: "Members", width: "w-40" },
-  { key: "opens", header: "Opens", width: "w-32" },
+  { key: "works", header: "Works in", width: "w-32" },
   { key: "permissions", header: "Permissions", width: "w-32" },
 ];
 
@@ -177,13 +177,13 @@ export function TeamsExplorer() {
       sortValue: (t) => t.members.length,
     },
     {
-      key: "opens",
-      header: "Opens",
+      key: "works",
+      header: "Works in",
       render: (t) => {
         const s = sectionsOpened(t.granted, modules);
-        return <Meter value={s.opened} total={s.total} label={`${s.opened} of ${s.total} sections`} />;
+        return <Meter value={s.works} total={s.total} label={`${s.works} of ${s.total} sections`} />;
       },
-      sortValue: (t) => sectionsOpened(t.granted, modules).opened,
+      sortValue: (t) => sectionsOpened(t.granted, modules).works,
     },
     {
       key: "permissions",
