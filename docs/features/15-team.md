@@ -14,6 +14,7 @@ Who can use Spine and what they can do: an Owner-only area with real pages for u
 | F-TEAM-03 | Teams and the privilege matrix | P1 | 0 | `TeamTeams`, `CreateTeamDialog`, `TeamMembers`, `TeamPrivileges`, `TeamPrivilegesExpanded` |
 | F-TEAM-04 | People and access fixes | P2 | 6 | `TeamUsers`, `PromoteOwnerConfirm`, `EmailInvite` |
 | F-TEAM-05 | Users you can manage from: the shared list layout, Teams and access on each person, invites with Teams, Staff ↔ Field, and safer actions | P2 | Refinements | `TeamUsersRefined`, `TeamUsersDark`, `TeamInvites`, `InvitePeopleDialog`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm` |
+| F-TEAM-06 | Set a Staff or Field member's password: an Owner sets it from Users, the person is signed out and emailed, and chooses their own at next sign-in; no Owner's password is set this way | P2 | Refinements | `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile` |
 
 ## User stories
 
@@ -352,3 +353,21 @@ Decision: D-218, D-223, D-232
 
 **Implementation notes**
 - API: `PUT /org/members/:id/deactivate` refuses the caller's own member (400).
+
+### US-TEAM-24 · Set a Staff or Field member's password
+**Feature:** F-TEAM-06 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile`
+**As** an owner, **I want** to set a new password for someone on my Staff or Field team, **so that** a person locked out can get back to work today — without anyone being able to take over an Owner's account.
+
+Decision: D-233
+
+**Acceptance criteria**
+- **Given** an active Staff or Field member's row, **when** I open its menu, **then** it has "Change password" (with its icon); an Owner's row — mine, another Owner's or the Primary Owner's — never has it, and the Primary Owner's menu says "Only <name> can change their own password, from Profile."
+- **Given** the dialog, **when** it opens, **then** it suggests a strong password (shown, with Copy and Hide), offers "Generate another" or a typed one, shows the strength meter and checklist used at sign-up (US-AUTH-15), and says what happens: they're signed out everywhere, we email them that an Owner changed it (never the password), and I give them the password myself.
+- **Given** "Change password", **when** it's done, **then** their sessions on web and phone end at once, the email goes (or is logged as not sent, US-SET-27), the audit log has "password set by <owner>" on the person (never the password), and the toast says "<name>'s password changed".
+- **Given** the password I set, **when** they next sign in with it, web or phone, **then** they must choose their own before anything else ("Choose your own password" with the same checklist); the one I set can't be reused, and until they choose, every other request is refused.
+- **Given** the API, **when** anyone asks to set the password of an Owner (the Primary Owner above all), themselves, someone in another business, or a deactivated member, **then** it refuses (403/400) whatever the screen shows.
+
+**Implementation notes**
+- API: `PUT /org/members/:id/password { newPassword }` (Owner; target Staff or Field, active, not the caller) — hashes as sign-in does, revokes the user's sessions, sets `user.must_change_password`, sends `password_set_by_owner` email, audits `password_set`. Server enforces the 8-character minimum and common list (US-AUTH-15).
+- Data: `user.must_change_password boolean default false`.
+- While `must_change_password` is set, a global guard answers 403 `{ code: "PASSWORD_CHANGE_REQUIRED" }` for everything but `PUT /users/me/password`, `GET /org/members/me`, sign-out and Better Auth's own routes; changing it clears the flag. Web sends them to `/choose-password`; the field app to its own screen.

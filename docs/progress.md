@@ -279,6 +279,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-21 · Invite several people, onto their Teams
 - [x] US-TEAM-22 · Change someone between Staff and Field
 - [x] US-TEAM-23 · Act on people safely
+- [ ] US-TEAM-24 · Set a Staff or Field member's password
 - [x] US-SET-13 · Open contact history the same way as everywhere else
 - [x] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [x] US-OPS-08 · Make every mutating request safe to repeat

@@ -963,6 +963,7 @@ Total: 525 stories.
 - US-TEAM-21 · Invite several people, onto their Teams (P2)
 - US-TEAM-22 · Change someone between Staff and Field (P2)
 - US-TEAM-23 · Act on people safely (P2)
+- US-TEAM-24 · Set a Staff or Field member's password (P2)
 
 ## Phase 10 · AI assistant
 
