@@ -16,7 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
-| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide, vendor payments and payables to pay from | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide, vendor payments and payables to pay from, banking with reconciliations | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -609,3 +609,19 @@ Decision: D-216, D-229, D-230
 **Implementation notes**
 - Shared: `BILL_TIMELINE` gains `bill8` (supplier, 90+ days, open), `bill9` (services, 31–60 days, open, on job b) and `bill10`/`bill11` (supplier_far, paid together); each industry pack gains their refs and lines. Plan bill payments gain `method` and `reference`; plans gain `vendorPayments` — one payment across several plan bills (`bills`, `inDays`, `method`, `reference`, `remittanceInDays?`).
 - API: the seeder records the shared payment through `VendorPaymentsService` once its bills are recorded, and writes its `remittance_sent` audit entry (the vendor's address) on its day — no email is queued, as with the demo's emailed invoices.
+
+### US-ONB-34 · Explore banking with accounts, transfers and reconciliations
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`BankingAccountsRefined`, `AccountRegisterRefined`, `ReconcileRefined`, `ReconciliationReport` with demo data)
+**As** an evaluator, **I want** the demo's banking to have a card, transfers, money in and out, an imported statement and reconciliations, **so that** Banking shows what it does.
+
+Decision: D-216, D-231
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** Banking has a credit card account ("Business card", ••4410) with spending on it (a software subscription as money out) and a payoff from the bank account as a transfer, and a transfer from the bank account to cash ("Petty cash top-up").
+- **Given** any demo, **when** it's loaded, **then** the bank account has money in (interest) and money out (bank charges) entries on their days.
+- **Given** any demo, **when** it's loaded, **then** the bank account has a statement imported for last month and this month, with a balance column: last month is reconciled (finished by the owner on the 3rd), and this month is in progress — some lines matched, some with a suggested match, and one bank charge line not yet in Spine to Create or exclude.
+- **Given** "Delete all demo data", **when** it runs, **then** the card account, the transfers, the money in and out, the statement and both reconciliations go with the rest.
+
+**Implementation notes**
+- Data: `is_demo` on `money_accounts`, `bank_transactions`, `bank_transfers`, `bank_statement_imports` and `bank_reconciliations` (migration), set by the demo; the ledger treats their entries as demo.
+- API: the seeder adds the card through `MoneyAccountsService`, records the entries through `BankTransactionsService` and `BankTransfersService`, imports the statement through `StatementImportsService` (lines made from the demo's own bank entries, plus a bank charge) and reconciles last month through `ReconciliationsService` — each on its day.

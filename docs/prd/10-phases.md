@@ -852,6 +852,7 @@ Total: 525 stories.
 - US-ONB-31 · Explore expenses with their receipts (P2)
 - US-ONB-32 · Explore expense categories that guide (P2)
 - US-ONB-33 · Explore vendor payments and payables you can pay from (P2)
+- US-ONB-34 · Explore banking with accounts, transfers and reconciliations (P2)
 
 *Invoices*
 
@@ -946,6 +947,14 @@ Total: 525 stories.
 - US-PUR-58 · Pay and apply credit from Payables (P2)
 - US-PUR-59 · Filter payables by age and see what's due this week (P2)
 - US-PUR-60 · Trust what Payables counts (P2)
+
+*Banking*
+
+- US-BANK-13 · See my accounts at a glance and act from them (P2)
+- US-BANK-14 · Work through an account's register (P2)
+- US-BANK-15 · Record money in, out and transfers safely (P2)
+- US-BANK-16 · Reconcile a long statement quickly (P2)
+- US-BANK-17 · Keep a reconciliation report (P2)
 
 ## Phase 10 · AI assistant
 

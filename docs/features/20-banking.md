@@ -13,6 +13,7 @@ Where the business's money actually sits: bank, cash and card accounts, each a l
 | F-BANK-02 | Transfers and other money in and out | P1 | 8 | `TransferDialog`, `MoneyInOutDialog` |
 | F-BANK-03 | Bank reconciliation | P1 | 8 | `StatementImportDialog`, `ReconcileAccount`, `ReconcileCreateDrawer`, `ReconciliationsHistory` |
 | F-BANK-04 | Banking rights | P1 | 8 | `TeamPrivilegesBooks` |
+| F-BANK-05 | Banking you can work from: accounts and registers on the shared list layout, recording that asks first, faster reconciling and a reconciliation report | P2 | Refinements | `BankingAccountsRefined`, `BankingAccountsDark`, `AccountRegisterRefined`, `RegisterEntryDrawer`, `MoneyOutConfirm`, `ReconcileRefined`, `ReconcileMatchAllConfirm`, `ReconciliationReport` |
 
 ## User stories
 
@@ -199,3 +200,82 @@ Decision: D-158
 
 **Implementation notes**
 - Capabilities added to `CAPABILITIES`, `CAPABILITY_LABELS`, `DEFAULT_TEAM_GRANTS` (all ✗) with a migration; enforced in API and UI together ([07-security](../prd/07-security.md)).
+
+### US-BANK-13 · See my accounts at a glance and act from them
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `BankingAccountsRefined`, `BankingAccountsDark`
+**As** an owner, **I want** Banking to show each account's state and let me act from its row, **so that** I can see what needs reconciling and do it in one place.
+
+Decision: D-210, D-218, D-222, D-231
+
+**Acceptance criteria**
+- **Given** Banking, **when** it opens, **then** tabs "Active" and "Archived" (with counts) sit under the header; below them the cards, the filter bar (Type — "All types", "Bank", "Cash", "Card" — on the left; "Updated just now", Refresh, "Transfer", "Money in", "Money out" and "Add account" on the right) and the search bar (search on the left, Columns on the right). Tab, type, card and search are kept in the address and survive opening an account and going Back.
+- **Given** the cards, **when** I look, **then** they read Bank and cash (accounts), Owed on cards (cards), Not yet reconciled (entries across accounts) and Last reconciled (account); pressing Not yet reconciled shows only accounts with unreconciled entries, pressing again shows all, and it's outlined and announced as pressed.
+- **Given** a row, **when** it shows, **then** it has the type's icon and type in words, the name (opening the register) with "Default", the bank and last four digits under the name, "Balance in Spine" ("owed" on a card), "Reconciled to 30 Sep" (or "Never reconciled") and "<n> unreconciled" (opening the register on Unreconciled only).
+- **Given** a row's menu, **when** I open it, **then** each item has its icon (D-222) and shows only with the right to do it: Open register; Reconcile and Import statement (`banking.reconcile`); Money in, Money out and Transfer, with this account chosen (`banking.record`); Set as default, Edit and Archive (Owner). An archived account offers Open register and Restore.
+- **Given** Archive, **when** I choose it, **then** "Archive <name>?" says it leaves the account pickers and keeps its history; the default account says "Choose another default account first." instead. Set as default says which account it replaces in the toast.
+
+**Implementation notes**
+- No new API: `GET /money-accounts?includeArchived=true` already carries balance, `lastReconciledOn` and `unreconciledCount`; Set as default is `PUT /money-accounts/:id` with `isDefault`.
+
+### US-BANK-14 · Work through an account's register
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `AccountRegisterRefined`, `RegisterEntryDrawer`
+**As** an owner, **I want** an account's register to keep my view, show what's reconciled at a glance and let me record and export from it, **so that** checking an account against the bank is quick.
+
+Decision: D-210, D-222, D-231
+
+**Acceptance criteria**
+- **Given** an account's register, **when** it opens, **then** the header has "Reconcile" (the one primary action), "Record" (Money in, Money out, Transfer — with this account chosen) and More (Import statement, Reconciliations, Edit account), each with its right.
+- **Given** the filter bar, **when** I use it, **then** it has the range ("This month", "Last month", "This quarter", "Last 90 days", "This year", "Custom range" with From and To), Type ("All entries", "Customer payments", "Vendor payments", "Expenses", "Transfers", "Money in and out", "Journals and other") and Show ("All", "Unreconciled only") on the left, and "Updated just now", Refresh and Export on the right; the search bar matches what, contact or reference. All of it is kept in the address (`?range=last_month&type=transfers&show=unreconciled&q=`) and survives opening an entry and going Back.
+- **Given** the cards, **when** I look, **then** they read Balance in Spine (today), Money in and Money out (the range; "Paid off" and "Spent" on a card) and Unreconciled (entries in the range); pressing Unreconciled shows only those.
+- **Given** a row, **when** it shows, **then** a reconciled entry has a tick and "Reconciled" in the last column and an unreconciled one has nothing there (no chip on every row); a deleted entry says "Deleted".
+- **Given** a money in or out entry or a transfer, **when** I open it, **then** a drawer shows its date, account (or From and To), category, tax, contact, reference, description, amount, whether it's reconciled and its attachments, with "Delete entry" (asks first; not once reconciled). Other rows open their document as today.
+- **Given** Export, **when** I choose CSV, Excel or PDF, **then** the file has the rows on screen with the opening and closing balance, named `<account>-<from>-<to>`.
+
+**Implementation notes**
+- API: `GET /money-accounts/:id/register` accepts `format=xlsx|pdf`, and `GET /money-accounts/:id/register/export.csv?from&to&unreconciled&type&search` (`banking.view`); `GET /bank-transactions/:id` and `GET /bank-transfers/:id` for the drawer (`banking.view`).
+
+### US-BANK-15 · Record money in, out and transfers safely
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MoneyOutConfirm`
+**As** office staff, **I want** recording money in, money out or a transfer to ask first and say what it posts, **so that** a slip doesn't land in the books.
+
+Decision: D-218, D-223, D-231
+
+**Acceptance criteria**
+- **Given** Money in or Money out filled in, **when** I press Record, **then** "Record money out?" reads "<amount> from <account> to <category> on <date>[, including <tax> tax]. It's posted to your books." with "Go back" and "Record"; the toast says what was recorded and where.
+- **Given** a transfer, **when** I press Record, **then** "Move <amount> from <account> to <account>?" says both balances change on <date>; the same account on both sides says "Choose two different accounts." and Record stays off.
+- **Given** any of the three opened from an account (its row's menu or its register), **when** the dialog opens, **then** that account is already chosen (as From for Money out and Transfer, Into for Money in).
+- **Given** the register is open, **when** something is recorded, **then** the register refreshes in place.
+
+**Implementation notes**
+- Web only; the dialogs gain `initialAccountId`.
+
+### US-BANK-16 · Reconcile a long statement quickly
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReconcileRefined`, `ReconcileMatchAllConfirm`
+**As** an owner, **I want** to see how far through a statement I am and accept the obvious matches at once, **so that** reconciling 60 lines doesn't take an hour.
+
+Decision: D-158, D-218, D-231
+
+**Acceptance criteria**
+- **Given** a reconciliation, **when** it shows, **then** above the panels "<done> of <total> lines done" with a bar counts matched and excluded lines; the statement panel has tabs "To do", "Suggested", "Matched" and "Excluded" with counts, and a search for description, reference or amount.
+- **Given** suggestions, **when** I press "Match all suggested (<n>)", **then** "Match <n> suggested lines?" lists them (line → entry) and confirming saves them together; the toast says "<n> lines matched".
+- **Given** I select a statement line, **when** the entries panel shows, **then** entries with the same amount come first, marked "Same amount", then the nearest dates; the panel has its own search.
+- **Given** an account with imported lines after its last reconciliation and a balance column, **when** I start reconciling, **then** the statement end date and closing balance are filled in from the newest such line, with "From <file> · <date>" under them; I can change them.
+- **Given** I leave and come back, **when** the page opens, **then** it says "Saved as you go — pick up where you left off." and everything is as I left it.
+
+**Implementation notes**
+- API: `GET /money-accounts/:id/statement-end` → `{ date, closingBalance, fileName } | null` — the newest imported line after the last finished reconciliation that has a running balance (`banking.reconcile`). Matching all suggested is one `PUT /bank-reconciliations/:id/matches`.
+
+### US-BANK-17 · Keep a reconciliation report
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReconciliationReport`
+**As** an owner, **I want** to open a finished reconciliation and download it as a report, **so that** I can show my accountant how the bank and the books agree.
+
+Decision: D-222, D-231
+
+**Acceptance criteria**
+- **Given** Reconciliations, **when** I open a row (or its menu's View, Download report and, for the newest, Undo — each with its icon), **then** the reconciliation opens read-only at `/banking/:id/reconciliations/:reconciliationId`: account, statement end date and closing balance, opening and cleared balances, who finished it and when; the matched lines with the entries they matched; the excluded lines with their notes; and what's outstanding — entries in Spine up to the end date that weren't on the statement.
+- **Given** that page, **when** I look at the summary, **then** it reads "Statement closing balance <a> + deposits not yet on the statement <b> − payments not yet on the statement <c> = balance in Spine on <date> <d>".
+- **Given** "Download report", **when** it downloads, **then** `reconciliation-<account>-<end date>.pdf` has the same, light, and is generated when asked for, never stored.
+- **Given** the newest reconciliation's page, **when** I press Undo, **then** it asks first as today.
+
+**Implementation notes**
+- API: `GET /bank-reconciliations/:id` returns finished reconciliations too and gains `outstanding` (`[{ journalLineId, date, what, contact, reference, amount }]`) and `finishedBy`/`finishedAt`; `GET /bank-reconciliations/:id/report.pdf` (`banking.reconcile`).
