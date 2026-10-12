@@ -16,7 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
-| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide, vendor payments and payables to pay from | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -591,3 +591,21 @@ Decision: D-129, D-216, D-228
 **Implementation notes**
 - Shared: template categories gain `description`; plans gain `categoryTaxDefault` (the country's expense rate, where there is one) and `archivedCategory`; template categories gain `goods`.
 - API: the seeder sets the defaults and adds the archived category through `ExpenseCategoriesService`, recording what it did in the demo setting (`createdCategoryIds`, `defaultedCategoryIds`) so deleting the demo undoes exactly that.
+
+### US-ONB-33 · Explore vendor payments and payables you can pay from
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`VendorPaymentsListRefined`, `VendorPaymentPage`, `PayablesByVendor`, `PayablesByBill`, `PayablesDueThisWeek` with demo data)
+**As** an evaluator, **I want** the demo's bills to owe at every age and its payments to look like real ones, **so that** Payables and Vendor payments show what they do.
+
+Decision: D-216, D-229, D-230
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** Payables has open bills in every age but one: Current and due within 7 days (the part-paid bill), 1–30 days (the overdue bill with credit applied), 31–60 days (on a job) and 90+ days. The 90+ bill is from the vendor who has the part-paid bill, so that vendor has two open bills to expand and to pay together with "Pay (2)"; 61–90 days stays empty, so pressing it says "Nothing 61–90 days late.".
+- **Given** an industry demo, **when** it's loaded, **then** one vendor payment pays two bills from the same vendor in full in one go, about five weeks ago — its row's "Bills paid" names both and its page lists both under "Paid to".
+- **Given** an industry demo, **when** it's loaded, **then** its payments read like real ones: by bank transfer with a reference, by cheque with the cheque number, and in cash to the sole trader; spread over the last five months, the newest a few days ago.
+- **Given** the payment that pays two bills, **when** its page opens, **then** its Activity reads "Remittance advice emailed to <the vendor's address>" on the day after it was recorded. Nothing is sent.
+- **Given** Riverstone Builders, **when** it's loaded, **then** Apex Timber (which has the part-paid bill) also has a bill 90+ days late, Granite State has a second bill 31–60 days late, and its payment has a method and a reference.
+- **Given** "Delete all demo data", **when** it runs, **then** the new bills and payments go with the rest, as before.
+
+**Implementation notes**
+- Shared: `BILL_TIMELINE` gains `bill8` (supplier, 90+ days, open), `bill9` (services, 31–60 days, open, on job b) and `bill10`/`bill11` (supplier_far, paid together); each industry pack gains their refs and lines. Plan bill payments gain `method` and `reference`; plans gain `vendorPayments` — one payment across several plan bills (`bills`, `inDays`, `method`, `reference`, `remittanceInDays?`).
+- API: the seeder records the shared payment through `VendorPaymentsService` once its bills are recorded, and writes its `remittance_sent` audit entry (the vendor's address) on its day — no email is queued, as with the demo's emailed invoices.
