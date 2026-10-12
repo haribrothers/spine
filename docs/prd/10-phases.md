@@ -970,6 +970,9 @@ Total: 525 stories.
 - US-TEAM-27 · Manage a Team's members safely (P2)
 - US-TEAM-28 · Review permissions before saving (P2)
 - US-TEAM-29 · See a Team's history (P2)
+- US-TEAM-30 · Choose which sections a Team can open (P2)
+- US-TEAM-31 · Keep closed records out of the way, not out of the work (P2)
+- US-TEAM-32 · Open and close sections in one place (P2)
 
 ## Phase 10 · AI assistant
 

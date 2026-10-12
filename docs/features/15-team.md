@@ -16,6 +16,7 @@ Who can use Spine and what they can do: an Owner-only area with real pages for u
 | F-TEAM-05 | Users you can manage from: the shared list layout, Teams and access on each person, invites with Teams, Staff ↔ Field, and safer actions | P2 | Refinements | `TeamUsersRefined`, `TeamUsersDark`, `TeamInvites`, `InvitePeopleDialog`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm` |
 | F-TEAM-06 | Set a Staff or Field member's password: an Owner sets it from Users, the person is signed out and emailed, and chooses their own at next sign-in; no Owner's password is set this way | P2 | Refinements | `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile` |
 | F-TEAM-07 | Teams you can manage from: the shared list layout, create from or duplicate a Team, a Team page with members you add and remove safely, permissions you review before saving with what members can open, and every change in the audit log | P2 | Refinements | `TeamsListRefined`, `TeamsListDark`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamPageMembers`, `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`, `TeamPagePermissions`, `SavePermissionsConfirm`, `TeamPageHistory` |
+| F-TEAM-08 | Sections a Team can open: an Open permission per section, enforced on the sidebar, pages and API; closed records stay out of links and search but pickers still name them; sections switched in one place | P2 | Refinements | `TeamPageSections`, `TeamPagePermissionsOpen`, `TeamSectionClosedNoAccess`, `ClosedRecordAsText` |
 
 ## User stories
 
@@ -441,3 +442,49 @@ Decision: D-064, D-234
 
 **Implementation notes**
 - API: `GET /org/teams/:id/history` → `[{ at, actorName, action, changes }]`, newest first (Owner); `/org/audit-log` takes `entityId`. Audit actions on entity type `team`: `created`, `updated`, `members_changed`, `privileges_changed`, `deleted`.
+
+### US-TEAM-30 · Choose which sections a Team can open
+**Feature:** F-TEAM-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageSections`, `TeamSectionClosedNoAccess`
+**As** an owner, **I want** to close sections of Spine for a Team, **so that** people only see the parts of the business their work needs.
+
+Decision: D-235, D-234
+
+**Acceptance criteria**
+- **Given** a Team's permissions, **when** I look, **then** each of these groups starts with an "Open" permission: Open Contacts, Open Pipeline, Open Meetings, Open Catalogue, Open Quotes, Open Jobs, Open Invoices, Open Credit Notes, Open Payments, Open Vendor Bills, Open Vendor Credits, Open Vendor Payments — and Expenses has "See everyone's expenses".
+- **Given** an Open permission is off for every Team a Staff member is on, **when** they use Spine, **then** the section isn't in their sidebar, its pages show "You don't have access to <section>" (US-OPS-12), and the API refuses its lists, records, PDFs and history with 403.
+- **Given** "See everyone's expenses" is off, **when** a Staff member opens Expenses, **then** they see and record their own expenses only (as Field do); with it on, everyone's.
+- **Given** an action permission (e.g. "Create/edit own quotes"), **when** it's turned on, **then** its section's Open permission turns on with it; turning Open off turns its actions off — with a notice, in the draft (US-TEAM-28, US-BANK-12).
+- **Given** existing Teams, **when** this ships, **then** every Open permission is on for every Team (nothing changes until an Owner closes something); a Team created with "Nothing allowed" starts with every section closed. Owners and Field are unaffected.
+
+**Implementation notes**
+- Shared: 13 capabilities — `contacts.open`, `leads.open`, `meetings.open`, `catalog.open`, `quotes.open`, `jobs.open`, `invoices.open`, `credit_notes.open`, `payments.open`, `vendor_bills.open`, `vendor_credits.open`, `vendor_payments.open`, `expenses.view_others` — first in their groups, in `DEFAULT_TEAM_GRANTS` (on), and in `CAPABILITY_REQUIRES` (each action needs its Open; activities need Open Contacts).
+- API: `@RequireCapability` on each section's list, record, PDF and history routes; migration grants them to every existing Team.
+- Web: the sidebar and page access (`nav-sections.tsx`, `page-access.ts`) gate each section on its Open permission.
+
+### US-TEAM-31 · Keep closed records out of the way, not out of the work
+**Feature:** F-TEAM-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ClosedRecordAsText`
+**As** an owner, **I want** closed sections to stay closed everywhere, **so that** a link or a search doesn't open what a Team can't — while other work still names the records it needs.
+
+Decision: D-235
+
+**Acceptance criteria**
+- **Given** Open Contacts is off, **when** a Staff member picks a customer on an invoice, a vendor on a bill or a contact on a job, **then** the picker still lists them by name (only what the form needs).
+- **Given** Open Catalogue or Open Jobs is off, **when** a quote or invoice line picks an item, or an expense or bill picks a job, **then** the picker still works, with what the line needs.
+- **Given** a record in a closed section, **when** another page mentions it (a job's quote, an expense's bill, an invoice's job, an activity's lead), **then** its name shows as plain text, not a link.
+- **Given** global search (Ctrl/⌘ K), **when** a Staff member searches, **then** records of closed sections aren't in the results.
+- **Given** the dashboard, **when** a Staff member opens it, **then** cards about a closed section are left out (e.g. no quotes card without Open Quotes).
+
+**Implementation notes**
+- API: list routes used as pickers answer `?picker=1` without Open, returning only `{ id, name, … }` the forms need (contacts: type, email; catalogue items: unit price, tax; jobs: name, contact); `GET /search` filters by Open; dashboard widgets check them.
+
+### US-TEAM-32 · Open and close sections in one place
+**Feature:** F-TEAM-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageSections`, `TeamPagePermissionsOpen`
+**As** an owner, **I want** to see and switch a Team's sections in one place, **so that** shaping what a Team sees doesn't mean opening 17 groups.
+
+Decision: D-235, D-234
+
+**Acceptance criteria**
+- **Given** a Team's Permissions tab, **when** it opens, **then** a "Sections" card above the groups lists every section with a switch (on: open; off: closed) and its state (Can work here, View only, Can't open), changing the same draft as the groups below.
+- **Given** a group, **when** it shows, **then** its Open permission comes first, and a closed section's actions show as unavailable until it's opened.
+- **Given** the panel "What members will open", the Teams list ("Works in") and "What they can open" on Users, **when** a section is closed, **then** it reads Can't open there.
+- **Given** Save changes, **when** I save, **then** the confirm says "They'll no longer see <section>" / "They'll see <section>" for each section opened or closed.
