@@ -24,6 +24,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-13 | Expenses you can work from: a list that shows money, a page per expense with its receipt, faster entry, fixing a rejected one | P2 | Refinements | `ExpensesListRefined`, `ExpensesListDark`, `ExpensePage`, `ExpenseRejectedResubmit`, `ExpenseFormRefined` |
 | F-PUR-14 | Expense categories that guide: a table with what each is used for, safe changes, and a hint and default tax rate in the expense form | P2 | Refinements | `ExpenseCategoriesRefined`, `ExpenseCategoriesDark`, `ExpenseCategoryDialogRefined`, `ExpenseCategoryNameTaken`, `ExpenseCategoryArchiveConfirm`, `ExpenseCategoryDeleteConfirm`, `ExpenseFormCategoryHint`, `ExpenseFormCategoryTax` |
 | F-PUR-15 | Vendor payments you can work from: a page per payment, delete that works, a list that shows money, paying by ticking bills, remittance advice and search | P2 | Refinements | `VendorPaymentPage`, `VendorPaymentDeleteConfirm`, `VendorPaymentDeleteReconciled`, `VendorPaymentsListRefined`, `VendorPaymentsListDark`, `RecordVendorPaymentRefined`, `RecordVendorPaymentConfirm`, `RecordVendorPaymentDuplicate`, `RemittanceEmailDialog`, `RemittanceAdvicePdf`, `SearchVendorPayments` |
+| F-PUR-16 | Payables you can pay from: by vendor and by bill, paying and applying credit from the list, ages that filter, what's due this week, figures you can trust | P2 | Refinements | `PayablesByVendor`, `PayablesByBill`, `PayablesDark`, `PayablesPaySelected`, `PayablesDueThisWeek` |
 
 ## User stories
 
@@ -849,4 +850,81 @@ Decision: D-229
 
 **Implementation notes**
 - API: `GET /search` gains a `vendor_payments` group (Owner and Staff).
+
+### US-PUR-56 · See what we owe each vendor
+**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesByVendor`, `PayablesDark`
+**As** an owner, **I want** Payables to add up what we owe each vendor, **so that** I know who to pay first.
+
+Decision: D-224, D-230
+
+**Acceptance criteria**
+- **Given** open bills, **when** I open Payables, **then** tabs "By vendor" and "By bill" sit under the header and "By vendor" is open; below them come the cards, the age bar, the filter bar (the age on the left; "Updated", Refresh and Export on the right) and the search bar (search on the left, Columns on the right). The tab is kept in the address.
+- **Given** "By vendor", **when** it shows, **then** each vendor we owe has one row: the vendor (opening the contact), how many open bills ("3 bills"), the oldest ("45 days late", "Due in 5 days" or "No due date"), the overdue amount, the total owed, credit to use (their open vendor credits; "—" when none) and when we last paid them ("3 Oct", or "Never").
+- **Given** no sort chosen, **when** the list shows, **then** the most overdue money comes first, then the most owed; a totals row adds up overdue, owed and credit.
+- **Given** a vendor row, **when** I expand it, **then** their open bills show under it, oldest due first — number, due date, how late, balance — each opening the bill.
+- **Given** search, **when** I type, **then** "By vendor" matches the vendor's name and "By bill" the bill number, vendor or job.
+- **Given** Export, **when** I use it on either tab, **then** it downloads the bills on screen, one row each (US-PUR-14).
+
+**Implementation notes**
+- API: `GET /reports/payables` gains `vendors` — `[{ contactId, name, billCount, overdueAmount, totalOutstanding, oldestDaysOverdue, oldestDueDate, credit, lastPaidOn }]`, credit from the vendor's open and partly used vendor credits (`balanceAmount`), last paid from their latest vendor payment. Same totals as the buckets.
+
+### US-PUR-57 · Read a payable at a glance
+**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesByBill`
+**As** office staff, **I want** each bill to say how late it is and what job it's for, **so that** I don't open it to find out.
+
+Decision: D-230
+
+**Acceptance criteria**
+- **Given** "By bill", **when** a row shows, **then** it has the number (with the job under it), the vendor (opening the contact), the due date in the business's format, how late in words ("12 days late", "Due in 5 days", "Due today", "No due date") beside its coloured age, and the balance due.
+- **Given** Columns, **when** I open it, **then** Bill date, Bill total and Paid so far can be shown; they're hidden at first.
+- **Given** no sort chosen, **when** the list shows, **then** the most days late comes first, as today.
+
+**Implementation notes**
+- API: `GET /reports/payables` bill rows gain `date`, `paidAmount` (paid and credited), `jobId` and `jobName`.
+
+### US-PUR-58 · Pay and apply credit from Payables
+**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesByBill`, `PayablesPaySelected`
+**As** office staff, **I want** to pay a bill or use a vendor's credit from Payables, **so that** paying doesn't mean hunting for each bill.
+
+Decision: D-218, D-223, D-229, D-230
+
+**Acceptance criteria**
+- **Given** a bill row's menu, **when** I open it, **then** it offers Pay bill (the vendor payment dialog with this bill ticked for its balance), Apply credit (while the vendor has credit; the bill's apply dialog) and Open bill, each with its icon and only with the right to do it.
+- **Given** a vendor row's menu, **when** I open it, **then** it offers Pay vendor (the dialog with the vendor chosen and their bills listed), Apply credit (while they have credit) and Open contact, each only with the right to do it.
+- **Given** bills ticked on "By bill", **when** they're all from one vendor, **then** "Pay (n)" opens the vendor payment dialog with those bills ticked for their balances; **when** they're from several vendors, **then** "Pay (n)" is off and says "Pick bills from one vendor — a payment is for one vendor."
+- **Given** any of these finishes, **when** it does, **then** the page refreshes in place, the toast says what happened (D-223) and a failure shows above the list.
+
+**Implementation notes**
+- Reuses `RecordVendorPaymentDialog` (gains `initialBillIds`) and `ApplyCreditToBillDialog`. Rights: `vendor_payments.edit_own`, `vendor_credits.apply`, `reports.view_payables`. No new API.
+
+### US-PUR-59 · Filter payables by age and see what's due this week
+**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesDueThisWeek`
+**As** an owner, **I want** to press an age — or "Due in 7 days" — to see what's in it, **so that** I can plan this week's payments and clear the oldest first.
+
+Decision: D-180, D-224, D-230
+
+**Acceptance criteria**
+- **Given** the cards, **when** I look, **then** they read Total owed (bills and vendors), Overdue (amount and bills), Due in 7 days (not yet overdue, due within a week — amount and bills) and 90+ days; pressing Overdue, Due in 7 days or 90+ days shows only that on both tabs, pressing again shows all, and the chosen card is outlined and announced as pressed.
+- **Given** the age bar, **when** I press an age (or reach it with Tab and press Enter), **then** the list shows that age.
+- **Given** the age filter in the filter bar, **when** I open it, **then** it offers All ages, Overdue, Due in 7 days, Current, 1–30 days, 31–60 days, 61–90 days and 90+ days; the age is kept in the address (`?age=due7`; the dashboard's `?overdue=1` still opens Overdue). It replaces the report-style "Show" row.
+- **Given** an age with nothing in it, **when** it's chosen, **then** the list says "Nothing 31–60 days late." (or "Nothing due in the next 7 days.") with "Show all".
+- **Given** an age is chosen, **when** I export, **then** the file has only that age.
+
+**Implementation notes**
+- API: `GET /reports/payables` gains `dueSoon: { amount, count }`; `GET /reports/payables` and `/reports/payables/export.csv` accept `age=current|overdue|due7|0-30|31-60|61-90|90+`. `AgingSummary` gains an optional extra card and the `due7` age.
+
+### US-PUR-60 · Trust what Payables counts
+**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesByVendor`
+**As** an owner, **I want** Payables to say what it counts and how fresh it is, **so that** I can rely on the number.
+
+Decision: D-210, D-230
+
+**Acceptance criteria**
+- **Given** the page, **when** it opens, **then** the description reads "What you owe vendors, by how late it is · as of 12 Oct 2026".
+- **Given** draft bills, **when** the page shows, **then** a note under the age bar reads "2 draft bills (₹18,400.00) aren't counted here — record them to include them." with "See drafts" (Vendor bills, Drafts to record).
+- **Given** the filter bar, **when** it shows, **then** it has "Updated just now" and Refresh beside Export; the page also refreshes after 30 seconds away.
+- **Given** a tab, search, sort, page or age, **when** I open a bill and go Back, **then** the page comes back the same.
+
+**Implementation notes**
+- API: `GET /reports/payables` gains `drafts: { count, amount }` (draft bills in the business's currency).
 

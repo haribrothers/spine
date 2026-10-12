@@ -940,6 +940,11 @@ Total: 525 stories.
 - US-PUR-53 · Be warned before recording the same vendor payment twice (P2)
 - US-PUR-54 · Send a vendor a remittance advice (P3)
 - US-PUR-55 · Find a vendor payment from search (P3)
+- US-PUR-56 · See what we owe each vendor (P2)
+- US-PUR-57 · Read a payable at a glance (P2)
+- US-PUR-58 · Pay and apply credit from Payables (P2)
+- US-PUR-59 · Filter payables by age and see what's due this week (P2)
+- US-PUR-60 · Trust what Payables counts (P2)
 
 ## Phase 10 · AI assistant
 

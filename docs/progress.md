@@ -550,6 +550,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-53 · Be warned before recording the same vendor payment twice
 - [x] US-PUR-54 · Send a vendor a remittance advice
 - [x] US-PUR-55 · Find a vendor payment from search
+- [ ] US-PUR-56 · See what we owe each vendor
+- [ ] US-PUR-57 · Read a payable at a glance
+- [ ] US-PUR-58 · Pay and apply credit from Payables
+- [ ] US-PUR-59 · Filter payables by age and see what's due this week
+- [ ] US-PUR-60 · Trust what Payables counts
 
 ## Phase 10 · AI assistant
 
