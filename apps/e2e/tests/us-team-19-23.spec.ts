@@ -23,7 +23,7 @@ test.describe("US-TEAM-19 to US-TEAM-23", () => {
     await page.goto("/team/users");
 
     // US-TEAM-19 — tabs, badges, Teams and the role filter, kept in the address.
-    await expect(page.getByRole("tab", { name: "Active, 3" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Active, 6" })).toHaveAttribute("aria-selected", "true");
     const me = table(page).getByRole("row").filter({ hasText: "Primary Owner" });
     await expect(me).toContainText("You");
     await expect(me).toContainText("Everything");
@@ -33,7 +33,8 @@ test.describe("US-TEAM-19 to US-TEAM-23", () => {
     await page.getByRole("combobox", { name: "Filter by role" }).click();
     await page.getByRole("option", { name: "Field" }).click();
     await expect(page).toHaveURL(/role=field/);
-    await expect(table(page).getByRole("row")).toHaveCount(2);
+    // Marcus and Ravi (US-ONB-35); Tom is deactivated.
+    await expect(table(page).getByRole("row")).toHaveCount(3);
     await page.getByRole("combobox", { name: "Filter by role" }).click();
     await page.getByRole("option", { name: "All roles" }).click();
 
@@ -51,7 +52,8 @@ test.describe("US-TEAM-19 to US-TEAM-23", () => {
     await card.click();
     await expect(card).toHaveAttribute("aria-pressed", "true");
     await expect(page).toHaveURL(/card=no-team/);
-    await expect(table(page).getByRole("row")).toHaveCount(2);
+    // Marcus, and the demo's Kavya (US-ONB-35).
+    await expect(table(page).getByRole("row")).toHaveCount(3);
     await card.click();
 
     // US-TEAM-20 — Manage Teams, then what they can open.
@@ -146,14 +148,15 @@ test.describe("US-TEAM-19 to US-TEAM-23", () => {
     await ask.getByRole("button", { name: "Deactivate" }).click();
     await expect(toasts(page).filter({ hasText: "Marcus Webb deactivated" })).toBeVisible();
 
-    await page.getByRole("tab", { name: "Deactivated, 1" }).click();
+    // Tom Becker is the demo's deactivated person (US-ONB-35).
+    await page.getByRole("tab", { name: "Deactivated, 2" }).click();
     await expect(row(page, "Marcus Webb")).toContainText("Deactivated");
     await menu(page, "Marcus Webb", "Reactivate");
     const back = page.getByRole("alertdialog", { name: "Reactivate Marcus Webb?" });
     await expect(back).toContainText("They get their previous role (Field) and Teams back");
     await back.getByRole("button", { name: "Reactivate" }).click();
     await expect(toasts(page).filter({ hasText: "Marcus Webb reactivated" })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Deactivated, 0" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Deactivated, 1" })).toBeVisible();
   });
 
   test("Users, the access drawer and Invite people pass axe in light and dark", async ({ page, seededOrg }) => {

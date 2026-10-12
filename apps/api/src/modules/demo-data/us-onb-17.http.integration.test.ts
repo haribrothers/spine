@@ -135,8 +135,8 @@ describe("US-ONB-17 · keep demo data out of my real numbers and books (requires
     expect(await db.select().from(member).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)))).toHaveLength(0);
     await seed();
     expect(await numbers(invoices)).toContain("DEMO-INV-0001");
-    // The demo Staff and Field people lost their membership with the deletion; loading again gives it back.
-    expect(await db.select().from(member).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)))).toHaveLength(2);
+    // The demo's people lost their membership with the deletion; loading again gives it back (US-ONB-35: six of them).
+    expect(await db.select().from(member).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)))).toHaveLength(6);
     const own = await realInvoice();
     expect(own.number).toBe("INV-0002");
   }, 180_000);

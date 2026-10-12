@@ -42,6 +42,7 @@ export class PublicInvitationsController {
         email: invitationTable.email,
         role: invitationTable.role,
         organizationName: organizationTable.name,
+        isDemo: invitationTable.isDemo,
       })
       .from(invitationTable)
       .innerJoin(organizationTable, eq(organizationTable.id, invitationTable.organizationId))
@@ -49,6 +50,8 @@ export class PublicInvitationsController {
 
     if (!row) throw new NotFoundException(INVITATION_UNUSABLE_MESSAGE);
     if (row.status !== "pending") return { status: row.status };
+    // US-ONB-35: a demo invite reveals nothing and can't be used.
+    if (row.isDemo) return { status: "expired" };
     if (row.expiresAt <= new Date()) return { status: "expired" };
     return { status: "pending", email: row.email, role: row.role, organizationName: row.organizationName };
   }

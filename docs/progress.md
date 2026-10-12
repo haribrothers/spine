@@ -513,7 +513,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-ONB-32 · Explore expense categories that guide
 - [x] US-ONB-33 · Explore vendor payments and payables you can pay from
 - [x] US-ONB-34 · Explore banking with accounts, transfers and reconciliations
-- [ ] US-ONB-35 · Explore Users with a team that looks real
+- [x] US-ONB-35 · Explore Users with a team that looks real
 - [x] US-INV-36 · Credit an invoice's lines, with their tax
 - [x] US-INV-37 · Start a credit note from the credit notes list
 - [x] US-INV-38 · See a credit note at a glance, with one next step

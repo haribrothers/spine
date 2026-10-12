@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { INDUSTRY_TEMPLATES, itemTaxFor, toDecimalString, type DemoPlan, type DemoPlanBanking, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
+import { CAPABILITIES, CAPABILITY_LABELS, INDUSTRY_TEMPLATES, itemTaxFor, toDecimalString, type DemoPlan, type DemoPlanBanking, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorBills, vendorPaymentAllocations, vendorPayments, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses, moneyAccounts, bankTransactions, bankTransfers, bankStatementImports, bankStatementLines, bankReconciliations } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, teams, invitation, invitationTeams, user, account, vendorBills, vendorPaymentAllocations, vendorPayments, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses, moneyAccounts, bankTransactions, bankTransfers, bankStatementImports, bankStatementLines, bankReconciliations } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -23,6 +23,7 @@ import { MilestonesService } from "../jobs/milestones.service";
 import { VariationOrdersService } from "../jobs/variation-orders.service";
 import { IndustryTemplateService } from "../org/industry-template.service";
 import { SettingsService } from "../org/settings.service";
+import { MembersService } from "../org/members.service";
 import { PaymentsService } from "../payments/payments.service";
 import { ExpensesService } from "../purchases/expenses.service";
 import { ExpenseCategoriesService } from "../purchases/expense-categories.service";
@@ -63,9 +64,41 @@ export const DEMO_SITE_PHOTOS = ["site-structure.jpg", "site-foundations.jpg", "
 
 /** The two demo people every demo shares (real logins; their memberships are demo rows). */
 const DEMO_USER_PASSWORD = "DemoPassword123!";
-const DEMO_USERS: { email: string; name: string; role: "staff" | "field"; joinDefaultTeam: boolean }[] = [
-  { email: "sarah.mendes.demo@example.com", name: "Sarah Mendes", role: "staff", joinDefaultTeam: true },
-  { email: "marcus.webb.demo@example.com", name: "Marcus Webb", role: "field", joinDefaultTeam: false },
+/**
+ * US-ONB-35 (D-232) — the demo's team: who they are, their Teams, which jobs
+ * they crew and when they joined. Sarah is the demo Staff login and Marcus
+ * the Field one; their access is what the rest of the demo and its tests
+ * expect, so Neha — not Sarah — is the one on Accounts.
+ */
+interface DemoPerson {
+  email: string;
+  name: string;
+  role: "staff" | "field";
+  teams: ("default" | "accounts")[];
+  /** Field: every demo job's crew, the first job's, or none. */
+  crew: "all" | "first" | "none";
+  joinedDaysAgo: number;
+  deactivatedDaysAgo?: number;
+}
+const DEMO_USERS: DemoPerson[] = [
+  { email: "sarah.mendes.demo@example.com", name: "Sarah Mendes", role: "staff", teams: ["default"], crew: "none", joinedDaysAgo: 75 },
+  { email: "neha.kapoor.demo@example.com", name: "Neha Kapoor", role: "staff", teams: ["default", "accounts"], crew: "none", joinedDaysAgo: 40 },
+  { email: "marcus.webb.demo@example.com", name: "Marcus Webb", role: "field", teams: [], crew: "all", joinedDaysAgo: 75 },
+  { email: "kavya.iyer.demo@example.com", name: "Kavya Iyer", role: "staff", teams: [], crew: "none", joinedDaysAgo: 2 },
+  { email: "ravi.kumar.demo@example.com", name: "Ravi Kumar", role: "field", teams: [], crew: "first", joinedDaysAgo: 20 },
+  { email: "tom.becker.demo@example.com", name: "Tom Becker", role: "field", teams: [], crew: "none", joinedDaysAgo: 150, deactivatedDaysAgo: 21 },
+];
+/** The demo Staff login: leads belong to her (US-ONB-24). */
+const DEMO_STAFF_EMAIL = "sarah.mendes.demo@example.com";
+
+/** US-ONB-35 — what the demo's "Accounts" Team allows: billing, payments, receivables, banking and reports. */
+const ACCOUNTS_TEAM_NAME = "Accounts";
+const ACCOUNTS_TEAM_GROUPS = new Set(["Manage Invoices", "Manage Payments", "Manage Credit Notes", "Banking", "Reports & Ledger"]);
+
+/** US-ONB-35 — the Invites tab: one waiting (on both Teams), one expired. Never usable (`is_demo`). */
+const DEMO_INVITES: { email: string; role: "staff" | "field"; teams: ("default" | "accounts")[]; sentDaysAgo: number; expiresInDays: number }[] = [
+  { email: "sam.lee.demo@example.com", role: "staff", teams: ["default", "accounts"], sentDaysAgo: 1, expiresInDays: 1 },
+  { email: "dev.patel.demo@example.com", role: "field", teams: [], sentDaysAgo: 30, expiresInDays: -28 },
 ];
 
 interface TaxIds {
@@ -137,6 +170,7 @@ export class DemoSeederService {
     private readonly statementImportsService: StatementImportsService,
     private readonly reconciliationsService: ReconciliationsService,
     private readonly accountRegisterService: AccountRegisterService,
+    private readonly membersService: MembersService,
   ) {}
 
   async run(orgId: string, actorUserId: string, plan: DemoPlan, options: { locked: boolean }): Promise<SeedResult> {
@@ -181,8 +215,8 @@ export class DemoSeederService {
     const percent = (ref: DemoTaxRef | null | undefined) => (ref?.rate ? (rates.get(ref.rate)?.rate ?? 0) : ref?.group ? (groups.get(ref.group)?.rate ?? 0) : 0);
 
     // The demo Staff and Field people come first, so leads can belong to them (US-ONB-24).
-    count("usersCreated", await this.seedDemoUsers(orgId));
-    const [staff] = await this.db.select({ id: user.id }).from(user).where(inArray(user.email, DEMO_USERS.filter((u) => u.role === "staff").map((u) => u.email)));
+    count("usersCreated", await this.seedDemoUsers(orgId, actorUserId, when, backdateAudit));
+    const [staff] = await this.db.select({ id: user.id }).from(user).where(eq(user.email, DEMO_STAFF_EMAIL));
     const ownerOf = (lead: DemoPlanLead) => (lead.owner === "staff" && staff ? staff.id : actorUserId);
     // US-ONB-27: goods post to 4000 Sales — Goods.
     const [goodsAccount] = await this.db.select({ id: accounts.id }).from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.code, "4000")));
@@ -1002,12 +1036,18 @@ export class DemoSeederService {
     if (plan.banking) await this.seedBanking(orgId, actorUserId, plan.banking, { today, iso: (offset) => day(offset).toISOString().slice(0, 10), when, count, backdateAudit, currency });
 
     // 11. US-MOB-04 — the demo Field person is on every demo job's crew, so
-    // the field app has jobs to show. Written directly: nobody needs telling.
-    const fieldUsers = await this.db
-      .select({ id: user.id })
-      .from(user)
-      .where(inArray(user.email, DEMO_USERS.filter((u) => u.role === "field").map((u) => u.email)));
-    const crew = [...jobRows.values()].flatMap((job) => fieldUsers.map((u) => ({ jobId: job.id, userId: u.id, orgId })));
+    // the field app has jobs to show; US-ONB-35 — Ravi crews the first job.
+    // Written directly: nobody needs telling.
+    const crewPeople = DEMO_USERS.filter((u) => u.crew !== "none");
+    const fieldUsers = new Map(
+      (await this.db.select({ id: user.id, email: user.email }).from(user).where(inArray(user.email, crewPeople.map((u) => u.email)))).map((u) => [u.email, u.id]),
+    );
+    const demoJobs = [...jobRows.values()];
+    const crew = crewPeople.flatMap((person) => {
+      const userId = fieldUsers.get(person.email);
+      if (!userId) return [];
+      return (person.crew === "all" ? demoJobs : demoJobs.slice(0, 1)).map((job) => ({ jobId: job.id, userId, orgId }));
+    });
     if (crew.length) await this.db.insert(jobAssignments).values(crew);
     count("crewAssignmentsCreated", crew.length);
 
@@ -1205,17 +1245,21 @@ export class DemoSeederService {
   }
 
   /**
-   * One real Staff and one real Field login. They're written directly — a
+   * US-ONB-35 — the demo's people, each a real login (written directly — a
    * user row and a password login, hashed the way sign-in checks it —
-   * because sign-up is closed once the business has an owner (US-AUTH-08)
-   * and every sign-up starts an organisation of its own. Loading a demo
-   * again reuses the people and moves their membership here (a person
-   * whose last demo was deleted gets a new one). Their membership is demo
-   * data; their logins aren't.
+   * because sign-up is closed once the business has an owner, US-AUTH-08).
+   * Loading a demo again reuses the people and moves their membership here
+   * (a person whose last demo was deleted gets a new one). Their membership
+   * is demo data; their logins aren't. Their Teams go through
+   * `MembersService.setTeams` and Tom's deactivation through `setActive`, so
+   * the audit log has them, moved to the day they happened. Then the
+   * "Accounts" Team and the two invites.
    */
-  private async seedDemoUsers(orgId: string): Promise<number> {
+  private async seedDemoUsers(orgId: string, actorUserId: string, when: (offset: number) => Date, backdateAudit: (id: string, at: Date, actions?: string[]) => Promise<unknown>): Promise<number> {
     let usersCreated = 0;
     const defaultTeam = (await this.teamsService.list(orgId)).find((t) => t.isDefault);
+    const accountsTeamId = await this.ensureAccountsTeam(orgId);
+    const teamIds = { default: defaultTeam?.id, accounts: accountsTeamId };
     for (const seed of DEMO_USERS) {
       const [existingUser] = await this.db.select().from(user).where(eq(user.email, seed.email));
       let userId = existingUser?.id;
@@ -1225,16 +1269,69 @@ export class DemoSeederService {
         await this.db.insert(user).values({ id: userId, name: seed.name, email: seed.email, emailVerified: true, createdAt: now, updatedAt: now });
         await this.db.insert(account).values({ id: randomUUID(), accountId: userId, providerId: "credential", userId, password: await hashPassword(DEMO_USER_PASSWORD), createdAt: now, updatedAt: now });
       }
-      let [moved] = await this.db.update(member).set({ organizationId: orgId, role: seed.role, isDemo: true, isPrimaryOwner: false }).where(eq(member.userId, userId)).returning();
-      if (!moved) [moved] = await this.db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId, role: seed.role, createdAt: new Date(), isDemo: true, isPrimaryOwner: false }).returning();
+      const joined = when(-seed.joinedDaysAgo);
+      const values = { organizationId: orgId, role: seed.role, isDemo: true, isPrimaryOwner: false, isActive: true, deactivatedAt: null, createdAt: joined };
+      let [moved] = await this.db.update(member).set(values).where(eq(member.userId, userId)).returning();
+      if (!moved) [moved] = await this.db.insert(member).values({ id: randomUUID(), userId, ...values }).returning();
       usersCreated++;
       // No Team grants follow the membership from wherever it was.
       await this.db.delete(teamMemberships).where(eq(teamMemberships.memberId, moved!.id));
-      if (seed.joinDefaultTeam && defaultTeam) {
-        const existing = await this.db.select({ id: teamMemberships.memberId }).from(teamMemberships).where(eq(teamMemberships.teamId, defaultTeam.id));
-        await this.teamsService.setMembers(orgId, defaultTeam.id, [...existing.map((m) => m.id), moved!.id]);
+      const ids = seed.teams.map((t) => teamIds[t]).filter((id): id is string => Boolean(id));
+      if (ids.length) {
+        await this.membersService.setTeams(orgId, moved!.id, ids, actorUserId);
+        await backdateAudit(userId, when(-seed.joinedDaysAgo + 1), ["teams_changed"]);
+      }
+      if (seed.deactivatedDaysAgo !== undefined) {
+        await this.membersService.setActive(orgId, moved!.id, false, actorUserId);
+        const at = when(-seed.deactivatedDaysAgo);
+        await this.db.update(member).set({ deactivatedAt: at }).where(eq(member.id, moved!.id));
+        await backdateAudit(userId, at, ["deactivated"]);
       }
     }
+    await this.seedDemoInvites(orgId, actorUserId, teamIds, when);
     return usersCreated;
+  }
+
+  /** US-ONB-35 — "Accounts", with its grants; one the business already has by that name is used as it is. */
+  private async ensureAccountsTeam(orgId: string): Promise<string> {
+    const existing = (await this.teamsService.list(orgId)).find((t) => t.name === ACCOUNTS_TEAM_NAME);
+    if (existing) return existing.id;
+    const created = await this.teamsService.create(orgId, ACCOUNTS_TEAM_NAME);
+    await this.db.update(teams).set({ isDemo: true }).where(eq(teams.id, created.id));
+    await this.teamsService.setPrivileges(
+      orgId,
+      created.id,
+      CAPABILITIES.map((capability) => ({ capability, granted: ACCOUNTS_TEAM_GROUPS.has(CAPABILITY_LABELS[capability].group ?? "") })),
+    );
+    return created.id;
+  }
+
+  /**
+   * US-ONB-35 — two invites from the owner, written directly so no email
+   * goes: one waiting on both Teams, one expired. `is_demo` makes them
+   * unusable — sign-up, the preview and accepting all refuse them.
+   */
+  private async seedDemoInvites(orgId: string, actorUserId: string, teamIds: Record<"default" | "accounts", string | undefined>, when: (offset: number) => Date) {
+    for (const seed of DEMO_INVITES) {
+      const [already] = await this.db
+        .select({ id: invitation.id })
+        .from(invitation)
+        .where(and(eq(invitation.organizationId, orgId), eq(invitation.email, seed.email), eq(invitation.status, "pending")));
+      if (already) continue;
+      const id = randomUUID();
+      await this.db.insert(invitation).values({
+        id,
+        organizationId: orgId,
+        email: seed.email,
+        role: seed.role,
+        status: "pending",
+        expiresAt: when(seed.expiresInDays),
+        createdAt: when(-seed.sentDaysAgo),
+        inviterId: actorUserId,
+        isDemo: true,
+      });
+      const ids = seed.teams.map((t) => teamIds[t]).filter((teamId): teamId is string => Boolean(teamId));
+      if (ids.length) await this.db.insert(invitationTeams).values(ids.map((teamId) => ({ invitationId: id, teamId })));
+    }
   }
 }

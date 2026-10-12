@@ -41,6 +41,8 @@ import {
   journalLines,
   meetings as meetingsTable,
   member,
+  invitation,
+  teams,
   numberSequences,
   payments,
   quotes,
@@ -326,6 +328,9 @@ export class DemoDataService {
 
       // The demo Staff and Field people lose access here; their logins stay (member.isDemo's own comment).
       const membersDeleted = (await tx.delete(member).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true))).returning({ id: member.id })).length;
+      // US-ONB-35: the demo's invites (their Teams cascade) and its "Accounts" Team (its grants and memberships cascade).
+      const invitesDeleted = (await tx.delete(invitation).where(and(eq(invitation.organizationId, orgId), eq(invitation.isDemo, true))).returning({ id: invitation.id })).length;
+      const teamsDeleted = (await tx.delete(teams).where(and(eq(teams.orgId, orgId), eq(teams.isDemo, true))).returning({ id: teams.id })).length;
 
       // A demo loaded again starts its series at 0001.
       await tx.delete(numberSequences).where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.isDemo, true)));
@@ -350,6 +355,8 @@ export class DemoDataService {
         creditNotesDeleted,
         meetingsDeleted,
         membersDeleted,
+        invitesDeleted,
+        teamsDeleted,
         kept: { contacts: demoContacts.length - contactsDeleted },
       };
     });

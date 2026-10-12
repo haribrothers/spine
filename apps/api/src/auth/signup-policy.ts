@@ -53,7 +53,8 @@ export async function assertSignupAllowed(db: Database, email: string): Promise<
   const [pending] = await db
     .select({ id: invitation.id })
     .from(invitation)
-    .where(and(eq(invitation.email, email.toLowerCase()), eq(invitation.status, "pending"), gt(invitation.expiresAt, new Date())))
+    // US-ONB-35: the demo's invites are for show — they never open sign-up.
+    .where(and(eq(invitation.email, email.toLowerCase()), eq(invitation.status, "pending"), gt(invitation.expiresAt, new Date()), eq(invitation.isDemo, false)))
     .limit(1);
   if (!pending) throw new APIError("FORBIDDEN", { message: INVITE_ONLY_MESSAGE });
 }

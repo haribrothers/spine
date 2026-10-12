@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Demo people, Teams and invites (US-ONB-35, D-216)
+
+- **People:** the demo's team is six: Sarah Mendes (Staff, General Staff — the demo Staff login, unchanged), Neha Kapoor (Staff, General Staff and Accounts), Marcus Webb (Field, every demo job's crew), Kavya Iyer (Staff, no Team), Ravi Kumar (Field, the first job's crew) and Tom Becker (Field, deactivated 3 weeks ago), each with their own Joined date and the demo password. Teams and the deactivation go through `MembersService`, so the audit log has them, backdated.
+- **Accounts Team:** created by the demo with billing, payments, credit notes, banking and reports; a Team of that name the business already has is used as it is.
+- **Invites:** a Staff invite on both Teams (expires tomorrow) and an expired Field invite, written directly (no email). `is_demo` on `teams` and `invitation` (migration `0121`); demo invites are never usable — sign-up, the invite preview and accepting refuse them.
+- **Delete all demo data** also removes the Accounts Team and the demo invites; a person's own stay.
+- **Tests:** API integration `us-onb-35`, with `us-onb-17` and `us-onb-18` counting six people; E2E `us-team-19-23` counts updated. QA script section 230.
+
 ### 2026-10-12 — Owners set Staff and Field passwords (US-TEAM-24, D-233)
 
 - **Users:** "Change password" in an active Staff or Field member's menu (never an Owner's, never your own; the Primary Owner's menu says only they can change it). The dialog suggests a strong password (`generatePassword` in `@spine/shared`), shown to pass on with Copy and Hide, or takes a typed one, with the sign-up strength meter and what happens. `PUT /org/members/:id/password` ends every session of theirs, sets `user.must_change_password` (migration `0120`), emails `password_set_by_owner` (never the password; logged as not sent without SMTP) and audits `password_set` without the password.

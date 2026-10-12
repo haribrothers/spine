@@ -11,6 +11,16 @@ import { InvoicesService } from "../invoices/invoices.service";
 import { ReportsService } from "../reports/reports.service";
 import { DemoSeederService } from "./demo-seeder.service";
 
+/** US-ONB-35 — the demo's people, `role:email`. */
+const DEMO_PEOPLE = [
+  "staff:sarah.mendes.demo@example.com",
+  "staff:neha.kapoor.demo@example.com",
+  "staff:kavya.iyer.demo@example.com",
+  "field:marcus.webb.demo@example.com",
+  "field:ravi.kumar.demo@example.com",
+  "field:tom.becker.demo@example.com",
+];
+
 /**
  * US-ONB-18 (D-192) — a demo business for every country and industry:
  * its settings, six months of history in date order, reports with
@@ -125,7 +135,7 @@ describe("US-ONB-18 · choose the country and industry of the demo business (req
   it("creates the demo Staff and Field people when sign-up is closed, as it is on any real install (US-AUTH-08)", async () => {
     const { cookie, orgId } = await owner();
     // From scratch: the demo people don't exist yet, as on a new install.
-    await db.delete(user).where(inArray(user.email, ["sarah.mendes.demo@example.com", "marcus.webb.demo@example.com"]));
+    await db.delete(user).where(inArray(user.email, DEMO_PEOPLE.map((p) => p.split(":")[1]!)));
     const before = process.env.SPINE_ALLOW_OPEN_SIGNUP;
     process.env.SPINE_ALLOW_OPEN_SIGNUP = "false";
     try {
@@ -134,7 +144,7 @@ describe("US-ONB-18 · choose the country and industry of the demo business (req
       process.env.SPINE_ALLOW_OPEN_SIGNUP = before;
     }
     const people = await db.select({ role: member.role, email: user.email }).from(member).innerJoin(user, eq(user.id, member.userId)).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)));
-    expect(people.map((p) => `${p.role}:${p.email}`).sort()).toEqual(["field:marcus.webb.demo@example.com", "staff:sarah.mendes.demo@example.com"]);
+    expect(people.map((p) => `${p.role}:${p.email}`).sort()).toEqual([...DEMO_PEOPLE].sort());
     const signIn = await fetch(`${testApp.baseUrl}/api/auth/sign-in/email`, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.APP_URL ?? "http://localhost:3000" }, body: JSON.stringify({ email: "sarah.mendes.demo@example.com", password: "DemoPassword123!" }) });
     expect(signIn.status).toBe(200);
   }, 120_000);

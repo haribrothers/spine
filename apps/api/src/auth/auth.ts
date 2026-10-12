@@ -175,6 +175,11 @@ export const auth = betterAuth({
         });
       },
       organizationHooks: {
+        // US-ONB-35 — the demo's invites can't be accepted, whoever holds the link.
+        beforeAcceptInvitation: async ({ invitation }) => {
+          const [row] = await db.select({ isDemo: invitationTable.isDemo }).from(invitationTable).where(eq(invitationTable.id, invitation.id));
+          if (row?.isDemo) throw new APIError("FORBIDDEN", { message: "This invitation can't be used. Ask whoever invited you to send a new one." });
+        },
         // US-TEAM-21 — a Staff invite joins its Teams the moment it's accepted.
         afterAcceptInvitation: async ({ invitation, member: joined, organization }) => {
           await applyInvitationTeams(db, { invitationId: invitation.id, memberId: joined.id, role: joined.role, orgId: organization.id });
@@ -265,6 +270,7 @@ export const auth = betterAuth({
                 eq(invitationTable.email, user.email.toLowerCase()),
                 eq(invitationTable.status, "pending"),
                 gt(invitationTable.expiresAt, new Date()),
+                eq(invitationTable.isDemo, false),
               ),
             )
             .limit(1);

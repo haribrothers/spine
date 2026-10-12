@@ -19,6 +19,8 @@ export const teams = pgTable(
     // block deletion of the seeded default and to identify the fallback
     // team new Staff invites land in.
     isDefault: boolean("is_default").default(false).notNull(),
+    /** US-ONB-35 — the demo's "Accounts" Team; deleting the demo removes it. */
+    isDemo: boolean("is_demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()

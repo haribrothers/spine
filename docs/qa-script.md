@@ -5150,6 +5150,18 @@ Use the demo (Sarah Mendes, Staff; Marcus Webb, Field), a second Owner and SMTP 
 6. Forgot password while still owing a choice: resetting by the emailed link counts as choosing; no choose screen after.
 7. Regression: Profile › Password still asks for the current password; invites, Manage Teams, role changes and Deactivate work as before; Field can't reach Users; an Owner's own sign-in never shows the choose screen.
 
+## 230. Demo people, Teams and invites (US-ONB-35, refinements before Phase 10)
+
+Load an industry demo (e.g. India › Construction) and Riverstone Builders in two businesses; have a Team and an invite of your own first.
+
+1. Users › Active: Sarah Mendes (Staff, General Staff), Neha Kapoor (Staff, General Staff and Accounts), Marcus Webb (Field), Kavya Iyer (Staff, "No Team — can't open anything") and Ravi Kumar (Field), all "Demo", each with their own Joined date; "Staff without a Team" reads 1. Deactivated: Tom Becker. Neha, Kavya and Ravi read "Never signed in".
+2. Teams: "Accounts" (billing, payments, receivables, banking and reports). "What they can open" for Neha shows Banking and Reports; for Sarah it doesn't.
+3. Jobs: Marcus crews every demo job; Ravi the first one only; Tom none. The field app as Ravi (DemoPassword123!) shows that one job.
+4. Invites: sam.lee.demo@example.com (Staff, General Staff and Accounts, expires tomorrow) and dev.patel.demo@example.com (Field, Expired), invited by the owner; nothing in MailDev or the email log. Copy invite link and open it: "This invitation can't be used". Sign up as sam.lee.demo@example.com on a closed install: refused.
+5. Audit log: Neha's Teams set and Tom deactivated, on their days, by the owner.
+6. Delete all demo data: the demo people are gone from Users (their logins stay), "Accounts" and the two demo invites go; your own Team and invite stay. Load again: everything comes back.
+7. Regression: signing in as Sarah or Marcus works as before; Sarah's access is General Staff's only.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
