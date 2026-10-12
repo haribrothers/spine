@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest, type Method, type RequestOptions } from "../api/request";
-import { AccessRemovedError, SessionExpiredError, UpdateRequiredError } from "../api/errors";
+import { AccessRemovedError, PasswordChangeRequiredError, SessionExpiredError, UpdateRequiredError } from "../api/errors";
 import { discoverServer, fetchMember, passwordSignIn, revokeSession, SignInError, SIGN_IN_FAILED_MESSAGE, type SignInField } from "./sign-in";
 import { clearSession, loadLastSignIn, loadSession, saveSession, type StoredSession } from "./storage";
 import { cache } from "../cache/cache-store";
@@ -23,6 +23,8 @@ interface SessionContextValue {
   lastSession: StoredSession | null;
   /** Calls the API as the signed-in person; a removed or expired session signs out, 426 shows the update screen. */
   request: <T>(method: Method, path: string, options?: Omit<RequestOptions, "token">) => Promise<T>;
+  /** US-TEAM-24 — saves the password they chose after an Owner set one; the app opens once it's saved. */
+  choosePassword: (newPassword: string) => Promise<void>;
 }
 
 /** Exported for tests, which render screens with a fixed session. */
@@ -69,13 +71,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setState({ status: "signedOut", notice, lastServer: last?.server ?? session?.server, lastEmail: last?.email ?? session?.member.email });
   }, []);
 
+  /** Updates the signed-in person's profile (kept on the phone with the session). */
+  const setMember = useCallback(async (patch: Partial<StoredSession["member"]>) => {
+    const session = sessionRef.current;
+    if (!session) return;
+    const next = { ...session, member: { ...session.member, ...patch } };
+    sessionRef.current = next;
+    await saveSession(next);
+    setState({ status: "signedIn", session: next });
+  }, []);
+
   const handleError = useCallback(
     (error: unknown) => {
-      if (error instanceof AccessRemovedError) void endSession(error.message, { discardOutbox: true });
+      if (error instanceof PasswordChangeRequiredError) void setMember({ mustChangePassword: true });
+      else if (error instanceof AccessRemovedError) void endSession(error.message, { discardOutbox: true });
       else if (error instanceof SessionExpiredError) void endSession(error.message);
       else if (error instanceof UpdateRequiredError) setUpdateRequired(true);
     },
-    [endSession],
+    [endSession, setMember],
   );
 
   const request = useCallback(
@@ -155,10 +168,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [endSession],
   );
 
+  const choosePassword = useCallback(
+    async (newPassword: string) => {
+      await request("PUT", "/org/members/me/password", { body: { newPassword }, idempotencyKey: `choose-password-${Date.now()}-${Math.random().toString(36).slice(2)}` });
+      await setMember({ mustChangePassword: false, passwordSetBy: null });
+    },
+    [request, setMember],
+  );
+
   useEffect(() => {
     if (state.status === "signedIn") setLastSession(state.session);
   }, [state]);
 
-  const value = useMemo(() => ({ state, updateRequired, lastSession, signIn, signOut, request }), [state, updateRequired, lastSession, signIn, signOut, request]);
+  const value = useMemo(() => ({ state, updateRequired, lastSession, signIn, signOut, request, choosePassword }), [state, updateRequired, lastSession, signIn, signOut, request, choosePassword]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared";
+
 /**
  * Thin browser-side fetch wrapper for `/org/*` endpoints — first of its
  * kind in apps/web (auth so far only used `authClient`/`get-session.ts`,
@@ -80,6 +82,11 @@ async function request<T>(
       message = parsed?.message ?? message;
     } catch {
       // response wasn't JSON — keep the generic message
+    }
+    // US-TEAM-24: an Owner set this password — choose your own first.
+    if (res.status === 403 && (data as { error?: string } | undefined)?.error === PASSWORD_CHANGE_REQUIRED_ERROR) {
+      sendToChoosePassword();
+      throw new ApiError(message, res.status, data);
     }
     // US-SET-24: a switched-off module isn't a permission problem — its own message says what to do.
     const moduleOff = res.status === 403 && (data as { error?: string } | undefined)?.error === "MODULE_OFF";
@@ -182,3 +189,9 @@ export const apiClient = {
   upload: <T>(path: string, file: File, fields?: Record<string, string>) => upload<T>(path, file, fields),
   download: (path: string, body?: unknown) => download(path, body),
 };
+
+/** US-TEAM-24 (D-233) — sends the browser to "Choose your own password", coming back here afterwards. */
+function sendToChoosePassword() {
+  if (typeof window === "undefined" || window.location.pathname === "/choose-password") return;
+  window.location.assign(`/choose-password?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+}

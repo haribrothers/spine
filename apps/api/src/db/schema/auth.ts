@@ -58,6 +58,8 @@ export const user = pgTable("user", {
   favouriteReports: jsonb("favourite_reports"),
   /** US-BANK-03 (D-140) — the money account this person last used on each kind of form: `{ payment, vendor_payment, expense, refund, tax_payment, money_in_out }`. */
   lastMoneyAccounts: jsonb("last_money_accounts"),
+  /** US-TEAM-24 (D-233) — an Owner set this password; they choose their own before anything else works. */
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
   /**
    * PRD S-10.22 — per-user override of the org's default meeting-reminder
    * lead time (minutes before a meeting starts to send the S-10.21

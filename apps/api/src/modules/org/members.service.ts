@@ -198,11 +198,11 @@ export class MembersService {
    * link is not access control, but it's still useful UI signal, and every
    * `team/*` page independently re-checks this server-side too.
    */
-  async getMe(orgId: string, userId: string): Promise<MemberRow & { organizationName: string; currency: string; locale: string }> {
+  async getMe(orgId: string, userId: string): Promise<MemberRow & { organizationName: string; currency: string; locale: string; mustChangePassword: boolean }> {
     // `organizationName` — US-MOB-02: the field app's Profile shows "Field · <Business>".
     // `currency`/`locale` — US-MOB-03: the phone formats money and dates the business's way.
     const [row] = await this.db
-      .select({ ...this.memberRowSelection, organizationName: organization.name })
+      .select({ ...this.memberRowSelection, organizationName: organization.name, mustChangePassword: user.mustChangePassword })
       .from(member)
       .innerJoin(user, eq(member.userId, user.id))
       .innerJoin(organization, eq(organization.id, member.organizationId))

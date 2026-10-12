@@ -61,7 +61,7 @@ export function auditEntityLabel(entityType: string): string {
 
 /** "accepted_in_person" → "Accepted in person"; "approve" → "Approved". */
 export function auditActionLabel(action: string): string {
-  const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred" };
+  const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred", password_set: "Password set by an owner" };
   return special[action] ?? sentenceCase(action);
 }
 

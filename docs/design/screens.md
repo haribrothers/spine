@@ -4215,6 +4215,64 @@ Links to: `TeamUsersRefined`, `AcceptInvite`
 
 Shows: "Email" "Role" "Teams on joining" "Invited" ("Priya Raman · 9 Oct") "Expires" ("Expires in 2 days", "Expires tomorrow", "Expired" in red) · row menu "Copy invite link" "Resend" · "Cancel invite" (asks first) · toast "Invite link copied" "Only <email> can use it, signed in with that address." As built, an expired invite's menu has no Copy invite link.
 
+## Setting a Staff or Field member's password
+
+Drawn in Claude Design for US-TEAM-24 (D-233): project "Spine web — refinements before Phase 10", canvases "26 User passwords" and "26b Choose your own password". An Owner sets a Staff or Field member's password from Users; the person chooses their own at next sign-in, on the web or the field app. No Owner's password is set this way.
+
+### TeamUsersPasswordMenu — Change password in a Staff or Field row's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![TeamUsersPasswordMenu](screens/TeamUsersPasswordMenu.webp)
+
+Links to: `ChangeMemberPasswordDialog`
+
+Shows: a Staff row's menu with "Change password" (key icon) between the role actions and Deactivate. Owner rows — yours, another Owner's, the Primary Owner's — never have it.
+
+### ChangeMemberPasswordDialog — A strong suggestion, shown to pass on
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![ChangeMemberPasswordDialog](screens/ChangeMemberPasswordDialog.webp)
+
+Links to: `ChangeMemberPasswordDone`
+
+Shows: "Change <name>'s password" "Set a new password for <first name>. Their current one stops working at once." · "New password" (a suggested password like "copper-Tide-48-lantern", shown, with Copy and Hide) · "Generate another" "Shown so you can pass it on" · the strength meter and checklist used at sign-up · "What happens": signed out on every device, web and phone; "We email <first name> that an owner changed their password — never the password itself."; "Give them the new password yourself, in person or by phone. When they sign in with it, they choose their own." · "Cancel" "Change password".
+
+### ChangeMemberPasswordDone — The toast
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![ChangeMemberPasswordDone](screens/ChangeMemberPasswordDone.webp)
+
+Links to: `TeamUsersRefined`
+
+Shows: toast "<name>'s password changed" "They're signed out everywhere and we've emailed them. Give them the new password yourself."
+
+### PrimaryOwnerNoPassword — Nobody sets the Primary Owner's password
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![PrimaryOwnerNoPassword](screens/PrimaryOwnerNoPassword.webp)
+
+Links to: `ProfilePreferences`
+
+Shows: another Owner's view of the Primary Owner's menu: "What they can open", then "Only <first name> can change their own password, from Profile." with a lock. As built, the line reads just that sentence.
+
+### ChooseOwnPassword — Choose your own, before anything else (web)
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Captured
+
+![ChooseOwnPassword](screens/ChooseOwnPassword.webp)
+
+Links to: `DashboardStaff`, `AuthLogin`
+
+Shows: the signed-out frame · "Choose your own password" "<Owner> set a password for you on <date>. Choose one only you know to keep going — it signs you in from now on." · "New password" with the meter and checklist, "At least 8 characters, not the one you were given." · "Confirm password" · "Save and continue" · "Not you? Sign out" · "Nobody else at <Business> will see it." Reusing the given password: "That's the password you were given. Choose a different one." under the field.
+
+### ChooseOwnPasswordMobile — The same on the field app
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![ChooseOwnPasswordMobile](screens/ChooseOwnPasswordMobile.webp)
+
+Links to: `MobHome`, `MobSignIn`
+
+Shows: the compact logo · "Choose your own password" · who set it · "New password" (iOS form rows; Android outlined fields) with "Password strength: <level>" · "Confirm password" · "Save and continue" · "Sign out". As built, the phone shows the strength level as a line, not the four-part meter.
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

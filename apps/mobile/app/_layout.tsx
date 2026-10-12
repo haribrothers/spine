@@ -35,6 +35,8 @@ function RootStack() {
   const navigationTheme = useNavigationTheme();
   const { seen: welcomeSeen, markSeen } = useWelcome();
   const signedIn = state.status === "signedIn";
+  // US-TEAM-24: an Owner set this password — only "Choose your own password" until they do.
+  const mustChoose = state.status === "signedIn" && state.session.member.mustChangePassword === true;
 
   // Someone already signed in when this version arrives never needs Welcome.
   useEffect(() => {
@@ -51,7 +53,10 @@ function RootStack() {
           <Stack.Protected guard={updateRequired}>
             <Stack.Screen name="update-required" />
           </Stack.Protected>
-          <Stack.Protected guard={!updateRequired && signedIn}>
+          <Stack.Protected guard={!updateRequired && mustChoose}>
+            <Stack.Screen name="choose-password" />
+          </Stack.Protected>
+          <Stack.Protected guard={!updateRequired && signedIn && !mustChoose}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="profile" options={profileScreenOptions(Platform.OS, colors, () => router.back())} />
           <Stack.Screen name="sync" options={{ presentation: Platform.OS === "ios" ? "modal" : "card", headerShown: false }} />

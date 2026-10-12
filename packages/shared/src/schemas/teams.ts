@@ -92,3 +92,13 @@ export interface MemberAccess {
   teams: MemberTeamRef[];
   capabilities: Record<string, boolean>;
 }
+
+/** US-TEAM-24 (D-233) — an Owner sets a Staff or Field member's password; they choose their own at next sign-in. */
+export const setMemberPasswordSchema = z.object({
+  newPassword: z.string().min(1).max(128),
+});
+
+/** US-TEAM-24 — the person's own choice after an Owner set it; no current password asked, the session proves it. */
+export const choosePasswordSchema = z.object({
+  newPassword: z.string().min(1).max(128),
+});

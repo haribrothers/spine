@@ -841,6 +841,13 @@
       "when": 1791807106734,
       "tag": "0119_invitation_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1791812694358,
+      "tag": "0120_password_set_by_owner",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import * as Network from "expo-network";
-import { ACCESS_REMOVED_ERROR, CLIENT_TOO_OLD_ERROR, CLIENT_VERSION_HEADER } from "@spine/shared/mobile";
+import { ACCESS_REMOVED_ERROR, CLIENT_TOO_OLD_ERROR, CLIENT_VERSION_HEADER, PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared/mobile";
 import { APP_VERSION } from "../app-version";
-import { AccessRemovedError, ApiError, OfflineError, ServerUnreachableError, SessionExpiredError, UpdateRequiredError } from "./errors";
+import { AccessRemovedError, ApiError, OfflineError, PasswordChangeRequiredError, ServerUnreachableError, SessionExpiredError, UpdateRequiredError } from "./errors";
 
 export type Method = "GET" | "POST" | "PUT" | "DELETE";
 
@@ -81,6 +81,7 @@ export async function apiRequest<T>(
   }
   if (res.status === 426 || body?.error === CLIENT_TOO_OLD_ERROR) throw new UpdateRequiredError(body?.minimumVersion);
   if (res.status === 403 && body?.error === ACCESS_REMOVED_ERROR) throw new AccessRemovedError(body.message ?? "Your access was removed.");
+  if (res.status === 403 && body?.error === PASSWORD_CHANGE_REQUIRED_ERROR) throw new PasswordChangeRequiredError(body.message ?? "Choose your own password to keep going.");
   if (res.status === 401) throw new SessionExpiredError();
   if (res.status === 502 || res.status === 503 || res.status === 504) throw new ServerUnreachableError();
   throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status, body?.error, body);

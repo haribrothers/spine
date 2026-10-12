@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { AppLayout } from "../../components/app-layout";
 import { getMyMembership } from "../../lib/get-my-membership";
 import { getSession } from "../../lib/get-session";
@@ -19,6 +20,8 @@ import { getOrgThemePreset } from "../../lib/get-org-theme-preset";
  */
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [session, membership, locale, themePreset] = await Promise.all([getSession(), getMyMembership(), getOrgLocale(), getOrgThemePreset()]);
+  // US-TEAM-24 (D-233): an Owner set this password — they choose their own before anything else.
+  if (membership?.mustChangePassword) redirect("/choose-password");
   return (
     <MoneyLocaleProvider locale={locale}>
       <OrgThemePreset preset={themePreset} />

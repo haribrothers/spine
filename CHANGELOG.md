@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Owners set Staff and Field passwords (US-TEAM-24, D-233)
+
+- **Users:** "Change password" in an active Staff or Field member's menu (never an Owner's, never your own; the Primary Owner's menu says only they can change it). The dialog suggests a strong password (`generatePassword` in `@spine/shared`), shown to pass on with Copy and Hide, or takes a typed one, with the sign-up strength meter and what happens. `PUT /org/members/:id/password` ends every session of theirs, sets `user.must_change_password` (migration `0120`), emails `password_set_by_owner` (never the password; logged as not sent without SMTP) and audits `password_set` without the password.
+- **Choose your own:** until they do, `PasswordChangeGuard` answers 403 `PASSWORD_CHANGE_REQUIRED` everywhere but `GET /org/members/me` (gains `mustChangePassword` and `passwordSetBy`) and `PUT /org/members/me/password` (no current password; not the one they were given; ends their other sessions). The web app sends them to `/choose-password` (layout redirect and the API client); the field app shows its own screen through `Stack.Protected`, and a reset by email link counts as choosing.
+- **Also:** `MENU_ICONS.changePassword`; `@spine/shared/password` subpath for the field app; audit label "Password set by an owner"; email log kind "Password changed by an owner".
+- **Tests:** API integration `us-team-24`; web unit `us-team-24`; mobile Jest `us-team-24`; E2E `us-team-24` (with axe). QA script section 229.
+
 ### 2026-10-12 — Users you can manage from (US-TEAM-19 to US-TEAM-23, D-232)
 
 - **List (US-TEAM-19):** Users on the shared list layout — "Invite people" in the header, Active, Deactivated and Invites tabs, the cards (Staff without a Team filters; Pending invites opens Invites), a Role filter, Updated and Refresh, search and Columns, all in the address; rows show "You", "Primary Owner" and "Demo", the role, Teams, last active and joined. For an Owner, `GET /org/members` rows gain `teams`, `lastActiveAt` and `isDemo`.

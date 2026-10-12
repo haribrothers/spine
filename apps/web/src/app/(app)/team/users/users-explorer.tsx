@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, ListFilter, MoreHorizontal, RefreshCw, Search, TriangleAlert, UserPlus, Users } from "lucide-react";
+import { ArrowUpRight, ListFilter, Lock, MoreHorizontal, RefreshCw, Search, TriangleAlert, UserPlus, Users } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -46,6 +46,7 @@ import { MENU_ICONS } from "../../../../lib/menu-icons";
 import { replaceQuery } from "../../../../lib/replace-query";
 import { useToast } from "../../../../components/toast-host";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../../contacts/contacts-list-state";
+import { ChangeMemberPasswordDialog } from "./change-member-password-dialog";
 import { ChangeRoleDialog } from "./change-role-dialog";
 import { InvitePeopleDialog } from "./invite-people-dialog";
 import { ManageTeamsDialog } from "./manage-teams-dialog";
@@ -106,6 +107,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
   const [managing, setManaging] = useState<MemberRow | null>(null);
   const [viewing, setViewing] = useState<MemberRow | null>(null);
   const [changingRole, setChangingRole] = useState<MemberRow | null>(null);
+  const [settingPassword, setSettingPassword] = useState<MemberRow | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const loading = useRef(false);
   const showToast = useToast();
@@ -361,6 +363,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
             onTransfer={() => setTransferOpen(true)}
             onDeactivate={() => void deactivate(m)}
             onReactivate={() => void reactivate(m)}
+            onChangePassword={() => setSettingPassword(m)}
           />
         </div>
       ),
@@ -648,6 +651,15 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
 
       <InvitePeopleDialog open={inviting} onOpenChange={setInviting} teams={teams} businessName={businessName} onInvited={invited} />
       <ManageTeamsDialog member={managing} teams={teams} onOpenChange={(open) => !open && setManaging(null)} onSave={saveTeams} />
+      <ChangeMemberPasswordDialog
+        member={settingPassword}
+        onOpenChange={(open) => !open && setSettingPassword(null)}
+        onChanged={(m) => {
+          setSettingPassword(null);
+          showToast(`${m.name}'s password changed`, "They're signed out everywhere and we've emailed them. Give them the new password yourself.");
+          void load();
+        }}
+      />
       <ChangeRoleDialog member={changingRole} teams={teams} onOpenChange={(open) => !open && setChangingRole(null)} onConfirm={(m, role, ids) => void changeRole(m, role, ids)} />
       <UserAccessDrawer
         member={viewing}
@@ -695,10 +707,12 @@ function MemberMenu({
   onTransfer,
   onDeactivate,
   onReactivate,
+  onChangePassword,
 }: {
   member: MemberRow;
   isMe: boolean;
   canTransfer: boolean;
+  onChangePassword: () => void;
   onView: () => void;
   onManageTeams: () => void;
   onChangeRole: () => void;
@@ -752,6 +766,22 @@ function MemberMenu({
             <MENU_ICONS.demote aria-hidden />
             Demote to Staff
           </DropdownMenuItem>
+        )}
+        {active && (staff || field) && !isMe && (
+          <DropdownMenuItem onSelect={onChangePassword}>
+            <MENU_ICONS.changePassword aria-hidden />
+            Change password
+          </DropdownMenuItem>
+        )}
+        {member.isPrimaryOwner && !isMe && (
+          <>
+            <DropdownMenuSeparator />
+            {/* US-TEAM-24 (D-233): nobody sets the Primary Owner's password. */}
+            <p className="flex max-w-64 items-start gap-1.5 px-2 py-1.5 text-[12px] text-on-surface-muted" data-testid="primary-owner-password-note">
+              <Lock size={13} aria-hidden className="mt-0.5 shrink-0" />
+              Only {member.name.split(" ")[0]} can change their own password, from Profile.
+            </p>
+          </>
         )}
         {canTransfer && (
           <DropdownMenuItem onSelect={onTransfer}>

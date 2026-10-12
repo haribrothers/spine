@@ -5138,6 +5138,18 @@ Use an owner with the demo loaded (Sarah Mendes, Staff on General Staff; Marcus 
 9. Deactivate asks first (for a demo person: "They're demo data, so they go when the demo data is deleted.") and toasts; Reactivate asks "Reactivate <name>?" (previous role and Teams back) and toasts. A failure says what to do next above the list. `PUT /org/members/<your id>/deactivate` answers 400 "You can't deactivate yourself."
 10. Regression: onboarding's invite step still sends one invite; promoting asks "Make <name> an owner?"; the Primary Owner's row offers only What they can open and the transfer; Staff and Field still can't open Team pages; `GET /org/members` as Staff has no Teams, last active or demo fields; Teams › a Team's members still edit as before.
 
+## 229. Setting a Staff or Field member's password (US-TEAM-24, refinements before Phase 10)
+
+Use the demo (Sarah Mendes, Staff; Marcus Webb, Field), a second Owner and SMTP set up (MailDev), then without SMTP. Check light and dark, and compare with the canvases "26 User passwords" and "26b Choose your own password".
+
+1. Users: Sarah's and Marcus's menus have "Change password" with its icon; your row, another Owner's and a deactivated person's don't. As the second Owner, the Primary Owner's menu says "Only <name> can change their own password, from Profile." `PUT /org/members/<Primary Owner>/password` answers 403 whoever asks; your own id answers 400.
+2. The dialog: a suggested password is shown (Copy copies it; Hide hides it; Generate another changes it), rated Strong; a typed one updates the meter; under 8 characters or a common one is refused under the field. "What happens" lists sign-out, the email and passing it on yourself.
+3. Change password: the toast says "<name>'s password changed"; their open web tab and the field app are signed out at once; MailDev has "<Owner> changed your <Business> password" with no password in it (without SMTP, the email log shows it Not sent); the audit log shows "Password set by an owner" on them, without the password.
+4. Sign in as them on the web with the password you set: "Choose your own password" opens, saying who set it and when; any other address comes back here. The same password is refused ("That's the password you were given…"); mismatched Confirm says so; their own password opens the dashboard (or where they were going), and signing in with it later goes straight in.
+5. On the field app: sign in with the password set → "Choose your own password" before Today; Sign out leaves; saving opens Today. An open app whose next request answers PASSWORD_CHANGE_REQUIRED moves to this screen.
+6. Forgot password while still owing a choice: resetting by the emailed link counts as choosing; no choose screen after.
+7. Regression: Profile › Password still asks for the current password; invites, Manage Teams, role changes and Deactivate work as before; Field can't reach Users; an Owner's own sign-in never shows the choose screen.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

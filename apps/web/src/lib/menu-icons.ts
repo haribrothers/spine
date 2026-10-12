@@ -23,6 +23,7 @@ import {
   GitBranch,
   HardHat,
   History,
+  KeyRound,
   Link2,
   LockOpen,
   Mail,
@@ -116,4 +117,6 @@ export const MENU_ICONS = {
   transferOwnership: Crown,
   deactivate: UserX,
   reactivate: UserCheck,
+  /** US-TEAM-24: set a Staff or Field member's password. */
+  changePassword: KeyRound,
 } satisfies Record<string, LucideIcon>;

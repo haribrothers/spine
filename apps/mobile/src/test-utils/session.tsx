@@ -23,6 +23,7 @@ export function renderWithSession(ui: React.ReactElement, overrides: Partial<Ses
     signIn: jest.fn(async () => ({ ok: true as const })),
     signOut: jest.fn(async () => {}),
     request: jest.fn(async () => MARCUS.member) as unknown as SessionContextValue["request"],
+    choosePassword: jest.fn(async () => {}),
     ...overrides,
   };
   const utils = render(

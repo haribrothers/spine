@@ -76,6 +76,10 @@ export const auth = betterAuth({
     },
     resetPasswordTokenExpiresIn: RESET_TOKEN_TTL_SECONDS,
     revokeSessionsOnPasswordReset: true,
+    // US-TEAM-24 — a password chosen through a reset link is their own: no "choose your own" step after it.
+    onPasswordReset: async ({ user: resetUser }) => {
+      await db.update(userTable).set({ mustChangePassword: false }).where(eq(userTable.id, resetUser.id));
+    },
   },
   hooks: {
     /**

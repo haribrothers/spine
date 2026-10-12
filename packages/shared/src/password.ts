@@ -106,3 +106,40 @@ export function passwordProblem(password: string): string | null {
   if (isCommonPassword(password)) return PASSWORD_TOO_COMMON_MESSAGE;
   return null;
 }
+
+/** Words for suggested passwords: short, common and unambiguous to read aloud. */
+const WORDS = [
+  "amber", "anchor", "apple", "arrow", "aspen", "badge", "basil", "beacon", "birch", "bison", "blaze", "bramble", "brick", "bridge", "cabin", "canyon",
+  "cedar", "chalk", "cherry", "cinder", "clover", "comet", "copper", "coral", "cotton", "crane", "creek", "daisy", "delta", "denim", "dune", "ember",
+  "falcon", "fern", "field", "flint", "forest", "garnet", "ginger", "glacier", "granite", "grove", "harbor", "hazel", "heron", "hollow", "indigo", "island",
+  "jasper", "juniper", "kettle", "lantern", "lark", "lemon", "linen", "maple", "marble", "meadow", "mesa", "mint", "moss", "nectar", "nutmeg", "oak",
+  "ocean", "olive", "orbit", "otter", "pebble", "pepper", "pine", "plum", "prairie", "quartz", "quill", "raven", "reed", "ridge", "river", "robin",
+  "saffron", "sage", "salt", "sierra", "slate", "sparrow", "spruce", "stone", "summit", "sunset", "thistle", "thunder", "tide", "timber", "topaz", "tulip",
+  "valley", "velvet", "violet", "walnut", "willow", "winter", "wren", "yarrow", "zephyr",
+];
+
+/** The Web Crypto random source (browsers and Node); this package's types don't include the DOM. */
+const webCrypto = (globalThis as unknown as { crypto: { getRandomValues<T extends Uint32Array>(array: T): T } }).crypto;
+
+/** A whole number below `max`, from the platform's cryptographic random source. */
+function randomBelow(max: number): number {
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0x100000000 / max) * max;
+  do webCrypto.getRandomValues(buf);
+  while (buf[0]! >= limit);
+  return buf[0]! % max;
+}
+
+/**
+ * US-TEAM-24 — a password an Owner can read out: three words, one capitalised,
+ * and a two-digit number, joined by hyphens ("copper-Tide-48-lantern"). Long,
+ * mixed and pattern-free, so it rates Strong.
+ */
+export function generatePassword(): string {
+  const pick = () => WORDS[randomBelow(WORDS.length)]!;
+  const words = [pick(), pick(), pick()];
+  const cap = randomBelow(3);
+  words[cap] = words[cap]!.charAt(0).toUpperCase() + words[cap]!.slice(1);
+  const number = String(10 + randomBelow(90));
+  return [words[0], words[1], number, words[2]].join("-");
+}

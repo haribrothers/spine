@@ -17,6 +17,8 @@ export const EMAIL_KINDS = [
   "digest",
   "invitation",
   "password_reset",
+  // US-TEAM-24: an Owner set this person's password.
+  "password_set_by_owner",
   "verification",
   "data_export",
   "test",
@@ -36,6 +38,7 @@ export const EMAIL_KIND_LABELS: Record<EmailKind, string> = {
   digest: "Daily digest",
   invitation: "Invitation",
   password_reset: "Password reset",
+  password_set_by_owner: "Password changed by an owner",
   verification: "Verification",
   data_export: "Data export",
   test: "Test",
