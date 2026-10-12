@@ -1,4 +1,5 @@
 import type { DemoPlan, DemoPlanContact, DemoPlanItem, DemoPlanLead, DemoPlanLine } from "./types.ts";
+import { DEMO_ARCHIVED_CATEGORY } from "./scenario.ts";
 
 /**
  * US-ONB-09 — Riverstone Builders, the default demo (United States,
@@ -220,6 +221,7 @@ export function riverstonePlan(): DemoPlan {
       { contact: "graniteState", vendorReference: "GSC-CR-112", dateInDays: -12, againstBill: "GSC-8834", lines: [{ name: "Returned: ready-mix concrete — 2 yd³ unused", quantity: 2, price: 18000n, tax: null }], outcome: "recorded", apply: { inDays: -10, fraction: 0.5 } },
       { contact: "coastalSteel", vendorReference: "CSM-CR-0410", dateInDays: -1, lines: [{ name: "Short delivery: structural steel beams", quantity: 4, price: 4200n, tax: null }], outcome: "draft" },
     ],
+    archivedCategory: DEMO_ARCHIVED_CATEGORY,
     recurringBills: [{ contact: "ridgeline", name: "Equipment yard rental", startsInDays: 5, dueDays: 14, lines: [{ name: "Equipment yard — monthly rental", quantity: 1, price: 95000n, tax: null }] }],
     expenses: [
       // US-ONB-31: receipts, except the fuel that says it has none.

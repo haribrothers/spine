@@ -127,7 +127,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
 
   useEffect(() => {
     apiClient
-      .get<ExpenseCategory[]>("/expense-categories")
+      .get<ExpenseCategory[]>("/expense-categories?includeArchived=true")
       .then(setCategories)
       .catch(() => {});
     apiClient
@@ -167,7 +167,8 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
     for (const e of expenses ?? []) if (e.submittedByUserId && e.submittedByUserId !== currentUserId) byId.set(e.submittedByUserId, e.submittedByName ?? "Someone");
     return [{ value: ALL, label: "Anyone" }, { value: ME, label: "Me" }, ...[...byId.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ value, label }))];
   }, [expenses, currentUserId]);
-  const categoryOptions = useMemo(() => [{ value: ALL, label: "All categories" }, ...categories.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name }))], [categories]);
+  // US-PUR-46: archived categories can still be filtered on (the Categories table links to them).
+  const categoryOptions = useMemo(() => [{ value: ALL, label: "All categories" }, ...categories.map((c) => ({ value: c.id, label: c.archivedAt ? `${c.name} (archived)` : c.name }))], [categories]);
 
   /** After an action: what happened (D-223), and the list again. */
   function done(title: string, description: string) {

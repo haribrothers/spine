@@ -48,9 +48,16 @@ export const voidVendorBillSchema = z.object({
   reason: z.string().min(1, "A reason is required to void a vendor bill"),
 });
 
+/** US-PUR-47 (D-228) — the "What it's for" line's limit. */
+export const EXPENSE_CATEGORY_DESCRIPTION_MAX = 120;
+
 export const createExpenseCategorySchema = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1, "Give the category a name."),
+  /** US-PUR-46 — the "What it's for" line; empty clears it. */
+  description: z.string().trim().max(EXPENSE_CATEGORY_DESCRIPTION_MAX, "Keep what it's for under 120 characters.").nullable().optional(),
   accountId: uuidSchema.optional().nullable(),
+  /** US-PUR-48 — an active rate, filled in on a new expense's form. */
+  defaultTaxRateId: uuidSchema.optional().nullable(),
 });
 
 export const updateExpenseCategorySchema = createExpenseCategorySchema.partial();
@@ -256,3 +263,12 @@ export interface PossibleDuplicateVendorCredit {
 export function normaliseBillNumber(billNumber: string): string {
   return billNumber.replace(/\s+/g, "").toLowerCase();
 }
+
+/** US-PUR-46 (D-228) — `GET /expense-categories/usage`, Owners and Staff only. */
+export interface ExpenseCategoryUsage {
+  categoryId: string;
+  expenseCount: number;
+  /** Approved this month, by approval date, in the business's currency (minor units). */
+  approvedThisMonth: string;
+}
+

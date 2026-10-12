@@ -34,8 +34,10 @@ test.describe("US-ONB-13", () => {
       ["Fuel & freight", "5400"],
       ["Site overheads & permits", "5500"],
     ]) {
-      const item = page.getByText(name!, { exact: true }).locator("..");
-      await expect(item).toContainText(`${account} ·`);
+      // US-PUR-46: a row with the account it posts to.
+      await expect(page.getByRole("row").filter({ has: page.getByText(name!, { exact: true }) })).toContainText(`${account} `);
     }
+    // US-ONB-32: each says what it's for.
+    await expect(page.getByRole("row").filter({ has: page.getByText("Materials", { exact: true }) })).toContainText("Cement, steel, sand — anything that goes into the build");
   });
 });

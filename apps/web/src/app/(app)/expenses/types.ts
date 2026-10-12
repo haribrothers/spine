@@ -68,6 +68,11 @@ export interface ExpenseCategory {
   /** US-PUR-23 — the posting account, e.g. "5200" / "Direct Labour". */
   accountCode?: string | null;
   accountName?: string | null;
+  /** US-PUR-46 (D-228) — the "What it's for" line. */
+  description?: string | null;
+  /** US-PUR-48 — filled in on a new expense's form. */
+  defaultTaxRateId?: string | null;
+  defaultTaxRateName?: string | null;
   createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;

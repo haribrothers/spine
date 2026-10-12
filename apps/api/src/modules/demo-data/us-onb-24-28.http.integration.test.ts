@@ -270,6 +270,27 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         }
       });
 
+      it("US-ONB-32 · categories say what they're for; goods default to the rate expenses carry; one is archived", async () => {
+        type Cat = { name: string; description: string | null; defaultTaxRateName: string | null; archivedAt: string | null };
+        const cats = await get<Cat[]>("/expense-categories?includeArchived=true");
+        const active = cats.filter((c) => !c.archivedAt);
+        expect(active.length).toBeGreaterThan(0);
+        for (const c of active) expect(c.description, c.name).toBeTruthy();
+        expect(cats.find((c) => c.name === "Client entertainment")).toMatchObject({ description: "Meals and gifts for clients" });
+        expect(cats.find((c) => c.name === "Client entertainment")!.archivedAt).not.toBeNull();
+        const defaulted = active.filter((c) => c.defaultTaxRateName).map((c) => c.name);
+        if (demo.name === "UK IT services") {
+          expect(defaulted.sort()).toEqual(["Hardware for resale", "Hosting & cloud", "Software subscriptions", "Training & certification"]);
+          expect(new Set(active.filter((c) => c.defaultTaxRateName).map((c) => c.defaultTaxRateName))).toEqual(new Set(["VAT 20%"]));
+        } else {
+          // India's GST splits by state and Riverstone's expenses carry no tax: no defaults.
+          expect(defaulted).toEqual([]);
+        }
+        // The figures read the demo's expenses.
+        const usage = await get<{ categoryId: string; expenseCount: number }[]>("/expense-categories/usage");
+        expect(usage.reduce((n, u) => n + u.expenseCount, 0)).toBe((await get<unknown[]>("/expenses")).length);
+      });
+
       it("deletes the demo's bundles, vendor credits and recurring bill with it", async () => {
         const receipts = (await get<{ receiptFileId: string | null }[]>("/expenses")).map((e) => e.receiptFileId).filter((id): id is string => !!id);
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });
@@ -282,6 +303,11 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(await get<unknown[]>("/vendor-credits")).toHaveLength(0);
         expect(await get<unknown[]>("/recurring-bills")).toHaveLength(0);
         expect(await get<unknown[]>("/vendor-bills")).toHaveLength(0);
+        // US-ONB-32: the archived category goes and the defaults are cleared; the template's categories stay.
+        const catsAfter = await get<{ name: string; defaultTaxRateId: string | null }[]>("/expense-categories?includeArchived=true");
+        expect(catsAfter.find((c) => c.name === "Client entertainment")).toBeUndefined();
+        expect(catsAfter.length).toBeGreaterThan(0);
+        expect(catsAfter.every((c) => c.defaultTaxRateId === null)).toBe(true);
         // US-ONB-31: the demo's receipts go with its expenses.
         const left = await db.select({ id: files.id }).from(files).where(inArray(files.id, receipts));
         expect(left).toHaveLength(0);

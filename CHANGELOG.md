@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Expense categories that guide (US-PUR-46 to US-PUR-48, US-ONB-32, D-228)
+
+- **A table that shows use (US-PUR-46):** Expenses › Categories is a table on the layout every refined list shares — each category's name over what it's for, the account it posts to ("6900 Other Expenses · default" when none is set, the account its expenses already fall back to), its default tax rate, how many expenses use it (a link to the expenses list filtered to it), what was approved in it this month, and Active or Archived in words; the 5200 category is tagged "Headcount × day rate". State filter and search in the address, Refresh, empty states. The figures come from `GET /expense-categories/usage`, for Owners and Staff only.
+- **Safe changes (US-PUR-47):** one form for adding and editing with "What it's for" (up to 120 characters) and a default tax rate; a note when the account changes saying approved expenses stay where they posted; names are unique ignoring case and spaces, archived included (409 naming the one that has it, with Restore for an archived one); the row menu gains icons, View history and Delete (only while unused — it existed in the API but wasn't offered); Archive and Delete ask first; every change toasts. Migration `0116` adds `description` and `default_tax_rate_id` and renames existing duplicate names "<name> (2)" before the unique index.
+- **Picking one (US-PUR-48):** the expense form's category picker shows each category's line and searches it; choosing a category with a default rate fills in the tax rate (and works the tax out), never over a rate the person chose or on a saved expense. `Combobox` options can carry a description line (docs and a11y test updated).
+- **Templates and demo (US-ONB-32):** every industry template's categories come with their line; a demo loaded into an empty business defaults the goods categories to the country's single expense rate (VAT/GST countries other than India), and every demo adds an archived "Client entertainment"; deleting the demo undoes both.
+- **Tests:** API integration `us-pur-46-48` and the US-ONB-32 checks in `us-onb-24-28`; web unit `us-pur-46-48`; E2E `us-pur-46-48`, with `us-pur-19`, `us-onb-13` and `us-onb-20` moved to the table. QA script section 222.
+
 ### 2026-10-11 — Demo expenses with their receipts (US-ONB-31, D-216)
 
 - **Receipts:** every demo expense has a receipt PDF printed for it — a till roll from a shop that fits what it was for, in the business's town, with the date, what was bought, the tax inside the amount and the total — stored like any upload and shown on the expense's page. Riverstone's "Fuel — no receipt attached" still has none. Without file storage the demo loads without receipts.

@@ -1681,6 +1681,8 @@ Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to 
 
 ![ExpenseCategoryDialog](screens/ExpenseCategoryDialog.webp)
 
+Superseded by `ExpenseCategoryDialogRefined` (D-228).
+
 Links to: `SettingsPurchases`, `ExpenseDialog`, `ExpenseCategories`
 
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "Q Search settings" · "Purchases" · "'xpense categories used when a team member submits an expense from the mobile app or" · "ORGANISATION" · "web. Each category can map to a default posting account" · "El Business profile" · "EXPENSE CATEGORIES" · "+ Add category" · "* Industry template" · "O, Currency & locale" · "Fuel & Vehicle" · "6300 - Travel & Vehicle" · "Financial year" · "% Tax" · "•.." · "Add category" · "# Numbering" · "Name" · "..." · "• Chart of accounts" · "e.g. Fuel" · "evenue this month" · "!? Purchases" · "Default posting account" · "15265.00 USD" · "• Repeat quote conversion" · "None" · "to Upcoming meetings" · "@ Meeting reminders" · "0 Edit layout" · "Cancel" · "Save" · "A Browser notifications" · "E Demo data" · "View board" · "Receivables aging" · "View all" · "Job profitability"
@@ -1699,6 +1701,8 @@ Shows: "Expenses" · "Submit an expense for approval. Categories are managed fro
 
 ![ExpenseCategories](screens/ExpenseCategories.webp)
 
+Superseded by `ExpenseCategoriesRefined` (D-228).
+
 Links to: `ExpenseDialog`, `ExpenseCategoryDialog`
 
 Shows: "Expenses" · "Submit an expense for approval. Categories are managed from Expenses › Categories." · "+ Add category" · "Categories" · "Name" · "Posting account" · "Used by" · "Status" · "Fuel" · "6300 · Travel & Vehicle" · "14 expenses" · "Active" · "Materials" · "5000 · Cost of Materials" · "22 expenses" · "Tools" · "6900 · Other Expenses" · "3 expenses" · "Travel" · "9 expenses" · "Meals" · "0 expenses" · "Archived" · "Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted."
@@ -1707,6 +1711,8 @@ Shows: "Expenses" · "Submit an expense for approval. Categories are managed fro
 **Priority:** P1 · **Phase:** 7 · **Stories:** US-ONB-13 · **Source:** Drawn
 
 ![ExpenseCategoriesConstruction](screens/ExpenseCategoriesConstruction.webp)
+
+Superseded by `ExpenseCategoriesRefined` (D-228).
 
 Links to: `ExpenseCategories`, `ExpenseCategoryDialog`
 
@@ -3789,6 +3795,82 @@ Shows: "EXP-0044" "Approved" "Billable" · "Direct labour" · "Bill to customer"
 Links to: `ExpenseLabourPage`
 
 Shows: "Edit expense" "It stays waiting for approval. Changing the rows changes the amount." · "Receipt and files" "Add files" · a muster sheet as the receipt with a site photo listed under it · the rows filled in · "Total for the day · 17 workers" · "Cancel" "Save changes"
+
+## Expense categories that guide
+
+Drawn in Claude Design for US-PUR-46 to US-PUR-48 (D-228): project "Spine web — refinements before Phase 10", canvas "21 Expense categories". The Categories tab as a table on the layout every refined list shares, with what each category is for, where it posts, its default tax and how much it's used; one form for adding and editing that catches a taken name; Archive and Delete asking first; and the expense form's picker showing what each category is for and filling in its usual rate.
+
+### ExpenseCategoriesRefined — Every category and how it's used
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-46, US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoriesRefined](screens/ExpenseCategoriesRefined.webp)
+
+Links to: `ExpenseCategoryDialogRefined`, `ExpenseCategoryArchiveConfirm`, `ExpensesListRefined`
+
+Shows: "Purchases › Expenses › Categories" · tabs "Expenses" "Categories" · "Active" · "Updated just now" · "Add category" · "Search categories" "Columns" · "Name ↑" "Posts to" "Default tax" "Expenses" "Approved this month" "State" · each name over its line ("Diesel, petrol, tolls and getting materials to site") · "Headcount × day rate" on Site labour · "6900 Other Expenses · default" when none is set · "Active" · row menu: "Edit" "View history" "Archive" and a disabled "Delete" with "In use — archive it instead" · "Archived categories leave the expense form; their expenses keep them. A category no expense uses can be deleted."
+
+### ExpenseCategoriesDark — Archived categories, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-46, US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoriesDark](screens/ExpenseCategoriesDark.webp)
+
+Links to: `ExpenseCategoryDeleteConfirm`
+
+Shows: the table on the dark app filtered to "Archived" · "Client entertainment" "Archived" · row menu: "Edit" "View history" "Restore" "Delete"
+
+### ExpenseCategoryDialogRefined — Edit a category
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryDialogRefined](screens/ExpenseCategoryDialogRefined.webp)
+
+Links to: `ExpenseCategoriesRefined`
+
+Shows: "Edit category" · "Name" · "What it's for (optional)" "Shown under the name when people pick a category." "52 / 120" · "Posts to" · "Expenses already approved stay in … Expenses approved from now on post to …" · "Default tax rate" "Filled in on the expense form when this category is chosen — people can still change it." · "Cancel" "Save changes"
+
+### ExpenseCategoryNameTaken — A name that's taken
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryNameTaken](screens/ExpenseCategoryNameTaken.webp)
+
+Links to: `ExpenseCategoriesRefined`
+
+Shows: "Add category" "Name it, say what it's for, and choose where it posts." · "client entertainment" · "Client entertainment is already a category — it's archived." "Restore it" · "Cancel" "Add category"
+
+### ExpenseCategoryArchiveConfirm — Archive asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryArchiveConfirm](screens/ExpenseCategoryArchiveConfirm.webp)
+
+Links to: —
+
+Shows: "Archive Fuel & freight?" "It leaves the expense form, so no new expense can use it. Its 6 expenses keep it, and you can restore it at any time." · "Go back" "Archive category"
+
+### ExpenseCategoryDeleteConfirm — Delete asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryDeleteConfirm](screens/ExpenseCategoryDeleteConfirm.webp)
+
+Links to: —
+
+Shows: "Delete Client entertainment?" "No expense uses it, so it's removed for good. This can't be undone." · "Go back" "Delete category"
+
+### ExpenseFormCategoryHint — What each category is for
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-48 · **Source:** Claude Design
+
+![ExpenseFormCategoryHint](screens/ExpenseFormCategoryHint.webp)
+
+Links to: `ExpenseFormCategoryTax`
+
+Shows: "Submit an expense" · the category picker open: search, then each category with its line under the name ("Materials" "Cement, steel, sand — anything that goes into the build")
+
+### ExpenseFormCategoryTax — A category's usual rate filled in
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-48 · **Source:** Claude Design
+
+![ExpenseFormCategoryTax](screens/ExpenseFormCategoryTax.webp)
+
+Links to: `ExpensePage`
+
+Shows: "Category" "Materials" with its line under the field · "Tax rate" "GST 18%" "Materials' usual rate — change it if this receipt differs." · "Tax amount" "Worked out from GST 18%, included in the amount."
 
 ## Mobile field companion
 

@@ -46,6 +46,11 @@ import { PHOTO_OR_PDF_ACCEPT } from "../../../lib/upload-types";
 
 const NO_JOB = "__none__";
 const NO_TAX = "";
+
+/** "Materials’", "Fuel & freight’s". */
+export function possessive(name: string): string {
+  return /s$/i.test(name) ? `${name}’` : `${name}’s`;
+}
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
 const PAID_BY_OPTIONS: { value: ExpensePaidBy; label: string }[] = (
@@ -107,6 +112,9 @@ export function ExpenseForm({
   const [extraFiles, setExtraFiles] = useState<PendingAttachment[]>([]);
   // US-PUR-44: the tax is worked out from the rate until it's typed over.
   const [taxTouched, setTaxTouched] = useState(false);
+  // US-PUR-48: a category's default rate fills in on a new expense until the person picks a rate themselves.
+  const [rateChosen, setRateChosen] = useState(false);
+  const [rateFromCategory, setRateFromCategory] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<PossibleDuplicateExpense[]>([]);
   const resubmitting = expense?.status === "rejected";
   const [isBillable, setIsBillable] = useState(false);
@@ -138,6 +146,8 @@ export function ExpenseForm({
     setReceiptMime(null);
     setExtraFiles([]);
     setTaxTouched(Boolean(expense));
+    setRateChosen(Boolean(expense));
+    setRateFromCategory(null);
     setDuplicates([]);
     setIsBillable(expense?.isBillable ?? false);
     setEntryMode(expense?.entryMode ?? "amount");
@@ -182,10 +192,27 @@ export function ExpenseForm({
       .catch(() => {});
   }, [expense]);
 
+  // US-PUR-48: each category says what it's for, under its name, and search looks at both.
   const categoryOptions = useMemo(
-    () => categories.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name })),
+    () => categories.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name, description: c.description })),
     [categories],
   );
+  const chosenCategory = categories.find((c) => c.id === categoryId) ?? null;
+
+  /** US-PUR-48 — choosing a category fills in its default rate on a new expense, never over a rate the person chose. */
+  function chooseCategory(id: string) {
+    setCategoryId(id);
+    if (expense || rateChosen) return;
+    const next = categories.find((c) => c.id === id);
+    const rate = next?.defaultTaxRateId && taxRates.some((r) => r.id === next.defaultTaxRateId) ? next.defaultTaxRateId : null;
+    if (rate) {
+      setTaxRateSelection(rate);
+      setRateFromCategory(next!.name);
+    } else if (rateFromCategory) {
+      setTaxRateSelection(NO_TAX);
+      setRateFromCategory(null);
+    }
+  }
   const jobOptions = useMemo(
     () => [{ value: NO_JOB, label: "No job" }, ...jobs.map((j) => ({ value: j.id, label: j.name }))],
     [jobs],
@@ -478,9 +505,9 @@ export function ExpenseForm({
             <FormField
               label="Category"
               required
-              helperText={entryMode === "labour" && labourCategory && categoryId === labourCategory.id ? `Preselected: posts to ${labourCategory.accountCode} ${labourCategory.accountName}.` : undefined}
+              helperText={entryMode === "labour" && labourCategory && categoryId === labourCategory.id ? `Preselected: posts to ${labourCategory.accountCode} ${labourCategory.accountName}.` : (chosenCategory?.description ?? undefined)}
             >
-              {() => <Combobox options={categoryOptions} value={categoryId} onValueChange={setCategoryId} placeholder="Select a category…" />}
+              {() => <Combobox options={categoryOptions} value={categoryId} onValueChange={chooseCategory} placeholder="Select a category…" />}
             </FormField>
             {/* US-SET-24: no jobs while Jobs & field is switched off. */}
             {jobsOn && (
@@ -499,8 +526,19 @@ export function ExpenseForm({
                 {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={amount} onValueChange={setAmount} currency={currency} />}
               </FormField>
             )}
-            <FormField label="Tax rate">
-              {() => <Combobox options={taxOptions} value={taxRateSelection} onValueChange={setTaxRateSelection} placeholder="No tax" />}
+            <FormField label="Tax rate" helperText={rateFromCategory && taxRateSelection ? `${possessive(rateFromCategory)} usual rate — change it if this receipt differs.` : undefined}>
+              {() => (
+                <Combobox
+                  options={taxOptions}
+                  value={taxRateSelection}
+                  onValueChange={(v) => {
+                    setTaxRateSelection(v);
+                    setRateChosen(true);
+                    setRateFromCategory(null);
+                  }}
+                  placeholder="No tax"
+                />
+              )}
             </FormField>
             <FormField label="Tax amount" helperText={!taxTouched && chosenRate ? `Worked out from ${chosenRate.name}, included in the amount.` : "Included in the amount above, not added on top."}>
               {(field) => (

@@ -13,12 +13,12 @@ export const CONSTRUCTION_ACCOUNTS = [
 ] as const;
 
 export const CONSTRUCTION_CATEGORIES = [
-  { name: "Materials", accountCode: "5000" },
-  { name: "Subcontractors", accountCode: "5100" },
-  { name: "Site labour", accountCode: "5200" },
-  { name: "Plant & equipment hire", accountCode: "5300" },
-  { name: "Fuel & freight", accountCode: "5400" },
-  { name: "Site overheads & permits", accountCode: "5500" },
+  { name: "Materials", accountCode: "5000", description: "Cement, steel, sand — anything that goes into the build", goods: true },
+  { name: "Subcontractors", accountCode: "5100", description: "A trade firm paid on the spot, without a bill", goods: true },
+  { name: "Site labour", accountCode: "5200", description: "Daily-wage crews, entered by trade" },
+  { name: "Plant & equipment hire", accountCode: "5300", description: "Scaffolding, mixers, the JCB — hired by the day", goods: true },
+  { name: "Fuel & freight", accountCode: "5400", description: "Diesel, petrol, tolls and getting materials to site" },
+  { name: "Site overheads & permits", accountCode: "5500", description: "Site meals, drinking water, permits and council fees" },
 ] as const;
 
 export const CONSTRUCTION_TEMPLATE_NOTE = "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads.";
@@ -30,7 +30,12 @@ export interface IndustryTemplateDefinition {
   description: string;
   /** Expense accounts the template adds (codes from the default chart are reused, not repeated here). */
   accounts: readonly { code: string; name: string }[];
-  categories: readonly { name: string; accountCode: string }[];
+  /**
+   * US-ONB-32 (D-228): each with its "What it's for" line; `goods` marks
+   * one usually bought with tax the business claims back, which a demo
+   * defaults to the country's standard rate.
+   */
+  categories: readonly { name: string; accountCode: string; description: string; goods?: boolean }[];
 }
 
 /**
@@ -52,12 +57,12 @@ export const INDUSTRY_TEMPLATES: Record<IndustryTemplateValue, IndustryTemplateD
       { code: "5610", name: "Freight & Delivery" },
     ],
     categories: [
-      { name: "Materials", accountCode: "5000" },
-      { name: "Furniture & fittings", accountCode: "5600" },
-      { name: "Carpenters & installers", accountCode: "5100" },
-      { name: "Site labour", accountCode: "5200" },
-      { name: "Freight & delivery", accountCode: "5610" },
-      { name: "Design software & samples", accountCode: "6900" },
+      { name: "Materials", accountCode: "5000", description: "Cement, steel, sand — anything that goes into the build", goods: true },
+      { name: "Furniture & fittings", accountCode: "5600", description: "Loose furniture, lights and fittings for a client’s space", goods: true },
+      { name: "Carpenters & installers", accountCode: "5100", description: "Carpentry and installation crews paid on the spot", goods: true },
+      { name: "Site labour", accountCode: "5200", description: "Daily-wage crews, entered by trade" },
+      { name: "Freight & delivery", accountCode: "5610", description: "Couriers, tempo and truck hire to get goods to site" },
+      { name: "Design software & samples", accountCode: "6900", description: "Design tools, renders, swatches and material samples", goods: true },
     ],
   },
   trades: {
@@ -69,12 +74,12 @@ export const INDUSTRY_TEMPLATES: Record<IndustryTemplateValue, IndustryTemplateD
       { code: "5720", name: "Vehicle Running" },
     ],
     categories: [
-      { name: "Parts & consumables", accountCode: "5700" },
-      { name: "Subcontractors", accountCode: "5100" },
-      { name: "Labour", accountCode: "5200" },
-      { name: "Tools & equipment", accountCode: "5710" },
-      { name: "Vehicle & fuel", accountCode: "5720" },
-      { name: "Permits & certification", accountCode: "6900" },
+      { name: "Parts & consumables", accountCode: "5700", description: "Cable, pipe, fittings and the small parts a job uses", goods: true },
+      { name: "Subcontractors", accountCode: "5100", description: "A trade firm paid on the spot, without a bill", goods: true },
+      { name: "Labour", accountCode: "5200", description: "Day labour and helpers, entered by trade" },
+      { name: "Tools & equipment", accountCode: "5710", description: "Hand and power tools, meters and safety gear", goods: true },
+      { name: "Vehicle & fuel", accountCode: "5720", description: "Fuel, tolls, parking and servicing for work vans" },
+      { name: "Permits & certification", accountCode: "6900", description: "Permits, inspections and certificates for a job" },
     ],
   },
   it_services: {
@@ -85,12 +90,12 @@ export const INDUSTRY_TEMPLATES: Record<IndustryTemplateValue, IndustryTemplateD
       { code: "5810", name: "Freelancers & Contractors" },
     ],
     categories: [
-      { name: "Hosting & cloud", accountCode: "5800" },
-      { name: "Software subscriptions", accountCode: "5800" },
-      { name: "Freelancers", accountCode: "5810" },
-      { name: "Hardware for resale", accountCode: "5000" },
-      { name: "Travel", accountCode: "6300" },
-      { name: "Training & certification", accountCode: "6900" },
+      { name: "Hosting & cloud", accountCode: "5800", description: "Servers, cloud usage and domains for clients’ work", goods: true },
+      { name: "Software subscriptions", accountCode: "5800", description: "Tools and licences the team works with", goods: true },
+      { name: "Freelancers", accountCode: "5810", description: "Freelancers and contractors paid on the spot" },
+      { name: "Hardware for resale", accountCode: "5000", description: "Laptops, parts and devices bought for a client", goods: true },
+      { name: "Travel", accountCode: "6300", description: "Flights, trains, taxis and hotels for client work" },
+      { name: "Training & certification", accountCode: "6900", description: "Courses, exams and certifications", goods: true },
     ],
   },
   professional_services: {
@@ -101,12 +106,12 @@ export const INDUSTRY_TEMPLATES: Record<IndustryTemplateValue, IndustryTemplateD
       { code: "6450", name: "Professional Indemnity Insurance" },
     ],
     categories: [
-      { name: "Subscriptions & research", accountCode: "5900" },
-      { name: "Associates & subcontractors", accountCode: "5100" },
-      { name: "Professional fees", accountCode: "6400" },
-      { name: "Insurance", accountCode: "6450" },
-      { name: "Travel", accountCode: "6300" },
-      { name: "Office supplies", accountCode: "6900" },
+      { name: "Subscriptions & research", accountCode: "5900", description: "Journals, databases and research subscriptions", goods: true },
+      { name: "Associates & subcontractors", accountCode: "5100", description: "Associates and outside experts paid on the spot" },
+      { name: "Professional fees", accountCode: "6400", description: "Legal, audit and other professional advice", goods: true },
+      { name: "Insurance", accountCode: "6450", description: "Professional indemnity and other cover" },
+      { name: "Travel", accountCode: "6300", description: "Flights, trains, taxis and hotels for client work" },
+      { name: "Office supplies", accountCode: "6900", description: "Stationery, printing and small office items", goods: true },
     ],
   },
   general_services: {

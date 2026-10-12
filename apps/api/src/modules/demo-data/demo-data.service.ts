@@ -63,6 +63,9 @@ export interface DemoDataSetting {
   createdTaxGroupIds?: string[];
   /** US-ONB-27 — the bundles the demo made (bundles carry no demo flag). */
   createdBundleIds?: string[];
+  /** US-ONB-32 — the archived category the demo added, and the categories it gave a default rate. */
+  createdCategoryIds?: string[];
+  defaultedCategoryIds?: string[];
 }
 
 /** `POST /demo-data/seed` — both optional; no body loads the default (US construction). */
@@ -126,7 +129,7 @@ export class DemoDataService {
       await this.deleteAll(orgId, actorUserId).catch(() => undefined);
       throw error;
     }
-    const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds, createdBundleIds: result.createdBundleIds };
+    const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds, createdBundleIds: result.createdBundleIds, createdCategoryIds: result.createdCategoryIds, defaultedCategoryIds: result.defaultedCategoryIds };
     await this.settingsService.set(orgId, DEMO_DATA_KEY, loaded);
     return { country, industry, businessName: plan.business.name, ...result.counts };
   }
@@ -266,6 +269,9 @@ export class DemoDataService {
       const rateIds = loaded?.createdTaxRateIds ?? (await tx.select({ id: taxRates.id }).from(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.name, ["Sales Tax", "State Surcharge"])))).map((r) => r.id);
       for (const id of groupIds) await tx.transaction((sp) => sp.delete(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.id, id)))).catch(swallowForeignKey);
       for (const id of rateIds) await tx.transaction((sp) => sp.delete(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.id, id)))).catch(swallowForeignKey);
+      // US-ONB-32: the category the demo added goes (unless something now uses it), and the defaults it set are cleared.
+      for (const id of loaded?.createdCategoryIds ?? []) await tx.transaction((sp) => sp.delete(expenseCategories).where(and(eq(expenseCategories.orgId, orgId), eq(expenseCategories.id, id)))).catch(swallowForeignKey);
+      if (loaded?.defaultedCategoryIds?.length) await tx.update(expenseCategories).set({ defaultTaxRateId: null }).where(and(eq(expenseCategories.orgId, orgId), inArray(expenseCategories.id, loaded.defaultedCategoryIds)));
       if (!loaded) {
         // Riverstone loaded before US-ONB-20 made its own categories outside a template.
         await tx

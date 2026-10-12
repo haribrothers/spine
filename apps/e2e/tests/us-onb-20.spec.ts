@@ -55,7 +55,7 @@ test.describe("US-ONB-20", () => {
       ["Travel", "6300"],
       ["Office supplies", "6900"],
     ]) {
-      await expect(page.getByText(name!, { exact: true }).locator("..")).toContainText(`${account} ·`);
+      await expect(page.getByRole("row").filter({ has: page.getByText(name!, { exact: true }) })).toContainText(`${account} `);
     }
   });
 });

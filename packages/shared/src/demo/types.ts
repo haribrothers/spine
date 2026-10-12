@@ -329,6 +329,14 @@ export interface DemoPlan {
   bills: DemoPlanBill[];
   vendorCredits: DemoPlanVendorCredit[];
   recurringBills: DemoPlanRecurringBill[];
+  /**
+   * US-ONB-32 (D-228) — the rate the template's goods categories default to
+   * (a business without records of its own only); absent where expenses
+   * carry no tax.
+   */
+  categoryTaxDefault?: DemoTaxRef;
+  /** US-ONB-32 — a category the demo adds archived, so the Archived filter shows something. */
+  archivedCategory: { name: string; description: string };
   expenses: DemoPlanExpense[];
   creditNotes: DemoPlanCreditNote[];
   meetings: DemoPlanMeeting[];

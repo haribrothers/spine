@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
+import { INDUSTRY_TEMPLATES, itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses } from "../../db/schema";
@@ -25,6 +25,7 @@ import { IndustryTemplateService } from "../org/industry-template.service";
 import { SettingsService } from "../org/settings.service";
 import { PaymentsService } from "../payments/payments.service";
 import { ExpensesService } from "../purchases/expenses.service";
+import { ExpenseCategoriesService } from "../purchases/expense-categories.service";
 import { VendorBillsService } from "../purchases/vendor-bills.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
 import { VendorCreditsService } from "../purchases/vendor-credits.service";
@@ -73,6 +74,9 @@ export interface SeedResult {
   createdTaxGroupIds: string[];
   /** US-ONB-27 — bundles carry no demo flag, so the ones made are recorded and deleted with the demo. */
   createdBundleIds: string[];
+  /** US-ONB-32 — the archived category the demo added, and the categories it gave a default rate (undone with the demo). */
+  createdCategoryIds: string[];
+  defaultedCategoryIds: string[];
   counts: Record<string, number>;
 }
 
@@ -113,6 +117,7 @@ export class DemoSeederService {
     private readonly vendorCreditsService: VendorCreditsService,
     private readonly recurringBillsService: RecurringBillsService,
     private readonly expensesService: ExpensesService,
+    private readonly expenseCategoriesService: ExpenseCategoriesService,
     private readonly meetingsService: MeetingsService,
     private readonly filesService: FilesService,
     private readonly teamsService: TeamsService,
@@ -633,7 +638,25 @@ export class DemoSeederService {
     }
 
     // Purchases. The template's categories hold the expenses.
-    const categoryRows = await this.db.select({ id: expenseCategories.id, name: expenseCategories.name }).from(expenseCategories).where(eq(expenseCategories.orgId, orgId));
+    const categoryRows = await this.db.select({ id: expenseCategories.id, name: expenseCategories.name, defaultTaxRateId: expenseCategories.defaultTaxRateId }).from(expenseCategories).where(eq(expenseCategories.orgId, orgId));
+    // US-ONB-32 (D-228): a business without records of its own gets the template's goods categories defaulting to the rate expenses carry here.
+    const defaultedCategoryIds: string[] = [];
+    const goodsRate = ids(plan.categoryTaxDefault).taxRateId;
+    if (!options.locked && goodsRate) {
+      const goods = new Set(INDUSTRY_TEMPLATES[plan.template].categories.filter((c) => c.goods).map((c) => c.name.toLowerCase()));
+      for (const row of categoryRows.filter((c) => goods.has(c.name.toLowerCase()) && !c.defaultTaxRateId)) {
+        await this.expenseCategoriesService.update(orgId, row.id, actorUserId, { defaultTaxRateId: goodsRate });
+        defaultedCategoryIds.push(row.id);
+      }
+    }
+    // …and one category no expense uses, archived, unless the business already has that name.
+    const createdCategoryIds: string[] = [];
+    if (!categoryRows.some((c) => c.name.toLowerCase() === plan.archivedCategory.name.toLowerCase())) {
+      const archived = await this.expenseCategoriesService.create(orgId, actorUserId, { name: plan.archivedCategory.name, description: plan.archivedCategory.description });
+      await this.expenseCategoriesService.archive(orgId, archived.id, actorUserId);
+      createdCategoryIds.push(archived.id);
+      count("categoriesArchived");
+    }
     const categoryId = (name: string) => categoryRows.find((c) => c.name.toLowerCase() === name.toLowerCase())?.id;
     const billIds = new Map<string, string>();
     for (const seed of plan.bills) {
@@ -941,7 +964,7 @@ export class DemoSeederService {
     if (crew.length) await this.db.insert(jobAssignments).values(crew);
     count("crewAssignmentsCreated", crew.length);
 
-    return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, createdBundleIds, counts };
+    return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, createdBundleIds, createdCategoryIds, defaultedCategoryIds, counts };
   }
 
   /** A business without records of its own takes the demo's identity (D-192); its own profile and registration win when set. */

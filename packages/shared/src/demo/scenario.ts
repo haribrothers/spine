@@ -155,6 +155,9 @@ export function receiptMerchant(category: string, description: string): string {
   return "Trade Supplies Co.";
 }
 
+/** US-ONB-32 — the category every demo adds archived (unused). */
+export const DEMO_ARCHIVED_CATEGORY = { name: "Client entertainment", description: "Meals and gifts for clients" };
+
 export const EXPENSE_TIMELINE = [
   { key: "exp1", date: -120, outcome: "approved" },
   { key: "exp2", date: -60, outcome: "approved" },
@@ -554,6 +557,9 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     bills,
     vendorCredits,
     recurringBills,
+    // US-ONB-32: goods categories default to the rate expenses carry here; one category archived.
+    ...(country.expenseTax ? { categoryTaxDefault: country.expenseTax.rate } : {}),
+    archivedCategory: DEMO_ARCHIVED_CATEGORY,
     expenses,
     // US-ONB-29 (D-219): one only off its invoice, one whose spare credit was partly applied to the customer's
     // overdue invoice (the rest still to use), and one whose spare credit was refunded — each crediting lines with their tax.

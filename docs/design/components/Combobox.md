@@ -14,7 +14,7 @@ import { ComboboxOption, Combobox } from "@spine/ui";
 
 | Prop | Type | Default |
 |---|---|---|
-| `options` | { value: string; label: string }[] | — |
+| `options` | { value: string; label: string; description?: string \| null }[] | — |
 | `value` | string | — |
 | `onValueChange` | (value: string) => void | — |
 | `placeholder` | string | — |
@@ -28,6 +28,7 @@ import { ComboboxOption, Combobox } from "@spine/ui";
 - Keyboard navigable — arrow keys move the highlight, Enter selects.
 - Hosted in a Popover, matching the field's trigger width.
 - Shows a configurable empty state when no options match.
+- Options can carry a description: a second, muted line under the label (what an expense category is for, D-228), searched along with it.
 - Optional allowCreate mode: typing a value with no matching option offers a "Create '…'" row, for open-ended, org-defined vocabularies (e.g. a catalogue item's unit or category) rather than a fixed list.
 
 ## Exports

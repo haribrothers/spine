@@ -813,6 +813,13 @@
       "when": 1791737353379,
       "tag": "0115_demo_purchases",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1791745817900,
+      "tag": "0116_expense_category_guidance",
+      "breakpoints": true
     }
   ]
 }

@@ -583,10 +583,11 @@ Decision: D-129, D-216, D-228
 
 **Acceptance criteria**
 - **Given** an industry template, **when** it seeds its categories (US-ONB-13), **then** each comes with its "What it's for" line ("Diesel, petrol, tolls and parking for site vehicles"); a category the business already had keeps its own line.
-- **Given** an industry demo loaded into a business without records of its own, **when** it's loaded, **then** the goods and tools categories default to the country's standard tax rate, and the table shows counts and this month's approved amounts from the demo's expenses. A business with records of its own keeps its categories as they are.
+- **Given** an industry demo loaded into a business without records of its own, in a country whose demo expenses carry a single tax rate (the VAT and GST countries other than India), **when** it's loaded, **then** the template's goods categories default to that rate. India's GST splits by state and Riverstone's expenses carry no tax, so their categories keep no default. A business with records of its own keeps its categories as they are.
+- **Given** any demo, **when** Expenses › Categories opens, **then** the table shows counts and this month's approved amounts from the demo's expenses.
 - **Given** any demo, **when** it's loaded, **then** it adds one category no expense uses, archived ("Client entertainment"), so the Archived filter shows something.
 - **Given** "Delete all demo data", **when** it runs, **then** the category the demo added goes, and the defaults it set are cleared; the template's categories stay, as before.
 
 **Implementation notes**
-- Shared: template categories gain `description`; plans gain `categoryDefaults` (category names whose default is the standard rate) and `archivedCategory`.
+- Shared: template categories gain `description`; plans gain `categoryTaxDefault` (the country's expense rate, where there is one) and `archivedCategory`; template categories gain `goods`.
 - API: the seeder sets the defaults and adds the archived category through `ExpenseCategoriesService`, recording what it did in the demo setting (`createdCategoryIds`, `defaultedCategoryIds`) so deleting the demo undoes exactly that.

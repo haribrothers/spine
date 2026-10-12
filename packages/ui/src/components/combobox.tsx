@@ -9,6 +9,8 @@ import * as Popover from "@radix-ui/react-popover";
 export interface ComboboxOption {
   value: string;
   label: string;
+  /** A second, muted line under the label (e.g. what an expense category is for); search looks at it too. */
+  description?: string | null;
 }
 
 export interface ComboboxProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "value" | "onChange" | "type" | "children"> {
@@ -105,14 +107,22 @@ export function Combobox({
                 <CommandPrimitive.Item
                   key={option.value}
                   value={option.label}
+                  keywords={option.description ? [option.description] : undefined}
                   onSelect={() => {
                     onValueChange(option.value);
                     handleOpenChange(false);
                   }}
-                  className="flex cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-[14px] text-on-surface data-[selected=true]:bg-surface-sunken"
+                  className="flex cursor-pointer items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-[14px] text-on-surface data-[selected=true]:bg-surface-sunken"
                 >
-                  {option.label}
-                  {option.value === value && <Check size={14} />}
+                  {option.description ? (
+                    <span className="flex min-w-0 flex-col">
+                      <span>{option.label}</span>
+                      <span className="text-[12px] text-on-surface-muted">{option.description}</span>
+                    </span>
+                  ) : (
+                    option.label
+                  )}
+                  {option.value === value && <Check size={14} className="shrink-0" />}
                 </CommandPrimitive.Item>
               ))}
               {canCreate && (

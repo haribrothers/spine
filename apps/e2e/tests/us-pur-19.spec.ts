@@ -15,7 +15,7 @@ test.describe("US-PUR-19", () => {
     await page.getByRole("navigation", { name: "Expenses sections" }).getByRole("link", { name: "Categories" }).click();
     await page.waitForURL("**/expenses/categories");
     await expect(page.getByRole("button", { name: /Add category/ })).toBeVisible();
-    await expect(page.getByText(/\d{4} · /).first()).toBeVisible(); // a posting account
+    await expect(page.getByTestId("categories-table").getByText(/\d{4} [A-Z]/).first()).toBeVisible(); // a posting account
 
     await page.getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
     await page.getByRole("menuitem", { name: "Settings" }).click();

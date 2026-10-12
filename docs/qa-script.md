@@ -5039,6 +5039,21 @@ Load the India construction demo, then Riverstone Builders on another organisati
 4. "Delete all demo data": the expenses and their receipts go.
 5. With no file storage set up, the demo still loads, with expenses and without receipts.
 
+## 222. Expense categories that guide (US-PUR-46 to US-PUR-48, US-ONB-32, refinements before Phase 10)
+
+Use an owner with a few categories and expenses (one category unused), and a Field member. Check light and dark, and compare with the canvas "21 Expense categories".
+
+1. Expenses › Categories: the breadcrumb reads Purchases › Expenses › Categories. The table lists each category's name over what it's for, Posts to ("6900 Other Expenses · default" when none is set), Default tax ("—" when none), Expenses (a link) and Approved this month in the business's currency ("—" when nothing), with Active or Archived in words; Active first, then by name. The 5200 category is tagged "Headcount × day rate".
+2. The state filter (Active by default, Archived, All) and the search (name and what it's for) stay in the address; Clear filters resets them; Refresh says "Updated just now". With nothing matching, the empty state offers Clear filters.
+3. Pressing a category's expense count opens the expenses list filtered to it (an archived one too, labelled "(archived)" in the filter).
+4. A row's menu has icons: Edit, View history, Archive (or Restore), and Delete — a category in use shows Delete greyed out with "In use — archive it instead". Archive asks "Archive <name>?" saying its expenses keep it; Delete asks "Delete <name>?" with a red button; Restore, saves and adds each say what happened in a toast.
+5. Add category: Name, What it's for (counted to 120), Posts to, Default tax rate (active rates). Typing a name another category has — any case, extra spaces, archived included — says "<Name> is already a category." ("— it's archived." with Restore it, which restores it and closes the form).
+6. Edit a category and change Posts to: a note says expenses already approved stay in the old account and those approved from now on post to the new one. Approve an expense afterwards and check it posted to the new account; the earlier one didn't move.
+7. Submit an expense: the category picker shows each category's line under its name, and typing searches both. Choosing a category with a default rate fills in Tax rate with "<Category>'s usual rate — change it if this receipt differs." and works out the tax; choosing one without a default clears it; picking a rate yourself is never overwritten. Editing a saved expense keeps its own rate.
+8. As Field, submit an expense: the hints and default rates show; the Categories tab doesn't, and `/expense-categories/usage` is refused.
+9. Demo (US-ONB-32): load the UK IT services demo into a new business — every category has its line, Hosting & cloud, Software subscriptions, Hardware for resale and Training & certification default to VAT 20%, and "Client entertainment" is archived. Load India construction or Riverstone: lines, no defaults, the archived one. "Delete all demo data" removes the archived one and clears the defaults; the template's categories stay.
+10. Regression: the Construction and Professional services templates still list their categories with the setup note (sections on US-ONB-13 and US-ONB-20); headcount × day rate still preselects the 5200 category; the expenses-by-category report is unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

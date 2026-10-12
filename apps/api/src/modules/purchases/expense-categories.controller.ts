@@ -24,6 +24,14 @@ export class ExpenseCategoriesController {
     return this.expenseCategoriesService.list(orgId, { includeArchived: includeArchived === "true" });
   }
 
+  /** US-PUR-46 (D-228) — how many expenses use each category and what was approved this month. Owners and Staff only: Field never sees other people's money (07-security). */
+  @Get("usage")
+  @OrgRoles(["owner", "staff"])
+  async usage(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.usage(orgId);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

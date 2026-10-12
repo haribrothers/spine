@@ -22,7 +22,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-11 | Vendor bills you can work from: a page per bill, paying from it, a list that shows money, safer entry | P2 | Refinements | `VendorBillPage`, `VendorBillPayDialog`, `VendorBillsListRefined`, `VendorBillsListDark`, `VendorBillDuplicateWarning`, `VendorBillsBulkRecord` |
 | F-PUR-12 | Vendor credits you can work from: a page per credit, a list that shows money, entry like a bill, raised and used from the bill | P2 | Refinements | `VendorCreditPage`, `VendorCreditsListRefined`, `VendorCreditsListDark`, `VendorCreditsBulkRecord`, `VendorCreditBuilderRefined`, `VendorCreditReplaceLines`, `VendorBillRecordCredit`, `VendorCreditApplyRefined` |
 | F-PUR-13 | Expenses you can work from: a list that shows money, a page per expense with its receipt, faster entry, fixing a rejected one | P2 | Refinements | `ExpensesListRefined`, `ExpensesListDark`, `ExpensePage`, `ExpenseRejectedResubmit`, `ExpenseFormRefined` |
-| F-PUR-14 | Expense categories that guide: a table with what each is used for, safe changes, and a hint and default tax rate in the expense form | P2 | Refinements | `ExpenseCategoriesRefined`, `ExpenseCategoriesDark`, `ExpenseCategoryDialogRefined`, `ExpenseCategoryDeleteConfirm`, `ExpenseFormCategoryHint` |
+| F-PUR-14 | Expense categories that guide: a table with what each is used for, safe changes, and a hint and default tax rate in the expense form | P2 | Refinements | `ExpenseCategoriesRefined`, `ExpenseCategoriesDark`, `ExpenseCategoryDialogRefined`, `ExpenseCategoryNameTaken`, `ExpenseCategoryArchiveConfirm`, `ExpenseCategoryDeleteConfirm`, `ExpenseFormCategoryHint`, `ExpenseFormCategoryTax` |
 
 ## User stories
 
@@ -714,7 +714,7 @@ Decision: D-210, D-222, D-228
 - UI: `/expenses/categories` keeps the Expenses header and tabs; the table uses `DataTable` with the shared filter and search bars.
 
 ### US-PUR-47 · Add, change and remove categories safely
-**Feature:** F-PUR-14 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpenseCategoryDialogRefined`, `ExpenseCategoryDeleteConfirm`
+**Feature:** F-PUR-14 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpenseCategoryDialogRefined`, `ExpenseCategoryNameTaken`, `ExpenseCategoryArchiveConfirm`, `ExpenseCategoryDeleteConfirm`
 **As** an owner or office staff, **I want** changes to categories to ask first and say what happened, **so that** I don't break how expenses post by accident.
 
 Decision: D-218, D-222, D-223, D-228
@@ -722,16 +722,16 @@ Decision: D-218, D-222, D-223, D-228
 **Acceptance criteria**
 - **Given** "Add category" or Edit, **when** the form opens, **then** it has Name, What it's for (optional, up to 120 characters, with a count), Posts to (expense accounts, "6900 Other Expenses · default" when left empty) and Default tax rate (active rates, or None); problems show under their field and the form stays open.
 - **Given** a name another category already has — ignoring case and surrounding spaces, archived ones included — **when** I save, **then** it says "<Name> is already a category." and names whether it's archived, with Restore offered for an archived one.
-- **Given** a category's account is changed, **when** the form shows, **then** it says expenses already approved stay where they posted; only expenses approved from now on post to the new account.
+- **Given** a category's account is changed, **when** the form shows, **then** it says expenses already approved stay in the old account and expenses approved from now on post to the new one.
 - **Given** a row's menu, **when** I open it, **then** it offers Edit, View history, Archive (or Restore) and Delete, each with its icon and right, destructive last; Delete shows only when no expense uses the category, and otherwise the menu says "In use — archive it instead".
-- **Given** Archive or Delete, **when** I choose it, **then** it asks first ("Archive Fuel? It leaves the expense form; its 14 expenses keep it.", "Delete Meals? This can't be undone.") and, once done, a toast says what happened; Restore and saves toast too.
+- **Given** Archive or Delete, **when** I choose it, **then** it asks first ("Archive Fuel & freight?" — it leaves the expense form, its expenses keep it and it can be restored; "Delete Client entertainment?" — removed for good, can't be undone) and, once done, a toast says what happened; Restore and saves toast too.
 
 **Implementation notes**
 - Data: unique index on `(org_id, lower(btrim(name)))`; migration `0116` renames existing duplicates "<name> (2)", "(3)"… (oldest keeps its name) before creating it.
 - API: `POST/PUT /expense-categories` accept `description` (≤ 120) and `defaultTaxRateId` (an active rate of the business, else 400 "Choose an active tax rate."); a clashing name → 409 "<Name> is already a category." with `{ existingId, archived }`; names are trimmed.
 
 ### US-PUR-48 · Pick the right category when submitting
-**Feature:** F-PUR-14 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpenseFormCategoryHint`
+**Feature:** F-PUR-14 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpenseFormCategoryHint`, `ExpenseFormCategoryTax`
 **As** anyone who submits expenses, **I want** each category to say what it's for and fill in its usual tax, **so that** I choose right and don't look up the tax.
 
 Decision: D-227, D-228
