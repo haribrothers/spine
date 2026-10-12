@@ -21,6 +21,7 @@ import {
 import { EmailService } from "../modules/email/email.service";
 import { loadEmailBrand } from "../modules/email/email-brand";
 import { appUrl, renderEmail } from "../modules/email/email-layout";
+import { applyInvitationTeams } from "./invitation-teams";
 import { invitationEmail } from "../modules/email/email-templates";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { seedDefaultTeam } from "../db/seed/default-team";
@@ -168,6 +169,12 @@ export const auth = betterAuth({
           attachments: email.attachments,
           log,
         });
+      },
+      organizationHooks: {
+        // US-TEAM-21 — a Staff invite joins its Teams the moment it's accepted.
+        afterAcceptInvitation: async ({ invitation, member: joined, organization }) => {
+          await applyInvitationTeams(db, { invitationId: invitation.id, memberId: joined.id, role: joined.role, orgId: organization.id });
+        },
       },
     }),
     jwt({

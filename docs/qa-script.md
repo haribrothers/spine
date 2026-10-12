@@ -5123,6 +5123,21 @@ Load an industry demo (e.g. India › Construction) and Riverstone Builders in t
 4. Reconcile: this month is in progress — older lines matched, newer ones suggested, a cheque presented this month to match by hand, and "SMS ALERT CHGS" to Create or Exclude.
 5. Delete all demo data: the card, the transfers, the money in and out, the statement and both reconciliations go; the bank account itself stays.
 
+## 228. Users you can manage from (US-TEAM-19 to US-TEAM-23, refinements before Phase 10)
+
+Use an owner with the demo loaded (Sarah Mendes, Staff on General Staff; Marcus Webb, Field), a second Team ("Accounts"), and a Staff member on no Team. Check light and dark, and compare with the canvas "25 Users".
+
+1. Users: "Invite people" in the header; tabs "Active", "Deactivated" and "Invites" with counts; the cards People (owners · staff · field), Staff without a Team (pressing it outlines it, says "Showing these · press again to clear" and shows only them) and Pending invites (how many expired; opens Invites). The Role filter, Updated and Refresh sit in the filter bar; search (names or emails) and Columns below. Tab, role, card and search survive a reload.
+2. Rows: avatar, name and email with "You", "Primary Owner" and "Demo" where they apply; the role; Teams as chips opening the Team, "No Team — can't open anything" in amber for Staff on none, "Everything" for owners and "Field access" for Field; "Last active" ("Just now", "2 hours ago", "Yesterday", "3 days ago", a date, or "Never signed in"); "Joined" in the business's date format.
+3. A row's menu, each item with its icon: What they can open; Manage Teams (Staff); Change to Field / Change to Staff; Promote to Owner (Staff); Demote to Staff (another Owner, not the Primary Owner); Transfer primary ownership… (your own row, as Primary Owner); Deactivate (not on your own row or the Primary Owner's) or Reactivate (Deactivated tab).
+4. Manage Teams: every Team with a tick and its size; Save Teams changes them at once and toasts "<name> is on <Teams>"; with none ticked the row warns. The audit log shows the change (record type User, "teams").
+5. What they can open: role and Teams; the sections ticked as their sidebar shows them (sign in as them to compare); permissions by group ("<n> of <total>"); "Edit on <Team> →" opens the Team; Manage Teams opens the dialog. Owners: "Owners can open everything…"; Field: "Field access is fixed…".
+6. Change to Staff asks "Change <name> to Staff?" with Teams to tick (General Staff ticked); Change to Field names the Teams they come off. Each toasts; the person's next page uses the new role; the audit log shows the role change. Owners have neither.
+7. Invite people: several emails (commas, spaces, new lines), up to 20; one that isn't an address shows in red and Send stays off; Role Staff or Field; for Staff, Teams they'll join (General Staff ticked). Sending toasts "<n> invites sent"; an address already a member or already invited stays in the dialog with why. Accept a Staff invite as the new person: they're on the Teams chosen.
+8. Invites tab: email, role, Teams on joining, "<inviter> · <date>", "Expires in <n> days" or "Expired" in red; the menu has Copy invite link (toast "Only <email> can use it, signed in with that address."), Resend (toast) and Cancel invite (asks first, toast).
+9. Deactivate asks first (for a demo person: "They're demo data, so they go when the demo data is deleted.") and toasts; Reactivate asks "Reactivate <name>?" (previous role and Teams back) and toasts. A failure says what to do next above the list. `PUT /org/members/<your id>/deactivate` answers 400 "You can't deactivate yourself."
+10. Regression: onboarding's invite step still sends one invite; promoting asks "Make <name> an owner?"; the Primary Owner's row offers only What they can open and the transfer; Staff and Field still can't open Team pages; `GET /org/members` as Staff has no Teams, last active or demo fields; Teams › a Team's members still edit as before.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

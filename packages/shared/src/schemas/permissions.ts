@@ -803,3 +803,19 @@ export function withImpliedPrivileges(changes: { capability: Capability; granted
   }
   return [...result.entries()].map(([capability, granted]) => ({ capability, granted }));
 }
+
+/**
+ * US-TEAM-20 — how many permissions of each group someone has, in the
+ * order the Team matrix lists them; ungrouped ones count under "Other".
+ */
+export function capabilityGroupCounts(capabilities: Partial<Record<string, boolean>>): { group: string; granted: number; total: number }[] {
+  const groups = new Map<string, { granted: number; total: number }>();
+  for (const capability of CAPABILITIES) {
+    const group = CAPABILITY_LABELS[capability].group ?? "Other";
+    const entry = groups.get(group) ?? { granted: 0, total: 0 };
+    entry.total += 1;
+    if (capabilities[capability] === true) entry.granted += 1;
+    groups.set(group, entry);
+  }
+  return [...groups.entries()].map(([group, counts]) => ({ group, ...counts }));
+}

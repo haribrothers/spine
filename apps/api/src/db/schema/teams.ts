@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
-import { pgTable, uuid, text, boolean, timestamp, unique, index } from "drizzle-orm/pg-core";
-import { organization, member } from "./auth";
+import { pgTable, uuid, text, boolean, timestamp, unique, index, primaryKey } from "drizzle-orm/pg-core";
+import { organization, member, invitation } from "./auth";
 
 /**
  * PRD §2.1/§7 — Teams subdivide the Staff tier with a configurable
@@ -72,6 +72,24 @@ export const teamPrivileges = pgTable(
     index("team_privileges_team_id_idx").on(table.teamId),
     unique("team_privileges_team_capability_unique").on(table.teamId, table.capability),
   ],
+);
+
+/**
+ * US-TEAM-21 (D-232) — the Teams a Staff invite joins when it's accepted
+ * (Better Auth's `afterAcceptInvitation` hook, auth.ts). Both sides cascade:
+ * a deleted invitation or Team takes its rows with it.
+ */
+export const invitationTeams = pgTable(
+  "invitation_teams",
+  {
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => invitation.id, { onDelete: "cascade" }),
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.invitationId, table.teamId] }), index("invitation_teams_team_id_idx").on(table.teamId)],
 );
 
 export const teamsRelations = relations(teams, ({ many }) => ({

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, UseInterceptors } from "@nestjs/common";
-import { transferPrimaryOwnerSchema } from "@spine/shared";
+import { changeMemberRoleSchema, setMemberTeamsSchema, transferPrimaryOwnerSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { z } from "zod";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -26,9 +26,11 @@ export class MembersController {
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
+  /** US-TEAM-19 (D-232) — Owners also get each person's Teams, last active and demo flag; everyone else the rows as before. */
   @Get()
   async list(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
+    if (await this.membersService.isOwner(orgId, session.user.id)) return this.membersService.listDetailed(orgId);
     return this.membersService.list(orgId);
   }
 
@@ -62,6 +64,40 @@ export class MembersController {
   async getTeams(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.teamsService.getMemberTeams(orgId, id);
+  }
+
+  /** US-TEAM-20 — the Teams a Staff member is on, replaced as a whole. */
+  @Put(":id/teams")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async setTeams(
+    @Session() session: UserSession,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(setMemberTeamsSchema)) body: z.infer<typeof setMemberTeamsSchema>,
+  ) {
+    const orgId = requireOrgId(session);
+    return this.membersService.setTeams(orgId, id, body.teamIds, session.user.id);
+  }
+
+  /** US-TEAM-20 — what they can open: role, Teams and their effective capabilities. */
+  @Get(":id/access")
+  @OrgRoles(["owner"])
+  async access(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.membersService.access(orgId, id);
+  }
+
+  /** US-TEAM-22 — Staff ↔ Field only. */
+  @Put(":id/role")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async changeRole(
+    @Session() session: UserSession,
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(changeMemberRoleSchema)) body: z.infer<typeof changeMemberRoleSchema>,
+  ) {
+    const orgId = requireOrgId(session);
+    return this.membersService.changeRole(orgId, id, body.role, body.teamIds, session.user.id);
   }
 
   @Put(":id/deactivate")

@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Users you can manage from (US-TEAM-19 to US-TEAM-23, D-232)
+
+- **List (US-TEAM-19):** Users on the shared list layout — "Invite people" in the header, Active, Deactivated and Invites tabs, the cards (Staff without a Team filters; Pending invites opens Invites), a Role filter, Updated and Refresh, search and Columns, all in the address; rows show "You", "Primary Owner" and "Demo", the role, Teams, last active and joined. For an Owner, `GET /org/members` rows gain `teams`, `lastActiveAt` and `isDemo`.
+- **Teams and access (US-TEAM-20):** "No Team — can't open anything" on Staff with none; Manage Teams (`PUT /org/members/:id/teams`, audited); "What they can open" — sections as their sidebar shows them and permissions by group, from `GET /org/members/:id/access` (the list the API enforces).
+- **Invites (US-TEAM-21):** several emails at once (up to 20) with the role and, for Staff, the Teams they join; who couldn't be invited stays listed with why. `invitation_teams` (migration `0119`) is applied by Better Auth's `afterAcceptInvitation` hook. The Invites tab shows who invited, when, the Teams and the expiry; Copy invite link, Resend and Cancel invite. Invite logic moves into `InvitationsService`; `{ email, role }` still works for onboarding.
+- **Role (US-TEAM-22):** Change to Field / Change to Staff ask first (to Staff, with the Teams to join); `PUT /org/members/:id/role`, Staff ↔ Field only; to Field takes them off their Teams.
+- **Safety (US-TEAM-23):** no Deactivate on your own row, and the API refuses it; Reactivate asks; every people action toasts, and a failure says what to do next above the list; deactivating a demo person says they go with the demo data.
+- **Also:** MENU_ICONS gains manageTeams, changeRole, promote, demote, transferOwnership, deactivate and reactivate; `capabilityGroupCounts`, `parseEmailList` and `isEmailAddress` in `@spine/shared`; `user-row.tsx` and `invitation-row.tsx` are gone; the cards, filters and list sit in the active tab's panel, so the tab controls something real (axe `aria-valid-attr-value` — Banking, Payables and Receivables still have the old arrangement).
+- **Tests:** API integration `us-team-19-23`; web unit `us-team-19-23`; E2E `us-team-19-23` (with axe in light and dark), with `us-team-16` moved to the new menu. QA script section 228.
+
 ### 2026-10-12 — Banking you can work from (US-BANK-13 to US-BANK-17, US-ONB-34, D-231)
 
 - **Accounts (US-BANK-13):** Banking on the shared list layout — Active and Archived tabs, the cards (Not yet reconciled filters), a Type filter, Updated and Refresh, search and Columns, all in the address; rows show the type, bank line, "Reconciled to <date>" and "<n> unreconciled"; a menu with icons opens the register, reconciles, imports a statement, records money in or out or a transfer with that account chosen, sets the default, edits or archives (asking first).

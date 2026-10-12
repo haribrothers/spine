@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { AppShellHeader } from "@spine/ui";
 import { getMyMembership } from "../../../../lib/get-my-membership";
 import { UsersExplorer } from "./users-explorer";
 
@@ -10,7 +9,8 @@ import { UsersExplorer } from "./users-explorer";
  * nicety, not access control — this page independently re-checks Owner
  * status server-side and redirects a Staff/Field user who navigates here
  * directly, matching CLAUDE.md's "server-side authorization on every
- * endpoint" rule applied to routing too.
+ * endpoint" rule applied to routing too. The header is the explorer's own
+ * (US-TEAM-19): its "Invite people" opens a dialog there.
  */
 export default async function UsersPage() {
   const membership = await getMyMembership();
@@ -18,14 +18,5 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
-  return (
-    <>
-      <AppShellHeader
-        breadcrumb={[{ label: "Team" }, { label: "Users" }]}
-        title="Users"
-        description="Everyone with access to this organisation."
-      />
-      <UsersExplorer currentMemberId={membership.id} />
-    </>
-  );
+  return <UsersExplorer currentMemberId={membership.id} />;
 }

@@ -1,9 +1,11 @@
 import { orgMoneySettings } from "../../common/money-format";
 import { BadRequestException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, max } from "drizzle-orm";
+import type { MemberAccess, MemberTeamRef } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { member, organization, user } from "../../db/schema";
+import { member, organization, session as sessionTable, teamMemberships, teams, user } from "../../db/schema";
+import { getEffectiveCapabilities } from "../../auth/capability.util";
 import { AuditLogService } from "../audit/audit-log.service";
 
 export interface MemberRow {
@@ -17,6 +19,15 @@ export interface MemberRow {
   deactivatedAt: Date | null;
   createdAt: Date;
 }
+
+/** US-TEAM-19 — what an Owner sees on each row: their Teams, when they were last active and whether they're demo data. */
+export interface MemberDetailRow extends MemberRow {
+  teams: MemberTeamRef[];
+  lastActiveAt: Date | null;
+  isDemo: boolean;
+}
+
+const ONLY_STAFF_AND_FIELD = "Only Staff and Field can be changed this way.";
 
 /**
  * Settings' member list (S-10.2) + deactivate/reactivate (S-10.3). Structural
@@ -57,6 +68,126 @@ export class MembersService {
       .where(eq(member.organizationId, orgId));
 
     return rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  /**
+   * US-TEAM-19 (D-232) — the list as an Owner sees it on Users. Last active
+   * is the newest use of any of their sessions (Better Auth moves
+   * `updatedAt` along as a session is used).
+   */
+  async listDetailed(orgId: string): Promise<MemberDetailRow[]> {
+    const rows = await this.db
+      .select({ ...this.memberRowSelection, isDemo: member.isDemo })
+      .from(member)
+      .innerJoin(user, eq(member.userId, user.id))
+      .where(eq(member.organizationId, orgId));
+    if (rows.length === 0) return [];
+    const teamsByMember = await this.teamsFor(orgId, rows.map((r) => r.id));
+    const lastActive = new Map(
+      (
+        await this.db
+          .select({ userId: sessionTable.userId, at: max(sessionTable.updatedAt) })
+          .from(sessionTable)
+          .where(inArray(sessionTable.userId, rows.map((r) => r.userId)))
+          .groupBy(sessionTable.userId)
+      ).map((r) => [r.userId, r.at]),
+    );
+    return rows
+      .map((r) => ({ ...r, teams: teamsByMember.get(r.id) ?? [], lastActiveAt: lastActive.get(r.userId) ?? null }))
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  /** Whether this user is an Owner here — Users' extra fields are for Owners only. */
+  async isOwner(orgId: string, userId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ role: member.role })
+      .from(member)
+      .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
+    return row?.role === "owner";
+  }
+
+  /** Each member's Teams in this organisation, by name. */
+  private async teamsFor(orgId: string, memberIds: string[]): Promise<Map<string, MemberTeamRef[]>> {
+    const rows = await this.db
+      .select({ memberId: teamMemberships.memberId, id: teams.id, name: teams.name })
+      .from(teamMemberships)
+      .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+      .where(and(eq(teams.orgId, orgId), inArray(teamMemberships.memberId, memberIds)))
+      .orderBy(desc(teams.isDefault), teams.createdAt);
+    const result = new Map<string, MemberTeamRef[]>();
+    for (const row of rows) result.set(row.memberId, [...(result.get(row.memberId) ?? []), { id: row.id, name: row.name }]);
+    return result;
+  }
+
+  /** The Teams with these ids, all in this organisation, or 400. */
+  private async requireTeams(orgId: string, teamIds: string[]): Promise<MemberTeamRef[]> {
+    const unique = [...new Set(teamIds)];
+    if (unique.length === 0) return [];
+    const rows = await this.db
+      .select({ id: teams.id, name: teams.name })
+      .from(teams)
+      .where(and(eq(teams.orgId, orgId), inArray(teams.id, unique)))
+      .orderBy(desc(teams.isDefault), teams.createdAt);
+    if (rows.length !== unique.length) throw new BadRequestException("One or more Teams weren't found. Refresh and try again.");
+    return rows;
+  }
+
+  private async defaultTeamIds(orgId: string): Promise<string[]> {
+    const rows = await this.db.select({ id: teams.id }).from(teams).where(and(eq(teams.orgId, orgId), eq(teams.isDefault, true)));
+    return rows.map((r) => r.id);
+  }
+
+  /** Replaces a member's Teams, inside the caller's transaction. */
+  private async replaceTeams(tx: Pick<Database, "delete" | "insert">, memberId: string, teamIds: string[]) {
+    await tx.delete(teamMemberships).where(eq(teamMemberships.memberId, memberId));
+    if (teamIds.length > 0) await tx.insert(teamMemberships).values(teamIds.map((teamId) => ({ teamId, memberId })));
+  }
+
+  private async detailRow(orgId: string, memberId: string): Promise<MemberDetailRow> {
+    const row = (await this.listDetailed(orgId)).find((r) => r.id === memberId);
+    if (!row) throw new BadRequestException("Member not found");
+    return row;
+  }
+
+  /** US-TEAM-20 — sets the Teams a Staff member is on; the change is in the audit log. */
+  async setTeams(orgId: string, memberId: string, teamIds: string[], actorUserId: string | null = null): Promise<MemberDetailRow> {
+    const existing = await this.requireMember(orgId, memberId);
+    if (existing.role !== "staff") throw new BadRequestException("Only Staff are on Teams.");
+    const next = await this.requireTeams(orgId, teamIds);
+    const before = (await this.teamsFor(orgId, [memberId])).get(memberId) ?? [];
+    await this.db.transaction(async (tx) => {
+      await this.replaceTeams(tx, memberId, next.map((t) => t.id));
+    });
+    const names = (list: MemberTeamRef[]) => list.map((t) => t.name).join(", ") || "No Team";
+    if (names(before) !== names(next)) await this.recordUserChange(orgId, actorUserId, existing.userId, "teams_changed", "teams", names(before), names(next));
+    return this.detailRow(orgId, memberId);
+  }
+
+  /** US-TEAM-20 — what a member can open: the same effective list the API enforces for them. */
+  async access(orgId: string, memberId: string): Promise<MemberAccess> {
+    const existing = await this.requireMember(orgId, memberId);
+    const teamsList = existing.role === "staff" ? ((await this.teamsFor(orgId, [memberId])).get(memberId) ?? []) : [];
+    const capabilities = await getEffectiveCapabilities(this.db, { orgId, userId: existing.userId });
+    return { role: existing.role as MemberAccess["role"], teams: teamsList, capabilities };
+  }
+
+  /**
+   * US-TEAM-22 — Staff ↔ Field. To Field takes them off their Teams (Field
+   * never uses them); to Staff puts them on the Teams given, or the default
+   * Team when none are named. Owner is never set or left this way.
+   */
+  async changeRole(orgId: string, memberId: string, role: "staff" | "field", teamIds: string[] | undefined, actorUserId: string | null = null): Promise<MemberDetailRow> {
+    const existing = await this.requireMember(orgId, memberId);
+    if (existing.role !== "staff" && existing.role !== "field") throw new BadRequestException(ONLY_STAFF_AND_FIELD);
+    if (existing.role === role) throw new BadRequestException(`They're already ${role === "staff" ? "Staff" : "Field"}.`);
+    const nextTeams = role === "staff" ? await this.requireTeams(orgId, teamIds ?? (await this.defaultTeamIds(orgId))) : [];
+    await this.db.transaction(async (tx) => {
+      await tx.update(member).set({ role }).where(eq(member.id, memberId));
+      await this.replaceTeams(tx, memberId, nextTeams.map((t) => t.id));
+    });
+    const label = (r: string) => (r === "staff" ? "Staff" : "Field");
+    await this.recordUserChange(orgId, actorUserId, existing.userId, "role_changed", "role", label(existing.role), label(role));
+    return this.detailRow(orgId, memberId);
   }
 
   /**
@@ -107,6 +238,11 @@ export class MembersService {
 
   async setActive(orgId: string, memberId: string, isActive: boolean, actorUserId: string | null = null): Promise<MemberRow> {
     const existing = await this.requireMember(orgId, memberId);
+
+    // US-TEAM-23 — nobody locks themselves out from Users.
+    if (!isActive && actorUserId && existing.userId === actorUserId) {
+      throw new BadRequestException("You can't deactivate yourself.");
+    }
 
     if (existing.role === "owner" && !isActive) {
       if (existing.isPrimaryOwner) {

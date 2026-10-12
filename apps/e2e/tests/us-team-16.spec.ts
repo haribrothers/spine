@@ -3,10 +3,10 @@ import { test, expect } from "./fixtures";
 
 const STAFF_NAME = "Sarah Mendes";
 
-const row = (page: Page, name: string) => page.getByTestId("user-row").filter({ hasText: name });
+const row = (page: Page, name: string) => page.getByTestId("users-table").getByRole("row").filter({ hasText: name });
 
 async function openPromote(page: Page) {
-  await row(page, STAFF_NAME).getByRole("button", { name: "More actions" }).click();
+  await row(page, STAFF_NAME).getByRole("button", { name: `Actions for ${STAFF_NAME}` }).click();
   await page.getByRole("menuitem", { name: "Promote to Owner" }).click();
 }
 
@@ -32,22 +32,21 @@ test.describe("US-TEAM-16 and US-TEAM-17", () => {
     await expect(row(page, STAFF_NAME)).toContainText("Owner");
 
     // Put things back for the specs that rely on the demo Staff user.
-    await row(page, STAFF_NAME).getByRole("button", { name: "More actions" }).click();
+    await row(page, STAFF_NAME).getByRole("button", { name: `Actions for ${STAFF_NAME}` }).click();
     await page.getByRole("menuitem", { name: "Demote to Staff" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Demote" }).click();
     await expect(row(page, STAFF_NAME)).toContainText("Staff");
   });
 
-  test("the Primary Owner's row has no Deactivate and only the transfer in its menu", async ({ page, seededOrg }) => {
+  test("the Primary Owner's row has no Deactivate, demote or promote — only what they can open and the transfer", async ({ page, seededOrg }) => {
     void seededOrg;
     await page.goto("/team/users");
-    const primary = page.getByTestId("user-row").filter({ hasText: "Primary Owner" });
-    await expect(primary.getByRole("button", { name: "Deactivate" })).toHaveCount(0);
-    await primary.getByRole("button", { name: "More actions" }).click();
+    const primary = page.getByTestId("users-table").getByRole("row").filter({ hasText: "Primary Owner" });
+    await primary.getByRole("button", { name: /^Actions for / }).click();
     const items = await page.getByRole("menuitem").allTextContents();
-    expect(items).toEqual(["Transfer primary ownership…"]);
+    expect(items).toEqual(["What they can open", "Transfer primary ownership…"]);
     await page.keyboard.press("Escape");
 
-    await expect(page.getByText("Everyone with access to this organisation.")).toHaveCount(1);
+    await expect(page.getByText("Everyone with access to Riverstone Builders, and the invites on their way.")).toHaveCount(1);
   });
 });

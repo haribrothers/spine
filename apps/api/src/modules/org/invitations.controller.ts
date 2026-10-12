@@ -1,9 +1,13 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Req, UseInterceptors } from "@nestjs/common";
+import { inviteMembersSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import type { z } from "zod";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Request } from "express";
 import { auth } from "../../auth/auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
+import { ZodValidationPipe } from "../../common/zod-validation.pipe";
+import { InvitationsService } from "./invitations.service";
 import { requireOrgId } from "./settings.controller";
 
 /**
@@ -19,13 +23,20 @@ import { requireOrgId } from "./settings.controller";
  */
 @Controller("org/invitations")
 export class InvitationsController {
+  constructor(private readonly invitations: InvitationsService) {}
+
   /**
    * PRD §2.1 — Owner is granted only by promoting an existing Staff member
    * (MembersController.promote), never at invite time. Better Auth's own
    * createInvitation would otherwise allow this (its own check only blocks
    * inviting the creatorRole if the CALLER isn't already that role — an
    * Owner inviting another Owner passes it fine), so this is enforced
-   * ourselves rather than relying on the plugin.
+   * ourselves rather than relying on the plugin: `inviteMembersSchema`
+   * only accepts "staff" or "field", so an Owner invite is a 400.
+   *
+   * US-TEAM-21 (D-232) — `{ emails, role, teamIds? }` invites several at
+   * once and answers which were sent and which were skipped, and why;
+   * `{ email, role }` (the onboarding wizard's) still returns the invitation.
    */
   @Post()
   @OrgRoles(["owner"])
@@ -33,12 +44,10 @@ export class InvitationsController {
   async invite(
     @Session() session: UserSession,
     @Req() request: Request,
-    @Body() body: { email: string; role: "staff" | "field" },
+    @Body(new ZodValidationPipe(inviteMembersSchema)) body: z.infer<typeof inviteMembersSchema>,
   ) {
-    if ((body.role as string) === "owner") {
-      throw new BadRequestException("Owner can only be granted by promoting an existing Staff member, not by invite.");
-    }
     const orgId = requireOrgId(session);
+    if ("emails" in body) return this.invitations.inviteMany(orgId, fromNodeHeaders(request.headers), body.emails, body.role, body.teamIds);
     const invitation = await auth.api.createInvitation({
       body: {
         email: body.email,
@@ -52,20 +61,15 @@ export class InvitationsController {
 
   /**
    * Feedback item: "I want to list all users including the user who has
-   * been sent an invite" — Better Auth's listInvitations returns every
-   * status (pending/accepted/cancelled/rejected); this endpoint filters to
-   * pending only, since accepted invites are already covered by
-   * GET /org/members and the rest aren't actionable.
+   * been sent an invite" — pending only, since accepted invites are
+   * already covered by GET /org/members and the rest aren't actionable.
+   * US-TEAM-21: each with who sent it, the Teams it joins and its link.
    */
   @Get()
   @OrgRoles(["owner"])
-  async list(@Session() session: UserSession, @Req() request: Request) {
+  async list(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
-    const invitations = await auth.api.listInvitations({
-      query: { organizationId: orgId },
-      headers: fromNodeHeaders(request.headers),
-    });
-    return invitations.filter((invitation) => invitation.status === "pending");
+    return this.invitations.listPending(orgId);
   }
 
   @Delete(":id")

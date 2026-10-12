@@ -2364,6 +2364,8 @@ Shows: "Account" · "Profile & Preferences" · "Your personal account settings. 
 ### TeamUsers — Users & pending invites
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-TEAM-01, US-TEAM-02, US-TEAM-03, US-TEAM-05, US-TEAM-14, US-TEAM-15, US-TEAM-17 · **Source:** Captured
 
+> Superseded by `TeamUsersRefined` and the screens under "Users you can manage from" (US-TEAM-19 to US-TEAM-23, D-232).
+
 ![TeamUsers](screens/TeamUsers.webp)
 
 Links to: `EmailInvite`
@@ -4145,6 +4147,73 @@ Shows: "Reconciliation to 30 Sept 2026" · account, finished by and when, file �
 Links to: —
 
 Shows: "RECONCILIATION REPORT" · account and statement date · Summary · Reconciled (opening, lines matched and excluded, finished) · "Not yet on the statement" · matched lines · excluded lines · "Generated from Spine on …". As built, every matched line is listed.
+
+## Users you can manage from
+
+Drawn in Claude Design for US-TEAM-19 to US-TEAM-23 (D-232): project "Spine web — refinements before Phase 10", canvas "25 Users". Users on the shared list layout, each Staff member's Teams and what they can open, inviting several people onto their Teams, moving someone between Staff and Field, and people actions that ask first. Supersedes `TeamUsers` for the Users page.
+
+### TeamUsersRefined — Everyone at a glance, with their Teams
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-19, US-TEAM-20, US-TEAM-23 · **Source:** Claude Design
+
+![TeamUsersRefined](screens/TeamUsersRefined.webp)
+
+Links to: `InvitePeopleDialog`, `TeamInvites`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm`, `TeamMembers`
+
+Shows: "Team › Users" · "Everyone with access to <Business>, and the invites on their way." · "Invite people" · tabs "Active 6" "Deactivated 1" "Invites 3" · "People" (owners · staff · field) "Staff without a Team" (presses to filter) "Pending invites" (expired, opens Invites) · "All roles" · "Updated just now" Refresh · "Search names or emails" "Columns" · "Person" (avatar, name, "You" "Primary Owner" "Demo", email) "Role" "Teams" (chips opening the Team, "No Team — can't open anything", "Everything", "Field access") "Last active" ("Just now", "2 hours ago", "Yesterday", "Never signed in") "Joined" · row menu "What they can open" "Manage Teams" "Change to Field" "Promote to Owner" · "Deactivate". Your own row has no Deactivate. As built, the Teams column's chips link to the Team, and the rows keep joining order.
+
+### TeamUsersDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-19 · **Source:** Claude Design
+
+![TeamUsersDark](screens/TeamUsersDark.webp)
+
+Links to: `TeamUsersRefined`
+
+Shows: dark mode, "Staff without a Team" pressed ("Showing these · press again to clear").
+
+### ManageTeamsDialog — Tick the Teams someone is on
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-20 · **Source:** Claude Design
+
+![ManageTeamsDialog](screens/ManageTeamsDialog.webp)
+
+Links to: `TeamUsersRefined`, `TeamTeams`
+
+Shows: "Manage Teams — Kavya Iyer" · "Kavya can open what their Teams allow, together. Without a Team, they can't open anything." · each Team with a tick and "<n> people" · "Change what a Team allows on its own page under Teams." · "Cancel" "Save Teams" · toast "Teams saved" "<name> is on General Staff and Accounts".
+
+### UserAccessDrawer — What they can open
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-20 · **Source:** Claude Design
+
+![UserAccessDrawer](screens/UserAccessDrawer.webp)
+
+Links to: `TeamPrivileges`, `ManageTeamsDialog`
+
+Shows: "What Sarah Mendes can open" · "Staff · on General Staff and Accounts — everything any of them allows." · "Sections" (ticked or not, as their sidebar shows them) · "Permissions by group" ("<granted> of <total>", as the Team matrix groups them) · "Change what they can do" "Edit on <Team> →" "Manage Teams". Owners: "Owners can open everything, including Users, Teams and Settings."; Field: "Field access is fixed: …".
+
+### ChangeRoleConfirm — Between Field and Staff, asking first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-22 · **Source:** Claude Design
+
+![ChangeRoleConfirm](screens/ChangeRoleConfirm.webp)
+
+Links to: `TeamUsersRefined`
+
+Shows: "Change Marcus Webb to Staff?" "Marcus will have their Teams' access instead of Field access — the office pages, not only the jobs they're assigned to. It applies the next time they open Spine." · "Teams they'll be on" (General Staff ticked) · "Go back" "Change to Staff". To Field: "… will only see the jobs they're assigned to, without money, and their own meetings and expenses. They'll come off <Teams>." · "Change to Field".
+
+### InvitePeopleDialog — Several people, onto their Teams
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-21 · **Source:** Claude Design
+
+![InvitePeopleDialog](screens/InvitePeopleDialog.webp)
+
+Links to: `TeamInvites`, `EmailInvite`
+
+Shows: "Invite people" "Each gets an email with a link to join <Business>. Owners are made by promoting Staff, not by invite." · "Emails" (commas, spaces or new lines; "Up to 20 at once."; each address shown, one that isn't an address in red: "<x> isn't an email address — fix or remove it.") · "Role" (Staff, Field) · "Teams they'll join" (General Staff ticked) · "Cancel" "Send invites (2)". After sending, any skipped stay listed: "These weren't invited: <email> — already a member / already invited — resend it instead / not an email address". As built, the emails are a text box with the addresses shown under it.
+
+### TeamInvites — The Invites tab
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-21 · **Source:** Claude Design
+
+![TeamInvites](screens/TeamInvites.webp)
+
+Links to: `TeamUsersRefined`, `AcceptInvite`
+
+Shows: "Email" "Role" "Teams on joining" "Invited" ("Priya Raman · 9 Oct") "Expires" ("Expires in 2 days", "Expires tomorrow", "Expired" in red) · row menu "Copy invite link" "Resend" · "Cancel invite" (asks first) · toast "Invite link copied" "Only <email> can use it, signed in with that address." As built, an expired invite's menu has no Copy invite link.
 
 ## Mobile field companion
 
