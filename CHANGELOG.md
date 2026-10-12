@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Teams you can manage from (US-TEAM-25 to US-TEAM-29, D-234)
+
+- **List (US-TEAM-25):** Teams on the shared list layout — "Create Team" in the header, the cards (Staff on no Team opens Users filtered to them; Staff on several Teams), search in the address; rows with badges, description, member avatars, "Opens <n> of <total> sections" and "<n> of <total>" permissions; a row menu with icons (Open, Rename, Duplicate, Delete — asking first, naming anyone left on no Team, then a toast). `GET /org/teams` rows gain `description`, `isDemo`, `members` and `granted`.
+- **Create and duplicate (US-TEAM-26):** one dialog for Create, Duplicate and Rename — name, description (`teams.description`, migration `0122`) and "Start from" another Team's permissions (`POST /org/teams { copyFromTeamId }`, never its members); a taken name is 409 "There's already a Team called <name>."; `PUT /org/teams/:id { name?, description? }`.
+- **Team page (US-TEAM-27):** a header with badges, Add people and a menu; tabs Members, Permissions and History in the address; members with their other Teams and last active; Add people ticks several Staff; Remove asks first and warns when it leaves someone on no Team.
+- **Permissions (US-TEAM-28):** a draft — "Changed" marks, group "<on> of <total> · was <n>", search, Show changed only, Expand all, a sticky "<n> changes · Discard · Save changes" bar, a confirm listing what turns on and off (with US-BANK-12's implied ones) and the sections gained or lost, and a live "What members will open" panel; leaving with changes asks first. Tab "Privileges" is now "Permissions".
+- **History (US-TEAM-29):** every Team change is audited as entity type `team` (`created` with `copiedFrom`, `updated`, `members_changed`, `privileges_changed` by label, `deleted`); `GET /org/teams/:id/history`; the audit log takes `entityId` (and the page reads `entityType`/`entityId` from the address), names Teams and links to them.
+- **Also:** the demo's Accounts Team has a description; MENU_ICONS gains removeMember; `team-detail-view.tsx` is replaced by `team-page.tsx` and `team-permissions.tsx`.
+- **Tests:** API integration `us-team-25-29` (and `teams.service` with the audit service); web unit `us-team-25-29`; E2E `us-team-25-29` (with axe), with `us-bank-12`, `us-pay-18`, `us-pur-28` and `us-set-24` on the renamed tab. QA script section 231.
+
 ### 2026-10-12 — Demo people, Teams and invites (US-ONB-35, D-216)
 
 - **People:** the demo's team is six: Sarah Mendes (Staff, General Staff — the demo Staff login, unchanged), Neha Kapoor (Staff, General Staff and Accounts), Marcus Webb (Field, every demo job's crew), Kavya Iyer (Staff, no Team), Ravi Kumar (Field, the first job's crew) and Tom Becker (Field, deactivated 3 weeks ago), each with their own Joined date and the demo password. Teams and the deactivation go through `MembersService`, so the audit log has them, backdated.

@@ -855,6 +855,13 @@
       "when": 1791814636922,
       "tag": "0121_demo_teams_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1791820027678,
+      "tag": "0122_team_description",
+      "breakpoints": true
     }
   ]
 }

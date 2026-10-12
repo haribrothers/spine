@@ -592,6 +592,8 @@ Shows: "Sales › Quotes > New" · "New quote" · "Build a multi-line quote. It 
 ### TeamPrivilegesExpanded — Team privileges — group expanded
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-CAT-08, US-TEAM-11, US-OPS-21 · **Source:** Captured
 
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
+
 ![TeamPrivilegesExpanded](screens/TeamPrivilegesExpanded.webp)
 
 Links to: `TeamPrivileges`, `OnbFinancialYear`, `OnbInviteTeam`, `QuoteBuilder`, `QuoteDetailAccepted`, `InvoiceBuilder`
@@ -1967,6 +1969,8 @@ Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "Q Search settings" �
 ### TeamPrivileges — Team privileges
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-RPT-10, US-TEAM-11, US-TEAM-13 · **Source:** Captured
 
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
+
 ![TeamPrivileges](screens/TeamPrivileges.webp)
 
 Links to: `TeamPrivilegesExpanded`
@@ -2411,6 +2415,8 @@ Shows: "Team > Users" · "Users" · "Everyone with access to this organisation."
 ### TeamTeams — Teams
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-TEAM-09, US-TEAM-12 · **Source:** Captured
 
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
+
 ![TeamTeams](screens/TeamTeams.webp)
 
 Links to: `CreateTeamDialog`
@@ -2429,6 +2435,8 @@ Shows: "Team > Teams" · "Teams" · "Group Staff members and configure what each
 ### TeamMembers — Team members
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-TEAM-10 · **Source:** Captured
 
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
+
 ![TeamMembers](screens/TeamMembers.webp)
 
 Links to: —
@@ -2446,6 +2454,8 @@ Shows: "Team › Users" · "Users" · "Everyone with access to this organisation
 
 ### TeamPrivilegesBooks — Team privileges — accountant access, banking, refunds, vendor credits
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-12, US-PAY-18, US-PUR-28, US-RPT-36 · **Source:** Drawn
+
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
 
 ![TeamPrivilegesBooks](screens/TeamPrivilegesBooks.webp)
 
@@ -4272,6 +4282,100 @@ Shows: the signed-out frame · "Choose your own password" "<Owner> set a passwor
 Links to: `MobHome`, `MobSignIn`
 
 Shows: the compact logo · "Choose your own password" · who set it · "New password" (iOS form rows; Android outlined fields) with "Password strength: <level>" · "Confirm password" · "Save and continue" · "Sign out". As built, the phone shows the strength level as a line, not the four-part meter.
+
+## Teams you can manage from
+
+Drawn in Claude Design for US-TEAM-25 to US-TEAM-29 (D-234): project "Spine web — refinements before Phase 10", canvas "27 Teams". Teams on the shared list layout, Teams that start from another's permissions, a Team page with members changed safely, permissions changed as a draft and saved after review, and every change in the Team's history. Supersedes `TeamTeams`, `TeamMembers`, `TeamPrivileges`, `TeamPrivilegesExpanded` and `TeamPrivilegesBooks`.
+
+### TeamsListRefined — Every Team at a glance
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
+
+![TeamsListRefined](screens/TeamsListRefined.webp)
+
+Links to: `TeamPageMembers`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamUsersRefined`
+
+Shows: "Team › Teams" · "What each group of Staff can open and do. Someone on several Teams gets everything any of them allows." · "Create Team" · cards "Teams" (default · with no one yet) "Staff on no Team" (opens Users filtered to them) "Staff on several Teams" · "Search Teams" "Columns" · "Team" (name, "Default"/"Demo", description) "Members" (avatars, "2 people" or "No one yet") "Opens" ("16 of 18 sections") "Permissions" ("30 of 104") · row menu "Open" "Rename" "Duplicate" · "Delete" (not on the default Team or the only Team). As built, Opens counts the sections members' sidebars show (the Owner-only Team section isn't counted), and the totals follow the business's modules.
+
+### TeamsListDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
+
+![TeamsListDark](screens/TeamsListDark.webp)
+
+Links to: `TeamsListRefined`
+
+Shows: dark mode.
+
+### CreateTeamDialog — Create, Duplicate or Rename
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-26 · **Source:** Claude Design
+
+![CreateTeamDialog](screens/CreateTeamDialog.webp)
+
+Links to: `TeamPagePermissions`
+
+Shows: "Duplicate Accounts" "A new Team starting with Accounts' permissions. Its members aren't copied — add people once it's made." · "Name" ("Accounts (copy)") · "Description" (optional, "What this Team is for…") · "Start from" ("Nothing allowed" or a Team with its permission count) · "Cancel" "Create Team". A taken name: "There's already a Team called <name>." under Name. Rename shows Name and Description only; the default Team's name can't change.
+
+### DeleteTeamConfirm — Delete asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
+
+![DeleteTeamConfirm](screens/DeleteTeamConfirm.webp)
+
+Links to: `TeamsListRefined`
+
+Shows: "Delete <Team>?" "Its 1 person loses what it allowed. Its permissions and history go; nobody's login does." · "<name> will be on no Team — they can't open anything until you add them to one." · "Go back" "Delete Team" · toast "<Team> deleted".
+
+### TeamPageMembers — A Team's page: members
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-27 · **Source:** Claude Design
+
+![TeamPageMembers](screens/TeamPageMembers.webp)
+
+Links to: `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`, `UserAccessDrawer`, `TeamPagePermissions`, `TeamPageHistory`
+
+Shows: "Team › Teams › <Team>" · the name and description, "Default"/"Demo" · "Add people" and a menu (Rename, Duplicate, Delete) · tabs "Members 2" "Permissions" "History" (kept in the address) · "Person" "Also on" (their other Teams, or "Only this Team") "Last active" · row menu "What they can open" · "Remove from <Team>" · "Only Staff are on Teams. Owners can open everything; Field access is fixed."
+
+### AddTeamMembersDialog — Add several people at once
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-27 · **Source:** Claude Design
+
+![AddTeamMembersDialog](screens/AddTeamMembersDialog.webp)
+
+Links to: `TeamPageMembers`
+
+Shows: "Add people to <Team>" "They can open what <Team> allows, on top of their other Teams." · "Search Staff" · each Staff member not on it with their current Teams ("No Team" in amber) and a tick · "Owners and Field aren't listed — only Staff are on Teams." · "Cancel" "Add 2 people" · toast "Added <names> to <Team>".
+
+### RemoveTeamMemberConfirm — Removing asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-27 · **Source:** Claude Design
+
+![RemoveTeamMemberConfirm](screens/RemoveTeamMemberConfirm.webp)
+
+Links to: `TeamPageMembers`
+
+Shows: "Remove <name> from <Team>?" "They lose what <Team> allowed at their next request." · on their only Team: "This is their only Team — <first name> will be on no Team and can't open anything until you add them to one." · "Go back" "Remove" · toast.
+
+### TeamPagePermissions — Permissions as a draft
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-28 · **Source:** Claude Design
+
+![TeamPagePermissions](screens/TeamPagePermissions.webp)
+
+Links to: `SavePermissionsConfirm`
+
+Shows: "Search permissions" "Show changed only" "Expand all"/"Collapse all" · groups with "<on> of <total>" (and "· was <n>" once changed) and their "toggle all" switch · each permission's label, description, "Changed" and switch · side panel "What members will open" (sections ticked, "Added"/"Lost") "Applies to <n> people at their next request." · bar "<n> changes · Discard · Save changes" · a notice when a switch brings another with it (US-BANK-12). Leaving the tab or the page with changes asks "Discard <n> unsaved changes?".
+
+### SavePermissionsConfirm — Save after review
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-28 · **Source:** Claude Design
+
+![SavePermissionsConfirm](screens/SavePermissionsConfirm.webp)
+
+Links to: `TeamPageHistory`
+
+Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." · "Turn on/off <permission>" (with why, for one that came with another) · "They'll open <section>" / "They'll no longer open <section>" · "Go back" "Save changes" · toast "<Team> saved".
+
+### TeamPageHistory — Who changed what
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-29 · **Source:** Claude Design
+
+![TeamPageHistory](screens/TeamPageHistory.webp)
+
+Links to: `OrgAuditLog`
+
+Shows: newest first, "<person> turned on <permissions>", "added <names>", "changed the description" (from → to), "created <Team> from <Team>", with the date and time and chips ("+ <permission>", "− <permission>") · "Open in audit log →" (the audit log filtered to this Team, "One record · Show all").
 
 ## Mobile field companion
 

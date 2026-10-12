@@ -15,7 +15,7 @@ Who can use Spine and what they can do: an Owner-only area with real pages for u
 | F-TEAM-04 | People and access fixes | P2 | 6 | `TeamUsers`, `PromoteOwnerConfirm`, `EmailInvite` |
 | F-TEAM-05 | Users you can manage from: the shared list layout, Teams and access on each person, invites with Teams, Staff ↔ Field, and safer actions | P2 | Refinements | `TeamUsersRefined`, `TeamUsersDark`, `TeamInvites`, `InvitePeopleDialog`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm` |
 | F-TEAM-06 | Set a Staff or Field member's password: an Owner sets it from Users, the person is signed out and emailed, and chooses their own at next sign-in; no Owner's password is set this way | P2 | Refinements | `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile` |
-| F-TEAM-07 | Teams you can manage from: the shared list layout, create from or duplicate a Team, a Team page with members you add and remove safely, permissions you review before saving with what members can open, and every change in the audit log | P2 | Refinements | `TeamsListRefined`, `TeamsListDark`, `CreateTeamDialog`, `TeamPageMembers`, `RemoveTeamMemberConfirm`, `TeamPagePermissions`, `SavePermissionsConfirm`, `TeamPageHistory` |
+| F-TEAM-07 | Teams you can manage from: the shared list layout, create from or duplicate a Team, a Team page with members you add and remove safely, permissions you review before saving with what members can open, and every change in the audit log | P2 | Refinements | `TeamsListRefined`, `TeamsListDark`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamPageMembers`, `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`, `TeamPagePermissions`, `SavePermissionsConfirm`, `TeamPageHistory` |
 
 ## User stories
 
@@ -374,7 +374,7 @@ Decision: D-233
 - While `must_change_password` is set, a global guard answers 403 `{ error: "PASSWORD_CHANGE_REQUIRED" }` for everything but `PUT /org/members/me/password { newPassword }` (no current password — the session proves it; refuses the given one with "That's the password you were given. Choose a different one."; ends their other sessions), `GET /org/members/me` (gains `mustChangePassword` and `passwordSetBy { name, at }`) and Better Auth's own routes (sign-out); choosing clears the flag, and so does a reset by email link. Web sends them to `/choose-password`; the field app to its own screen.
 
 ### US-TEAM-25 · See every Team at a glance on the list layout
-**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamsListRefined`, `TeamsListDark`
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamsListRefined`, `TeamsListDark`, `DeleteTeamConfirm`
 **As** an owner, **I want** Teams to work like every other list, **so that** I can see what each Team allows and who is on it without opening each one.
 
 Decision: D-210, D-222, D-234
@@ -405,7 +405,7 @@ Decision: D-234
 - API: `POST /org/teams { name, description?, copyFromTeamId? }`; `PUT /org/teams/:id { name?, description? }`; a duplicate name is 409 with that message.
 
 ### US-TEAM-27 · Manage a Team's members safely
-**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageMembers`, `RemoveTeamMemberConfirm`
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageMembers`, `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`
 **As** an owner, **I want** a Team's page to show who's on it and change that safely, **so that** nobody loses access by accident.
 
 Decision: D-218, D-223, D-234

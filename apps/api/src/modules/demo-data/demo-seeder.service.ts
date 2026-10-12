@@ -1296,7 +1296,7 @@ export class DemoSeederService {
   private async ensureAccountsTeam(orgId: string): Promise<string> {
     const existing = (await this.teamsService.list(orgId)).find((t) => t.name === ACCOUNTS_TEAM_NAME);
     if (existing) return existing.id;
-    const created = await this.teamsService.create(orgId, ACCOUNTS_TEAM_NAME);
+    const created = await this.teamsService.create(orgId, { name: ACCOUNTS_TEAM_NAME, description: "Billing, payments, banking and the books" });
     await this.db.update(teams).set({ isDemo: true }).where(eq(teams.id, created.id));
     await this.teamsService.setPrivileges(
       orgId,

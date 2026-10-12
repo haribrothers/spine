@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { AppShellHeader } from "@spine/ui";
 import { getMyMembership } from "../../../../../lib/get-my-membership";
-import { TeamDetailView } from "./team-detail-view";
+import { TeamPage } from "./team-page";
 
+/** Owner-only, re-checked here as on every team/* page; the header is the Team page's own (US-TEAM-27). */
 export default async function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const membership = await getMyMembership();
@@ -10,13 +10,5 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
     redirect("/dashboard");
   }
 
-  return (
-    <>
-      <AppShellHeader
-        breadcrumb={[{ label: "Team" }, { label: "Teams", href: "/team/teams" }, { label: "Detail" }]}
-        title="Team"
-      />
-      <TeamDetailView teamId={id} />
-    </>
-  );
+  return <TeamPage teamId={id} />;
 }

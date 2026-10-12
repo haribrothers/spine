@@ -43,6 +43,7 @@ import {
   Upload,
   User,
   UserCheck,
+  UserMinus,
   UserX,
   Users,
   X,
@@ -119,4 +120,6 @@ export const MENU_ICONS = {
   reactivate: UserCheck,
   /** US-TEAM-24: set a Staff or Field member's password. */
   changePassword: KeyRound,
+  /** Teams (US-TEAM-27): take someone off a Team. */
+  removeMember: UserMinus,
 } satisfies Record<string, LucideIcon>;

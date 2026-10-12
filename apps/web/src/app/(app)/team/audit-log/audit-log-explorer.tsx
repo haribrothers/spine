@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AppShellHeader, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, cn } from "@spine/ui";
 import { auditActionLabel, auditActionTone, auditDetails, auditEntityLabel, AUDIT_PAGE_SIZE, type AuditLogPage } from "@spine/shared";
 import { Download } from "lucide-react";
@@ -38,12 +39,15 @@ function when(iso: string): string {
  * the filtered entries.
  */
 export function AuditLogExplorer() {
+  const params = useSearchParams();
   const monthAgo = new Date();
   monthAgo.setMonth(monthAgo.getMonth() - 1);
-  const [from, setFrom] = useState(isoDay(monthAgo));
+  // US-TEAM-29: opened for one record ("Open in audit log" on a Team), its whole history shows.
+  const [entityId, setEntityId] = useState(params.get("entityId") ?? "");
+  const [from, setFrom] = useState(entityId ? "" : isoDay(monthAgo));
   const [to, setTo] = useState(isoDay(new Date()));
   const [person, setPerson] = useState(ALL);
-  const [entityType, setEntityType] = useState(ALL);
+  const [entityType, setEntityType] = useState(params.get("entityType") ?? ALL);
   const [action, setAction] = useState(ALL);
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<AuditLogPage | null>(null);
@@ -57,8 +61,9 @@ export function AuditLogExplorer() {
     if (person !== ALL) p.set("userId", person);
     if (entityType !== ALL) p.set("entityType", entityType);
     if (action !== ALL) p.set("action", action);
+    if (entityId) p.set("entityId", entityId);
     return p.toString();
-  }, [from, to, person, entityType, action]);
+  }, [from, to, person, entityType, action, entityId]);
 
   useEffect(() => {
     apiClient
@@ -103,6 +108,11 @@ export function AuditLogExplorer() {
           <FilterSelect id="audit-person" label="Person" value={person} onChange={setPerson} allLabel="Everyone" options={(facets?.people ?? []).map((p) => ({ value: p.userId, label: p.name }))} />
           <FilterSelect id="audit-type" label="Record type" value={entityType} onChange={setEntityType} allLabel="All types" options={(facets?.entityTypes ?? []).map((t) => ({ value: t, label: auditEntityLabel(t) }))} />
           <FilterSelect id="audit-action" label="Action" value={action} onChange={setAction} allLabel="All actions" options={(facets?.actions ?? []).map((a) => ({ value: a, label: auditActionLabel(a) }))} />
+          {entityId && (
+            <Button variant="secondary" onClick={() => setEntityId("")} data-testid="audit-one-record">
+              One record · Show all
+            </Button>
+          )}
           <Button asChild variant="secondary" className="ml-auto">
             <a href={`${API_URL}/org/audit-log.csv?${query}`} data-testid="audit-export">
               <Download size={14} aria-hidden="true" />

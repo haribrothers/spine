@@ -5162,6 +5162,19 @@ Load an industry demo (e.g. India › Construction) and Riverstone Builders in t
 6. Delete all demo data: the demo people are gone from Users (their logins stay), "Accounts" and the two demo invites go; your own Team and invite stay. Load again: everything comes back.
 7. Regression: signing in as Sarah or Marcus works as before; Sarah's access is General Staff's only.
 
+## 231. Teams you can manage from (US-TEAM-25 to US-TEAM-29, refinements before Phase 10)
+
+Use an owner with the demo loaded (General Staff with Sarah and Neha; Accounts with Neha; Kavya on no Team) and one Team of your own. Check light and dark, and compare with the canvas "27 Teams".
+
+1. Teams: "Create Team" in the header; cards Teams (default · with no one yet), Staff on no Team (Kavya; opens Users filtered to Staff on no Team) and Staff on several Teams; search (name or description) in the address. Rows: name, "Default"/"Demo", description, member avatars and count, "Opens <n> of <total> sections", "<n> of <total>" permissions. With a module switched off, its permissions leave the totals.
+2. A row's menu, each item with its icon: Open, Rename, Duplicate, Delete (not on General Staff or the only Team). Delete asks "Delete <Team>?", names anyone left on no Team, and toasts.
+3. Create Team: name, description, Start from (Nothing allowed, or a Team with its permission count) — the new Team opens on Permissions with the copied permissions and no members; toast. Duplicate prefills "<Team> (copy)". A name in use (any case) says "There's already a Team called <name>." Rename changes name and description; General Staff's name can't change.
+4. A Team's page: name, description, badges, Add people, a menu (Rename, Duplicate, Delete); tabs Members, Permissions, History in the address. Members show "Also on" and Last active; What they can open opens the access drawer.
+5. Add people: only active Staff not on the Team, with their Teams ("No Team" in amber); tick several; toast names them. Remove asks first; on their only Team it warns they'll be on no Team; toast.
+6. Permissions: switching marks "Changed", updates the group's "<on> of <total> · was <n>", the side panel (Added/Lost) and the bar ("<n> changes · Discard · Save changes"); turning on Reconcile accounts turns on View bank balances with a notice. Search, Show changed only and Expand all work. Switching tabs or leaving asks "Discard <n> unsaved changes?" (Keep editing keeps them); refreshing the page warns. Save asks, listing what turns on and off and the sections gained or lost; confirming saves once and toasts.
+7. History: newest first — permission changes by label, members added or removed, name/description changes, created (from which Team). "Open in audit log →" shows only this Team ("One record · Show all"). The audit log lists record type "Team" with the Team's name linking to it.
+8. Regression: a Staff member's access follows the saved permissions only (not the draft); Users › Manage Teams still works; Field and Owners can't be added to Teams; Staff and Field can't open Team pages or `/org/teams` routes.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

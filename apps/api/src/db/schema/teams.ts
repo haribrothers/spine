@@ -15,6 +15,8 @@ export const teams = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    /** US-TEAM-26 — what the Team is for (up to 200 characters). */
+    description: text("description"),
     // Marks the auto-seeded "General Staff" team. Informational + used to
     // block deletion of the seeded default and to identify the fallback
     // team new Staff invites land in.

@@ -12,7 +12,7 @@ function filtersFrom(q: Record<string, string | undefined>): AuditLogFilters {
   for (const key of ["from", "to"] as const) {
     if (q[key] && !DATE.test(q[key]!)) throw new BadRequestException(`"${key}" must be a date like 2026-10-05.`);
   }
-  return { from: q.from || undefined, to: q.to || undefined, userId: q.userId || undefined, entityType: q.entityType || undefined, action: q.action || undefined };
+  return { from: q.from || undefined, to: q.to || undefined, userId: q.userId || undefined, entityType: q.entityType || undefined, entityId: q.entityId || undefined, action: q.action || undefined };
 }
 
 /** US-SET-11/12 (D-064) — the organisation audit log. Owners only, never Team-configurable. */

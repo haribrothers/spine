@@ -5,13 +5,27 @@ import { capabilitySchema } from "./permissions.ts";
 // control — validate as a non-empty string, not uuidSchema.
 const memberIdSchema = z.string().min(1);
 
+const teamDescriptionSchema = z.string().trim().max(200).nullable().optional();
+
+/** US-TEAM-26 (D-234) — `copyFromTeamId` copies that Team's permissions, never its members. */
 export const createTeamSchema = z.object({
   name: z.string().trim().min(1).max(100),
+  description: teamDescriptionSchema,
+  copyFromTeamId: z.string().uuid().optional(),
 });
 
 export const updateTeamSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),
+  description: teamDescriptionSchema,
 });
+
+/** US-TEAM-29 — one entry on a Team's History tab. */
+export interface TeamHistoryEntry {
+  at: string;
+  actorName: string | null;
+  action: "created" | "updated" | "members_changed" | "privileges_changed" | "deleted" | string;
+  changes: { field: string; from: unknown; to: unknown }[] | null;
+}
 
 export const setTeamPrivilegesSchema = z.object({
   privileges: z.array(z.object({ capability: capabilitySchema, granted: z.boolean() })).min(1),

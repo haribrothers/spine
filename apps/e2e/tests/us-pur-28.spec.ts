@@ -17,7 +17,7 @@ test.describe("US-PUR-28", () => {
   test("'Vendor credits' rights are granted to General Staff; without 'Record' a draft shows no Record", async ({ page, seededOrg: _, browser }) => {
     await page.goto("/team/teams");
     await page.getByRole("link", { name: /General Staff/ }).click();
-    await page.getByRole("tab", { name: "Privileges" }).click();
+    await page.getByRole("tab", { name: "Permissions" }).click();
     await page.getByRole("button", { name: "Vendor credits" }).click();
     for (const name of RIGHTS) await expect(page.getByRole("switch", { name, exact: true })).toBeChecked();
 

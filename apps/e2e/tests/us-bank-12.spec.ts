@@ -7,7 +7,7 @@ test.describe("US-BANK-12", () => {
     void seededOrg;
     await page.goto("/team/teams");
     await page.getByRole("link", { name: /General Staff/ }).click();
-    await page.getByRole("tab", { name: "Privileges" }).click();
+    await page.getByRole("tab", { name: "Permissions" }).click();
     await page.getByRole("button", { name: "Banking" }).click();
 
     const view = page.getByRole("switch", { name: "View bank balances and registers" });

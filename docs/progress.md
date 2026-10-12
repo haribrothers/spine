@@ -280,11 +280,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-22 · Change someone between Staff and Field
 - [x] US-TEAM-23 · Act on people safely
 - [x] US-TEAM-24 · Set a Staff or Field member's password
-- [ ] US-TEAM-25 · See every Team at a glance on the list layout
-- [ ] US-TEAM-26 · Create a Team from another, or duplicate one
-- [ ] US-TEAM-27 · Manage a Team's members safely
-- [ ] US-TEAM-28 · Review permissions before saving
-- [ ] US-TEAM-29 · See a Team's history
+- [x] US-TEAM-25 · See every Team at a glance on the list layout
+- [x] US-TEAM-26 · Create a Team from another, or duplicate one
+- [x] US-TEAM-27 · Manage a Team's members safely
+- [x] US-TEAM-28 · Review permissions before saving
+- [x] US-TEAM-29 · See a Team's history
 - [x] US-SET-13 · Open contact history the same way as everywhere else
 - [x] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [x] US-OPS-08 · Make every mutating request safe to repeat

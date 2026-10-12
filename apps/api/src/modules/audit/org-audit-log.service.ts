@@ -28,6 +28,7 @@ import {
   recurringBills,
   taxGroups,
   taxRates,
+  teams,
   user,
   vendorBills,
   vendorPayments,
@@ -39,6 +40,8 @@ export interface AuditLogFilters {
   to?: string;
   userId?: string;
   entityType?: string;
+  /** US-TEAM-29 — one record's entries. */
+  entityId?: string;
   action?: string;
 }
 
@@ -137,6 +140,8 @@ const RESOLVERS: Record<string, Resolver> = {
     byId(await db.select({ id: recurringInvoices.id, name: recurringInvoices.name }).from(recurringInvoices).where(and(eq(recurringInvoices.orgId, orgId), inArray(recurringInvoices.id, ids))), (r) => r.name, () => "/invoices/recurring"),
   recurring_bill: async (db, orgId, ids) =>
     byId(await db.select({ id: recurringBills.id, name: recurringBills.name }).from(recurringBills).where(and(eq(recurringBills.orgId, orgId), inArray(recurringBills.id, ids))), (r) => r.name, () => "/vendor-bills/recurring"),
+  team: async (db, orgId, ids) =>
+    byId(await db.select({ id: teams.id, name: teams.name }).from(teams).where(and(eq(teams.orgId, orgId), inArray(teams.id, ids.filter((id) => UUID.test(id))))), (r) => r.name, (r) => `/team/teams/${r.id}`),
   user: async (db, orgId, ids) => byId(await db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, ids)), (r) => r.name, () => "/team/users"),
   data_export: async () => new Map(),
 };
@@ -157,6 +162,7 @@ export class OrgAuditLogService {
       f.to ? lt(auditLog.createdAt, localMidnight(f.to, 1)) : undefined,
       f.userId ? eq(auditLog.actorUserId, f.userId) : undefined,
       f.entityType ? eq(auditLog.entityType, f.entityType) : undefined,
+      f.entityId ? eq(auditLog.entityId, f.entityId) : undefined,
       f.action ? eq(auditLog.action, f.action) : undefined,
     )!;
   }

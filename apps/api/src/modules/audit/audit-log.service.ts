@@ -58,6 +58,8 @@ export type AuditEntityType =
   | "tally_export"
   // US-SET-23: modules switched on or off (entity id is the organisation's).
   | "modules"
+  // US-TEAM-29 (D-234): Teams created, renamed, deleted, and their members and permissions changed.
+  | "team"
   // US-SET-28 (D-220): an email retried or cancelled from the email log.
   | "email";
 

@@ -16,7 +16,7 @@ test.describe("US-PAY-18", () => {
 
     await page.goto("/team/teams");
     await page.getByRole("link", { name: /General Staff/ }).click();
-    await page.getByRole("tab", { name: "Privileges" }).click();
+    await page.getByRole("tab", { name: "Permissions" }).click();
     await page.getByRole("button", { name: "Manage Payments" }).click();
     await expect(page.getByRole("switch", { name: "Refund customers" })).not.toBeChecked();
 
