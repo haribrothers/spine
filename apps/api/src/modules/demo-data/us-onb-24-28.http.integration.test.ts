@@ -329,6 +329,42 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect((await db.select().from(emailLog).where(and(eq(emailLog.orgId, orgId), eq(emailLog.kind, "remittance")))).length).toBe(0);
       });
 
+      it("US-ONB-34 · a card, transfers, money in and out, a statement and two reconciliations", async () => {
+        type Account = { id: string; name: string; kind: string; balance?: string; lastReconciledOn?: string | null; unreconciledCount?: number; isDefault: boolean };
+        const all = await get<Account[]>("/money-accounts");
+        const card = all.find((a) => a.kind === "card" && a.name === "Business card")!;
+        expect(card).toBeTruthy();
+        // The subscription was paid off; the fuel is still owed.
+        expect(BigInt(card.balance!)).toBeGreaterThan(0n);
+        const bank = all.find((a) => a.kind === "bank" && a.isDefault)!;
+        const today = new Date();
+        const firstOfMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+        const register = await get<{ rows: { sourceType: string; what: string }[] }>(`/money-accounts/${bank.id}/register?from=2000-01-01`);
+        const kinds = register.rows.map((r) => r.what);
+        expect(kinds.some((w) => /Money in — Interest Received/.test(w))).toBe(true);
+        expect(kinds.some((w) => /Money out — Other Expenses/.test(w))).toBe(true);
+        expect(kinds.some((w) => /Transfer to Cash in Hand/.test(w))).toBe(true);
+        expect(kinds.some((w) => /Transfer to Business card/.test(w))).toBe(true);
+
+        // Last month reconciled; this month in progress, with the SMS charge to create.
+        const finished = await get<{ id: string; statementEndDate: string; finishedAt: string | null }[]>(`/bank-reconciliations?moneyAccountId=${bank.id}&status=finished`);
+        expect(finished).toHaveLength(1);
+        expect(finished[0]!.statementEndDate < firstOfMonth).toBe(true);
+        expect(bank.lastReconciledOn).toBe(finished[0]!.statementEndDate);
+        type View = { status: string; difference: string; statementLines: { description: string; status: string }[]; suggestions: unknown[]; outstanding: { amount: string }[] };
+        const done = await get<View>(`/bank-reconciliations/${finished[0]!.id}`);
+        expect(done.difference).toBe("0");
+        // A cheque presented this month is outstanding at the end of last month.
+        expect(done.outstanding.length).toBeGreaterThanOrEqual(1);
+        const open = await get<{ id: string }[]>(`/bank-reconciliations?moneyAccountId=${bank.id}&status=in_progress`);
+        if (today.getDate() >= 2) {
+          expect(open).toHaveLength(1);
+          const progress = await get<View>(`/bank-reconciliations/${open[0]!.id}`);
+          expect(progress.statementLines.find((l) => l.description === "SMS ALERT CHGS")?.status).toBe("unmatched");
+          expect(BigInt(progress.difference)).not.toBe(0n);
+        }
+      });
+
       it("deletes the demo's bundles, vendor credits and recurring bill with it", async () => {
         const receipts = (await get<{ receiptFileId: string | null }[]>("/expenses")).map((e) => e.receiptFileId).filter((id): id is string => !!id);
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });
@@ -341,6 +377,12 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(await get<unknown[]>("/vendor-credits")).toHaveLength(0);
         expect(await get<unknown[]>("/recurring-bills")).toHaveLength(0);
         expect(await get<unknown[]>("/vendor-bills")).toHaveLength(0);
+        // US-ONB-34: the card, the statement and the reconciliations go too.
+        const accountsAfter = await get<{ id: string; kind: string; isDefault: boolean }[]>("/money-accounts?includeArchived=true");
+        expect(accountsAfter.find((a) => a.kind === "card")).toBeUndefined();
+        const bankAfter = accountsAfter.find((a) => a.isDefault)!;
+        expect(await get<unknown[]>(`/money-accounts/${bankAfter.id}/reconciliations`)).toHaveLength(0);
+        expect(await get<unknown[]>(`/bank-reconciliations?moneyAccountId=${bankAfter.id}&status=in_progress`)).toHaveLength(0);
         // US-ONB-32: the archived category goes and the defaults are cleared; the template's categories stay.
         const catsAfter = await get<{ name: string; defaultTaxRateId: string | null }[]>("/expense-categories?includeArchived=true");
         expect(catsAfter.find((c) => c.name === "Client entertainment")).toBeUndefined();

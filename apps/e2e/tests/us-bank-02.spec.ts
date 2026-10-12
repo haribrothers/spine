@@ -23,7 +23,7 @@ test.describe("US-BANK-02", () => {
     const bankRow = table.getByRole("row", { name: /Bank Account/ });
     await expect(bankRow).toContainText("$4,542.50");
     await expect(bankRow).toContainText("Never reconciled");
-    await expect(bankRow).toContainText("1 entry");
+    await expect(bankRow).toContainText("1 unreconciled");
     await expect(page.getByText("Not yet reconciled")).toBeVisible();
 
     await bankRow.getByRole("link", { name: "Bank Account" }).click();

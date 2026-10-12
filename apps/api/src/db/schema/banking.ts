@@ -32,6 +32,8 @@ export const moneyAccounts = pgTable(
     /** D-157 — the CSV column mapping saved by the last statement import. */
     statementMapping: jsonb("statement_mapping"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
+    /** US-ONB-34 — loaded by the demo (its card account); deleting the demo removes it. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -71,6 +73,8 @@ export const bankTransfers = pgTable(
     reversalEntryId: uuid("reversal_entry_id").references(() => journalEntries.id),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    /** US-ONB-34 — loaded by the demo; its entries are demo entries. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -118,6 +122,8 @@ export const bankTransactions = pgTable(
     reversalEntryId: uuid("reversal_entry_id").references(() => journalEntries.id),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    /** US-ONB-34 — loaded by the demo; its entries are demo entries. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -146,6 +152,8 @@ export const bankStatementImports = pgTable(
     skippedCount: bigint("skipped_count", { mode: "number" }).notNull(),
     failedRows: jsonb("failed_rows").notNull().default(sql`'[]'::jsonb`),
     importedByUserId: text("imported_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** US-ONB-34 — the demo's statement; its lines go with it. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("bank_statement_imports_account_idx").on(table.moneyAccountId)],
@@ -219,6 +227,8 @@ export const bankReconciliations = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     undoneByUserId: text("undone_by_user_id").references(() => user.id, { onDelete: "set null" }),
     undoneAt: timestamp("undone_at", { withTimezone: true }),
+    /** US-ONB-34 — the demo's reconciliations. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

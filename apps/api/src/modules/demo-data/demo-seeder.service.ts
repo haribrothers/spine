@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { INDUSTRY_TEMPLATES, itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
+import { INDUSTRY_TEMPLATES, itemTaxFor, toDecimalString, type DemoPlan, type DemoPlanBanking, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorBills, vendorPaymentAllocations, vendorPayments, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorBills, vendorPaymentAllocations, vendorPayments, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses, moneyAccounts, bankTransactions, bankTransfers, bankStatementImports, bankStatementLines, bankReconciliations } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -28,6 +28,12 @@ import { ExpensesService } from "../purchases/expenses.service";
 import { ExpenseCategoriesService } from "../purchases/expense-categories.service";
 import { VendorBillsService } from "../purchases/vendor-bills.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { BankTransactionsService } from "../banking/bank-transactions.service";
+import { BankTransfersService } from "../banking/bank-transfers.service";
+import { StatementImportsService } from "../banking/statement-imports.service";
+import { ReconciliationsService } from "../banking/reconciliations.service";
+import { AccountRegisterService } from "../banking/account-register.service";
 import { VendorCreditsService } from "../purchases/vendor-credits.service";
 import { RecurringBillsService } from "../purchases/recurring-bills.service";
 import { renderDemoReceipt } from "./demo-receipt";
@@ -125,6 +131,12 @@ export class DemoSeederService {
     private readonly publicQuotes: PublicQuotesService,
     private readonly publicTokens: QuotePublicTokenService,
     private readonly customerRefunds: CustomerRefundsService,
+    private readonly moneyAccountsService: MoneyAccountsService,
+    private readonly bankTransactionsService: BankTransactionsService,
+    private readonly bankTransfersService: BankTransfersService,
+    private readonly statementImportsService: StatementImportsService,
+    private readonly reconciliationsService: ReconciliationsService,
+    private readonly accountRegisterService: AccountRegisterService,
   ) {}
 
   async run(orgId: string, actorUserId: string, plan: DemoPlan, options: { locked: boolean }): Promise<SeedResult> {
@@ -986,6 +998,9 @@ export class DemoSeederService {
       count("meetingsCreated");
     }
 
+    // 10. US-ONB-34 (D-231): banking — a card, transfers, money in and out, the bank's statement and two reconciliations.
+    if (plan.banking) await this.seedBanking(orgId, actorUserId, plan.banking, { today, iso: (offset) => day(offset).toISOString().slice(0, 10), when, count, backdateAudit, currency });
+
     // 11. US-MOB-04 — the demo Field person is on every demo job's crew, so
     // the field app has jobs to show. Written directly: nobody needs telling.
     const fieldUsers = await this.db
@@ -997,6 +1012,134 @@ export class DemoSeederService {
     count("crewAssignmentsCreated", crew.length);
 
     return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, createdBundleIds, createdCategoryIds, defaultedCategoryIds, counts };
+  }
+
+  /**
+   * US-ONB-34 (D-231) — the demo's banking, through the real services: a
+   * business card with spending and a payoff, a petty cash top-up, interest
+   * and bank charges; then the bank's statement for last month and this
+   * month (made from the account's own entries, one cheque presented a few
+   * days late and an SMS charge Spine doesn't have yet), last month
+   * reconciled on the 3rd and this month in progress. Everything is marked
+   * demo; a business whose own banking gets in the way keeps its own.
+   */
+  private async seedBanking(
+    orgId: string,
+    actorUserId: string,
+    plan: DemoPlanBanking,
+    t: { today: string; iso: (offset: number) => string; when: (offset: number) => Date; count: (key: string, n?: number) => void; backdateAudit: (id: string, at: Date, actions?: string[]) => Promise<unknown>; currency: string },
+  ) {
+    const active = await this.moneyAccountsService.list(orgId, { includeArchived: false, withBalances: false });
+    const bank = active.find((a) => a.kind === "bank" && a.isDefault) ?? active.find((a) => a.kind === "bank");
+    const cash = active.find((a) => a.kind === "cash");
+    if (!bank) return;
+    const codes = new Map((await this.db.select({ id: accounts.id, code: accounts.code }).from(accounts).where(eq(accounts.orgId, orgId))).map((a) => [a.code, a.id]));
+    const dayOfMonth = +t.today.slice(8, 10);
+    const lastMonthEnd = -dayOfMonth;
+    const firstOfThisMonth = t.iso(1 - dayOfMonth);
+    const firstOfLastMonth = (() => {
+      const d = new Date(`${firstOfThisMonth}T00:00:00Z`);
+      d.setUTCMonth(d.getUTCMonth() - 1);
+      return d.toISOString().slice(0, 10);
+    })();
+
+    const money = async (moneyAccountId: string, direction: "in" | "out", code: string, amount: bigint, offset: number, description: string) => {
+      const accountId = codes.get(code);
+      if (!accountId) return;
+      const entry = await this.bankTransactionsService.create(orgId, actorUserId, { moneyAccountId, direction, accountId, contactId: null, amount, taxRateId: null, taxGroupId: null, date: t.iso(offset), description } as never, true);
+      await this.db.update(bankTransactions).set({ createdAt: t.when(offset) }).where(eq(bankTransactions.id, entry.id));
+      await t.backdateAudit(entry.id, t.when(offset));
+      t.count("bankEntriesCreated");
+    };
+    const transfer = async (fromMoneyAccountId: string, toMoneyAccountId: string, amount: bigint, offset: number, reference: string) => {
+      const moved = await this.bankTransfersService.create(orgId, actorUserId, { fromMoneyAccountId, toMoneyAccountId, amount, date: t.iso(offset), reference } as never, true);
+      await this.db.update(bankTransfers).set({ createdAt: t.when(offset) }).where(eq(bankTransfers.id, moved.id));
+      await t.backdateAudit(moved.id, t.when(offset));
+      t.count("bankTransfersCreated");
+    };
+
+    // A business card: a subscription paid off a week later, and fuel last week. A name the business already uses: no card.
+    const card = await this.moneyAccountsService
+      .create(orgId, actorUserId, { kind: "card", name: plan.card.name, bankName: plan.card.bankName, last4: plan.card.last4, isDefault: false } as never)
+      .catch(() => null);
+    if (card) {
+      await this.db.update(moneyAccounts).set({ isDemo: true }).where(eq(moneyAccounts.id, card.id));
+      t.count("moneyAccountsCreated");
+      await money(card.id, "out", "6900", plan.cardSpend[0], -40, "Software subscription");
+      await transfer(bank.id, card.id, plan.cardSpend[0], -33, "Card payoff");
+      await money(card.id, "out", "6300", plan.cardSpend[1], -6, "Fuel");
+    }
+    if (cash) await transfer(bank.id, cash.id, plan.pettyCash, -20, "Petty cash top-up");
+    await money(bank.id, "in", "4800", plan.interest, lastMonthEnd, "Interest");
+    await money(bank.id, "out", "6900", plan.bankCharges, -25, "Bank charges");
+
+    // The bank's statement from the 1st of last month: the account's own entries, one cheque presented a few days into this month, and an SMS charge.
+    const register = await this.accountRegisterService.register(orgId, bank.id, { from: firstOfLastMonth, to: t.today, unreconciled: false } as never);
+    type Line = { date: string; description: string; reference: string | null; amount: bigint; journalLineId: string | null; late?: boolean };
+    const lines: Line[] = register.rows
+      .filter((r) => !r.deleted && !r.sourceType.endsWith("_delete"))
+      .map((r) => ({
+        date: r.date,
+        description: `${BigInt(r.in) > 0n ? "CR" : "DR"} ${r.contact?.name ?? r.what}`.toUpperCase().slice(0, 60),
+        reference: r.reference,
+        amount: BigInt(r.in) - BigInt(r.out),
+        journalLineId: r.journalLineId,
+      }));
+    const presentedOn = t.iso(Math.min(0, 1 - dayOfMonth + 3));
+    // A vendor payment if last month had one (a cheque, in effect), else the last money out.
+    const outLastMonth = [...lines].reverse().filter((l) => l.date < firstOfThisMonth && l.amount < 0n && l.journalLineId);
+    const vendorLines = new Set(register.rows.filter((r) => r.sourceType === "vendor_payment").map((r) => r.journalLineId));
+    const lateCheque = outLastMonth.find((l) => vendorLines.has(l.journalLineId!)) ?? outLastMonth[0];
+    if (lateCheque && presentedOn >= firstOfThisMonth) {
+      lateCheque.date = presentedOn;
+      lateCheque.late = true;
+    }
+    if (dayOfMonth >= 2) lines.push({ date: t.iso(-1), description: "SMS ALERT CHGS", reference: null, amount: -plan.smsCharges, journalLineId: null });
+    lines.sort((a, b) => a.date.localeCompare(b.date));
+    if (!lines.length) return;
+    let running = BigInt(register.openingBalance);
+    const balances = lines.map((l) => (running += l.amount));
+    const decimal = (v: bigint) => toDecimalString({ amount: v, currency: t.currency });
+    const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const csv = ["Date,Description,Reference,Amount,Balance", ...lines.map((l, i) => [l.date, l.description, l.reference ?? "", decimal(l.amount), decimal(balances[i]!)].map(csvCell).join(","))].join("\n");
+    const buffer = Buffer.from(csv, "utf8");
+    const imported = await this.statementImportsService
+      .import(orgId, actorUserId, bank.id, { originalname: "bank-statement.csv", mimetype: "text/csv", size: buffer.length, buffer }, { date: "Date", dateFormat: "YYYY-MM-DD", description: "Description", reference: "Reference", amountMode: "single", amount: "Amount", moneyIn: null, moneyOut: null, balance: "Balance" })
+      .catch(() => null);
+    if (!imported) return;
+    await this.db.update(bankStatementImports).set({ isDemo: true, createdAt: t.when(-1) }).where(eq(bankStatementImports.id, imported.importId));
+    t.count("statementLinesImported", imported.imported);
+    const stored = await this.db.select({ id: bankStatementLines.id, rowNumber: bankStatementLines.rowNumber }).from(bankStatementLines).where(eq(bankStatementLines.importId, imported.importId));
+    const lineId = new Map(stored.map((r) => [Number(r.rowNumber), r.id]));
+    const withIds = lines.map((l, i) => ({ ...l, statementLineId: lineId.get(i + 2) ?? null, balance: balances[i]! }));
+
+    const reconcile = async (endDate: string, closing: bigint, match: typeof withIds, finishOn: number | null) => {
+      try {
+        const rec = await this.reconciliationsService.start(orgId, actorUserId, { moneyAccountId: bank.id, statementEndDate: endDate, statementClosingBalance: closing });
+        const matches = match.filter((l) => l.statementLineId && l.journalLineId).map((l) => ({ statementLineId: l.statementLineId!, journalLineIds: [l.journalLineId!] }));
+        if (matches.length) await this.reconciliationsService.saveMatches(orgId, rec.id, { matches, exclusions: [] });
+        if (finishOn !== null) await this.reconciliationsService.finish(orgId, actorUserId, rec.id);
+        await this.db
+          .update(bankReconciliations)
+          .set({ isDemo: true, createdAt: t.when(finishOn ?? -1), ...(finishOn !== null ? { finishedAt: t.when(finishOn) } : {}) })
+          .where(eq(bankReconciliations.id, rec.id));
+        await t.backdateAudit(rec.id, t.when(finishOn ?? -1));
+        t.count(finishOn !== null ? "reconciliationsFinished" : "reconciliationsStarted");
+        return true;
+      } catch {
+        // The business's own reconciliation of this account comes first.
+        return false;
+      }
+    };
+    // Last month, reconciled on the 3rd (or today, early in the month).
+    const lastMonth = withIds.filter((l) => l.date < firstOfThisMonth);
+    const finishedLastMonth = lastMonth.length > 0 && (await reconcile(t.iso(lastMonthEnd), lastMonth[lastMonth.length - 1]!.balance, lastMonth, dayOfMonth > 3 ? 3 - dayOfMonth : 0));
+    // This month, in progress: lines more than three days old matched, the rest waiting with their suggestions.
+    const thisMonth = withIds.filter((l) => l.date >= firstOfThisMonth);
+    if (finishedLastMonth && thisMonth.length) {
+      const settled = t.iso(-3);
+      await reconcile(t.today, thisMonth[thisMonth.length - 1]!.balance, thisMonth.filter((l) => !l.late && l.date <= settled), null);
+    }
   }
 
   /** A business without records of its own takes the demo's identity (D-192); its own profile and registration win when set. */

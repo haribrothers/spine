@@ -827,6 +827,13 @@
       "when": 1791788299271,
       "tag": "0117_email_kind_remittance",
       "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1791800462841,
+      "tag": "0118_banking_demo",
+      "breakpoints": true
     }
   ]
 }

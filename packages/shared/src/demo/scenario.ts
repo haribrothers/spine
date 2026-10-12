@@ -1,7 +1,7 @@
 import { gstinCheckCharacter } from "../tax/gst.ts";
 import type { GstTreatment } from "../tax/gst.ts";
 import type { TaxCountry } from "../tax/presets/types.ts";
-import type { DemoCountry, DemoIndustry, DemoPlan, DemoPlanContact, DemoPlanLead, DemoPlanLine, DemoPlanMilestone, DemoPlanQuote, DemoTax, DemoTaxRef } from "./types.ts";
+import type { DemoCountry, DemoIndustry, DemoPlan, DemoPlanBanking, DemoPlanContact, DemoPlanLead, DemoPlanLine, DemoPlanMilestone, DemoPlanQuote, DemoTax, DemoTaxRef } from "./types.ts";
 
 /**
  * US-ONB-18 (D-192) — a demo business is an industry pack written once,
@@ -149,6 +149,23 @@ export const BILL_TIMELINE = [
 
 /** US-ONB-33 — the payment that pays two bills together, about five weeks ago, with its remittance advice emailed the next day. */
 export const SHARED_VENDOR_PAYMENT = { vendor: "supplier_far", bills: ["bill10", "bill11"], inDays: -35, remittanceInDays: -34 } as const satisfies { vendor: VendorSlot; bills: readonly BillKey[]; inDays: number; remittanceInDays: number };
+
+/** US-ONB-34 — the bank that issues the demo's business card, by country. */
+const DEMO_CARD_BANK: Record<string, string> = { US: "First Coastal Bank", IN: "HDFC Bank", GB: "Barclays", AU: "Westpac", NZ: "ANZ", AE: "Emirates NBD", SA: "Al Rajhi Bank" };
+
+/** US-ONB-34 (D-231) — the demo's banking, in the country's money (whole units: rupees, or dollars and the like). */
+export function demoBanking(country: string): DemoPlanBanking {
+  const minor = (units: number) => BigInt(Math.round(units * 100));
+  const india = country === "IN";
+  return {
+    card: { name: "Business card", bankName: DEMO_CARD_BANK[country] ?? "First Coastal Bank", last4: "4410" },
+    cardSpend: india ? [minor(2999), minor(4200)] : [minor(49), minor(85)],
+    pettyCash: india ? minor(10000) : minor(300),
+    interest: india ? minor(1240.5) : minor(12.4),
+    bankCharges: india ? minor(590) : minor(15),
+    smsCharges: india ? minor(59) : minor(2.95),
+  };
+}
 
 /** US-ONB-33 — a bank transfer's or cheque's reference, the way the country's banks write it. */
 export function vendorPaymentReference(country: string, method: "bank_transfer" | "cheque", serial: number): string {
@@ -584,6 +601,7 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     ...(pack.jobs && pack.variationOrder ? { variationOrder: { job: "a", notes: pack.variationOrder.notes, lines: pack.variationOrder.lines.map(freeLine) } } : {}),
     bills,
     vendorCredits,
+    banking: demoBanking(country.country),
     vendorPayments: [
       {
         contact: SHARED_VENDOR_PAYMENT.vendor,

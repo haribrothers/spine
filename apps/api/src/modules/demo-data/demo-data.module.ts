@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { BankingModule } from "../banking/banking.module";
 import { AuditModule } from "../audit/audit.module";
 import { QuotesModule } from "../quotes/quotes.module";
 import { InvoicesModule } from "../invoices/invoices.module";
@@ -17,7 +18,7 @@ import { DemoDataService } from "./demo-data.service";
 import { DemoSeederService } from "./demo-seeder.service";
 
 @Module({
-  imports: [AuditModule, QuotesModule, InvoicesModule, PaymentsModule, CreditNotesModule, ContactsModule, JobsModule, OrgModule, TaxModule, PurchasesModule, FilesModule, TeamsModule, CatalogModule],
+  imports: [AuditModule, QuotesModule, InvoicesModule, PaymentsModule, CreditNotesModule, ContactsModule, JobsModule, OrgModule, TaxModule, PurchasesModule, FilesModule, TeamsModule, CatalogModule, BankingModule],
   controllers: [DemoDataController],
   providers: [DemoDataService, DemoSeederService],
   exports: [DemoDataService],

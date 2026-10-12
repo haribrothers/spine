@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -14,14 +16,19 @@ import {
   AlertDialogTitle,
   AppShellHeader,
   Badge,
-  Button,
   DataTable,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   StatCard,
   StatusChip,
   type TableColumn,
 } from "@spine/ui";
-import { History } from "lucide-react";
+import { History, MoreHorizontal } from "lucide-react";
+import { MENU_ICONS } from "../../../lib/menu-icons";
+import { filenameFrom, saveBlob } from "../../../lib/save-file";
 import type { MoneyAccount, ReconciliationSummary } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -46,6 +53,17 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
   const [undoing, setUndoing] = useState<ReconciliationSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const showToast = useToast();
+  const router = useRouter();
+
+  /** US-BANK-17 — the reconciliation's PDF report. */
+  async function download(r: ReconciliationSummary) {
+    try {
+      const { blob, headers } = await apiClient.download(`/bank-reconciliations/${r.id}/report.pdf`);
+      saveBlob(blob, filenameFrom(headers, `reconciliation-${r.statementEndDate}.pdf`));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't download the report. Try again.");
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -91,7 +109,16 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
   const oldest = rows?.length ? rows[rows.length - 1]! : null;
 
   const columns: TableColumn<ReconciliationSummary>[] = [
-    { key: "end", header: "Statement end date", render: (r) => formatDay(r.statementEndDate), sortValue: (r) => r.statementEndDate },
+    {
+      key: "end",
+      header: "Statement end date",
+      render: (r) => (
+        <Link href={`/banking/${accountId}/reconciliations/${r.id}`} className="font-medium text-primary hover:underline">
+          {formatDay(r.statementEndDate)}
+        </Link>
+      ),
+      sortValue: (r) => r.statementEndDate,
+    },
     { key: "closing", header: "Closing balance", align: "right", render: (r) => <span className="tabular-nums">{formatMoney(BigInt(r.statementClosingBalance), currency)}</span> },
     { key: "matched", header: "Entries matched", align: "right", render: (r) => <span className="tabular-nums">{r.entriesMatched}</span> },
     { key: "by", header: "Finished by", render: (r) => r.finishedBy?.name ?? <span className="text-on-surface-muted">—</span> },
@@ -99,16 +126,39 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
     { key: "status", header: "Status", render: (r) => (r.isLatest ? <Badge className="bg-primary/10 text-primary">Latest</Badge> : <StatusChip status="paid">Finished</StatusChip>) },
     {
       key: "actions",
-      header: "Actions",
-      align: "right",
-      render: (r) =>
-        r.isLatest ? (
-          <Button variant="ghost" size="sm" aria-label={`Undo the reconciliation to ${formatDay(r.statementEndDate)}`} onClick={() => setUndoing(r)}>
-            Undo
-          </Button>
-        ) : (
-          <span className="text-[12px] text-on-surface-muted">Undo the later reconciliations first.</span>
-        ),
+      header: "",
+      render: (r) => (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Actions for the reconciliation to ${formatDay(r.statementEndDate)}`}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-52">
+              <DropdownMenuItem onSelect={() => router.push(`/banking/${accountId}/reconciliations/${r.id}`)}>
+                <MENU_ICONS.view aria-hidden />
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void download(r)}>
+                <MENU_ICONS.download aria-hidden />
+                Download report
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={!r.isLatest} onSelect={() => setUndoing(r)}>
+                <MENU_ICONS.moveOff aria-hidden />
+                <span className="flex flex-1 flex-col">
+                  Undo
+                  {!r.isLatest && <span className="text-[11.5px] text-on-surface-muted">Undo the later reconciliations first.</span>}
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
     },
   ];
 

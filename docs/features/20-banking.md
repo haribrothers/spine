@@ -13,7 +13,7 @@ Where the business's money actually sits: bank, cash and card accounts, each a l
 | F-BANK-02 | Transfers and other money in and out | P1 | 8 | `TransferDialog`, `MoneyInOutDialog` |
 | F-BANK-03 | Bank reconciliation | P1 | 8 | `StatementImportDialog`, `ReconcileAccount`, `ReconcileCreateDrawer`, `ReconciliationsHistory` |
 | F-BANK-04 | Banking rights | P1 | 8 | `TeamPrivilegesBooks` |
-| F-BANK-05 | Banking you can work from: accounts and registers on the shared list layout, recording that asks first, faster reconciling and a reconciliation report | P2 | Refinements | `BankingAccountsRefined`, `BankingAccountsDark`, `AccountRegisterRefined`, `RegisterEntryDrawer`, `MoneyOutConfirm`, `ReconcileRefined`, `ReconcileMatchAllConfirm`, `ReconciliationReport` |
+| F-BANK-05 | Banking you can work from: accounts and registers on the shared list layout, recording that asks first, faster reconciling and a reconciliation report | P2 | Refinements | `BankingAccountsRefined`, `BankingAccountsDark`, `BankingArchiveConfirm`, `AccountRegisterRefined`, `RegisterEntryDrawer`, `MoneyOutConfirm`, `TransferConfirm`, `ReconcileRefined`, `ReconcileMatchAllConfirm`, `ReconciliationReport`, `ReconciliationReportPdf` |
 
 ## User stories
 
@@ -202,7 +202,7 @@ Decision: D-158
 - Capabilities added to `CAPABILITIES`, `CAPABILITY_LABELS`, `DEFAULT_TEAM_GRANTS` (all ✗) with a migration; enforced in API and UI together ([07-security](../prd/07-security.md)).
 
 ### US-BANK-13 · See my accounts at a glance and act from them
-**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `BankingAccountsRefined`, `BankingAccountsDark`
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `BankingAccountsRefined`, `BankingAccountsDark`, `BankingArchiveConfirm`
 **As** an owner, **I want** Banking to show each account's state and let me act from its row, **so that** I can see what needs reconciling and do it in one place.
 
 Decision: D-210, D-218, D-222, D-231
@@ -232,10 +232,10 @@ Decision: D-210, D-222, D-231
 - **Given** Export, **when** I choose CSV, Excel or PDF, **then** the file has the rows on screen with the opening and closing balance, named `<account>-<from>-<to>`.
 
 **Implementation notes**
-- API: `GET /money-accounts/:id/register` accepts `format=xlsx|pdf`, and `GET /money-accounts/:id/register/export.csv?from&to&unreconciled&type&search` (`banking.view`); `GET /bank-transactions/:id` and `GET /bank-transfers/:id` for the drawer (`banking.view`).
+- API: `GET /money-accounts/:id/register` accepts `format=csv|xlsx|pdf` with `type` and `search` (`banking.view`); `GET /bank-transactions/:id` and `GET /bank-transfers/:id` for the drawer (`banking.view`).
 
 ### US-BANK-15 · Record money in, out and transfers safely
-**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MoneyOutConfirm`
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MoneyOutConfirm`, `TransferConfirm`
 **As** office staff, **I want** recording money in, money out or a transfer to ask first and say what it posts, **so that** a slip doesn't land in the books.
 
 Decision: D-218, D-223, D-231
@@ -266,7 +266,7 @@ Decision: D-158, D-218, D-231
 - API: `GET /money-accounts/:id/statement-end` → `{ date, closingBalance, fileName } | null` — the newest imported line after the last finished reconciliation that has a running balance (`banking.reconcile`). Matching all suggested is one `PUT /bank-reconciliations/:id/matches`.
 
 ### US-BANK-17 · Keep a reconciliation report
-**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReconciliationReport`
+**Feature:** F-BANK-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ReconciliationReport`, `ReconciliationReportPdf`
 **As** an owner, **I want** to open a finished reconciliation and download it as a report, **so that** I can show my accountant how the bank and the books agree.
 
 Decision: D-222, D-231

@@ -22,11 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import { SAME_ACCOUNT_TRANSFER, type BankTransfer, type MoneyAccount } from "@spine/shared";
 import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { apiClient } from "../../../lib/api-client";
-import { toIsoDate } from "./dates";
+import { formatMoney } from "../../../lib/money";
+import { formatDay, toIsoDate } from "./dates";
 
 function AccountSelect({ id, accounts, value, onValueChange, disabled }: { id: string; accounts: MoneyAccount[]; value: string; onValueChange: (v: string) => void; disabled?: boolean }) {
   return (
@@ -56,6 +58,7 @@ export function TransferDialog({
   currency,
   onRecorded,
   prefill,
+  initialAccountId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -64,6 +67,8 @@ export function TransferDialog({
   onRecorded: (transfer: BankTransfer) => void;
   /** US-BANK-09 — from a statement line: the line's account is one side (the "to" side for money in), and amount and date are fixed. */
   prefill?: StatementPrefill & { direction: "in" | "out" };
+  /** US-BANK-15 — opened from an account: it's the From side. */
+  initialAccountId?: string;
 }) {
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
@@ -72,6 +77,7 @@ export function TransferDialog({
   const [reference, setReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   useEffect(() => {
     if (!open) return;
@@ -79,17 +85,18 @@ export function TransferDialog({
       setFromId(prefill.direction === "out" ? prefill.moneyAccountId : "");
       setToId(prefill.direction === "in" ? prefill.moneyAccountId : "");
     } else {
-      setFromId(accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
+      setFromId((initialAccountId && accounts.some((a) => a.id === initialAccountId) ? initialAccountId : undefined) ?? accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
       setToId("");
     }
     setAmount(prefill?.amount ?? 0n);
     setDate(prefill ? prefillDate(prefill) : new Date());
     setReference(prefill?.reference ?? "");
     setError(null);
-  }, [open, accounts, prefill]);
+  }, [open, accounts, prefill, initialAccountId]);
 
   const from = accounts.find((a) => a.id === fromId);
   const to = accounts.find((a) => a.id === toId);
+  const sameAccount = Boolean(fromId) && fromId === toId;
 
   async function handleSubmit() {
     setError(null);
@@ -105,6 +112,14 @@ export function TransferDialog({
       setError("Enter an amount greater than zero.");
       return;
     }
+    // US-BANK-15 (D-218): moving money asks first.
+    const ok = await confirm({
+      title: `Move ${formatMoney(amount, currency)} from ${from?.name ?? "the account"} to ${to?.name ?? "the account"}?`,
+      description: `Both balances change on ${formatDay(toIsoDate(date))}, and both registers show the transfer.`,
+      confirmLabel: "Move money",
+      cancelLabel: "Go back",
+    });
+    if (!ok) return;
     setSaving(true);
     try {
       const transfer = await apiClient.post<BankTransfer>("/bank-transfers", { fromMoneyAccountId: fromId, toMoneyAccountId: toId, amount: amount.toString(), date: toIsoDate(date), reference: reference.trim() || null });
@@ -147,6 +162,11 @@ export function TransferDialog({
           <FormField label="Reference">
             {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" maxLength={120} />}
           </FormField>
+          {sameAccount && (
+            <p role="alert" className="text-[13px] font-medium text-overdue">
+              {SAME_ACCOUNT_TRANSFER}
+            </p>
+          )}
           {from && to && from.id !== to.id && (
             <p className="text-[13px] text-on-surface-muted">
               Posts Dr {to.name} / Cr {from.name}. Both registers show it.
@@ -157,11 +177,12 @@ export function TransferDialog({
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={saving}>
+          <Button type="button" onClick={handleSubmit} disabled={saving || sameAccount}>
             {saving ? <Spinner size="sm" /> : "Move money"}
           </Button>
         </DialogFooter>
       </DialogContent>
+      {confirmDialog}
     </Dialog>
   );
 }

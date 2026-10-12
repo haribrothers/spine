@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Param, ParseUUIDPipe, Post, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, UseInterceptors } from "@nestjs/common";
 import { createBankTransactionSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { RequireCapability } from "../../auth/require-capability.decorator";
@@ -19,6 +19,13 @@ export class BankTransactionsController {
     const parsed = createBankTransactionSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the entry and try again.");
     return this.transactions.create(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  /** US-BANK-14 — one entry, for the register's drawer: seeing it needs only `banking.view`. */
+  @Get(":id")
+  @RequireCapability("banking.view")
+  async getOne(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.transactions.getOne(requireOrgId(session), id);
   }
 
   @Delete(":id")

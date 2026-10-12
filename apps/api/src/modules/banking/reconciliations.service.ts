@@ -139,6 +139,14 @@ export class ReconciliationsService {
     const excludedSum = lineRows.filter((r) => r.line.status === "excluded").reduce((sum, r) => sum + r.line.amount, 0n);
     const cleared = opening + sense * (matchedSum + excludedSum);
 
+    // US-BANK-17: what's outstanding, and Spine's own balance on the end date.
+    const outstanding = rec.status === "in_progress" ? entries.filter((e) => !e.statementLineId) : await this.outstandingAfterFinish(orgId, rec, account.accountId, broughtForwardBefore);
+    const [onEnd] = await this.db
+      .select({ net: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+      .where(and(eq(journalEntries.orgId, orgId), eq(journalLines.accountId, account.accountId), lte(journalEntries.date, rec.statementEndDate)));
+
     return {
       ...this.toSummary(rec, finishedBy?.name ?? null, matches.length, latest?.id === rec.id),
       moneyAccount: { id: account.id, name: account.name, kind: account.kind },
@@ -153,7 +161,43 @@ export class ReconciliationsService {
       clearedBalance: cleared.toString(),
       difference: (rec.statementClosingBalance - cleared).toString(),
       fileNames: [...new Set(lineRows.map((r) => r.fileName))],
+      outstanding,
+      spineBalance: (sense * BigInt(onEnd!.net)).toString(),
+      excludedTotal: (sense * excludedSum).toString(),
     };
+  }
+
+  /**
+   * US-BANK-17 — for a finished reconciliation: entries on the account up to
+   * its end date that it didn't clear — still unreconciled, or cleared only
+   * by a later reconciliation. Entries and their own reversals cancel out.
+   */
+  private async outstandingAfterFinish(orgId: string, rec: ReconciliationRow, ledgerAccountId: string, broughtForwardBefore: string | null): Promise<ReconciliationEntry[]> {
+    const later = this.db
+      .select({ id: bankReconciliations.id })
+      .from(bankReconciliations)
+      .where(and(eq(bankReconciliations.moneyAccountId, rec.moneyAccountId), eq(bankReconciliations.status, "finished"), sql`${bankReconciliations.statementEndDate} > ${rec.statementEndDate}`));
+    const rows = await this.db
+      .select({ line: journalLines, entry: journalEntries })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+      .where(
+        and(
+          eq(journalEntries.orgId, orgId),
+          eq(journalLines.accountId, ledgerAccountId),
+          lte(journalEntries.date, rec.statementEndDate),
+          broughtForwardBefore ? gte(journalEntries.date, broughtForwardBefore) : undefined,
+          or(isNull(journalLines.reconciliationId), inArray(journalLines.reconciliationId, later)),
+        ),
+      )
+      .orderBy(asc(journalEntries.date), asc(journalEntries.createdAt), asc(journalLines.id));
+    const entryIds = new Set(rows.map((r) => r.entry.id));
+    const kept = rows.filter((r) => !(r.entry.reversedById && entryIds.has(r.entry.reversedById)) && !rows.some((o) => o.entry.reversedById === r.entry.id));
+    const described = await this.register.describe(orgId, kept);
+    return kept.map(({ line, entry }) => {
+      const about = described.get(line.id)!;
+      return { journalLineId: line.id, date: entry.date, sourceType: entry.sourceType, sourceId: entry.sourceId, what: about.what, contact: about.contact, reference: about.reference, amount: (line.debit - line.credit).toString(), statementLineId: null };
+    });
   }
 
   /** Replaces the reconciliation's matches and exclusions with these. */

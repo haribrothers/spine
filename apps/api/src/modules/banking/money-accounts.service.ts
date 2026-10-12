@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import {
   DUPLICATE_MONEY_ACCOUNT_NAME,
   formatMoney,
@@ -17,7 +17,7 @@ import {
 import { orgMoneySettings } from "../../common/money-format";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, bankReconciliations, journalLines, moneyAccounts, user } from "../../db/schema";
+import { accounts, bankReconciliations, bankStatementImports, bankStatementLines, journalLines, moneyAccounts, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 
 type MoneyAccountRow = typeof moneyAccounts.$inferSelect;
@@ -66,6 +66,39 @@ export class MoneyAccountsService {
     if (!row) throw new NotFoundException("Money account not found");
     const balances = await this.balances(this.db, [row.money]);
     return { ...this.toResponse(row.money, row.code), balance: (balances.get(row.money.id) ?? 0n).toString() };
+  }
+
+  /**
+   * US-BANK-16 — where the imported statement ends, to start reconciling
+   * from: the newest imported line after the last finished reconciliation
+   * that carries the bank's running balance. Several lines on that day: the
+   * file's last one (files list newest first or oldest first; its order
+   * says which).
+   */
+  async statementEnd(orgId: string, id: string): Promise<{ date: string; closingBalance: string; fileName: string } | null> {
+    await this.get(orgId, id);
+    const [last] = await this.db
+      .select({ end: sql<string | null>`max(${bankReconciliations.statementEndDate})::text` })
+      .from(bankReconciliations)
+      .where(and(eq(bankReconciliations.orgId, orgId), eq(bankReconciliations.moneyAccountId, id), eq(bankReconciliations.status, "finished")));
+    const [newest] = await this.db
+      .select({ line: bankStatementLines, fileName: bankStatementImports.fileName })
+      .from(bankStatementLines)
+      .innerJoin(bankStatementImports, eq(bankStatementImports.id, bankStatementLines.importId))
+      .where(and(eq(bankStatementLines.orgId, orgId), eq(bankStatementLines.moneyAccountId, id), isNotNull(bankStatementLines.runningBalance), last?.end ? gt(bankStatementLines.date, last.end) : undefined))
+      .orderBy(desc(bankStatementLines.date))
+      .limit(1);
+    if (!newest) return null;
+    // Same day, same file: the row the file lists last in time.
+    const sameDay = await this.db
+      .select({ rowNumber: bankStatementLines.rowNumber, runningBalance: bankStatementLines.runningBalance, date: bankStatementLines.date })
+      .from(bankStatementLines)
+      .where(and(eq(bankStatementLines.importId, newest.line.importId), isNotNull(bankStatementLines.runningBalance)))
+      .orderBy(asc(bankStatementLines.rowNumber));
+    const ascending = sameDay.length < 2 || sameDay[0]!.date <= sameDay[sameDay.length - 1]!.date;
+    const onDay = sameDay.filter((l) => l.date === newest.line.date);
+    const pick = (ascending ? onDay[onDay.length - 1] : onDay[0]) ?? { runningBalance: newest.line.runningBalance };
+    return { date: newest.line.date, closingBalance: String(pick.runningBalance), fileName: newest.fileName };
   }
 
   /** The ledger code a new account of each kind would get, for the dialog's hint. */

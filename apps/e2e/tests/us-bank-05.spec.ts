@@ -21,6 +21,11 @@ test.describe("US-BANK-05", () => {
     await dialog.locator('input[inputmode="decimal"]').fill("10000");
     await dialog.getByLabel("Description").fill("Capital top-up");
     await dialog.getByRole("button", { name: "Record money in" }).click();
+    // US-BANK-15: it asks first, saying what posts where.
+    const askIn = page.getByRole("alertdialog", { name: "Record money in?" });
+    await expect(askIn).toContainText("$10,000.00 into Bank Account from Owner's Capital");
+    await expect(askIn).toContainText("It's posted to your books.");
+    await askIn.getByRole("button", { name: "Record" }).click();
     await expect(page.getByText("Money in recorded").first()).toBeVisible();
 
     // Control accounts aren't offered.
@@ -37,6 +42,10 @@ test.describe("US-BANK-05", () => {
     await page.getByRole("option", { name: "GST 18%" }).click();
     await expect(dialog).toContainText("Includes $1.80 tax, which goes to Input Tax Receivable.");
     await dialog.getByRole("button", { name: "Record money out" }).click();
+    const askOut = page.getByRole("alertdialog", { name: "Record money out?" });
+    await expect(askOut).toContainText("$11.80 from Bank Account to Other Expenses");
+    await expect(askOut).toContainText("including $1.80 tax");
+    await askOut.getByRole("button", { name: "Record" }).click();
     await expect(page.getByText("Money out recorded").first()).toBeVisible();
 
     const table = page.getByTestId("money-accounts-table");
@@ -47,8 +56,13 @@ test.describe("US-BANK-05", () => {
     const charges = register.getByRole("row", { name: /Money out — Other Expenses/ });
     await expect(charges).toContainText("$11.80");
 
+    // US-BANK-14: its drawer shows the category and tax, and deletes it (asking first).
     await charges.getByRole("button", { name: /Actions for/ }).click();
-    await page.getByRole("menuitem", { name: "Delete entry" }).click();
+    await page.getByRole("menuitem", { name: "View entry" }).click();
+    const drawer = page.getByTestId("register-entry-drawer");
+    await expect(drawer).toContainText("6900 · Other Expenses");
+    await expect(drawer).toContainText("GST 18% · $1.80 included");
+    await drawer.getByRole("button", { name: "Delete entry" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Delete entry" }).click();
     await expect(page.getByText("Entry deleted").first()).toBeVisible();
     await expect(register.getByRole("row", { name: /Money out deleted — Other Expenses/ })).toBeVisible();

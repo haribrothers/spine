@@ -77,6 +77,10 @@ export const accountRegisterQuerySchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((v) => v === "true"),
+  // US-BANK-14: the Type filter and search, for exports (the page filters on screen too).
+  type: z.enum(["customer_payments", "vendor_payments", "expenses", "transfers", "money_in_out", "other"], { message: "Choose a type to show." }).optional(),
+  search: z.string().max(200).optional(),
+  format: z.enum(["csv", "xlsx", "pdf"], { message: "Choose CSV, Excel or PDF." }).optional(),
 });
 export type AccountRegisterQuery = z.infer<typeof accountRegisterQuerySchema>;
 
@@ -115,6 +119,50 @@ export interface AccountRegister {
   totalOut: string;
   /** Whether anything has ever gone in or out of the account, regardless of filters. */
   hasEntries: boolean;
+}
+
+/** US-BANK-14 (D-231) — the register's Type filter, by the kind of document behind each entry. */
+export const REGISTER_TYPES = ["customer_payments", "vendor_payments", "expenses", "transfers", "money_in_out", "other"] as const;
+export type RegisterType = (typeof REGISTER_TYPES)[number];
+
+export const REGISTER_TYPE_LABELS: Record<RegisterType, string> = {
+  customer_payments: "Customer payments",
+  vendor_payments: "Vendor payments",
+  expenses: "Expenses",
+  transfers: "Transfers",
+  money_in_out: "Money in and out",
+  other: "Journals and other",
+};
+
+const REGISTER_TYPE_OF: Record<string, RegisterType> = {
+  payment: "customer_payments",
+  payment_delete: "customer_payments",
+  customer_refund: "customer_payments",
+  customer_refund_delete: "customer_payments",
+  vendor_payment: "vendor_payments",
+  vendor_payment_delete: "vendor_payments",
+  vendor_refund: "vendor_payments",
+  vendor_refund_delete: "vendor_payments",
+  expense: "expenses",
+  bank_transfer: "transfers",
+  bank_transfer_delete: "transfers",
+  bank_transaction: "money_in_out",
+  bank_transaction_delete: "money_in_out",
+};
+
+/** The Type an entry falls under; anything not listed (tax payments, journals, opening balances) is "other". */
+export function registerType(sourceType: string): RegisterType {
+  return REGISTER_TYPE_OF[sourceType] ?? "other";
+}
+
+export function isRegisterType(type: string): type is RegisterType {
+  return (REGISTER_TYPES as readonly string[]).includes(type);
+}
+
+/** The register's rows of one Type whose what, contact or reference contains the search, ignoring case. */
+export function filterRegisterRows<T extends Pick<AccountRegisterRow, "sourceType" | "what" | "reference"> & { contact: { name: string } | null }>(rows: T[], filter: { type?: RegisterType | null; search?: string | null }): T[] {
+  const q = filter.search?.trim().toLowerCase();
+  return rows.filter((r) => (!filter.type || registerType(r.sourceType) === filter.type) && (!q || `${r.what} ${r.contact?.name ?? ""} ${r.reference ?? ""}`.toLowerCase().includes(q)));
 }
 
 /** The forms that remember the account each person used last (US-BANK-03, `user.last_money_accounts`). */
@@ -220,4 +268,13 @@ export interface BankTransaction {
   date: string;
   description: string | null;
   deletedAt: string | null;
+}
+
+/** US-BANK-14 — a money in or out entry or a transfer as the register's drawer shows it. */
+export interface BankEntryDetails {
+  /** Its line on the money account is part of a finished reconciliation (it can't be deleted). */
+  reconciled: boolean;
+  taxName: string | null;
+  createdBy: string | null;
+  createdAt: string;
 }

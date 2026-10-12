@@ -353,11 +353,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-BANK-10 · Finish a reconciliation when it balances
 - [x] US-BANK-11 · Review or undo a reconciliation
 - [x] US-BANK-12 · Let a Team see balances, record money and reconcile
-- [ ] US-BANK-13 · See my accounts at a glance and act from them
-- [ ] US-BANK-14 · Work through an account's register
-- [ ] US-BANK-15 · Record money in, out and transfers safely
-- [ ] US-BANK-16 · Reconcile a long statement quickly
-- [ ] US-BANK-17 · Keep a reconciliation report
+- [x] US-BANK-13 · See my accounts at a glance and act from them
+- [x] US-BANK-14 · Work through an account's register
+- [x] US-BANK-15 · Record money in, out and transfers safely
+- [x] US-BANK-16 · Reconcile a long statement quickly
+- [x] US-BANK-17 · Keep a reconciliation report
 - [x] US-CAT-09 · Import catalogue items from a spreadsheet
 - [x] US-PAY-16 · Keep a credit note's extra as customer credit
 - [x] US-PAY-17 · Refund a customer
@@ -506,7 +506,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-ONB-31 · Explore expenses with their receipts
 - [x] US-ONB-32 · Explore expense categories that guide
 - [x] US-ONB-33 · Explore vendor payments and payables you can pay from
-- [ ] US-ONB-34 · Explore banking with accounts, transfers and reconciliations
+- [x] US-ONB-34 · Explore banking with accounts, transfers and reconciliations
 - [x] US-INV-36 · Credit an invoice's lines, with their tax
 - [x] US-INV-37 · Start a credit note from the credit notes list
 - [x] US-INV-38 · See a credit note at a glance, with one next step

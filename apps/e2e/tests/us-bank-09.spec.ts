@@ -31,6 +31,13 @@ test.describe("US-BANK-09", () => {
     await page.getByRole("textbox", { name: "Closing balance on the statement" }).fill("180.00");
     await page.getByRole("button", { name: "Start reconciling" }).click();
     const line = (text: string) => page.getByTestId("statement-line").filter({ hasText: text });
+    // US-BANK-16: once matched, a line moves from To do to Matched.
+    const matched = async (text: string) => {
+      await expect(line(text)).toHaveCount(0);
+      await page.getByRole("tab", { name: /^Matched/ }).click();
+      await expect(line(text)).toContainText("Matched");
+      await page.getByRole("tab", { name: /^To do/ }).click();
+    };
 
     // Money in: a customer payment, opened prefilled.
     await line("NEFT ACME BUILDERS").getByRole("button", { name: "Create" }).click();
@@ -47,7 +54,7 @@ test.describe("US-BANK-09", () => {
     await expect(pay.locator('input[inputmode="decimal"]').first()).toBeDisabled();
     await pay.getByRole("button", { name: "Record payment" }).click();
     await expect(page.getByText("Recorded and matched to NEFT ACME BUILDERS.")).toBeVisible();
-    await expect(line("NEFT ACME BUILDERS")).toContainText("Matched");
+    await matched("NEFT ACME BUILDERS");
 
     // Money out: an expense, recorded and approved from the drawer.
     await line("POS 4410 SHELL PORTLAND").getByRole("button", { name: "Create" }).click();
@@ -56,7 +63,7 @@ test.describe("US-BANK-09", () => {
     await drawer.getByRole("combobox", { name: "Category" }).click();
     await page.getByRole("option", { name: "Fuel" }).click();
     await drawer.getByRole("button", { name: "Save and match" }).click();
-    await expect(line("POS 4410 SHELL PORTLAND")).toContainText("Matched");
+    await matched("POS 4410 SHELL PORTLAND");
 
     // Money out: other money out, through the Money out form.
     await line("ACCOUNT FEES OCT").getByRole("button", { name: "Create" }).click();
@@ -65,7 +72,8 @@ test.describe("US-BANK-09", () => {
     const out = page.getByRole("dialog", { name: "Money out" });
     await out.getByRole("button", { name: "Bank charges" }).click();
     await out.getByRole("button", { name: "Record money out" }).click();
-    await expect(line("ACCOUNT FEES OCT")).toContainText("Matched");
+    await page.getByRole("alertdialog", { name: "Record money out?" }).getByRole("button", { name: "Record" }).click();
+    await matched("ACCOUNT FEES OCT");
     await expect(page.getByTestId("reconcile-difference")).toContainText("$0.00");
   });
 });

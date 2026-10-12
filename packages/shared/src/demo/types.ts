@@ -342,6 +342,8 @@ export interface DemoPlan {
   vendorCredits: DemoPlanVendorCredit[];
   /** US-ONB-33 — payments across several bills. */
   vendorPayments?: DemoPlanVendorPayment[];
+  /** US-ONB-34 — a card, transfers, money in and out, a statement and reconciliations. */
+  banking?: DemoPlanBanking;
   recurringBills: DemoPlanRecurringBill[];
   /**
    * US-ONB-32 (D-228) — the rate the template's goods categories default to
@@ -355,4 +357,21 @@ export interface DemoPlan {
   creditNotes: DemoPlanCreditNote[];
   meetings: DemoPlanMeeting[];
   bundles: DemoPlanBundle[];
+}
+
+/**
+ * US-ONB-34 (D-231) — the demo's banking: a credit card with spending on it
+ * and a payoff, a petty cash top-up, interest and bank charges, and the
+ * bank's statement for last month (reconciled on the 3rd) and this month
+ * (in progress, with a charge not yet in Spine). Amounts in minor units.
+ */
+export interface DemoPlanBanking {
+  card: { name: string; bankName: string; last4: string };
+  /** On the card: a subscription about 40 days ago (paid off a week later) and fuel last week. */
+  cardSpend: [bigint, bigint];
+  pettyCash: bigint;
+  interest: bigint;
+  bankCharges: bigint;
+  /** On this month's statement only: to Create or exclude. */
+  smsCharges: bigint;
 }

@@ -19,8 +19,14 @@ import { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import {
+  bankReconciliations,
+  bankStatementImports,
   bankStatementLineMatches,
   bankStatementLines,
+  bankTransactions,
+  bankTransfers,
+  moneyAccounts,
+  accounts,
   catalogBundles,
   catalogItems,
   contacts,
@@ -228,6 +234,30 @@ export class DemoDataService {
         (r) => remove(r.id, (sp) => sp.delete(quotes).where(eq(quotes.id, r.id)), { entityType: "quote", contactId: r.contactId, field: "number", from: r.number }),
       );
 
+      // US-ONB-34: the demo's reconciliations and statement first (taking the tick off what they reconciled), then its bank entries.
+      const demoRecIds = (await tx.select({ id: bankReconciliations.id }).from(bankReconciliations).where(and(eq(bankReconciliations.orgId, orgId), eq(bankReconciliations.isDemo, true)))).map((r) => r.id);
+      if (demoRecIds.length) {
+        await tx.update(journalLines).set({ reconciliationId: null }).where(inArray(journalLines.reconciliationId, demoRecIds));
+        await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.reconciliationId, demoRecIds));
+        await tx.update(bankStatementLines).set({ status: "unmatched", excludeNote: null, reconciliationId: null }).where(inArray(bankStatementLines.reconciliationId, demoRecIds));
+      }
+      const demoImportIds = (await tx.select({ id: bankStatementImports.id }).from(bankStatementImports).where(and(eq(bankStatementImports.orgId, orgId), eq(bankStatementImports.isDemo, true)))).map((r) => r.id);
+      if (demoImportIds.length) {
+        const demoLineIds = (await tx.select({ id: bankStatementLines.id }).from(bankStatementLines).where(inArray(bankStatementLines.importId, demoImportIds))).map((r) => r.id);
+        if (demoLineIds.length) await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.statementLineId, demoLineIds));
+        await tx.delete(bankStatementLines).where(inArray(bankStatementLines.importId, demoImportIds));
+        await tx.delete(bankStatementImports).where(inArray(bankStatementImports.id, demoImportIds));
+      }
+      if (demoRecIds.length) await tx.delete(bankReconciliations).where(inArray(bankReconciliations.id, demoRecIds));
+      const bankTransfersDeleted = await count(
+        await tx.select({ id: bankTransfers.id, reference: bankTransfers.reference }).from(bankTransfers).where(and(eq(bankTransfers.orgId, orgId), eq(bankTransfers.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(bankTransfers).where(eq(bankTransfers.id, r.id)), { entityType: "bank_transfer", contactId: null, field: "reference", from: r.reference }),
+      );
+      const bankTransactionsDeleted = await count(
+        await tx.select({ id: bankTransactions.id, description: bankTransactions.description, contactId: bankTransactions.contactId }).from(bankTransactions).where(and(eq(bankTransactions.orgId, orgId), eq(bankTransactions.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(bankTransactions).where(eq(bankTransactions.id, r.id)), { entityType: "bank_transaction", contactId: r.contactId, field: "description", from: r.description }),
+      );
+
       // The demo's journal entries, except those of a document that was kept.
       // A bank statement line matched to one goes back to unmatched first.
       const demoEntries = (await tx.select({ id: journalEntries.id, sourceId: journalEntries.sourceId }).from(journalEntries).where(and(eq(journalEntries.orgId, orgId), eq(journalEntries.isDemo, true)))).filter((e) => !kept.has(e.sourceId));
@@ -242,6 +272,20 @@ export class DemoDataService {
         }
         await tx.delete(journalEntries).where(inArray(journalEntries.id, entryIds));
       }
+
+      // US-ONB-34: the demo's card account, and its ledger account, once its entries are gone.
+      const moneyAccountsDeleted = await count(
+        await tx.select({ id: moneyAccounts.id, name: moneyAccounts.name, accountId: moneyAccounts.accountId }).from(moneyAccounts).where(and(eq(moneyAccounts.orgId, orgId), eq(moneyAccounts.isDemo, true))),
+        (r) =>
+          remove(
+            r.id,
+            async (sp) => {
+              await sp.delete(moneyAccounts).where(eq(moneyAccounts.id, r.id));
+              await sp.delete(accounts).where(eq(accounts.id, r.accountId));
+            },
+            { entityType: "money_account", contactId: null, field: "name", from: r.name },
+          ),
+      );
 
       const jobsDeleted = await count(
         await tx.select({ id: jobs.id, name: jobs.name, contactId: jobs.contactId }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.isDemo, true))),
@@ -296,6 +340,9 @@ export class DemoDataService {
         paymentsDeleted,
         jobsDeleted,
         vendorPaymentsDeleted,
+        bankTransfersDeleted,
+        bankTransactionsDeleted,
+        moneyAccountsDeleted,
         vendorBillsDeleted,
         vendorCreditsDeleted,
         recurringBillsDeleted,

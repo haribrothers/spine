@@ -7,7 +7,9 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { requireOrgId } from "../org/settings.controller";
+import { ReportExportService } from "../reports/export/report-export.service";
 import { AccountRegisterService } from "./account-register.service";
+import { registerDocument } from "./register-document";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 function parseInput(body: unknown) {
@@ -28,6 +30,7 @@ export class MoneyAccountsController {
   constructor(
     private readonly moneyAccounts: MoneyAccountsService,
     private readonly registers: AccountRegisterService,
+    private readonly exporter: ReportExportService,
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
@@ -50,13 +53,27 @@ export class MoneyAccountsController {
     return this.moneyAccounts.lastUsed(session.user.id);
   }
 
-  /** US-BANK-02 — what moved through one account, with a running balance. */
+  /**
+   * US-BANK-02 — what moved through one account, with a running balance.
+   * US-BANK-14: `format=csv|xlsx|pdf` downloads the rows on screen (the
+   * range, Unreconciled only, `type` and `search`).
+   */
   @Get(":id/register")
   @RequireCapability("banking.view")
   async register(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Query() query: unknown) {
     const parsed = accountRegisterQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
-    return this.registers.register(requireOrgId(session), id, parsed.data);
+    const orgId = requireOrgId(session);
+    const register = await this.registers.register(orgId, id, parsed.data);
+    if (!parsed.data.format) return register;
+    return this.exporter.file(orgId, parsed.data.format, registerDocument(register, { type: parsed.data.type, search: parsed.data.search }));
+  }
+
+  /** US-BANK-16 — where the imported statement ends, to start reconciling from. */
+  @Get(":id/statement-end")
+  @RequireCapability("banking.reconcile")
+  async statementEnd(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.moneyAccounts.statementEnd(requireOrgId(session), id);
   }
 
   @Post()

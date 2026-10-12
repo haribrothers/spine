@@ -5098,6 +5098,31 @@ Load an industry demo (e.g. India › Construction) into a new business, and Riv
 6. Delete all demo data: the bills and payments go; Payables says "Nothing outstanding".
 7. Regression: Vendor bills' cards, the dashboard's Payables card and the AP aging report agree with Payables; the jobs' costs include the 31–60 bill.
 
+## 226. Banking you can work from (US-BANK-13 to US-BANK-17, refinements before Phase 10)
+
+Use an owner with two bank accounts, cash, a card, a few payments, money in and out and a transfer; a CSV statement for the default bank with a Balance column; and a Staff member with only `banking.view`. Check light and dark, and compare with the canvas "24 Banking".
+
+1. Banking: tabs "Active" and "Archived" with counts; the cards Bank and cash, Owed on cards, Not yet reconciled and Last reconciled; pressing Not yet reconciled outlines it, says "Showing these · press again to clear" and shows only accounts with entries to reconcile. The Type filter, Updated, Refresh, Transfer, Money in, Money out and Add account sit in the filter bar; search and Columns below. Tab, type, card and search survive opening an account and going Back.
+2. Rows: the type's icon and type in words, the name with "Default", the bank line, "Balance in Spine" ("owed" on a card), "Reconciled to <date>" or "Never reconciled", and "<n> unreconciled" opening the register on Unreconciled only.
+3. A row's menu: Open register; Reconcile and Import statement; Money in, Money out and Transfer (that account chosen); Set as default, Edit and Archive — each with its icon. Archive asks "Archive <name>?"; the default account says "Choose another default account first."; an account with money says to move it first. Set as default toasts which account it replaces. As the Staff member: no Money in/out, Transfer, Reconcile, Import, Set as default, Edit or Archive.
+4. The register: Reconcile is the primary button, with Record (Money in, Money out, Transfer — this account chosen) and More (Import statement, Reconciliations, Edit account). The range presets (This month, Last month, This quarter, Last 90 days, This year, Custom range with From and To), Type and Show filter it; search matches what, contact or reference; all of it is in the address and survives a reload. A reconciled row has a tick and "Reconciled"; an unreconciled row has nothing there. The Unreconciled card filters.
+5. A money in or out entry, or a transfer, opens a drawer (its name or "View entry"): date, who recorded it, amount, account (From and To), category and tax, contact, description or reference, reconciled or not, attachments (money in or out), and Delete entry/transfer, which asks first and isn't offered once reconciled. Other rows open their document.
+6. Export: CSV, Excel and PDF hold the rows on screen (range, type, search) between the opening and closing balance, named `<account>-<from>-<to>`.
+7. Money in and Money out ask "Record money in/out?" naming the amount, account, category, date and any tax; Go back changes nothing. A transfer asks "Move <amount> from <A> to <B>?"; the same account on both sides says "Choose two different accounts." and Move money stays off.
+8. Reconcile: with a statement imported after the last reconciliation, the end date and closing balance are filled in, with "From <file> · <date>"; once started, "Saved as you go — pick up where you left off." A bar says "<done> of <total> lines done". Tabs To do, Suggested, Matched and Excluded (with counts) and a search; a matched or excluded line moves to its tab. Selecting a line lists entries with the same amount first, marked "Same amount". "Match all suggested (n)" asks first, listing line → entry, and toasts "<n> lines matched".
+9. Reconciliations: the end date opens the reconciliation; the row menu has View, Download report and Undo (off, with why, except on the newest). The page: the summary "Statement closing balance + Deposits not yet on the statement − Payments not yet on the statement = Balance in Spine on <date>" (with excluded lines when there are any), the opening and cleared balances, what's outstanding, matched lines (Show all) and excluded lines with notes; Download report saves `reconciliation-<account>-<date>.pdf`, light; Undo asks first.
+10. Regression: balances match the Balance Sheet; payments, bills and expenses still choose their account; statement import and Create from a line work as before; Field can't reach Banking or any of these routes.
+
+## 227. Demo banking (US-ONB-34, refinements before Phase 10)
+
+Load an industry demo (e.g. India › Construction) and Riverstone Builders in two businesses.
+
+1. Banking lists a "Business card" (••4410) owing what's left of its spending, alongside the bank and cash accounts.
+2. The bank's register has a card payoff and a petty cash top-up (transfers), interest (money in) and bank charges (money out), each on its own day.
+3. Reconciliations: last month is reconciled (finished on the 3rd, or today early in the month), with a cheque outstanding at the end of the month; open it and download the report.
+4. Reconcile: this month is in progress — older lines matched, newer ones suggested, a cheque presented this month to match by hand, and "SMS ALERT CHGS" to Create or Exclude.
+5. Delete all demo data: the card, the transfers, the money in and out, the statement and both reconciliations go; the bank account itself stays.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

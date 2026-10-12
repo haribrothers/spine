@@ -11,7 +11,12 @@ test.describe("US-BANK-07", () => {
     await signUpNewOrg(page, { name: "Statement Owner", email: `e2e-bank-07-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
     const bank = ((await (await page.request.get(`${API_URL}/money-accounts`)).json()) as { id: string; code: string }[]).find((a) => a.code === "1010")!;
     await page.goto(`/banking/${bank.id}`);
-    await page.getByRole("button", { name: "Import statement" }).click();
+    // US-BANK-14: Import statement is under the register's More.
+    const openImport = async () => {
+      await page.getByRole("button", { name: "More" }).click();
+      await page.getByRole("menuitem", { name: "Import statement" }).click();
+    };
+    await openImport();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: "Import statement — Bank Account" })).toBeVisible();
 
@@ -36,7 +41,7 @@ test.describe("US-BANK-07", () => {
     await dialog.getByRole("button", { name: "Done" }).click();
 
     // Next time: the saved mapping applies, and lines already there are skipped.
-    await page.getByRole("button", { name: "Import statement" }).click();
+    await openImport();
     await dialog.getByTestId("statement-file").setInputFiles(csv("statement-oct-2026-b.csv", ['01/10/2026,NEFT-MAPLE RIDGE DEV,FT26100248,,"4,542.50",', "03/10/2026,INTEREST CREDIT,,,6.12,"]));
     await expect(dialog.getByRole("combobox", { name: "Description" })).toHaveText("Narration");
     await dialog.getByRole("button", { name: "Import 2 lines" }).click();
@@ -44,7 +49,7 @@ test.describe("US-BANK-07", () => {
     await dialog.getByRole("button", { name: "Done" }).click();
 
     // Not a CSV, or too many lines.
-    await page.getByRole("button", { name: "Import statement" }).click();
+    await openImport();
     await dialog.getByTestId("statement-file").setInputFiles({ name: "statement.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
     await expect(dialog).toContainText("Export the statement from your bank as CSV, then import it here.");
     await dialog.getByTestId("statement-file").setInputFiles(csv("huge.csv", Array.from({ length: 5001 }, (_, i) => `01/10/2026,LINE ${i},,1.00,,`)));

@@ -4043,6 +4043,109 @@ Links to: `PayablesByBill`
 
 Shows: "2 selected" "Pay (2)" off · "Pick bills from one vendor — a payment is for one vendor." · "Clear"
 
+## Banking you can work from
+
+Drawn in Claude Design for US-BANK-13 to US-BANK-17 (D-231): project "Spine web — refinements before Phase 10", canvas "24 Banking". Banking and an account's register on the shared list layout, recording that asks first, reconciling a long statement quickly, and a finished reconciliation as a report.
+
+### BankingAccountsRefined — Every account at a glance, and its menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-13 · **Source:** Claude Design
+
+![BankingAccountsRefined](screens/BankingAccountsRefined.webp)
+
+Links to: `AccountRegisterRefined`, `ReconcileRefined`, `StatementImportDialog`, `MoneyOutConfirm`, `TransferConfirm`, `MoneyAccountDialog`, `BankingArchiveConfirm`
+
+Shows: "Money › Banking" · tabs "Active 4" "Archived 1" · "Bank and cash" "Owed on cards" "Not yet reconciled" (presses to filter) "Last reconciled" · "All types" · "Updated just now" Refresh "Transfer" "Money in" "Money out" "Add account" · "Search accounts" "Columns" · "Account" (type icon, name, "Default", bank line) "Type" "Balance in Spine" ("owed" on a card) "Reconciliation" ("Reconciled to 30 Sept", "Never reconciled") "Unreconciled" ("14 unreconciled") · row menu "Open register" · "Reconcile" "Import statement" · "Money in" "Money out" "Transfer" · "Set as default" "Edit" "Archive". As built, the Reconciliation column shows the date only (not who and when).
+
+### BankingAccountsDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-13 · **Source:** Claude Design
+
+![BankingAccountsDark](screens/BankingAccountsDark.webp)
+
+Links to: `BankingAccountsRefined`
+
+Shows: dark mode, "Not yet reconciled" pressed ("Showing these · press again to clear").
+
+### BankingArchiveConfirm — Archive asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-13 · **Source:** Claude Design
+
+![BankingArchiveConfirm](screens/BankingArchiveConfirm.webp)
+
+Links to: `BankingAccountsRefined`
+
+Shows: "Archive ICICI Operating?" "It leaves the account pickers on payments, expenses and transfers. Its register, reconciliations and ledger history stay, and you can restore it from Archived." · "Go back" "Archive account"
+
+### AccountRegisterRefined — An account's register you can work from
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-14, US-BANK-15 · **Source:** Claude Design
+
+![AccountRegisterRefined](screens/AccountRegisterRefined.webp)
+
+Links to: `RegisterEntryDrawer`, `ReconcileRefined`, `MoneyOutConfirm`, `TransferConfirm`
+
+Shows: "Money › Banking › HDFC Current" · bank line, kind and ledger code · "More" (Import statement, Reconciliations, Edit account) "Record" (Money in, Money out, Transfer) "Reconcile" · "Balance in Spine" "Money in" "Money out" "Unreconciled" (presses to filter) · range ("Last 90 days"; This month, Last month, This quarter, This year, Custom range) "All entries" (type) "All" (show) · "Updated just now" Refresh "Export" · "Search what, contact or reference" "Columns" · "Date" "What" "Contact" "Reference" "Money in" "Money out" "Balance" "Reconciled" (a tick, or nothing) · "Opening balance on …".
+
+### RegisterEntryDrawer — A money in or out entry, or a transfer
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-14 · **Source:** Claude Design
+
+![RegisterEntryDrawer](screens/RegisterEntryDrawer.webp)
+
+Links to: `AccountRegisterRefined`
+
+Shows: "Money out · Bank charges" "12 Oct 2026 · recorded by Priya Raman" · "Amount" "From" "Category" "Tax" ("GST 18% · ₹90.00 included") "Contact" "Description" "Reconciled" · Attachments · "Deleting posts a reversing entry today." "Delete entry". As built, a money in or out entry has no reference (a transfer shows its reference instead of a category).
+
+### MoneyOutConfirm — Money out asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-15 · **Source:** Claude Design
+
+![MoneyOutConfirm](screens/MoneyOutConfirm.webp)
+
+Links to: `AccountRegisterRefined`
+
+Shows: "Record money out?" "₹590.00 from HDFC Current to Bank charges on 12 Oct 2026, including ₹90.00 tax. It's posted to your books." · "Go back" "Record"
+
+### TransferConfirm — A transfer asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-15 · **Source:** Claude Design
+
+![TransferConfirm](screens/TransferConfirm.webp)
+
+Links to: `AccountRegisterRefined`
+
+Shows: "Move ₹10,000.00 from HDFC Current to Petty cash?" "Both balances change on 8 Oct 2026, and both registers show the transfer." · "Go back" "Move money"
+
+### ReconcileRefined — Reconcile a long statement quickly
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-16 · **Source:** Claude Design
+
+![ReconcileRefined](screens/ReconcileRefined.webp)
+
+Links to: `ReconcileMatchAllConfirm`, `ReconcileCreateDrawer`, `ReconciliationsHistory`
+
+Shows: "Statement end date" and "Closing balance on the statement" filled from "hdfc-oct-2026.csv · 12 Oct" · "Saved as you go — pick up where you left off." · "18 of 26 lines done" "16 matched · 2 excluded · 5 suggested to check · 3 to do" with a bar · Statement lines with "Match all suggested (5)", tabs "To do" "Suggested" "Matched" "Excluded" and a search · a selected line · Unreconciled in Spine with search, "Same amount" first · "Difference … — match or create entries until it's zero." "Finish reconciliation". As built, the Difference stays in its card.
+
+### ReconcileMatchAllConfirm — Match every suggestion at once
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-16 · **Source:** Claude Design
+
+![ReconcileMatchAllConfirm](screens/ReconcileMatchAllConfirm.webp)
+
+Links to: `ReconcileRefined`
+
+Shows: "Match 5 suggested lines?" "Each statement line is matched to the entry Spine suggested. You can unmatch any of them before you finish." with each line → entry and amount · "Go back" "Match 5 lines"
+
+### ReconciliationReport — A finished reconciliation
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-17 · **Source:** Claude Design
+
+![ReconciliationReport](screens/ReconciliationReport.webp)
+
+Links to: `ReconciliationReportPdf`, `ReconciliationsHistory`
+
+Shows: "Reconciliation to 30 Sept 2026" · account, finished by and when, file · "Undo" (the newest) "Download report" · "Statement closing balance + Deposits not yet on the statement − Payments not yet on the statement = Balance in Spine on 30 Sept" · "Opening balance" "Cleared in Spine" "Excluded" · "What's outstanding" · "Matched lines" ("Show all 31 matched lines") · "Excluded" with notes.
+
+### ReconciliationReportPdf — The reconciliation report as a PDF
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-17 · **Source:** Claude Design
+
+![ReconciliationReportPdf](screens/ReconciliationReportPdf.webp)
+
+Links to: —
+
+Shows: "RECONCILIATION REPORT" · account and statement date · Summary · Reconciled (opening, lines matched and excluded, finished) · "Not yet on the statement" · matched lines · excluded lines · "Generated from Spine on …". As built, every matched line is listed.
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.
@@ -4950,6 +5053,8 @@ Shows: "Help" · "Search" · "Ctrl K" · "Online docs ↗" · "Auto ▾" · "You
 
 ![BankingAccounts](screens/BankingAccounts.webp)
 
+Superseded by `BankingAccountsRefined` (D-231).
+
 Links to: `AccountRegister`, `MoneyAccountDialog`, `TransferDialog`, `MoneyInOutDialog`, `ReconcileAccount`
 
 Shows: "Banking — Spine" · "Money" · "Banking" · "Bank, cash and card accounts, what moved through them, and reconciliation." · "Bank and cash" · "$58,124.40" · "3 accounts" · "Owed on cards" · "$1,284.60" · "1 card" · "Not yet reconciled" · "13" · "entries across 3 accounts" · "Last reconciled" · "Sep 30, 2026" · "First Coastal — Operating" · "All types" · "Active accounts" · "Transfer" · "Money in" · "Money out" · "Add account" · "Search accounts" · "Columns" · "Account" · "Type" · "Bank" · "Balance in Spine" · "Reconciliation" · "Unreconciled" · "Actions" · "Default" · "Bank account" · "First Coastal Bank · ••0193" · "$48,212.40" · "Reconciled" · "6 entries" · "First Coastal — Tax reserve" · "First Coastal Bank · ••7741" · "$9,500.00" · "0 entries" · "Cash in Hand" · "Cash" · "Site petty cash" · "$412.00"
@@ -4958,6 +5063,8 @@ Shows: "Banking — Spine" · "Money" · "Banking" · "Bank, cash and card accou
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-02 · **Source:** Drawn
 
 ![AccountRegister](screens/AccountRegister.webp)
+
+Superseded by `AccountRegisterRefined` and `RegisterEntryDrawer` (D-231).
 
 Links to: `ReconcileAccount`, `StatementImportDialog`
 
@@ -4986,6 +5093,8 @@ Shows: "Record payment — Spine" · "Billing" · "Invoices" · "Detail" · "Inv
 
 ![TransferDialog](screens/TransferDialog.webp)
 
+Move money asks first: `TransferConfirm` (D-231).
+
 Links to: —
 
 Shows: "Transfer — Spine" · "Money" · "Banking" · "Bank, cash and card accounts, what moved through them, and reconciliation." · "Bank and cash" · "$58,124.40" · "3 accounts" · "Owed on cards" · "$1,284.60" · "1 card" · "Not yet reconciled" · "13" · "entries across 3 accounts" · "Last reconciled" · "Sep 30, 2026" · "First Coastal — Operating" · "All types" · "Active accounts" · "Transfer" · "Money in" · "Money out" · "Add account" · "Search accounts" · "Columns" · "Account" · "Type" · "Bank" · "Balance in Spine" · "Reconciliation" · "Unreconciled" · "Actions" · "Default" · "Bank account" · "First Coastal Bank · ••0193" · "$48,212.40" · "Reconciled" · "6 entries" · "First Coastal — Tax reserve" · "First Coastal Bank · ••7741" · "$9,500.00" · "0 entries" · "Cash in Hand" · "Cash" · "Site petty cash" · "$412.00"
@@ -4994,6 +5103,8 @@ Shows: "Transfer — Spine" · "Money" · "Banking" · "Bank, cash and card acco
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-05 · **Source:** Drawn
 
 ![MoneyInOutDialog](screens/MoneyInOutDialog.webp)
+
+Record asks first: `MoneyOutConfirm` (D-231).
 
 Links to: —
 
@@ -5013,6 +5124,8 @@ Shows: "Import statement — Spine" · "Money" · "Banking" · "First Coastal �
 
 ![ReconcileAccount](screens/ReconcileAccount.webp)
 
+Superseded by `ReconcileRefined` (D-231).
+
 Links to: `ReconcileCreateDrawer`, `ReconciliationsHistory`
 
 Shows: "Reconcile — Spine" · "Money" · "Banking" · "First Coastal — Operating" · "Reconcile" · "Reconcile First Coastal — Operating" · "Match each statement line to an entry in Spine until the difference is zero." · "Statement end date" · "Oct 4, 2026" · "Closing balance on the statement" · "$50,566.42" · "Import statement" · "Statement closing balance" · "Cleared in Spine" · "$50,618.50" · "opening $45,829.90 + 2 matched" · "Difference" · "−$52.08" · "match or create entries until it's zero" · "Statement lines" · "From statement-oct-2026.csv · 4 lines to Oct 4" · "Oct 1" · "NEFT-MAPLE RIDGE DEV · FT26100248" · "Suggested match" · "+4,542.50" · "Match" · "Not this one" · "CHQ 000214 COASTAL TIMBER" · "Matched" · "−2,160.00" · "Oct 3" · "INTEREST CREDIT" · "Unmatched" · "+6.12" · "Create" · "Exclude" · "Oct 4" · "POS 4410 SHELL PORTLAND" · "−58.20" · "Unreconciled in Spine" · "Entries on this account up to Oct 4" · "Oct 2" · "Payment RCT-0018 · Maple Ridge Developments" · "Vendor payment VP-0009 · Coastal Timber Supply" · "Expense EXP-0034 · Marcus Webb · Fuel"
@@ -5030,6 +5143,8 @@ Shows: "Reconcile — Spine" · "Money" · "Banking" · "First Coastal — Opera
 **Priority:** P2 · **Phase:** 8 · **Stories:** US-BANK-11 · **Source:** Drawn
 
 ![ReconciliationsHistory](screens/ReconciliationsHistory.webp)
+
+Rows open `ReconciliationReport` and have a menu: View, Download report, Undo (D-231).
 
 Links to: —
 

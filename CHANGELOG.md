@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Banking you can work from (US-BANK-13 to US-BANK-17, US-ONB-34, D-231)
+
+- **Accounts (US-BANK-13):** Banking on the shared list layout — Active and Archived tabs, the cards (Not yet reconciled filters), a Type filter, Updated and Refresh, search and Columns, all in the address; rows show the type, bank line, "Reconciled to <date>" and "<n> unreconciled"; a menu with icons opens the register, reconciles, imports a statement, records money in or out or a transfer with that account chosen, sets the default, edits or archives (asking first).
+- **Register (US-BANK-14):** Reconcile as the primary action with Record and More; range presets and a custom range, Type, Show and search in the address; a reconciled tick instead of a chip on every row; money in and out and transfers open a drawer with their details, files and Delete; Export to CSV, Excel and PDF. `GET /money-accounts/:id/register` takes `type`, `search` and `format`; `GET /bank-transactions/:id` and `GET /bank-transfers/:id`.
+- **Recording asks first (US-BANK-15):** Money in, Money out and Transfer confirm what posts where; the same account twice is refused in the form; opened from an account, it's chosen.
+- **Reconcile (US-BANK-16):** "<done> of <total> lines done", tabs To do, Suggested, Matched and Excluded with a search, "Match all suggested (n)" (asks first), same-amount entries first, and the end date and closing balance from the imported statement (`GET /money-accounts/:id/statement-end`).
+- **Report (US-BANK-17):** a finished reconciliation opens read-only with how the statement and Spine agree, what's outstanding, matched and excluded lines; `GET /bank-reconciliations/:id/report.pdf`; the history rows have a menu (View, Download report, Undo).
+- **Demo (US-ONB-34):** a business card with spending and a payoff, a petty cash top-up, interest and bank charges, and the bank's statement — last month reconciled, this month in progress with a charge to create. `is_demo` on money accounts, bank entries, transfers, statement imports and reconciliations (migration `0118`); deleting the demo removes them.
+- **Also:** banking dates follow the business's format; MENU_ICONS gains register, reconcile, importStatement, moneyIn, moneyOut, transfer and setDefault; the light `--color-category-green` darkens from #1a7f4b to #187a48 (4.74:1 on its background — the activity feed's avatars were 4.43:1).
+- **Tests:** API integration `us-bank-13-17` and the US-ONB-34 checks in `us-onb-24-28`; web unit `us-bank-13-17`; E2E `us-bank-13-17`, with `us-bank-02`, `04`–`09` and `11` moved to the new screens. QA script sections 226 and 227.
+
 ### 2026-10-12 — Demo vendor payments and payables you can pay from (US-ONB-33, D-216)
 
 - **Payables (every industry demo):** open bills in every age but 61–90 days — the part-paid bill due this week, the overdue bill with credit (1–30), a new bill 31–60 days late on a job, and a new one 90+ days late from the part-paid bill's vendor, so that vendor has two bills to expand and pay together. Riverstone: Apex Timber's 90+ bill and Granite State's 31–60 bill.

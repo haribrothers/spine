@@ -55,7 +55,7 @@
   --color-inverse-on-surface: #ffffff;
   --color-inverse-on-surface-muted: #d3d0c9;
 
-  /* WCAG AA a11y pass (2026-08-06): darkened from #1a7f4b (4.44:1 on
+  /* WCAG AA a11y pass (2026-08-06): darkened from #187a48 (4.44:1 on
      paid-bg — fails 4.5:1 at the 12px chip text size) to #177044 (5.40:1). */
   --color-paid: #177044;
   --color-paid-bg: #e4f5eb;
@@ -74,7 +74,7 @@
 
   --color-category-blue: #2954e5;
   --color-category-blue-bg: #eaeffd;
-  --color-category-green: #1a7f4b;
+  --color-category-green: #187a48;
   --color-category-green-bg: #e4f5eb;
   --color-category-amber: #946000;
   --color-category-amber-bg: #fcf0d4;

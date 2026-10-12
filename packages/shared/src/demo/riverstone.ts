@@ -1,5 +1,5 @@
 import type { DemoPlan, DemoPlanContact, DemoPlanItem, DemoPlanLead, DemoPlanLine } from "./types.ts";
-import { DEMO_ARCHIVED_CATEGORY } from "./scenario.ts";
+import { DEMO_ARCHIVED_CATEGORY, demoBanking } from "./scenario.ts";
 
 /**
  * US-ONB-09 — Riverstone Builders, the default demo (United States,
@@ -159,6 +159,8 @@ export function riverstonePlan(): DemoPlan {
     ],
     ownTaxGroups: [{ name: "Sales Tax + Surcharge", rates: ["Sales Tax", "State Surcharge"] }],
     ordering: "declared",
+    // US-ONB-34: a card, transfers, money in and out, a statement and reconciliations.
+    banking: demoBanking("US"),
     contacts: CONTACTS.map((c) => (c.lead ? { ...c, lead: { ...c.lead, ...WORKED[c.key] } } : c)),
     items: ITEMS,
     quotes: [

@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
-import type { BankTransfer, CreateBankTransferInput } from "@spine/shared";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import type { BankEntryDetails, BankTransfer, CreateBankTransferInput } from "@spine/shared";
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { bankTransfers } from "../../db/schema";
+import { bankTransfers, journalLines, moneyAccounts, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { MoneyAccountsService } from "./money-accounts.service";
@@ -25,7 +26,8 @@ export class BankTransfersService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  async create(orgId: string, actorUserId: string, input: CreateBankTransferInput): Promise<BankTransfer> {
+  /** `isDemo` (US-ONB-34): loaded by the demo — the row and its entry are demo data. */
+  async create(orgId: string, actorUserId: string, input: CreateBankTransferInput, isDemo = false): Promise<BankTransfer> {
     return this.db.transaction(async (tx) => {
       const from = await this.moneyAccounts.requireActive(tx, orgId, input.fromMoneyAccountId);
       const to = await this.moneyAccounts.requireActive(tx, orgId, input.toMoneyAccountId);
@@ -40,10 +42,11 @@ export class BankTransfersService {
           { accountId: to.accountId, debit: input.amount, credit: 0n },
           { accountId: from.accountId, debit: 0n, credit: input.amount },
         ],
+        isDemo,
       });
       const [row] = await tx
         .insert(bankTransfers)
-        .values({ id, orgId, fromMoneyAccountId: from.id, toMoneyAccountId: to.id, amount: input.amount, date: input.date, reference: input.reference, entryId, createdByUserId: actorUserId })
+        .values({ id, orgId, fromMoneyAccountId: from.id, toMoneyAccountId: to.id, amount: input.amount, date: input.date, reference: input.reference, entryId, createdByUserId: actorUserId, isDemo })
         .returning();
       await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "money_in_out", from.id);
       await this.auditLog.record(tx, {
@@ -57,6 +60,32 @@ export class BankTransfersService {
       });
       return this.toResponse(row!, { id: from.id, name: from.name }, { id: to.id, name: to.name });
     });
+  }
+
+  /** US-BANK-14 — one transfer, for the register's drawer; reconciled when either side is. */
+  async getOne(orgId: string, id: string): Promise<BankTransfer & BankEntryDetails> {
+    const from = alias(moneyAccounts, "from_account");
+    const to = alias(moneyAccounts, "to_account");
+    const [row] = await this.db
+      .select({ t: bankTransfers, from, to, createdBy: user.name })
+      .from(bankTransfers)
+      .innerJoin(from, eq(from.id, bankTransfers.fromMoneyAccountId))
+      .innerJoin(to, eq(to.id, bankTransfers.toMoneyAccountId))
+      .leftJoin(user, eq(user.id, bankTransfers.createdByUserId))
+      .where(and(eq(bankTransfers.orgId, orgId), eq(bankTransfers.id, id)));
+    if (!row) throw new NotFoundException("Transfer not found");
+    const [reconciled] = await this.db
+      .select({ id: journalLines.id })
+      .from(journalLines)
+      .where(and(eq(journalLines.entryId, row.t.entryId), inArray(journalLines.accountId, [row.from.accountId, row.to.accountId]), isNotNull(journalLines.reconciliationId)))
+      .limit(1);
+    return {
+      ...this.toResponse(row.t, { id: row.from.id, name: row.from.name }, { id: row.to.id, name: row.to.name }),
+      reconciled: Boolean(reconciled),
+      taxName: null,
+      createdBy: row.createdBy ?? null,
+      createdAt: row.t.createdAt.toISOString(),
+    };
   }
 
   async remove(orgId: string, id: string, actorUserId: string): Promise<{ id: string }> {
