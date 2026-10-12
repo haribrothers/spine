@@ -965,6 +965,11 @@ Total: 525 stories.
 - US-TEAM-22 · Change someone between Staff and Field (P2)
 - US-TEAM-23 · Act on people safely (P2)
 - US-TEAM-24 · Set a Staff or Field member's password (P2)
+- US-TEAM-25 · See every Team at a glance on the list layout (P2)
+- US-TEAM-26 · Create a Team from another, or duplicate one (P2)
+- US-TEAM-27 · Manage a Team's members safely (P2)
+- US-TEAM-28 · Review permissions before saving (P2)
+- US-TEAM-29 · See a Team's history (P2)
 
 ## Phase 10 · AI assistant
 

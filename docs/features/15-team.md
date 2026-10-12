@@ -15,6 +15,7 @@ Who can use Spine and what they can do: an Owner-only area with real pages for u
 | F-TEAM-04 | People and access fixes | P2 | 6 | `TeamUsers`, `PromoteOwnerConfirm`, `EmailInvite` |
 | F-TEAM-05 | Users you can manage from: the shared list layout, Teams and access on each person, invites with Teams, Staff ↔ Field, and safer actions | P2 | Refinements | `TeamUsersRefined`, `TeamUsersDark`, `TeamInvites`, `InvitePeopleDialog`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm` |
 | F-TEAM-06 | Set a Staff or Field member's password: an Owner sets it from Users, the person is signed out and emailed, and chooses their own at next sign-in; no Owner's password is set this way | P2 | Refinements | `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile` |
+| F-TEAM-07 | Teams you can manage from: the shared list layout, create from or duplicate a Team, a Team page with members you add and remove safely, permissions you review before saving with what members can open, and every change in the audit log | P2 | Refinements | `TeamsListRefined`, `TeamsListDark`, `CreateTeamDialog`, `TeamPageMembers`, `RemoveTeamMemberConfirm`, `TeamPagePermissions`, `SavePermissionsConfirm`, `TeamPageHistory` |
 
 ## User stories
 
@@ -371,3 +372,72 @@ Decision: D-233
 - API: `PUT /org/members/:id/password { newPassword }` (Owner; target Staff or Field, active, not the caller) — hashes as sign-in does, revokes the user's sessions, sets `user.must_change_password`, sends `password_set_by_owner` email, audits `password_set`. Server enforces the 8-character minimum and common list (US-AUTH-15).
 - Data: `user.must_change_password boolean default false`.
 - While `must_change_password` is set, a global guard answers 403 `{ error: "PASSWORD_CHANGE_REQUIRED" }` for everything but `PUT /org/members/me/password { newPassword }` (no current password — the session proves it; refuses the given one with "That's the password you were given. Choose a different one."; ends their other sessions), `GET /org/members/me` (gains `mustChangePassword` and `passwordSetBy { name, at }`) and Better Auth's own routes (sign-out); choosing clears the flag, and so does a reset by email link. Web sends them to `/choose-password`; the field app to its own screen.
+
+### US-TEAM-25 · See every Team at a glance on the list layout
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamsListRefined`, `TeamsListDark`
+**As** an owner, **I want** Teams to work like every other list, **so that** I can see what each Team allows and who is on it without opening each one.
+
+Decision: D-210, D-222, D-234
+
+**Acceptance criteria**
+- **Given** Teams, **when** it opens, **then** the header has "Create Team"; below it the cards Teams (count), Staff on no Team (opens Users filtered to them; warning when not zero) and Staff on several Teams; then search (Team name or description) with Columns. The search is kept in the address.
+- **Given** a row, **when** it shows, **then** it has the Team's name with "Default" and "Demo" badges and its description; its members as avatars with a count ("4 people", or "No one yet"); "Opens 9 of 16 sections" (as members' sidebars would show them); and "38 of 105 permissions".
+- **Given** a row's menu, **when** I open it, **then** each item has its icon (D-222): Open, Rename, Duplicate and Delete; Delete isn't offered on the default Team or the only Team.
+- **Given** Delete, **when** I choose it, **then** "Delete <Team>?" names how many people lose what it allowed and who'd be left on no Team ("Kavya Iyer will be on no Team — they can't open anything"); confirming deletes it and the toast says so (D-218, D-223).
+
+**Implementation notes**
+- API: `GET /org/teams` rows gain `description`, `isDemo`, `members` (`[{ memberId, name }]`) and `granted` (the capabilities it grants).
+
+### US-TEAM-26 · Create a Team from another, or duplicate one
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreateTeamDialog`
+**As** an owner, **I want** to start a Team from one I already have, **so that** a similar Team doesn't mean switching 100 permissions on by hand.
+
+Decision: D-234
+
+**Acceptance criteria**
+- **Given** "Create Team", **when** the dialog opens, **then** it asks for the name, an optional description ("What this Team is for") and "Start from": "Nothing allowed" or any Team (its permissions are copied, not its members); creating opens the new Team's Permissions with a toast ("<Team> created — check what it allows").
+- **Given** a row's Duplicate, **when** I choose it, **then** the same dialog opens with "<Team> (copy)" and that Team chosen in "Start from".
+- **Given** a name another Team has, **when** I create or rename, **then** it says "There's already a Team called <name>." under the field.
+- **Given** Rename (from the list or the Team page), **when** I save, **then** the name and description change and the toast says so; the default Team's name stays, but its description can change.
+
+**Implementation notes**
+- Data: `teams.description text` (nullable, up to 200 characters).
+- API: `POST /org/teams { name, description?, copyFromTeamId? }`; `PUT /org/teams/:id { name?, description? }`; a duplicate name is 409 with that message.
+
+### US-TEAM-27 · Manage a Team's members safely
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageMembers`, `RemoveTeamMemberConfirm`
+**As** an owner, **I want** a Team's page to show who's on it and change that safely, **so that** nobody loses access by accident.
+
+Decision: D-218, D-223, D-234
+
+**Acceptance criteria**
+- **Given** a Team's page, **when** it opens, **then** the header shows its name, description, "Default"/"Demo" badges and a menu (Rename, Duplicate, Delete — with icons), and tabs Members, Permissions and History (a count on Members), kept in the address.
+- **Given** Members, **when** I add, **then** "Add people" lets me tick several Staff not on this Team (with their current Teams beside them) and adds them at once; the toast names them.
+- **Given** a member's row, **when** it shows, **then** it has their name and email, their other Teams, when they were last active, and a menu: What they can open (US-TEAM-20) and Remove from <Team>.
+- **Given** Remove, **when** I choose it, **then** it asks first — and if this is their only Team, warns "<name> will be on no Team — they can't open anything"; confirming removes them and the toast says so.
+- **Given** Field and Owners, **when** I add people, **then** they're not offered (only Staff are on Teams), and a note says so.
+
+### US-TEAM-28 · Review permissions before saving
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPagePermissions`, `SavePermissionsConfirm`
+**As** an owner, **I want** to change a Team's permissions as a draft and see what they add up to, **so that** a mis-click never changes what people can do.
+
+Decision: D-218, D-234
+
+**Acceptance criteria**
+- **Given** Permissions, **when** I switch something, **then** nothing is saved yet: the switch is marked "Changed", a bar sticks to the bottom ("5 changes · Discard · Save changes"), and leaving the page with unsaved changes asks first.
+- **Given** a group, **when** it shows, **then** it reads "4 of 6" with its "toggle all" switch; "Expand all" / "Collapse all", a search over names and descriptions, and "Show changed only" sit above the list.
+- **Given** a change, **when** I make it, **then** the panel "What members will open" beside the list shows the sections of Spine members will see (as their sidebar would), marking ones the draft adds or takes away.
+- **Given** Save changes, **when** I press it, **then** "Save <n> changes to <Team>?" lists what turns on and off — including ones turned on or off with them (US-BANK-12) — and that it applies to its <n> people at their next request; confirming saves them in one request and the toast says so.
+
+### US-TEAM-29 · See a Team's history
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageHistory`
+**As** an owner, **I want** to see who changed a Team and how, **so that** I can tell why someone can or can't do something.
+
+Decision: D-064, D-234
+
+**Acceptance criteria**
+- **Given** any change to a Team — created (and from which Team), renamed or described, members added or removed, permissions turned on or off, deleted — **when** it's saved, **then** it's in the audit log as record type "Team" with who and when, and the changes named (permissions by their labels).
+- **Given** the History tab, **when** it opens, **then** it lists those entries newest first ("Priya Raman turned on Reconcile accounts and View bank balances · 12 Oct, 10:42"), with "Open in audit log" for the full log filtered to this Team.
+
+**Implementation notes**
+- API: `GET /org/teams/:id/history` → `[{ at, actorName, action, changes }]`, newest first (Owner); `/org/audit-log` takes `entityId`. Audit actions on entity type `team`: `created`, `updated`, `members_changed`, `privileges_changed`, `deleted`.
