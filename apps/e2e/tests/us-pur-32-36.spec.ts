@@ -40,7 +40,7 @@ test.describe("US-PUR-32, US-PUR-33", () => {
     await expect(page.getByTestId("fig-credited")).toContainText("$100.00 credit to use");
     await expect(page.getByTestId("bill-activity-entry")).toHaveCount(3);
     await expect(page.getByTestId("bill-activity-entry").first()).toContainText("Paid $600.00 by");
-    await expect(page.getByTestId("bill-payment-row").getByRole("link")).toHaveAttribute("href", /\/vendor-payments\?id=[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("bill-payment-row").getByRole("link")).toHaveAttribute("href", /\/vendor-payments\/[0-9a-f-]{36}$/);
 
     // Apply credit: the vendor's credit, up to the balance.
     await page.getByRole("button", { name: "Apply credit" }).click();
@@ -53,9 +53,10 @@ test.describe("US-PUR-32, US-PUR-33", () => {
     // Pay bill: the vendor payment dialog with this bill ticked for its balance.
     await page.getByRole("button", { name: "Pay bill" }).click();
     const pay = page.getByRole("dialog", { name: "Record a vendor payment" });
-    await expect(pay.getByText("Remaining to allocate: $0.00")).toBeVisible();
-    await expect(pay).toContainText("RTE-3302");
+    // US-PUR-52: the bill ticked for its balance, and what it pays, before asking.
+    await expect(pay.getByTestId("vendor-payment-summary")).toContainText("pays RTE-3302 in full.");
     await pay.getByRole("button", { name: "Record payment" }).click();
+    await page.getByRole("alertdialog", { name: "Record this payment?" }).or(page.getByRole("dialog", { name: "Record this payment?" })).getByRole("button", { name: "Record payment" }).click();
     await expect(toasts(page).filter({ hasText: /recorded/ })).toContainText("RTE-3302's balance has been updated.");
     await expect(page.getByTestId("bill-state")).toHaveText("Paid");
     await expect(page.getByRole("button", { name: "Pay bill" })).toHaveCount(0);

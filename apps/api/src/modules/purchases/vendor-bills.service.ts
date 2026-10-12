@@ -280,6 +280,16 @@ export class VendorBillsService {
         const reason = changes.find((c) => c.field === "voidReason")?.to;
         entries.push({ type: "voided", at: iso(row.at), actorName: row.actorName ?? null, detail: typeof reason === "string" ? reason : bill.voidReason });
       }
+      // US-PUR-50: a deleted payment keeps its "Paid" line, and says when it was deleted.
+      else if (row.action === "payment_deleted") {
+        const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown }[];
+        const from = (field: string) => changes.find((c) => c.field === field)?.from;
+        const number = typeof from("payment") === "string" ? (from("payment") as string) : null;
+        const amount = typeof from("amount") === "string" ? (from("amount") as string) : null;
+        const paidAt = from("paidAt");
+        if (typeof paidAt === "string") entries.push({ type: "paid", at: paidAt, actorName: null, amount, detail: number });
+        entries.push({ type: "payment_deleted", at: iso(row.at), actorName: row.actorName ?? null, amount, detail: number });
+      }
     }
     const paid = await this.db
       .select({ amount: vendorPaymentAllocations.amount, at: vendorPaymentAllocations.createdAt, paymentId: vendorPayments.id, number: vendorPayments.number, actorName: user.name })

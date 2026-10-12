@@ -27,7 +27,7 @@ test.describe("Route smoke pass", () => {
     { path: "/receivables", heading: "Receivables" },
     { path: "/vendor-bills", heading: "Vendor bills" },
     { path: "/expenses", heading: "Expenses" },
-    { path: "/vendor-payments", heading: "Vendor Payments" },
+    { path: "/vendor-payments", heading: "Vendor payments" },
     { path: "/payables", heading: "Payables" },
     { path: "/team/users", heading: "Users" },
     { path: "/team/teams", heading: "Teams" },

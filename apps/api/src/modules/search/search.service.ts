@@ -18,7 +18,7 @@ import { orgClock } from "../../common/org-clock";
 import { orgLocale } from "../../common/money-format";
 import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
-import { contacts, creditNotes, expenseCategories, expenses, invoices, jobAssignments, jobs, payments, quotes, user, vendorBills } from "../../db/schema";
+import { contacts, creditNotes, expenseCategories, expenses, invoices, jobAssignments, jobs, payments, quotes, user, vendorBills, vendorPayments } from "../../db/schema";
 
 const MAX_PER_GROUP = 5;
 
@@ -70,6 +70,8 @@ export class SearchService {
       // US-PAY-25: payments are Owner and Staff only.
       payments: field ? [] : await this.payments(ctx),
       vendor_bills: field ? [] : await this.vendorBills(ctx),
+      // US-PUR-55: vendor payments are Owner and Staff only.
+      vendor_payments: field ? [] : await this.vendorPayments(ctx),
       expenses: await this.expenses(ctx, field),
     };
 
@@ -223,6 +225,28 @@ export class SearchService {
         subtitle: [r.contact, c.money(r.amount, r.currency), day].filter(Boolean).join(" · "),
         status: left > 0n ? `${c.money(left, r.currency)} credit left` : null,
         href: `/payments/${r.id}`,
+        exact: isNumberMatch(r.number, c.q),
+      };
+    });
+  }
+
+  /** US-PUR-55 — by number, reference or vendor: "VPY-0014 · Ridgeline · ₹48,000.00 · 11 Oct". */
+  private async vendorPayments(c: Ctx) {
+    const rows = await this.db
+      .select({ id: vendorPayments.id, number: vendorPayments.number, date: vendorPayments.date, currency: vendorPayments.currency, amount: vendorPayments.amount, vendor: contacts.name })
+      .from(vendorPayments)
+      .leftJoin(contacts, eq(vendorPayments.contactId, contacts.id))
+      .where(and(eq(vendorPayments.orgId, c.orgId), this.numberOrText(vendorPayments.number, c.q, contacts.name, vendorPayments.reference)))
+      .orderBy(...this.rank(vendorPayments.number, contacts.name, c.q), desc(vendorPayments.date), desc(vendorPayments.createdAt))
+      .limit(c.n);
+    return rows.map((r) => {
+      const day = new Date(`${typeof r.date === "string" ? r.date : new Date(r.date).toISOString().slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+      return {
+        id: r.id,
+        title: r.number ?? "Vendor payment",
+        subtitle: [r.vendor, c.money(r.amount, r.currency), day].filter(Boolean).join(" · "),
+        status: null,
+        href: `/vendor-payments/${r.id}`,
         exact: isNumberMatch(r.number, c.q),
       };
     });

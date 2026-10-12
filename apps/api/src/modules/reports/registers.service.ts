@@ -130,7 +130,7 @@ export class RegistersService {
           .map((a) => ({ documentId: a.billId, number: a.number, amount: a.amount.toString(), opening: a.opening, href: `/vendor-bills/${a.billId}` })),
         heldAsCredit: (held > 0n ? held : 0n).toString(),
         refunded: "0",
-        href: `/vendor-payments?id=${p.id}`,
+        href: `/vendor-payments/${p.id}`,
       };
     });
     return { from, to, rows: result, totals: totals(result) };

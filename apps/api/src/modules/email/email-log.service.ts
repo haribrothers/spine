@@ -3,7 +3,7 @@ import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle
 import { EMAIL_KIND_LABELS, EMAIL_LOG_RETENTION_DAYS, type EmailKind, type EmailLogEntry, type EmailLogStatus, type EmailLogStatusSummary } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contacts, creditNotes, emailLog, invoices, jobs, member, payments, quotes, user } from "../../db/schema";
+import { contacts, creditNotes, emailLog, invoices, jobs, member, payments, quotes, user, vendorPayments } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { AuditLogService } from "../audit/audit-log.service";
 import { EmailService, queuedEmailContext } from "./email.service";
@@ -314,6 +314,9 @@ export class EmailLogService implements OnApplicationBootstrap {
     if (paymentIds.length) fill(await this.db.select({ id: payments.id, label: payments.number }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.id, paymentIds))));
     const contactIds = ids("contact");
     if (contactIds.length) fill(await this.db.select({ id: contacts.id, label: contacts.name }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.id, contactIds))));
+    // US-PUR-54: a remittance advice names its vendor payment.
+    const vendorPaymentIds = ids("vendor_payment");
+    if (vendorPaymentIds.length) fill(await this.db.select({ id: vendorPayments.id, label: vendorPayments.number }).from(vendorPayments).where(and(eq(vendorPayments.orgId, orgId), inArray(vendorPayments.id, vendorPaymentIds))));
     const jobIds = ids("job");
     if (jobIds.length) fill(await this.db.select({ id: jobs.id, label: jobs.number }).from(jobs).where(and(eq(jobs.orgId, orgId), inArray(jobs.id, jobIds))));
 

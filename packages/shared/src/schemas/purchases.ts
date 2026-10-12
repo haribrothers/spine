@@ -190,7 +190,7 @@ export const createVendorRefundSchema = z.object({
 
 /** US-PUR-32 (D-225) — one line of a vendor bill's Activity: `GET /vendor-bills/:id/activity`, newest first. */
 export interface VendorBillActivityEntry {
-  type: "created" | "recorded" | "paid" | "credit_applied" | "voided";
+  type: "created" | "recorded" | "paid" | "credit_applied" | "voided" | "payment_deleted";
   at: string;
   actorName: string | null;
   /** Minor units: the bill's total when recorded, a payment's or credit's amount on this bill. */
@@ -271,4 +271,51 @@ export interface ExpenseCategoryUsage {
   /** Approved this month, by approval date, in the business's currency (minor units). */
   approvedThisMonth: string;
 }
+
+/** US-PUR-49 (D-229) — one line of a vendor payment's Activity, newest first. */
+export interface VendorPaymentActivityEntry {
+  type: "recorded" | "applied" | "remittance_emailed";
+  at: string;
+  actorName: string | null;
+  /** Minor units: the payment's amount, or what it put on a bill. */
+  amount?: string | null;
+  /** The bill's number, or the address a remittance advice went to. */
+  detail?: string | null;
+  /** The bill, for `applied`. */
+  linkId?: string | null;
+  /** The money account, for `recorded`. */
+  account?: string | null;
+  /** The method, for `recorded`. */
+  method?: string | null;
+}
+
+/** US-PUR-53 — `GET /vendor-payments/possible-duplicates`. */
+export interface PossibleDuplicateVendorPayment {
+  id: string;
+  number: string | null;
+  date: string;
+  amount: string;
+  currency: string;
+  method: string;
+  reference: string | null;
+}
+
+/** US-PUR-51 — `GET /vendor-payments/summary`, in the business's currency (minor units). */
+export interface VendorPaymentsSummary {
+  currency: string;
+  paidThisMonth: string;
+  paidThisMonthCount: number;
+  paidLastMonth: string;
+  paidLastMonthCount: number;
+  toPay: string;
+  toPayCount: number;
+}
+
+/** US-PUR-54 — `POST /vendor-payments/:id/remittance/send`. */
+export const sendRemittanceSchema = z.object({
+  to: z.string().trim().email("Enter an email address to send the remittance advice to."),
+  subject: z.string().trim().min(1, "Give the email a subject.").max(200, "Keep the subject shorter."),
+  body: z.string().trim().min(1, "Write a short message.").max(20000, "Keep the message shorter."),
+});
+export type SendRemittanceInput = z.infer<typeof sendRemittanceSchema>;
 

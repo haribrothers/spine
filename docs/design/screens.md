@@ -1505,6 +1505,8 @@ Shows: "Purchases › Vendor Bills > Detail" · "Vendor bill" · "< Back to vend
 
 ![VendorPaymentsList](screens/VendorPaymentsList.webp)
 
+Superseded by `VendorPaymentsListRefined` (D-229).
+
 Links to: `VendorPaymentsEmpty`, `VendorPaymentDrawer`
 
 Shows: "Purchases › Vendor Payments" · "OVERVIEW" · "Vendor Payments" · "98 Dashboard" · "Record a payment to a vendor, fully allocated across their recorded bills." · "SALES" · "9, Contacts" · "Total payments" · "Total paid" · "Pipeline" · "4250.00 USD" · "Meetings" · "Catalogue" · "All vendors" · "Record payment" · "Quotes" · "JOBS" · "Search vendor payments" · "*= Columns" · "• Jobs" · "Number N" · "Date tu" · "Vendor t" · "Method" · "Amount t1" · "BILLING" · "5 Invoices" · "VPY-0001" · "10/3/2026" · "Apex Timber Supply" · "Bank transfer" · "5 Credit Notes" · "1-1 of 1 per page" · "10" · "•• Payments" · "• Receivables" · "PURCHASES" · "• Vendor Bills" · "Expenses" · "2 Vendor Payments" · "• Payables" · "REPORTS" · "L Reports" · "TEAM" · "Alex Morg... v"
@@ -1523,6 +1525,8 @@ Shows: "Purchases › Vendor Payments" · "Vendor Payments" · "Record a payment
 
 ![NewVendorPaymentDialog](screens/NewVendorPaymentDialog.webp)
 
+Superseded by `RecordVendorPaymentRefined` (D-229).
+
 Links to: —
 
 Shows: "Purchases > Vendor Payments" · "OVERVIEW" · "Vendor Payments" · "B8 Dashboard" · "Record a payment to a vendor, fully allocated across their recorded bills." · "SALES" · "• Contacts" · "Record a vendor payment" · "Pick a vendor, then allocate the full payment across their recorded bills - unlike a customer payment, this must be fully allocated" · "Pipeline" · "before It can be saved." · "Meetings" · "• Catalogue" · "Vendor *" · "Date *" · "Record payment" · "• Quotes" · "Select a vendor..." · "10/4/2026" · "JOBS" · "Method *" · "Reference" · "# Columns" · "_ Jobs" · "Bank transfer" · "Optional" · "Amount t" · "BILLING" · "Cheque number, transaction ID, etc." · "5 Invoices" · "4250.00 USD" · "Amount *" · "5 Credit Notes" · "0.00" · "•• Payments" · "• Receivables" · "PURCHASES" · "• Vendor Bills" · "El Expenses" · "2 Vendor Payments" · "• Payables" · "REPORTS" · "ill Reports" · "Cancel" · "TEAM" · …
@@ -1531,6 +1535,8 @@ Shows: "Purchases > Vendor Payments" · "OVERVIEW" · "Vendor Payments" · "B8 D
 **Priority:** P2 · **Phase:** 4 · **Stories:** US-PUR-06 · **Source:** Captured
 
 ![VendorPaymentDrawer](screens/VendorPaymentDrawer.webp)
+
+Superseded by `VendorPaymentPage` (D-229).
 
 Links to: `VendorPaymentsList`, `VendorPaymentsEmpty`
 
@@ -3871,6 +3877,109 @@ Shows: "Submit an expense" · the category picker open: search, then each catego
 Links to: `ExpensePage`
 
 Shows: "Category" "Materials" with its line under the field · "Tax rate" "GST 18%" "Materials' usual rate — change it if this receipt differs." · "Tax amount" "Worked out from GST 18%, included in the amount."
+
+## Vendor payments you can work from
+
+Drawn in Claude Design for US-PUR-49 to US-PUR-55 (D-229): project "Spine web — refinements before Phase 10", canvas "22 Vendor payments". A list that shows what went out and what each payment paid, in the layout every refined list shares; a payment on its own page with what it paid and its Activity; deleting safely; paying by ticking bills; a remittance advice to download or email; search.
+
+### VendorPaymentsListRefined — What went out, and what each paid
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-51 · **Source:** Claude Design
+
+![VendorPaymentsListRefined](screens/VendorPaymentsListRefined.webp)
+
+Links to: `VendorPaymentPage`, `RecordVendorPaymentRefined`, `VendorBillsListRefined`
+
+Shows: "Purchases › Vendor payments" · "Paid this month" "3 payments" · "Paid last month" · "To pay" "4 overdue bills · open Vendor bills" · "All vendors" "Method" "All time" · "Updated just now" · "Record payment" · "Search numbers, references, vendors or bills" "Columns" · "Number" (reference under it) "Date ↓" "Vendor" "Method" (account under it) "Amount" "Bills paid" ("RTE-3302, RTE-3340", "3 bills") · row menu: "View" "Download remittance advice" "Email remittance advice" "Delete payment"
+
+### VendorPaymentsListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-51 · **Source:** Claude Design
+
+![VendorPaymentsListDark](screens/VendorPaymentsListDark.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: one vendor, "Bank transfer", "Last 90 days" · "Clear filters"
+
+### VendorPaymentPage — A vendor payment on its own page
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-49, US-PUR-54 · **Source:** Claude Design
+
+![VendorPaymentPage](screens/VendorPaymentPage.webp)
+
+Links to: `RemittanceEmailDialog`, `VendorPaymentDeleteConfirm`, `VendorBillPage`
+
+Shows: "Purchases › Vendor payments › VPY-0014" · "VPY-0014" · vendor (a link) "11 Oct" "Bank transfer" "Paid from HDFC Current" "NEFT 4471 2280" · "Download remittance advice" "Email remittance advice" "More" ("View history" "Delete payment") · "Paid" "Bills paid" "RTE-3302 in full, part of RTE-3340" · "Paid to" "Bill" "Bill total" "From this payment" "Still owes" ("Paid") "Due" · Attachments · Notes · Activity "Remittance advice emailed to …" "Paid ₹8,000.00 on RTE-3340" "Recorded · ₹48,000.00 by bank transfer from HDFC Current". As built, a bill shows its date under its number (a bill has only the vendor's number).
+
+### VendorPaymentDeleteConfirm — Delete asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-50 · **Source:** Claude Design
+
+![VendorPaymentDeleteConfirm](screens/VendorPaymentDeleteConfirm.webp)
+
+Links to: `VendorPaymentsListRefined`
+
+Shows: "Delete VPY-0014?" "It's removed for good, and a reversing entry posts today." the bills that will owe again · "Go back" "Delete payment"
+
+### VendorPaymentDeleteReconciled — Unmatch first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-50 · **Source:** Claude Design
+
+![VendorPaymentDeleteReconciled](screens/VendorPaymentDeleteReconciled.webp)
+
+Links to: `AccountRegister`
+
+Shows: "Can't delete VPY-0014 yet" "VPY-0014 is matched to a bank statement line in HDFC Current. Unmatch it in Banking first, then delete it — so your reconciled figures don't change." · "Close" "Open HDFC Current"
+
+### RecordVendorPaymentRefined — Pay a vendor by ticking bills
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-52 · **Source:** Claude Design
+
+![RecordVendorPaymentRefined](screens/RecordVendorPaymentRefined.webp)
+
+Links to: `RecordVendorPaymentConfirm`, `VendorCreditApplyRefined`
+
+Shows: "Record a vendor payment" "Tick the bills it pays, oldest due first; a typed amount is spread over them." · "<Vendor> has ₹7,788.00 of credit. Apply it first?" · "Vendor" "Amount" "Date" "Method" "Paid from" "Reference" · "What it pays" "Pay all" · "Bill" "Due" ("12 days late") "Balance" "Pay" with tick boxes · "₹48,000.00 pays RTE-3302 in full and ₹8,000.00 of RTE-3340." · "Cancel" "Record payment". As built, the line under a bill's number is its date.
+
+### RecordVendorPaymentConfirm — Record asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-52 · **Source:** Claude Design
+
+![RecordVendorPaymentConfirm](screens/RecordVendorPaymentConfirm.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: "Record this payment?" "₹48,000.00 to Ridgeline Equipment Rentals Pvt Ltd by bank transfer … It pays RTE-3302 in full and ₹8,000.00 of RTE-3340, and is posted to your books." · "Go back" "Record payment"
+
+### RecordVendorPaymentDuplicate — The same payment twice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-53 · **Source:** Claude Design
+
+![RecordVendorPaymentDuplicate](screens/RecordVendorPaymentDuplicate.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: "This looks like VPY-0013 — ₹12,400.00 to Kaveri Sand & Earthmovers on 9 Oct (UPI · 2291). Record it anyway if it's a second payment. Open VPY-0013 →"
+
+### RemittanceEmailDialog — Email a remittance advice
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-54 · **Source:** Claude Design
+
+![RemittanceEmailDialog](screens/RemittanceEmailDialog.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: "Email remittance advice" "Tells Ridgeline what VPY-0014 paid, bill by bill. Sent from your business email." · "To" "Subject" "Message" · "remittance-VPY-0014.pdf" · "Cancel" "Send"
+
+### RemittanceAdvicePdf — The remittance advice
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-54 · **Source:** Claude Design
+
+![RemittanceAdvicePdf](screens/RemittanceAdvicePdf.webp)
+
+Links to: —
+
+Shows: the business, "REMITTANCE ADVICE" "VPY-0014 · 11 Oct 2026" · "Paid to" · "Payment date" "Method" "Reference" "From" "Amount" · "Your invoice" … "Paid now" "Still owed" · "Total paid" · "it is not a tax invoice". As built, the table is Your invoice, Invoice date, Invoice total, Paid now and Still owed (a bill has no number of ours).
+
+### SearchVendorPayments — Search finds vendor payments
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-55 · **Source:** Claude Design
+
+![SearchVendorPayments](screens/SearchVendorPayments.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: ⌘K "ridgeline" · "Contacts" · "Vendor payments" "VPY-0014 · Ridgeline Equipment Rentals Pvt Ltd · ₹48,000.00 · 11 Oct" · "Vendor bills"
 
 ## Mobile field companion
 

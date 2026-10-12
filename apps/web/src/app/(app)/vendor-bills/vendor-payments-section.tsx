@@ -12,7 +12,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
  * Every vendor payment allocated against this bill —
  * `GET /vendor-payments?billId=` (a join through
  * vendor_payment_allocations). US-PUR-33: each opens that payment
- * (`/vendor-payments?id=`), its date in the business's format, the method
+ * (`/vendor-payments/:id`, US-PUR-49), its date in the business's format, the method
  * with the reference under it.
  */
 export function VendorPaymentsSection({ billId, refreshKey }: { billId: string; refreshKey: number }) {
@@ -56,7 +56,7 @@ export function VendorPaymentsSection({ billId, refreshKey }: { billId: string; 
               {payments.map((payment) => (
                 <tr key={payment.id} className="border-t border-border" data-testid="bill-payment-row">
                   <td className="px-4 py-2.5">
-                    <Link href={`/vendor-payments?id=${payment.id}`} className="font-medium text-primary hover:underline">
+                    <Link href={`/vendor-payments/${payment.id}`} className="font-medium text-primary hover:underline">
                       {payment.number ?? "Payment"}
                     </Link>
                   </td>

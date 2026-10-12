@@ -30,7 +30,7 @@ import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-co
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { calendarDate } from "../quotes/quotes-list-state";
-import { NewVendorPaymentDialog } from "../vendor-payments/new-vendor-payment-dialog";
+import { RecordVendorPaymentDialog } from "../vendor-payments/record-vendor-payment-dialog";
 import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VendorBillActivity } from "./vendor-bill-activity";
 import { VoidBillDialog } from "./void-bill-dialog";
@@ -382,13 +382,13 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         <VendorBillActivity billId={bill.id} currency={bill.currency} refreshKey={refreshKey} onViewHistory={() => setHistoryOpen(true)} />
       </div>
 
-      <NewVendorPaymentDialog
+      <RecordVendorPaymentDialog
         open={payOpen}
         onOpenChange={setPayOpen}
         initialContactId={bill.contactId}
         initialBillId={bill.id}
         onRecorded={(payment) => {
-          const number = (payment as { number?: string | null } | undefined)?.number;
+          const number = payment.number;
           done(number ? `${number} recorded` : "Payment recorded", `${bill.billNumber}'s balance has been updated.`);
         }}
       />

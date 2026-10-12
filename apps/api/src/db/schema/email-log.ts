@@ -9,6 +9,7 @@ export const emailKindEnum = pgEnum("email_kind", [
   "receipt",
   "refund",
   "statement",
+  "remittance",
   "notification",
   "digest",
   "invitation",

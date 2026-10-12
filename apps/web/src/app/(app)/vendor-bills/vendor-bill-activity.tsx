@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, Skeleton, cn } from "@spine/ui";
 import type { VendorBillActivityEntry } from "@spine/shared";
-import { Ban, Banknote, FileCheck, FilePlus, ArrowRightLeft } from "lucide-react";
+import { Ban, Banknote, FileCheck, FilePlus, ArrowRightLeft, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 
@@ -23,11 +23,14 @@ export function billActivityText(item: VendorBillActivityEntry, currency: string
     case "recorded":
       return { text: `Recorded · posted ${money(item.amount)} to Accounts Payable` };
     case "paid":
-      return { text: `Paid ${money(item.amount)} by`, link: item.linkId ? { label: item.detail ?? "a payment", href: `/vendor-payments?id=${item.linkId}` } : undefined };
+      // US-PUR-49: the payment's own page; a deleted one is named without a link.
+      return item.linkId ? { text: `Paid ${money(item.amount)} by`, link: { label: item.detail ?? "a payment", href: `/vendor-payments/${item.linkId}` } } : { text: `Paid ${money(item.amount)} by ${item.detail ?? "a payment"}` };
     case "credit_applied":
       return { text: `Credit applied ${money(item.amount)} from`, link: item.linkId ? { label: item.detail ?? "a credit", href: `/vendor-credits/${item.linkId}` } : undefined };
     case "voided":
       return { text: "Voided", after: item.detail ?? undefined };
+    case "payment_deleted":
+      return { text: `Payment ${item.detail ?? ""} deleted · owes ${money(item.amount)} again`.replace("  ", " ") };
   }
 }
 
@@ -37,6 +40,7 @@ const ICONS: Record<VendorBillActivityEntry["type"], React.ComponentType<{ size?
   paid: Banknote,
   credit_applied: ArrowRightLeft,
   voided: Ban,
+  payment_deleted: Trash2,
 };
 
 const SHOWN = 6;
@@ -84,7 +88,7 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
               <span
                 className={cn(
                   "flex h-[26px] w-[26px] items-center justify-center rounded-full border",
-                  item.type === "paid" || item.type === "credit_applied" ? "border-transparent bg-paid-bg text-paid" : item.type === "voided" ? "border-transparent bg-overdue-bg text-overdue" : "border-border bg-surface-sunken text-on-surface-muted",
+                  item.type === "paid" || item.type === "credit_applied" ? "border-transparent bg-paid-bg text-paid" : item.type === "voided" || item.type === "payment_deleted" ? "border-transparent bg-overdue-bg text-overdue" : "border-border bg-surface-sunken text-on-surface-muted",
                 )}
                 aria-hidden
               >

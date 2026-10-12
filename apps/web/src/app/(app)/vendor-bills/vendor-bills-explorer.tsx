@@ -14,7 +14,7 @@ import { useToast } from "../../../components/toast-host";
 import { ActionError } from "../../../components/action-error";
 import { JobFilter, JobFilterNote, useJobFilter } from "../../../components/job-filter";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { NewVendorPaymentDialog } from "../vendor-payments/new-vendor-payment-dialog";
+import { RecordVendorPaymentDialog } from "../vendor-payments/record-vendor-payment-dialog";
 import { VendorBillsSkeleton } from "./vendor-bills-skeleton";
 import { VendorBillsTable } from "./vendor-bills-table";
 import { VendorBillsBulkBar } from "./vendor-bills-bulk-bar";
@@ -338,13 +338,13 @@ export function VendorBillsExplorer() {
         </div>
       )}
 
-      <NewVendorPaymentDialog
+      <RecordVendorPaymentDialog
         open={paying !== null}
         onOpenChange={(open) => !open && setPaying(null)}
         initialContactId={paying?.contactId}
         initialBillId={paying?.id}
         onRecorded={(payment) => {
-          const number = (payment as { number?: string | null } | undefined)?.number;
+          const number = payment.number;
           const bill = paying;
           setPaying(null);
           done(number ? `${number} recorded` : "Payment recorded", bill ? `${bill.billNumber}'s balance has been updated.` : "The bill's balance has been updated.");

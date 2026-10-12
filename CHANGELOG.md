@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Vendor payments you can work from (US-PUR-49 to US-PUR-55, D-229)
+
+- **A payment's own page (US-PUR-49):** `/vendor-payments/:id` replaces the drawer (old `?id=` links redirect; bills, the bank register, reports and search link to it): the number, vendor, date, method, the account it was paid from and the reference; Paid and Bills paid; "Paid to" with each bill's total, what this payment put on it, what it still owes and its due date; attachments, notes and Activity (`GET /vendor-payments/:id/activity`).
+- **Delete that works (US-PUR-50):** an allocated vendor payment can now be deleted, as D-080 always said — it never could be, since every payment is fully allocated. It asks first naming the bills that will owe again, posts P14, lowers each bill's paid amount and records it in the bill's Activity; a payment matched to a bank statement line is refused until it's unmatched.
+- **A list that shows money (US-PUR-51):** cards Paid this month, Paid last month and To pay (overdue bills, opening Vendor bills); rows with the reference, the account and the bills paid; newest first; vendor, method and date-range filters and search in the address, Refresh; a row menu with icons. `GET /vendor-payments` rows gain `moneyAccountName` and `paidTo`; `GET /vendor-payments/summary`.
+- **Paying by ticking bills (US-PUR-52, US-PUR-53):** one dialog everywhere lists the vendor's open bills oldest due first with how late they are; ticks, Pay all and a typed amount spread oldest first; a line says what it pays (or by how much it doesn't add up); Record asks first and the toast names the payment; the same vendor and amount within 3 days, or the same reference, is flagged (`GET /vendor-payments/possible-duplicates`).
+- **Remittance advice (US-PUR-54):** download a PDF of what a payment paid, bill by bill, or email it to the vendor with it attached (`/vendor-payments/:id/remittance.pdf`, `/remittance/draft`, `/remittance/send`); generated when asked for, never stored; the email log's new kind `remittance` (migration `0117`) links to the payment.
+- **Search (US-PUR-55):** ⌘K has a Vendor payments group (Owner and Staff).
+- **Also:** the page's title is "Vendor payments" (sentence case).
+- **Tests:** API integration `us-pur-49-55`; web unit `us-pur-49-55`; E2E `us-pur-49-55`, with `us-pur-32-36` and `route-smoke` moved to the new dialog, page and title. QA script section 223.
+
 ### 2026-10-12 — Expense categories that guide (US-PUR-46 to US-PUR-48, US-ONB-32, D-228)
 
 - **A table that shows use (US-PUR-46):** Expenses › Categories is a table on the layout every refined list shares — each category's name over what it's for, the account it posts to ("6900 Other Expenses · default" when none is set, the account its expenses already fall back to), its default tax rate, how many expenses use it (a link to the expenses list filtered to it), what was approved in it this month, and Active or Archived in words; the 5200 category is tagged "Headcount × day rate". State filter and search in the address, Refresh, empty states. The figures come from `GET /expense-categories/usage`, for Owners and Staff only.

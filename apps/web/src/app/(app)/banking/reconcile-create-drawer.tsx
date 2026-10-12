@@ -32,7 +32,7 @@ import { useMyRole } from "../../../lib/role-context";
 import { formatMoney } from "../../../lib/money";
 import type { StatementPrefill } from "../../../components/statement-prefill";
 import { RecordPaymentDialog } from "../../../components/record-payment-dialog";
-import { NewVendorPaymentDialog } from "../vendor-payments/new-vendor-payment-dialog";
+import { RecordVendorPaymentDialog } from "../vendor-payments/record-vendor-payment-dialog";
 import { TaxPaymentDialog } from "../reports/tax-payment-dialog";
 import type { ExpenseCategory, JobOption } from "../expenses/types";
 import { MoneyInOutDialog } from "./money-in-out-dialog";
@@ -281,8 +281,8 @@ export function ReconcileCreateDrawer({
         </DrawerContent>
       </Drawer>
 
-      <RecordPaymentDialog open={openForm === "payment"} onOpenChange={(o) => !o && setOpenForm(null)} prefill={prefill} onRecorded={(p) => p && created(p.id)} />
-      <NewVendorPaymentDialog open={openForm === "vendor_payment"} onOpenChange={(o) => !o && setOpenForm(null)} prefill={prefill} onRecorded={(p) => p && created(p.id)} />
+      <RecordPaymentDialog open={openForm === "payment"} onOpenChange={(o) => !o && setOpenForm(null)} prefill={prefill} onRecorded={(p) => created(p.id)} />
+      <RecordVendorPaymentDialog open={openForm === "vendor_payment"} onOpenChange={(o) => !o && setOpenForm(null)} prefill={prefill} onRecorded={(p) => created(p.id)} />
       <TransferDialog open={openForm === "transfer"} onOpenChange={(o) => !o && setOpenForm(null)} accounts={active} currency={currency} prefill={transferPrefill} onRecorded={(t) => created(t.id)} />
       <MoneyInOutDialog
         direction={isIn ? "in" : "out"}

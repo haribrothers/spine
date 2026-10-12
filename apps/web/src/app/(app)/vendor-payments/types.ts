@@ -43,6 +43,34 @@ export interface VendorPayment {
   updatedAt: string;
   /** Only present on GET /vendor-payments/:id, not the list endpoint. */
   allocations?: VendorPaymentAllocation[];
+  /** US-PUR-51 — on list rows: the account's name and the bills it paid. */
+  moneyAccountName?: string | null;
+  paidTo?: { billId: string; number: string }[] | VendorPaymentPaidTo[];
+}
+
+/** US-PUR-49 — one bill a payment paid, on its page. */
+export interface VendorPaymentPaidTo {
+  allocationId: string;
+  billId: string;
+  billNumber: string;
+  billDate: string | null;
+  billTotal: string;
+  billBalance: string;
+  dueDate: string | null;
+  amount: string;
+}
+
+/** `GET /vendor-payments/:id`. */
+export interface VendorPaymentDetailData extends Omit<VendorPayment, "paidTo"> {
+  paidTo: VendorPaymentPaidTo[];
+  /** US-PUR-50 — matched to a bank statement line: unmatch it before deleting. */
+  reconciled: boolean;
+}
+
+/** A list row. */
+export interface VendorPaymentRow extends Omit<VendorPayment, "paidTo"> {
+  moneyAccountName: string | null;
+  paidTo: { billId: string; number: string }[];
 }
 
 /** Minimal shape used by the vendor-only contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */

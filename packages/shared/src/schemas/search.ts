@@ -5,7 +5,7 @@
  * document first.
  */
 
-export const SEARCH_GROUPS = ["contacts", "quotes", "jobs", "invoices", "credit_notes", "payments", "vendor_bills", "expenses"] as const;
+export const SEARCH_GROUPS = ["contacts", "quotes", "jobs", "invoices", "credit_notes", "payments", "vendor_bills", "vendor_payments", "expenses"] as const;
 export type SearchGroupType = (typeof SEARCH_GROUPS)[number];
 
 export const SEARCH_GROUP_LABELS: Record<SearchGroupType, string> = {
@@ -16,6 +16,7 @@ export const SEARCH_GROUP_LABELS: Record<SearchGroupType, string> = {
   credit_notes: "Credit notes",
   payments: "Payments",
   vendor_bills: "Vendor bills",
+  vendor_payments: "Vendor payments",
   expenses: "Expenses",
 };
 

@@ -11,6 +11,8 @@ export const EMAIL_KINDS = [
   "receipt",
   "refund",
   "statement",
+  // US-PUR-54: a remittance advice to a vendor.
+  "remittance",
   "notification",
   "digest",
   "invitation",
@@ -29,6 +31,7 @@ export const EMAIL_KIND_LABELS: Record<EmailKind, string> = {
   receipt: "Receipt",
   refund: "Refund",
   statement: "Statement",
+  remittance: "Remittance advice",
   notification: "Notification",
   digest: "Daily digest",
   invitation: "Invitation",
@@ -116,6 +119,8 @@ export function emailRecordHref(entityType: string | null, entityId: string | nu
       return `/vendor-bills/${entityId}`;
     case "expense":
       return `/expenses/${entityId}`;
+    case "vendor_payment":
+      return `/vendor-payments/${entityId}`;
     case "meeting":
       return `/meetings/${entityId}`;
     default:
