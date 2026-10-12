@@ -18,8 +18,7 @@ const REPORTS: { path: string; title: string; range: RegExp | null }[] = [
   { path: "/reports/payments-made", title: "Payments made", range: /· .+\d{4}/ },
   { path: "/reports/credit-notes-and-refunds", title: "Credit notes and refunds", range: /· .+\d{4}/ },
   { path: "/reports/vendor-credits", title: "Vendor credits", range: /· .+\d{4}/ },
-  // Receivables uses the list layout every refined list shares since D-224 (US-PAY-27 to US-PAY-31).
-  { path: "/payables", title: "Payables", range: null },
+  // Receivables and Payables use the list layout every refined list shares since D-224 and D-230 (US-PAY-27 to US-PAY-31, US-PUR-56 to US-PUR-60).
 ];
 
 test.describe("US-RPT-40", () => {
@@ -74,5 +73,12 @@ test.describe("US-RPT-40", () => {
     await page.getByRole("combobox", { name: "Show by age" }).click();
     await page.getByRole("option", { name: "Overdue" }).click();
     await expect(page).toHaveURL(/\/receivables\?age=overdue$/);
+
+    // Payables: the same, with "Due in 7 days" in the age filter (D-230).
+    await page.goto("/payables");
+    await expect(page.getByTestId("aging-cards")).toContainText("Total owed");
+    await page.getByRole("combobox", { name: "Show by age" }).click();
+    await page.getByRole("option", { name: "Due in 7 days" }).click();
+    await expect(page).toHaveURL(/\/payables\?age=due7$/);
   });
 });

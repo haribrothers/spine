@@ -224,7 +224,8 @@ export function ReceivablesExplorer() {
         currency={currency}
         totalDetail={`${report.invoices.length} ${report.invoices.length === 1 ? "invoice" : "invoices"} · ${report.customers.length} ${report.customers.length === 1 ? "customer" : "customers"}`}
         age={state.age}
-        onAgeChange={(age) => update({ age })}
+        // Receivables has no "Due in 7 days" card, so the age is always one of its own.
+        onAgeChange={(age) => update({ age: age as ReceivablesAge | null })}
         note={
           retention && (
             <span className="flex flex-wrap items-center gap-2" data-testid="retention-note">

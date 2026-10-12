@@ -839,9 +839,10 @@ than building every case from scratch.
 
 ### 11.5 Payables (S-07.7)
 
-1. Go to **Purchases → Payables**. Confirm stat cards for Current/0-30/
-   31-60/61-90/90+ days overdue, plus a Total outstanding figure.
-2. Confirm the table lists every outstanding **recorded** vendor bill,
+1. Go to **Purchases → Payables**. Confirm the cards Total owed, Overdue,
+   Due in 7 days and 90+ days, and the age bar naming every bucket (the
+   layout is section 224's since D-230).
+2. Confirm "By bill" lists every outstanding **recorded** vendor bill,
    oldest-overdue first, tagged with the correct aging bucket.
 3. Confirm bills that are **draft**, **void**, or **fully paid** do NOT
    appear here.
@@ -5069,6 +5070,21 @@ Use an owner with a vendor that has an email address and three recorded bills (o
 9. Delete payment (More, or a row's menu): asks "Delete VPY-…?" naming the bills that will owe again; confirming posts the reversal, the list toasts "VPY-… deleted", the bills owe again and their Activity says "Payment VPY-… deleted · owes … again". A payment matched to a bank statement line says "Can't delete … yet" with "Open <account>" instead, and the API refuses.
 10. ⌘K: a vendor payment's number, reference or vendor finds it in a "Vendor payments" group, opening its page. As Field: no Vendor payments group, and the pages and routes are refused.
 11. Regression: Payables, the AP aging and Profit & Loss still match after recording and deleting; US-PUR-25's credit offer, US-PUR-33's Pay bill and US-DASH-13's "Pay bill" link still open the dialog on the right vendor; the bank register's vendor payment rows open the page.
+
+## 224. Payables you can pay from (US-PUR-56 to US-PUR-60, refinements before Phase 10)
+
+Use an owner with three vendors: one with an overdue bill and a bill due in 3 days, one with an overdue bill and an open vendor credit, one with a bill with no due date; a draft bill; and a Staff member without `vendor_credits.apply`. Check light and dark, and compare with the canvas "23 Payables".
+
+1. The page: "What you owe vendors, by how late it is · as of <today>" under the title; tabs "By vendor" and "By bill" with counts, then the cards, the age bar, the filter bar (the age on the left; "Updated just now", Refresh and Export on the right) and the search bar (search on the left, Columns on the right).
+2. Cards: Total owed (bills and vendors), Overdue (amount and bills, red), Due in 7 days (not yet overdue and due within a week — amount and bills) and 90+ days. Pressing Overdue, Due in 7 days or 90+ days outlines it, says "Showing these · press again to clear", filters both tabs and puts `?age=` in the address; pressing again shows all. A part of the age bar does the same, by mouse or Tab and Enter.
+3. The age filter offers All ages, Overdue, Due in 7 days, Current, 1–30, 31–60, 61–90 and 90+ days; an empty age says "Nothing 61–90 days late." (or "Nothing due in the next 7 days.") with "Show all". The dashboard's Payables "Overdue" link opens Payables on Overdue.
+4. By vendor: one row per vendor — open bills ("2 bills"), the oldest ("33 days late", "Due in 3 days" or "No due date"), overdue, total owed, credit to use ("—" when none) and last paid ("Never"); most overdue money first; a totals row. Expanding a vendor lists their bills oldest due first, each opening the bill. Search matches vendor names.
+5. By bill: the number with the job under it, the vendor (opening the contact), the due date in the business's format, the coloured age with how late in words, and the balance; Columns adds Bill date, Bill total and Paid so far. Search matches a bill number, a vendor or a job.
+6. A bill's menu: Pay bill (the vendor payment dialog with this bill ticked for its balance), Apply credit (only while the vendor has credit; "Apply credit to …") and Open bill, each with its icon. A vendor's menu: Pay vendor (the dialog on that vendor), Apply credit (only with credit; against their oldest bill) and Open contact. As the Staff member without the credit right, Apply credit isn't there.
+7. Tick two bills from one vendor: "2 selected", "Pay (2)" opens the dialog with both ticked for their balances; Record asks first; the toast names the payment, the page refreshes in place and the bills drop out. Tick bills from two vendors: "Pay (2)" is off and the bar says "Pick bills from one vendor — a payment is for one vendor."
+8. With a draft bill: under the age bar "1 draft bill (…) isn't counted here — record it to include it." with "See drafts", opening Vendor bills on Drafts to record.
+9. Export with an age chosen: the CSV, Excel and PDF hold only that age (and the search). Refresh updates in place; leave the tab for 30 seconds and come back — it refreshes. Tab, age, search, sort and page survive opening a bill and going Back.
+10. Regression: the totals match the AP aging report and the dashboard's Payables card; Receivables' cards, age bar and filter are unchanged; Vendor bills' Pay bill and Vendor payments' Record payment still open the dialog as before; Field can't reach Payables.
 
 ## Known gaps — don't file these as bugs
 

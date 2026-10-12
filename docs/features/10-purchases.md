@@ -24,7 +24,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-13 | Expenses you can work from: a list that shows money, a page per expense with its receipt, faster entry, fixing a rejected one | P2 | Refinements | `ExpensesListRefined`, `ExpensesListDark`, `ExpensePage`, `ExpenseRejectedResubmit`, `ExpenseFormRefined` |
 | F-PUR-14 | Expense categories that guide: a table with what each is used for, safe changes, and a hint and default tax rate in the expense form | P2 | Refinements | `ExpenseCategoriesRefined`, `ExpenseCategoriesDark`, `ExpenseCategoryDialogRefined`, `ExpenseCategoryNameTaken`, `ExpenseCategoryArchiveConfirm`, `ExpenseCategoryDeleteConfirm`, `ExpenseFormCategoryHint`, `ExpenseFormCategoryTax` |
 | F-PUR-15 | Vendor payments you can work from: a page per payment, delete that works, a list that shows money, paying by ticking bills, remittance advice and search | P2 | Refinements | `VendorPaymentPage`, `VendorPaymentDeleteConfirm`, `VendorPaymentDeleteReconciled`, `VendorPaymentsListRefined`, `VendorPaymentsListDark`, `RecordVendorPaymentRefined`, `RecordVendorPaymentConfirm`, `RecordVendorPaymentDuplicate`, `RemittanceEmailDialog`, `RemittanceAdvicePdf`, `SearchVendorPayments` |
-| F-PUR-16 | Payables you can pay from: by vendor and by bill, paying and applying credit from the list, ages that filter, what's due this week, figures you can trust | P2 | Refinements | `PayablesByVendor`, `PayablesByBill`, `PayablesDark`, `PayablesPaySelected`, `PayablesDueThisWeek` |
+| F-PUR-16 | Payables you can pay from: by vendor and by bill, paying and applying credit from the list, ages that filter, what's due this week, figures you can trust | P2 | Refinements | `PayablesByVendor`, `PayablesByBill`, `PayablesDark`, `PayablesPaySelected`, `PayablesPayMixed`, `PayablesDueThisWeek` |
 
 ## User stories
 
@@ -883,7 +883,7 @@ Decision: D-230
 - API: `GET /reports/payables` bill rows gain `date`, `paidAmount` (paid and credited), `jobId` and `jobName`.
 
 ### US-PUR-58 · Pay and apply credit from Payables
-**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesByBill`, `PayablesPaySelected`
+**Feature:** F-PUR-16 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PayablesByBill`, `PayablesPaySelected`, `PayablesPayMixed`
 **As** office staff, **I want** to pay a bill or use a vendor's credit from Payables, **so that** paying doesn't mean hunting for each bill.
 
 Decision: D-218, D-223, D-229, D-230

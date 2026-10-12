@@ -1660,6 +1660,8 @@ Shows: "Expense" · "BXP-0001 (FueL" · "& Vehicle, 85.00 USD) was approved."
 
 ![Payables](screens/Payables.webp)
 
+Superseded by `PayablesByVendor` and `PayablesByBill` (D-230).
+
 Links to: `PayablesEmpty`
 
 Shows: "Purchases › Payables" · "Payables" · "Outstanding vendor bill balances, bucketed by how overdue they are." · "Current" · "1-30 days" · "31-60 days" · "61-90 days" · "90+ days" · "2160.00" · "USD" · "Total outstanding" · "2160.00 USD" · "Search payables" · "* Columns" · "Bill T" · "Vendor t" · "Due date T" · "Aging 1" · "Balance due T" · "GSC-8834" · "Granite State Concrete" · "9/28/2026" · "1-1 of 1 per page" · "10"
@@ -1668,6 +1670,8 @@ Shows: "Purchases › Payables" · "Payables" · "Outstanding vendor bill balanc
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-13 · **Source:** Captured
 
 ![PayablesEmpty](screens/PayablesEmpty.webp)
+
+The empty state stays; the header now reads "What you owe vendors, by how late it is · as of …" and the cards "Total owed" (D-230).
 
 Links to: `Payables`
 
@@ -3980,6 +3984,64 @@ Shows: the business, "REMITTANCE ADVICE" "VPY-0014 · 11 Oct 2026" · "Paid to" 
 Links to: `VendorPaymentPage`
 
 Shows: ⌘K "ridgeline" · "Contacts" · "Vendor payments" "VPY-0014 · Ridgeline Equipment Rentals Pvt Ltd · ₹48,000.00 · 11 Oct" · "Vendor bills"
+
+## Payables you can pay from
+
+Drawn in Claude Design for US-PUR-56 to US-PUR-60 (D-230): project "Spine web — refinements before Phase 10", canvas "23 Payables". Payables mirrors Receivables (D-224): what we owe each vendor or each bill, in the layout every refined list shares, with ages that filter, what's due this week, paying and applying credit from the rows, and a page that says what it counts.
+
+### PayablesByVendor — What we owe each vendor
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-56, US-PUR-58, US-PUR-60 · **Source:** Claude Design
+
+![PayablesByVendor](screens/PayablesByVendor.webp)
+
+Links to: `PayablesByBill`, `RecordVendorPaymentRefined`, `VendorBillsListRefined`
+
+Shows: "Purchases › Payables" · "What you owe vendors, by how late it is · as of 12 Oct 2026" · tabs "By vendor 5" "By bill 9" · "Total owed" "9 bills · 5 vendors" · "Overdue" "4 bills" · "Due in 7 days" "2 bills · not yet overdue" · "90+ days" · "Owed by age" with every age · "2 draft bills (₹18,400.00) aren't counted here — record them to include them." "See drafts" · "All ages" · "Updated just now" Refresh "Export" · "Search vendors" "Columns" · "Vendor" "Open" "Oldest" "Overdue ↓" "Total owed" "Credit to use" "Last paid" ("Never") · a vendor expanded to its bills (number · job, "Due 26 Aug", age and "47 days late", balance) · totals row · vendor menu "Pay vendor" "Apply credit" "Open contact". As built, the menu's payment icon is the app's Record payment icon (D-222).
+
+### PayablesDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-56 · **Source:** Claude Design
+
+![PayablesDark](screens/PayablesDark.webp)
+
+Links to: `PayablesByVendor`
+
+Shows: By vendor in dark mode.
+
+### PayablesByBill — Each bill, how late, and its menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-57, US-PUR-58, US-PUR-59 · **Source:** Claude Design
+
+![PayablesByBill](screens/PayablesByBill.webp)
+
+Links to: `RecordVendorPaymentRefined`, `VendorBillPage`
+
+Shows: "Overdue" pressed ("Showing these · press again to clear"), the age filter "Overdue" · "Search bills, vendors or jobs" · "Bill" (job under it) "Vendor" "Due" "How late ↓" ("90+ days" "95 days late") "Balance due" · bill menu "Pay bill" "Apply credit" "Open bill". Bill date, Bill total and Paid so far are in Columns.
+
+### PayablesDueThisWeek — What's due in the next 7 days
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-59 · **Source:** Claude Design
+
+![PayablesDueThisWeek](screens/PayablesDueThisWeek.webp)
+
+Links to: `PayablesByBill`
+
+Shows: "Due in 7 days" pressed · the age filter "Due in 7 days" · "Current" "Due in 3 days", "Due in 5 days". An age with nothing in it says "Nothing due in the next 7 days." with "Show all".
+
+### PayablesPaySelected — Pay several bills from one vendor
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-58 · **Source:** Claude Design
+
+![PayablesPaySelected](screens/PayablesPaySelected.webp)
+
+Links to: `RecordVendorPaymentConfirm`
+
+Shows: "2 selected" "Pay (2)" "Clear" · "Record a vendor payment" with both bills ticked for their balances · "Coastline Steel Works has ₹9,440.00 of credit. Apply it first?" · "₹96,200.00 pays CSW-4471 in full and CSW-4490 in full."
+
+### PayablesPayMixed — Bills from two vendors can't be paid together
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-58 · **Source:** Claude Design
+
+![PayablesPayMixed](screens/PayablesPayMixed.webp)
+
+Links to: `PayablesByBill`
+
+Shows: "2 selected" "Pay (2)" off · "Pick bills from one vendor — a payment is for one vendor." · "Clear"
 
 ## Mobile field companion
 

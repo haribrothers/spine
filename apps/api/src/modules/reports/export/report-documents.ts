@@ -212,7 +212,7 @@ export function receivablesDocument(report: ReceivablesReport, search?: string):
 }
 
 export function payablesDocument(report: PayablesReport, search?: string): Doc {
-  const rows = report.bills.filter((b) => matchesSearch(`${b.billNumber} ${b.contactName ?? ""}`, search));
+  const rows = report.bills.filter((b) => matchesSearch(`${b.billNumber} ${b.contactName ?? ""} ${b.jobName ?? ""}`, search));
   return {
     title: "Payables",
     subtitle: asOfText(report.asOf),

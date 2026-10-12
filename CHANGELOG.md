@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Payables you can pay from (US-PUR-56 to US-PUR-60, D-230)
+
+- **By vendor (US-PUR-56):** Payables opens on "By vendor" — one row per vendor we owe: open bills, how late the oldest is, overdue, total owed, credit to use (their open vendor credits) and when we last paid them; most overdue money first; each row expands to its bills; a totals row. `GET /reports/payables` gains `vendors`.
+- **By bill (US-PUR-57):** the number with its job, the vendor, the due date in the business's format, the coloured age with how late in words and the balance; Bill date, Bill total and Paid so far in Columns. Bill rows gain `date`, `paidAmount`, `jobId` and `jobName`.
+- **Pay from the list (US-PUR-58):** a bill's menu pays it or applies the vendor's credit; a vendor's menu pays them, applies their credit or opens the contact; bills ticked from one vendor are paid together with "Pay (n)" (bills from several vendors can't be). `RecordVendorPaymentDialog` gains `initialBillIds`.
+- **Ages and this week (US-PUR-59):** the cards Total owed, Overdue, Due in 7 days and 90+ days and the age bar filter the list; an age filter replaces the "Show" row; `?age=` (the dashboard's `?overdue=1` still opens Overdue) also narrows the report and its exports — an unknown age is refused with "Choose an age to show.". `GET /reports/payables` gains `dueSoon`; the ages live in `@spine/shared` (`PAYABLES_AGES`, `inPayablesAge`); `AgingSummary` takes a "Due in 7 days" card and its labels.
+- **What it counts (US-PUR-60):** "as of" the day, Updated and Refresh (and a quiet refresh after 30 seconds away), a note for draft bills it leaves out (`drafts`), and the list kept in the address.
+- **Tests:** API integration `us-pur-56-60`; web unit `us-pur-56-60`; E2E `us-pur-56-60`, with `us-dash-21` and `us-rpt-40` moved to the new layout. QA script section 224.
+
 ### 2026-10-12 — Vendor payments you can work from (US-PUR-49 to US-PUR-55, D-229)
 
 - **A payment's own page (US-PUR-49):** `/vendor-payments/:id` replaces the drawer (old `?id=` links redirect; bills, the bank register, reports and search link to it): the number, vendor, date, method, the account it was paid from and the reference; Paid and Bills paid; "Paid to" with each bill's total, what this payment put on it, what it still owes and its due date; attachments, notes and Activity (`GET /vendor-payments/:id/activity`).

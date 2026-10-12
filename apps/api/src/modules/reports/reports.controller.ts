@@ -1,4 +1,4 @@
-import { analysisQuerySchema, balanceSheetQuerySchema, creditRegisterQuerySchema, paymentRegisterQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString, inReceivablesAge, parseReceivablesAge } from "@spine/shared";
+import { analysisQuerySchema, balanceSheetQuerySchema, creditRegisterQuerySchema, paymentRegisterQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString, inReceivablesAge, parseReceivablesAge, inPayablesAge, isPayablesAge, type PayablesAge } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -247,7 +247,10 @@ export class ReportsController {
   @RequireCapability("reports.view_payables")
   async payables(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
-    return this.out(orgId, query, this.reportsService.payables(orgId), docs.payablesDocument);
+    // US-PUR-59: an age narrows the bills — the Excel and PDF exports follow it; the totals keep every age.
+    const age = payablesAgeParam((query as { age?: unknown })?.age);
+    const report = this.reportsService.payables(orgId).then((r) => (age ? { ...r, bills: r.bills.filter((b) => inPayablesAge(b, age)) } : r));
+    return this.out(orgId, query, report, docs.payablesDocument);
   }
 
   /** S-09.2 — Owner, or `reports.view_financial_statements` (US-RPT-36). */
@@ -402,14 +405,15 @@ export class ReportsController {
     sendCsv(res, `receivables-${report.asOf}.csv`, toCsv(["Invoice #", "Contact", "Currency", "Due date", "Total", "Balance due", "Days overdue", "Bucket"], rows));
   }
 
-  /** US-PUR-14 — one row per open bill with its bucket; same conventions as receivables. */
+  /** US-PUR-14 — one row per open bill with its bucket; same conventions as receivables. `age` is the list's age (US-PUR-59). */
   @Get("payables/export.csv")
   @RequireCapability("reports.view_payables")
-  async exportPayables(@Session() session: UserSession, @Query("search") search: string | undefined, @Res() res: Response) {
+  async exportPayables(@Session() session: UserSession, @Query("search") search: string | undefined, @Query("age") age: string | undefined, @Res() res: Response) {
     const orgId = requireOrgId(session);
+    const chosen = payablesAgeParam(age);
     const report = await this.reportsService.payables(orgId);
     const rows = report.bills
-      .filter((b) => matchesSearch(`${b.billNumber ?? ""} ${b.contactName ?? ""}`, search))
+      .filter((b) => inPayablesAge(b, chosen) && matchesSearch(`${b.billNumber ?? ""} ${b.contactName ?? ""} ${b.jobName ?? ""}`, search))
       .map((b) => [b.billNumber, b.contactName, b.currency, b.dueDate, decimal(b.totalAmount, b.currency), decimal(b.balanceDue, b.currency), b.daysOverdue, b.bucket]);
     sendCsv(res, `payables-${report.asOf}.csv`, toCsv(["Bill #", "Contact", "Currency", "Due date", "Total", "Balance due", "Days overdue", "Bucket"], rows));
   }
@@ -451,4 +455,11 @@ function matchesSearch(text: string, search: string | undefined): boolean {
 /** US-RPT-15 — `?status=`: active and on hold unless asked for another set. */
 function jobStatusFilter(status?: string): JobProfitabilityStatus {
   return status === "active" || status === "on_hold" || status === "completed" || status === "all" ? status : "active_on_hold";
+}
+
+/** US-PUR-59 — the list's age, or every age when there's none; an unknown age is refused. */
+function payablesAgeParam(age: unknown): PayablesAge | null {
+  if (age === undefined || age === "") return null;
+  if (typeof age === "string" && isPayablesAge(age)) return age;
+  throw new BadRequestException("Choose an age to show.");
 }

@@ -65,6 +65,7 @@ export function RecordVendorPaymentDialog({
   prefill,
   initialContactId,
   initialBillId,
+  initialBillIds,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -76,6 +77,8 @@ export function RecordVendorPaymentDialog({
   initialContactId?: string;
   /** US-PUR-33 — and with that bill ticked for its balance. */
   initialBillId?: string;
+  /** US-PUR-58 — Payables' "Pay (n)": several of the vendor's bills ticked for their balances. */
+  initialBillIds?: readonly string[];
 }) {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [contactId, setContactId] = useState("");
@@ -128,10 +131,11 @@ export function RecordVendorPaymentDialog({
         setBills(open);
         if (rows[0]?.contactName) setVendorName(rows[0].contactName);
         if (open[0]) setCurrency(open[0].currency);
-        const preset = initialBillId && contactId === initialContactId ? open.find((b) => b.id === initialBillId) : undefined;
-        if (preset && !prefill) {
-          setPay(new Map([[preset.id, preset.balance]]));
-          setAmount(preset.balance);
+        const wanted = new Set([...(initialBillIds ?? []), ...(initialBillId ? [initialBillId] : [])]);
+        const preset = contactId === initialContactId ? open.filter((b) => wanted.has(b.id)) : [];
+        if (preset.length && !prefill) {
+          setPay(new Map(preset.map((b) => [b.id, b.balance])));
+          setAmount(preset.reduce((s, b) => s + b.balance, 0n));
           setAmountTyped(false);
         } else if (prefill) {
           setPay(spreadOldestFirst(open, prefill.amount));
@@ -140,7 +144,7 @@ export function RecordVendorPaymentDialog({
         }
       })
       .catch(() => setBills([]));
-  }, [open, contactId, initialBillId, initialContactId, prefill]);
+  }, [open, contactId, initialBillId, initialBillIds, initialContactId, prefill]);
 
   // US-PUR-25: the vendor's open credit, offered first.
   useEffect(() => {

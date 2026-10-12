@@ -1,19 +1,17 @@
 import { Suspense } from "react";
-import { AppShellHeader } from "@spine/ui";
-import { PrintHeader, PrintRangeProvider } from "../../../components/print-header";
+import { PrintRangeProvider } from "../../../components/print-header";
 import { PayablesExplorer } from "./payables-explorer";
 
-/** PRD FEAT-07 (S-07.7) — outstanding vendor bills bucketed by how overdue they are, the AP-side mirror of receivables/page.tsx. */
+/**
+ * PRD FEAT-07 (S-07.7) and US-PUR-56 to US-PUR-60 (D-230) — what we owe
+ * vendors and for how long, vendor by vendor or bill by bill; the AP-side
+ * mirror of receivables/page.tsx. The header lives in the explorer, which
+ * knows the day it's as of.
+ */
 export default function PayablesPage() {
   return (
     <PrintRangeProvider>
-      <AppShellHeader
-        breadcrumb={[{ label: "Purchases" }, { label: "Payables" }]}
-        title="Payables"
-        description="Outstanding vendor bill balances, bucketed by how overdue they are."
-      />
-      <PrintHeader />
-      {/* US-DASH-21: reads ?overdue=1 from the URL. */}
+      {/* US-DASH-21, US-PUR-60: reads its view from the address. */}
       <Suspense>
         <PayablesExplorer />
       </Suspense>

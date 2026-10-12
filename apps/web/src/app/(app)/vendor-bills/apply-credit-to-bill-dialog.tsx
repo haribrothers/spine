@@ -33,7 +33,7 @@ export function fillCredits(credits: { id: string; balanceAmount: string }[], ba
  * is applied, so the dialog is the confirmation (D-218). Applying posts
  * nothing (P24a) — one `POST /vendor-credits/:id/apply` per credit used.
  */
-export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }: { bill: VendorBill; open: boolean; onOpenChange: (open: boolean) => void; onApplied: (total: bigint) => void }) {
+export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }: { bill: Pick<VendorBill, "id" | "billNumber" | "contactId" | "contactName" | "currency" | "balanceDue">; open: boolean; onOpenChange: (open: boolean) => void; onApplied: (total: bigint) => void }) {
   const [credits, setCredits] = useState<OpenCredit[] | null>(null);
   const [amounts, setAmounts] = useState<Record<string, bigint>>({});
   const [error, setError] = useState<string | null>(null);

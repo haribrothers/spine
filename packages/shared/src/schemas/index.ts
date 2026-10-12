@@ -54,3 +54,4 @@ export * from "./catalog-import.ts";
 export * from "./setup.ts";
 export * from "./email-log.ts";
 export * from "./receivables.ts";
+export * from "./payables.ts";
