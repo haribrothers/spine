@@ -543,6 +543,13 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-46 · See every expense category and how it's used
 - [x] US-PUR-47 · Add, change and remove categories safely
 - [x] US-PUR-48 · Pick the right category when submitting
+- [ ] US-PUR-49 · See a vendor payment on its own page
+- [ ] US-PUR-50 · Delete a wrong vendor payment
+- [ ] US-PUR-51 · See money paid out at a glance
+- [ ] US-PUR-52 · Pay a vendor by ticking bills
+- [ ] US-PUR-53 · Be warned before recording the same vendor payment twice
+- [ ] US-PUR-54 · Send a vendor a remittance advice
+- [ ] US-PUR-55 · Find a vendor payment from search
 
 ## Phase 10 · AI assistant
 

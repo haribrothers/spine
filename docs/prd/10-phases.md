@@ -933,6 +933,13 @@ Total: 525 stories.
 - US-PUR-46 · See every expense category and how it's used (P2)
 - US-PUR-47 · Add, change and remove categories safely (P2)
 - US-PUR-48 · Pick the right category when submitting (P2)
+- US-PUR-49 · See a vendor payment on its own page (P2)
+- US-PUR-50 · Delete a wrong vendor payment (P2)
+- US-PUR-51 · See money paid out at a glance (P2)
+- US-PUR-52 · Pay a vendor by ticking bills (P2)
+- US-PUR-53 · Be warned before recording the same vendor payment twice (P2)
+- US-PUR-54 · Send a vendor a remittance advice (P3)
+- US-PUR-55 · Find a vendor payment from search (P3)
 
 ## Phase 10 · AI assistant
 

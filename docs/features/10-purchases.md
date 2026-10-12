@@ -23,6 +23,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-12 | Vendor credits you can work from: a page per credit, a list that shows money, entry like a bill, raised and used from the bill | P2 | Refinements | `VendorCreditPage`, `VendorCreditsListRefined`, `VendorCreditsListDark`, `VendorCreditsBulkRecord`, `VendorCreditBuilderRefined`, `VendorCreditReplaceLines`, `VendorBillRecordCredit`, `VendorCreditApplyRefined` |
 | F-PUR-13 | Expenses you can work from: a list that shows money, a page per expense with its receipt, faster entry, fixing a rejected one | P2 | Refinements | `ExpensesListRefined`, `ExpensesListDark`, `ExpensePage`, `ExpenseRejectedResubmit`, `ExpenseFormRefined` |
 | F-PUR-14 | Expense categories that guide: a table with what each is used for, safe changes, and a hint and default tax rate in the expense form | P2 | Refinements | `ExpenseCategoriesRefined`, `ExpenseCategoriesDark`, `ExpenseCategoryDialogRefined`, `ExpenseCategoryNameTaken`, `ExpenseCategoryArchiveConfirm`, `ExpenseCategoryDeleteConfirm`, `ExpenseFormCategoryHint`, `ExpenseFormCategoryTax` |
+| F-PUR-15 | Vendor payments you can work from: a page per payment, delete that works, a list that shows money, paying by ticking bills, remittance advice and search | P2 | Refinements | `VendorPaymentPage`, `VendorPaymentDeleteConfirm`, `VendorPaymentsListRefined`, `VendorPaymentsListDark`, `RecordVendorPaymentRefined`, `RecordVendorPaymentDuplicate`, `RemittanceEmailDialog`, `RemittanceAdvicePdf`, `SearchVendorPayments` |
 
 ## User stories
 
@@ -744,4 +745,108 @@ Decision: D-227, D-228
 
 **Implementation notes**
 - UI: `Combobox` options carry a description line; the form keeps `taxRateTouched` so a category's default never overwrites a person's choice.
+
+### US-PUR-49 · See a vendor payment on its own page
+**Feature:** F-PUR-15 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorPaymentPage`
+**As** office staff, **I want** a vendor payment to have its own page, **so that** I can see which bills it paid and other pages can link to it.
+
+Decision: D-221, D-222, D-229
+
+**Acceptance criteria**
+- **Given** a vendor payment, **when** its page (`/vendor-payments/:id`) opens, **then** the title is its number, and under it the vendor (a link), the date in the business's format, the method, "Paid from <account>" and the reference.
+- **Given** the page, **when** it shows, **then** the primary action is "Email remittance advice" (with the right to record vendor payments and an email address for the vendor), else "Download remittance advice"; More holds Download remittance advice, View history and Delete payment, each with its icon and right.
+- **Given** the page, **when** it shows, **then** a strip reads Paid (the amount) and Bills paid ("RTE-3302", or "3 bills"), and "Paid to" lists each bill: the bill (a link), its total, what this payment put on it, what it still owes ("Paid" at zero) and its due date.
+- **Given** the payment's Activity, **when** it shows, **then** it lists, newest first with who and when: "Recorded · ₹48,000.00 by bank transfer from HDFC Current", "Paid ₹40,000.00 on RTE-3302" (a link, one per bill) and "Remittance advice emailed to …"; attachments and notes show under Paid to.
+- **Given** a bill's Payments, a bank register row, the dashboard, Activity elsewhere or an old `/vendor-payments?id=` link, **when** it names a vendor payment, **then** it opens this page.
+- **Given** a Field user, **when** they could reach a vendor payment, **then** they can't (404).
+
+**Implementation notes**
+- API: `GET /vendor-payments/:id` gains `paidTo` (`[{ allocationId, billId, billNumber, billTotal, billBalance, dueDate, amount }]`) and `reconciled`; `GET /vendor-payments/:id/activity` → `[{ type: recorded|applied|remittance_emailed, at, actorName, amount?, detail?, linkId?, account? }]`, newest first, from the audit log, the allocations and the email log.
+- UI: `vendor-payment-detail.tsx` replaces `vendor-payment-detail-drawer.tsx`; `?action=delete|email` opens that dialog (from the list's row menu).
+
+### US-PUR-50 · Delete a wrong vendor payment
+**Feature:** F-PUR-15 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorPaymentDeleteConfirm`
+**As** office staff, **I want** to delete a vendor payment recorded by mistake, **so that** the bills owe again and I can record it correctly.
+
+Decision: D-080, D-218, D-223, D-229
+
+**Acceptance criteria**
+- **Given** a vendor payment (allocated or not) and the right to delete it, **when** I choose "Delete payment", **then** "Delete VPY-0012?" says it's removed for good, that RTE-3302 and RTE-3340 will owe ₹40,000.00 and ₹8,000.00 again, and that a reversing entry posts today; "Go back" does nothing.
+- **Given** I confirm, **when** it saves, **then** P14 posts, each bill's paid amount drops and its balance returns, the list opens with "VPY-0012 deleted" in a toast, and the bills' Activity says the payment was deleted.
+- **Given** a payment matched to a bank statement line, **when** I look at its page, **then** Delete is offered but the dialog says "VPY-0012 is matched to a bank statement line. Unmatch it in Banking first, then delete it." with a link to the account, and the API refuses with the same message.
+
+**Implementation notes**
+- API: `DELETE /vendor-payments/:id` no longer refuses an allocated payment: under locks on the payment and its bills it removes the allocations, lowers each bill's `amount_paid`, posts P14 and audits `deleted` on the payment and `payment_deleted` on each bill; a payment whose entry's bank lines are matched → 400 with the message above.
+
+### US-PUR-51 · See money paid out at a glance
+**Feature:** F-PUR-15 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorPaymentsListRefined`, `VendorPaymentsListDark`
+**As** an owner, **I want** the vendor payments list to show money and what each paid, **so that** I know what went out and find a payment fast.
+
+Decision: D-210, D-222, D-229
+
+**Acceptance criteria**
+- **Given** the list, **when** it shows, **then** the cards read "Paid this month" (the total and how many), "Paid last month" and "To pay" (overdue bills' balance and how many; pressing it opens Vendor bills filtered to overdue), in the business's currency.
+- **Given** a payment, **when** its row shows, **then** it has the number with the reference under it, the date in the business's format, the vendor, the method with the account under it, the amount and the bills paid ("RTE-3302", "RTE-3302, RTE-3340" or "3 bills"); newest first.
+- **Given** the list layout every refined list shares, **when** it shows, **then** Vendor (only vendors with a payment), Method and a date range (All time — the default — This month, Last month, Last 90 days, This financial year) sit on the left of the filter bar with Updated, Refresh and "Record payment" on the right, and search (number, reference, vendor and bill numbers) with Columns below; everything is kept in the address, and Clear filters clears it.
+- **Given** a row's menu, **when** I open it, **then** it offers View, Download remittance advice, Email remittance advice and Delete payment, each with its icon and right, destructive last; Email and Delete open the payment's page with that dialog, so nothing happens in one click (D-218).
+
+**Implementation notes**
+- API: `GET /vendor-payments` rows gain `moneyAccountName` and `paidTo` (`[{ billId, number }]`), newest first; `GET /vendor-payments/summary` → `{ paidThisMonth, paidThisMonthCount, paidLastMonth, toPay, toPayCount }` in the business's currency.
+
+### US-PUR-52 · Pay a vendor by ticking bills
+**Feature:** F-PUR-15 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `RecordVendorPaymentRefined`
+**As** office staff, **I want** to tick the bills a payment covers, **so that** recording it takes one look at what we owe.
+
+Decision: D-218, D-223, D-229
+
+**Acceptance criteria**
+- **Given** "Record payment" on the list, "Pay bill" on a bill or the dashboard, or a bank statement line, **when** the dialog opens, **then** it's the same dialog everywhere; from a bill, its vendor is chosen and the bill ticked for its balance.
+- **Given** a vendor, **when** I choose them, **then** their recorded bills with a balance are listed oldest due first, each with its number, their bill reference, due date (or "12 days late"), balance and a tick box; "Pay all" ticks every bill; the payment's currency is the bills'.
+- **Given** I tick bills, **when** I do, **then** the amount is their total and each line takes its balance; **given** I type an amount first, **then** it's spread oldest first and I can change any line (up to its balance).
+- **Given** the amount and the ticked lines, **when** they don't match, **then** the line before the button says by how much ("₹2,000.00 more than the ticked bills — tick another or lower the amount") and Record stays off; when they match it reads "₹48,000.00 pays RTE-3302 in full and ₹8,000.00 of RTE-3340."
+- **Given** I press "Record payment", **when** it asks "Record this payment?" with the same line and I confirm, **then** it saves and the toast reads "VPY-0012 recorded"; from the list the payment's page opens, from a bill the bill refreshes.
+- **Given** the vendor has open credit, **when** the dialog shows, **then** "<Vendor> has ₹… of credit. Apply it first?" stays, as today (US-PUR-25).
+
+**Implementation notes**
+- UI: one `RecordVendorPaymentDialog` in `components/` replaces `vendor-payments/new-vendor-payment-dialog.tsx` (bank statement prefill keeps amount, date and account fixed, US-BANK-09). No new API.
+
+### US-PUR-53 · Be warned before recording the same vendor payment twice
+**Feature:** F-PUR-15 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `RecordVendorPaymentDuplicate`
+**As** office staff, **I want** to be told when a vendor payment looks already recorded, **so that** we don't count the same money out twice.
+
+Decision: D-229
+
+**Acceptance criteria**
+- **Given** a vendor, amount and date, **when** a payment to that vendor for the same amount within 3 days (or with the same reference) exists, **then** the dialog warns "This looks like VPY-0011 — ₹48,000.00 to Ridgeline Equipment Rentals on 9 Oct (Bank transfer · NEFT 4471)." with a link to open it.
+- **Given** the warning, **when** I still record, **then** it records.
+
+**Implementation notes**
+- API: `GET /vendor-payments/possible-duplicates?contactId&amount&date&reference?` → `[{ id, number, date, amount, currency, method, reference }]`.
+
+### US-PUR-54 · Send a vendor a remittance advice
+**Feature:** F-PUR-15 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `RemittanceEmailDialog`, `RemittanceAdvicePdf`
+**As** office staff, **I want** to tell a vendor what we paid against which bills, **so that** they match our payment without calling.
+
+Decision: D-218, D-229
+
+**Acceptance criteria**
+- **Given** a vendor payment, **when** I choose "Download remittance advice", **then** a PDF (`remittance-VPY-0012.pdf`) shows our business, the vendor, the payment's number, date, method, reference and amount, and each bill paid with their bill reference, our bill number, the bill's total and the amount paid — light, in the business's formats.
+- **Given** the vendor has an email address and email is set up, **when** I choose "Email remittance advice", **then** a dialog shows To, Subject ("Remittance advice — VPY-0012 from <business>") and a message I can edit, with the PDF attached; "Send" asks nothing more (the dialog is the check), sends, toasts "Remittance advice sent to …" and adds it to Activity and the email log.
+- **Given** no email address for the vendor, or email not set up, **when** the page shows, **then** Email isn't the primary action and its menu item says why ("Add an email address for <vendor>" / "Set up email sending first").
+
+**Implementation notes**
+- API: `GET /vendor-payments/:id/remittance.pdf`, `GET /vendor-payments/:id/remittance/draft` → `{ to, subject, body }`, `POST /vendor-payments/:id/remittance/send { to, subject, body }` (`vendor_payments.edit_own`/`edit_others`; Idempotency-Key). Generated when asked for, never stored or numbered (@react-pdf, like a statement); the email log records it (`entityType: vendor_payment`, kind `remittance`).
+
+### US-PUR-55 · Find a vendor payment from search
+**Feature:** F-PUR-15 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `SearchVendorPayments`
+**As** office staff, **I want** search to find vendor payments, **so that** "did we pay them?" is one search away.
+
+Decision: D-229
+
+**Acceptance criteria**
+- **Given** ⌘K search, **when** I type a vendor payment's number, its reference or a vendor's name, **then** a Vendor payments group lists matches as "VPY-0012 · Ridgeline Equipment Rentals · ₹48,000.00 · 9 Oct", opening the payment's page.
+- **Given** a Field user, **when** they search, **then** there's no Vendor payments group.
+
+**Implementation notes**
+- API: `GET /search` gains a `vendor_payments` group (Owner and Staff).
 
