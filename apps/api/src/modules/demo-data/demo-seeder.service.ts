@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { INDUSTRY_TEMPLATES, itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorPaymentAllocations, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoiceReminders, invoices, jobAssignments, creditNotes, customerRefunds, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, paymentAllocations, payments, quoteEvents, quotes, teamMemberships, user, account, vendorBills, vendorPaymentAllocations, vendorPayments, vendorCreditAllocations, vendorCredits, vendorRefunds, expenses } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -143,6 +143,12 @@ export class DemoSeederService {
         .update(auditLog)
         .set({ createdAt: when })
         .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityId, entityId), ...(actions ? [inArray(auditLog.action, actions)] : [])));
+    /** US-ONB-33 — a vendor payment, and what it paid on each bill, recorded on its day. */
+    const paidOn = async (paymentId: string, at: Date) => {
+      await this.db.update(vendorPayments).set({ createdAt: at }).where(eq(vendorPayments.id, paymentId));
+      await this.db.update(vendorPaymentAllocations).set({ createdAt: at }).where(eq(vendorPaymentAllocations.vendorPaymentId, paymentId));
+      await backdateAudit(paymentId, at, ["created"]);
+    };
     const currency = plan.currency.code;
 
     // 1. The business itself.
@@ -702,13 +708,39 @@ export class DemoSeederService {
             const paid = (await this.vendorPaymentsService.create(
               orgId,
               actorUserId,
-              { contactId: contactIds.get(seed.contact)!, date: payment.inDays === null ? new Date() : day(payment.inDays), method: "bank_transfer", currency, amount, allocations: [{ billId: recorded.id, amount }] } as never,
+              // US-ONB-33: how it was paid, with its reference.
+              { contactId: contactIds.get(seed.contact)!, date: payment.inDays === null ? new Date() : day(payment.inDays), method: payment.method ?? "bank_transfer", reference: payment.reference ?? null, currency, amount, allocations: [{ billId: recorded.id, amount }] } as never,
               true,
             )) as { id: string };
             count("vendorPaymentsCreated");
-            // US-PUR-32: "Paid" on the bill's Activity reads on the payment's day.
-            await this.db.update(vendorPaymentAllocations).set({ createdAt: when(Math.max(payment.inDays ?? 0, seed.dateInDays)) }).where(eq(vendorPaymentAllocations.vendorPaymentId, paid.id));
+            // US-PUR-32: "Paid" on the bill's Activity reads on the payment's day — and US-ONB-33: so does the payment's own.
+            await paidOn(paid.id, when(Math.max(payment.inDays ?? 0, seed.dateInDays)));
           });
+        }
+      });
+    }
+    // US-ONB-33: a payment across several bills, once they're recorded, with its remittance advice emailed on its day — nothing is sent.
+    for (const seed of plan.vendorPayments ?? []) {
+      at(seed.inDays, async () => {
+        const ids = seed.bills.map((number) => billIds.get(number));
+        if (ids.some((id) => !id)) throw new Error(`Demo vendor payment: a bill isn't loaded yet (${seed.bills.join(", ")}).`);
+        const rows = await this.db.select({ id: vendorBills.id, totalAmount: vendorBills.totalAmount }).from(vendorBills).where(inArray(vendorBills.id, ids as string[]));
+        const allocations = rows.map((b) => ({ billId: b.id, amount: b.totalAmount }));
+        const amount = allocations.reduce((sum, a) => sum + a.amount, 0n);
+        const paid = (await this.vendorPaymentsService.create(
+          orgId,
+          actorUserId,
+          { contactId: contactIds.get(seed.contact)!, date: day(seed.inDays), method: seed.method, reference: seed.reference ?? null, currency, amount, allocations } as never,
+          true,
+        )) as { id: string };
+        count("vendorPaymentsCreated");
+        await paidOn(paid.id, when(seed.inDays));
+        if (seed.remittanceInDays !== undefined) {
+          const to = plan.contacts.find((c) => c.key === seed.contact)?.email;
+          if (to) {
+            await this.auditLog.record(this.db, { orgId, actorUserId, action: "remittance_sent", entityType: "vendor_payment", entityId: paid.id, contactId: contactIds.get(seed.contact)!, changes: [{ field: "email", from: null, to }] });
+            await backdateAudit(paid.id, when(seed.remittanceInDays), ["remittance_sent"]);
+          }
         }
       });
     }

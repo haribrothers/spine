@@ -93,6 +93,11 @@ export const CONSTRUCTION: IndustryPack = {
     bill5: { ref: "ABM-20587", lines: [{ name: "Ready-mix concrete (M25)", quantity: 30, price: 130, in: { price: 5100, hsnSac: "3824", slab: 18 } }] },
     bill6: { ref: "CSW-5611", lines: [{ name: "Structural steel sections", quantity: 3500, price: 1.1, in: { price: 64, hsnSac: "7216", slab: 18 } }] },
     bill7: { ref: "RPH-8902", lines: [{ name: "Plate compactor hire — 3 days", quantity: 3, price: 95, service: true, in: { price: 2800, hsnSac: "9973", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late on a job, and two paid together.
+    bill8: { ref: "ABM-20398", lines: [{ name: "Sand and aggregate — 3 loads", quantity: 3, price: 420, in: { price: 14500, hsnSac: "2505", slab: 5 } }] },
+    bill9: { ref: "RPH-8871", lines: [{ name: "Mini excavator hire — 4 days", quantity: 4, price: 260, service: true, in: { price: 8800, hsnSac: "9973", slab: 18 } }] },
+    bill10: { ref: "CSW-5540", lines: [{ name: "Steel mesh panels", quantity: 120, price: 14, in: { price: 520, hsnSac: "7314", slab: 18 } }] },
+    bill11: { ref: "CSW-5563", lines: [{ name: "Binding wire and spacers", quantity: 40, price: 18, in: { price: 650, hsnSac: "7217", slab: 18 } }] },
   },
   recurringBill: { name: "Site office cabin rental", line: { name: "Site office cabin — monthly rental", quantity: 1, price: 650, service: true, in: { price: 18000, hsnSac: "997212", slab: 18 } } },
   expenses: {

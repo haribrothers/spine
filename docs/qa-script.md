@@ -5086,6 +5086,18 @@ Use an owner with three vendors: one with an overdue bill and a bill due in 3 da
 9. Export with an age chosen: the CSV, Excel and PDF hold only that age (and the search). Refresh updates in place; leave the tab for 30 seconds and come back — it refreshes. Tab, age, search, sort and page survive opening a bill and going Back.
 10. Regression: the totals match the AP aging report and the dashboard's Payables card; Receivables' cards, age bar and filter are unchanged; Vendor bills' Pay bill and Vendor payments' Record payment still open the dialog as before; Field can't reach Payables.
 
+## 225. Demo vendor payments and payables you can pay from (US-ONB-33, refinements before Phase 10)
+
+Load an industry demo (e.g. India › Construction) into a new business, and Riverstone Builders into another.
+
+1. Payables: the cards and age bar have money in Current, 1–30, 31–60 and 90+ days; 61–90 is empty and pressing it says "Nothing 61–90 days late."; "Due in 7 days" has the part-paid bill.
+2. By vendor: the part-paid bill's vendor has "2 bills", expanding to the 90+ bill and the one due this week; on By bill, tick both and "Pay (2)" opens the payment dialog with them ticked. The 31–60 bill shows its job (where the industry has jobs).
+3. Vendor payments: rows by Bank transfer (with a reference like "NEFT …"/"BACS …"/"ACH …"), Cheque ("Chq 00…") and Cash; the newest a few days ago, the oldest about four months ago; one row's "Bills paid" names two bills.
+4. Open that payment: "Paid to" lists both bills in full; Activity reads "Remittance advice emailed to <vendor's address>" the day after "Recorded". The email log has no remittance — nothing was sent.
+5. Riverstone: Apex Timber has 2 open bills (one 90+ days late), Granite State 2 (one 31–60 days late); its payment shows Bank transfer and "ACH 552190".
+6. Delete all demo data: the bills and payments go; Payables says "Nothing outstanding".
+7. Regression: Vendor bills' cards, the dashboard's Payables card and the AP aging report agree with Payables; the jobs' costs include the 31–60 bill.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

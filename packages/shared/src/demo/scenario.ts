@@ -132,15 +132,31 @@ export const INVOICE_TIMELINE = [
 export type InvoiceKey = (typeof INVOICE_TIMELINE)[number]["key"];
 
 export const BILL_TIMELINE = [
-  { key: "bill1", vendor: "supplier", date: -150, due: -120, paid: -125 },
+  { key: "bill1", vendor: "supplier", date: -150, due: -120, paid: -125, method: "cheque" },
   { key: "bill2", vendor: "supplier_far", date: -60, due: -30 },
-  { key: "bill3", vendor: "local", date: -40, due: -40, paid: -38 },
+  { key: "bill3", vendor: "local", date: -40, due: -40, paid: -38, method: "cash" },
   { key: "bill4", vendor: "services", date: -90, due: -60, voided: "Entered twice — the vendor's statement shows one charge." },
   // US-ONB-30: part-paid and due this week.
-  { key: "bill5", vendor: "supplier", date: -10, due: 4, paid: -2, part: 0.4, job: "a" },
+  { key: "bill5", vendor: "supplier", date: -10, due: 4, paid: -2, part: 0.4, job: "a", method: "bank_transfer" },
   { key: "bill6", vendor: "supplier_far", date: -3, due: 27, draft: true },
   { key: "bill7", vendor: "services", date: -2, due: 28, draft: true },
-] as const satisfies readonly { key: string; vendor: VendorSlot; date: number; due: number; paid?: number; part?: number; voided?: string; draft?: boolean; job?: "a" | "b" | "c" }[];
+  // US-ONB-33: 90+ days late from the part-paid bill's vendor (two open bills), 31–60 days late on a job, and two paid together.
+  { key: "bill8", vendor: "supplier", date: -130, due: -100 },
+  { key: "bill9", vendor: "services", date: -75, due: -45, job: "b" },
+  { key: "bill10", vendor: "supplier_far", date: -50, due: -20 },
+  { key: "bill11", vendor: "supplier_far", date: -44, due: -14 },
+] as const satisfies readonly { key: string; vendor: VendorSlot; date: number; due: number; paid?: number; part?: number; method?: "bank_transfer" | "cheque" | "cash"; voided?: string; draft?: boolean; job?: "a" | "b" | "c" }[];
+
+/** US-ONB-33 — the payment that pays two bills together, about five weeks ago, with its remittance advice emailed the next day. */
+export const SHARED_VENDOR_PAYMENT = { vendor: "supplier_far", bills: ["bill10", "bill11"], inDays: -35, remittanceInDays: -34 } as const satisfies { vendor: VendorSlot; bills: readonly BillKey[]; inDays: number; remittanceInDays: number };
+
+/** US-ONB-33 — a bank transfer's or cheque's reference, the way the country's banks write it. */
+export function vendorPaymentReference(country: string, method: "bank_transfer" | "cheque", serial: number): string {
+  if (method === "cheque") return `Chq ${String(4500 + serial).padStart(6, "0")}`;
+  const prefix: Record<string, string> = { US: "ACH", IN: "NEFT", GB: "BACS", AU: "EFT", NZ: "EFT", AE: "TT", SA: "TT" };
+  return `${prefix[country] ?? "TRF"} ${String(48213 + serial * 7919).slice(-6)}`;
+}
+
 export type BillKey = (typeof BILL_TIMELINE)[number]["key"];
 
 /** US-ONB-31 — the kind of shop a demo expense's receipt comes from, by what it was for. */
@@ -441,7 +457,19 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
       }),
       outcome: "draft" in step ? ("draft" as const) : "voided" in step ? ("voided" as const) : ("recorded" as const),
       ...("job" in step && pack.jobs ? { job: step.job } : {}),
-      ...("paid" in step ? { payments: [{ inDays: step.paid, ...("part" in step ? { amount: step.part } : {}) }] } : {}),
+      ...("paid" in step
+        ? {
+            payments: [
+              {
+                inDays: step.paid,
+                ...("part" in step ? { amount: step.part } : {}),
+                // US-ONB-33: how it was paid, with the transfer's or cheque's reference.
+                method: step.method,
+                ...(step.method !== "cash" ? { reference: vendorPaymentReference(country.country, step.method, Number(step.key.slice(4))) } : {}),
+              },
+            ],
+          }
+        : {}),
       ...("voided" in step ? { voidReason: step.voided } : {}),
     };
   });
@@ -556,6 +584,16 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     ...(pack.jobs && pack.variationOrder ? { variationOrder: { job: "a", notes: pack.variationOrder.notes, lines: pack.variationOrder.lines.map(freeLine) } } : {}),
     bills,
     vendorCredits,
+    vendorPayments: [
+      {
+        contact: SHARED_VENDOR_PAYMENT.vendor,
+        bills: SHARED_VENDOR_PAYMENT.bills.map((key) => pack.bills[key].ref),
+        inDays: SHARED_VENDOR_PAYMENT.inDays,
+        method: "bank_transfer" as const,
+        reference: vendorPaymentReference(country.country, "bank_transfer", 10),
+        remittanceInDays: SHARED_VENDOR_PAYMENT.remittanceInDays,
+      },
+    ],
     recurringBills,
     // US-ONB-32: goods categories default to the rate expenses carry here; one category archived.
     ...(country.expenseTax ? { categoryTaxDefault: country.expenseTax.rate } : {}),

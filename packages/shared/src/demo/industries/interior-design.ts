@@ -91,6 +91,11 @@ export const INTERIOR_DESIGN: IndustryPack = {
     bill5: { ref: "WPL-3402", lines: [{ name: "Laminates and edge band", quantity: 80, price: 28, in: { price: 1350, hsnSac: "4823", slab: 18 } }] },
     bill6: { ref: "LLC-7901", lines: [{ name: "Cove lighting strips", quantity: 50, price: 22, in: { price: 900, hsnSac: "9405", slab: 18 } }] },
     bill7: { ref: "CAD-1244", lines: [{ name: "Rendering plug-in — 3 seats", quantity: 3, price: 160, service: true, in: { price: 5200, hsnSac: "997331", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late on a job, and two paid together.
+    bill8: { ref: "WPL-3288", lines: [{ name: "Veneer sheets — walnut", quantity: 20, price: 65, in: { price: 2900, hsnSac: "4408", slab: 18 } }] },
+    bill9: { ref: "CAD-1215", lines: [{ name: "3D walkthrough render — showroom", quantity: 1, price: 450, service: true, in: { price: 15000, hsnSac: "998391", slab: 18 } }] },
+    bill10: { ref: "LLC-7820", lines: [{ name: "Wall washers", quantity: 12, price: 48, in: { price: 1900, hsnSac: "9405", slab: 18 } }] },
+    bill11: { ref: "LLC-7846", lines: [{ name: "LED drivers and dimmers", quantity: 10, price: 35, in: { price: 1400, hsnSac: "8504", slab: 18 } }] },
   },
   recurringBill: { name: "Design software subscription", line: { name: "Design software — monthly seats", quantity: 4, price: 85, service: true, in: { price: 2900, hsnSac: "997331", slab: 18 } } },
   expenses: {

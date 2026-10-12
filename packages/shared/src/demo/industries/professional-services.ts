@@ -85,6 +85,11 @@ export const PROFESSIONAL_SERVICES: IndustryPack = {
     bill5: { ref: "LLS-5611", lines: [{ name: "Document management add-on", quantity: 8, price: 40, service: true, in: { price: 1400, hsnSac: "997331", slab: 18 } }] },
     bill6: { ref: "JRS-0533", lines: [{ name: "Company filings search pack", quantity: 1, price: 450, service: true, in: { price: 14000, hsnSac: "9983", slab: 18 } }] },
     bill7: { ref: "MCS-3088", lines: [{ name: "Training room hire — full day", quantity: 1, price: 380, service: true, in: { price: 9500, hsnSac: "997212", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late, and two paid together.
+    bill8: { ref: "LLS-5488", lines: [{ name: "Payroll module — quarter", quantity: 1, price: 360, service: true, in: { price: 11000, hsnSac: "997331", slab: 18 } }] },
+    bill9: { ref: "MCS-3051", lines: [{ name: "Hot desks — 10 days", quantity: 10, price: 35, service: true, in: { price: 900, hsnSac: "997212", slab: 18 } }] },
+    bill10: { ref: "JRS-0468", lines: [{ name: "Case law search pack", quantity: 1, price: 320, service: true, in: { price: 9500, hsnSac: "9983", slab: 18 } }] },
+    bill11: { ref: "JRS-0481", lines: [{ name: "Land registry searches", quantity: 4, price: 45, service: true, in: { price: 1200, hsnSac: "9983", slab: 18 } }] },
   },
   recurringBill: { name: "Co-working desks", line: { name: "Dedicated desks — monthly", quantity: 3, price: 290, service: true, in: { price: 8500, hsnSac: "997212", slab: 18 } } },
   expenses: {

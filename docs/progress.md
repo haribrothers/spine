@@ -500,7 +500,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-ONB-30 · Explore bills and vendor credits at every stage
 - [x] US-ONB-31 · Explore expenses with their receipts
 - [x] US-ONB-32 · Explore expense categories that guide
-- [ ] US-ONB-33 · Explore vendor payments and payables you can pay from
+- [x] US-ONB-33 · Explore vendor payments and payables you can pay from
 - [x] US-INV-36 · Credit an invoice's lines, with their tax
 - [x] US-INV-37 · Start a credit note from the credit notes list
 - [x] US-INV-38 · See a credit note at a glance, with one next step

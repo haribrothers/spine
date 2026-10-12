@@ -236,9 +236,21 @@ export interface DemoPlanBill {
   lines: Extract<DemoPlanLine, { name: string }>[];
   outcome: "draft" | "recorded" | "voided";
   job?: string;
-  /** Full unless `amount` is a fraction of the total (US-ONB-30: a partly paid bill). */
-  payments?: { inDays: number | null; amount?: "full" | number }[];
+  /** Full unless `amount` is a fraction of the total (US-ONB-30: a partly paid bill); by bank transfer unless `method` says (US-ONB-33). */
+  payments?: { inDays: number | null; amount?: "full" | number; method?: DemoVendorPaymentMethod; reference?: string }[];
   voidReason?: string;
+}
+
+export type DemoVendorPaymentMethod = "bank_transfer" | "cheque" | "cash";
+
+/** US-ONB-33 — one vendor payment paying several plan bills (by number) in full, with its remittance advice emailed on a day. */
+export interface DemoPlanVendorPayment {
+  contact: string;
+  bills: string[];
+  inDays: number;
+  method: DemoVendorPaymentMethod;
+  reference?: string;
+  remittanceInDays?: number;
 }
 
 /** US-ONB-30 — a vendor credit, by the bill it's against (its number). */
@@ -328,6 +340,8 @@ export interface DemoPlan {
   variationOrder?: DemoPlanVariationOrder;
   bills: DemoPlanBill[];
   vendorCredits: DemoPlanVendorCredit[];
+  /** US-ONB-33 — payments across several bills. */
+  vendorPayments?: DemoPlanVendorPayment[];
   recurringBills: DemoPlanRecurringBill[];
   /**
    * US-ONB-32 (D-228) — the rate the template's goods categories default to

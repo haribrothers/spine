@@ -210,8 +210,11 @@ export function riverstonePlan(): DemoPlan {
     variationOrder: { job: "marina", notes: "Additional scope requested on site — see attached line items.", lines: [{ name: "Additional electrical outlets (site-requested)", quantity: 6, price: 8500n, tax: null }] },
     bills: [
       // US-ONB-30: part-paid and due this week.
-      { contact: "apexTimber", billNumber: "AT-20441", dateInDays: -10, dueInDays: 4, lines: [{ name: "Framing lumber delivery", quantity: 500, price: 850n, tax: null }], outcome: "recorded", job: "marina", payments: [{ inDays: null, amount: 0.4 }] },
+      { contact: "apexTimber", billNumber: "AT-20441", dateInDays: -10, dueInDays: 4, lines: [{ name: "Framing lumber delivery", quantity: 500, price: 850n, tax: null }], outcome: "recorded", job: "marina", payments: [{ inDays: null, amount: 0.4, method: "bank_transfer", reference: "ACH 552190" }] },
       { contact: "graniteState", billNumber: "GSC-8834", dateInDays: -35, dueInDays: -5, lines: [{ name: "Ready-mix concrete pour", quantity: 12, price: 18000n, tax: null }], outcome: "recorded" },
+      // US-ONB-33: Apex Timber's second open bill, 90+ days late, and Granite State's second, 31–60 days late.
+      { contact: "apexTimber", billNumber: "AT-20388", dateInDays: -125, dueInDays: -95, lines: [{ name: "Sheathing plywood", quantity: 60, price: 2400n, tax: null }], outcome: "recorded" },
+      { contact: "graniteState", billNumber: "GSC-8790", dateInDays: -70, dueInDays: -40, lines: [{ name: "Gravel base — 8 tons", quantity: 8, price: 6500n, tax: null }], outcome: "recorded" },
       { contact: "coastalSteel", billNumber: "CSM-5502", dateInDays: -3, dueInDays: 27, lines: [{ name: "Structural steel beams", quantity: 80, price: 4200n, tax: null }], outcome: "draft" },
       { contact: "northline", billNumber: "NEW-1190", dateInDays: -50, dueInDays: -20, lines: [{ name: "Electrical rough-in materials", quantity: 3, price: 45000n, tax: null }], outcome: "voided", voidReason: "Duplicate bill entered in error" },
       { contact: "apexTimber", billNumber: "AT-20502", dateInDays: -1, dueInDays: 29, lines: [{ name: "Treated decking boards", quantity: 120, price: 1150n, tax: null }], outcome: "draft" },

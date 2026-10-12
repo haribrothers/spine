@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-12 — Demo vendor payments and payables you can pay from (US-ONB-33, D-216)
+
+- **Payables (every industry demo):** open bills in every age but 61–90 days — the part-paid bill due this week, the overdue bill with credit (1–30), a new bill 31–60 days late on a job, and a new one 90+ days late from the part-paid bill's vendor, so that vendor has two bills to expand and pay together. Riverstone: Apex Timber's 90+ bill and Granite State's 31–60 bill.
+- **Vendor payments:** one payment pays two bills from the same vendor, about five weeks ago, with "Remittance advice emailed to …" in its Activity the next day (no email is sent); payments are by bank transfer with a reference, by cheque with its number and in cash, each recorded on its own day. Riverstone's payment has a method and reference.
+- **Shared:** `BILL_TIMELINE` gains `bill8` to `bill11`, each industry pack their refs and lines; plan bill payments gain `method` and `reference`; plans gain `vendorPayments`.
+- **Tests:** the US-ONB-33 checks in `us-onb-24-28` (Riverstone, India construction, UK IT services). QA script section 225.
+
 ### 2026-10-12 — Payables you can pay from (US-PUR-56 to US-PUR-60, D-230)
 
 - **By vendor (US-PUR-56):** Payables opens on "By vendor" — one row per vendor we owe: open bills, how late the oldest is, overdue, total owed, credit to use (their open vendor credits) and when we last paid them; most overdue money first; each row expands to its bills; a totals row. `GET /reports/payables` gains `vendors`.

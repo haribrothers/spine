@@ -291,6 +291,44 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
         expect(usage.reduce((n, u) => n + u.expenseCount, 0)).toBe((await get<unknown[]>("/expenses")).length);
       });
 
+      it("US-ONB-33 · bills owing at every age but one, and vendor payments that read like real ones", async () => {
+        const riverstone = demo.name === "Riverstone Builders";
+        type Payables = { buckets: Record<string, string>; bills: { contactId: string; bucket: string; jobId: string | null }[]; vendors: { contactId: string; name: string; billCount: number }[]; dueSoon: { count: number } };
+        const ap = await get<Payables>("/reports/payables");
+        for (const age of ["0-30", "31-60", "90+"]) expect(BigInt(ap.buckets[age]!), age).toBeGreaterThan(0n);
+        expect(ap.buckets["61-90"]).toBe("0");
+        expect(ap.dueSoon.count).toBeGreaterThanOrEqual(1);
+        // The part-paid bill's vendor also has the 90+ bill: two open bills to expand and pay together.
+        const late = ap.bills.find((b) => b.bucket === "90+")!;
+        const twoBills = ap.vendors.find((v) => v.contactId === late.contactId)!;
+        expect(twoBills.billCount).toBe(2);
+        if (riverstone) expect(twoBills.name).toBe("Apex Timber Supply");
+        if (!riverstone) expect(ap.bills.find((b) => b.bucket === "31-60")!.jobId).not.toBeNull();
+
+        type Payment = { id: string; method: string; reference: string | null; date: string; paidTo: { number: string }[] };
+        const paid = await get<Payment[]>("/vendor-payments");
+        for (const p of paid.filter((p) => p.method !== "cash")) expect(p.reference, p.method).toBeTruthy();
+        if (riverstone) {
+          expect(paid.map((p) => [p.method, p.reference])).toEqual([["bank_transfer", "ACH 552190"]]);
+          return;
+        }
+        expect(new Set(paid.map((p) => p.method))).toEqual(new Set(["bank_transfer", "cheque", "cash"]));
+        const ages = paid.map((p) => Math.round((Date.now() - new Date(`${p.date.slice(0, 10)}T12:00:00Z`).getTime()) / DAY));
+        expect(Math.min(...ages)).toBeLessThanOrEqual(7);
+        expect(Math.max(...ages)).toBeGreaterThanOrEqual(120);
+        // One pays two bills; its remittance advice was emailed the day after it was recorded.
+        const shared = paid.filter((p) => p.paidTo.length === 2);
+        expect(shared).toHaveLength(1);
+        const activity = await get<{ type: string; at: string; detail?: string | null }[]>(`/vendor-payments/${shared[0]!.id}/activity`);
+        const recorded = activity.find((a) => a.type === "recorded")!;
+        const emailed = activity.find((a) => a.type === "remittance_emailed")!;
+        expect(emailed.detail).toMatch(/@/);
+        expect(Math.round((new Date(emailed.at).getTime() - new Date(recorded.at).getTime()) / DAY)).toBe(1);
+        expect(Math.round((Date.now() - new Date(recorded.at).getTime()) / DAY)).toBe(35);
+        // Nothing was sent.
+        expect((await db.select().from(emailLog).where(and(eq(emailLog.orgId, orgId), eq(emailLog.kind, "remittance")))).length).toBe(0);
+      });
+
       it("deletes the demo's bundles, vendor credits and recurring bill with it", async () => {
         const receipts = (await get<{ receiptFileId: string | null }[]>("/expenses")).map((e) => e.receiptFileId).filter((id): id is string => !!id);
         const res = await fetch(`${testApp.baseUrl}/demo-data`, { method: "DELETE", headers: { cookie, "Idempotency-Key": randomUUID() } });

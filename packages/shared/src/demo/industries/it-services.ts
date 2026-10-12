@@ -91,6 +91,11 @@ export const IT_SERVICES: IndustryPack = {
     bill5: { ref: "CBH-INV-3402", lines: [{ name: "Managed database — portal", quantity: 1, price: 380, service: true, in: { price: 13500, hsnSac: "998315", slab: 18 } }] },
     bill6: { ref: "DHT-1003", lines: [{ name: "Contract QA engineer — 80 hours", quantity: 80, price: 45, service: true, in: { price: 1100, hsnSac: "998314", slab: 18 } }] },
     bill7: { ref: "CSH-7835", lines: [{ name: "Docking stations", quantity: 6, price: 140, in: { price: 7800, hsnSac: "8471", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late on a job, and two paid together.
+    bill8: { ref: "CBH-INV-3288", lines: [{ name: "Backup storage — quarter", quantity: 1, price: 240, service: true, in: { price: 8500, hsnSac: "998315", slab: 18 } }] },
+    bill9: { ref: "CSH-7810", lines: [{ name: "Test devices — tablets", quantity: 3, price: 310, in: { price: 19500, hsnSac: "8471", slab: 18 } }] },
+    bill10: { ref: "DHT-0954", lines: [{ name: "Contract designer — 24 hours", quantity: 24, price: 50, service: true, in: { price: 1300, hsnSac: "998314", slab: 18 } }] },
+    bill11: { ref: "DHT-0968", lines: [{ name: "Contract tester — 16 hours", quantity: 16, price: 40, service: true, in: { price: 1000, hsnSac: "998314", slab: 18 } }] },
   },
   recurringBill: { name: "Device leasing", line: { name: "Test devices — monthly lease", quantity: 5, price: 45, service: true, in: { price: 1600, hsnSac: "997315", slab: 18 } } },
   expenses: {
