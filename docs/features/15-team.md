@@ -13,6 +13,7 @@ Who can use Spine and what they can do: an Owner-only area with real pages for u
 | F-TEAM-02 | Owners and the Primary Owner | P1 | 0 | `UserActionsMenu`, `DemoteOwnerConfirm`, `TransferPrimaryOwnerDialog` |
 | F-TEAM-03 | Teams and the privilege matrix | P1 | 0 | `TeamTeams`, `CreateTeamDialog`, `TeamMembers`, `TeamPrivileges`, `TeamPrivilegesExpanded` |
 | F-TEAM-04 | People and access fixes | P2 | 6 | `TeamUsers`, `PromoteOwnerConfirm`, `EmailInvite` |
+| F-TEAM-05 | Users you can manage from: the shared list layout, Teams and access on each person, invites with Teams, Staff ↔ Field, and safer actions | P2 | Refinements | `TeamUsersRefined`, `TeamUsersDark`, `TeamInvites`, `InvitePeopleDialog`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm` |
 
 ## User stories
 
@@ -275,3 +276,79 @@ Review finding: Stage 5 #30
 - Screens: the trimmed sidebar is drawn on `DashboardFieldRedesign` (Phase 7); this story ships the sidebar filter alone in Phase 6, on today's dashboard.
 - UI: `apps/web/src/lib/nav-sections.tsx` filters items with `useCapabilities()` and role; each nav item declares its required capability or role.
 - The nav filter is a convenience; the server checks stay authoritative (07-security).
+
+### US-TEAM-19 · See everyone at a glance on the list layout
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamUsersRefined`, `TeamUsersDark`
+**As** an owner, **I want** Users to work like every other list, **so that** I can find a person and see how they stand without reading the whole page.
+
+Decision: D-210, D-222, D-232
+
+**Acceptance criteria**
+- **Given** Users, **when** it opens, **then** the header has "Invite people"; tabs "Active", "Deactivated" and "Invites" (with counts) sit under it; below them the cards, the filter bar (Role — "All roles", "Owner", "Staff", "Field" — on the left; "Updated just now" and Refresh on the right) and the search bar (name or email, with Columns). Tab, role, card and search are kept in the address.
+- **Given** the cards, **when** I look, **then** they read People (owners · staff · field), Staff without a Team (presses to show only them; warning when not zero) and Pending invites (with how many expired, opening the Invites tab).
+- **Given** a row, **when** it shows, **then** it has the avatar, name and email with "You", "Primary Owner", "Demo" and "Deactivated" badges where they apply, the role, the Teams (US-TEAM-20), "Last active" ("2 hours ago", "3 Oct", or "Never signed in") and "Joined" in the business's date format.
+- **Given** a row's menu, **when** I open it, **then** each item has its icon (D-222) and only appears where it applies: What they can open, Manage Teams (Staff), Change to Field / Change to Staff (US-TEAM-22), Promote to Owner (Staff), Demote to Staff (an Owner other than the Primary Owner and me), Transfer primary ownership (my own row, as Primary Owner), Deactivate or Reactivate.
+
+**Implementation notes**
+- API: for an Owner, `GET /org/members` rows gain `teams` (`[{ id, name }]`), `lastActiveAt` (the newest session's last use) and `isDemo`; other members get the rows as today.
+
+### US-TEAM-20 · See and fix each person's Teams and access
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ManageTeamsDialog`, `UserAccessDrawer`
+**As** an owner, **I want** to see each Staff member's Teams and what they can open, and change their Teams from Users, **so that** nobody joins and finds they can't do anything.
+
+Decision: D-232
+
+**Acceptance criteria**
+- **Given** a Staff member's row, **when** it shows, **then** their Teams are listed as chips (opening the Team); with none it reads "No Team — can't open anything" in the warning colour. Owners read "Everything"; Field reads "Field access".
+- **Given** Manage Teams, **when** the dialog opens, **then** it lists every Team with a tick for those they're on and each Team's member count; saving updates their Teams at once and the toast says what changed ("Sarah Mendes is on General Staff and Accounts").
+- **Given** "What they can open", **when** the drawer opens, **then** it shows their role, Teams, the sections of Spine they can open (as the sidebar would show them) and how many permissions they have of each group, with "Edit on <Team>" links; for an Owner it says "Owners can open everything", for Field "Field access is fixed".
+
+**Implementation notes**
+- API: `PUT /org/members/:id/teams { teamIds }` (Owner; Staff only, else 400 "Only Staff are on Teams."); `GET /org/members/:id/access` → `{ role, teams, capabilities }` (Owner) — the same effective list the API enforces.
+
+### US-TEAM-21 · Invite several people, onto their Teams
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvitePeopleDialog`, `TeamInvites`
+**As** an owner, **I want** to invite a few people at once and put new Staff straight onto their Teams, **so that** they can work the moment they join.
+
+Decision: D-020, D-232
+
+**Acceptance criteria**
+- **Given** "Invite people", **when** the dialog opens, **then** it asks for emails (one or more, separated by commas, spaces or new lines; up to 20), the role ("Staff" or "Field") and, for Staff, the Teams they'll join (General Staff ticked by default); "Send invites (3)" sends them all.
+- **Given** some emails can't be invited, **when** I send, **then** the others are sent and the dialog lists which weren't and why ("already a member", "already invited — resend it instead", "not an email address").
+- **Given** a Staff invite with Teams, **when** it's accepted, **then** the new member is on those Teams.
+- **Given** the Invites tab, **when** it shows, **then** each invite has the email, role, Teams, "Invited by <name> · 3 Oct", and "Expires in 5 days" or "Expired"; its menu (with icons) offers Copy invite link, Resend and Cancel invite (asks first, as today).
+- **Given** Copy invite link, **when** I press it, **then** the link is copied and the toast says "Only <email> can use it, signed in with that address."
+
+**Implementation notes**
+- API: `POST /org/invitations` also takes `{ emails: string[], role, teamIds? }` → `{ invited: [{ id, email }], skipped: [{ email, reason }] }` (`{ email, role }` still works); `GET /org/invitations` rows gain `inviterName`, `createdAt`, `teams` and `acceptUrl`.
+- Data: `invitation_teams` (`invitation_id` → invitation, cascade; `team_id` → teams, cascade), applied when the invitation is accepted.
+
+### US-TEAM-22 · Change someone between Staff and Field
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ChangeRoleConfirm`
+**As** an owner, **I want** to move a person between Staff and Field, **so that** a promotion from the site to the office doesn't mean a new account.
+
+Decision: D-232
+
+**Acceptance criteria**
+- **Given** a Field member's menu, **when** I choose "Change to Staff", **then** "Change Marcus Webb to Staff?" says they'll have their Teams' access instead of Field access and asks which Teams to put them on (General Staff ticked); confirming changes the role and Teams together.
+- **Given** a Staff member's menu, **when** I choose "Change to Field", **then** the confirm says they'll only see the jobs they're assigned to, without money, and they'll come off their Teams (named); confirming changes it.
+- **Given** an Owner, **when** the menu shows, **then** there's no Change to Field (an Owner is demoted to Staff first); Owner is never set this way.
+- **Given** either change, **when** it's done, **then** the toast says it, it's in the audit log as a role change, and the person's next request uses the new role.
+
+**Implementation notes**
+- API: `PUT /org/members/:id/role { role: "staff" | "field", teamIds? }` (Owner); only Staff ↔ Field (else 400 "Only Staff and Field can be changed this way."); to Field removes their Team memberships.
+
+### US-TEAM-23 · Act on people safely
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamUsersRefined`
+**As** an owner, **I want** people actions to ask first and say what happened, **so that** access never changes by accident.
+
+Decision: D-218, D-223, D-232
+
+**Acceptance criteria**
+- **Given** my own row, **when** it shows, **then** it's marked "You" and offers no Deactivate; the API refuses it ("You can't deactivate yourself.").
+- **Given** Reactivate, **when** I choose it, **then** "Reactivate <name>?" says they get their previous role and Teams back and can sign in again.
+- **Given** any people action (deactivate, reactivate, promote, demote, change role, Teams, invite, resend, cancel), **when** it's done, **then** a toast says what happened (D-223) and a failure says what to do next above the list.
+- **Given** the demo's people, **when** they're listed, **then** they're marked "Demo" and the Deactivate confirm notes they go when the demo data is deleted.
+
+**Implementation notes**
+- API: `PUT /org/members/:id/deactivate` refuses the caller's own member (400).

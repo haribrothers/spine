@@ -956,6 +956,14 @@ Total: 525 stories.
 - US-BANK-16 · Reconcile a long statement quickly (P2)
 - US-BANK-17 · Keep a reconciliation report (P2)
 
+*Team*
+
+- US-TEAM-19 · See everyone at a glance on the list layout (P2)
+- US-TEAM-20 · See and fix each person's Teams and access (P2)
+- US-TEAM-21 · Invite several people, onto their Teams (P2)
+- US-TEAM-22 · Change someone between Staff and Field (P2)
+- US-TEAM-23 · Act on people safely (P2)
+
 ## Phase 10 · AI assistant
 
 **Goal:** An owner switches on an AI assistant, with their own local or cloud provider, that fills in bills and expenses, drafts emails and quote lines and suggests bank matches — and nothing is saved until a person saves.
