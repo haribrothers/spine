@@ -21,16 +21,22 @@ export const CAPABILITIES = [
   "banking.view",
   "banking.record",
   "banking.reconcile",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "contacts.open",
   "contacts.edit_own",
   "contacts.edit_others",
   "contacts.delete_own",
   "contacts.delete_others",
   "contacts.manage_persons",
   "contacts.manage_addresses",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "catalog.open",
   "catalog.edit_own",
   "catalog.edit_others",
   "catalog.delete_own",
   "catalog.delete_others",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "leads.open",
   "leads.edit_own",
   "leads.edit_others",
   "leads.delete_own",
@@ -39,6 +45,8 @@ export const CAPABILITIES = [
   "activities.edit_others",
   "activities.delete_own",
   "activities.delete_others",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "quotes.open",
   "quotes.edit_own",
   "quotes.edit_others",
   "quotes.delete_own",
@@ -47,6 +55,8 @@ export const CAPABILITIES = [
   "quotes.revise",
   "quotes.approve_discount",
   "quotes.accept_in_person",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "invoices.open",
   "invoices.edit_own",
   "invoices.edit_others",
   "invoices.delete_own",
@@ -56,6 +66,8 @@ export const CAPABILITIES = [
   "invoices.send",
   "invoices.send_reminder",
   "invoices.manage_recurring",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "payments.open",
   "payments.edit_own",
   "payments.edit_others",
   "payments.delete_own",
@@ -63,11 +75,15 @@ export const CAPABILITIES = [
   "payments.apply_credit",
   "payments.send_receipt",
   "payments.refund",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "credit_notes.open",
   "credit_notes.edit_own",
   "credit_notes.edit_others",
   "credit_notes.delete_own",
   "credit_notes.delete_others",
   "credit_notes.issue",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "expenses.view_others",
   "expenses.edit_own",
   "expenses.edit_others",
   "expenses.delete_own",
@@ -80,6 +96,8 @@ export const CAPABILITIES = [
   "expense_categories.edit_others",
   "expense_categories.delete_own",
   "expense_categories.delete_others",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "vendor_bills.open",
   "vendor_bills.edit_own",
   "vendor_bills.edit_others",
   "vendor_bills.delete_own",
@@ -87,6 +105,8 @@ export const CAPABILITIES = [
   "vendor_bills.record",
   "vendor_bills.void",
   "vendor_bills.manage_recurring",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "vendor_credits.open",
   "vendor_credits.edit_own",
   "vendor_credits.edit_others",
   "vendor_credits.delete_own",
@@ -94,10 +114,14 @@ export const CAPABILITIES = [
   "vendor_credits.record",
   "vendor_credits.apply",
   "vendor_credits.void",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "vendor_payments.open",
   "vendor_payments.edit_own",
   "vendor_payments.edit_others",
   "vendor_payments.delete_own",
   "vendor_payments.delete_others",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "jobs.open",
   "jobs.edit_own",
   "jobs.edit_others",
   "jobs.release_retention",
@@ -112,6 +136,8 @@ export const CAPABILITIES = [
   "variation_orders.edit_own",
   "variation_orders.edit_others",
   "variation_orders.apply",
+  // US-TEAM-30 (D-235): the section opens for the Team.
+  "meetings.open",
   "meetings.edit_own",
   "meetings.edit_others",
   "meetings.delete_own",
@@ -177,6 +203,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Import bank statements, match them to Spine's entries, and finish or undo reconciliations. Needs View bank balances and registers.",
     group: "Banking",
   },
+  "contacts.open": {
+    label: "Open Contacts",
+    description: "See the Contacts section and every contact's page. Off: Contacts leaves the sidebar and its pages say there's no access; forms elsewhere still list contacts by name.",
+    group: "Manage Contacts",
+  },
   "contacts.edit_own": {
     label: "Create/edit own contacts",
     description:
@@ -208,6 +239,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Add, edit or remove a contact's addresses, on any contact. They also need permission to edit the contact itself.",
     group: "Manage Contacts",
   },
+  "catalog.open": {
+    label: "Open Catalogue",
+    description: "See the Catalogue section and its items and bundles. Off: it leaves the sidebar; quote, invoice and bill lines still pick items.",
+    group: "Manage Catalogue",
+  },
   "catalog.edit_own": {
     label: "Create/edit own catalogue",
     description:
@@ -228,6 +264,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Archive/delete others' catalogue",
     description: "Archive, restore, or delete a catalogue item that a different user created.",
     group: "Manage Catalogue",
+  },
+  "leads.open": {
+    label: "Open Pipeline",
+    description: "See the Pipeline board and its leads. Off: Pipeline leaves the sidebar and its pages say there's no access.",
+    group: "Manage Leads",
   },
   "leads.edit_own": {
     label: "Create/edit own leads",
@@ -271,6 +312,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Delete an activity that a different user logged.",
     group: "Manage Activities",
   },
+  "quotes.open": {
+    label: "Open Quotes",
+    description: "See the Quotes section and its quotes. Off: Quotes leaves the sidebar and its pages say there's no access; other pages name a quote without linking it.",
+    group: "Manage Quotes",
+  },
   "quotes.edit_own": {
     label: "Create/edit own quotes",
     description:
@@ -311,6 +357,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Accept a quote in person",
     description: "Show a quote on a phone or tablet and record the customer's acceptance with their signature, on site.",
     group: "Manage Quotes",
+  },
+  "invoices.open": {
+    label: "Open Invoices",
+    description: "See the Invoices section and its invoices. Off: Invoices leaves the sidebar; recording a payment still lists the customer's invoices to allocate.",
+    group: "Manage Invoices",
   },
   "invoices.edit_own": {
     label: "Create/edit own invoices",
@@ -358,6 +409,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "See, set up, change, pause and delete recurring invoices — schedules that create and can issue invoices automatically.",
     group: "Manage Invoices",
   },
+  "payments.open": {
+    label: "Open Payments",
+    description: "See the Payments section and its payments. Off: Payments leaves the sidebar and its pages say there's no access.",
+    group: "Manage Payments",
+  },
   "payments.edit_own": {
     label: "Record own payments",
     description:
@@ -394,6 +450,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Pay a customer back out of their credit — an unallocated payment or a credit note's excess. Money leaves the bank, so it's its own right.",
     group: "Manage Payments",
   },
+  "credit_notes.open": {
+    label: "Open Credit Notes",
+    description: "See the Credit Notes section and its credit notes. Off: Credit Notes leaves the sidebar and its pages say there's no access.",
+    group: "Manage Credit Notes",
+  },
   "credit_notes.edit_own": {
     label: "Create/edit own credit notes",
     description:
@@ -419,6 +480,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Issue a credit note",
     description: "Issue a draft credit note: it gets its number and is posted to the books. Issuing can't be undone, so it's separate from editing.",
     group: "Manage Credit Notes",
+  },
+  "expenses.view_others": {
+    label: "See everyone's expenses",
+    description: "See every expense in the business. Off: Expenses shows only their own, which they can always record and see.",
+    group: "Manage Expenses",
   },
   "expenses.edit_own": {
     label: "Submit/edit own expenses",
@@ -482,6 +548,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Archive, restore, or delete an expense category that a different user created.",
     group: "Manage Expense Categories",
   },
+  "vendor_bills.open": {
+    label: "Open Vendor Bills",
+    description: "See the Vendor Bills section and its bills. Off: it leaves the sidebar; paying a vendor still lists their bills to allocate.",
+    group: "Manage Vendor Bills",
+  },
   "vendor_bills.edit_own": {
     label: "Create/edit own vendor bills",
     description:
@@ -518,6 +589,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "See, set up, change, pause and delete recurring bills — schedules that create, and can record, vendor bills automatically.",
     group: "Manage Vendor Bills",
   },
+  "vendor_credits.open": {
+    label: "Open Vendor Credits",
+    description: "See the Vendor Credits section and its credits. Off: Vendor Credits leaves the sidebar and its pages say there's no access.",
+    group: "Vendor credits",
+  },
   "vendor_credits.edit_own": {
     label: "Create/edit own vendor credits",
     description: "Create vendor credit drafts, and edit drafts this user created.",
@@ -553,6 +629,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Void a recorded vendor credit that has nothing applied or refunded.",
     group: "Vendor credits",
   },
+  "vendor_payments.open": {
+    label: "Open Vendor Payments",
+    description: "See the Vendor Payments section and its payments. Off: Vendor Payments leaves the sidebar and its pages say there's no access.",
+    group: "Manage Vendor Payments",
+  },
   "vendor_payments.edit_own": {
     label: "Create own vendor payments",
     description:
@@ -573,6 +654,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Delete others' vendor payments",
     description: "Delete a vendor payment that a different user created (only possible while it has zero allocation).",
     group: "Manage Vendor Payments",
+  },
+  "jobs.open": {
+    label: "Open Jobs",
+    description: "See the Jobs section and every job's page. Off: Jobs leaves the sidebar; expenses and bills still pick a job.",
+    group: "Manage Jobs",
   },
   "jobs.edit_own": {
     label: "Create/edit own jobs",
@@ -645,6 +731,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Fold an accepted variation order's total into a job's contract value — a one-way billing action, not an edit.",
     group: "Manage Jobs",
   },
+  "meetings.open": {
+    label: "Open Meetings",
+    description: "See the Meetings calendar and its meetings. Off: Meetings leaves the sidebar and its pages say there's no access.",
+    group: "Manage Meetings",
+  },
   "meetings.edit_own": {
     label: "Create/edit own meetings",
     description:
@@ -672,6 +763,19 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
 export const DEFAULT_TEAM_NAME = "General Staff";
 
 export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
+  "contacts.open": true,
+  "catalog.open": true,
+  "leads.open": true,
+  "quotes.open": true,
+  "invoices.open": true,
+  "payments.open": true,
+  "credit_notes.open": true,
+  "expenses.view_others": true,
+  "vendor_bills.open": true,
+  "vendor_credits.open": true,
+  "vendor_payments.open": true,
+  "jobs.open": true,
+  "meetings.open": true,
   "reports.view_dashboard_summary": true,
   "reports.view_receivables": true,
   "reports.view_payables": true,
@@ -784,9 +888,59 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
  * depends on it. Applied by the API when a Team's privileges are saved, so
  * the matrix and the guard never disagree.
  */
+/** US-TEAM-30 (D-235) — the Open permission each section's actions need, by capability prefix. */
+const OPEN_FOR_PREFIX: Record<string, { open: Capability; section: string }> = {
+  contacts: { open: "contacts.open", section: "Contacts" },
+  activities: { open: "contacts.open", section: "Contacts" },
+  catalog: { open: "catalog.open", section: "Catalogue" },
+  leads: { open: "leads.open", section: "Pipeline" },
+  quotes: { open: "quotes.open", section: "Quotes" },
+  invoices: { open: "invoices.open", section: "Invoices" },
+  payments: { open: "payments.open", section: "Payments" },
+  credit_notes: { open: "credit_notes.open", section: "Credit Notes" },
+  vendor_bills: { open: "vendor_bills.open", section: "Vendor Bills" },
+  vendor_credits: { open: "vendor_credits.open", section: "Vendor Credits" },
+  vendor_payments: { open: "vendor_payments.open", section: "Vendor Payments" },
+  jobs: { open: "jobs.open", section: "Jobs" },
+  milestones: { open: "jobs.open", section: "Jobs" },
+  job_notes: { open: "jobs.open", section: "Jobs" },
+  job_photos: { open: "jobs.open", section: "Jobs" },
+  variation_orders: { open: "jobs.open", section: "Jobs" },
+  meetings: { open: "meetings.open", section: "Meetings" },
+};
+
+/** Expenses: a person's own are always theirs; acting on anyone else's needs to see them. */
+const NEEDS_EVERYONES_EXPENSES: Capability[] = ["expenses.edit_others", "expenses.delete_others", "expenses.approve", "expenses.reject", "expenses.mark_billed", "expenses.bill_to_customer"];
+
+/** The Open permission (or "See everyone's expenses") a capability needs, if any. */
+function openRule(capability: Capability): { requires: Capability[]; reason: string } | undefined {
+  if (NEEDS_EVERYONES_EXPENSES.includes(capability)) return { requires: ["expenses.view_others"], reason: "Acting on other people's expenses needs seeing everyone's." };
+  const rule = OPEN_FOR_PREFIX[capability.split(".")[0]!];
+  if (!rule || rule.open === capability) return undefined;
+  return { requires: [rule.open], reason: `Working in ${rule.section} needs ${rule.section} open.` };
+}
+
 export const CAPABILITY_REQUIRES: Partial<Record<Capability, { requires: Capability[]; reason: string }>> = {
   "banking.reconcile": { requires: ["banking.view"], reason: "Reconciling needs to see the account." },
+  ...Object.fromEntries(CAPABILITIES.map((c) => [c, openRule(c)]).filter(([, rule]) => rule)),
 };
+
+/** US-TEAM-32 — each section's Open permission and its label, in sidebar order. */
+export const SECTION_OPEN_CAPABILITIES: { href: string; section: string; capability: Capability }[] = [
+  { href: "/contacts", section: "Contacts", capability: "contacts.open" },
+  { href: "/leads", section: "Pipeline", capability: "leads.open" },
+  { href: "/meetings", section: "Meetings", capability: "meetings.open" },
+  { href: "/catalog", section: "Catalogue", capability: "catalog.open" },
+  { href: "/quotes", section: "Quotes", capability: "quotes.open" },
+  { href: "/jobs", section: "Jobs", capability: "jobs.open" },
+  { href: "/invoices", section: "Invoices", capability: "invoices.open" },
+  { href: "/credit-notes", section: "Credit Notes", capability: "credit_notes.open" },
+  { href: "/payments", section: "Payments", capability: "payments.open" },
+  { href: "/vendor-bills", section: "Vendor Bills", capability: "vendor_bills.open" },
+  { href: "/vendor-credits", section: "Vendor Credits", capability: "vendor_credits.open" },
+  { href: "/expenses", section: "Expenses", capability: "expenses.view_others" },
+  { href: "/vendor-payments", section: "Vendor Payments", capability: "vendor_payments.open" },
+];
 
 /** The privilege changes to save once implied ones are added (US-BANK-12). An explicit change in the same request wins. */
 export function withImpliedPrivileges(changes: { capability: Capability; granted: boolean }[]): { capability: Capability; granted: boolean }[] {

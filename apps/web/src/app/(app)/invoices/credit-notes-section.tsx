@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
-import Link from "next/link";
 import { formatMoney } from "../../../lib/money";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { useToast } from "../../../components/toast-host";
 
+import { SectionLink } from "../../../components/section-link";
 interface CreditNoteRow {
   id: string;
   number: string | null;
@@ -56,7 +56,7 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
           <div className="flex flex-col divide-y divide-border">
             {issued.map((cn) => (
               <div key={cn.id} className="flex items-center gap-2 py-2">
-                <Link
+                <SectionLink
                   href={`/credit-notes/${cn.id}`}
                   className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
@@ -65,7 +65,7 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
                     {cn.reason && <p className="text-[12px] text-on-surface-muted">{cn.reason}</p>}
                   </div>
                   <span className="shrink-0 text-[13px] tabular-nums text-on-surface">{formatMoney(-BigInt(cn.totalAmount), cn.currency)}</span>
-                </Link>
+                </SectionLink>
                 {canEmail && (
                   <Button variant="secondary" size="sm" onClick={() => setEmailing(cn)} aria-label={`Email credit note ${cn.number ?? ""}`.trim()}>
                     Email

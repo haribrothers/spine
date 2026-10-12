@@ -47,8 +47,8 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
     await expect(page.getByRole("tab", { name: "Permissions" })).toHaveAttribute("aria-selected", "true");
     const panel = page.getByTestId("members-will-open");
     await expect(panel.getByRole("listitem").filter({ hasText: "Banking" })).toContainText("can work here");
-    // Reading quotes needs no permission, but Accounts allows nothing there.
-    await expect(panel.getByRole("listitem").filter({ hasText: "Quotes" })).toContainText("view only");
+    // US-TEAM-30: Accounts doesn't open Quotes.
+    await expect(panel.getByRole("listitem").filter({ hasText: "Quotes" })).toContainText("can't open");
 
     // A taken name is refused under the field.
     await page.goto("/team/teams");
@@ -98,7 +98,7 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
     await page.getByRole("tab", { name: "Permissions" }).click();
     await expect(page).toHaveURL(/tab=permissions/);
     await page.getByRole("button", { name: "Manage Catalogue" }).click();
-    const record = page.getByRole("switch", { name: "Create/edit own catalogue" });
+    const record = page.getByRole("switch", { name: "Open Catalogue" });
     await expect(record).not.toBeChecked();
     await record.click();
     await expect(record).toBeChecked();
@@ -113,7 +113,7 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
 
     await page.getByTestId("permissions-bar").getByRole("button", { name: "Save changes" }).click();
     const save = page.getByRole("alertdialog", { name: "Save 1 change to Accounts?" });
-    await expect(save.getByTestId("save-permissions-list")).toContainText("Turn on Create/edit own catalogue");
+    await expect(save.getByTestId("save-permissions-list")).toContainText("Turn on Open Catalogue");
     await save.getByRole("button", { name: "Save changes" }).click();
     await expect(toasts(page).filter({ hasText: "Accounts saved" })).toContainText("Neha Kapoor gets them at their next request");
     await expect(page.getByTestId("permissions-bar")).toHaveCount(0);
@@ -121,7 +121,7 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
     // US-TEAM-29 — the History tab tells it newest first.
     await page.getByRole("tab", { name: "History" }).click();
     const history = page.getByTestId("team-history");
-    await expect(history.getByRole("listitem").first()).toContainText("turned on Create/edit own catalogue");
+    await expect(history.getByRole("listitem").first()).toContainText("turned on Open Catalogue");
     await expect(history).toContainText("removed Kavya Iyer");
     await expect(history).toContainText("added Kavya Iyer");
     await page.getByRole("link", { name: "Open in audit log →" }).click();
@@ -131,7 +131,7 @@ test.describe("US-TEAM-25 to US-TEAM-29", () => {
     await page.goBack();
     await page.getByRole("tab", { name: "Permissions" }).click();
     await page.getByRole("button", { name: "Manage Catalogue" }).click();
-    await page.getByRole("switch", { name: "Create/edit own catalogue" }).click();
+    await page.getByRole("switch", { name: "Open Catalogue" }).click();
     await page.getByTestId("permissions-bar").getByRole("button", { name: "Save changes" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByTestId("permissions-bar")).toHaveCount(0);

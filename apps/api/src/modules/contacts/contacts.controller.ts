@@ -2,7 +2,8 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createContactSchema, updateContactSchema } from "@spine/shared";
 import { z } from "zod";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { PickerAllowed, RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
+import { SectionClosed, forPicker, pickFields } from "../../common/picker";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { ContactsService } from "./contacts.service";
@@ -19,6 +20,9 @@ import { ContactsService } from "./contacts.service";
  * be split by the user rather than risk one oversized request timing out.
  */
 const MAX_IMPORT_ROWS = 500;
+/** US-TEAM-31 — what another section's form needs of a contact when Contacts is closed for the caller. */
+const PICKER_FIELDS = ["id", "type", "isCompany", "name", "email", "taxId", "gstTreatment", "stateCode", "archivedAt"] as const;
+
 const importContactsSchema = z.object({ rows: z.array(createContactSchema).min(1).max(MAX_IMPORT_ROWS) });
 
 /**
@@ -40,6 +44,7 @@ const importContactsSchema = z.object({ rows: z.array(createContactSchema).min(1
  * lookup, via `requireOwnershipCapability` (capability.util.ts).
  */
 @Controller("contacts")
+@RequireSectionOpen("contacts.open")
 export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 
@@ -52,21 +57,26 @@ export class ContactsController {
    * param in an Express app is conventionally handled.
    */
   @Get()
+  @PickerAllowed()
   async list(
     @Session() session: UserSession,
+    @SectionClosed() closed: boolean,
     @Query("type") type?: string | string[],
     @Query("search") search?: string,
     @Query("includeArchived") includeArchived?: string,
   ) {
     const orgId = requireOrgId(session);
     const types = type === undefined ? undefined : (Array.isArray(type) ? type : [type]) as ("customer" | "vendor" | "both")[];
-    return this.contactsService.list(orgId, { types, search, includeArchived: includeArchived === "true" });
+    return forPicker(closed, await this.contactsService.list(orgId, { types, search, includeArchived: includeArchived === "true" }), PICKER_FIELDS);
   }
 
   @Get(":id")
-  async getOne(@Session() session: UserSession, @Param("id") id: string) {
+  @PickerAllowed()
+  async getOne(@Session() session: UserSession, @SectionClosed() closed: boolean, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.contactsService.getOne(orgId, id);
+    const contact = await this.contactsService.getOne(orgId, id);
+    // A closed section still gives forms the addresses (place of supply, a job's site).
+    return closed ? { ...pickFields(contact, PICKER_FIELDS), addresses: contact.addresses } : contact;
   }
 
   /**

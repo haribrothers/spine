@@ -1,5 +1,5 @@
 import { moduleOn } from "../../common/modules";
-import { getMemberRole } from "../../auth/capability.util";
+import { getMemberRole, hasCapability } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { BulkResult, createExpenseSchema, ExpenseActivityEntry, PossibleDuplicateExpense, updateExpenseSchema } from "@spine/shared";
 import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
@@ -99,9 +99,16 @@ export class ExpensesService {
    * US-OPS-20 — Field users read only the expenses they submitted (07-security:
    * Field never reaches other people's money). Returns the user id to
    * restrict reads to, or undefined for Owners and Staff.
+   *
+   * US-TEAM-30 (D-235): Staff whose Teams don't grant "See everyone's
+   * expenses" read only their own too, as Field do.
    */
   async readScope(orgId: string, userId: string): Promise<string | undefined> {
-    return (await getMemberRole(this.db, orgId, userId)) === "field" ? userId : undefined;
+    return (await hasCapability(this.db, { orgId, userId }, "expenses.view_others")) ? undefined : userId;
+  }
+
+  async isField(orgId: string, userId: string): Promise<boolean> {
+    return (await getMemberRole(this.db, orgId, userId)) === "field";
   }
 
   /** `onlySubmittedBy` (from `readScope`) makes anyone else's expense a 404. */

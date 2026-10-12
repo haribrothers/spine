@@ -11,6 +11,7 @@ import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { calendarDate } from "../../quotes/quotes-list-state";
 import { billedByMilestones, inOrder, milestoneDueText } from "../job-page-state";
 
+import { useCanOpen } from "../../../../components/section-link";
 const STATUS_BADGE_CLASS: Record<Milestone["status"], string> = {
   pending: "bg-draft-bg text-draft",
   completed: "bg-due-soon-bg text-due-soon",
@@ -77,6 +78,7 @@ export function MilestonesSection({
   onInvoice: (m: Milestone) => void;
   invoicingId: string | null;
 }) {
+  const canOpen = useCanOpen();
   const [editing, setEditing] = useState(false);
   const [rows, setRows] = useState<EditableMilestone[]>([]);
   const [saving, setSaving] = useState(false);
@@ -369,7 +371,7 @@ export function MilestonesSection({
                     {invoicingId === m.id ? <Spinner size="sm" /> : "Raise invoice"}
                   </Button>
                 )}
-                {m.status === "invoiced" && m.invoicedInvoiceId && (
+                {m.status === "invoiced" && m.invoicedInvoiceId && canOpen("/invoices") && (
                   <Button size="sm" variant="secondary" asChild>
                     <a href={`/invoices/${m.invoicedInvoiceId}`}>View invoice</a>
                   </Button>

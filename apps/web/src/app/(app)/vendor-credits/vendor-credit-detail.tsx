@@ -38,6 +38,7 @@ import { VoidCreditDialog } from "./void-credit-dialog";
 import { VendorCreditActivity } from "./vendor-credit-activity";
 import { CREDIT_STATE_CLASS, CREDIT_STATE_LABELS, creditRecordedToast, creditState, creditUse, hasCreditLeft } from "./vendor-credit-state";
 
+import { SectionLink } from "../../../components/section-link";
 /** A credit's state in words — never colour alone (US-PUR-37). */
 export function CreditStateBadge({ credit, testId }: { credit: Pick<VendorCredit, "status" | "totalAmount" | "balanceAmount">; testId?: string }) {
   const state = creditState(credit);
@@ -191,9 +192,9 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="credit-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
-                <Link href={`/contacts/${credit.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${credit.contactId}`} className="font-medium text-primary hover:underline">
                   {credit.contactName ?? "Unknown vendor"}
-                </Link>
+                </SectionLink>
               </span>
               {credit.vendorReference && (
                 <span className="inline-flex items-center gap-1.5">
@@ -209,17 +210,17 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                 <span className="inline-flex items-center gap-1.5">
                   <File size={14} aria-hidden />
                   Against{" "}
-                  <Link href={`/vendor-bills/${credit.billId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/vendor-bills/${credit.billId}`} className="font-medium text-primary hover:underline">
                     {credit.billNumber ?? "a bill"}
-                  </Link>
+                  </SectionLink>
                 </span>
               )}
               {credit.jobId && (
                 <span className="inline-flex items-center gap-1.5">
                   <HardHat size={14} aria-hidden />
-                  <Link href={`/jobs/${credit.jobId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/jobs/${credit.jobId}`} className="font-medium text-primary hover:underline">
                     {credit.jobName ?? "The job"}
-                  </Link>
+                  </SectionLink>
                 </span>
               )}
               {credit.placeOfSupply && (
@@ -350,9 +351,9 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               ) : (
                 allocations.map((a) => (
                   <div key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto_32px] items-center gap-4 border-t border-border px-4 py-2.5 text-[13.5px]" data-testid="credit-allocation">
-                    <Link href={`/vendor-bills/${a.billId}`} className="font-medium text-primary hover:underline">
+                    <SectionLink href={`/vendor-bills/${a.billId}`} className="font-medium text-primary hover:underline">
                       {a.billNumber}
-                    </Link>
+                    </SectionLink>
                     <span className="text-[12.5px] text-on-surface-muted">{calendarDate(a.createdAt.slice(0, 10), today, locale)}</span>
                     <span className="tabular-nums text-on-surface">{money(a.amount)}</span>
                     {canApply && !isVoid ? (

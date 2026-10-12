@@ -35,7 +35,7 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
 
   const caps = access?.capabilities as Partial<Record<Capability, boolean>> | undefined;
   // Every section the business uses, ticked where their sidebar shows it.
-  // Work there, only view (reading needs no permission), or can't open.
+  // Work there, only view (the section is open, nothing there is allowed), or can't open.
   const sections = access ? sectionAccessFor(access.role, caps ?? null, modules) : [];
 
   return (
@@ -87,7 +87,7 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
                 </ul>
                 <p className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-on-surface-muted" aria-hidden>
                   <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />Can work here</span>
-                  <span className="flex items-center gap-1"><Eye size={13} />View only — reading needs no permission</span>
+                  <span className="flex items-center gap-1"><Eye size={13} />View only — can see records, not change them</span>
                   <span className="flex items-center gap-1"><CircleMinus size={13} />Can&apos;t open</span>
                 </p>
               </section>

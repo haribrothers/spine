@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -38,6 +37,7 @@ import { RemittanceEmailDialog } from "./remittance-email-dialog";
 import { VendorPaymentActivity } from "./vendor-payment-activity";
 import { PAYMENT_METHOD_LABELS, type VendorPaymentDetailData } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * A vendor payment's page (US-PUR-49, US-PUR-50, US-PUR-54, D-229),
  * replacing the drawer. The number is the title, with the vendor, date,
@@ -177,9 +177,9 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="vendor-payment-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
-                <Link href={`/contacts/${payment.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${payment.contactId}`} className="font-medium text-primary hover:underline">
                   {payment.contactName ?? "Unknown vendor"}
-                </Link>
+                </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays size={14} aria-hidden />
@@ -286,9 +286,9 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
                   {payment.paidTo.map((b) => (
                     <tr key={b.allocationId} className="border-t border-border" data-testid="paid-to-row">
                       <td className="px-4 py-2.5">
-                        <Link href={`/vendor-bills/${b.billId}`} className="font-medium text-primary hover:underline">
+                        <SectionLink href={`/vendor-bills/${b.billId}`} className="font-medium text-primary hover:underline">
                           {b.billNumber}
-                        </Link>
+                        </SectionLink>
                         {b.billDate && <span className="block text-[12px] text-on-surface-muted">Billed {calendarDate(b.billDate, today, locale)}</span>}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">{money(b.billTotal)}</td>

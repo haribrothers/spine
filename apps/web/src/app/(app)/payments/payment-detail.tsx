@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -45,6 +44,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type PaymentDetailData } from "./types";
 import { ActionError } from "../../../components/action-error";
 
+import { SectionLink } from "../../../components/section-link";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type PaymentState = "applied" | "credit" | "refunded";
@@ -215,9 +215,9 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="payment-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
-                <Link href={`/contacts/${payment.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${payment.contactId}`} className="font-medium text-primary hover:underline">
                   {payment.contactName ?? "Unknown contact"}
-                </Link>
+                </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays size={14} aria-hidden />
@@ -303,9 +303,9 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                     {appliedTo.map((a) => (
                       <tr key={a.allocationId} className="border-t border-border" data-testid="applied-to-row">
                         <td className="px-4 py-2.5">
-                          <Link href={`/invoices/${a.invoiceId}`} className="font-medium text-primary hover:underline">
+                          <SectionLink href={`/invoices/${a.invoiceId}`} className="font-medium text-primary hover:underline">
                             {a.invoiceNumber ?? "Invoice"}
-                          </Link>
+                          </SectionLink>
                           {a.invoiceType === "advance" && <span className="ml-2 text-[12px] text-on-surface-muted">Deposit</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right tabular-nums">{money(a.invoiceTotal)}</td>

@@ -28,7 +28,7 @@ export function ContactPicker({
 
   useEffect(() => {
     apiClient
-      .get<ContactOption[]>("/contacts")
+      .get<ContactOption[]>("/contacts?picker=1")
       .then(setContacts)
       .catch(() => {});
   }, []);

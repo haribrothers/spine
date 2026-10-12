@@ -59,6 +59,7 @@ describe("US-CAT-12 · change many items at once (requires local Postgres)", () 
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, staff.userId));
     const [team] = await db.insert(teams).values({ orgId, name: `Own catalogue ${randomUUID()}` }).returning();
     await db.insert(teamPrivileges).values([
+      { teamId: team!.id, capability: "catalog.open", granted: true },
       { teamId: team!.id, capability: "catalog.edit_own", granted: true },
       { teamId: team!.id, capability: "catalog.delete_own", granted: true },
     ]);

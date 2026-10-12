@@ -54,7 +54,8 @@ describe("US-PUR-28 · let a Team manage vendor credits (requires local Postgres
 
   it("General Staff have every vendor credit right", async () => {
     const rows = await db.select().from(teamPrivileges).where(and(eq(teamPrivileges.teamId, generalStaff), like(teamPrivileges.capability, "vendor_credits.%")));
-    expect(rows).toHaveLength(7);
+    // With Open Vendor Credits (US-TEAM-30).
+    expect(rows).toHaveLength(8);
     expect(rows.every((r) => r.granted)).toBe(true);
   });
 

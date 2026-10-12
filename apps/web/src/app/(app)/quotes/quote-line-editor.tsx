@@ -157,7 +157,7 @@ export function QuoteLineEditor({
 
   useEffect(() => {
     apiClient
-      .get<CatalogItemOption[]>("/catalog-items")
+      .get<CatalogItemOption[]>("/catalog-items?picker=1")
       .then(setCatalogItems)
       .catch(() => {});
     apiClient

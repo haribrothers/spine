@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Card, DonutChart, Progress, Spinner, cn } from "@spine/ui";
 import { BUDGET_NEAR_PCT, billingGapMessage } from "@spine/shared";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
-import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { DrilldownDialog } from "../../reports/reports-explorer";
 import type { Job, JobCostingReport } from "../types";
 import { formatMoney } from "../../../../lib/money";
 
+import { SectionLink } from "../../../../components/section-link";
 /**
  * The job's Costing tab (`JobCostingBudget`): contract value, revenue, cost
  * and margin read live off journal lines tagged to the job (D-011), and
@@ -53,9 +53,9 @@ export function CostingSection({ job, onEditJob }: { job: Job; onEditJob?: () =>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-[15px] font-semibold text-on-surface">Job costing</h3>
           {/* US-PUR-22: what makes up the cost. */}
-          <Link href={`/vendor-bills?jobId=${job.id}`} className="text-[13px] font-medium text-primary hover:underline">
+          <SectionLink href={`/vendor-bills?jobId=${job.id}`} className="text-[13px] font-medium text-primary hover:underline">
             View bills and expenses
-          </Link>
+          </SectionLink>
         </div>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           <Figure label="Contract value" value={fmt(report.contractValueAmount)} note="Includes applied variations" />

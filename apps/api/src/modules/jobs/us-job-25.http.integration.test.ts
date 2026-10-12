@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createDb, type Database } from "../../db/client";
-import { accounts, contacts, expenseCategories, expenses, member, session as sessionTable, user } from "../../db/schema";
+import { accounts, contacts, expenseCategories, expenses, member, session as sessionTable, teamMemberships, teamPrivileges, teams, user } from "../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { ExpensesService } from "../purchases/expenses.service";
 import { QueueService } from "../queue/queue.service";
@@ -60,8 +60,13 @@ describe("US-JOB-25 · see budget spent and get warned before going over (requir
 
     Object.assign(staff, await newUser("staff"));
     await db.delete(member).where(eq(member.userId, staff.userId));
-    await db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId: staff.userId, role: "staff", createdAt: new Date() });
+    const staffMemberId = randomUUID();
+    await db.insert(member).values({ id: staffMemberId, organizationId: orgId, userId: staff.userId, role: "staff", createdAt: new Date() });
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, staff.userId));
+    // US-TEAM-30: their Team opens Jobs, without job profitability.
+    const [team] = await db.insert(teams).values({ orgId, name: `Jobs ${randomUUID()}` }).returning();
+    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "jobs.open", granted: true });
+    await db.insert(teamMemberships).values({ teamId: team!.id, memberId: staffMemberId });
   }, 120_000);
 
   afterAll(async () => {

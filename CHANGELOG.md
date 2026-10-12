@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — Sections a Team can open (US-TEAM-30 to US-TEAM-32, D-235)
+
+- **Open permissions (US-TEAM-30):** 13 capabilities — Open Contacts, Pipeline, Meetings, Catalogue, Quotes, Jobs, Invoices, Credit Notes, Payments, Vendor Bills, Vendor Credits, Vendor Payments, and "See everyone's expenses" — first in their groups, on by default, and required by each section's actions (`CAPABILITY_REQUIRES`; turning Open off turns them off). `@RequireSectionOpen` on each section's controllers is checked as well as any `@RequireCapability`, so a closed section refuses every route; the sidebar and page access hide and refuse it (`SECTION_OPEN_CAPABILITIES`). Without "See everyone's expenses", Staff see their own expenses only, as Field do. Migration `0123` opens every section for every existing Team; Field's Jobs and Meetings are fixed (`FIELD_ALWAYS_CAPABILITIES`).
+- **Closed, not in the way (US-TEAM-31):** pickers answer `?picker=1` without the Open permission, with only what forms need (contacts and a contact's addresses, catalogue items and bundles, jobs, invoices for payments and credit notes, bills for vendor payments and credits). A record in a closed section shows as plain text with a lock (`SectionLink`, 60-odd links); search, Needs your attention, the activity feed and dashboard cards leave closed sections out.
+- **Team page (US-TEAM-32):** a "Sections" card above the groups with a switch and Can work here / View only / Can't open per section, in the same draft; a closed section's actions read "Open <section> first." and can't be switched; the save confirm says "They'll see" / "They'll no longer see <section>". Copy no longer says reading needs no permission.
+- **Tests:** API integration `us-team-30-31` (with the Open permissions added to existing tests' Teams); web unit `us-team-30-32` (and `us-team-25-29` updated); E2E `us-team-30-32` (with axe). QA script section 232.
+
 ### 2026-10-12 — Teams you can manage from (US-TEAM-25 to US-TEAM-29, D-234)
 
 - **List (US-TEAM-25):** Teams on the shared list layout — "Create Team" in the header, the cards (Staff on no Team opens Users filtered to them; Staff on several Teams), search in the address; rows with badges, description, member avatars, "Works in <n> of <total> sections" and "<n> of <total>" permissions; a row menu with icons (Open, Rename, Duplicate, Delete — asking first, naming anyone left on no Team, then a toast). `GET /org/teams` rows gain `description`, `isDemo`, `members` and `granted`.

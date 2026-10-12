@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createLeadSchema, updateLeadSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { LeadsService } from "./leads.service";
@@ -16,6 +16,7 @@ import { LeadsService } from "./leads.service";
  * unconditional for every Staff/Field user.
  */
 @Controller("leads")
+@RequireSectionOpen("leads.open")
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 

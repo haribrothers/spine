@@ -132,7 +132,7 @@ export function ReconcileCreateDrawer({
   useEffect(() => {
     if (kind !== "expense" || categories.length) return;
     apiClient.get<ExpenseCategory[]>("/expense-categories").then(setCategories).catch(() => {});
-    apiClient.get<JobOption[]>("/jobs").then(setJobs).catch(() => {});
+    apiClient.get<JobOption[]>("/jobs?picker=1").then(setJobs).catch(() => {});
   }, [kind, categories.length]);
 
   const prefill: StatementPrefill | undefined = useMemo(

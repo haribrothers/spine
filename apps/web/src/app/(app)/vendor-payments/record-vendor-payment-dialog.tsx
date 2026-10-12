@@ -122,7 +122,7 @@ export function RecordVendorPaymentDialog({
       return;
     }
     apiClient
-      .get<{ id: string; billNumber: string; date: string; dueDate: string | null; balanceDue: string; currency: string; contactName?: string | null }[]>(`/vendor-bills?contactId=${contactId}&status=recorded`)
+      .get<{ id: string; billNumber: string; date: string; dueDate: string | null; balanceDue: string; currency: string; contactName?: string | null }[]>(`/vendor-bills?picker=1&contactId=${contactId}&status=recorded`)
       .then((rows) => {
         const open = rows
           .map((b) => ({ id: b.id, billNumber: b.billNumber, date: b.date.slice(0, 10), dueDate: b.dueDate ? b.dueDate.slice(0, 10) : null, balance: BigInt(b.balanceDue), currency: b.currency }))

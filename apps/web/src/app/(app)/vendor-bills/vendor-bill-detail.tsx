@@ -39,6 +39,7 @@ import { RecurringBillDialog } from "./recurring/recurring-bill-dialog";
 import { BILL_STATE_CLASS, BILL_STATE_LABELS, billRecordedToast, billState, lateLabel, owes } from "./vendor-bill-state";
 import type { VendorBill } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * US-PUR-32/US-PUR-33 (D-225) — a vendor bill's page, laid out like a
  * payment's (D-221): the bill number as the title with its state in words,
@@ -196,9 +197,9 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="bill-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
-                <Link href={`/contacts/${bill.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${bill.contactId}`} className="font-medium text-primary hover:underline">
                   {bill.contactName ?? "Unknown vendor"}
-                </Link>
+                </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays size={14} aria-hidden />
@@ -214,9 +215,9 @@ export function VendorBillDetail({ billId }: { billId: string }) {
               {bill.jobId && (
                 <span className="inline-flex items-center gap-1.5">
                   <HardHat size={14} aria-hidden />
-                  <Link href={`/jobs/${bill.jobId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/jobs/${bill.jobId}`} className="font-medium text-primary hover:underline">
                     {bill.jobName ?? "The job"}
-                  </Link>
+                  </SectionLink>
                 </span>
               )}
               {bill.placeOfSupply && (
@@ -362,10 +363,10 @@ export function VendorBillDetail({ billId }: { billId: string }) {
               <h3 className="text-[14px] font-semibold text-on-surface">Credits applied</h3>
               {bill.creditsApplied!.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-3 text-[13.5px]">
-                  <Link href={`/vendor-credits/${c.vendorCreditId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/vendor-credits/${c.vendorCreditId}`} className="font-medium text-primary hover:underline">
                     {c.number}
                     {c.vendorReference ? ` · their ${c.vendorReference}` : ""}
-                  </Link>
+                  </SectionLink>
                   <span className="tabular-nums text-on-surface">{money(c.amount)}</span>
                 </div>
               ))}

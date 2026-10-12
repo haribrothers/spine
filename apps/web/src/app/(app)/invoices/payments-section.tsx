@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Card, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Spinner } from "@spine/ui";
 import type { PaymentAppliedTo } from "@spine/shared";
 import { MoreHorizontal } from "lucide-react";
-import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
@@ -13,6 +12,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type InvoicePaymentRow } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * Every payment allocated against this invoice — `GET /payments?invoiceId=`
  * (`PaymentsService.listForInvoice`, a real join through
@@ -66,9 +66,9 @@ export function PaymentsSection({
           {payments.map((payment) => (
             <div key={payment.allocationId} className="flex items-center justify-between gap-4 py-2" data-testid="invoice-payment-row">
               <div>
-                <Link href={`/payments/${payment.id}`} className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
+                <SectionLink href={`/payments/${payment.id}`} className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
                   {payment.number ?? "Payment"}
-                </Link>
+                </SectionLink>
                 <p className="text-[12px] text-on-surface-muted">
                   {calendarDate(payment.date.slice(0, 10), today, locale)} · {PAYMENT_METHOD_LABELS[payment.method]}
                   {payment.reference && <> · {payment.reference}</>}

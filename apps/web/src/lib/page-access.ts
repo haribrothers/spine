@@ -1,4 +1,4 @@
-import type { Capability } from "@spine/shared";
+import { SECTION_OPEN_CAPABILITIES, type Capability } from "@spine/shared";
 
 export type PageAccess =
   | { state: "allowed" }
@@ -36,6 +36,8 @@ const RULES: PageRule[] = [
     // US-RPT-23: the Reports page lists whatever reports the person can open.
     anyOf: ["reports.view_dashboard_summary", "reports.view_receivables", "reports.view_payables", "reports.view_job_profitability", "reports.view_financial_statements", "ledger.view"],
   },
+  // US-TEAM-30 (D-235): a section closed for every one of a Staff member's Teams. Expenses always opens (their own).
+  ...SECTION_OPEN_CAPABILITIES.filter((s) => s.href !== "/expenses").map((s) => ({ prefix: s.href, name: s.section, anyOf: [s.capability] })),
 ];
 
 /** Names for pages Field can't open, as the sidebar labels them. */
@@ -73,7 +75,7 @@ export function pageAccessFor(pathname: string, role: string | null, capabilitie
 
   if (role === "field") {
     // Field's capabilities are fixed and never include expense categories.
-    if (!rule?.anyOf && FIELD_PAGES.some((p) => matches(pathname, p))) return { state: "allowed" };
+    if (FIELD_PAGES.some((p) => matches(pathname, p)) && !rule?.anyOf?.some((c) => c.startsWith("expense_categories."))) return { state: "allowed" };
     const prefix = Object.keys(PAGE_NAMES).find((p) => matches(pathname, p));
     return { state: "denied", pageName: prefix ? PAGE_NAMES[prefix]! : "this page", ownerOnly: rule?.ownerOnly ?? false, fixedRole: true };
   }

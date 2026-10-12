@@ -25,7 +25,7 @@ export function NewCreditNoteDialog({ open, onOpenChange, onPicked }: { open: bo
     setPicked(null);
     setInvoices(null);
     apiClient
-      .get<Invoice[]>("/invoices")
+      .get<Invoice[]>("/invoices?picker=1")
       .then((list) => setInvoices(list.filter((i) => i.status === "issued" && i.type !== "advance" && i.type !== "opening" && BigInt(i.leftToCredit ?? "0") > 0n)))
       .catch(() => setInvoices([]));
   }, [open]);

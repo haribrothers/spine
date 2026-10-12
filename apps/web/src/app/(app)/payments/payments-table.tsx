@@ -11,6 +11,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /**
@@ -101,9 +102,9 @@ export function PaymentsTable({
             {to.map((a, i) => (
               <Fragment key={a.invoiceId}>
                 {i > 0 && ", "}
-                <Link href={`/invoices/${a.invoiceId}`} className="text-primary hover:underline">
+                <SectionLink href={`/invoices/${a.invoiceId}`} className="text-primary hover:underline">
                   {a.number ?? "Invoice"}
-                </Link>
+                </SectionLink>
               </Fragment>
             ))}
           </span>

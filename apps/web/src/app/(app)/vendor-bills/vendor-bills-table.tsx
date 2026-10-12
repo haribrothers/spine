@@ -9,6 +9,7 @@ import { VendorBillRowActions, type BillRowHandlers } from "./vendor-bill-row-ac
 import { BILL_STATE_CLASS, BILL_STATE_LABELS, BILL_STATES, billState, daysLate, lateLabel } from "./vendor-bill-state";
 import type { VendorBill } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * US-PUR-34 (D-225) — the bills list: the bill number, the vendor (opening
  * the contact), the bill date, the due date with how late in words, the
@@ -59,9 +60,9 @@ export function VendorBillsTable({
       key: "contact",
       header: "Vendor",
       render: (row) => (
-        <Link href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
+        <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (row) => row.contactName ?? "",
     },

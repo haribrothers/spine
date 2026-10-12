@@ -255,7 +255,8 @@ describe("US-OPS-20 · close the read-access gaps (requires local Postgres)", ()
       const rows = (await res.json()) as { submittedByUserId: string }[];
       expect(rows.length).toBeGreaterThan(0);
       expect(rows.every((row) => row.submittedByUserId === field.userId)).toBe(true);
-      const all = (await (await get("/expenses", staff)).json()) as unknown[];
+      // Staff on no Team see only their own too (US-TEAM-30), so compare with an Owner.
+      const all = (await (await get("/expenses", owner)).json()) as unknown[];
       expect(all.length).toBeGreaterThan(rows.length);
     });
 
@@ -263,7 +264,7 @@ describe("US-OPS-20 · close the read-access gaps (requires local Postgres)", ()
       const [others] = await db.select().from(expenses).where(and(eq(expenses.orgId, orgId), ne(expenses.submittedByUserId, field.userId))).limit(1);
       expect((await get(`/expenses/${others!.id}`, field)).status).toBe(404);
       expect((await get(`/expenses/${others!.id}/history`, field)).status).toBe(404);
-      expect((await get(`/expenses/${others!.id}`, staff)).status).toBe(200);
+      expect((await get(`/expenses/${others!.id}`, owner)).status).toBe(200);
     });
   });
 });

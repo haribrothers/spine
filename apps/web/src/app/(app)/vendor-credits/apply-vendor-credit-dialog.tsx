@@ -41,7 +41,7 @@ export function ApplyVendorCreditDialog({
     setError(null);
     setBills(null);
     apiClient
-      .get<VendorBill[]>(`/vendor-bills?contactId=${credit.contactId}&status=recorded`)
+      .get<VendorBill[]>(`/vendor-bills?picker=1&contactId=${credit.contactId}&status=recorded`)
       .then((rows) => {
         const { ordered, amounts: prefill } = fillBills(
           rows.filter((b) => b.currency === credit.currency),

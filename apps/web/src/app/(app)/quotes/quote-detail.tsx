@@ -48,6 +48,7 @@ import { calendarDate, shortDate, validityNote } from "./quotes-list-state";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { AttachmentsSection } from "../../../components/attachments-section";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
  * `quote_conversion_guard` setting is "warn" and this quote already has a
@@ -466,9 +467,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="quote-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
-                <Link href={`/contacts/${quote.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${quote.contactId}`} className="font-medium text-primary hover:underline">
                   {quote.contactName ?? "Unknown contact"}
-                </Link>
+                </SectionLink>
               </span>
               {quote.sentAt && (
                 <span className="inline-flex items-center gap-1.5">
@@ -674,9 +675,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   <ul className="flex flex-col gap-1">
                     {conversionConfirm.body.existing.jobs.map((j) => (
                       <li key={j.id}>
-                        <Link href={`/jobs/${j.id}`} className="text-primary hover:underline">
+                        <SectionLink href={`/jobs/${j.id}`} className="text-primary hover:underline">
                           {j.number ? `${j.number} · ${j.name}` : j.name}
-                        </Link>
+                        </SectionLink>
                       </li>
                     ))}
                   </ul>
@@ -690,9 +691,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   <ul className="flex flex-col gap-1">
                     {conversionConfirm.body.existing.invoices.map((i) => (
                       <li key={i.id}>
-                        <Link href={`/invoices/${i.id}`} className="text-primary hover:underline">
+                        <SectionLink href={`/invoices/${i.id}`} className="text-primary hover:underline">
                           {i.number ?? "Draft invoice"}
-                        </Link>
+                        </SectionLink>
                       </li>
                     ))}
                   </ul>

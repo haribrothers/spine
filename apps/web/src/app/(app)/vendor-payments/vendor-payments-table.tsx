@@ -10,6 +10,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { PAYMENT_METHOD_LABELS, type VendorPaymentRow } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * US-PUR-51 (D-222) — a row's menu: View, Download remittance advice,
  * Email remittance advice and Delete payment, each with its icon and right,
@@ -121,9 +122,9 @@ export function VendorPaymentsTable({
           <span className="flex flex-wrap gap-x-1">
             {row.paidTo.map((b, i) => (
               <span key={b.billId}>
-                <Link href={`/vendor-bills/${b.billId}`} className="text-primary hover:underline">
+                <SectionLink href={`/vendor-bills/${b.billId}`} className="text-primary hover:underline">
                   {b.number}
-                </Link>
+                </SectionLink>
                 {i < row.paidTo.length - 1 ? "," : ""}
               </span>
             ))}

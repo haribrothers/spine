@@ -99,7 +99,7 @@ describe("US-TEAM-24 · set a Staff or Field member's password (requires local P
     const me = (await (await call(signedIn.cookie, "GET", "/org/members/me")).json()) as { mustChangePassword: boolean; passwordSetBy: { name: string } };
     expect(me.mustChangePassword).toBe(true);
     expect(me.passwordSetBy.name).toBe("Priya Raman");
-    const held = await call(signedIn.cookie, "GET", "/contacts");
+    const held = await call(signedIn.cookie, "GET", "/expenses");
     expect(held.status).toBe(403);
     expect(await held.text()).toContain("PASSWORD_CHANGE_REQUIRED");
 
@@ -109,7 +109,7 @@ describe("US-TEAM-24 · set a Staff or Field member's password (requires local P
     expect((await call(signedIn.cookie, "PUT", "/org/members/me/password", { newPassword: "short" })).status).toBe(400);
     expect((await call(signedIn.cookie, "PUT", "/org/members/me/password", { newPassword: CHOSEN })).status).toBe(200);
 
-    expect((await call(signedIn.cookie, "GET", "/contacts")).status).not.toBe(403);
+    expect((await call(signedIn.cookie, "GET", "/expenses")).status).not.toBe(403);
     expect(((await (await call(signedIn.cookie, "GET", "/org/members/me")).json()) as { mustChangePassword: boolean }).mustChangePassword).toBe(false);
     expect((await signIn(emails.staff, CHOSEN)).status).toBe(200);
     // Only right after an Owner set it; otherwise Profile asks for the current one.

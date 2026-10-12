@@ -70,6 +70,7 @@ import { useReportDetail } from "./report-shell";
 import { JOB_STATUS_LABELS, type Job } from "../jobs/types";
 import { STATUS_BADGE_CLASS } from "../jobs/jobs-table";
 
+import { SectionLink } from "../../../components/section-link";
 /** The local calendar date (toISOString would shift it a day in time zones ahead of UTC). */
 function toDateParam(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -466,9 +467,9 @@ export function JobProfitabilityTab() {
       key: "job",
       header: "Job",
       render: (job) => (
-        <Link href={`/jobs/${job.jobId}`} className="font-medium text-primary hover:underline">
+        <SectionLink href={`/jobs/${job.jobId}`} className="font-medium text-primary hover:underline">
           {job.name}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (job) => job.name,
     },

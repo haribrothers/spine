@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
@@ -11,6 +10,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { oldestLabel, type CustomerView } from "./receivables-list-state";
 import { AgeCell } from "./receivables-table";
 
+import { SectionLink } from "../../../components/section-link";
 export interface CustomerActions {
   onSendStatement: (customer: CustomerView) => void;
   onRecordPayment: (customer: CustomerView) => void;
@@ -54,9 +54,9 @@ export function ReceivablesCustomersTable({
       key: "name",
       header: "Customer",
       render: (c) => (
-        <Link href={`/contacts/${c.contactId}`} className="block max-w-72 truncate font-semibold text-on-surface hover:text-primary hover:underline" title={c.name ?? undefined}>
+        <SectionLink href={`/contacts/${c.contactId}`} className="block max-w-72 truncate font-semibold text-on-surface hover:text-primary hover:underline" title={c.name ?? undefined}>
           {c.name ?? "Customer"}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (c) => c.name ?? "",
     },
@@ -131,9 +131,9 @@ function CustomerInvoices({ customer, now }: { customer: CustomerView; now: Date
       {customer.invoices.map((row) => (
         <li key={row.id} className="grid grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.6fr)_minmax(0,1fr)] items-center gap-3 py-1.5 text-[13px]">
           <span className="truncate">
-            <Link href={`/invoices/${row.id}`} className="font-medium text-primary hover:underline">
+            <SectionLink href={`/invoices/${row.id}`} className="font-medium text-primary hover:underline">
               {row.number ?? "Invoice"}
-            </Link>
+            </SectionLink>
             {row.jobName && <span className="text-on-surface-muted"> · {row.jobName}</span>}
           </span>
           <span className="whitespace-nowrap text-on-surface-muted">

@@ -30,6 +30,7 @@ import type { Quote } from "../quotes/types";
 import type { Address } from "../contacts/types";
 import { useToast } from "../../../components/toast-host";
 
+import { SectionLink } from "../../../components/section-link";
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
 /** The 409 the quote-conversion guard sends in "warn" mode (US-QUO-16): what's already been made from the quote. */
@@ -129,7 +130,7 @@ export function NewJobDrawer({
     setContactId(id);
     setErrors((e) => ({ ...e, contactId: "" }));
     try {
-      const contact = await apiClient.get<{ name: string; addresses?: Address[] }>(`/contacts/${id}`);
+      const contact = await apiClient.get<{ name: string; addresses?: Address[] }>(`/contacts/${id}?picker=1`);
       const address = defaultSiteAddress(contact.addresses ?? []);
       // Only fill an address the person hasn't typed themselves.
       if (address && (!siteAddress || siteFrom !== null)) {
@@ -266,9 +267,9 @@ export function NewJobDrawer({
                         </Link>
                       ))}
                       {conflict.existing.invoices.map((i) => (
-                        <Link key={i.id} href={`/invoices/${i.id}`} className="text-primary hover:underline">
+                        <SectionLink key={i.id} href={`/invoices/${i.id}`} className="text-primary hover:underline">
                           {i.number ?? "Draft invoice"}
-                        </Link>
+                        </SectionLink>
                       ))}
                     </span>
                   </AlertDescription>

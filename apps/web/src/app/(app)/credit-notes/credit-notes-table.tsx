@@ -8,6 +8,7 @@ import { CreditNoteRowActions } from "./credit-note-row-actions";
 import { whereItWent } from "./credit-notes-list-state";
 import type { CreditNoteRow } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 const WHERE_TONE = { off: "text-on-surface-muted", applied: "text-on-surface-muted", refunded: "font-medium text-paid", left: "font-semibold text-due-soon" } as const;
 
 /**
@@ -67,9 +68,9 @@ export function CreditNotesTable({
       header: "Invoice",
       render: (row) =>
         row.invoiceNumber ? (
-          <Link href={`/invoices/${row.invoiceId}`} className="text-primary hover:underline">
+          <SectionLink href={`/invoices/${row.invoiceId}`} className="text-primary hover:underline">
             {row.invoiceNumber}
-          </Link>
+          </SectionLink>
         ) : (
           "—"
         ),

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -37,6 +36,7 @@ import { expenseLabel } from "./expense-row-actions";
 import { EXPENSE_STATE_CLASS, EXPENSE_STATE_LABELS, canReviewThis, expenseState, nextWaiting, readyToBill } from "./expense-state";
 import type { Expense } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * US-PUR-43/US-PUR-45 (D-227) — an expense on its own page, laid out like a
  * bill's (D-225): its number (or "Expense" before approval) as the title,
@@ -201,9 +201,9 @@ export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string;
               {expense.jobId && (
                 <span className="inline-flex items-center gap-1.5">
                   <HardHat size={14} aria-hidden />
-                  <Link href={`/jobs/${expense.jobId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/jobs/${expense.jobId}`} className="font-medium text-primary hover:underline">
                     {expense.jobName ?? "The job"}
-                  </Link>
+                  </SectionLink>
                 </span>
               )}
               <span className="inline-flex items-center gap-1.5">
@@ -307,9 +307,9 @@ export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string;
           expense.billedInvoiceId ? (
             <>
               Billed on{" "}
-              <Link href={`/invoices/${expense.billedInvoiceId}`} className="font-medium text-primary hover:underline">
+              <SectionLink href={`/invoices/${expense.billedInvoiceId}`} className="font-medium text-primary hover:underline">
                 {expense.billedInvoiceNumber ?? "an invoice"}
-              </Link>
+              </SectionLink>
             </>
           ) : readyToBill(expense) ? (
             "Ready to bill to the job's customer"

@@ -3,7 +3,6 @@
 import { placeOfSupplyLabel, SUPPLY_TYPE_LABELS } from "@spine/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import {
   Alert,
   AlertDescription,
@@ -35,6 +34,7 @@ import { CreditNoteActivity } from "./credit-note-activity";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { CREDIT_NOTE_STATE_LABELS, creditNoteState } from "./credit-notes-list-state";
 
+import { SectionLink } from "../../../components/section-link";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
@@ -194,16 +194,16 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="credit-note-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
-                <Link href={`/contacts/${note.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${note.contactId}`} className="font-medium text-primary hover:underline">
                   {note.contactName ?? "Unknown contact"}
-                </Link>
+                </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Receipt size={14} aria-hidden />
                 Against{" "}
-                <Link href={`/invoices/${note.invoiceId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/invoices/${note.invoiceId}`} className="font-medium text-primary hover:underline">
                   {note.invoiceNumber ?? "the invoice"}
-                </Link>
+                </SectionLink>
               </span>
               {note.issuedAt && (
                 <span className="inline-flex items-center gap-1.5">

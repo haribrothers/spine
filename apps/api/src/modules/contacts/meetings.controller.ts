@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createMeetingSchema, deleteMeetingScopeSchema, respondToMeetingSchema, updateMeetingSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { MeetingsService } from "./meetings.service";
@@ -21,6 +21,7 @@ import { MeetingsService } from "./meetings.service";
  * regardless of any capability) — see that service's own comments.
  */
 @Controller("meetings")
+@RequireSectionOpen("meetings.open")
 export class MeetingsController {
   constructor(private readonly meetingsService: MeetingsService) {}
 

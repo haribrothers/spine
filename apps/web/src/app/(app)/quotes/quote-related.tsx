@@ -10,6 +10,7 @@ import { orgLocaleTag } from "../../../lib/money";
 import { STATUS_BADGE_CLASS } from "./quotes-table";
 import { QUOTE_STATUS_LABELS } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 function Heading({ children }: { children: React.ReactNode }) {
   return <h4 className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted">{children}</h4>;
 }
@@ -43,9 +44,9 @@ export function QuoteRelated({ quoteId, refreshKey }: { quoteId: string; refresh
             <Heading>Lead</Heading>
             <div className="flex items-center gap-2 py-1.5 text-[13px]">
               <Target size={14} className="text-on-surface-muted" aria-hidden />
-              <Link href={`/leads?lead=${data.lead.id}`} className="font-medium text-primary hover:underline">
+              <SectionLink href={`/leads?lead=${data.lead.id}`} className="font-medium text-primary hover:underline">
                 {data.lead.title || "Untitled lead"}
-              </Link>
+              </SectionLink>
             </div>
           </>
         )}
@@ -80,18 +81,18 @@ export function QuoteRelated({ quoteId, refreshKey }: { quoteId: string; refresh
               {data.jobs.map((j) => (
                 <li key={j.id} className="flex items-center gap-2 py-1.5 text-[13px]">
                   <HardHat size={14} className="text-on-surface-muted" aria-hidden />
-                  <Link href={`/jobs/${j.id}`} className="min-w-0 truncate font-medium text-primary hover:underline">
+                  <SectionLink href={`/jobs/${j.id}`} className="min-w-0 truncate font-medium text-primary hover:underline">
                     {j.number ? `${j.number} · ${j.name}` : j.name}
-                  </Link>
+                  </SectionLink>
                   <span className="ml-auto text-[12px] capitalize text-on-surface-muted">{j.status.replace(/_/g, " ")}</span>
                 </li>
               ))}
               {data.invoices.map((inv) => (
                 <li key={inv.id} className="flex items-center gap-2 py-1.5 text-[13px]">
                   <Receipt size={14} className="text-on-surface-muted" aria-hidden />
-                  <Link href={`/invoices/${inv.id}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/invoices/${inv.id}`} className="font-medium text-primary hover:underline">
                     {inv.number ?? "Draft invoice"}
-                  </Link>
+                  </SectionLink>
                   <span className="ml-auto text-[12px] capitalize text-on-surface-muted">{inv.status.replace(/_/g, " ")}</span>
                 </li>
               ))}

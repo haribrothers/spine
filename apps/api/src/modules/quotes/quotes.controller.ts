@@ -4,7 +4,7 @@ import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { acceptQuoteInPersonSchema, createQuoteSchema, rejectQuoteInPersonSchema, updateQuoteSchema } from "@spine/shared";
 import type { Response } from "express";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { QuotesService } from "./quotes.service";
@@ -32,6 +32,7 @@ import { AcceptQuoteInPersonDto, RejectQuoteInPersonDto } from "./quotes.dto";
  * an Owner may want to grant separately.
  */
 @Controller("quotes")
+@RequireSectionOpen("quotes.open")
 @OrgRoles(["owner", "staff"])
 export class QuotesController {
   constructor(

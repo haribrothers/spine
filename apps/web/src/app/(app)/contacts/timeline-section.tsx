@@ -60,7 +60,11 @@ export function TimelineSection({ contactId }: { contactId: string }) {
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
 
   useEffect(() => {
-    apiClient.get<QuoteSummary[]>(`/quotes?contactId=${contactId}`).then(setQuotes);
+    // US-TEAM-31: Quotes closed for this person leaves them out.
+    apiClient
+      .get<QuoteSummary[]>(`/quotes?contactId=${contactId}`)
+      .then(setQuotes)
+      .catch(() => setQuotes([]));
     apiClient.get<Activity[]>(`/activities?contactId=${contactId}`).then(setActivities);
     // US-SET-24: no meetings while Leads & meetings is switched off.
     apiClient

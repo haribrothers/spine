@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   Alert,
   AlertDescription,
@@ -35,6 +34,7 @@ import { PAYMENT_METHOD_LABELS, type Payment, type PaymentMethod } from "../app/
 import { MoneyAccountPicker } from "./money-account-picker";
 import { localIsoDate, prefillDate, type StatementPrefill } from "./statement-prefill";
 
+import { SectionLink } from "./section-link";
 const METHOD_OPTIONS = (Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([value, label]) => ({ value, label }));
 const DAY_MS = 86_400_000;
 
@@ -184,7 +184,7 @@ export function RecordPaymentDialog({
     }
     let cancelled = false;
     apiClient
-      .get<{ name: string; email: string | null }>(`/contacts/${contactId}`)
+      .get<{ name: string; email: string | null }>(`/contacts/${contactId}?picker=1`)
       .then((c) => {
         if (cancelled) return;
         setContactName(c.name);
@@ -192,7 +192,7 @@ export function RecordPaymentDialog({
       })
       .catch(() => setContactEmail(null));
     apiClient
-      .get<InvoiceRow[]>(`/invoices?contactId=${contactId}&status=issued`)
+      .get<InvoiceRow[]>(`/invoices?picker=1&contactId=${contactId}&status=issued`)
       .then((rows) => {
         if (cancelled) return;
         const open_ = rows
@@ -391,9 +391,9 @@ export function RecordPaymentDialog({
               <span>
                 <strong className="font-semibold">This looks like {duplicate.number ?? "a payment already recorded"}</strong> — {formatMoney(BigInt(duplicate.amount), duplicate.currency)} from {who} on{" "}
                 {new Date(`${duplicate.date}T00:00:00`).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" })} ({[PAYMENT_METHOD_LABELS[duplicate.method as PaymentMethod] ?? duplicate.method, duplicate.reference].filter(Boolean).join(" · ")}). Record it anyway if it&apos;s a second payment.{" "}
-                <Link href={`/payments/${duplicate.id}`} target="_blank" className="font-medium text-primary hover:underline">
+                <SectionLink href={`/payments/${duplicate.id}`} target="_blank" className="font-medium text-primary hover:underline">
                   Open {duplicate.number ?? "it"}
-                </Link>
+                </SectionLink>
               </span>
             </div>
           )}

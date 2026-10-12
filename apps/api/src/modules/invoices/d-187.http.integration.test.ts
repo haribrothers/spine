@@ -47,7 +47,10 @@ describe("D-187 · apply the customer's credit as an invoice is issued (requires
     await db.insert(member).values({ id: memberId, organizationId: orgId, userId: clerk.userId, role: "staff", createdAt: new Date() });
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, clerk.userId));
     const [team] = await db.insert(teams).values({ orgId, name: `Billing ${randomUUID()}` }).returning();
-    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "invoices.issue", granted: true });
+    await db.insert(teamPrivileges).values([
+      { teamId: team!.id, capability: "invoices.open", granted: true },
+      { teamId: team!.id, capability: "invoices.issue", granted: true },
+    ]);
     await db.insert(teamMemberships).values({ teamId: team!.id, memberId });
 
     await json(await call(owner, "PUT", "/org/settings/currency", { value: { code: "INR", locale: "en-IN" } }));

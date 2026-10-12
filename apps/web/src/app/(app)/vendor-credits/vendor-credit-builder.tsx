@@ -99,8 +99,8 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
   useEffect(() => {
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
     apiClient.get<TaxGroupOption[]>("/tax-groups").then(setTaxGroups).catch(() => {});
-    apiClient.get<JobOption[]>("/jobs").then(setJobs).catch(() => {});
-    apiClient.get<{ id: string; name: string }[]>("/contacts?type=vendor&type=both").then(setVendors).catch(() => {});
+    apiClient.get<JobOption[]>("/jobs?picker=1").then(setJobs).catch(() => {});
+    apiClient.get<{ id: string; name: string }[]>("/contacts?picker=1&type=vendor&type=both").then(setVendors).catch(() => {});
     if (!credit && !fromBill) {
       apiClient
         .get<{ value: { code: string } | null }>("/org/settings/currency")
@@ -115,7 +115,7 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
       return;
     }
     apiClient
-      .get<VendorBill[]>(`/vendor-bills?contactId=${contactId}&status=recorded`)
+      .get<VendorBill[]>(`/vendor-bills?picker=1&contactId=${contactId}&status=recorded`)
       .then(setBills)
       .catch(() => setBills([]));
   }, [contactId]);
@@ -139,7 +139,7 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
   async function chooseBill(id: string) {
     touch(setBillId)(id);
     if (id === NO_BILL) return;
-    const bill = await apiClient.get<VendorBill>(`/vendor-bills/${id}`);
+    const bill = await apiClient.get<VendorBill>(`/vendor-bills/${id}?picker=1`);
     if (!bill.lines?.length) return;
     if (hasEntered(lines)) {
       const entered = lines.filter((l) => l.name.trim() || l.unitPriceAmount > 0n).length;
@@ -387,7 +387,7 @@ export function VendorCreditNewLoader({ billId }: { billId?: string }) {
   useEffect(() => {
     if (!billId) return;
     apiClient
-      .get<VendorBill>(`/vendor-bills/${billId}`)
+      .get<VendorBill>(`/vendor-bills/${billId}?picker=1`)
       .then(setBill)
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't open the bill."));
   }, [billId]);

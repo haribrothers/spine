@@ -197,7 +197,7 @@ export function LeadsBoard() {
       try {
         const [leadRows, contactRows] = await Promise.all([
           apiClient.get<Lead[]>("/leads"),
-          apiClient.get<Contact[]>("/contacts?includeArchived=true").catch(() => [] as Contact[]),
+          apiClient.get<Contact[]>("/contacts?picker=1&includeArchived=true").catch(() => [] as Contact[]),
         ]);
         setLeads(leadRows);
         setContacts(contactRows);

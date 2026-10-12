@@ -1,7 +1,8 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createCatalogBundleSchema, updateCatalogBundleSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { PickerAllowed, RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
+import { SectionClosed, forPicker } from "../../common/picker";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { CatalogBundlesService } from "./catalog-bundles.service";
@@ -19,12 +20,16 @@ function parse<T>(schema: { safeParse: (v: unknown) => { success: true; data: T 
  * against the bundle's creator in the service.
  */
 @Controller("catalog-bundles")
+@RequireSectionOpen("catalog.open")
 export class CatalogBundlesController {
   constructor(private readonly bundles: CatalogBundlesService) {}
 
+  /** US-TEAM-31: quote and invoice lines pick a bundle with `?picker=1` while Catalogue is closed. */
   @Get()
-  async list(@Session() session: UserSession, @Query("includeArchived") includeArchived?: string, @Query("currency") currency?: string) {
-    return this.bundles.list(requireOrgId(session), { includeArchived: includeArchived === "true", currency: currency || undefined });
+  @PickerAllowed()
+  async list(@Session() session: UserSession, @SectionClosed() closed: boolean, @Query("includeArchived") includeArchived?: string, @Query("currency") currency?: string) {
+    const rows = await this.bundles.list(requireOrgId(session), { includeArchived: includeArchived === "true", currency: currency || undefined });
+    return forPicker(closed, rows, ["id", "name", "description", "currency", "totalAmount", "lines", "archivedAt"] as const);
   }
 
   @Get(":id")

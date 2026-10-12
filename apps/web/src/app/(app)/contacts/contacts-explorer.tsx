@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -43,6 +42,7 @@ import type { Contact, ContactType, Lead } from "./types";
 import { useContactStats } from "./use-contact-stats";
 import { useToast } from "../../../components/toast-host";
 
+import { SectionLink } from "../../../components/section-link";
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: "Customer" },
   { value: "vendor", label: "Vendor" },
@@ -236,14 +236,14 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
         {statButton("Total contacts", stats.total, null, "Clear the type filter")}
         {statButton("Customers", stats.customers, STAT_TYPES.customers, "Show customers")}
         {statButton("Vendors", stats.vendors, STAT_TYPES.vendors, "Show vendors")}
-        <Link href="/leads" aria-label={`Open the pipeline, ${stats.activeLeads ?? "loading"} active leads`} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <SectionLink href="/leads" aria-label={`Open the pipeline, ${stats.activeLeads ?? "loading"} active leads`} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <StatCard
             label="Active leads"
             value={stats.activeLeads === null ? "—" : String(stats.activeLeads)}
             trend={{ direction: "neutral", label: "Open the pipeline" }}
             className="h-full transition-colors hover:border-border-strong"
           />
-        </Link>
+        </SectionLink>
       </div>
 
       <div className="flex flex-col gap-3">

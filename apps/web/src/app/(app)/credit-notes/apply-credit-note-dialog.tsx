@@ -45,7 +45,7 @@ export function ApplyCreditNoteDialog({
     setError(null);
     setInvoices(null);
     apiClient
-      .get<Invoice[]>(`/invoices?contactId=${contactId}`)
+      .get<Invoice[]>(`/invoices?picker=1&contactId=${contactId}`)
       .then((list) => {
         const owed = list
           .filter((i) => i.status === "issued" && i.type !== "advance" && i.currency === currency && BigInt(i.balanceDue) > 0n)

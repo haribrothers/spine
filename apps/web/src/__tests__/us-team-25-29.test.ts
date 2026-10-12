@@ -33,10 +33,11 @@ describe("US-TEAM-25", () => {
     // Receivables is a report: it opens with its permission, and that's the work.
     expect(at([], "/receivables")).toBe("none");
     expect(at(["reports.view_receivables"], "/receivables")).toBe("work");
-    // Reading quotes needs no permission; creating one is work.
-    expect(at([], "/quotes")).toBe("view");
-    expect(at(["quotes.edit_own"], "/quotes")).toBe("work");
-    const s = sectionsOpened(["invoices.edit_own"], DEFAULT_MODULES);
+    // US-TEAM-30: Quotes opens with Open Quotes; creating one is work.
+    expect(at([], "/quotes")).toBe("none");
+    expect(at(["quotes.open"], "/quotes")).toBe("view");
+    expect(at(["quotes.open", "quotes.edit_own"], "/quotes")).toBe("work");
+    const s = sectionsOpened(["invoices.open", "invoices.edit_own"], DEFAULT_MODULES);
     expect(s.works).toBe(1);
     expect(s.all.some((x) => x.href.startsWith("/team/"))).toBe(false);
     expect(permissionCount(["banking.view", "not.a.capability"], DEFAULT_MODULES).granted).toBe(1);

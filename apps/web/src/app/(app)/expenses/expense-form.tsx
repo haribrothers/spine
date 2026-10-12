@@ -162,7 +162,7 @@ export function ExpenseForm({
   useEffect(() => {
     if (!open) return;
     apiClient.get<ExpenseCategory[]>("/expense-categories").then(setCategories).catch(() => {});
-    apiClient.get<JobOption[]>("/jobs").then(setJobs).catch(() => {});
+    apiClient.get<JobOption[]>("/jobs?picker=1").then(setJobs).catch(() => {});
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
     apiClient.get<{ trade: string; lastDayRateAmount: string }[]>("/expenses/labour-trades").then(setTrades).catch(() => {});
   }, [open]);

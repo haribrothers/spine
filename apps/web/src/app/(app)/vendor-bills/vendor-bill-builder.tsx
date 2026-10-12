@@ -123,8 +123,8 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   useEffect(() => {
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
     apiClient.get<TaxGroupOption[]>("/tax-groups").then(setTaxGroups).catch(() => {});
-    apiClient.get<JobOption[]>("/jobs").then(setJobs).catch(() => {});
-    apiClient.get<{ id: string; name: string }[]>("/contacts?type=vendor&type=both").then(setVendors).catch(() => {});
+    apiClient.get<JobOption[]>("/jobs?picker=1").then(setJobs).catch(() => {});
+    apiClient.get<{ id: string; name: string }[]>("/contacts?picker=1&type=vendor&type=both").then(setVendors).catch(() => {});
   }, []);
 
   const totals = useMemo(() => {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -44,6 +43,7 @@ import { PayablesBulkBar } from "./payables-bulk-bar";
 import { draftsNote, emptyAge, filterBills, parsePayablesState, payablesQuery, vendorView, type PayablesListState, type PayablesTab } from "./payables-list-state";
 import type { PayablesBillRow, PayablesReport } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 const ALL_AGES = "__all__";
 
 type Dialog = { kind: "pay"; contactId: string; billIds: string[] } | { kind: "credit"; row: PayablesBillRow } | null;
@@ -208,9 +208,9 @@ export function PayablesExplorer() {
             <span className="flex flex-wrap items-center gap-2" data-testid="drafts-note">
               <Info size={15} aria-hidden />
               {drafts}
-              <Link href="/vendor-bills?card=drafts" className="font-medium text-primary hover:underline">
+              <SectionLink href="/vendor-bills?card=drafts" className="font-medium text-primary hover:underline">
                 See drafts
-              </Link>
+              </SectionLink>
             </span>
           )
         }

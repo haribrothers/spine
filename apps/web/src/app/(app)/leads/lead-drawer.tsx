@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Badge,
@@ -39,6 +38,7 @@ import { STATUS_BADGE_CLASS } from "../quotes/quotes-table";
 import { LostReasonChips } from "./lead-closed-dialogs";
 import { daysInStage, daysLabel } from "./pipeline-state";
 
+import { SectionLink } from "../../../components/section-link";
 // Same list quote-builder.tsx uses for its currency Combobox.
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 const UNASSIGNED = "__unassigned__";
@@ -223,9 +223,9 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
           {lead ? (
             <DrawerDescription id="lead-drawer-summary" className="flex flex-wrap items-center gap-x-2">
               {contact && (
-                <Link href={`/contacts/${contact.id}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${contact.id}`} className="font-medium text-primary hover:underline">
                   {contact.name}
-                </Link>
+                </SectionLink>
               )}
               <span aria-hidden>·</span>
               <span>{lead.stageKind === "open" ? daysLabel(daysInStage(lead, Date.now())) : `${lead.stageName} ${new Date(lead.stageChangedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`}</span>
@@ -331,9 +331,9 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
                   <ul className="flex flex-col divide-y divide-border">
                     {quotes.map((q) => (
                       <li key={q.id} className="flex items-center gap-2.5 py-2 text-[13px]">
-                        <Link href={`/quotes/${q.id}`} className="font-medium text-primary hover:underline">
+                        <SectionLink href={`/quotes/${q.id}`} className="font-medium text-primary hover:underline">
                           {q.number ?? `Draft v${q.version}`}
-                        </Link>
+                        </SectionLink>
                         <Badge className={STATUS_BADGE_CLASS[q.status]}>{QUOTE_STATUS_LABELS[q.status]}</Badge>
                         <span className="ml-auto font-medium tabular-nums text-on-surface">{formatMoney(q.totalAmount, q.currency)}</span>
                       </li>

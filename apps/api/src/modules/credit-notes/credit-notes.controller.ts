@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { applyPaymentCreditSchema, createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import type { Response } from "express";
@@ -21,6 +21,7 @@ import { parseEmailOverride } from "../email/email-text";
  * `@RequireCapability` here.
  */
 @Controller("credit-notes")
+@RequireSectionOpen("credit_notes.open")
 @OrgRoles(["owner", "staff"])
 export class CreditNotesController {
   constructor(

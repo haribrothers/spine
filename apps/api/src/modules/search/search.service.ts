@@ -13,7 +13,7 @@ import {
 } from "@spine/shared";
 import { and, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
-import { getMemberRole } from "../../auth/capability.util";
+import { getEffectiveCapabilities, getMemberRole } from "../../auth/capability.util";
 import { orgClock } from "../../common/org-clock";
 import { orgLocale } from "../../common/money-format";
 import type { Database } from "../../db/client";
@@ -59,20 +59,25 @@ export class SearchService {
     const money = (amount: bigint, currency: string) => formatMoney(amount, currency, locale);
     const ctx = { orgId, userId, q, n, money, today: orgClock().date };
 
+    // US-TEAM-31 (D-235): a section closed for every one of a Staff member's Teams isn't searched.
+    const can = await getEffectiveCapabilities(this.db, { orgId, userId });
+    const open = (capability: keyof typeof can) => !field && can[capability];
+
     const results: Record<SearchGroupType, (SearchResult & { exact: boolean })[]> = {
-      contacts: field ? [] : await this.contacts(ctx),
-      quotes: field ? [] : await this.quotes(ctx),
+      contacts: open("contacts.open") ? await this.contacts(ctx) : [],
+      quotes: open("quotes.open") ? await this.quotes(ctx) : [],
       // US-SET-24: no Jobs group while Jobs & field is switched off.
-      jobs: (await moduleOn(this.db, orgId, "jobsField")) ? await this.jobs(ctx, field) : [],
-      invoices: field ? [] : await this.invoices(ctx),
+      jobs: (field || can["jobs.open"]) && (await moduleOn(this.db, orgId, "jobsField")) ? await this.jobs(ctx, field) : [],
+      invoices: open("invoices.open") ? await this.invoices(ctx) : [],
       // US-INV-38: credit notes are Owner and Staff only, like invoices.
-      credit_notes: field ? [] : await this.creditNotes(ctx),
+      credit_notes: open("credit_notes.open") ? await this.creditNotes(ctx) : [],
       // US-PAY-25: payments are Owner and Staff only.
-      payments: field ? [] : await this.payments(ctx),
-      vendor_bills: field ? [] : await this.vendorBills(ctx),
+      payments: open("payments.open") ? await this.payments(ctx) : [],
+      vendor_bills: open("vendor_bills.open") ? await this.vendorBills(ctx) : [],
       // US-PUR-55: vendor payments are Owner and Staff only.
-      vendor_payments: field ? [] : await this.vendorPayments(ctx),
-      expenses: await this.expenses(ctx, field),
+      vendor_payments: open("vendor_payments.open") ? await this.vendorPayments(ctx) : [],
+      // Field, and Staff without "See everyone's expenses", find only their own.
+      expenses: await this.expenses(ctx, field || !can["expenses.view_others"]),
     };
 
     const groups: (SearchGroup & { exact: boolean })[] = (Object.keys(results) as SearchGroupType[])
@@ -268,7 +273,7 @@ export class SearchService {
     });
   }
 
-  private async expenses(c: Ctx, field: boolean) {
+  private async expenses(c: Ctx, ownOnly: boolean) {
     const rows = await this.db
       .select({ id: expenses.id, number: expenses.number, status: expenses.status, amount: expenses.amount, currency: expenses.currency, date: expenses.date, category: expenseCategories.name, submitter: user.name })
       .from(expenses)
@@ -278,8 +283,8 @@ export class SearchService {
         and(
           eq(expenses.orgId, c.orgId),
           this.numberOrText(expenses.number, c.q, expenseCategories.name, expenses.description),
-          // Field: only their own expenses (US-OPS-20).
-          field ? eq(expenses.submittedByUserId, c.userId) : undefined,
+          // Field (US-OPS-20) and Staff without "See everyone's expenses" (US-TEAM-30): only their own.
+          ownOnly ? eq(expenses.submittedByUserId, c.userId) : undefined,
         ),
       )
       .orderBy(...this.rank(expenses.number, expenseCategories.name, c.q), desc(expenses.createdAt))

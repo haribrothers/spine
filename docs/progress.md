@@ -285,9 +285,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-27 · Manage a Team's members safely
 - [x] US-TEAM-28 · Review permissions before saving
 - [x] US-TEAM-29 · See a Team's history
-- [ ] US-TEAM-30 · Choose which sections a Team can open
-- [ ] US-TEAM-31 · Keep closed records out of the way, not out of the work
-- [ ] US-TEAM-32 · Open and close sections in one place
+- [x] US-TEAM-30 · Choose which sections a Team can open
+- [x] US-TEAM-31 · Keep closed records out of the way, not out of the work
+- [x] US-TEAM-32 · Open and close sections in one place
 - [x] US-SET-13 · Open contact history the same way as everywhere else
 - [x] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [x] US-OPS-08 · Make every mutating request safe to repeat

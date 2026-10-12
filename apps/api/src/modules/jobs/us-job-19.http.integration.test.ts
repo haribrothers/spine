@@ -59,11 +59,17 @@ describe("US-JOB-19 · keep money and unassigned jobs away from field crew (requ
     Object.assign(field, await newUser("field"));
     await joinOrg(field, "field");
     Object.assign(staff, await newUser("staff"));
-    await joinOrg(staff, "staff");
+    // US-TEAM-30: their Team opens Jobs.
+    const [jobsTeam] = await db.insert(teams).values({ orgId, name: `Jobs ${randomUUID()}` }).returning();
+    await db.insert(teamPrivileges).values({ teamId: jobsTeam!.id, capability: "jobs.open", granted: true });
+    await db.insert(teamMemberships).values({ teamId: jobsTeam!.id, memberId: await joinOrg(staff, "staff") });
     Object.assign(staffWithCosting, await newUser("staff-costing"));
     const memberId = await joinOrg(staffWithCosting, "staff");
     const [team] = await db.insert(teams).values({ orgId, name: `Costing ${randomUUID()}` }).returning();
-    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "reports.view_job_profitability", granted: true });
+    await db.insert(teamPrivileges).values([
+      { teamId: team!.id, capability: "jobs.open", granted: true },
+      { teamId: team!.id, capability: "reports.view_job_profitability", granted: true },
+    ]);
     await db.insert(teamMemberships).values({ teamId: team!.id, memberId });
 
     const [a, b] = await db.select().from(jobs).where(eq(jobs.orgId, orgId)).limit(2);

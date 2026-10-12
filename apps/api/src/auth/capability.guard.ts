@@ -8,7 +8,7 @@ import { DATABASE } from "../db/db.module";
 import type { Database } from "../db/client";
 import { member } from "../db/schema";
 import { hasCapability } from "./capability.util";
-import { CAPABILITY_KEY } from "./require-capability.decorator";
+import { CAPABILITY_KEY, PICKER_KEY, SECTION_KEY } from "./require-capability.decorator";
 
 /**
  * Registered as a global APP_GUARD in app.module.ts. @thallesp/nestjs-
@@ -39,11 +39,13 @@ export class CapabilityGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<Capability | undefined>(CAPABILITY_KEY, [
+    const capability = this.reflector.getAllAndOverride<Capability | undefined>(CAPABILITY_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!required) return true;
+    const section = this.reflector.getAllAndOverride<Capability | undefined>(SECTION_KEY, [context.getHandler(), context.getClass()]);
+    if (!capability && !section) return true;
+    const required = (capability ?? section) as Capability;
 
     const request = context.switchToHttp().getRequest();
     // NOT guaranteed to be Better Auth's own AuthGuard's request.session yet
@@ -102,9 +104,16 @@ export class CapabilityGuard implements CanActivate {
       throw new ForbiddenException(`Role "${membership.role}" is not eligible for capability "${required}"`);
     }
 
+    // US-TEAM-30: a closed section refuses all its routes; a picker route
+    // still answers `?picker=1`, with only what forms need (US-TEAM-31).
+    if (section && !(await hasCapability(this.db, { orgId, userId }, section))) {
+      const picker = this.reflector.get<boolean | undefined>(PICKER_KEY, context.getHandler()) && request.query?.picker === "1";
+      if (!picker) throw new ForbiddenException(`Missing capability: ${section}`);
+      request.sectionClosed = true;
+    }
     // Same rule as everywhere else (hasCapability): only this organisation's Teams count.
-    if (!(await hasCapability(this.db, { orgId, userId }, required))) {
-      throw new ForbiddenException(`Missing capability: ${required}`);
+    if (capability && !(await hasCapability(this.db, { orgId, userId }, capability))) {
+      throw new ForbiddenException(`Missing capability: ${capability}`);
     }
     return true;
   }

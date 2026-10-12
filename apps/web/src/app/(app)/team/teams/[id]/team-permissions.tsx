@@ -26,9 +26,10 @@ import { apiClient } from "../../../../../lib/api-client";
 import type { MemberRow } from "../../../../../lib/members";
 import { useModules } from "../../../../../lib/modules-context";
 import type { TeamDetail, TeamPrivileges } from "../../../../../lib/teams";
-import { applyToDraft, changeReason, draftChanges, matchesSearch, permissionGroups, sectionChanges, sectionsOpened } from "../teams-state";
+import { applyToDraft, changeReason, draftChanges, matchesSearch, permissionGroups, sectionChangeLine, sectionChanges, sectionSwitches, sectionsOpened, waitsFor } from "../teams-state";
 
 const ACCESS_WORDS = { work: " — can work here", view: " — view only", none: " — can't open" } as const;
+const ACCESS_LABELS = { work: "Can work here", view: "View only", none: "Can't open" } as const;
 
 const granted = (p: TeamPrivileges) => Object.entries(p).filter(([, on]) => on).map(([c]) => c);
 
@@ -40,6 +41,10 @@ const granted = (p: TeamPrivileges) => Object.entries(p).filter(([, on]) => on).
  * the sections members gain or lose. Groups say how many are on; search,
  * Show changed only and Expand all help find one; the side panel is what
  * members will open.
+ *
+ * US-TEAM-32 (D-235) — `TeamPageSections`: the Sections card above the groups
+ * opens and closes sections in the same draft; a closed section's actions
+ * wait for it ("Open Quotes first.").
  */
 export function TeamPermissions({
   detail,
@@ -71,6 +76,7 @@ export function TeamPermissions({
   const before = useMemo(() => sectionsOpened(granted(detail.privileges), modules), [detail.privileges, modules]);
   const after = useMemo(() => sectionsOpened(granted(draft), modules), [draft, modules]);
   const moved = useMemo(() => sectionChanges(before, after), [before, after]);
+  const switches = useMemo(() => sectionSwitches(draft, modules), [draft, modules]);
 
   function change(list: { capability: Capability; granted: boolean }[]) {
     const next = applyToDraft(draft, list);
@@ -140,6 +146,27 @@ export function TeamPermissions({
         </Button>
       </div>
 
+      <section className="overflow-hidden rounded-lg border border-border bg-surface" aria-labelledby="team-sections-title" data-testid="team-sections">
+        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 border-b border-border bg-surface-sunken px-3.5 py-2.5">
+          <h3 id="team-sections-title" className="text-[13.5px] font-semibold text-on-surface">Sections</h3>
+          <p className="text-[12.5px] text-on-surface-muted">Closed sections leave members’ sidebar. Receivables, Payables, Banking and Reports open with their permissions below.</p>
+        </div>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {switches.map((sw) => (
+            <li key={sw.href} className={cn("-mb-px -mr-px flex items-center gap-3 border-b border-r border-border px-3.5 py-2.5 text-[13px]", changed.has(sw.capability) && "bg-info-bg/50")} data-section={sw.section} data-access={sw.access}>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2 font-medium text-on-surface">
+                  {sw.section}
+                  {changed.has(sw.capability) && <Badge className="bg-info-bg text-primary">Changed</Badge>}
+                </span>
+                <span className={cn("block text-[12px]", sw.access === "work" ? "text-paid" : "text-on-surface-muted")}>{ACCESS_LABELS[sw.access]}</span>
+              </span>
+              <Switch checked={sw.on} onCheckedChange={(checked) => change([{ capability: sw.capability, granted: checked }])} aria-label={`${sw.section} section`} />
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="overflow-hidden rounded-lg border border-border bg-surface" data-testid="permissions-list">
           {visible.length === 0 && <p className="px-4 py-6 text-[13px] text-on-surface-muted">{changedOnly ? "Nothing changed yet." : "No permission matches."}</p>}
@@ -172,18 +199,22 @@ export function TeamPermissions({
                   <Switch checked={all} onCheckedChange={(checked) => change(g.capabilities.map((capability) => ({ capability, granted: checked })))} aria-label={`Everything in ${g.label}`} />
                 </div>
                 {open &&
-                  g.shown.map((c) => (
-                    <div key={c} className={cn("flex items-center gap-3 border-t border-border py-2.5 pl-9 pr-3.5 text-[13px]", changed.has(c) && "bg-info-bg/50")}>
-                      <div className="min-w-0 flex-1">
-                        <p className="flex flex-wrap items-center gap-2 font-medium text-on-surface">
-                          {CAPABILITY_LABELS[c].label}
-                          {changed.has(c) && <Badge className="bg-info-bg text-primary">Changed</Badge>}
-                        </p>
-                        <p className="text-[12.5px] text-on-surface-muted">{CAPABILITY_LABELS[c].description}</p>
+                  g.shown.map((c) => {
+                    // US-TEAM-32: a closed section's actions wait for it.
+                    const waiting = waitsFor(c, draft);
+                    return (
+                      <div key={c} className={cn("flex items-center gap-3 border-t border-border py-2.5 pl-9 pr-3.5 text-[13px]", changed.has(c) && "bg-info-bg/50")} data-waiting={waiting ? "" : undefined}>
+                        <div className="min-w-0 flex-1">
+                          <p className={cn("flex flex-wrap items-center gap-2 font-medium", waiting ? "text-on-surface-muted" : "text-on-surface")}>
+                            {CAPABILITY_LABELS[c].label}
+                            {changed.has(c) && <Badge className="bg-info-bg text-primary">Changed</Badge>}
+                          </p>
+                          <p className="text-[12.5px] text-on-surface-muted">{waiting ?? CAPABILITY_LABELS[c].description}</p>
+                        </div>
+                        <Switch checked={draft[c] ?? false} disabled={waiting !== null} onCheckedChange={(checked) => change([{ capability: c, granted: checked }])} aria-label={CAPABILITY_LABELS[c].label} />
                       </div>
-                      <Switch checked={draft[c] ?? false} onCheckedChange={(checked) => change([{ capability: c, granted: checked }])} aria-label={CAPABILITY_LABELS[c].label} />
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             );
           })}
@@ -191,7 +222,7 @@ export function TeamPermissions({
 
         <aside className="rounded-lg border border-border bg-surface px-4 py-3.5" data-testid="members-will-open">
           <h3 className="text-[13.5px] font-semibold text-on-surface">What members will open</h3>
-          <p className="mb-2.5 text-[12.5px] text-on-surface-muted">Their sidebar with these permissions — before any other Team adds to it. Reading records never needs a permission.</p>
+          <p className="mb-2.5 text-[12.5px] text-on-surface-muted">Their sidebar with these permissions — before any other Team adds to it.</p>
           <ul className="flex flex-col gap-1.5 text-[13px]">
             {after.all.map((s) => {
               const change = moved.find((m) => m.href === s.href);
@@ -264,7 +295,7 @@ export function TeamPermissions({
               <li key={`s${s.href}`} className="flex items-start gap-2">
                 <LayoutGrid size={15} aria-hidden className="mt-0.5 shrink-0 text-on-surface-muted" />
                 <span>
-                  {s.access === "work" ? "They'll work in" : s.access === "view" ? "They'll only view" : "They'll no longer open"} <b className="font-semibold">{s.label}</b>
+                  {sectionChangeLine(s.was, s.access)} <b className="font-semibold">{s.label}</b>
                 </span>
               </li>
             ))}

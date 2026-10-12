@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { applyVendorCreditSchema, bulkVendorCreditIdsSchema, createVendorCreditSchema, createVendorRefundSchema, updateVendorCreditSchema, voidVendorCreditSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { VendorCreditsService } from "./vendor-credits.service";
@@ -18,6 +18,7 @@ function parse<T>(schema: { safeParse: (v: unknown) => { success: true; data: T 
  * `vendor_credits.record` for the posting step. Field never.
  */
 @Controller("vendor-credits")
+@RequireSectionOpen("vendor_credits.open")
 @OrgRoles(["owner", "staff"])
 export class VendorCreditsController {
   constructor(private readonly credits: VendorCreditsService) {}
@@ -123,6 +124,7 @@ export class VendorCreditsController {
 
 /** US-PUR-26 — `DELETE /vendor-refunds/:id` reverses a vendor refund. */
 @Controller("vendor-refunds")
+@RequireSectionOpen("vendor_credits.open")
 @OrgRoles(["owner", "staff"])
 export class VendorRefundsController {
   constructor(private readonly credits: VendorCreditsService) {}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { addDays, addMonths, isSameMonth } from "date-fns";
 import {
@@ -54,6 +53,7 @@ import type { Meeting, MeetingAttendee } from "./types";
 import { useFillHeight } from "../../../lib/use-fill-height";
 import { orgLocaleTag } from "../../../lib/money";
 import { useToast } from "../../../components/toast-host";
+import { SectionLink } from "../../../components/section-link";
 import {
   DEFAULT_VIEW,
   UPCOMING_DAYS,
@@ -423,7 +423,7 @@ export function MeetingsCalendar() {
 
   useEffect(() => {
     apiClient
-      .get<Contact[]>("/contacts?includeArchived=true")
+      .get<Contact[]>("/contacts?picker=1&includeArchived=true")
       .then(setContacts)
       .catch(() => setContacts([]));
     apiClient
@@ -813,9 +813,9 @@ export function MeetingsCalendar() {
               <ul className="flex flex-col gap-1">
                 {contactCounts.map(([contactId, count]) => (
                   <li key={contactId} className="flex items-center justify-between gap-2 text-[13px]">
-                    <Link href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline">
+                    <SectionLink href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline">
                       {contactsById.get(contactId)?.name ?? "Unknown contact"}
-                    </Link>
+                    </SectionLink>
                     <span className="shrink-0 tabular-nums text-on-surface-muted">{count}</span>
                   </li>
                 ))}

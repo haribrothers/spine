@@ -71,6 +71,16 @@ function visibleKeysForRole(
   return visibleForRole(role, can).filter((key) => !ownedByOffModule(modules, "dashboardWidgets", key));
 }
 
+/** US-TEAM-31 (D-235): cards about a section are left out while it's closed for the member. */
+const WIDGET_SECTION: Partial<Record<DashboardWidgetKey, Capability>> = {
+  "pipeline-by-stage": "leads.open",
+  "invoices-due": "invoices.open",
+  "ready-to-bill": "jobs.open",
+  "retention-held": "jobs.open",
+  "jobs-in-progress": "jobs.open",
+  "job-profitability": "jobs.open",
+};
+
 function visibleForRole(role: string | null, can: (capability: Capability) => boolean): DashboardWidgetKey[] {
   // US-DASH-18: Field get their own cards; nobody else sees them.
   if (role === "field")
@@ -80,7 +90,8 @@ function visibleForRole(role: string | null, can: (capability: Capability) => bo
     (w) =>
       !w.fieldOnly &&
       (role === "owner" || !w.ownerOnly) &&
-      (w.capability === null || can(w.capability)),
+      (w.capability === null || can(w.capability)) &&
+      (role === "owner" || !WIDGET_SECTION[w.key] || can(WIDGET_SECTION[w.key]!)),
   ).map((w) => w.key);
 }
 

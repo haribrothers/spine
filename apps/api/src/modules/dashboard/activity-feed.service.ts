@@ -1,3 +1,5 @@
+import { getEffectiveCapabilities } from "../../auth/capability.util";
+import type { Capability } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -59,12 +61,17 @@ export class ActivityFeedService {
         ? (await this.db.select({ jobId: jobAssignments.jobId }).from(jobAssignments).where(eq(jobAssignments.userId, userId))).map((r) => r.jobId)
         : null;
 
+    // US-TEAM-31 (D-235): Staff don't see events from sections closed for all their Teams.
+    const can = role === "staff" && userId ? await getEffectiveCapabilities(this.db, { orgId, userId }) : null;
+    const open = (capability: Capability) => !can || can[capability];
+    const jobsShown = onlyJobs?.length !== 0 && open("jobs.open");
+
     const [quoteEntries, paymentEntries, expenseEntries, jobEntries, milestoneEntries] = await Promise.all([
-      includeFinancial ? this.quoteEventEntries(orgId) : Promise.resolve([]),
-      includeFinancial ? this.paymentEntries(orgId) : Promise.resolve([]),
-      includeFinancial ? this.expenseEntries(orgId) : Promise.resolve([]),
-      onlyJobs?.length === 0 ? Promise.resolve([]) : this.jobEntries(orgId, onlyJobs),
-      onlyJobs?.length === 0 ? Promise.resolve([]) : this.milestoneEntries(orgId, onlyJobs),
+      includeFinancial && open("quotes.open") ? this.quoteEventEntries(orgId) : Promise.resolve([]),
+      includeFinancial && open("payments.open") ? this.paymentEntries(orgId) : Promise.resolve([]),
+      includeFinancial && open("expenses.view_others") ? this.expenseEntries(orgId) : Promise.resolve([]),
+      jobsShown ? this.jobEntries(orgId, onlyJobs) : Promise.resolve([]),
+      jobsShown ? this.milestoneEntries(orgId, onlyJobs) : Promise.resolve([]),
     ]);
 
     return [...quoteEntries, ...paymentEntries, ...expenseEntries, ...jobEntries, ...milestoneEntries]

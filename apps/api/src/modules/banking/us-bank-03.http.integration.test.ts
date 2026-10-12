@@ -86,7 +86,7 @@ describe("US-BANK-03 · choose the account money went into or came out of (requi
     Object.assign(owner, await newUser("owner"));
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;
     Object.assign(staff, await newUser("staff"));
-    await join(staff, "staff", ["payments.edit_own", "vendor_payments.edit_own", "expenses.edit_own", "expenses.approve"]);
+    await join(staff, "staff", ["payments.open", "payments.edit_own", "vendor_payments.open", "vendor_payments.edit_own", "expenses.edit_own", "expenses.view_others", "expenses.approve"]);
     Object.assign(field, await newUser("field"));
     await join(field, "field");
 

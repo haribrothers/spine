@@ -25,6 +25,7 @@ import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLin
 import { formatMoney } from "../../../../lib/money";
 import { useToast } from "../../../../components/toast-host";
 
+import { SectionLink } from "../../../../components/section-link";
 const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], string> = {
   draft: "bg-draft-bg text-draft",
   sent: "bg-due-soon-bg text-due-soon",
@@ -172,9 +173,9 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
             <div key={v.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <a href={`/quotes/${v.quoteId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
+                  <SectionLink href={`/quotes/${v.quoteId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
                     {v.quote.number ?? "Draft variation quote"}
-                  </a>
+                  </SectionLink>
                   <Badge className={QUOTE_STATUS_BADGE_CLASS[v.quote.status]}>
                     {v.quote.status.charAt(0).toUpperCase() + v.quote.status.slice(1)}
                   </Badge>

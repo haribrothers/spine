@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
 import { HardHat, Plus, RefreshCw, Search } from "lucide-react";
@@ -16,6 +16,7 @@ import { filterJobs, hasJobFilters, jobContacts, jobStats, jobsQuery, parseJobsS
 import { NewJobDrawer } from "./new-job-drawer";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
 
+import { useCanOpen } from "../../../components/section-link";
 const STATUS_OPTIONS = Object.entries(JOB_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 const ALL_CONTACTS = "__all__";
@@ -33,6 +34,7 @@ const ALL_CONTACTS = "__all__";
  */
 export function JobsExplorer() {
   const canCreate = useCapability("jobs.edit_own");
+  const canOpen = useCanOpen();
   const canSeeBudget = useCapability("reports.view_job_profitability");
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -253,9 +255,11 @@ export function JobsExplorer() {
                   canCreate ? (
                     <div className="flex flex-wrap justify-center gap-2">
                       {newJobButton}
-                      <Button asChild variant="secondary">
-                        <Link href="/quotes">Go to quotes</Link>
-                      </Button>
+                      {canOpen("/quotes") && (
+                        <Button asChild variant="secondary">
+                          <Link href="/quotes">Go to quotes</Link>
+                        </Button>
+                      )}
                     </div>
                   ) : undefined
                 }

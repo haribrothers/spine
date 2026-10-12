@@ -114,7 +114,7 @@ export function MoneyInOutDialog({
       .get<Record<string, LedgerAccount[]>>("/org/accounts")
       .then((grouped) => setLedger(Object.values(grouped).flat()))
       .catch(() => setLedger([]));
-    apiClient.get<{ id: string; name: string; archivedAt: string | null }[]>("/contacts").then(setContacts).catch(() => {});
+    apiClient.get<{ id: string; name: string; archivedAt: string | null }[]>("/contacts?picker=1").then(setContacts).catch(() => {});
     if (!isIn) apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
   }, [open, accounts, isIn, prefill, initialAccountId]);
 

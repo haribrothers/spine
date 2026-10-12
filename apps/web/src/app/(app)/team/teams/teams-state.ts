@@ -1,4 +1,4 @@
-import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, capabilitiesOff, withImpliedPrivileges, type Capability, type ModuleSettings } from "@spine/shared";
+import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, SECTION_OPEN_CAPABILITIES, capabilitiesOff, withImpliedPrivileges, type Capability, type ModuleSettings } from "@spine/shared";
 import type { MemberRow } from "../../../../lib/members";
 import { sectionAccessFor, type SectionAccess } from "../../../../lib/nav-sections";
 import type { TeamPrivileges, TeamSummary } from "../../../../lib/teams";
@@ -89,6 +89,40 @@ export function changeReason(capability: Capability, granted: boolean, changes: 
   }
   const rule = CAPABILITY_REQUIRES[capability];
   return rule && changes.some((c) => !c.granted && rule.requires.includes(c.capability)) ? rule.reason : null;
+}
+
+// ---------- Sections (US-TEAM-30, US-TEAM-32, D-235) ----------
+
+const OPEN_CAPABILITIES = new Set<Capability>(SECTION_OPEN_CAPABILITIES.map((s) => s.capability));
+
+/**
+ * The Sections card: one switch per section that has an Open permission
+ * (Expenses always opens — "See everyone's expenses" stays in its group),
+ * for the switched-on modules, with where members stand there.
+ */
+export function sectionSwitches(draft: TeamPrivileges, modules: ModuleSettings | null) {
+  const off = capabilitiesOff(modules);
+  const access = sectionsOpened(Object.entries(draft).filter(([, on]) => on).map(([c]) => c), modules).all;
+  return SECTION_OPEN_CAPABILITIES.filter((s) => s.href !== "/expenses" && !off.has(s.capability) && access.some((a) => a.href === s.href)).map((s) => ({
+    ...s,
+    on: draft[s.capability] ?? false,
+    access: access.find((a) => a.href === s.href)!.access,
+  }));
+}
+
+/** "Open Quotes first." while a permission's section is closed in the draft, else null. */
+export function waitsFor(capability: Capability, draft: TeamPrivileges): string | null {
+  const open = CAPABILITY_REQUIRES[capability]?.requires.find((r) => OPEN_CAPABILITIES.has(r) && !draft[r]);
+  if (!open) return null;
+  const label = CAPABILITY_LABELS[open].label;
+  return label.startsWith("Open ") ? `${label} first.` : `Turn on “${label}” first.`;
+}
+
+/** The save confirm's line for a section the draft opens, closes or changes. */
+export function sectionChangeLine(was: SectionAccess, access: SectionAccess): string {
+  if (access === "none") return "They'll no longer see";
+  if (was === "none") return "They'll see";
+  return access === "work" ? "They'll work in" : "They'll only view";
 }
 
 /** Groups in the matrix's order, for the switched-on modules (US-SET-24). */

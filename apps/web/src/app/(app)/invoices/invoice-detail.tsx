@@ -60,6 +60,7 @@ import { EmailFailedAlert } from "../../../components/email-failed-alert";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { calendarDate } from "../quotes/quotes-list-state";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
  * always JSON-parses responses, so this opens the route directly in a new
@@ -173,7 +174,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     if (!invoice) return;
     const missing = (invoice.lines ?? []).filter((l) => l.type === "item" && !l.hsnSac).length;
     if (missing > 0) {
-      const contact = await apiClient.get<{ gstTreatment: GstTreatment | null }>(`/contacts/${invoice.contactId}`).catch(() => null);
+      const contact = await apiClient.get<{ gstTreatment: GstTreatment | null }>(`/contacts/${invoice.contactId}?picker=1`).catch(() => null);
       if (gstinRequired(contact?.gstTreatment)) {
         setMissingHsn(missing);
         return;
@@ -486,9 +487,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="invoice-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
-                <Link href={`/contacts/${invoice.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${invoice.contactId}`} className="font-medium text-primary hover:underline">
                   {invoice.contactName ?? "Unknown contact"}
-                </Link>
+                </SectionLink>
               </span>
               {invoice.status !== "draft" && invoice.issueDate && (
                 <span className="inline-flex items-center gap-1.5">
@@ -528,9 +529,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               {invoice.job && (
                 <span className="inline-flex items-center gap-1.5" data-testid="invoice-job-card">
                   <HardHat size={14} aria-hidden />
-                  <Link href={`/jobs/${invoice.job.id}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/jobs/${invoice.job.id}`} className="font-medium text-primary hover:underline">
                     {invoice.job.number ? `${invoice.job.number} · ${invoice.job.name}` : invoice.job.name}
-                  </Link>
+                  </SectionLink>
                   {invoice.milestone && (
                     <>
                       {" · "}
@@ -544,9 +545,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 <span className="inline-flex items-center gap-1.5">
                   <Receipt size={14} aria-hidden />
                   From{" "}
-                  <Link href={`/quotes/${invoice.sourceQuoteId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/quotes/${invoice.sourceQuoteId}`} className="font-medium text-primary hover:underline">
                     {invoice.sourceQuoteNumber ?? "a quote"}
-                  </Link>
+                  </SectionLink>
                 </span>
               )}
             </p>

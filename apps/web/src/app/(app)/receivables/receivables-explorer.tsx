@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -46,6 +45,7 @@ import { ReceivablesBulkBar } from "./receivables-bulk-bar";
 import { customerView, filterInvoices, parseReceivablesState, receivablesQuery, type ReceivablesListState, type ReceivablesTab } from "./receivables-list-state";
 import type { ReceivablesInvoiceRow, ReceivablesReport } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 const ALL_AGES = "__all__";
 
 /** "Nothing 31–60 days late." — what an empty age says. */
@@ -231,9 +231,9 @@ export function ReceivablesExplorer() {
             <span className="flex flex-wrap items-center gap-2" data-testid="retention-note">
               <Info size={15} aria-hidden />
               {formatMoney(BigInt(retention.held), currency)} retention held on {retention.jobCount} {retention.jobCount === 1 ? "job" : "jobs"} isn&apos;t counted here — it&apos;s owed once you release it on the job.
-              <Link href="/jobs" className="font-medium text-primary hover:underline">
+              <SectionLink href="/jobs" className="font-medium text-primary hover:underline">
                 See jobs
-              </Link>
+              </SectionLink>
             </span>
           )
         }

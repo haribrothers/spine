@@ -67,7 +67,7 @@ export function VendorBillLines({
   const [expenseAccounts, setExpenseAccounts] = useState<AccountOption[]>([]);
 
   useEffect(() => {
-    apiClient.get<CatalogItemOption[]>("/catalog-items").then(setCatalogItems).catch(() => {});
+    apiClient.get<CatalogItemOption[]>("/catalog-items?picker=1").then(setCatalogItems).catch(() => {});
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
     apiClient.get<TaxGroupOption[]>("/tax-groups").then(setTaxGroups).catch(() => {});
     apiClient

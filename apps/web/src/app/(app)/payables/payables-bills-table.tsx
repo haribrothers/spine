@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
@@ -11,6 +10,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { AgeCell } from "../receivables/receivables-table";
 import type { PayablesBillRow } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 export interface BillActions {
   onPay: (row: PayablesBillRow) => void;
   onApplyCredit: (row: PayablesBillRow) => void;
@@ -56,9 +56,9 @@ export function PayablesBillsTable({
       header: "Bill",
       render: (row) => (
         <div className="flex max-w-[14rem] flex-col">
-          <Link href={`/vendor-bills/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
+          <SectionLink href={`/vendor-bills/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
             {row.billNumber}
-          </Link>
+          </SectionLink>
           {row.jobName && <span className="truncate text-[12px] text-on-surface-muted">{row.jobName}</span>}
         </div>
       ),
@@ -68,9 +68,9 @@ export function PayablesBillsTable({
       key: "contact",
       header: "Vendor",
       render: (row) => (
-        <Link href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
+        <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (row) => row.contactName ?? "",
     },

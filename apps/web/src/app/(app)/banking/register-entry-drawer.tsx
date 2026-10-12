@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, Spinner, useConfirm } from "@spine/ui";
 import type { BankEntryDetails, BankTransaction, BankTransfer } from "@spine/shared";
@@ -10,6 +9,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { formatDay } from "./dates";
 
+import { SectionLink } from "../../../components/section-link";
 export type DrawerEntry = { kind: "bank_transaction" | "bank_transfer"; id: string; what: string };
 type Loaded = { kind: "bank_transaction"; entry: BankTransaction & BankEntryDetails } | { kind: "bank_transfer"; entry: BankTransfer & BankEntryDetails };
 
@@ -85,9 +85,9 @@ export function RegisterEntryDrawer({
     rows.push([
       "Contact",
       e.contact ? (
-        <Link key="c" href={`/contacts/${e.contact.id}`} className="text-primary hover:underline">
+        <SectionLink key="c" href={`/contacts/${e.contact.id}`} className="text-primary hover:underline">
           {e.contact.name}
-        </Link>
+        </SectionLink>
       ) : (
         "—"
       ),

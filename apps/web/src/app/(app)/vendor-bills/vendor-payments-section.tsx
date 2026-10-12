@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Card, Spinner } from "@spine/ui";
-import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { PAYMENT_METHOD_LABELS, type BillVendorPaymentRow } from "./types";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * Every vendor payment allocated against this bill —
  * `GET /vendor-payments?billId=` (a join through
@@ -56,9 +56,9 @@ export function VendorPaymentsSection({ billId, refreshKey }: { billId: string; 
               {payments.map((payment) => (
                 <tr key={payment.id} className="border-t border-border" data-testid="bill-payment-row">
                   <td className="px-4 py-2.5">
-                    <Link href={`/vendor-payments/${payment.id}`} className="font-medium text-primary hover:underline">
+                    <SectionLink href={`/vendor-payments/${payment.id}`} className="font-medium text-primary hover:underline">
                       {payment.number ?? "Payment"}
-                    </Link>
+                    </SectionLink>
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5">{calendarDate(payment.date.slice(0, 10), today, locale)}</td>
                   <td className="px-4 py-2.5">

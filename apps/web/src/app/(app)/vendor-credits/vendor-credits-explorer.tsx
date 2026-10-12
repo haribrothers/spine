@@ -115,11 +115,11 @@ export function VendorCreditsExplorer() {
 
   useEffect(() => {
     apiClient
-      .get<ContactOption[]>("/contacts?type=vendor&type=both")
+      .get<ContactOption[]>("/contacts?picker=1&type=vendor&type=both")
       .then(setContacts)
       .catch(() => {});
     apiClient
-      .get<JobOption[]>("/jobs")
+      .get<JobOption[]>("/jobs?picker=1")
       .then(setJobs)
       .catch(() => {});
     apiClient

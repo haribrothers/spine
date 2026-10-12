@@ -9,6 +9,7 @@ import { VendorCreditRowActions, creditLabel, type CreditRowHandlers } from "./v
 import { CREDIT_STATES, creditState } from "./vendor-credit-state";
 import type { VendorCredit } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * US-PUR-38 (D-226) — the credits list: the number ("—" until a draft is
  * recorded), the vendor's credit note number, the vendor (opening the
@@ -60,9 +61,9 @@ export function VendorCreditsTable({
       key: "contact",
       header: "Vendor",
       render: (row) => (
-        <Link href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
+        <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (row) => row.contactName ?? "",
     },
@@ -72,9 +73,9 @@ export function VendorCreditsTable({
       header: "Against bill",
       render: (row) =>
         row.billId ? (
-          <Link href={`/vendor-bills/${row.billId}`} className="font-medium text-primary hover:underline">
+          <SectionLink href={`/vendor-bills/${row.billId}`} className="font-medium text-primary hover:underline">
             {row.billNumber ?? "A bill"}
-          </Link>
+          </SectionLink>
         ) : (
           muted
         ),

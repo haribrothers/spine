@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -70,6 +69,7 @@ import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { BUDGET_NOT_NEGATIVE, PERCENT_COMPLETE_RANGE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
+import { SectionLink } from "../../../components/section-link";
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
 
@@ -377,9 +377,9 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="job-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
-                <Link href={`/contacts/${job.contactId}`} className="font-medium text-primary hover:underline">
+                <SectionLink href={`/contacts/${job.contactId}`} className="font-medium text-primary hover:underline">
                   {job.contactName ?? "Unknown contact"}
-                </Link>
+                </SectionLink>
               </span>
               {job.siteAddress && (
                 <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -398,9 +398,9 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
               {job.sourceQuoteId && (
                 <span>
                   From{" "}
-                  <Link href={`/quotes/${job.sourceQuoteId}`} className="font-medium text-primary hover:underline">
+                  <SectionLink href={`/quotes/${job.sourceQuoteId}`} className="font-medium text-primary hover:underline">
                     {job.sourceQuoteNumber ?? "its quote"}
-                  </Link>
+                  </SectionLink>
                 </span>
               )}
             </p>

@@ -2,7 +2,8 @@ import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get,
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { bulkInvoiceIdsSchema, createInvoiceSchema, updateInvoiceSchema, voidInvoiceSchema } from "@spine/shared";
 import type { Response } from "express";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { PickerAllowed, RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
+import { SectionClosed, forPicker } from "../../common/picker";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { InvoicesService } from "./invoices.service";
@@ -14,6 +15,9 @@ import { parseEmailOverride } from "../email/email-text";
 import { hasCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
+
+/** US-TEAM-31 — what a payment or credit note needs of an invoice when Invoices is closed for the caller. */
+const INVOICE_PICKER_FIELDS = ["id", "number", "type", "status", "contactId", "contactName", "currency", "issueDate", "dueDate", "totalAmount", "balanceDue", "leftToCredit"] as const;
 
 /**
  * PRD §2.1/§9 — Invoices use the own/others capability split:
@@ -31,6 +35,7 @@ import type { Database } from "../../db/client";
  * `@OrgRoles(["owner", "staff"])`.
  */
 @Controller("invoices")
+@RequireSectionOpen("invoices.open")
 @OrgRoles(["owner", "staff"])
 export class InvoicesController {
   constructor(
@@ -42,10 +47,12 @@ export class InvoicesController {
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
+  /** US-TEAM-31: recording a payment or a credit note picks invoices with `?picker=1` while Invoices is closed. */
   @Get()
-  async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string) {
+  @PickerAllowed()
+  async list(@Session() session: UserSession, @SectionClosed() closed: boolean, @Query("status") status?: string, @Query("contactId") contactId?: string) {
     const orgId = requireOrgId(session);
-    return this.invoicesService.list(orgId, { status, contactId });
+    return forPicker(closed, await this.invoicesService.list(orgId, { status, contactId }), INVOICE_PICKER_FIELDS);
   }
 
   /**

@@ -12,7 +12,8 @@ import {
   createVariationOrderSchema,
   assignJobSchema,
 } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { PickerAllowed, RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
+import { SectionClosed, pickFields } from "../../common/picker";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { JobsService } from "./jobs.service";
@@ -42,6 +43,7 @@ import { AddJobNoteDto, AddJobPhotoDto, AssignJobDto, CompleteMilestoneDto } fro
  * pattern as every other own/others module in this codebase.
  */
 @Controller("jobs")
+@RequireSectionOpen("jobs.open")
 export class JobsController {
   constructor(
     private readonly jobsService: JobsService,
@@ -54,8 +56,10 @@ export class JobsController {
 
   /** `assignedToMe` (Phase 5 mobile home screen, S-11.2) mirrors `GET /expenses?mine=true`'s own precedent — narrows to jobs the requesting user is assigned to via `job_assignments`. */
   @Get()
+  @PickerAllowed()
   async list(
     @Session() session: UserSession,
+    @SectionClosed() closed: boolean,
     @Query("status") status?: string,
     @Query("contactId") contactId?: string,
     @Query("assignedToMe") assignedToMe?: string,
@@ -69,6 +73,8 @@ export class JobsController {
       contactId,
       assignedToUserId: field || assignedToMe === "true" ? session.user.id : undefined,
     });
+    // US-TEAM-31: an expense, bill or journal picks a job while Jobs is closed.
+    if (closed) return rows.map((row) => pickFields(row, ["id", "number", "name", "status", "contactId", "contactName"] as const));
     const includes = new Set((include ?? "").split(",").filter(Boolean));
     // US-DASH-18: each job's next pending milestone, for the dashboard's "My jobs".
     const withNextOnly = includes.has("next_milestone") ? await this.jobsService.withNextMilestone(rows) : rows;

@@ -4294,7 +4294,7 @@ Drawn in Claude Design for US-TEAM-25 to US-TEAM-29 (D-234): project "Spine web 
 
 Links to: `TeamPageMembers`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamUsersRefined`
 
-Shows: "Team › Teams" · "What each group of Staff can open and do. Someone on several Teams gets everything any of them allows." · "Create Team" · cards "Teams" (default · with no one yet) "Staff on no Team" (opens Users filtered to them) "Staff on several Teams" · "Search Teams" "Columns" · "Team" (name, "Default"/"Demo", description) "Members" (avatars, "2 people" or "No one yet") "Works in" ("7 of 18 sections") "Permissions" ("30 of 104") · row menu "Open" "Rename" "Duplicate" · "Delete" (not on the default Team or the only Team). As built, the column is "Works in": sections where the Team allows at least one action, or a report it opens (reading records never needs a permission, so the rest are view only; the Owner-only Team section isn't counted); the totals follow the business's modules.
+Shows: "Team › Teams" · "What each group of Staff can open and do. Someone on several Teams gets everything any of them allows." · "Create Team" · cards "Teams" (default · with no one yet) "Staff on no Team" (opens Users filtered to them) "Staff on several Teams" · "Search Teams" "Columns" · "Team" (name, "Default"/"Demo", description) "Members" (avatars, "2 people" or "No one yet") "Works in" ("7 of 18 sections") "Permissions" ("30 of 104") · row menu "Open" "Rename" "Duplicate" · "Delete" (not on the default Team or the only Team). As built, the column is "Works in": sections where the Team allows at least one action, or a report it opens (sections it opens with nothing allowed are view only, and closed sections don't count — US-TEAM-30; the Owner-only Team section isn't counted); the totals follow the business's modules.
 
 ### TeamsListDark — The same, dark
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
@@ -4366,7 +4366,7 @@ Shows: "Search permissions" "Show changed only" "Expand all"/"Collapse all" · g
 
 Links to: `TeamPageHistory`
 
-Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." · "Turn on/off <permission>" (with why, for one that came with another) · "They'll work in <section>" / "They'll only view <section>" / "They'll no longer open <section>" · "Go back" "Save changes" · toast "<Team> saved".
+Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." · "Turn on/off <permission>" (with why, for one that came with another) · "They'll see <section>" / "They'll work in <section>" / "They'll only view <section>" / "They'll no longer see <section>" (US-TEAM-32) · "Go back" "Save changes" · toast "<Team> saved".
 
 ### TeamPageHistory — Who changed what
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-29 · **Source:** Claude Design
@@ -4376,6 +4376,46 @@ Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." �
 Links to: `OrgAuditLog`
 
 Shows: newest first, "<person> turned on <permissions>", "added <names>", "changed the description" (from → to), "created <Team> from <Team>", with the date and time and chips ("+ <permission>", "− <permission>") · "Open in audit log →" (the audit log filtered to this Team, "One record · Show all").
+
+## Sections a Team can open
+
+Drawn in Claude Design for US-TEAM-30 to US-TEAM-32 (D-235): project "Spine web — refinements before Phase 10", canvas "28 Team sections". A Team's Permissions tab starts with its sections — one switch each, in the same draft as the groups — and each group starts with its Open permission. A closed section leaves its Staff's sidebar, its pages show no access, and other pages name its records without linking them.
+
+### TeamPageSections — Open and close a Team's sections
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-30, US-TEAM-32 · **Source:** Claude Design
+
+![TeamPageSections](screens/TeamPageSections.webp)
+
+Links to: `SavePermissionsConfirm`
+
+Shows: card "Sections" "Closed sections leave members’ sidebar. Receivables, Payables, Banking and Reports open with their permissions below." · one row per section (Contacts, Pipeline, Meetings, Catalogue, Quotes, Jobs, Invoices, Credit Notes, Payments, Vendor Bills, Vendor Credits, Vendor Payments — those of switched-on modules) with "Can work here" / "View only" / "Can't open", "Changed" and a switch · below, the groups and the side panel as on `TeamPagePermissions`. As built, the design's "Closed" reads "Can't open" (as in the panel), and Expenses has no switch here: it always opens, and "See everyone's expenses" stays in its group.
+
+### TeamPagePermissionsOpen — Open first in each group
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-30, US-TEAM-32 · **Source:** Claude Design
+
+![TeamPagePermissionsOpen](screens/TeamPagePermissionsOpen.webp)
+
+Links to: —
+
+Shows: a group starting with "Open <section>" ("See the <section> section and its <records>. Off: <section> leaves the sidebar and its pages say there's no access; other pages name a <record> without linking it.") · while it's off, the group's actions are dimmed with "Open <section> first." in place of their description and can't be switched (Expenses' others-only actions: "Turn on “See everyone's expenses” first.") · turning an action on from the group's switch brings Open with it, and turning Open off turns them off, with a notice (US-BANK-12).
+
+### TeamSectionClosedNoAccess — A closed section, for its Team
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-30 · **Source:** Claude Design
+
+![TeamSectionClosedNoAccess](screens/TeamSectionClosedNoAccess.webp)
+
+Links to: `DashboardStaff`
+
+Shows: the section gone from the sidebar · its address shows the no-access page (US-OPS-12) "You don’t have access to <section>" "Your account can’t open this page. If you need it for your work, ask an owner — <names> — to change your team’s permissions." "Go to dashboard". Search leaves its records out; dashboard cards about it are left out.
+
+### ClosedRecordAsText — A closed section's record named, not linked
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-31 · **Source:** Claude Design
+
+![ClosedRecordAsText](screens/ClosedRecordAsText.webp)
+
+Links to: —
+
+Shows: on another section's page, a record in a closed section as plain text with a small lock ("QUO-0012" on a job; screen readers hear "(Quotes is closed for your Team)") while records in open sections stay links · a button that only opens such a record (a milestone's "View invoice") is left out. As built, the design's note under the details isn't shown.
 
 ## Mobile field companion
 

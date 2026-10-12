@@ -3,7 +3,7 @@ import type { Response } from "express";
 import { z } from "zod";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createVendorPaymentSchema, sendRemittanceSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { VendorPaymentsService } from "./vendor-payments.service";
@@ -18,6 +18,7 @@ import { VendorRemittanceService } from "./vendor-remittance.service";
  * `requireOwnershipCapability`.
  */
 @Controller("vendor-payments")
+@RequireSectionOpen("vendor_payments.open")
 @OrgRoles(["owner", "staff"])
 export class VendorPaymentsController {
   constructor(

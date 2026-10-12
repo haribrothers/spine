@@ -60,15 +60,16 @@ export class AttentionService {
     const can = await getEffectiveCapabilities(this.db, { orgId, userId });
 
     const rows: (AttentionItem | null)[] = [
-      await this.invoicesOverdue(orgId, today, currency),
+      // US-TEAM-31 (D-235): nothing from a section closed for all the member's Teams.
+      can["invoices.open"] ? await this.invoicesOverdue(orgId, today, currency) : null,
       // US-DASH-30 (D-220): the email log is Owner-only, so is this row.
       role === "owner" ? await this.emailsFailed(orgId, currency) : null,
       can["expenses.approve"] ? await this.expensesAwaitingApproval(orgId, role === "owner" ? null : userId, currency) : null,
       can["quotes.approve_discount"] ? await this.quotesDiscountApproval(orgId, currency) : null,
       can["milestones.invoice"] ? await this.milestonesToInvoice(orgId, currency) : null,
-      await this.quotesExpiring(orgId, today, role === "owner" ? null : userId, currency),
-      can["vendor_payments.edit_own"] ? await this.vendorBillsDue(orgId, today, currency) : null,
-      can["reports.view_job_profitability"] ? await this.jobsOverBudget(orgId, currency) : null,
+      can["quotes.open"] ? await this.quotesExpiring(orgId, today, role === "owner" ? null : userId, currency) : null,
+      can["vendor_payments.edit_own"] && can["vendor_bills.open"] ? await this.vendorBillsDue(orgId, today, currency) : null,
+      can["reports.view_job_profitability"] && can["jobs.open"] ? await this.jobsOverBudget(orgId, currency) : null,
       role === "staff" ? await this.followupsOverdue(orgId, userId, currency) : null,
     ];
     return rows.filter((r): r is AttentionItem => r !== null && r.count > 0 && !ownedByOffModule(modules, "attention", r.kind));

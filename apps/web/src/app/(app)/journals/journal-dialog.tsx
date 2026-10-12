@@ -91,7 +91,7 @@ export function JournalDialog({
         ),
       )
       .catch(() => setAccounts([]));
-    apiClient.get<{ id: string; name: string; number: string | null }[]>("/jobs").then(setJobs).catch(() => {});
+    apiClient.get<{ id: string; name: string; number: string | null }[]>("/jobs?picker=1").then(setJobs).catch(() => {});
   }, [open, initial]);
 
   const debits = useMemo(() => lines.reduce((s, l) => s + l.debit, 0n), [lines]);

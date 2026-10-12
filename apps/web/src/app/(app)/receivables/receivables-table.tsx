@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Badge,
@@ -21,6 +20,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { howLate, reminderBlocked } from "./receivables-list-state";
 import { AGING_BUCKET_LABELS, type AgingBucket, type ReceivablesInvoiceRow } from "./types";
 
+import { SectionLink } from "../../../components/section-link";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
@@ -88,9 +88,9 @@ export function ReceivablesTable({
       header: "Invoice",
       render: (row) => (
         <div className="flex max-w-[14rem] flex-col">
-          <Link href={`/invoices/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
+          <SectionLink href={`/invoices/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
             {row.number ?? "Invoice"}
-          </Link>
+          </SectionLink>
           {(row.jobName || row.type === "advance") && (
             <span className="truncate text-[12px] text-on-surface-muted">
               {row.jobName}
@@ -106,9 +106,9 @@ export function ReceivablesTable({
       key: "contact",
       header: "Customer",
       render: (row) => (
-        <Link href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
+        <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (row) => row.contactName ?? "",
     },

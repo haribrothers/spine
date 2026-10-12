@@ -4,7 +4,7 @@ import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-aut
 import { applyPaymentCreditSchema, createPaymentSchema, unapplyPaymentSchema } from "@spine/shared";
 import type { Response } from "express";
 import { z } from "zod";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { PaymentsService } from "./payments.service";
@@ -24,6 +24,7 @@ import { IssuedPdfService } from "../pdf/issued-pdf.service";
  * access at all for Field — same shape as InvoicesController.
  */
 @Controller("payments")
+@RequireSectionOpen("payments.open")
 @OrgRoles(["owner", "staff"])
 export class PaymentsController {
   constructor(

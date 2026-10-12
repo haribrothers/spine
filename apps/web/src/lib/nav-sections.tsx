@@ -1,6 +1,6 @@
 import { Banknote, BarChart3, BookOpen, CalendarDays, ClipboardList, FileMinus, FileText, HandCoins, HardHat, History, Inbox, Landmark, LayoutDashboard, Package, Receipt, ReceiptText, Shield, Target, Undo2, UserCog, Users, Wallet } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
-import { DEFAULT_MODULES, moduleForPage, type Capability, type ModuleSettings } from "@spine/shared";
+import { DEFAULT_MODULES, SECTION_OPEN_CAPABILITIES, moduleForPage, type Capability, type ModuleSettings } from "@spine/shared";
 
 /**
  * The app's sidebar sections, shared across every routed page. Extracted
@@ -135,6 +135,8 @@ const ITEM_CAPABILITY: Record<string, Capability> = {
   "/payables": "reports.view_payables",
   "/banking": "banking.view",
   "/journals": "ledger.view",
+  // US-TEAM-30 (D-235): each section's Open permission. Expenses always opens (their own).
+  ...Object.fromEntries(SECTION_OPEN_CAPABILITIES.filter((s) => s.href !== "/expenses").map((s) => [s.href, s.capability])),
 };
 
 /** The Reports page is shown to Staff who hold any report capability. */
@@ -187,7 +189,7 @@ function sectionsForRole(role: string | null, capabilities: Partial<Record<Capab
 /**
  * Where a person stands in a section of Spine: they can work there (an
  * action is allowed, or the section is a report they may open), only view
- * it (it's in their sidebar — reading records needs no permission — but
+ * it (its section is open and in their sidebar — but
  * nothing there is allowed), or can't open it at all.
  */
 export type SectionAccess = "work" | "view" | "none";
@@ -231,8 +233,10 @@ export function sectionAccessFor(
     .flatMap((s) => s.items)
     .filter((i) => i.href !== "/dashboard" && !i.href.startsWith("/team/"));
   const shown = new Set(navSectionsFor(role, capabilities, modules).flatMap((s) => s.items.map((i) => i.href)));
+  // Opening a section (US-TEAM-30) isn't working in it.
+  const opens = new Set<string>(SECTION_OPEN_CAPABILITIES.map((o) => o.capability));
   const granted = Object.entries(capabilities ?? {})
-    .filter(([, on]) => on)
+    .filter(([c, on]) => on && !opens.has(c))
     .map(([c]) => c);
   return all.map((item) => {
     let access: SectionAccess;

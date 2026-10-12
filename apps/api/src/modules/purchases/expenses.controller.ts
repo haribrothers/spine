@@ -46,10 +46,11 @@ export class ExpensesController {
     @Query("mine") mine?: string,
   ) {
     const orgId = requireOrgId(session);
-    // Field always sees only their own expenses, whatever `mine` says (US-OPS-20).
+    // Field always sees only their own expenses, whatever `mine` says (US-OPS-20);
+    // so do Staff without "See everyone's expenses" (US-TEAM-30).
     const scope = await this.expensesService.readScope(orgId, session.user.id);
     // US-PUR-22: Field can only filter by a job they're assigned to.
-    if (scope && jobId && !(await this.expensesService.isAssigned(orgId, session.user.id, jobId))) return [];
+    if (scope && jobId && (await this.expensesService.isField(orgId, session.user.id)) && !(await this.expensesService.isAssigned(orgId, session.user.id, jobId))) return [];
     return this.expensesService.list(orgId, { status, jobId, submittedByUserId: scope ?? (mine === "true" ? session.user.id : undefined) });
   }
 
