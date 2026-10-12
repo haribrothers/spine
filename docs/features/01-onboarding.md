@@ -16,7 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
-| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide, vendor payments and payables to pay from, banking with reconciliations | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide, vendor payments and payables to pay from, banking with reconciliations, a team with Teams and invites | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -625,3 +625,20 @@ Decision: D-216, D-231
 **Implementation notes**
 - Data: `is_demo` on `money_accounts`, `bank_transactions`, `bank_transfers`, `bank_statement_imports` and `bank_reconciliations` (migration), set by the demo; the ledger treats their entries as demo.
 - API: the seeder adds the card through `MoneyAccountsService`, records the entries through `BankTransactionsService` and `BankTransfersService`, imports the statement through `StatementImportsService` (lines made from the demo's own bank entries, plus a bank charge) and reconciles last month through `ReconciliationsService` — each on its day.
+
+### US-ONB-35 · Explore Users with a team that looks real
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`TeamUsersRefined`, `TeamInvites`, `UserAccessDrawer`, `TeamsList` with demo data)
+**As** an evaluator, **I want** the demo's people, Teams and invites to look like a real small team, **so that** Users and Teams show what they do.
+
+Decision: D-216, D-232
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** Users lists, besides the owner, Sarah Mendes (Staff), Marcus Webb (Field), Kavya Iyer (Staff, on no Team — so "Staff without a Team" reads 1 and her row warns) and Ravi Kumar (Field, on the crew of one demo job); Tom Becker (Field) is under Deactivated. All are marked "Demo"; Kavya and Ravi have "Never signed in" until someone uses their login.
+- **Given** any demo, **when** it's loaded, **then** Teams has a second Team, "Accounts" (billing, payments, receivables, banking and reports), and Sarah is on General Staff and Accounts, so "What they can open" shows more for her than for someone on General Staff alone.
+- **Given** any demo, **when** it's loaded, **then** the Invites tab has two invites from the owner: a Staff invite (sam.lee.demo@example.com, joining General Staff and Accounts, sent two days ago) and a Field invite that has expired (dev.patel.demo@example.com, sent last month). No email is sent.
+- **Given** the demo's people, **when** the audit log or a person's history opens, **then** it reads like the team grew: each joined on their day, Sarah added to Accounts, Tom deactivated a few weeks ago — backdated, by the owner.
+- **Given** "Delete all demo data", **when** it runs, **then** the demo people lose their membership (their logins stay, as now), the Accounts Team and the demo invites go, and nothing a person set up themselves is touched — a Team or invite of their own stays.
+
+**Implementation notes**
+- Data: `is_demo` on `teams` and on Better Auth's `invitation` (migration), set only by the demo.
+- API: the seeder adds Kavya, Ravi and Tom the way it adds Sarah and Marcus (a login with the demo password; the membership is demo), creates "Accounts" through `TeamsService` with its grants, puts Sarah on it, writes the two invites directly (an id, the owner as inviter, `expires_at` in two days and last week) with their Teams, deactivates Tom through `MembersService`, adds Ravi to the first demo job's crew and backdates the audit entries. Loading the demo again reuses the people and the Team by name.

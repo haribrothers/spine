@@ -853,6 +853,7 @@ Total: 525 stories.
 - US-ONB-32 · Explore expense categories that guide (P2)
 - US-ONB-33 · Explore vendor payments and payables you can pay from (P2)
 - US-ONB-34 · Explore banking with accounts, transfers and reconciliations (P2)
+- US-ONB-35 · Explore Users with a team that looks real (P2)
 
 *Invoices*
 
