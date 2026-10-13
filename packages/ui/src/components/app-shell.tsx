@@ -61,6 +61,8 @@ export interface AppShellSidebarProps {
   renderLink: (item: AppShellNavItem, children: React.ReactNode) => React.ReactNode;
   /** Pinned-to-bottom user menu content (avatar + name + dropdown) — fully caller-supplied since it depends on session data and the dropdown menu's own actions. */
   userMenu?: React.ReactNode;
+  /** US-OPS-48 — shown under the logo, above the nav (the app's search field, or its icon when collapsed). */
+  search?: React.ReactNode;
 }
 
 /**
@@ -77,10 +79,12 @@ export function AppShellSidebar({
   isActive,
   renderLink,
   userMenu,
+  search,
 }: AppShellSidebarProps) {
   return (
     <Sidebar collapsed={collapsed} className="h-full shrink-0">
       <SidebarHeader collapsed={collapsed} onCollapsedChange={onCollapsedChange} logo={logo} />
+      {search ? <div className={cn("shrink-0 px-2 pt-2", collapsed && "flex justify-center")}>{search}</div> : null}
       <SidebarContent>
         {sections.map((section) => (
           <SidebarGroup key={section.label} collapsed={collapsed}>

@@ -7,6 +7,7 @@ import { AppShell, AppShellContent, AppShellSidebar, SpineLogo } from "@spine/ui
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { SearchButton, SearchPalette } from "./search-palette";
+import { RecentVisits } from "../lib/recent-visits";
 import { NotificationBell } from "./notification-bell";
 import { StorageBanner } from "./storage-banner";
 import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
@@ -132,10 +133,10 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
             {content}
           </Link>
         )}
+        search={<SearchButton collapsed={hydrated ? collapsed : false} onClick={() => setSearchOpen(true)} />}
         userMenu={
           (hydrated ? collapsed : false) ? (
             <div className="flex flex-col items-center gap-1">
-              <SearchButton onClick={() => setSearchOpen(true)} />
               <HelpButton collapsed />
               <NotificationBell collapsed />
               <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
@@ -145,7 +146,6 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
               <div className="min-w-0 flex-1">
                 <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
               </div>
-              <SearchButton onClick={() => setSearchOpen(true)} />
               <HelpButton collapsed={false} />
               <NotificationBell collapsed={false} />
             </div>
@@ -161,7 +161,11 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
           <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />
         ) : null}
       </AppShellContent>
-      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <Suspense>
+        <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} sections={sections} isOwner={isOwner} />
+        {/* US-OPS-39: records opened, for search's Recent. */}
+        <RecentVisits />
+      </Suspense>
     </AppShell>
   );
 }

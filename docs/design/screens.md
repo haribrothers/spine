@@ -4558,6 +4558,118 @@ Links to: `SettingsPhoneList`
 
 Shows: "Back to settings" above the pane; Escape or the close button closes Settings.
 
+## Search that finds more
+
+Drawn in Claude Design for US-OPS-39 to US-OPS-49 (D-238): project "Spine web — refinements before Phase 10", canvas "30 Search". Search shows recent records and searches before you type; finds leads, meetings, catalogue items and vendor credits, contacts by phone, tax ID and their people, and documents by amount; offers actions, pages and settings; narrows to one sidebar area with chips; ends each group with "See all … matching"; and sits as a field at the top of the sidebar. `SearchPalette` and `SearchPaletteDark` (under Self-hosting & system states) were redrawn with it. As built, the chips are the app's one segmented control (D-210) rather than the drawn pills, "Clear recent" is the last row of the recent lists (a row in the heading isn't reachable by keyboard inside the listbox), and a contact's status stays "Contact".
+
+### SearchPaletteRecent — Search before you type
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-39, US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteRecent](screens/SearchPaletteRecent.webp)
+
+Links to: `SearchPalette`
+
+Shows: Placeholder "Search records, pages and settings" · chips "All" "Sales" "Jobs" "Billing" "Purchases" · "RECENT" with "Clear recent" · INV-0014, JOB-001, Harborview Construction Co., BILL-8841, QUO-0011 · "RECENT SEARCHES" bluewater, 2,389.50, numbering · footer "↑↓ to move" "Enter to open" "Esc to close" and "Include archived".
+
+### SearchPaletteRecentDark — Search before you type, dark mode
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-39, US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteRecentDark](screens/SearchPaletteRecentDark.webp)
+
+Links to: `SearchPaletteRecent`
+
+Shows: The same in dark mode.
+
+### SearchPaletteFirstUse — Search with nothing recent yet
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-39, US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteFirstUse](screens/SearchPaletteFirstUse.webp)
+
+Links to: —
+
+Shows: "Type a name, a number like INV-0010 or an amount like 2,389.50." · "You can search contacts, leads, meetings, the catalogue, quotes, jobs, invoices, credit notes, payments, vendor bills, vendor credits, vendor payments and expenses."
+
+### SearchPaletteContactMatch — A contact found by phone
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-44 · **Source:** Claude Design
+
+![SearchPaletteContactMatch](screens/SearchPaletteContactMatch.webp)
+
+Links to: —
+
+Shows: "555 0107" · Bluewater Hospitality Group "Customer · Phone +1-555-0107" · Granite State Concrete "Vendor · Contact: Dana Lee · +1-555-0107 ext. 2" · "See all contacts matching “555 0107”".
+
+### SearchPaletteNoResults — No results
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteNoResults](screens/SearchPaletteNoResults.webp)
+
+Links to: —
+
+Shows: "No results for “harbourside”" · "Check the spelling, or try part of a name, a number or an amount. Or turn on Include archived."
+
+### SearchPaletteGoTo — Actions, pages and settings
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-41, US-OPS-42 · **Source:** Claude Design
+
+![SearchPaletteGoTo](screens/SearchPaletteGoTo.webp)
+
+Links to: —
+
+Shows: "invoice" · "ACTIONS" New invoice · "PAGES" Invoices (Billing), Receivables · "SETTINGS" Numbering, Automatic reminders, Documents (Documents & emails) · "CREDIT NOTES" CN-0002 · "See all credit notes matching “invoice”".
+
+### SearchPaletteAmount — Documents found by amount
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-45 · **Source:** Claude Design
+
+![SearchPaletteAmount](screens/SearchPaletteAmount.webp)
+
+Links to: —
+
+Shows: "2,389.50" · QUO-0011, INV-0014, INV-0009, RCP-0021, BILL-8841 with the amount in bold · a "See all … matching “2,389.50”" row under each group.
+
+### SearchPaletteScoped — Search narrowed to Billing
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-49, US-OPS-40 · **Source:** Claude Design
+
+![SearchPaletteScoped](screens/SearchPaletteScoped.webp)
+
+Links to: —
+
+Shows: "har" with "Billing" chosen · "INVOICES" six rows · "CREDIT NOTES" · "PAYMENTS" · "See all invoices matching “har”".
+
+### SearchPalettePhone — Search on a phone
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-49 · **Source:** Claude Design
+
+![SearchPalettePhone](screens/SearchPalettePhone.webp)
+
+Links to: —
+
+Shows: Full screen with "Cancel" · chips that scroll sideways · groups with "See all … matching “har”".
+
+### SidebarSearchField — Search in the sidebar
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-48 · **Source:** Claude Design
+
+![SidebarSearchField](screens/SidebarSearchField.webp)
+
+Links to: `SearchPaletteRecent`
+
+Shows: "Search…" with "⌘K" under the logo; the footer keeps the account menu, help and notifications.
+
+### SidebarSearchFieldFocus — Search in the sidebar, focused
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-48 · **Source:** Claude Design
+
+![SidebarSearchFieldFocus](screens/SidebarSearchFieldFocus.webp)
+
+Links to: `SidebarSearchField`
+
+Shows: The field with its focus ring.
+
+### SidebarSearchCollapsed — Search in the collapsed sidebar
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-48 · **Source:** Claude Design
+
+![SidebarSearchCollapsed](screens/SidebarSearchCollapsed.webp)
+
+Links to: `SidebarSearchField`
+
+Shows: A search icon button under the logo with the tooltip "Search (⌘K)".
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.
@@ -5321,13 +5433,15 @@ Links to: `AppShellPhone`
 Shows: "Welcome, Alex Morgan" · "Overview" · "Dashboard" · "Sales" · "Contacts" · "Pipeline" · "Meetings" · "Catalogue" · "Quotes" · "Jobs" · "Billing" · "Invoices" · "Credit Notes" · "Payments" · "Receivables" · "Purchases" · "Vendor Bills" · "Expenses" · "Vendor Payments" · "Payables" · "Reports" · "Team" · "Users" · "Teams" · "Audit log" · "AM" · "Alex Morgan"
 
 ### SearchPalette — Global search (Cmd/Ctrl+K)
-**Priority:** P1 · **Phase:** 7 · **Stories:** US-OPS-22, US-OPS-23 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-OPS-22, US-OPS-23, US-OPS-40, US-OPS-43, US-OPS-46, US-OPS-47 · **Source:** Claude Design (redrawn for D-238)
 
 ![SearchPalette](screens/SearchPalette.webp)
 
-Links to: —
+Redrawn for D-238: chips, sidebar icons, bold matches, leads and meetings groups, "See all … matching" rows and the new footer (see "Search that finds more").
 
-Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "↑↓ to move" · "Enter to open" · "Searches contacts, quotes, invoices, jobs, bills and expenses"
+Links to: `SearchPaletteRecent`, `SearchPaletteScoped`
+
+Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "See all contacts matching “har”" · "↑↓ to move" · "Enter to open" · "Esc to close" · "Include archived"
 
 ### DashboardOwnerRedesignDark — Dashboard (redesign) — owner, dark mode
 **Priority:** P1 · **Phase:** 6 · **Stories:** US-OPS-25, US-OPS-26 · **Source:** Drawn
@@ -5357,13 +5471,15 @@ Links to: `DashboardOwnerRedesignDark`, `SearchPaletteDark`, `InvoicesBulkSelect
 Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "Numbering" · "Chart of accounts" · "Payment instructions" · "Automatic reminders" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Spine emails customers about unpaid invoices on a schedule, so you don't have to chase." · "Send reminders automatically" · "Off by default. Applies to every issued invoice with a balance due." · "Schedule" · "3 days before the due date" · "On the due date" · "7 days after the due date" · "14 days after the due date" · "Every 14 days after that, up to 3 more times" · "Send at" · "9:00 AM (organisation time)" · "Each reminder uses the branded reminder email. Customers are never sent more than one reminder a day, and nothing is sent once an invoice is paid, voided or credited in full. You can turn reminders off for one customer on their contact page." · "Save" · "Preview email"
 
 ### SearchPaletteDark — Global search, dark mode
-**Priority:** P1 · **Phase:** 6 · **Stories:** US-OPS-25, US-OPS-26 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 6 · **Stories:** US-OPS-25, US-OPS-26, US-OPS-47 · **Source:** Claude Design (redrawn for D-238)
 
 ![SearchPaletteDark](screens/SearchPaletteDark.webp)
 
+Redrawn for D-238 in the new layout.
+
 Links to: `DashboardOwnerRedesignDark`, `InvoicesBulkSelectDark`, `SettingsRemindersDark`
 
-Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "↑↓ to move" · "Enter to open" · "Searches contacts, quotes, invoices, jobs, bills and expenses"
+Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "See all contacts matching “har”" · "↑↓ to move" · "Enter to open" · "Esc to close" · "Include archived"
 
 ### VendorBillAttachments — Attachments on a vendor bill
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-OPS-33, US-OPS-34, US-OPS-35 · **Source:** Drawn

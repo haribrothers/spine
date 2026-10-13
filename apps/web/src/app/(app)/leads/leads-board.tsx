@@ -156,6 +156,14 @@ export function LeadsBoard() {
     setDrawerLeadId(leadParam);
     setDrawerOpen(true);
   }, [leadParam]);
+  // US-OPS-42: `?new=1` (search's "Add lead") opens an empty drawer.
+  const newParam = searchParams.get("new") === "1";
+  useEffect(() => {
+    if (!newParam || !canCreate) return;
+    setDrawerLeadId(null);
+    setCreateStage(undefined);
+    setDrawerOpen(true);
+  }, [newParam, canCreate]);
   const { stages, error: stagesError, reload: reloadStages } = useLeadStages();
   const board = useFillHeight({ minHeight: BOARD_MIN_HEIGHT });
 

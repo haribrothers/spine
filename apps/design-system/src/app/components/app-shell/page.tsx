@@ -10,7 +10,7 @@ import {
   SpineLogo,
   type AppShellNavSection,
 } from "@spine/ui";
-import { Bell, ChevronDown, FileText, HelpCircle, LayoutDashboard, Receipt, Settings, Users } from "lucide-react";
+import { Bell, ChevronDown, FileText, HelpCircle, LayoutDashboard, Receipt, Search, Settings, Users } from "lucide-react";
 import { useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
@@ -47,6 +47,19 @@ function AppShellDemo() {
           collapsed={collapsed}
           onCollapsedChange={setCollapsed}
           sections={DEMO_SECTIONS}
+          search={
+            collapsed ? (
+              <button aria-label="Search" title="Search (⌘K)" className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-on-surface-muted hover:bg-surface-sunken">
+                <Search size={16} aria-hidden />
+              </button>
+            ) : (
+              <button aria-label="Search" className="flex h-8.5 w-full items-center gap-2 rounded-md border border-border bg-background pl-2.5 pr-2 text-[13px] text-on-surface-muted hover:bg-surface-sunken">
+                <Search size={15} aria-hidden />
+                <span className="flex-1 text-left">Search…</span>
+                <kbd className="rounded-sm border border-border bg-surface px-1.5 text-[11px] font-medium">⌘K</kbd>
+              </button>
+            )
+          }
           isActive={(href) => path === href}
           renderLink={(item, content) => (
             <a
@@ -178,6 +191,7 @@ export default () => (
             { prop: "AppShellSidebar.isActive", type: "(href: string) => boolean" },
             { prop: "AppShellSidebar.renderLink", type: "(item: AppShellNavItem, children: ReactNode) => ReactNode" },
             { prop: "AppShellSidebar.userMenu", type: "ReactNode" },
+            { prop: "AppShellSidebar.search", type: "ReactNode", defaultValue: "—", description: "US-OPS-48: under the logo, above the nav — the app's Search… field, or its icon when collapsed." },
             { prop: "AppShellHeader.breadcrumb", type: "BreadcrumbItem[]" },
             { prop: "AppShellHeader.title", type: "string" },
             { prop: "AppShellHeader.description", type: "string" },

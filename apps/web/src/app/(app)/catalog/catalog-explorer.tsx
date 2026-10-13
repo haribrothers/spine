@@ -193,6 +193,21 @@ export function CatalogExplorer({
     setDrawerOpen(true);
   }
 
+  // US-OPS-43: `?item=<id>` (a search result) opens that item, then leaves the address.
+  const itemParam = searchParams.get("item");
+  useEffect(() => {
+    if (!itemParam) return;
+    apiClient
+      .get<CatalogItem>(`/catalog-items/${itemParam}`)
+      .then(openEdit)
+      .catch(() => {})
+      .finally(() => {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("item");
+        replaceQuery(pathname, params.toString());
+      });
+  }, [itemParam]);
+
   // US-CAT-12 — Duplicate opens Add item filled from this one.
   function openDuplicate(item: CatalogItem) {
     setEditingItem(undefined);

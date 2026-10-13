@@ -77,6 +77,11 @@ export function PaymentsExplorer() {
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [recordOpen, setRecordOpen] = useState(false);
+  // US-OPS-42: `?new=1` (search's "Record payment") opens the dialog.
+  const newParam = searchParams.get("new") === "1";
+  useEffect(() => {
+    if (newParam && canCreate) setRecordOpen(true);
+  }, [newParam, canCreate]);
   const loading = useRef(false);
   const showToast = useToast();
 

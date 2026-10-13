@@ -517,6 +517,11 @@ export function MeetingsCalendar() {
   }, [visibleMeetings, session?.user?.id, capabilities]);
 
   const canCreateMeetings = capabilities?.["meetings.edit_own"] ?? false;
+  // US-OPS-42: `?new=1` (search's "New meeting") opens the new-meeting form for the next half hour.
+  const newParam = searchParams.get("new") === "1";
+  useEffect(() => {
+    if (newParam && canCreateMeetings) setCreateRequest(newMeetingRange(new Date(), new Date()));
+  }, [newParam, canCreateMeetings]);
 
   const events = useMemo<CalendarEvent[]>(
     () => [...visibleMeetings.map(toCalendarEvent), ...activityEvents],

@@ -5210,6 +5210,23 @@ Use an owner with the demo loaded and Sarah Mendes (Staff) in a second browser. 
 11. Notifications: "Business default · <n> min" uses the Owner's Meeting reminders setting; the digest names the business's time zone.
 12. Regression: onboarding's settings and Set up Spine's cards still open Settings panes and update when closed; Branding's note reads "Each person still chooses light or dark mode from their user menu."; every settings pane saves as before; Field and Staff can't save business settings (API 403).
 
+## 235. Search that finds more (US-OPS-39 to US-OPS-49, refinements before Phase 10)
+
+Use an owner with the demo loaded, Sarah Mendes (Staff) and Marcus Webb (Field) in other browsers. Check light and dark and a phone width, and compare with the canvas "30 Search".
+
+1. Sidebar: "Search…" with ⌘K (Ctrl K on Windows) sits under the logo and opens search; collapsed, it's an icon with the tooltip "Search (⌘K)"; the footer has no search icon any more. ⌘K / Ctrl+K still opens it anywhere.
+2. Before typing: the placeholder reads "Search records, pages and settings". With nothing opened yet: "Type a name, a number like INV-0010 or an amount like 2,389.50." and "You can search …" listing this person's areas (Marcus: "your meetings, jobs and expenses"). Open an invoice and a job, search "bluewater" and open a result, then reopen search: RECENT lists them newest first, RECENT SEARCHES has "bluewater"; choosing it fills the field. In another browser as the same owner, the same list shows. "Clear recent" empties both without asking.
+3. Results: "harborview" shows Contacts, Leads, Meetings, Quotes, Jobs, Invoices… in the sidebar's order, each row with its section's icon, "harbor" in bold and a coloured status; each group ends with "See all … matching “harborview”", which opens that list with the search box filled. Meetings has no See all.
+4. Contacts: a phone number's last digits ("555 0107"), part of a GSTIN or tax ID, or a contact person's name finds the contact, with "Phone …", "GSTIN …" or "Contact: …" on the second line. Marcus never sees contacts.
+5. Amounts: "4,542.50", "$4,542.50" and "4542.5" find DEMO-INV-0002 first in Invoices with the amount in bold; "4,542" finds nothing for $4,542.50. Marcus gets no amount matches.
+6. Actions, pages and settings: "new inv" → New invoice opens the invoice builder; "add lead", "new meeting", "record payment", "record vendor payment" and "add catalogue item" open their forms; "receivables", "trial balance" and "audit log" open their pages; "invoice prefix" opens Settings › Numbering. Sarah without invoice rights doesn't see New invoice and never sees business settings.
+7. New groups: "marina" finds the lead (with its stage) and the walkthrough meeting (Upcoming or Past); "drywall" finds the catalogue item and opens it on Catalogue; "VCR-" with a number finds that vendor credit first.
+8. Include archived: archive a contact; it doesn't show until "Include archived" is ticked (then "Archived"); the tick is remembered after a reload on this device.
+9. Chips: Tab from the field reaches them; arrows move; Billing shows only invoices, credit notes and payments, up to 20 each, with no actions, pages or settings; reopening search is back on All. Marcus sees Sales (meetings), Jobs and Purchases (expenses).
+10. Loading: with the network throttled (Slow 4G), choose a result — search stays open with a spinner on that row until the page shows, then closes; choosing another row meanwhile does nothing.
+11. Phone width: the palette fills the screen and the chips scroll sideways. Screen reader: the dialog is "Search", the field a combobox; icons aren't read.
+12. Regression: a document number ("INV-0010", "QUO-4") is still the first result; Settings' own search, the Reports page search and every list's search box work as before; Field still sees only their jobs, meetings and expenses.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

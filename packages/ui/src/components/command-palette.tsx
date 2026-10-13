@@ -2,7 +2,7 @@
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Command as CommandPrimitive } from "cmdk";
-import { Search } from "lucide-react";
+import { CornerDownLeft, Loader2, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { Kbd } from "./kbd";
@@ -15,11 +15,47 @@ export interface CommandPaletteItem {
   subtitle?: string | null;
   /** Shown on the right, e.g. a status ("Overdue"). */
   meta?: string | null;
+  /** Colours the meta by what it says; muted when unset. */
+  metaTone?: "danger" | "success" | "warning";
+  /** An icon in a tile before the text (US-OPS-47), hidden from screen readers. */
+  icon?: React.ReactNode;
+  /** Text to bold instead of the palette's `highlight` (an amount or a phone number that matched). */
+  highlight?: string | null;
+  /** `link`: a one-line row in the primary colour with its icon bare, e.g. "See all invoices matching “har”" (US-OPS-40). */
+  variant?: "link";
 }
 
 export interface CommandPaletteGroup {
   heading: string;
   items: CommandPaletteItem[];
+}
+
+const META_TONE: Record<NonNullable<CommandPaletteItem["metaTone"]>, string> = {
+  danger: "text-overdue",
+  success: "text-paid",
+  warning: "text-due-soon",
+};
+
+/** `text` with each case-insensitive occurrence of `needle` in bold (US-OPS-47: bold, not colour alone). */
+export function highlightText(text: string, needle: string | null | undefined): React.ReactNode {
+  const n = needle?.trim();
+  if (!n) return text;
+  const lower = text.toLowerCase();
+  const find = n.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let from = 0;
+  for (let at = lower.indexOf(find); at !== -1; at = lower.indexOf(find, from)) {
+    if (at > from) parts.push(text.slice(from, at));
+    parts.push(
+      <mark key={at} className="bg-transparent font-bold text-on-surface">
+        {text.slice(at, at + n.length)}
+      </mark>,
+    );
+    from = at + n.length;
+  }
+  if (!parts.length) return text;
+  if (from < text.length) parts.push(text.slice(from));
+  return parts;
 }
 
 export interface CommandPaletteProps {
@@ -40,6 +76,12 @@ export interface CommandPaletteProps {
   hint?: React.ReactNode;
   /** Keyboard hints and a note along the bottom. */
   footer?: React.ReactNode;
+  /** Bolded wherever it appears in a title or second line (US-OPS-47). */
+  highlight?: string;
+  /** Controls under the field, e.g. chips that narrow the search (US-OPS-49). */
+  toolbar?: React.ReactNode;
+  /** The row being opened: it shows a spinner (and "Opening…" is announced) until the caller clears it, e.g. while the next page loads. */
+  pendingId?: string | null;
   className?: string;
 }
 
@@ -64,6 +106,9 @@ export function CommandPalette({
   emptyMessage,
   hint,
   footer,
+  highlight,
+  toolbar,
+  pendingId,
   className,
 }: CommandPaletteProps) {
   const hasResults = groups.some((g) => g.items.length > 0);
@@ -122,8 +167,11 @@ export function CommandPalette({
           data-testid="command-palette"
         >
           <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
+          <span className="sr-only" role="status">
+            {pendingId ? "Opening…" : ""}
+          </span>
           <CommandPrimitive label={label} shouldFilter={false} loop value={selected} onValueChange={setSelected} className="flex min-h-0 flex-1 flex-col">
-            <div className="flex items-center gap-2 border-b border-border px-4">
+            <div className={cn("flex items-center gap-2 px-4", !toolbar && "border-b border-border")}>
               <Search size={16} className="shrink-0 text-on-surface-muted" aria-hidden />
               <CommandPrimitive.Input
                 ref={inputRef}
@@ -135,11 +183,13 @@ export function CommandPalette({
               />
               {loading && <Spinner size="sm" />}
               <DialogPrimitive.Close asChild>
-                <button type="button" className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Close search">
+                {/* Escape closes too; out of the tab order so Tab goes from the field to the toolbar (US-OPS-49). */}
+                <button type="button" tabIndex={-1} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Close search">
                   <Kbd>Esc</Kbd>
                 </button>
               </DialogPrimitive.Close>
             </div>
+            {toolbar && <div className="border-b border-border px-4 pb-3">{toolbar}</div>}
             {!hasResults && !loading && (emptyMessage || hint) && (
               <div className="px-3 py-8 text-center text-[13px] text-on-surface-muted" role="status">
                 {emptyMessage ?? hint}
@@ -154,20 +204,47 @@ export function CommandPalette({
                     heading={group.heading}
                     className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-on-surface-muted"
                   >
-                    {group.items.map((item) => (
-                      <CommandPrimitive.Item
-                        key={item.id}
-                        value={item.id}
-                        onSelect={() => onSelect(item)}
-                        className="flex cursor-pointer select-none items-center gap-3 rounded-md px-3 py-2 outline-none data-[selected=true]:bg-info-bg"
-                      >
-                        <span className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate text-[14px] font-medium text-on-surface">{item.title}</span>
-                          {item.subtitle && <span className="truncate text-[12px] text-on-surface-muted">{item.subtitle}</span>}
-                        </span>
-                        {item.meta && <span className="shrink-0 text-[12px] text-on-surface-muted">{item.meta}</span>}
-                      </CommandPrimitive.Item>
-                    ))}
+                    {group.items.map((item) =>
+                      item.variant === "link" ? (
+                        <CommandPrimitive.Item
+                          key={item.id}
+                          value={item.id}
+                          onSelect={() => onSelect(item)}
+                          className="flex min-h-9 cursor-pointer select-none items-center gap-3 rounded-md px-3 text-[13px] font-medium text-primary outline-none data-[selected=true]:bg-info-bg"
+                        >
+                          {item.icon && (
+                            <span className="flex w-7.5 shrink-0 justify-center [&_svg]:size-3.5" aria-hidden>
+                              {item.icon}
+                            </span>
+                          )}
+                          <span className="truncate">{item.title}</span>
+                          {pendingId === item.id && <Loader2 size={14} className="ml-auto shrink-0 animate-spin" aria-hidden data-testid="command-palette-pending" />}
+                        </CommandPrimitive.Item>
+                      ) : (
+                        <CommandPrimitive.Item
+                          key={item.id}
+                          value={item.id}
+                          onSelect={() => onSelect(item)}
+                          className="group flex min-h-12 cursor-pointer select-none items-center gap-3 rounded-md px-3 py-1.5 outline-none data-[selected=true]:bg-info-bg"
+                        >
+                          {item.icon && (
+                            <span className="flex size-7.5 shrink-0 items-center justify-center rounded-md bg-surface-sunken text-on-surface-muted [&_svg]:size-4" aria-hidden>
+                              {item.icon}
+                            </span>
+                          )}
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate text-[14px] font-medium text-on-surface">{highlightText(item.title, item.highlight ?? highlight)}</span>
+                            {item.subtitle && <span className="truncate text-[12px] text-on-surface-muted">{highlightText(item.subtitle, item.highlight ?? highlight)}</span>}
+                          </span>
+                          {item.meta && <span className={cn("shrink-0 text-[12px] font-medium", item.metaTone ? META_TONE[item.metaTone] : "text-on-surface-muted")}>{item.meta}</span>}
+                          {pendingId === item.id ? (
+                            <Loader2 size={14} className="shrink-0 animate-spin text-on-surface-muted" aria-hidden data-testid="command-palette-pending" />
+                          ) : (
+                            <CornerDownLeft size={14} className="hidden shrink-0 text-on-surface-muted group-data-[selected=true]:block" aria-hidden />
+                          )}
+                        </CommandPrimitive.Item>
+                      ),
+                    )}
                   </CommandPrimitive.Group>
                 ))}
             </CommandPrimitive.List>

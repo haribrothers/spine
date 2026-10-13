@@ -986,6 +986,20 @@ Total: 534 stories.
 - US-SET-33 · Come back to the same setting, without losing edits (P2)
 - US-SET-34 · Search what's inside settings (P2)
 
+*Search*
+
+- US-OPS-39 · Pick up where I left off from search (P2)
+- US-OPS-40 · See every match in its list (P2)
+- US-OPS-41 · Go to a page or a setting from search (P2)
+- US-OPS-42 · Start something new from search (P2)
+- US-OPS-43 · Find leads, meetings, catalogue items and vendor credits (P2)
+- US-OPS-44 · Find a contact by phone, tax ID or one of their people (P2)
+- US-OPS-45 · Find a document by its amount (P2)
+- US-OPS-46 · Find archived records when I need them (P2)
+- US-OPS-47 · Read search results at a glance (P2)
+- US-OPS-48 · See search in the sidebar (P2)
+- US-OPS-49 · Narrow search to one area (P2)
+
 ## Phase 10 · AI assistant
 
 **Goal:** An owner switches on an AI assistant, with their own local or cloud provider, that fills in bills and expenses, drafts emails and quote lines and suggests bank matches — and nothing is saved until a person saves.

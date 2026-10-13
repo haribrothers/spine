@@ -63,7 +63,8 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     pages: ["/leads", "/meetings"],
     dashboardWidgets: ["pipeline-by-stage"],
     attention: [],
-    search: [],
+    // US-OPS-43
+    search: ["leads", "meetings"],
     notifications: ["meeting_invited", "meeting_starting_soon", "meeting_cancelled", "meeting_removed", "meeting_response_changed"],
     settingsPanes: ["lead-stages", "dashboard-meetings-scope", "meeting-reminder-lead-time"],
     reports: [],

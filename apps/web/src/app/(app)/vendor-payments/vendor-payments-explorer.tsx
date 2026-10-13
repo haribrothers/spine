@@ -60,6 +60,11 @@ export function VendorPaymentsExplorer() {
   const [now, setNow] = useState(() => Date.now());
   const payFor = searchParams.get("pay") === "1" ? (searchParams.get("contactId") ?? undefined) : undefined;
   const [recordOpen, setRecordOpen] = useState(Boolean(payFor));
+  // US-OPS-42: `?new=1` (search's "Record vendor payment") opens the dialog.
+  const newParam = searchParams.get("new") === "1";
+  useEffect(() => {
+    if (newParam && canCreate) setRecordOpen(true);
+  }, [newParam, canCreate]);
   const loading = useRef(false);
 
   // US-PUR-49: an old `?id=` link opens the payment's page.

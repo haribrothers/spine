@@ -551,6 +551,17 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-26 · Move a payment off the wrong invoice
 - [x] US-OPS-37 · See what each menu action does at a glance
 - [x] US-OPS-38 · Know an action worked, wherever it takes me
+- [x] US-OPS-39 · Pick up where I left off from search
+- [x] US-OPS-40 · See every match in its list
+- [x] US-OPS-41 · Go to a page or a setting from search
+- [x] US-OPS-42 · Start something new from search
+- [x] US-OPS-43 · Find leads, meetings, catalogue items and vendor credits
+- [x] US-OPS-44 · Find a contact by phone, tax ID or one of their people
+- [x] US-OPS-45 · Find a document by its amount
+- [x] US-OPS-46 · Find archived records when I need them
+- [x] US-OPS-47 · Read search results at a glance
+- [x] US-OPS-48 · See search in the sidebar
+- [x] US-OPS-49 · Narrow search to one area
 - [x] US-CAT-16 · Confirm a change to many items before it happens
 - [x] US-PAY-27 · See who owes me most, customer by customer
 - [x] US-PAY-28 · Chase a customer without leaving Receivables
