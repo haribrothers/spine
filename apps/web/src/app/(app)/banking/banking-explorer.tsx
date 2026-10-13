@@ -25,6 +25,7 @@ import {
   StatCard,
   TableSkeleton,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
   Tooltip,
@@ -301,7 +302,7 @@ export function BankingExplorer() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Tabs value={state.tab} onValueChange={(tab) => update({ tab: tab as BankingTab })}>
+      <Tabs value={state.tab} onValueChange={(tab) => update({ tab: tab as BankingTab })} className="flex flex-col gap-6">
         <TabsList data-print="hide">
           <TabsTrigger value="active" className="group" aria-label={allRows ? `Active, ${active.length}` : "Active"}>
             Active
@@ -312,117 +313,119 @@ export function BankingExplorer() {
             {allRows && <Count n={archivedCount} />}
           </TabsTrigger>
         </TabsList>
-      </Tabs>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="banking-cards">
-        <StatCard label="Bank and cash" value={totals ? formatMoney(totals.cash, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cashLabel } : undefined} className="h-full" />
-        <StatCard label="Owed on cards" value={totals ? formatMoney(totals.owed, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cardLabel } : undefined} className="h-full" />
-        <button
-          type="button"
-          aria-pressed={state.unreconciled}
-          aria-label="Show accounts not yet reconciled only"
-          onClick={() => update({ unreconciled: !state.unreconciled })}
-          className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <StatCard
-            label="Not yet reconciled"
-            value={totals ? String(totals.unreconciled) : "—"}
-            tone={totals && totals.unreconciled > 0 ? "warning" : "default"}
-            trend={{ direction: "neutral", label: state.unreconciled ? "Showing these · press again to clear" : (totals?.unreconciledLabel ?? "") }}
-            className={cn("h-full transition-colors hover:border-border-strong", state.unreconciled && "border-primary bg-info-bg/60 ring-1 ring-primary")}
-          />
-          <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", state.unreconciled ? "text-primary" : "text-on-surface-muted")} />
-        </button>
-        <StatCard
-          label="Last reconciled"
-          value={totals?.lastReconciled?.lastReconciledOn ? formatDay(totals.lastReconciled.lastReconciledOn) : "Never"}
-          trend={totals?.lastReconciled ? { direction: "neutral", label: totals.lastReconciled.name } : undefined}
-          className="h-full"
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-        <Select value={state.type ?? ALL_TYPES} onValueChange={(v) => update({ type: v === ALL_TYPES ? null : (v as MoneyAccountKind) })}>
-          <SelectTrigger aria-label="Filter by type" className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_TYPES}>All types</SelectItem>
-            <SelectItem value="bank">Bank</SelectItem>
-            <SelectItem value="cash">Cash</SelectItem>
-            <SelectItem value="card">Card</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {updatedAt !== null && (
-            <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="banking-updated">
-              {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
-            </span>
-          )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
-                <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Refresh list</TooltipContent>
-          </Tooltip>
-          {canRecord && (
-            <>
-              <Button variant="secondary" onClick={() => setRecording({ kind: "transfer" })} disabled={active.length < 2}>
-                <MENU_ICONS.transfer size={14} aria-hidden />
-                Transfer
-              </Button>
-              <Button variant="secondary" onClick={() => setRecording({ kind: "in" })} disabled={!active.length}>
-                <MENU_ICONS.moneyIn size={14} aria-hidden />
-                Money in
-              </Button>
-              <Button variant="secondary" onClick={() => setRecording({ kind: "out" })} disabled={!active.length}>
-                <MENU_ICONS.moneyOut size={14} aria-hidden />
-                Money out
-              </Button>
-            </>
-          )}
-          {isOwner && (
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setDialogOpen(true);
-              }}
+        <TabsContent value={state.tab} className="flex flex-col gap-6 pt-0">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="banking-cards">
+            <StatCard label="Bank and cash" value={totals ? formatMoney(totals.cash, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cashLabel } : undefined} className="h-full" />
+            <StatCard label="Owed on cards" value={totals ? formatMoney(totals.owed, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cardLabel } : undefined} className="h-full" />
+            <button
+              type="button"
+              aria-pressed={state.unreconciled}
+              aria-label="Show accounts not yet reconciled only"
+              onClick={() => update({ unreconciled: !state.unreconciled })}
+              className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              Add account
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {!rows ? (
-        <TableSkeleton columns={TABLE_COLUMNS} />
-      ) : rows.length === 0 ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
-          <div className="rounded-lg border border-border bg-surface">
-            {state.tab === "archived" && !state.q.trim() && !state.type ? (
-              <EmptyState icon={<Landmark />} title="No archived accounts" description="Accounts you archive appear here with their history, and can be restored." />
-            ) : (
-              <EmptyState
-                icon={<Landmark />}
-                title="No accounts match"
-                description="Clear the filters to see every account."
-                action={
-                  <Button variant="secondary" onClick={() => update({ type: null, unreconciled: false, q: "" })}>
-                    Clear filters
-                  </Button>
-                }
+              <StatCard
+                label="Not yet reconciled"
+                value={totals ? String(totals.unreconciled) : "—"}
+                tone={totals && totals.unreconciled > 0 ? "warning" : "default"}
+                trend={{ direction: "neutral", label: state.unreconciled ? "Showing these · press again to clear" : (totals?.unreconciledLabel ?? "") }}
+                className={cn("h-full transition-colors hover:border-border-strong", state.unreconciled && "border-primary bg-info-bg/60 ring-1 ring-primary")}
               />
-            )}
+              <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", state.unreconciled ? "text-primary" : "text-on-surface-muted")} />
+            </button>
+            <StatCard
+              label="Last reconciled"
+              value={totals?.lastReconciled?.lastReconciledOn ? formatDay(totals.lastReconciled.lastReconciledOn) : "Never"}
+              trend={totals?.lastReconciled ? { direction: "neutral", label: totals.lastReconciled.name } : undefined}
+              className="h-full"
+            />
           </div>
-        </div>
-      ) : (
-        <div data-testid="money-accounts-table">
-          <DataTable columns={columns} data={rows} rowKey={(row) => row.id} toolbarStart={search} configurablePageSize />
-        </div>
-      )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
+            <Select value={state.type ?? ALL_TYPES} onValueChange={(v) => update({ type: v === ALL_TYPES ? null : (v as MoneyAccountKind) })}>
+              <SelectTrigger aria-label="Filter by type" className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_TYPES}>All types</SelectItem>
+                <SelectItem value="bank">Bank</SelectItem>
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {updatedAt !== null && (
+                <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="banking-updated">
+                  {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                </span>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
+                    <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Refresh list</TooltipContent>
+              </Tooltip>
+              {canRecord && (
+                <>
+                  <Button variant="secondary" onClick={() => setRecording({ kind: "transfer" })} disabled={active.length < 2}>
+                    <MENU_ICONS.transfer size={14} aria-hidden />
+                    Transfer
+                  </Button>
+                  <Button variant="secondary" onClick={() => setRecording({ kind: "in" })} disabled={!active.length}>
+                    <MENU_ICONS.moneyIn size={14} aria-hidden />
+                    Money in
+                  </Button>
+                  <Button variant="secondary" onClick={() => setRecording({ kind: "out" })} disabled={!active.length}>
+                    <MENU_ICONS.moneyOut size={14} aria-hidden />
+                    Money out
+                  </Button>
+                </>
+              )}
+              {isOwner && (
+                <Button
+                  onClick={() => {
+                    setEditing(null);
+                    setDialogOpen(true);
+                  }}
+                >
+                  Add account
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {!rows ? (
+            <TableSkeleton columns={TABLE_COLUMNS} />
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex">{search}</div>
+              <div className="rounded-lg border border-border bg-surface">
+                {state.tab === "archived" && !state.q.trim() && !state.type ? (
+                  <EmptyState icon={<Landmark />} title="No archived accounts" description="Accounts you archive appear here with their history, and can be restored." />
+                ) : (
+                  <EmptyState
+                    icon={<Landmark />}
+                    title="No accounts match"
+                    description="Clear the filters to see every account."
+                    action={
+                      <Button variant="secondary" onClick={() => update({ type: null, unreconciled: false, q: "" })}>
+                        Clear filters
+                      </Button>
+                    }
+                  />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div data-testid="money-accounts-table">
+              <DataTable columns={columns} data={rows} rowKey={(row) => row.id} toolbarStart={search} configurablePageSize />
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <MoneyInOutDialog
         direction={(recording?.kind === "out" ? "out" : "in") as BankTransactionDirection}

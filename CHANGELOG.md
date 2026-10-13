@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — Tabs that name their panel on Banking, Payables, Receivables and Reconcile
+
+- **Fix:** each tab points screen readers (`aria-controls`) at the content it shows, but on Banking (Active/Archived), Payables (By vendor/By bill), Receivables (By customer/By invoice) and Reconcile's statement lines (To do/Suggested/Matched/Excluded) that content sat outside the tabs, so the tab pointed at nothing and axe failed. The content is now the tab's panel (`TabsContent`), as on Users. Nothing looks different.
+- **Tests:** E2E `us-bank-13-17`, `us-pay-27-31` and `us-pur-56-60` now run axe on these pages (and after switching tabs on Receivables).
+
 ### 2026-10-13 — Sections a Team can open (US-TEAM-30 to US-TEAM-32, D-235)
 
 - **Open permissions (US-TEAM-30):** 13 capabilities — Open Contacts, Pipeline, Meetings, Catalogue, Quotes, Jobs, Invoices, Credit Notes, Payments, Vendor Bills, Vendor Credits, Vendor Payments, and "See everyone's expenses" — first in their groups, on by default, and required by each section's actions (`CAPABILITY_REQUIRES`; turning Open off turns them off). `@RequireSectionOpen` on each section's controllers is checked as well as any `@RequireCapability`, so a closed section refuses every route; the sidebar and page access hide and refuse it (`SECTION_OPEN_CAPABILITIES`). Without "See everyone's expenses", Staff see their own expenses only, as Field do. Migration `0123` opens every section for every existing Team; Field's Jobs and Meetings are fixed (`FIELD_ALWAYS_CAPABILITIES`).

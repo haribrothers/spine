@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { expectNoAxeViolations } from "./axe";
 import { signUpNewOrg } from "./helpers";
 import { api, isoDays } from "./quote-seed";
 
@@ -38,6 +39,8 @@ test.describe("US-PUR-56, US-PUR-60", () => {
 
     await expect(page.locator("main h1 + p")).toHaveText(/^What you owe vendors, by how late it is · as of /);
     await expect(page.getByRole("tab", { name: "By vendor, 2" })).toHaveAttribute("aria-selected", "true");
+    // The tabs control the table below them (a tab panel), so axe passes.
+    await expectNoAxeViolations(page);
     await expect(page.getByTestId("aging-cards")).toContainText("Total owed");
     await expect(page.getByTestId("aging-cards")).toContainText("Due in 7 days");
     await expect(page.getByTestId("payables-updated")).toHaveText("Updated just now");

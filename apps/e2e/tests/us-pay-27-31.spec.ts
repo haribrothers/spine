@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { expectNoAxeViolations } from "./axe";
 import { signUpNewOrg } from "./helpers";
 import { api, isoDays } from "./quote-seed";
 import { test as seededTest } from "./fixtures";
@@ -30,6 +31,8 @@ test.describe("US-PAY-27, US-PAY-31", () => {
     await expect(page.getByText(/What customers owe you, by how late it is · as of .*\d{4}/)).toBeVisible();
     await expect(page.getByRole("tab", { name: "By customer, 2" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("tab", { name: "By invoice, 3" })).toBeVisible();
+    // The tabs control the table below them (a tab panel), so axe passes.
+    await expectNoAxeViolations(page);
 
     // Most overdue money first; Halcyon's figures; a totals row.
     const halcyon = rowOf(page, "Halcyon Tech Parks");
@@ -60,6 +63,7 @@ test.describe("US-PAY-27, US-PAY-31", () => {
     await page.waitForURL(`**/invoices/${late.id}`);
     await page.goBack();
     await expect(page.getByRole("tab", { name: /By invoice/ })).toHaveAttribute("aria-selected", "true");
+    await expectNoAxeViolations(page);
     await expect(page.getByRole("button", { name: "Show overdue only" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("receivables-updated")).toHaveText("Updated just now");
   });

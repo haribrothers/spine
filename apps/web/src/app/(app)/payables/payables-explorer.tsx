@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
   Tooltip,
@@ -328,8 +329,10 @@ export function PayablesExplorer() {
             {report && <Count n={report.bills.length} />}
           </TabsTrigger>
         </TabsList>
+        <TabsContent value={state.tab} className="pt-0">
+          {body}
+        </TabsContent>
       </Tabs>
-      {body}
 
       <RecordVendorPaymentDialog
         open={dialog?.kind === "pay"}

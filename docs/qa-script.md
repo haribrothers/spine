@@ -5188,6 +5188,11 @@ Use an owner with the demo loaded, and Sarah Staff (General Staff only) in a sec
 7. Users › Sarah › What they can open, Teams › Works in, and the side panel all show the closed sections as Can't open.
 8. Regression: owners see and link everything; Marcus (Field) still has Jobs, Meetings and his own Expenses on web and phone; Neha (General Staff and Accounts) keeps what either Team opens; reopening a section brings it back at Sarah's next request; Teams list, Users and the access drawer still load.
 
+## 233. Tabs that name their panel (refinements before Phase 10)
+
+1. Banking, Payables, Receivables and an account's Reconcile page: with a screen reader (or the browser's accessibility tree), each tab names the panel below it, and moving between tabs reads the new content. Run axe (or Lighthouse) on each in light and dark: no "aria-valid-attr-value" errors.
+2. Regression: tabs, counts, the tab kept in the address, cards, filters, search and Print look and behave as before; Tab moves from the tab list into the panel's controls.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

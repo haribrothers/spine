@@ -22,6 +22,7 @@ import {
   Spinner,
   StatCard,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
   useConfirm,
@@ -423,114 +424,116 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                         </TabsTrigger>
                       ))}
                     </TabsList>
+                    <TabsContent value={tab} className="pt-0">
+                      <div className="relative border-b border-border p-3">
+                        <Search size={15} className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
+                        <Input type="search" aria-label="Search statement lines" placeholder="Search description, reference or amount" value={lineQuery} onChange={(e) => setLineQuery(e.target.value)} className="pl-9" />
+                      </div>
+                      {rec.statementLines.length === 0 ? (
+                        <div className="flex flex-col items-start gap-3 p-4">
+                          <p className="text-[13px] text-on-surface-muted">No statement lines up to {formatDay(rec.statementEndDate)}. Import the statement to start matching.</p>
+                          <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                            Import statement
+                          </Button>
+                        </div>
+                      ) : (
+                        <ul data-testid="statement-lines">
+                          {shownLines.length === 0 && <li className="p-4 text-[13px] text-on-surface-muted">{lineQuery.trim() ? "No lines match your search." : tab === "todo" ? "Every line is matched or excluded." : "None here."}</li>}
+                          {shownLines.map((line) => {
+                            const suggestion = line.status === "unmatched" ? suggestionFor.get(line.id) : undefined;
+                            const isSelected = selectedLine === line.id;
+                            const status =
+                              line.status === "matched"
+                                ? { text: "Matched", tone: "text-paid" }
+                                : line.status === "excluded"
+                                  ? { text: `Excluded${line.excludeNote ? ` — ${line.excludeNote}` : ""}`, tone: "text-on-surface-muted" }
+                                  : suggestion
+                                    ? { text: "Suggested match", tone: "text-due-soon" }
+                                    : { text: "Unmatched", tone: "text-on-surface-muted" };
+                            return (
+                              <li
+                                key={line.id}
+                                data-testid="statement-line"
+                                className={`flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-0 ${isSelected ? "bg-primary/5" : ""}`}
+                              >
+                                <span className="w-14 shrink-0 text-[13px] text-on-surface-muted">{shortDay(line.date)}</span>
+                                <div className="min-w-0 flex-1">
+                                  {line.status === "unmatched" ? (
+                                    <button
+                                      type="button"
+                                      aria-pressed={isSelected}
+                                      className="text-left text-[14px] text-on-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                      onClick={() => {
+                                        setSelectedLine(isSelected ? null : line.id);
+                                        setTicked(new Set());
+                                      }}
+                                    >
+                                      {line.description}
+                                      {line.reference ? ` · ${line.reference}` : ""}
+                                    </button>
+                                  ) : (
+                                    <p className="text-[14px] text-on-surface">
+                                      {line.description}
+                                      {line.reference ? ` · ${line.reference}` : ""}
+                                    </p>
+                                  )}
+                                  <p className={`text-[12px] font-medium ${status.tone}`}>{status.text}</p>
+                                </div>
+                                <span className="text-[14px] tabular-nums text-on-surface">{signed(line.amount)}</span>
+                                <div className="flex items-center gap-1">
+                                  {suggestion && (
+                                    <>
+                                      <Button size="sm" variant="secondary" disabled={busy} onClick={() => save([...rec.matches, { statementLineId: line.id, journalLineIds: [suggestion] }], exclusionsOf(rec))}>
+                                        Match
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="text-primary" onClick={() => setDismissed((d) => new Set(d).add(line.id))}>
+                                        Not this one
+                                      </Button>
+                                    </>
+                                  )}
+                                  {line.status === "unmatched" && !suggestion && (
+                                    <Button size="sm" variant="secondary" onClick={() => setCreating(line)}>
+                                      Create
+                                    </Button>
+                                  )}
+                                  {line.status === "unmatched" && !suggestion && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-primary"
+                                      onClick={() => {
+                                        setExcludeNote("");
+                                        setExcluding(line);
+                                      }}
+                                    >
+                                      Exclude
+                                    </Button>
+                                  )}
+                                  {line.status === "matched" && (
+                                    <Button size="sm" variant="ghost" className="text-primary" disabled={busy} aria-label={`Unmatch ${line.description}`} onClick={() => save(rec.matches.filter((m) => m.statementLineId !== line.id), exclusionsOf(rec))}>
+                                      Unmatch
+                                    </Button>
+                                  )}
+                                  {line.status === "excluded" && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-primary"
+                                      disabled={busy}
+                                      aria-label={`Include ${line.description}`}
+                                      onClick={() => save(rec.matches, exclusionsOf(rec).filter((x) => x.statementLineId !== line.id))}
+                                    >
+                                      Include
+                                    </Button>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </TabsContent>
                   </Tabs>
-                  <div className="relative border-b border-border p-3">
-                    <Search size={15} className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-                    <Input type="search" aria-label="Search statement lines" placeholder="Search description, reference or amount" value={lineQuery} onChange={(e) => setLineQuery(e.target.value)} className="pl-9" />
-                  </div>
-                  {rec.statementLines.length === 0 ? (
-                    <div className="flex flex-col items-start gap-3 p-4">
-                      <p className="text-[13px] text-on-surface-muted">No statement lines up to {formatDay(rec.statementEndDate)}. Import the statement to start matching.</p>
-                      <Button variant="secondary" onClick={() => setImportOpen(true)}>
-                        Import statement
-                      </Button>
-                    </div>
-                  ) : (
-                    <ul data-testid="statement-lines">
-                      {shownLines.length === 0 && <li className="p-4 text-[13px] text-on-surface-muted">{lineQuery.trim() ? "No lines match your search." : tab === "todo" ? "Every line is matched or excluded." : "None here."}</li>}
-                      {shownLines.map((line) => {
-                        const suggestion = line.status === "unmatched" ? suggestionFor.get(line.id) : undefined;
-                        const isSelected = selectedLine === line.id;
-                        const status =
-                          line.status === "matched"
-                            ? { text: "Matched", tone: "text-paid" }
-                            : line.status === "excluded"
-                              ? { text: `Excluded${line.excludeNote ? ` — ${line.excludeNote}` : ""}`, tone: "text-on-surface-muted" }
-                              : suggestion
-                                ? { text: "Suggested match", tone: "text-due-soon" }
-                                : { text: "Unmatched", tone: "text-on-surface-muted" };
-                        return (
-                          <li
-                            key={line.id}
-                            data-testid="statement-line"
-                            className={`flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-0 ${isSelected ? "bg-primary/5" : ""}`}
-                          >
-                            <span className="w-14 shrink-0 text-[13px] text-on-surface-muted">{shortDay(line.date)}</span>
-                            <div className="min-w-0 flex-1">
-                              {line.status === "unmatched" ? (
-                                <button
-                                  type="button"
-                                  aria-pressed={isSelected}
-                                  className="text-left text-[14px] text-on-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                  onClick={() => {
-                                    setSelectedLine(isSelected ? null : line.id);
-                                    setTicked(new Set());
-                                  }}
-                                >
-                                  {line.description}
-                                  {line.reference ? ` · ${line.reference}` : ""}
-                                </button>
-                              ) : (
-                                <p className="text-[14px] text-on-surface">
-                                  {line.description}
-                                  {line.reference ? ` · ${line.reference}` : ""}
-                                </p>
-                              )}
-                              <p className={`text-[12px] font-medium ${status.tone}`}>{status.text}</p>
-                            </div>
-                            <span className="text-[14px] tabular-nums text-on-surface">{signed(line.amount)}</span>
-                            <div className="flex items-center gap-1">
-                              {suggestion && (
-                                <>
-                                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => save([...rec.matches, { statementLineId: line.id, journalLineIds: [suggestion] }], exclusionsOf(rec))}>
-                                    Match
-                                  </Button>
-                                  <Button size="sm" variant="ghost" className="text-primary" onClick={() => setDismissed((d) => new Set(d).add(line.id))}>
-                                    Not this one
-                                  </Button>
-                                </>
-                              )}
-                              {line.status === "unmatched" && !suggestion && (
-                                <Button size="sm" variant="secondary" onClick={() => setCreating(line)}>
-                                  Create
-                                </Button>
-                              )}
-                              {line.status === "unmatched" && !suggestion && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-primary"
-                                  onClick={() => {
-                                    setExcludeNote("");
-                                    setExcluding(line);
-                                  }}
-                                >
-                                  Exclude
-                                </Button>
-                              )}
-                              {line.status === "matched" && (
-                                <Button size="sm" variant="ghost" className="text-primary" disabled={busy} aria-label={`Unmatch ${line.description}`} onClick={() => save(rec.matches.filter((m) => m.statementLineId !== line.id), exclusionsOf(rec))}>
-                                  Unmatch
-                                </Button>
-                              )}
-                              {line.status === "excluded" && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-primary"
-                                  disabled={busy}
-                                  aria-label={`Include ${line.description}`}
-                                  onClick={() => save(rec.matches, exclusionsOf(rec).filter((x) => x.statementLineId !== line.id))}
-                                >
-                                  Include
-                                </Button>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
                   {selected && (
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-sunken p-4" data-testid="match-bar">
                       <p className="text-[13px] text-on-surface" role="status">

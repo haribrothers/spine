@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { expectNoAxeViolations } from "./axe";
 import { signUpNewOrg } from "./helpers";
 import { api, isoDays } from "./quote-seed";
 
@@ -29,6 +30,8 @@ test.describe("US-BANK-13, US-BANK-15", () => {
     await setUp(page, "13");
     await page.goto("/banking");
     await expect(page.getByRole("tab", { name: "Active, 3" })).toHaveAttribute("aria-selected", "true");
+    // The tabs control the list below them (a tab panel), so axe passes.
+    await expectNoAxeViolations(page);
     const table = page.getByTestId("money-accounts-table");
 
     await page.getByRole("combobox", { name: "Filter by type" }).click();
@@ -121,6 +124,7 @@ test.describe("US-BANK-16, US-BANK-17", () => {
     await page.getByRole("button", { name: "Start reconciling" }).click();
     await expect(page.getByText("Saved as you go — pick up where you left off.")).toBeVisible();
     await expect(page.getByTestId("reconcile-progress")).toContainText("0 of 2 lines done");
+    await expectNoAxeViolations(page);
 
     // A selected line puts the same amount first.
     await page.getByTestId("statement-line").filter({ hasText: "CAPITAL" }).getByRole("button", { name: "CAPITAL" }).click();
