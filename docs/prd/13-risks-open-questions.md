@@ -28,6 +28,7 @@
 | R-21 | Business data reaches a cloud AI provider the business didn't mean to use, or the provider keeps it | Privacy breach, loss of trust | Medium | Off by default; Owner acknowledgement for non-local providers (D-164); redaction and per-feature "What's sent" (D-165); local-model option; no prompt or reply stored in Spine (D-169) |
 | R-22 | AI costs run away or the provider is down | Unexpected bills, blocked work | Medium | Monthly budget with 80% warning and hard stop, per-person rate limit (D-168); forms never depend on AI (US-AI-07) |
 | R-23 | Text inside a document or enquiry tries to instruct the model (prompt injection) | Misleading suggestions | Low | Fixed JSON schema, every field validated, AI routes are read-only ([07-security](07-security.md)) |
+| R-24 | Four E2E tests fail now and then in a full run and pass when run again: dashboard "Edit layout", US-INV-23 (bulk reminders), US-OPS-26 job-costing in light mode, US-PUR-23 (order-dependent: an earlier test's labour lines) — found by `pnpm verify` on 2026-10-13 | A red CI run on a good branch, and reruns | Medium | CI retries an E2E test once, so they rarely block a PR; each gets its shared data or waits fixed in its own change. The two that weren't retried were fixed: the meeting-reminder integration test now waits for the notification the worker sends without awaiting, and mobile Jest allows 20 s a test while every package's tests run at once |
 
 ## Open questions
 

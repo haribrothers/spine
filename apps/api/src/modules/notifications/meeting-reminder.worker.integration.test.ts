@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
 import { meetingAttendees, meetings, member, notifications, user } from "../../db/schema";
@@ -85,8 +85,11 @@ describe("MeetingReminderWorker.tick (requires local Postgres)", () => {
     const [attendeeRow] = await db.select().from(meetingAttendees).where(eq(meetingAttendees.meetingId, meeting.id));
     expect(attendeeRow?.remindedAt).not.toBeNull();
 
-    const notifRows = await db.select().from(notifications).where(eq(notifications.orgId, orgId));
-    expect(notifRows.some((n) => n.type === "meeting_starting_soon" && n.recipientUserId === attendeeUserId)).toBe(true);
+    // The worker sends the notification without waiting for it (a failed send never blocks other reminders), so wait for it here.
+    await vi.waitFor(async () => {
+      const notifRows = await db.select().from(notifications).where(eq(notifications.orgId, orgId));
+      expect(notifRows.some((n) => n.type === "meeting_starting_soon" && n.recipientUserId === attendeeUserId)).toBe(true);
+    });
   });
 
   it("does NOT remind before the lead-time window is reached", async () => {
@@ -119,11 +122,11 @@ describe("MeetingReminderWorker.tick (requires local Postgres)", () => {
     await worker.tick(now);
     await worker.tick(new Date(now.getTime() + 60 * 1000)); // one minute later, same occurrence
 
-    const notifRows = await db
-      .select()
-      .from(notifications)
-      .where(eq(notifications.orgId, orgId));
-    expect(notifRows.filter((n) => n.type === "meeting_starting_soon" && n.recipientUserId === attendeeUserId)).toHaveLength(1);
+    // Wait for the (unawaited) send to land, then make sure there's only one.
+    const reminders = async () =>
+      (await db.select().from(notifications).where(eq(notifications.orgId, orgId))).filter((n) => n.type === "meeting_starting_soon" && n.recipientUserId === attendeeUserId);
+    await vi.waitFor(async () => expect((await reminders()).length).toBeGreaterThan(0));
+    expect(await reminders()).toHaveLength(1);
   });
 
   it("lead-time resolution: per-user override beats org default", async () => {
