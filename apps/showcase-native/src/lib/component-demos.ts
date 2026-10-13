@@ -15,12 +15,14 @@ import { FullWidthButtonDemo } from "../components/demos/full-width-button-demo"
 import { GaugeIndicatorDemo } from "../components/demos/gauge-indicator-demo";
 import { KpiCardDemo } from "../components/demos/kpi-card-demo";
 import { NativeTextFieldDemo } from "../components/demos/native-text-field-demo";
+import { OutlinedTextFieldDemo } from "../components/demos/outlined-text-field-demo";
 import { SegmentedControlDemo } from "../components/demos/segmented-control-demo";
 import { SelectDemo } from "../components/demos/select-demo";
 import { SelectFieldDemo } from "../components/demos/select-field-demo";
 import { SelectListFieldDemo } from "../components/demos/select-list-field-demo";
 import { SkeletonDemo } from "../components/demos/skeleton-demo";
 import { SliderDemo } from "../components/demos/slider-demo";
+import { SpineLogoDemo } from "../components/demos/spine-logo-demo";
 import { SpinnerDemo } from "../components/demos/spinner-demo";
 import { StatusChipDemo } from "../components/demos/status-chip-demo";
 import { StepperDemo } from "../components/demos/stepper-demo";
@@ -44,6 +46,7 @@ export const COMPONENT_DEMOS: Record<string, React.ComponentType> = {
   "text-field": TextFieldDemo,
   "native-text-field": NativeTextFieldDemo,
   "floating-label-field": FloatingLabelFieldDemo,
+  "outlined-text-field": OutlinedTextFieldDemo,
   "form-row": FormRowDemo,
   divider: DividerDemo,
   "scroll-edge-mask": ScrollEdgeMaskDemo,
@@ -59,4 +62,5 @@ export const COMPONENT_DEMOS: Record<string, React.ComponentType> = {
   "gauge-indicator": GaugeIndicatorDemo,
   "kpi-card": KpiCardDemo,
   "action-tile": ActionTileDemo,
+  "spine-logo": SpineLogoDemo,
 };

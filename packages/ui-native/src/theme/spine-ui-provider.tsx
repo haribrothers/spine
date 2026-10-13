@@ -5,7 +5,7 @@ import { ThemeProvider, type ThemeStorage } from "./theme-provider";
 
 /**
  * Collapses the theme + safe-area + status-bar boilerplate every native app
- * (`apps/mobile`, `apps/design-system-native`, `apps/showcase-native`)
+ * (`apps/mobile`, `apps/showcase-native`)
  * previously hand-wired identically at its own root (`App.tsx`/
  * `app/_layout.tsx`) into one import. Each app still supplies its own
  * `storage` adapter (per `ThemeProvider`'s own doc comment, this package

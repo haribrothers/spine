@@ -1,6 +1,6 @@
 # NativeTextField
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/native-text-field.tsx` · **Doc page:** `apps/design-system-native/app/components/native-text-field.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/native-text-field.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/native-text-field-demo.tsx`
 
 A genuinely native iOS text field, built directly from Apple&apos;s own SwiftUI `TextField` API — colored with this design system&apos;s own tokens, not the system default. iOS only; there is no Android equivalent of this component.
 

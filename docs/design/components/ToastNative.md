@@ -1,6 +1,6 @@
 # Toast
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/toast.tsx` · **Doc page:** `apps/design-system-native/app/components/toast.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/toast.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/toast-demo.tsx`
 
 A succinct message that is displayed temporarily. Dark chrome, auto-dismissing — confirms an action succeeded. Never carries a validation error, which belongs inline once this package has a HelperText equivalent.
 

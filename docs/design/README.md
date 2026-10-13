@@ -1,6 +1,6 @@
 # Spine design system
 
-The brand book for Spine's web app (`@spine/ui`), its native mobile app (`@spine/ui-native`), its documents (quote, invoice and receipt PDFs) and its emails. Values live in [tokens.json](tokens.json); motion in [motion.md](motion.md); one file per component in [components/](components/). The running references are `apps/design-system` (web) and `apps/design-system-native` / `apps/showcase-native` (native).
+The brand book for Spine's web app (`@spine/ui`), its native mobile app (`@spine/ui-native`), its documents (quote, invoice and receipt PDFs) and its emails. Values live in [tokens.json](tokens.json); motion in [motion.md](motion.md); one file per component in [components/](components/). The running references are `apps/design-system` (web) and `apps/showcase-native` (native).
 
 Source of truth: token values are authored in the front matter of `docs/DESIGN.md` and `packages/config/tailwind-preset.css` (web) and hand-synced into `packages/ui-native/src/tokens/` (native). `tokens.json` is generated from those files — change the source, then regenerate.
 

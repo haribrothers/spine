@@ -94,7 +94,8 @@ describe("US-MOB-27 · use the Spine brand the same way everywhere in the app", 
     expect(sourceFiles(join(ROOT, "apps/web/src")).filter((file) => /@spine\/ui-native/.test(readFileSync(file, "utf8")))).toEqual([]);
   });
 
-  it("documents SpineLogo in the design-system app", () => {
-    expect(readFileSync(join(ROOT, "apps/design-system-native/app/components/spine-logo.tsx"), "utf8")).toContain("<SpineLogo");
+  it("documents SpineLogo in the showcase app", () => {
+    expect(readFileSync(join(ROOT, "apps/showcase-native/src/components/demos/spine-logo-demo.tsx"), "utf8")).toContain("<SpineLogo");
+    expect(readFileSync(join(ROOT, "apps/showcase-native/src/lib/component-catalog.ts"), "utf8")).toContain('slug: "spine-logo"');
   });
 });

@@ -1,6 +1,6 @@
 # StatusChip
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/status-chip.tsx` · **Doc page:** `apps/design-system-native/app/components/status-chip.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/status-chip.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/status-chip-demo.tsx`
 
 The single component for paid/due-soon/overdue/draft. This reserved palette is never repurposed for a generic badge or tag — see Badge for that. Always paired with a text label; color alone never carries the meaning.
 

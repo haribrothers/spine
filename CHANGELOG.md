@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — One native doc app (D-240)
+
+- **Removed `apps/design-system-native`**, the unused first doc app for `@spine/ui-native`, and its `dev:ui-native` script. `apps/showcase-native` is now the one native doc app (supersedes D-034).
+- **Moved its two pages with no showcase demo:** OutlinedTextField and SpineLogo now have showcase demos and catalog entries; `check-doc-coverage` accepts only showcase demos, and US-MOB-27's test checks the showcase's Spine Logo demo.
+- **Docs:** CLAUDE.md, native notes, the monorepo layout, tech stack, design-system rules, the native component docs (doc page links), the mobile stories and the QA script name `apps/showcase-native`. The React Navigation components only that app demonstrated (TabBar, FloatingTabBar, NativeHeader, NativeTabView) stay in `packages/ui-native`, unused and without a doc page.
+
 ### 2026-10-13 — Integration tests in parallel (D-239)
 
 - **Faster suite:** integration files run in parallel, each Vitest worker against its own copy of the migrated `spine_test` (`spine_test_w1`…, made from it as a template before the run and dropped after). `SPINE_TEST_WORKERS` sets the count (4 locally, 2 in CI); 1 runs them one at a time as before. Locally 10½ → 4¾ minutes (6½ with 2 workers); no CI workflow change.

@@ -68,7 +68,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Secure storage | expo-secure-store (session token, theme) | |
 | Offline store | Local SQLite cache + outbox queue ([02-architecture §Offline](02-architecture.md#offline-sync-mobile)) | |
 | Tests | Jest 29 (`@spine/ui-native/jest-config-base`) | |
-| Docs | `apps/showcase-native` (`@expo/ui` components), `apps/design-system-native` (NativeWind components) | [D-034](12-decisions.md) |
+| Docs | `apps/showcase-native` (every `@spine/ui-native` component) | [D-034](12-decisions.md), [D-240](12-decisions.md) |
 
 ## Infrastructure
 

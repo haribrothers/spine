@@ -43,7 +43,7 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 
 ## UI rules
 - Values come from `docs/design/tokens.json` via CSS variables in `packages/config` / `packages/ui` (native: `packages/ui-native/src/tokens`). No hex values or magic numbers in components.
-- Use the design-system components (`docs/design/components/`). A component change ships with its doc page (`apps/design-system`, or `apps/showcase-native` / `apps/design-system-native`) and its a11y test in the same change.
+- Use the design-system components (`docs/design/components/`). A component change ships with its doc page (`apps/design-system`, or `apps/showcase-native` for native) and its a11y test in the same change.
 - Lucide icons only, per-icon imports on native; native themed classes always carry their `dark:` pair. Every menu action gets its icon from `lib/menu-icons.ts` (D-222); never add spacing around a menu icon. See `docs/prd/09-design-system.md`.
 - Copy: sentence case, verbs on buttons, say what happens to people's data, errors say what to do next.
 - A major action (issuing, recording, voiding, deleting, removing, emailing a customer, bulk changes) asks first with `useConfirm()` from `@spine/ui`; never one click from a menu (D-218). When it succeeds, `useToast()` (the app's one `ToastHost`) says what happened — call it before `router.push` and it shows on the next page (D-223).
@@ -54,4 +54,4 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 `pnpm dev:infra:up` · `pnpm db:migrate:dev` · `pnpm db:seed:dev` · `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm --filter @spine/api test:integration` · `pnpm test:e2e` · `pnpm verify` · `pnpm dev:mobile` · `pnpm create:native-app <name>`
 
 ## Where things are
-`apps/api` NestJS · `apps/web` Next.js · `apps/mobile` field app · `apps/e2e` Playwright · `apps/design-system`, `apps/design-system-native`, `apps/showcase-native` component docs · `packages/shared` money/tax/schemas · `packages/ui`, `packages/ui-native` · `packages/config` · `docs/` spec.
+`apps/api` NestJS · `apps/web` Next.js · `apps/mobile` field app · `apps/e2e` Playwright · `apps/design-system`, `apps/showcase-native` component docs · `packages/shared` money/tax/schemas · `packages/ui`, `packages/ui-native` · `packages/config` · `docs/` spec.

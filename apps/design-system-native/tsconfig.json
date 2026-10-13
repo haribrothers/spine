@@ -1,8 +1,0 @@
-{
-  "extends": "@spine/config/tsconfig/expo",
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "nativewind-env.d.ts"
-  ]
-}

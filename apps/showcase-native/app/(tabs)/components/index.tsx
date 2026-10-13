@@ -6,9 +6,8 @@ import { COMPONENT_CATALOG } from "../../../src/lib/component-catalog";
 
 /**
  * The Components tab's own list UI — maps over `COMPONENT_CATALOG` (the
- * single static array this app uses instead of replicating
- * `apps/design-system-native`'s two-file nav-metadata pattern, see that
- * file's own doc comment) to render one row per component, linking to
+ * single static array this app uses — see that file's own doc comment) to
+ * render one row per component, linking to
  * `/components/[slug]`.
  *
  * `Link`'s `asChild` clones its `onPress` handler onto whatever it wraps —

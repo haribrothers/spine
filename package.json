@@ -14,7 +14,6 @@
     "dev:mobile": "pnpm --filter @spine/mobile start",
     "dev:ios": "pnpm --filter @spine/mobile ios",
     "dev:android": "pnpm --filter @spine/mobile android",
-    "dev:ui-native": "pnpm --filter @spine/design-system-native start",
     "dev:showcase-native": "pnpm --filter @spine/showcase-native start",
     "dev:showcase-native:ios": "pnpm --filter @spine/showcase-native ios",
     "dev:showcase-native:android": "pnpm --filter @spine/showcase-native android",

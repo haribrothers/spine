@@ -1324,93 +1324,7 @@ Not a full audit — just confirm nothing obviously broke:
    app — confirm it persists across a reload and that a few screens
    (dashboard, an invoice detail page, a dialog) look correct in both
    modes.
-3. **`apps/design-system-native`** (`pnpm dev:ui-native`, then `--web`
-   or a simulator): browse Button, Text Field, Card, Badge, **Bottom
-   Tab Bar**, **Floating Tab Bar**. Confirm a wide browser window
-   shows the desktop shell (top bar + left sidebar at a fixed ~224px
-   width, not full-width) and narrowing it below ~768px switches to
-   the mobile list → push-detail stack. Click the Search button (or
-   ⌘K on web) and confirm it filters the component list and jumps to
-   the selected one. **On Bottom Tab Bar and Floating Tab Bar**,
-   confirm the "Live demo" section actually works — click between all
-   5 tabs (Home/Jobs/Expenses/Messages/Profile) and confirm the
-   content changes and the active tab's icon/color updates — check
-   this on BOTH the desktop layout and the mobile layout (a real
-   shipped bug had the live demo crash with "Couldn't register the
-   navigator" specifically on the desktop layout, fixed 2026-08-30).
-   **On Floating Tab Bar specifically**, confirm: the bar is a true
-   floating pill with visible margin on all sides (not flush with the
-   preview box's edges, not a rounded rectangle), the active tab's
-   highlight is a true rounded capsule matching the outer pill's
-   curvature (most visible on the rightmost tab, where a flatter
-   radius showed as a visible seam against the pill's own curve —
-   fixed 2026-08-30), every tab shows its icon stacked above its
-   label, and there's no white area visible behind the bar in either
-   light or dark mode (a real shipped bug had the demo's preview box
-   and its `NavigationContainer` both losing their theme — fixed
-   2026-08-30). **Also confirm**: tapping a different tab makes the
-   highlight capsule visibly SLIDE from the previously selected tab to
-   the newly selected one, rather than instantly jumping/disappearing
-   from one and reappearing on the other (tap a tab that's NOT
-   adjacent to the currently selected one, e.g. Home → Messages, to
-   make any snap-vs-slide difference obvious) — this was added
-   2026-08-30, replacing an earlier instant-swap. **Also confirm all 5
-   tab icons AND labels are level with each other** — same vertical
-   position and size for every tab, none sitting higher or lower than
-   the others; check this specifically at a NARROW/phone-width layout
-   (a real device or simulator, or a narrow browser window — not just
-   a wide desktop window) since two distinct bugs shipped here and
-   only showed up at real phone widths: (1) icons at inconsistent
-   heights due to icon-font glyph inconsistency, fixed 2026-08-30 by
-   migrating from `@expo/vector-icons` to `lucide-react-native`; (2)
-   "Messages"/"Expenses" (the longest labels) wrapping to two lines on
-   a narrow screen and shifting that tab's whole icon+label block,
-   fixed 2026-08-30 by forbidding label wrapping — confirm long labels
-   truncate with an ellipsis ("Expens…", "Messa…") rather than
-   wrapping or clipping abruptly. Check this on both Bottom Tab Bar
-   and Floating Tab Bar, in both light and dark mode. Click the
-   theme-toggle icon in
-   the top bar/header and cycle through all three states, confirming
-   at each step that BOTH the icon AND every background/text/border
-   color on screen (the sidebar, top bar, card borders, body text,
-   etc.) are consistent with the reported preference: **sun icon =
-   light mode**, **moon icon = dark mode**, **monitor icon = system**
-   (resolves to the device/browser's real light/dark preference). Two
-   real shipped bugs were found and fixed here 2026-08-30: (1) the
-   toggle changed internal state but no color on screen ever visibly
-   changed (a build-time CSS generation gap affecting web and native
-   equally), and (2) after fixing that, the icons themselves were
-   mapped to the wrong preference (moon shown for light, sun shown for
-   system, etc.), which made a now-correctly-working toggle look
-   broken because the icon didn't match the state a user would expect
-   from pressing it. Confirm both the icon-to-state mapping and the
-   actual color change on a device/simulator AND in a web browser
-   (`--web`). **Also confirm**: the top bar/header itself (not just
-   the page content below it) changes color with the theme — a real
-   shipped bug had the React Navigation header stay light in dark mode
-   while the rest of the screen correctly went dark, fixed 2026-08-30.
-   **Also confirm "system" actually tracks your real OS/browser
-   preference** — set your OS or browser to dark, reload the app fresh
-   (don't just click the toggle) and confirm it boots straight into
-   dark mode with no click needed; then explicitly cycle the toggle
-   back to the monitor icon and confirm it's still dark; then switch
-   your OS/browser preference to light while the app is on "system"
-   and confirm it live-updates to light without a reload. All three of
-   these were broken (system always resolved to light on web) and
-   fixed 2026-08-30. **Also confirm the preference survives a reload**
-   — pick light or dark explicitly, reload the page (web) or restart
-   the app (native), and confirm it comes back in the same mode
-   instead of resetting to system; this was a real shipped bug
-   (preference was in-memory only) fixed 2026-08-30.
-   **On the Button page specifically**, check every variant's
-   **Disabled** example in the States/Examples section — the label
-   text must be clearly visible (muted gray, not white-on-transparent)
-   in both light and dark mode; this was a real shipped bug (invisible
-   disabled-button text) fixed 2026-08-30. Also check the **Loading**
-   example (all variants) — the spinner must be clearly visible (muted
-   gray, not white-on-transparent) in both light and dark mode; this
-   was a second, related shipped bug (invisible loading spinner) fixed
-   the same day.
+3. *(`apps/design-system-native` was removed in D-240; every `@spine/ui-native` component is documented in `apps/showcase-native`, below.)*
 4. **`apps/showcase-native`** (native-only, `expo-router` — run via its
    own dev script, real device/simulator required, no web/Expo Go
    fallback). **Components tab (2026-09-14)**: browse to each of the 9
@@ -4466,7 +4380,7 @@ The phone carries the new Spine logo (D-203); the web keeps its own until its re
    - Tap Email: the illustration folds to the horizontal logo, and Server, Email, Password and "Sign in" stay above the keyboard on a small phone (iPhone SE, small Android). Dismiss the keyboard: the illustration returns.
    - A wrong password: "That email and password don't match. Check both, or reset your password." What you typed stays.
 8. **Logo and brand colours (US-MOB-27):**
-   - The design-system app (`apps/design-system-native`) has a "Spine logo" page (mark, horizontal, vertical, minimum sizes) and Brand swatches on Color.
+   - The showcase app (`apps/showcase-native`) has a "Spine Logo" demo (mark, horizontal, vertical, minimum sizes). *(Its Brand swatches page went with `apps/design-system-native`, D-240.)*
    - `pnpm --filter @spine/ui-native test` passes its doc-screen and a11y coverage checks.
 9. Regression:
    - The web app, the docs site and the web design system still show the "S" logo.

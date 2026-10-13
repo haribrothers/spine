@@ -1,6 +1,6 @@
 # TextField
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/text-field.tsx` · **Doc page:** `apps/design-system-native/app/components/text-field.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/text-field.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/text-field-demo.tsx`
 
 A single-line text input, 44px height — mirrors packages/ui&apos;s Input, but on RN&apos;s TextInput. Always pair with a visible label above it, never placeholder-only.
 

@@ -1,6 +1,6 @@
 # Button
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/button.tsx` · **Doc page:** `apps/design-system-native/app/components/button.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/button.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/button-demo.tsx`
 
 Triggers an action or event. One primary (filled) action per screen — everything else is secondary, ghost, or a plain link.
 

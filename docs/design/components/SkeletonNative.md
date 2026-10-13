@@ -1,6 +1,6 @@
 # Skeleton
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/skeleton.tsx` · **Doc page:** `apps/design-system-native/app/components/skeleton.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/skeleton.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/skeleton-demo.tsx`
 
 A pulsing block matching the shape of the loading content — used for genuinely slow loads, not every async state.
 
