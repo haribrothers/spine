@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — Documents shows a sample page, not the PDF (US-SET-17 to US-SET-19, D-237)
+
+- **Preview:** Settings › Documents draws an HTML sample of the document beside the options — the business's name or logo, the document colour and footer, the title and number, bill to, sample lines with the chosen columns (HSN/SAC and CGST/SGST for GST), totals, tax summary, amount in words, terms, notes and the uploaded signature above "Authorised signatory" — on a page of the chosen paper size, scaled into a 380 px column. It follows every option as it changes, needs nothing to load, looks the same in every browser and stays light in dark mode. It replaces the browser's PDF viewer in an iframe, which was blank in some browsers and didn't match the design.
+- **Tests:** web unit `us-set-17-sample`; E2E `us-set-17` now checks the sample (title, columns, paper shape, amount in words) instead of the preview requests, and `us-set-19` checks the uploaded signature shows in it.
+
 ### 2026-10-13 — One Settings for everyone (US-AUTH-16 to US-AUTH-19, US-SET-30 to US-SET-34, D-236)
 
 - **Your account (US-SET-30):** Profile & Preferences is now the "Your account" group of Settings — Profile, Password & security, Notifications — which every role opens from the user menu; Staff and Field see only it, and the business groups and their writes stay Owner-only. `/profile` (and `?tab=`) opens the matching pane. The Appearance tab is gone.

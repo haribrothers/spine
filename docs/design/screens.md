@@ -2615,6 +2615,8 @@ Shows: "Settings — Payment instructions — Spine" · "Overview" · "Dashboard
 
 ![SettingsDocumentLayout](screens/SettingsDocumentLayout.webp)
 
+As built (D-237), the preview is an HTML sample of the page — top colour bar, business, title and number, bill to, the lines with the chosen columns, totals, tax summary, amount in words, terms, notes, signature and footer — in a 380 px column (300 px below 1280 px), not the PDF. See `SettingsLarge`.
+
 Links to: —
 
 Shows: "Settings — Documents — Spine" · "Overview" · "Dashboard" · "Good afternoon, Alex" · "Cash position" · "Profit this month" · "Receivables" · "Overdue" · "Search settings" · "ORGANISATION" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Choose what each document shows. The preview updates as you change options." · "Quotes" · "Invoices" · "Credit notes" · "Receipts" · "Statements" · "Paper size" · "A4" · "Title" · "Tax Invoice" · "Columns" · "Quantity and unit" · "Discount" · "HSN/SAC" · "Tax per line"

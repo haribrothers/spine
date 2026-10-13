@@ -268,13 +268,13 @@ Decision: D-094
 Decision: D-152
 
 **Acceptance criteria**
-- **Given** Settings › Documents, **when** it opens, **then** a tab per document type ("Quotes", "Invoices", "Credit notes", "Receipts", "Statements") shows options beside a live preview with sample data.
+- **Given** Settings › Documents, **when** it opens, **then** a tab per document type ("Quotes", "Invoices", "Credit notes", "Receipts", "Statements") shows options beside a live preview with sample data — an HTML sample of the page in the chosen paper size, drawn from the options on screen ([D-237](../prd/12-decisions.md)).
 - **Given** the options, **when** I change them, **then** I can set "Paper size" (A4, Letter) and show or hide "Quantity and unit", "Discount", "HSN/SAC" (when GST is on), "Tax per line" and "Tax summary table"; the preview updates as I change.
 - **Given** I save, **when** a new document is issued, **then** its PDF uses the options; issued PDFs never change.
 - **Given** a document with a discount on a line while "Discount" is hidden, **when** it renders, **then** the line shows its discounted price and the discount column is still hidden ("Hidden columns don't change any amounts.").
 
 **Implementation notes**
-- API: `GET/PUT /org/settings/document_layout` (roles: owner), validated by `documentLayoutSchema`; `GET /org/settings/document_layout/preview?type=` returns a sample PDF.
+- API: `GET/PUT /org/settings/document_layout` (roles: owner), validated by `documentLayoutSchema`; `GET /org/settings/document_layout/preview?type=` returns a sample PDF; the pane itself draws an HTML sample (`app/settings/panes/document-sample.tsx`, D-237).
 
 ### US-SET-18 · Set each document's title, terms and notes
 **Feature:** F-SET-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsDocumentLayout`
