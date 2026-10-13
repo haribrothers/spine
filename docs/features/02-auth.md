@@ -1,6 +1,6 @@
 # 02 · Sign-in & account
 
-How people get into Spine and look after their own account: the single-use first sign-up that creates the Primary Owner, sign-in and sign-out, joining by invitation, password reset, and the personal Profile & Preferences page every role has.
+How people get into Spine and look after their own account: the single-use first sign-up that creates the Primary Owner, sign-in and sign-out, joining by invitation, password reset, and their own account — Profile & Preferences, which from US-SET-30 is the "Your account" group of Settings every role has.
 
 **Screens:** `SignUp` (P1), `SignIn` (P1), `AcceptInvite` (P1), `EmailInvite` (P2), `ProfilePreferences` (P1), `UserMenu` (P1), `SignUpClosed` (P2), `ForgotPassword` (P2), `ForgotPasswordSent` (P2), `ResetPassword` (P2), `InviteInvalid` (P2), `SessionExpired` (P2), `AuthWelcome` (P2), `AuthWelcomeDark` (P2), `AuthLogin` (P2), `AuthLoginDark` (P2), `AuthLoginError` (P2), `AuthSignUp` (P2), `AuthSignUpStrength` (P2), `AuthInvite` (P2), `AuthNarrow` (P2)
 **Depends on:** 15 Team (invitations are created there), 14 Notifications (email delivery), 18 Self-hosting (SMTP).
@@ -14,6 +14,7 @@ How people get into Spine and look after their own account: the single-use first
 | F-AUTH-03 | Profile & Preferences | P1 | 0 | `ProfilePreferences`, `UserMenu` |
 | F-AUTH-04 | Account recovery and access states | P2 | 6 | `SignUpClosed`, `ForgotPassword`, `ForgotPasswordSent`, `ResetPassword`, `InviteInvalid`, `SessionExpired` |
 | F-AUTH-05 | Welcome, login and passwords that feel like Spine | P2 | Refinements | `AuthWelcome`, `AuthWelcomeDark`, `AuthLogin`, `AuthLoginDark`, `AuthLoginError`, `AuthSignUp`, `AuthSignUpStrength`, `AuthNarrow` |
+| F-AUTH-06 | Your account in Settings: one theme, signed-in devices, safe email change | P2 | Refinements | `UserMenuRefined`, `SettingsAccountProfile`, `SettingsSecurity`, `SettingsAccountNotifications`, `ChangeEmailDialog`, `EmailChangedNotice`, `SignOutOtherDevicesConfirm` |
 
 ## User stories
 
@@ -117,6 +118,7 @@ Legacy: S-10.17
 **Implementation notes**
 - API: `PUT /users/me`, `PUT /users/me/password`, `POST /files`.
 - Data: `user`.
+- From US-SET-30 (D-236), these live in Settings › Your account (Profile; Password & security); `/profile` opens it. Email changes move to US-AUTH-18 and the Theme tab goes (US-AUTH-16).
 - UI: `apps/web/src/app/(app)/profile/profile-view.tsx`.
 - Edge: these routes must accept `Idempotency-Key` (finding C26, US-OPS-08).
 
@@ -136,6 +138,7 @@ Legacy: S-00.2, S-00.3
 - API: `PUT /users/me/preferences`.
 - Data: user theme preference.
 - UI: `next-themes` (`data-theme`), `theme-toggle.tsx`.
+- US-AUTH-16 (D-236) makes the user menu the one place to choose, saved to the account and applied at sign-in — the second criterion above wasn't met before it.
 - Edge: every status colour keeps 4.5:1 contrast in both themes (design README).
 
 ### US-AUTH-08 · See that sign-up is invite-only
@@ -301,3 +304,69 @@ Decision: [D-207](../prd/12-decisions.md)
 - `packages/shared/src/password.ts`: `passwordStrength(password)` gives the level, the checklist and the common-password check (a short built-in list, no dependency). It's used by the web and by the API's Better Auth `before` hook on `/sign-up/email`, `/reset-password` and `/change-password`, which answers 400 `PASSWORD_TOO_COMMON`.
 - `PasswordInput` and `PasswordStrengthMeter` in `@spine/ui`, with doc pages and accessibility tests. The existing `PasswordToggleField` is the base for the eye.
 
+
+### US-AUTH-16 · One theme, wherever I sign in
+**Feature:** F-AUTH-06 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `UserMenuRefined`
+**As** any user, **I want** the theme I pick to stay picked, **so that** Spine looks the same on every device and in every place that shows it.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** the user menu, **when** I pick "Light", "Dark" or "System", **then** the app switches at once and my choice is saved to my account (`themePreference`).
+- **Given** I picked "Dark" on one device, **when** I sign in on another, **then** Spine opens in dark — the saved choice wins over what that browser last used.
+- **Given** "System", **when** my operating system switches between light and dark, **then** Spine follows without a reload.
+- **Given** saving fails, **when** the error returns, **then** a toast says "Couldn't save your theme. It's used on this device until you sign in again." and the theme still applies here.
+- **Given** Settings › Your account, **when** it opens, **then** there's no separate Appearance pane: the user menu is the one place to choose a theme.
+- **Given** the theme buttons in the user menu, **when** a screen reader or tooltip reads them, **then** they're named "Light", "Dark" and "Follow system", and the chosen one is pressed.
+
+**Implementation notes**
+- Supersedes the Appearance tab in US-AUTH-06/US-AUTH-07. The app layout applies `GET /users/me`'s `themePreference` with `next-themes` once per sign-in; the user menu calls `PUT /users/me/preferences`.
+- The note on Settings › Branding (US-SET-09) now reads "Each person still chooses light or dark mode from their user menu.".
+
+### US-AUTH-17 · See where I'm signed in and sign out elsewhere
+**Feature:** F-AUTH-06 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsSecurity`, `SignOutOtherDevicesConfirm`
+**As** any user, **I want** to see every device signed in to my account, **so that** I can sign out a lost phone or a shared computer.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** Settings › Your account › Password & security, **when** it opens, **then** "Where you're signed in" lists each session: device and browser ("Chrome on macOS", "Spine app on iPhone"), the place it signed in from (IP address), "Last active <time ago>", and "This device" on the current one, most recent first.
+- **Given** another session's row, **when** I press "Sign out", **then** it asks "Sign out <device>? It'll need to sign in again." and, confirmed, ends that session (web or phone) and says so in a toast.
+- **Given** more than one session, **when** I press "Sign out of other devices", **then** it asks first, ends every session but this one, and the toast says how many.
+- **Given** I change my password here, **when** I look below the fields, **then** "Sign out of my other devices" is ticked; with it ticked, success signs out every other session (`revokeOtherSessions`) and the toast says "Password changed. Your other devices are signed out."; unticked, "Password changed.".
+
+**Implementation notes**
+- API: `GET /users/me/sessions`, `DELETE /users/me/sessions/:id`, `POST /users/me/sessions/sign-out-others` — the caller's own sessions only. Device names come from the session's `user_agent`; the phone app sends a recognisable user agent.
+
+### US-AUTH-18 · Change my email safely
+**Feature:** F-AUTH-06 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `ChangeEmailDialog`, `EmailChangedNotice`
+**As** any user, **I want** changing my sign-in email to need my password and to be told about, **so that** someone at my unlocked computer can't take over my account.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** Settings › Your account › Profile, **when** I look at Email, **then** it's shown with "Change email" rather than as an open field.
+- **Given** "Change email", **when** the dialog opens, **then** it asks for "New email" and "Current password", and "Change email" is pressed only when both are filled.
+- **Given** a wrong password, **when** I press "Change email", **then** Current password says "That password isn't right." and nothing changes.
+- **Given** an email another account uses, **when** I press "Change email", **then** New email says "Another account uses that email." and nothing changes.
+- **Given** it succeeds, **when** the dialog closes, **then** a toast says "Your sign-in email is now <new>.", and the old address gets an email "Your Spine sign-in email changed" naming the new one, when and from which device — and saying to contact an Owner if it wasn't them.
+
+**Implementation notes**
+- API: `PUT /users/me/email { newEmail, currentPassword }` (400 wrong password, 409 taken); `PUT /users/me` no longer accepts `email`. New `email_kind` `email_changed`, sent to the old address.
+
+### US-AUTH-19 · My account looks after the details
+**Feature:** F-AUTH-06 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsAccountProfile`, `SettingsAccountNotifications`, `UserMenuRefined`
+**As** any user, **I want** my account settings to be clear and finished, **so that** I don't wonder what's saved or what a default means.
+
+Decision: [D-236](../prd/12-decisions.md), [D-222](../prd/12-decisions.md), [D-223](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** I've uploaded a photo, **when** the user menu and the sidebar show me, **then** they show my photo (initials only without one).
+- **Given** a photo, **when** I open Profile, **then** "Change photo" and "Remove photo" are offered; Remove asks first and returns to initials everywhere.
+- **Given** Profile's name, **when** nothing has changed, **then** "Save" is off; after saving, a toast says "Profile updated." (US-OPS-38) instead of a message on the page.
+- **Given** Notifications › Meeting reminders, **when** I haven't chosen one, **then** the first option reads "Business default · <n> min", using the Owner's setting.
+- **Given** the daily digest, **when** it shows the time, **then** it names the time zone ("Times are in Asia/Kolkata, the business's time zone.").
+- **Given** the user menu, **when** it opens, **then** each item has its icon from the standard menu icons with no extra spacing (D-222): Settings, Set up Spine (Owners), Sign out.
+
+**Implementation notes**
+- `GET /users/me` gains `orgDefaults: { meetingReminderLeadMinutes, timeZone }` and the photo is read from `image` everywhere the person is shown.

@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 525 stories.
+Total: 534 stories.
 
 ## Phase 0 · Foundation
 
@@ -973,6 +973,18 @@ Total: 525 stories.
 - US-TEAM-30 · Choose which sections a Team can open (P2)
 - US-TEAM-31 · Keep closed records out of the way, not out of the work (P2)
 - US-TEAM-32 · Open and close sections in one place (P2)
+
+*Settings & your account*
+
+- US-AUTH-16 · One theme, wherever I sign in (P2)
+- US-AUTH-17 · See where I'm signed in and sign out elsewhere (P2)
+- US-AUTH-18 · Change my email safely (P2)
+- US-AUTH-19 · My account looks after the details (P2)
+- US-SET-30 · Find my own settings and the business's in one place (P2)
+- US-SET-31 · Settings grouped the way I think about my business (P2)
+- US-SET-32 · Settings that use the screen (P2)
+- US-SET-33 · Come back to the same setting, without losing edits (P2)
+- US-SET-34 · Search what's inside settings (P2)
 
 ## Phase 10 · AI assistant
 

@@ -22,6 +22,7 @@ Organisation configuration in one Owner-only Settings dialog (business profile, 
 | F-SET-11 | Modules | P1 | 9 | `SettingsModules`, `ModuleOffConfirm` |
 | F-SET-12 | The Spine brand on the web | P2 | Refinements | `BrandSidebar`, `BrandSidebarDark`, `BrandSignIn`, `BrandBrowserIcons`, `BrandPublicQuoteFooter` |
 | F-SET-13 | The email log: every email Spine sends, what happened to it, retry and cancel, and a warning when email isn't set up | P2 | Refinements | `EmailLog`, `EmailLogDark`, `EmailLogNoSmtp`, `EmailLogRetryConfirm` |
+| F-SET-14 | One Settings for everyone: Your account, groups, room on big screens, phones, the address, unsaved changes and search by content | P2 | Refinements | `SettingsGrouped`, `SettingsStaff`, `SettingsLarge`, `SettingsPhoneList`, `SettingsPhonePane`, `SettingsUnsavedConfirm`, `SettingsSearchKeywords` |
 
 ## User stories
 
@@ -40,6 +41,7 @@ Legacy: S-10.1
 **Implementation notes**
 - API: `GET /org/settings`, `GET/PUT /org/settings/:key` (PUT Owner).
 - UI: `components/settings-dialog.tsx`. Expense categories move out of Settings to Expenses › Categories in Phase 6 (US-PUR-19, [D-078](../prd/12-decisions.md)); "Browser notifications" moves to Profile with US-NTF-12.
+- From US-SET-30 (D-236), Staff and Field see "Settings" too, with only Your account; the business panes and their write routes stay Owner-only. The section list is grouped (US-SET-31) and the open pane is kept in the address (US-SET-33).
 
 ### US-SET-02 · Search settings
 **Feature:** F-SET-01 · **Priority:** P3 · **Phase:** 0 · **Screens:** `SettingsSearch`
@@ -149,7 +151,7 @@ Legacy: S-00.4, S-00.5 · Gaps: G3 · Decision: D-063
 - **Given** I pick "Harbour Teal" and press "Save", **when** any member reloads, **then** primary buttons, links, active navigation and focus rings use teal in light and dark mode.
 - **Given** any preset, **when** it applies, **then** paid, due-soon, overdue and draft status colours are unchanged.
 - **Given** "Reset to Spine defaults", **when** I press it and save, **then** Spine Blue returns.
-- **Given** the note "Each person still chooses light or dark mode in their own Profile & Preferences.", **when** a member changes their theme, **then** it applies on top of the preset.
+- **Given** the note "Each person still chooses light or dark mode from their user menu." (US-AUTH-16), **when** a member changes their theme, **then** it applies on top of the preset.
 
 **Implementation notes**
 - API: `GET/PUT /org/settings/branding`.
@@ -453,3 +455,85 @@ Decision: D-015, D-220
 **Implementation notes**
 - API: `GET /emails/status` → `{ smtpConfigured, waiting, failedRecently, sentToday, lastError }` (Owner); the page's cards use the same counts. `EmailLogService.releaseWaiting` runs at start-up.
 
+
+### US-SET-30 · Find my own settings and the business's in one place
+**Feature:** F-SET-14 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsAccountProfile`, `SettingsStaff`, `UserMenuRefined`
+**As** anyone using Spine, **I want** one Settings with my own account in it, **so that** I don't have to remember that "Profile & Preferences" and "Settings" are different places.
+
+Decision: [D-236](../prd/12-decisions.md) (replaces the Profile part of [D-023](../prd/12-decisions.md))
+
+**Acceptance criteria**
+- **Given** any role, **when** I open the user menu, **then** it lists "Settings" (and no longer "Profile & Preferences"); Settings opens on Your account › Profile for Staff and Field, and on Business profile for Owners.
+- **Given** Settings, **when** it opens, **then** "Your account" holds "Profile" (photo, name, email), "Password & security" and "Notifications" — what Profile & Preferences had, except Appearance (US-AUTH-16).
+- **Given** a Staff or Field user, **when** Settings opens, **then** they see only Your account; the business groups aren't listed, and every business settings write still answers 403.
+- **Given** an old address `/profile` (or `/profile?tab=notifications`), **when** it opens, **then** Spine shows the dashboard with Settings open on that pane (Profile, Password & security or Notifications).
+- **Given** a Field user on the phone app, **when** they open Profile there, **then** nothing changes (the phone app has its own).
+
+**Implementation notes**
+- UI: `components/settings-dialog.tsx` gains the account panes (moved from `app/(app)/profile/profile-view.tsx`); `/profile` becomes a redirect to `/dashboard?settings=profile`. `isOwner` decides which groups are listed; the API is unchanged.
+
+### US-SET-31 · Settings grouped the way I think about my business
+**Feature:** F-SET-14 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsGrouped`
+**As** an owner, **I want** the settings list in groups, **so that** I can see where a setting lives without reading 21 names.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** an Owner opens Settings, **when** the list shows, **then** it's grouped, in this order:
+  - **Your account:** Profile, Password & security, Notifications;
+  - **Business:** Business profile, Branding, Industry template, Currency & locale, Modules;
+  - **Money & tax:** Financial year, Tax, GST (India), Chart of accounts, Opening balances, Payment instructions;
+  - **Documents & emails:** Numbering, Documents, Emails, Automatic reminders;
+  - **Sales & meetings:** Pipeline stages, Repeat quote conversion, Upcoming meetings, Meeting reminders;
+  - **Data:** Data export, Demo data;
+  - **Team:** Users, Teams, Audit log, Email log — links that close Settings and open the page.
+- **Given** a module is switched off, **when** the list shows, **then** its panes are gone (US-SET-24) and a group left empty isn't shown.
+- **Given** the list is taller than the dialog, **when** I scroll it, **then** the group names stay readable and the active pane stays in view when the dialog opens.
+
+**Implementation notes**
+- `SECTIONS` gain a `group`; Team links reuse the sidebar's icons. Opening balances keeps its own page (it already closes Settings).
+
+### US-SET-32 · Settings that use the screen
+**Feature:** F-SET-14 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsLarge`, `SettingsPhoneList`, `SettingsPhonePane`
+**As** an owner, **I want** Settings to be roomy on a big screen and usable on a phone, **so that** wide panes like Documents aren't cramped and I can change a setting on the go.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** a screen at least 1280 px wide and 900 px tall, **when** Settings opens, **then** it's up to 1152 px wide and 90% of the window's height (at most 960 px); on smaller laptops it keeps a margin of at least 24 px.
+- **Given** Documents, **when** it opens in the larger dialog, **then** the options and the live preview sit side by side without the options wrapping into a narrow column.
+- **Given** a window narrower than 768 px, **when** Settings opens, **then** it fills the screen and shows the list first; picking a pane shows it with a "Back to settings" button, and Escape or the close button closes Settings.
+- **Given** the larger dialog, **when** a pane is short, **then** the dialog keeps its height (no jumping as I move between panes).
+
+**Implementation notes**
+- `@spine/ui` Dialog gains `size="xl"` with its doc page and accessibility test (component rule), used by Settings only.
+
+### US-SET-33 · Come back to the same setting, without losing edits
+**Feature:** F-SET-14 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsUnsavedConfirm`
+**As** an owner, **I want** Settings to remember where I am and to catch unsaved changes, **so that** a refresh or a stray click doesn't lose my work.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** Settings is open on a pane, **when** I look at the address, **then** it has `?settings=<pane>` (e.g. `?settings=numbering`); refreshing, Back/Forward or sharing the link opens the same pane, and closing Settings removes it.
+- **Given** an unknown pane or one my role can't open, **when** the address asks for it, **then** Settings opens on my first pane.
+- **Given** I've changed a pane without saving, **when** I pick another pane, close Settings or press Escape, **then** it asks "Discard unsaved changes to <pane>?" with "Keep editing" and "Discard"; Keep editing leaves everything as it was.
+- **Given** a pane with unsaved changes, **when** I look at the list, **then** that pane shows a dot and "Unsaved" for screen readers.
+
+**Implementation notes**
+- Panes report `dirty` through a small context (`useSettingsDirty`); panes that save on change (switches, Modules) are never dirty. Replaces the "no per-section URL" note in US-SET-01.
+
+### US-SET-34 · Search what's inside settings
+**Feature:** F-SET-14 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `SettingsSearchKeywords`
+**As** an owner, **I want** search to find a setting by what it does, **so that** I can find "invoice prefix" without knowing it lives under Numbering.
+
+Decision: [D-236](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** "Search settings", **when** I type a word a pane contains — e.g. "logo" (Branding), "prefix" (Numbering), "GSTIN" (GST, Business profile), "signature" (Documents), "SMTP" (Emails), "password" (Password & security) — **then** the list shows those panes under their groups, each with the matching phrase beneath its name ("Matches: invoice prefix").
+- **Given** a search, **when** I press Enter, **then** the first result opens; ↑/↓ move through results.
+- **Given** a Staff or Field user, **when** they search, **then** only Your account panes can match.
+- **Given** no match, **when** it filters, **then** "No matching settings." shows with "Clear search".
+
+**Implementation notes**
+- Each section gains `keywords` (the labels of what's in the pane), kept next to its entry in `settings-dialog.tsx`; client-side, no API.
