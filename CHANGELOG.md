@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — Integration tests in parallel (D-239)
+
+- **Faster suite:** integration files run in parallel, each Vitest worker against its own copy of the migrated `spine_test` (`spine_test_w1`…, made from it as a template before the run and dropped after). `SPINE_TEST_WORKERS` sets the count (4 locally, 2 in CI); 1 runs them one at a time as before. Locally 10½ → 4¾ minutes (6½ with 2 workers); no CI workflow change.
+- **Connections:** `createDb` and pg-boss read `DATABASE_POOL_MAX` and `DATABASE_IDLE_TIMEOUT` (unset in production); the test workers set 5 and 2 s so every worker fits under Postgres's 100 connections.
+- **Steadier tests:** the quote-view throttle test waits for its unawaited notifications instead of a fixed 50 ms, and US-OPS-28's weekly-run check reads the run's newest warning without depending on how many damaged files the database already holds.
+
 ### 2026-10-13 — Search that finds more and takes you further (US-OPS-39 to US-OPS-49, D-238)
 
 - **Before you type (US-OPS-39):** search shows the 5 records you opened last (from search, a list, a link or the dashboard) and your last 3 searches, kept on your account (`user.recent_items`, `user.recent_searches`, migration `0125`) and read again with today's access each time; "Clear recent" empties both. `GET/POST/DELETE /search/recent`; the app layout's `RecentVisits` records each record page opened.

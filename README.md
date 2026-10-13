@@ -222,6 +222,12 @@ pnpm --filter @spine/api exec dotenv -e ../../.env.test -e ../../.env -- drizzle
 Re-run the second command after any schema change to keep `spine_test`'s
 schema in sync with `spine`'s.
 
+The files run in parallel (D-239): before a run, each worker gets its own
+copy of `spine_test` (`spine_test_w1` … `spine_test_w4`, made with
+`CREATE DATABASE … TEMPLATE` and dropped afterwards), so no file sees
+another's rows. `SPINE_TEST_WORKERS` sets how many workers (4 locally, 2 in
+CI); `SPINE_TEST_WORKERS=1` runs one file at a time, as before.
+
 ### Resetting your local database
 
 If migrations get into a bad state or you want a completely clean slate:

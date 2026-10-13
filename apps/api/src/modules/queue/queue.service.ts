@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nest
 import { PgBoss, type Job as PgBossJob } from "pg-boss";
 import { sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
-import type { Database } from "../../db/client";
+import { poolSize, type Database } from "../../db/client";
 
 /**
  * Thin wrapper around `pg-boss` (PRD stack table: "pg-boss (Postgres-backed
@@ -44,7 +44,8 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       // assumes DbModule's provider factory ran first.
       throw new Error("DATABASE_URL is required");
     }
-    this.boss = new PgBoss({ connectionString: databaseUrl });
+    const max = poolSize();
+    this.boss = new PgBoss({ connectionString: databaseUrl, ...(max ? { max } : {}) });
     this.boss.on("error", (err: Error) => this.logger.error("pg-boss error", err));
     await this.boss.start();
     this.logger.log("pg-boss started");
