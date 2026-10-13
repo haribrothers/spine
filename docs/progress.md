@@ -288,15 +288,15 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-30 · Choose which sections a Team can open
 - [x] US-TEAM-31 · Keep closed records out of the way, not out of the work
 - [x] US-TEAM-32 · Open and close sections in one place
-- [ ] US-AUTH-16 · One theme, wherever I sign in
-- [ ] US-AUTH-17 · See where I'm signed in and sign out elsewhere
-- [ ] US-AUTH-18 · Change my email safely
-- [ ] US-AUTH-19 · My account looks after the details
-- [ ] US-SET-30 · Find my own settings and the business's in one place
-- [ ] US-SET-31 · Settings grouped the way I think about my business
-- [ ] US-SET-32 · Settings that use the screen
-- [ ] US-SET-33 · Come back to the same setting, without losing edits
-- [ ] US-SET-34 · Search what's inside settings
+- [x] US-AUTH-16 · One theme, wherever I sign in
+- [x] US-AUTH-17 · See where I'm signed in and sign out elsewhere
+- [x] US-AUTH-18 · Change my email safely
+- [x] US-AUTH-19 · My account looks after the details
+- [x] US-SET-30 · Find my own settings and the business's in one place
+- [x] US-SET-31 · Settings grouped the way I think about my business
+- [x] US-SET-32 · Settings that use the screen
+- [x] US-SET-33 · Come back to the same setting, without losing edits
+- [x] US-SET-34 · Search what's inside settings
 - [x] US-SET-13 · Open contact history the same way as everywhere else
 - [x] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [x] US-OPS-08 · Make every mutating request safe to repeat

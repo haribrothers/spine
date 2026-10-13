@@ -1,9 +1,9 @@
 import { test, expect } from "./fixtures";
 
 test.describe("US-NTF-14", () => {
-  test("Profile › Notifications: daily digest on/off, Send at and Days, beside browser notifications and meeting reminders", async ({ page, seededOrg: _ }) => {
-    await page.goto("/profile");
-    await page.getByRole("tab", { name: "Notifications" }).click();
+  test("Settings › Your account › Notifications: daily digest on/off, Send at and Days, beside browser notifications and meeting reminders", async ({ page, seededOrg: _ }) => {
+    // US-SET-30: Settings › Your account › Notifications.
+    await page.goto("/dashboard?settings=notifications");
 
     const digest = page.getByTestId("daily-digest");
     await expect(digest.getByRole("heading", { name: "Daily digest" })).toBeVisible();
@@ -19,17 +19,17 @@ test.describe("US-NTF-14", () => {
     await expect(digest.getByRole("combobox", { name: "Send at" })).toHaveText("6:30 AM");
     await digest.getByRole("combobox", { name: "Days" }).click();
     await page.getByRole("option", { name: "Every day" }).click();
-    await expect(page.getByText("Daily digest on: every day.")).toBeVisible();
+    await expect(page.getByTestId("toast").filter({ hasText: "Daily digest on: every day." })).toBeVisible();
 
     await toggle.click();
-    await expect(page.getByText("Daily digest turned off.")).toBeVisible();
+    await expect(page.getByTestId("toast").filter({ hasText: "Daily digest turned off." })).toBeVisible();
 
     // The same tab holds the other notification settings.
     await expect(page.getByTestId("browser-notifications")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Meeting reminders" })).toBeVisible();
 
     // Saved: a fresh load opens straight on the tab with the choices kept.
-    await page.goto("/profile?tab=notifications");
+    await page.goto("/dashboard?settings=notifications");
     const reloaded = page.getByTestId("daily-digest");
     await expect(reloaded.getByRole("switch", { name: "Email me a summary each morning" })).toHaveAttribute("aria-checked", "false");
     await expect(reloaded.getByRole("combobox", { name: "Send at" })).toHaveText("6:30 AM");

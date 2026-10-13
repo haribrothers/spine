@@ -45,7 +45,7 @@ test.describe("US-SET-19", () => {
     await expect(pane.getByRole("checkbox", { name: "Signature" })).toBeChecked();
     await pane.getByRole("checkbox", { name: "Amount in words" }).check();
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
 
     type Saved = { value: { signatureFileId: string | null; invoice: { signature: boolean; amountInWords: boolean } } };
     const saved = (await (await page.request.get(`${API_URL}/org/settings/document_layout`)).json()) as Saved;

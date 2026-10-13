@@ -518,7 +518,7 @@ Decision: [D-236](../prd/12-decisions.md)
 - **Given** Settings is open on a pane, **when** I look at the address, **then** it has `?settings=<pane>` (e.g. `?settings=numbering`); refreshing, Back/Forward or sharing the link opens the same pane, and closing Settings removes it.
 - **Given** an unknown pane or one my role can't open, **when** the address asks for it, **then** Settings opens on my first pane.
 - **Given** I've changed a pane without saving, **when** I pick another pane, close Settings or press Escape, **then** it asks "Discard unsaved changes to <pane>?" with "Keep editing" and "Discard"; Keep editing leaves everything as it was.
-- **Given** a pane with unsaved changes, **when** I look at the list, **then** that pane shows a dot and "Unsaved" for screen readers.
+- **Given** a pane with unsaved changes, **when** I look at the list, **then** that pane shows a dot, and screen readers hear "<pane>, edited".
 
 **Implementation notes**
 - Panes report `dirty` through a small context (`useSettingsDirty`); panes that save on change (switches, Modules) are never dirty. Replaces the "no per-section URL" note in US-SET-01.

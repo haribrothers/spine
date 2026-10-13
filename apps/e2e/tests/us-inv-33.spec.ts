@@ -15,7 +15,7 @@ test.describe("US-INV-33", () => {
     await expect(pane.getByLabel("Invoices due in")).toHaveValue("30");
     await pane.getByLabel("Invoices due in").fill("15");
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.goto("/invoices/new");

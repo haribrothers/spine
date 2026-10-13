@@ -31,7 +31,6 @@ test.describe("Route smoke pass", () => {
     { path: "/payables", heading: "Payables" },
     { path: "/team/users", heading: "Users" },
     { path: "/team/teams", heading: "Teams" },
-    { path: "/profile", heading: "Profile & Preferences" },
   ];
 
   for (const { path, heading } of routes) {

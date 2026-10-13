@@ -25,7 +25,7 @@ test.describe("US-INV-18", () => {
 
     await pane.getByLabel("7 days after the due date").check();
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
 
     await pane.getByRole("button", { name: "Preview email" }).click();
     const preview = page.getByRole("dialog", { name: "Reminder email preview" });

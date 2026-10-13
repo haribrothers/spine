@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AppShell, AppShellContent, AppShellSidebar, SpineLogo } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
@@ -20,6 +20,8 @@ import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
 import { SessionExpiredDialog } from "./session-expired-dialog";
 import { ToastHost } from "./toast-host";
+import { SettingsRoute } from "./settings-route";
+import { AccountProvider } from "../lib/account-context";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -71,9 +73,16 @@ export function AppLayout(props: AppLayoutProps) {
       <CapabilitiesProvider>
         {/* US-OPS-38 (D-223): the one toast host, mounted across pages. */}
         <ToastHost max={3} duration={5000}>
-          <ModulesProvider>
-            <AppLayoutShell {...props} />
-          </ModulesProvider>
+          {/* US-AUTH-16: the person, and their saved theme, for every page. */}
+          <AccountProvider>
+            <ModulesProvider>
+              <AppLayoutShell {...props} />
+              {/* US-SET-33: ?settings=<pane> opens Settings on any page. */}
+              <Suspense>
+                <SettingsRoute isOwner={props.isOwner} />
+              </Suspense>
+            </ModulesProvider>
+          </AccountProvider>
           <PermissionToast />
         </ToastHost>
         <SessionExpiredDialog email={props.userEmail} />

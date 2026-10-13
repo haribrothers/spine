@@ -24,7 +24,7 @@ test.describe("US-CRM-19", () => {
     // Keyboard-friendly reorder: the new stage moves up above "Quote sent".
     await pane.getByRole("button", { name: "Move Site visit booked up" }).click();
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
 
     await page.goto("/leads");
     // US-CRM-24: Won and Lost are slim columns at the end (no heading), so read each column's stage name.

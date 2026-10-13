@@ -13,7 +13,7 @@ import { SavedToast } from "../app/settings/saved-toast";
  * a user with several devices subscribes from each one separately, and
  * revoking here never touches subscriptions from other devices (S-10.12).
  *
- * US-NTF-12 — lives on every member's Profile & Preferences › Notifications
+ * US-NTF-12 — lives on every member's Settings › Your account › Notifications
  * (the subscription routes were always per-user), not in the Owner-only
  * organisation Settings.
  */

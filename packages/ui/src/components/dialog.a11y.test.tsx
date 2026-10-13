@@ -24,4 +24,16 @@ describe("Dialog a11y", () => {
     // Radix portals DialogContent onto document.body, outside the render container.
     await expectNoA11yViolations(document.body);
   });
+
+  it("has no violations at size xl", async () => {
+    render(
+      <Dialog open>
+        <DialogContent size="xl" aria-describedby={undefined}>
+          <DialogTitle>Settings</DialogTitle>
+          <nav aria-label="Settings sections">Your account</nav>
+        </DialogContent>
+      </Dialog>,
+    );
+    await expectNoA11yViolations(document.body);
+  });
 });

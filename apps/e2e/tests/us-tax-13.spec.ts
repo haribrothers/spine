@@ -89,7 +89,7 @@ test.describe("US-TAX-13", () => {
     await pane.getByLabel("Legal name").fill("Kaveri Exports");
     await pane.getByRole("checkbox", { name: /We export under LUT/ }).check();
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     const pickItem = async (scope: import("@playwright/test").Locator) => {

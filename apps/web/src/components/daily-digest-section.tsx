@@ -14,8 +14,11 @@ export function DailyDigestSection({
   value,
   onSaved,
   onError,
+  timeZone,
 }: {
   value: NotificationPreferences;
+  /** US-AUTH-19 — the business's time zone, named under the times. */
+  timeZone?: string;
   onSaved: (next: NotificationPreferences) => void;
   onError: (message: string) => void;
 }) {
@@ -84,7 +87,7 @@ export function DailyDigestSection({
           </Select>
         </div>
       </div>
-      <p className="text-[12px] text-on-surface-muted">Times are in your organisation&apos;s time zone.</p>
+      <p className="text-[12px] text-on-surface-muted">{timeZone ? `Times are in ${timeZone}, the business's time zone.` : "Times are in your organisation's time zone."}</p>
     </section>
   );
 }

@@ -3,8 +3,11 @@ import { test, expect } from "@playwright/test";
 import { signUpNewOrg } from "./helpers";
 
 async function openPane(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: /Owner/ }).last().click();
-  await page.getByRole("menuitem", { name: "Settings" }).click();
+  // US-SET-33: after a reload Settings is still open (it's in the address).
+  if (!(await page.getByTestId("settings-dialog").isVisible())) {
+    await page.getByRole("button", { name: /Owner/ }).last().click();
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+  }
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Payment instructions" }).click();
   return dialog;

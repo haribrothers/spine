@@ -341,6 +341,25 @@ export function passwordSetByOwnerEmail(d: { name: string; ownerName: string; bu
   };
 }
 
+/** US-AUTH-18 — to the old address when someone changes their sign-in email. Says who to contact if it wasn't them. */
+export function emailChangedEmail(d: { name: string; businessName: string; newEmail: string; when: string; device: string; ownerNames: string }): EmailTemplate {
+  return {
+    subject: "Your Spine sign-in email changed",
+    content: {
+      heading: "Your sign-in email changed",
+      greeting: `Hi ${firstName(d.name)},`,
+      paragraphs: [`The email you use to sign in to Spine for ${d.businessName} was changed.`],
+      facts: [
+        { label: "New sign-in email", value: d.newEmail },
+        { label: "When", value: d.when },
+        { label: "From", value: d.device },
+      ],
+      note: `If this was you, there's nothing to do. If it wasn't, contact an owner of ${d.businessName}${d.ownerNames ? ` — ${d.ownerNames} —` : ""} straight away so they can secure your account.`,
+      footerNote: "You get this email because your sign-in details changed.",
+    },
+  };
+}
+
 /** The button a notification gets, from where its in-app link points. */
 function recordButton(link: string): string {
   const section = link.split(/[/?]/)[1] ?? "";

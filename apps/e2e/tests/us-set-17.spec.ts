@@ -32,7 +32,7 @@ test.describe("US-SET-17", () => {
     await expect(pane.getByText("Hidden columns don't change any amounts. Issued PDFs never change.")).toBeVisible();
 
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     const saved = (await (await page.request.get(`${API_URL}/org/settings/document_layout`)).json()) as { value: { invoice: { paperSize: string; columns: { discount: boolean } } } };
     expect(saved.value.invoice).toMatchObject({ paperSize: "LETTER", columns: { discount: false } });
 

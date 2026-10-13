@@ -17,7 +17,7 @@ test.describe("US-ONB-13", () => {
     ).toBeVisible();
     await pane.getByText("Construction / Contracting").click();
     await pane.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.goto("/expenses/categories");

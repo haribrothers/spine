@@ -5193,6 +5193,23 @@ Use an owner with the demo loaded, and Sarah Staff (General Staff only) in a sec
 1. Banking, Payables, Receivables and an account's Reconcile page: with a screen reader (or the browser's accessibility tree), each tab names the panel below it, and moving between tabs reads the new content. Run axe (or Lighthouse) on each in light and dark: no "aria-valid-attr-value" errors.
 2. Regression: tabs, counts, the tab kept in the address, cards, filters, search and Print look and behave as before; Tab moves from the tab list into the panel's controls.
 
+## 234. One Settings for everyone (US-AUTH-16 to US-AUTH-19, US-SET-30 to US-SET-34, refinements before Phase 10)
+
+Use an owner with the demo loaded and Sarah Mendes (Staff) in a second browser. Check light and dark, a 1920 × 1200 window and a phone width, and compare with the canvas "29 Settings for everyone".
+
+1. User menu (both): photo or initials, name and email; Settings; Set up Spine (Owner only); Light / Dark / System (named "Follow system"); Sign out — each with its icon, no "Profile & Preferences".
+2. Theme: pick Dark in one browser, then sign in as the same person in another (or a private window): it opens dark. Pick System and switch the computer to dark: Spine follows without a reload. With the API stopped, picking a theme still applies here and a toast says it couldn't be saved.
+3. Owner › Settings: opens on Business profile with `?settings=business` in the address; groups Your account, Business, Money & tax, Documents & emails, Sales & meetings, Data and Team (Users, Teams, Audit log, Email log open their pages and close Settings). With Leads & meetings off, Pipeline stages, Upcoming meetings and Meeting reminders are gone.
+4. Address: pick Numbering, refresh — still Numbering; Back goes back; close — the parameter goes. `?settings=nope` opens Business profile.
+5. Unsaved changes: change a prefix in Numbering — a dot shows by Numbering (a screen reader says "Numbering, edited"); pick Branding, close or press Escape — "Discard unsaved changes to Numbering?"; Keep editing keeps the change; Discard drops it. Save, then leave — no question. Notifications never asks (it saves as it changes).
+6. Search: "prefix" → Numbering ("Matches: invoice prefix, quote prefix"); Enter opens it; ↑/↓ move; "logo" → Branding; "GSTIN" → Business profile (and GST in India); "SMTP" → Emails; "zzzz" → "No matching settings." and Clear search.
+7. Size: on a 1920 × 1200 window the dialog is about 1152 × 960 and Documents shows its preview beside the options; on a 1280 × 800 laptop it keeps a margin; on a phone it fills the screen with the list first, then the pane with "Back to settings".
+8. Sarah › Settings: opens on Profile; the list is Your account only; `/dashboard?settings=numbering` opens her Profile; `/profile` and `/profile?tab=password` open Profile and Password & security.
+9. Profile: upload, crop and remove a photo (Remove asks first); the sidebar and menu show it. Name's Save is off until the name changes; saving toasts "Profile updated.". Change email: a wrong password says "That password isn't right."; another account's address says "Another account uses that email."; with the right password the email changes, a toast says so, and the old address gets "Your Spine sign-in email changed" (or it shows in the email log as not sent without SMTP).
+10. Password & security: the devices list shows this browser ("This device", Active now) and others with their IP and last active; Sign out on another device asks first, toasts and signs that browser out; Sign out of other devices does it for all. Change password with "Sign out of my other devices" ticked signs the others out and keeps this one signed in; unticked keeps them.
+11. Notifications: "Business default · <n> min" uses the Owner's Meeting reminders setting; the digest names the business's time zone.
+12. Regression: onboarding's settings and Set up Spine's cards still open Settings panes and update when closed; Branding's note reads "Each person still chooses light or dark mode from their user menu."; every settings pane saves as before; Field and Staff can't save business settings (API 403).
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

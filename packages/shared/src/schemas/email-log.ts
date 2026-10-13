@@ -19,6 +19,8 @@ export const EMAIL_KINDS = [
   "password_reset",
   // US-TEAM-24: an Owner set this person's password.
   "password_set_by_owner",
+  // US-AUTH-18: someone changed their sign-in email (sent to the old address).
+  "email_changed",
   "verification",
   "data_export",
   "test",
@@ -39,6 +41,7 @@ export const EMAIL_KIND_LABELS: Record<EmailKind, string> = {
   invitation: "Invitation",
   password_reset: "Password reset",
   password_set_by_owner: "Password changed by an owner",
+  email_changed: "Sign-in email changed",
   verification: "Verification",
   data_export: "Data export",
   test: "Test",

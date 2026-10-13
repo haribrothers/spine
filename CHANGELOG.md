@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — One Settings for everyone (US-AUTH-16 to US-AUTH-19, US-SET-30 to US-SET-34, D-236)
+
+- **Your account (US-SET-30):** Profile & Preferences is now the "Your account" group of Settings — Profile, Password & security, Notifications — which every role opens from the user menu; Staff and Field see only it, and the business groups and their writes stay Owner-only. `/profile` (and `?tab=`) opens the matching pane. The Appearance tab is gone.
+- **Theme (US-AUTH-16):** the user menu's Light / Dark / System saves to the account and the saved choice is applied when a tab starts, so it follows the person to every device (it never did before: the menu only changed the browser). A failed save says so and keeps the theme on this device.
+- **Where you're signed in (US-AUTH-17):** Password & security lists each session (browser or the phone app, IP, last active, "This device") with Sign out and Sign out of other devices, both asking first. Changing the password signs out other devices unless unticked — this device stays signed in. `GET /users/me/sessions`, `DELETE /users/me/sessions/:id`, `POST /users/me/sessions/sign-out-others`.
+- **Change email (US-AUTH-18):** "Change email" asks for the current password, refuses an address another account uses, and emails the old address (`email_changed`, migration `0124`). `PUT /users/me/email`; `PUT /users/me` no longer takes `email` — changing it there had been failing ("Change email is disabled").
+- **The details (US-AUTH-19):** the photo shows in the sidebar and menu, with Remove photo; Save waits for a change and toasts; meeting reminders name the business default and the digest names the time zone (`GET /users/me` `orgDefaults`); the menu uses the standard icons.
+- **Settings (US-SET-31 to US-SET-34):** grouped (Your account, Business, Money & tax, Documents & emails, Sales & meetings, Data, Team links); `@spine/ui` Dialog `size="xl"` (up to 1152 × 960, full screen on phones with the list first); the pane in the address (`?settings=<pane>`, `SettingsRoute`); a dot and "Discard unsaved changes to <pane>?" before edits are dropped; search by what panes contain, with what matched, Enter and ↑/↓.
+- **Tests:** API integration `us-auth-16-19`; shared `us-auth-17`; web unit `us-set-30-34`, `us-auth-16-19`; `@spine/ui` dialog a11y (xl); E2E `us-set-30-34`, `us-auth-16-19` (with axe), with `us-ntf-12`, `us-ntf-14`, `us-ops-26`, `us-onb-15`, `us-set-09`, `us-auth-15` and `route-smoke` moved to Settings, and "Saved" matched exactly in the settings specs. QA script section 234.
+
 ### 2026-10-13 — Tabs that name their panel on Banking, Payables, Receivables and Reconcile
 
 - **Fix:** each tab points screen readers (`aria-controls`) at the content it shows, but on Banking (Active/Archived), Payables (By vendor/By bill), Receivables (By customer/By invoice) and Reconcile's statement lines (To do/Suggested/Matched/Excluded) that content sat outside the tabs, so the tab pointed at nothing and axe failed. The content is now the tab's panel (`TabsContent`), as on Users. Nothing looks different.

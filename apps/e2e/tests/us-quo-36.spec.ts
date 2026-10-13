@@ -23,7 +23,7 @@ test.describe("US-QUO-36", () => {
     await expect(pane.getByLabel("Quotes valid for")).toHaveValue("30");
     await pane.getByLabel("Quotes valid for").fill("45");
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.goto("/quotes/new");

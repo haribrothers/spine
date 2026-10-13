@@ -4417,6 +4417,145 @@ Links to: —
 
 Shows: on another section's page, a record in a closed section as plain text with a small lock ("QUO-0012" on a job; screen readers hear "(Quotes is closed for your Team)") while records in open sections stay links · a button that only opens such a record (a milestone's "View invoice") is left out. As built, the design's note under the details isn't shown.
 
+## One Settings for everyone
+
+Drawn in Claude Design for US-AUTH-16 to US-AUTH-19 and US-SET-30 to US-SET-34 (D-236): project "Spine web — refinements before Phase 10", canvas "29 Settings for everyone". Profile & Preferences becomes Settings › Your account for every role; the list is grouped with Team links; the dialog is roomy on big screens and list-then-pane on phones; the open pane is in the address, unsaved changes ask first and search matches what panes contain. Supersedes `ProfilePreferences` and, for the list, `SettingsBusiness` and `SettingsSearch`. As built, devices show their IP address (no place name: Spine doesn't look addresses up), the Password & security cards stack, and Meeting reminders lists 5, 15, 30 and 60 min after the business default.
+
+### SettingsAccountProfile — Your account › Profile
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-30, US-AUTH-19 · **Source:** Claude Design
+
+![SettingsAccountProfile](screens/SettingsAccountProfile.webp)
+
+Links to: `ChangeEmailDialog`
+
+Shows: "Profile" "How you appear to your team and on what you send. Only you can change these." · Photo: the photo or initials, "Change photo" / "Upload photo", "Remove photo" (asks "Remove your photo?") "PNG or JPEG up to 10 MB. You can crop it after choosing." · Name with "Save" (off until the name changes; toast "Profile updated.") · Sign-in email with "You sign in with this address." and "Change email".
+
+### SettingsStaff — Settings for Staff and Field
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-30 · **Source:** Claude Design
+
+![SettingsStaff](screens/SettingsStaff.webp)
+
+Links to: `SettingsAccountProfile`
+
+Shows: the list holds Your account only — Profile, Password & security, Notifications; no business groups. `/profile` and `/profile?tab=…` open it on Profile, Password & security or Notifications.
+
+### SettingsSecurity — Your account › Password & security
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-17 · **Source:** Claude Design
+
+![SettingsSecurity](screens/SettingsSecurity.webp)
+
+Links to: `SignOutOtherDevicesConfirm`
+
+Shows: "Change password": Current password, New password with the strength meter (US-AUTH-15), Confirm new password, "Sign out of my other devices" (ticked), "Change password" (toast "Password changed. Your other devices are signed out.") · "Where you're signed in" "<n> devices. Sign out one you don't recognise or no longer use." with each device ("Chrome on macOS", "Spine app on iPhone"), its IP and "Active now" / "Last active <when>", "This device", and "Sign out" on the others · "Sign out of other devices".
+
+### SignOutOtherDevicesConfirm — Sign out of other devices
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-17 · **Source:** Claude Design
+
+![SignOutOtherDevicesConfirm](screens/SignOutOtherDevicesConfirm.webp)
+
+Links to: —
+
+Shows: "Sign out of <n> other devices?" "<devices> will need to sign in again. You stay signed in here." "Go back" "Sign out <n> devices" · toast "Signed out of <n> other devices." A single device asks "Sign out <device>?" "It'll need to sign in again."
+
+### ChangeEmailDialog — Change your sign-in email
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-18 · **Source:** Claude Design
+
+![ChangeEmailDialog](screens/ChangeEmailDialog.webp)
+
+Links to: `EmailChangedNotice`
+
+Shows: "Change your sign-in email" "You'll sign in with the new address from now on. We'll tell your current address it changed." · New email · Current password ("That password isn't right.") · "Another account uses that email." under New email · "Cancel" "Change email" · toast "Your sign-in email is now <email>."
+
+### EmailChangedNotice — The email to the old address
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-18 · **Source:** Claude Design
+
+![EmailChangedNotice](screens/EmailChangedNotice.webp)
+
+Links to: —
+
+Shows: subject "Your Spine sign-in email changed" · "Your sign-in email changed" "Hi <name>, The email you use to sign in to Spine for <business> was changed." · New sign-in email, When, From (browser and IP) · "If this was you, there's nothing to do. If it wasn't, contact an owner of <business> — <owners> — straight away so they can secure your account."
+
+### SettingsAccountNotifications — Your account › Notifications
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-30, US-AUTH-19 · **Source:** Claude Design
+
+![SettingsAccountNotifications](screens/SettingsAccountNotifications.webp)
+
+Links to: —
+
+Shows: Browser notifications · Daily digest with "Times are in <time zone>, the business's time zone." · Meeting reminders "Business default · <n> min", 5, 15, 30, 60 min. Each saves as it changes, with a toast.
+
+### UserMenuRefined — User menu, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-16, US-AUTH-19, US-SET-30 · **Source:** Claude Design
+
+![UserMenuRefined](screens/UserMenuRefined.webp)
+
+Links to: `SettingsAccountProfile`
+
+Shows: the photo (or initials), name and email · "Settings" (every role) · "Set up Spine" (Owners) · "Light" "Dark" "System" (named "Follow system"), saved to the account so it follows the person to every device · "Sign out". Each item has its standard menu icon (D-222).
+
+### UserMenuRefinedLight — User menu, light, following the system
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-16 · **Source:** Claude Design
+
+![UserMenuRefinedLight](screens/UserMenuRefinedLight.webp)
+
+Links to: —
+
+Shows: the same, light, with System chosen.
+
+### SettingsGrouped — Owner's Settings, grouped
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-31, US-SET-33 · **Source:** Claude Design
+
+![SettingsGrouped](screens/SettingsGrouped.webp)
+
+Links to: `SettingsUnsavedConfirm`
+
+Shows: "Search settings" · Your account · Business (Business profile, Branding, Industry template, Currency & locale, Modules) · Money & tax (Financial year, Tax, GST, Chart of accounts, Opening balances, Payment instructions) · Documents & emails (Numbering, Documents, Emails, Automatic reminders) · Sales & meetings (Pipeline stages, Repeat quote conversion, Upcoming meetings, Meeting reminders) · Data (Data export, Demo data) · Team (Users, Teams, Audit log, Email log — links ↗). The address carries `?settings=<pane>`.
+
+### SettingsLarge — Settings on a large screen
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-32 · **Source:** Claude Design
+
+![SettingsLarge](screens/SettingsLarge.webp)
+
+Links to: —
+
+Shows: up to 1152 × 960 px (90% of the window, 24 px margin) — Documents' options beside its live preview. `@spine/ui` Dialog `size="xl"`.
+
+### SettingsUnsavedConfirm — Discard unsaved changes
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-33 · **Source:** Claude Design
+
+![SettingsUnsavedConfirm](screens/SettingsUnsavedConfirm.webp)
+
+Links to: —
+
+Shows: a dot beside the pane (screen readers hear "<pane>, edited") · picking another pane, closing or Escape asks "Discard unsaved changes to <pane>?" "What you changed here hasn't been saved." "Keep editing" "Discard".
+
+### SettingsSearchKeywords — Search what's inside settings
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-34 · **Source:** Claude Design
+
+![SettingsSearchKeywords](screens/SettingsSearchKeywords.webp)
+
+Links to: —
+
+Shows: "prefix" lists Numbering under Documents & emails with "Matches: invoice prefix, quote prefix" · Enter opens the first result, ↑/↓ move · "No matching settings." with "Clear search".
+
+### SettingsPhoneList — Settings on a phone, the list
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-32 · **Source:** Claude Design
+
+![SettingsPhoneList](screens/SettingsPhoneList.webp)
+
+Links to: `SettingsPhonePane`
+
+Shows: full screen: "Settings", search and the grouped list, each row 44 px with a chevron.
+
+### SettingsPhonePane — Settings on a phone, a pane
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-32 · **Source:** Claude Design
+
+![SettingsPhonePane](screens/SettingsPhonePane.webp)
+
+Links to: `SettingsPhoneList`
+
+Shows: "Back to settings" above the pane; Escape or the close button closes Settings.
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

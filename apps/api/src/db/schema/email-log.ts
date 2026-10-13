@@ -15,6 +15,7 @@ export const emailKindEnum = pgEnum("email_kind", [
   "invitation",
   "password_reset",
   "password_set_by_owner",
+  "email_changed",
   "verification",
   "data_export",
   "test",

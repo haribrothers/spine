@@ -6,10 +6,9 @@ test.describe("US-NTF-12", () => {
     await page.goto("about:blank");
     await page.context().clearCookies();
     await logIn(page, DEMO_FIELD_USER);
-    await page.goto("/profile");
-    // US-NTF-14: notification preferences live on the Notifications tab.
-    await page.getByRole("tab", { name: "Notifications" }).click();
-    await expect(page.getByRole("tab", { name: "Notifications" })).toHaveAttribute("aria-selected", "true");
+    // US-SET-30: Profile & Preferences is Settings › Your account; /profile opens it.
+    await page.goto("/profile?tab=notifications");
+    await expect(page).toHaveURL(/settings=notifications/);
     const section = page.getByTestId("browser-notifications");
     await expect(section.getByRole("heading", { name: "Browser notifications" })).toBeVisible();
     // One of the US-NTF-04 states for this device.

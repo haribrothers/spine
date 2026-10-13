@@ -25,6 +25,8 @@ import {
   History,
   KeyRound,
   Link2,
+  ListChecks,
+  LogOut,
   LockOpen,
   Mail,
   Package,
@@ -37,6 +39,7 @@ import {
   ShieldCheck,
   ShieldMinus,
   Send,
+  Settings,
   Star,
   Trash2,
   Undo2,
@@ -122,4 +125,8 @@ export const MENU_ICONS = {
   changePassword: KeyRound,
   /** Teams (US-TEAM-27): take someone off a Team. */
   removeMember: UserMinus,
+  /** The user menu (US-AUTH-19). */
+  settings: Settings,
+  setUp: ListChecks,
+  signOut: LogOut,
 } satisfies Record<string, LucideIcon>;

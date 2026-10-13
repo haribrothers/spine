@@ -38,6 +38,8 @@ DialogOverlay.displayName = "DialogOverlay";
 const DIALOG_SIZES = {
   md: "max-w-md max-h-[85vh]",
   lg: "max-w-4xl h-[min(720px,85vh)]",
+  // US-SET-32 (D-236): roomy on large screens (up to 1152 × 960, 90% of the window, 24px margin), the whole screen on a phone.
+  xl: "max-w-[min(1152px,calc(100vw-48px))] h-[min(960px,90vh)] max-md:h-dvh max-md:max-w-none max-md:rounded-none max-md:border-0",
 } as const;
 
 export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
@@ -45,7 +47,8 @@ export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeo
    * `"md"` (default) is the standard centered task dialog (e.g. confirming
    * a void, or a form like Record Payment). `"lg"` is a large, tall panel
    * for multi-pane content like a settings dialog (roughly 2/3 viewport
-   * width, near-full height).
+   * width, near-full height). `"xl"` is the roomier version (Settings,
+   * US-SET-32): up to 1152 × 960 px on large screens, full screen on phones.
    */
   size?: keyof typeof DIALOG_SIZES;
 }

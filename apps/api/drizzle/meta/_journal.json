@@ -869,6 +869,13 @@
       "when": 1791830666425,
       "tag": "0123_team_open_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1791876028840,
+      "tag": "0124_email_changed",
+      "breakpoints": true
     }
   ]
 }

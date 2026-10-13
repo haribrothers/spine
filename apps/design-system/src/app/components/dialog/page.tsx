@@ -130,7 +130,7 @@ export default () => (
           </DocLead>
           <ApiTable
             rows={[
-              { prop: "size", type: '"md" | "lg"', defaultValue: '"md"' },
+              { prop: "size", type: '"md" | "lg" | "xl"', defaultValue: '"md"' },
               { prop: "onOpenAutoFocus", type: "(event: Event) => void" },
               { prop: "onCloseAutoFocus", type: "(event: Event) => void" },
               { prop: "onEscapeKeyDown", type: "(event: KeyboardEvent) => void" },
@@ -267,7 +267,10 @@ export default () => (
         <DocLead>
           <code>size=&quot;lg&quot;</code> is a large, tall, unpadded panel for multi-pane content — e.g. a
           settings dialog with a left nav list and a right content pane. Panes are responsible for their
-          own padding since the default padding is dropped at this size.
+          own padding since the default padding is dropped at this size. <code>size=&quot;xl&quot;</code> is
+          the roomier version Settings uses (US-SET-32): up to 1152 × 960 px — 90% of the window&apos;s height,
+          keeping a 24px margin — and the whole screen below 768 px, where the content should show one pane
+          at a time.
         </DocLead>
         <ComponentPreview
           code={`<Dialog>

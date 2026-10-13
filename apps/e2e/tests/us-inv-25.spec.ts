@@ -5,8 +5,11 @@ import { signUpNewOrg } from "./helpers";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
 
 async function openPane(page: Page) {
-  await page.getByRole("button", { name: /Owner/ }).last().click();
-  await page.getByRole("menuitem", { name: "Settings" }).click();
+  // US-SET-33: after a reload Settings is still open (it's in the address).
+  if (!(await page.getByTestId("settings-dialog").isVisible())) {
+    await page.getByRole("button", { name: /Owner/ }).last().click();
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+  }
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Payment instructions" }).click();
   return dialog;

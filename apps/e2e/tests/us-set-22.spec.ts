@@ -39,10 +39,9 @@ test.describe("US-SET-22", () => {
     await expect(confirm.getByRole("heading", { name: "Reset the receipt email?" })).toBeVisible();
     await confirm.getByRole("button", { name: "Reset to default" }).click();
     await expect(editor.getByLabel("Subject")).toHaveValue("{business_name} sent you a receipt ({document_number})");
+    // US-SET-33: the reload keeps Settings open on Emails.
     await page.reload();
-    await page.getByRole("button", { name: /Owner/ }).last().click();
-    await page.getByRole("menuitem", { name: "Settings" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Emails" }).click();
+    await expect(page).toHaveURL(/settings=emails/);
     await page.getByTestId("email-template-list").getByRole("button", { name: /^Receipt/ }).click();
     await expect(page.getByTestId("email-template-editor").getByLabel("Subject")).toHaveValue("{business_name} sent you a receipt ({document_number})");
   });

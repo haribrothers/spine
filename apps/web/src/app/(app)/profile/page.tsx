@@ -1,22 +1,13 @@
-import { Suspense } from "react";
-import { AppShellHeader } from "@spine/ui";
-import { ProfileView } from "./profile-view";
+import { redirect } from "next/navigation";
+
+/** The old Profile & Preferences tabs, as Settings › Your account panes (US-SET-30, D-236). */
+const PANES: Record<string, string> = { profile: "profile", password: "security", appearance: "profile", notifications: "notifications" };
 
 /**
- * PRD S-10.17 — self-service account editing (name, email, password,
- * avatar, theme), available to every role including Field. Deliberately
- * outside both the Owner-gated /team/* area and the org-config Settings
- * dialog — reachable from the user menu regardless of role, unlike either
- * of those.
+ * US-SET-30 — Profile & Preferences is now Settings › Your account; links to
+ * `/profile` (and `?tab=`) open Settings on the matching pane.
  */
-export default function ProfilePage() {
-  return (
-    <>
-      <AppShellHeader breadcrumb={[{ label: "Account" }]} title="Profile & Preferences" description="Your personal account settings. Only you can change these." />
-      {/* ProfileView reads ?tab= via useSearchParams, which needs a Suspense boundary. */}
-      <Suspense>
-        <ProfileView />
-      </Suspense>
-    </>
-  );
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams;
+  redirect(`/dashboard?settings=${PANES[tab ?? ""] ?? "profile"}`);
 }

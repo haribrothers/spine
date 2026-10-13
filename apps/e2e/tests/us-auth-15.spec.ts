@@ -50,7 +50,7 @@ test.describe("US-AUTH-15", () => {
     await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForURL("**/onboarding");
 
-    await page.goto("/profile?tab=password");
+    await page.goto("/dashboard?settings=security");
     await page.getByLabel(/^Current password/).fill("TestPassword123!");
     await page.getByLabel(/^New password/).fill("qwerty123");
     await page.getByLabel(/^Confirm new password/).fill("qwerty123");
@@ -61,6 +61,6 @@ test.describe("US-AUTH-15", () => {
     await page.getByLabel(/^New password/).fill("Harbour-view-2027");
     await page.getByLabel(/^Confirm new password/).fill("Harbour-view-2027");
     await page.getByRole("button", { name: "Change password" }).click();
-    await expect(page.getByText("Password changed.")).toBeVisible();
+    await expect(page.getByTestId("toast").filter({ hasText: "Password changed." })).toBeVisible();
   });
 });
