@@ -7,7 +7,8 @@ test.describe("US-RPT-23", () => {
     await signUpNewOrg(page, { name: "Reports Owner", email: `e2e-rpt-23-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
     await page.goto("/reports");
     await expect(page.getByText("Every report you can open, derived from the ledger.")).toBeVisible();
-    const groups = page.getByTestId("report-group");
+    // Within the page's main region: on a slow runner the outgoing page can still be in the document.
+    const groups = page.getByRole("main").getByTestId("report-group");
     await expect(groups.filter({ hasText: "Business overview" })).toContainText("Profit & Loss");
     await expect(groups.filter({ hasText: "Business overview" })).toContainText("Trial Balance");
     await expect(groups.filter({ hasText: "Accountant" })).toContainText("Journals");

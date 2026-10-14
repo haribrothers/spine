@@ -89,8 +89,8 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   async work<T extends object>(queueName: string, handler: (job: PgBossJob<T>) => Promise<void>) {
     const boss = this.getBoss();
     await boss.createQueue(queueName).catch(() => {});
-    // D-241: E2E runs check for new jobs every half second (QUEUE_POLLING_SECONDS) instead of pg-boss's 2 s,
-    // so a test waiting on an email isn't waiting on the queue; production keeps the default.
+    // QUEUE_POLLING_SECONDS (0.5 or more) overrides pg-boss's 2 s between checks for new jobs; unset everywhere
+    // today (D-241: in E2E on CI's two cores it ran the demo's queued emails alongside the tests and slowed them).
     const polling = Number(process.env.QUEUE_POLLING_SECONDS);
     const options = Number.isFinite(polling) && polling >= 0.5 ? { pollingIntervalSeconds: polling } : {};
     await boss.work<T>(queueName, options, async (jobs: PgBossJob<T>[]) => {

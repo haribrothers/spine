@@ -84,17 +84,16 @@ export async function signUpNewOrg(page: Page, { name, email, password }: { name
 }
 
 /**
- * Opens the dashboard, where the sign-up and login pages used to land, and
- * waits for the person's permissions to load (every signed-in page asks for
- * them), so a test reading the sidebar sees all of it. Other requests may
- * still be running: a test that intercepts requests or clears cookies next
- * should leave for `about:blank` first.
+ * Opens the dashboard, where the sign-up and login pages used to land. Its
+ * requests (the person's permissions among them) may still be running: a
+ * test that reads permission-dependent UI waits for it, and one that
+ * intercepts requests or clears cookies next leaves for `about:blank` first.
+ * (Waiting here for the permissions response cost every sign-in its full
+ * timeout in CI, where the response wasn't seen — D-241.)
  */
 export async function openSettledDashboard(page: Page): Promise<void> {
-  const permissions = page.waitForResponse((res) => res.url().includes("/org/members/me/capabilities"), { timeout: 15_000 }).catch(() => null);
   await page.goto("/dashboard");
   await page.waitForURL("**/dashboard");
-  await permissions;
 }
 
 /**
