@@ -110,7 +110,8 @@ export function formatMoneyCompact(amount: bigint | string | number, currency: s
   const code = (currency || "USD").toUpperCase();
   const minor = typeof amount === "bigint" ? amount : BigInt(typeof amount === "number" ? Math.round(amount) : amount || "0");
   const value = Number(toDecimalString({ amount: minor, currency: code }));
-  const options: Intl.NumberFormatOptions = { style: "currency", currency: code, notation: "compact", maximumFractionDigits: 1 };
+  // An explicit minimum: without it some Node/ICU versions keep a trailing zero ("$950.0").
+  const options: Intl.NumberFormatOptions = { style: "currency", currency: code, notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: 1 };
   let formatter: Intl.NumberFormat;
   try {
     formatter = new Intl.NumberFormat(locale || "en-US", options);

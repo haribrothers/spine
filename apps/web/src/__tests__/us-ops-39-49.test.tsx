@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { configure, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppShellNavSection } from "@spine/ui";
 import type { SearchRecentResponse, SearchResponse } from "@spine/shared";
@@ -37,6 +37,10 @@ vi.mock("../components/settings-dialog", () => {
         .filter(({ section, matches }) => section.label.toLowerCase().includes(q.toLowerCase()) || matches.length > 0),
   };
 });
+
+// The palette waits 150 ms before searching, and CI runs every package's tests at once:
+// give results longer than Testing Library's 1 s default to appear.
+configure({ asyncUtilTimeout: 5_000 });
 
 import { SearchButton, SearchPalette } from "../components/search-palette";
 import { actionMatches, matchesWordStarts, SEARCH_ACTIONS } from "../components/search-actions";
