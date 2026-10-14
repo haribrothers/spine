@@ -24,7 +24,7 @@ export default defineConfig({
     // test database (made before the run, dropped after), so no file sees
     // another's rows — ledger-integrity's TRUNCATE empties only its worker's
     // copy. One shared database made them run one at a time before.
-    // SPINE_TEST_WORKERS sets how many (2 in CI, 4 locally).
+    // SPINE_TEST_WORKERS sets how many (1 in CI, 4 locally).
     pool: "forks",
     poolOptions: { forks: { minForks: 1, maxForks: workers } },
     fileParallelism: workers > 1,

@@ -5,6 +5,7 @@ import { spreadCreditAmount, type CreditNoteActivityEntry } from "@spine/shared"
 import { createDb, type Database } from "../../db/client";
 import { accounts, journalLines, user } from "../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
+import { EmailService } from "../email/email.service";
 import { QueueService } from "../queue/queue.service";
 
 interface CreditableLine {
@@ -172,7 +173,13 @@ describe("Credit notes you can work from (requires local Postgres)", () => {
       await ok(await call("POST", `/credit-notes/${note.id}/apply-credit`, { allocations: [{ invoiceId: other.id, amount: "1000000" }] }));
       const cash = (await ok<{ id: string; code: string }[]>(await call("GET", "/money-accounts"))).find((a) => a.code === "1000")!;
       await ok(await call("POST", "/customer-refunds", { sourceCreditNoteId: note.id, amount: "500000", date: "2026-10-03", method: "upi", moneyAccountId: cash.id }));
+      // Email as if SMTP were set up (CI has none); the queued job does the sending.
+      const email = testApp.app.get(EmailService);
+      const configured = vi.spyOn(email, "isConfigured").mockReturnValue(true);
+      const sent = vi.spyOn(email, "send").mockResolvedValue();
       await ok(await call("POST", `/credit-notes/${note.id}/send-email`, {}));
+      configured.mockRestore();
+      sent.mockRestore();
 
       const page = await ok<CreditNote>(await call("GET", `/credit-notes/${note.id}`));
       expect(page).toMatchObject({ appliedAmount: "1000000", refundedAmount: "500000", offInvoiceAmount: "0" });

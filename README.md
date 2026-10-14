@@ -225,8 +225,9 @@ schema in sync with `spine`'s.
 The files run in parallel (D-239): before a run, each worker gets its own
 copy of `spine_test` (`spine_test_w1` … `spine_test_w4`, made with
 `CREATE DATABASE … TEMPLATE` and dropped afterwards), so no file sees
-another's rows. `SPINE_TEST_WORKERS` sets how many workers (4 locally, 2 in
-CI); `SPINE_TEST_WORKERS=1` runs one file at a time, as before.
+another's rows. `SPINE_TEST_WORKERS` sets how many workers (4 locally, 1 in
+CI, whose two-core runner was slower with two); `SPINE_TEST_WORKERS=1` runs
+one file at a time.
 
 ### Resetting your local database
 

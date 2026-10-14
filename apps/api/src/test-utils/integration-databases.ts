@@ -5,11 +5,14 @@
  * their own worker's copy).
  */
 
-/** Workers: `SPINE_TEST_WORKERS`, or 2 in CI (a 2-core runner shared with Postgres) and 4 locally. */
+/**
+ * Workers: `SPINE_TEST_WORKERS`, or 1 in CI and 4 locally. CI's runner has two cores shared with
+ * Postgres: two workers there took 18 minutes against 13½ for one, so CI keeps one (and its copy).
+ */
 export function integrationWorkers(): number {
   const set = Number(process.env.SPINE_TEST_WORKERS);
   if (Number.isInteger(set) && set > 0) return set;
-  return process.env.CI ? 2 : 4;
+  return process.env.CI ? 1 : 4;
 }
 
 /** `postgres://…/spine_test` → `postgres://…/spine_test_w2`. */
