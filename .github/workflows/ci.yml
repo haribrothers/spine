@@ -237,7 +237,8 @@ jobs:
     needs: [changes, static]
     if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # D-241: the suite takes about 28 minutes on this runner, plus 5 of setup.
+    timeout-minutes: 45
     permissions:
       contents: read
       actions: write # cancels the run when this job fails
