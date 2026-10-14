@@ -1,7 +1,8 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createCatalogItemSchema, importCatalogItemsSchema, updateCatalogItemSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { bulkCatalogItemsSchema, createCatalogItemSchema, importCatalogItemsSchema, updateCatalogItemSchema } from "@spine/shared";
+import { PickerAllowed, RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
+import { SectionClosed, forPicker } from "../../common/picker";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { CatalogImportService } from "./catalog-import.service";
@@ -25,7 +26,14 @@ import { CatalogService } from "./catalog.service";
  * `@RequireCapability` here and instead defer to `CatalogService`'s
  * `requireOwnershipCapability` call.
  */
+/** US-TEAM-31 — what a line needs of an item when Catalogue is closed for the caller. */
+const PICKER_FIELDS = [
+  "id", "name", "description", "unit", "defaultPriceAmount", "defaultPriceCurrency", "defaultTaxRatePercentage", "defaultTaxRateId", "defaultTaxGroupId",
+  "interTaxRateId", "interTaxGroupId", "hsnSac", "supplyClass", "expenseAccountId", "archivedAt",
+] as const;
+
 @Controller("catalog-items")
+@RequireSectionOpen("catalog.open")
 export class CatalogController {
   constructor(
     private readonly catalogService: CatalogService,
@@ -33,14 +41,23 @@ export class CatalogController {
   ) {}
 
   @Get()
+  @PickerAllowed()
   async list(
     @Session() session: UserSession,
+    @SectionClosed() closed: boolean,
     @Query("search") search?: string,
     @Query("category") category?: string,
     @Query("includeArchived") includeArchived?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.catalogService.list(orgId, { search, category, includeArchived: includeArchived === "true" });
+    return forPicker(closed, await this.catalogService.list(orgId, { search, category, includeArchived: includeArchived === "true" }), PICKER_FIELDS);
+  }
+
+  /** US-CAT-15 — where an item is used. Owner and Staff only: Field never sees invoice counts. */
+  @Get(":id/usage")
+  @OrgRoles(["owner", "staff"])
+  async usage(@Session() session: UserSession, @Param("id") id: string) {
+    return this.catalogService.usage(requireOrgId(session), id);
   }
 
   @Get(":id")
@@ -65,6 +82,16 @@ export class CatalogController {
     const parsed = importCatalogItemsSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the file and try again.");
     return this.catalogImport.import(requireOrgId(session), session.user.id, parsed.data.rows, parsed.data.dryRun);
+  }
+
+  /** US-CAT-12 (D-213) — change, archive or restore several items at once; rights checked per item in the service. */
+  @Post("bulk")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulk(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkCatalogItemsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the change and try again.");
+    return this.catalogService.bulk(requireOrgId(session), session.user.id, parsed.data);
   }
 
   @Post()

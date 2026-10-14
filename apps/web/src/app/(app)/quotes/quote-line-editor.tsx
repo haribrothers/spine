@@ -1,7 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Button,
+  Combobox,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Input,
+  Kbd,
+  MoneyInput,
+  cn,
+} from "@spine/ui";
 import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
 import { bundleLines, useBundles } from "../../../lib/bundles";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -9,9 +22,10 @@ import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, typ
 import { LineTaxWarning } from "../../../components/place-of-supply";
 import { HsnSacField } from "../../../components/hsn-sac-field";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { EllipsisVertical, GripVertical, Heading, Plus, Type } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { CatalogItemOption, QuoteLineType, TaxGroupOption, TaxRateOption } from "./types";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney } from "../../../lib/money";
 
 /** Client-side line shape while editing — money fields as `bigint` (never a float), matching MoneyInput's own contract. Not the same as the API's QuoteLine (which serializes bigints as strings and includes server-computed fields this component doesn't need pre-save). */
@@ -109,12 +123,12 @@ export function computeLinePreview(
 }
 
 /**
- * The multi-line editor: add item/heading/text lines, per-line quantity/
- * price/discount/tax for item lines, remove, and reorder via up/down
- * buttons (no drag-and-drop library pulled in for Stage 1 — a bounded list
- * of a handful of lines doesn't need it, and buttons are fully keyboard/
- * screen-reader operable without any extra work, unlike most drag
- * implementations).
+ * The multi-line editor. US-QUO-34 (D-214): one row per item — drag handle,
+ * item, qty, rate, discount, tax and amount — with the description (and
+ * HSN/SAC, supply type) under it; headings and text lines span the row.
+ * Rows move by dragging the handle (only the handle is draggable, so text
+ * in the fields can still be selected), from the row's menu, or with
+ * Alt + ↑/↓; Enter in the last row's tax adds a row.
  */
 export function QuoteLineEditor({
   lines,
@@ -143,7 +157,7 @@ export function QuoteLineEditor({
 
   useEffect(() => {
     apiClient
-      .get<CatalogItemOption[]>("/catalog-items")
+      .get<CatalogItemOption[]>("/catalog-items?picker=1")
       .then(setCatalogItems)
       .catch(() => {});
     apiClient
@@ -183,19 +197,6 @@ export function QuoteLineEditor({
     onChange(lines.filter((_, i) => i !== index));
   }
 
-  function moveLine(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= lines.length) return;
-    const next = lines.slice();
-    const [moved] = next.splice(index, 1);
-    next.splice(target, 0, moved!);
-    onChange(next);
-  }
-
-  function addLine(type: QuoteLineType) {
-    onChange([...lines, blankLine(type)]);
-  }
-
   /** Replaces the line the bundle was picked on with the bundle's lines, in order. */
   function insertBundle(index: number, bundleId: string) {
     const bundle = bundles.find((b) => b.id === bundleId);
@@ -222,248 +223,354 @@ export function QuoteLineEditor({
     });
   }
 
+  // US-QUO-34: a new row starts with its Item field focused.
+  const focusKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusKey.current) return;
+    const row = document.querySelector(`[data-line-key="${focusKey.current}"]`);
+    focusKey.current = null;
+    (row?.querySelector("input") as HTMLInputElement | null)?.focus();
+  }, [lines]);
+
+  const [announcement, setAnnouncement] = useState("");
+  const [dragKey, setDragKey] = useState<string | null>(null);
+  const [over, setOver] = useState<{ key: string; before: boolean } | null>(null);
+
+  function moveTo(from: number, to: number) {
+    if (to < 0 || to >= lines.length || from === to) return;
+    const next = lines.slice();
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved!);
+    onChange(next);
+    setAnnouncement(`Moved to position ${to + 1} of ${lines.length}`);
+  }
+
+  function dropOn(targetKey: string, before: boolean) {
+    if (!dragKey || dragKey === targetKey) return;
+    const from = lines.findIndex((l) => l.key === dragKey);
+    const without = lines.filter((l) => l.key !== dragKey);
+    let to = without.findIndex((l) => l.key === targetKey);
+    if (to === -1 || from === -1) return;
+    if (!before) to += 1;
+    const next = [...without.slice(0, to), lines[from]!, ...without.slice(to)];
+    onChange(next);
+    setAnnouncement(`Moved to position ${to + 1} of ${lines.length}`);
+  }
+
+  function addAndFocus(type: QuoteLineType) {
+    const line = blankLine(type);
+    focusKey.current = line.key;
+    onChange([...lines, line]);
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col">
+      <div className={cn(ROW_GRID, "hidden border-b border-border bg-surface-sunken px-3 py-2 text-[12px] font-medium text-on-surface-muted lg:grid")} aria-hidden>
+        <span />
+        <span>Item</span>
+        <span className="text-right">Qty</span>
+        <span className="text-right">Rate</span>
+        <span className="text-right">Disc. %</span>
+        <span>Tax</span>
+        <span className="text-right">Amount</span>
+        <span />
+      </div>
+      <div className="flex flex-col" data-testid="quote-lines">
         {lines.map((line, index) => (
-          <div key={line.key} className="rounded-lg border border-border bg-surface p-3">
-            <div className="flex items-start gap-2">
-              <div className="flex flex-col gap-1 pt-1">
-                <button
-                  type="button"
-                  aria-label="Move line up"
-                  disabled={index === 0}
-                  onClick={() => moveLine(index, -1)}
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface disabled:opacity-30"
-                >
-                  <ArrowUp size={14} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Move line down"
-                  disabled={index === lines.length - 1}
-                  onClick={() => moveLine(index, 1)}
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface disabled:opacity-30"
-                >
-                  <ArrowDown size={14} />
-                </button>
-              </div>
-
-              <div className="flex flex-1 flex-col gap-2">
-                {line.type === "item" ? (
-                  <ItemLineFields
-                    line={line}
-                    currency={currency}
-                    catalogItems={catalogItems}
-                    bundles={pickerBundles}
-                    onPickBundle={(id) => insertBundle(index, id)}
-                    canSaveToCatalogue={canSaveToCatalogue}
-                    taxOptions={taxOptions}
-                    taxRates={taxRates}
-                    taxGroups={taxGroups}
-                    onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
-                    showHsn={showHsn}
-                    onChange={(patch) => updateLine(index, patch)}
-                  />
-                ) : (
-                  <NonItemLineFields line={line} onChange={(patch) => updateLine(index, patch)} />
-                )}
-                {flaggedKeys?.has(line.key) && <LineTaxWarning />}
-              </div>
-
-              <button
-                type="button"
-                aria-label="Remove line"
-                onClick={() => removeLine(index)}
-                className="mt-1 flex h-7 w-7 items-center justify-center rounded-sm text-on-surface-muted hover:bg-overdue-bg hover:text-overdue"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+          <div
+            key={line.key}
+            data-line-key={line.key}
+            aria-label={`Line ${index + 1} of ${lines.length}`}
+            role="group"
+            onDragOver={(e) => {
+              if (!dragKey || dragKey === line.key) return;
+              e.preventDefault();
+              const rect = e.currentTarget.getBoundingClientRect();
+              setOver({ key: line.key, before: e.clientY < rect.top + rect.height / 2 });
+            }}
+            onDragLeave={() => setOver((o) => (o?.key === line.key ? null : o))}
+            onDrop={(e) => {
+              e.preventDefault();
+              dropOn(line.key, over?.key === line.key ? over.before : true);
+              setDragKey(null);
+              setOver(null);
+            }}
+            onKeyDown={(e) => {
+              // Alt + ↑/↓ moves the row (US-QUO-34).
+              if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+              e.preventDefault();
+              moveTo(index, index + (e.key === "ArrowUp" ? -1 : 1));
+            }}
+            className={cn(
+              "relative border-b border-border px-3 py-2",
+              dragKey === line.key && "opacity-40",
+              over?.key === line.key && (over.before ? "shadow-[inset_0_2px_0_var(--color-primary)]" : "shadow-[inset_0_-2px_0_var(--color-primary)]"),
+            )}
+          >
+            <LineRow
+              line={line}
+              index={index}
+              count={lines.length}
+              currency={currency}
+              catalogItems={catalogItems}
+              bundles={pickerBundles}
+              canSaveToCatalogue={canSaveToCatalogue}
+              taxOptions={taxOptions}
+              taxRates={taxRates}
+              taxGroups={taxGroups}
+              showHsn={showHsn}
+              onChange={(patch) => updateLine(index, patch)}
+              onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
+              onPickBundle={(id) => insertBundle(index, id)}
+              onMove={(to) => moveTo(index, to)}
+              onRemove={() => removeLine(index)}
+              onDragStart={() => setDragKey(line.key)}
+              onDragEnd={() => {
+                setDragKey(null);
+                setOver(null);
+              }}
+              onEnterLast={index === lines.length - 1 ? () => addAndFocus("item") : undefined}
+            />
+            {flaggedKeys?.has(line.key) && <LineTaxWarning />}
           </div>
         ))}
       </div>
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" size="sm" onClick={() => addLine("item")}>
+      <div className="flex flex-wrap items-center gap-2 px-3 py-3">
+        <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("item")}>
           <Plus size={14} /> Add item
         </Button>
-        <Button type="button" variant="secondary" size="sm" onClick={() => addLine("heading")}>
-          <Plus size={14} /> Add heading
+        <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("heading")}>
+          <Heading size={14} /> Add heading
         </Button>
-        <Button type="button" variant="secondary" size="sm" onClick={() => addLine("text")}>
-          <Plus size={14} /> Add text line
+        <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("text")}>
+          <Type size={14} /> Add text line
         </Button>
+        <span className="ml-auto hidden text-[12px] text-on-surface-muted lg:inline">
+          Enter adds a row · <Kbd>Alt</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd> moves it
+        </span>
       </div>
     </div>
   );
 }
 
-function ItemLineFields({
+/** One grid for the header and every row (US-QUO-34): handle, item, qty, rate, discount, tax, amount, menu. Wraps under 1024 px. */
+const ROW_GRID = "grid grid-cols-[24px_repeat(5,minmax(0,1fr))_32px] gap-2 lg:grid-cols-[24px_minmax(0,1fr)_76px_120px_76px_168px_112px_32px]";
+
+function LineRow({
   line,
+  index,
+  count,
   currency,
   catalogItems,
   bundles,
-  onPickBundle,
   canSaveToCatalogue,
   taxOptions,
   taxRates,
   taxGroups,
-  onApplyCatalogItem,
-  onChange,
   showHsn,
+  onChange,
+  onApplyCatalogItem,
+  onPickBundle,
+  onMove,
+  onRemove,
+  onDragStart,
+  onDragEnd,
+  onEnterLast,
 }: {
   line: EditableQuoteLine;
+  index: number;
+  count: number;
   currency: string;
   catalogItems: CatalogItemOption[];
   bundles: PickerBundle[];
-  onPickBundle: (id: string) => void;
   canSaveToCatalogue: boolean;
   taxOptions: { value: string; label: string }[];
   taxRates: TaxRateOption[];
   taxGroups: TaxGroupOption[];
-  onApplyCatalogItem: (id: string) => void;
-  onChange: (patch: Partial<EditableQuoteLine>) => void;
   showHsn: boolean;
+  onChange: (patch: Partial<EditableQuoteLine>) => void;
+  onApplyCatalogItem: (id: string) => void;
+  onPickBundle: (id: string) => void;
+  onMove: (to: number) => void;
+  onRemove: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onEnterLast?: () => void;
 }) {
+  const [details, setDetails] = useState(false);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const handle = (
+    <span
+      draggable
+      role="button"
+      tabIndex={-1}
+      aria-label={`Drag line ${index + 1}`}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", line.key);
+        const row = rowRef.current?.closest("[data-line-key]");
+        if (row) e.dataTransfer.setDragImage(row, 16, 16);
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      className="flex h-9 cursor-grab items-center justify-center text-on-surface-muted active:cursor-grabbing"
+    >
+      <GripVertical size={15} aria-hidden />
+    </span>
+  );
+  const menu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label={`Actions for line ${index + 1}`} className="flex h-9 w-8 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+          <EllipsisVertical size={16} aria-hidden />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(index - 1)}>
+          <MENU_ICONS.moveUp aria-hidden />
+          Move up
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(index + 1)}>
+          <MENU_ICONS.moveDown aria-hidden />
+          Move down
+        </DropdownMenuItem>
+        {line.type === "item" && (
+          <DropdownMenuCheckboxItem checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })}>
+            Price includes tax
+          </DropdownMenuCheckboxItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem destructive onSelect={onRemove}>
+          <MENU_ICONS.delete aria-hidden />
+          Remove line
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  if (line.type !== "item") {
+    return (
+      <div ref={rowRef} className={ROW_GRID}>
+        {handle}
+        <Input
+          aria-label={line.type === "heading" ? "Heading" : "Text line"}
+          value={line.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          placeholder={line.type === "heading" ? "Section heading" : "Text for the customer"}
+          className={cn("col-span-5 lg:col-span-6", line.type === "heading" ? "font-semibold" : "text-on-surface-muted")}
+          required
+        />
+        {menu}
+      </div>
+    );
+  }
+
   const preview = computeLinePreview(line, currency, taxRates, taxGroups);
   const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
   const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
+  const showSupply = showsSupplyType(line.supplyClass, taxPercent);
+  const showDetails = details || Boolean(line.description) || showHsn || showSupply || line.isTaxInclusive;
+  const onEnter = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && onEnterLast) {
+      e.preventDefault();
+      onEnterLast();
+    }
+  };
 
   function applyTaxSelection(value: string) {
-    if (value.startsWith("rate:")) {
-      onChange({ taxRateId: value.slice(5), taxGroupId: null, taxRatePercentage: 0 });
-    } else if (value.startsWith("group:")) {
-      onChange({ taxRateId: null, taxGroupId: value.slice(6), taxRatePercentage: 0 });
-    } else {
-      onChange({ taxRateId: null, taxGroupId: null, taxRatePercentage: 0 });
-    }
+    if (value.startsWith("rate:")) onChange({ taxRateId: value.slice(5), taxGroupId: null, taxRatePercentage: 0 });
+    else if (value.startsWith("group:")) onChange({ taxRateId: null, taxGroupId: value.slice(6), taxRatePercentage: 0 });
+    else onChange({ taxRateId: null, taxGroupId: null, taxRatePercentage: 0 });
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <LineItemPicker
-        name={line.name}
-        onNameChange={(name) => onChange({ name })}
-        items={catalogItems}
-        bundles={bundles}
-        onPickBundle={onPickBundle}
-        currency={currency}
-        canSaveToCatalogue={canSaveToCatalogue}
-        saveToCatalogue={!!line.saveToCatalogue}
-        onPickItem={onApplyCatalogItem}
-        onOneOff={(save) => onChange({ catalogItemId: null, saveToCatalogue: save })}
-      />
+    <div ref={rowRef} className="flex flex-col gap-1.5">
+      <div className={cn(ROW_GRID, "items-center")}>
+        {handle}
+        <div className="col-span-5 min-w-0 lg:col-span-1">
+          <LineItemPicker
+            name={line.name}
+            onNameChange={(name) => onChange({ name })}
+            items={catalogItems}
+            bundles={bundles}
+            onPickBundle={onPickBundle}
+            currency={currency}
+            canSaveToCatalogue={canSaveToCatalogue}
+            saveToCatalogue={!!line.saveToCatalogue}
+            onPickItem={onApplyCatalogItem}
+            onOneOff={(save) => onChange({ catalogItemId: null, saveToCatalogue: save })}
+          />
+        </div>
+        <Input
+          aria-label="Quantity"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step="0.01"
+          value={String(line.quantity)}
+          onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
+          className="col-start-2 text-right tabular-nums lg:col-start-auto"
+        />
+        <MoneyInput aria-label="Unit price" value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
+        <Input
+          aria-label="Discount %"
+          type="number"
+          inputMode="decimal"
+          min={0}
+          max={100}
+          step="0.01"
+          value={String(line.discountPercentage)}
+          onChange={(e) => onChange({ discountPercentage: Number(e.target.value) || 0 })}
+          className="text-right tabular-nums"
+        />
+        <div onKeyDown={onEnter}>
+          <Combobox aria-label="Tax" options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
+        </div>
+        <span className="text-right text-[13.5px] font-medium tabular-nums text-on-surface" data-testid="line-amount">
+          {formatMoney(preview.total, currency)}
+        </span>
+        <span className="row-start-1 col-start-7 lg:row-start-auto lg:col-start-auto">{menu}</span>
+      </div>
       {line.saveToCatalogue && (
-        <p className="text-[12px] text-on-surface-muted">
+        <p className="pl-8 text-[12px] text-on-surface-muted">
           Added to the catalogue when you save the quote{line.unitPriceAmount > 0n ? "." : " — give it a price first."}{" "}
           <button type="button" className="text-primary hover:underline" onClick={() => onChange({ saveToCatalogue: false })}>
             Don&apos;t add it
           </button>
         </p>
       )}
-      <Input
-        value={line.description}
-        onChange={(e) => onChange({ description: e.target.value })}
-        placeholder="Description (optional)"
-      />
-      <div className="grid grid-cols-4 gap-2">
-        <FieldLabel label="Qty">
+      {showDetails ? (
+        // US-QUO-34: the details row shares the line's grid — description under Item to Disc. %, HSN/SAC under Tax, supply type beside it.
+        <div className={cn(ROW_GRID, "items-start")}>
           <Input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="0.01"
-            value={String(line.quantity)}
-            onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
+            aria-label="Description"
+            value={line.description}
+            onChange={(e) => onChange({ description: e.target.value })}
+            placeholder="Description (optional)"
+            className="col-[2/span_5] h-8 text-[13px] lg:col-[2/span_4]"
           />
-        </FieldLabel>
-        <FieldLabel label="Unit price">
-          <MoneyInput value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
-        </FieldLabel>
-        <FieldLabel label="Discount %">
-          <Input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            max={100}
-            step="0.01"
-            value={String(line.discountPercentage)}
-            onChange={(e) => onChange({ discountPercentage: Number(e.target.value) || 0 })}
-          />
-        </FieldLabel>
-        <FieldLabel label="Line total">
-          <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 text-[14px] tabular-nums">
-            {formatMoney(preview.total, currency)}
-          </div>
-        </FieldLabel>
-      </div>
-      <div className="grid grid-cols-[1fr_auto] items-end gap-2">
-        <FieldLabel label="Tax">
-          <Combobox options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
-        </FieldLabel>
-        <label className="flex h-10 cursor-pointer items-center gap-2 pb-0.5">
-          <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })} />
-          <span className="text-[13px] text-on-surface">Price includes tax</span>
-        </label>
-      </div>
-      {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
-        <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
-          {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => onChange({ hsnSac })} />}
-          {showsSupplyType(line.supplyClass, taxPercent) && (
-            <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
+          {showHsn && (
+            <div className="col-[2/span_2] lg:col-[6/span_1]">
+              <HsnSacField compact value={line.hsnSac} onChange={(hsnSac) => onChange({ hsnSac })} />
+            </div>
+          )}
+          {showSupply && (
+            <div className={showHsn ? "col-[4/span_2] lg:col-[7/span_2]" : "col-[2/span_2] lg:col-[6/span_1]"}>
+              <SupplyTypeField compact value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
+            </div>
           )}
         </div>
-      )}
-    </div>
-  );
-}
-
-function NonItemLineFields({
-  line,
-  onChange,
-}: {
-  line: EditableQuoteLine;
-  onChange: (patch: Partial<EditableQuoteLine>) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <div className="w-32">
-          <Select value={line.type} onValueChange={(v) => onChange({ type: v as QuoteLineType })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="heading">Heading</SelectItem>
-              <SelectItem value="text">Text</SelectItem>
-            </SelectContent>
-          </Select>
+      ) : (
+        <div className={ROW_GRID}>
+          <button type="button" onClick={() => setDetails(true)} className="col-[2/span_5] flex w-fit items-center gap-1 text-[12.5px] font-medium text-primary hover:underline lg:col-[2/span_4]">
+            <Plus size={13} aria-hidden /> Add description
+          </button>
         </div>
-        <Input
-          value={line.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder={line.type === "heading" ? "Section heading" : "Free text"}
-          className="flex-1 font-medium"
-          required
-        />
-      </div>
-      {line.type === "text" && (
-        <Input
-          value={line.description}
-          onChange={(e) => onChange({ description: e.target.value })}
-          placeholder="Additional detail (optional)"
-        />
       )}
-    </div>
-  );
-}
-
-function FieldLabel({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium text-on-surface-muted">{label}</span>
-      {children}
     </div>
   );
 }

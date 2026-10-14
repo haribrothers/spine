@@ -11,6 +11,24 @@ export interface PayablesBillRow {
   balanceDue: string;
   daysOverdue: number;
   bucket: AgingBucket;
+  /** US-PUR-57 — the bill date, what's been paid and credited, and the job. */
+  date: string;
+  paidAmount: string;
+  jobId: string | null;
+  jobName: string | null;
+}
+
+/** US-PUR-56 — one vendor we owe. */
+export interface PayablesVendorRow {
+  contactId: string;
+  name: string | null;
+  billCount: number;
+  overdueAmount: string;
+  totalOutstanding: string;
+  oldestDaysOverdue: number;
+  oldestDueDate: string | null;
+  credit: string;
+  lastPaidOn: string | null;
 }
 
 export interface PayablesReport {
@@ -18,6 +36,9 @@ export interface PayablesReport {
   totalOutstanding: string;
   buckets: Record<AgingBucket, string>;
   bills: PayablesBillRow[];
+  vendors: PayablesVendorRow[];
+  dueSoon: { amount: string; count: number };
+  drafts: { count: number; amount: string };
 }
 
 export const AGING_BUCKET_LABELS: Record<AgingBucket, string> = {

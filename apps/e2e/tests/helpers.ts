@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
 
 const MAILDEV_URL = process.env.MAILDEV_URL ?? "http://localhost:1080";
@@ -11,9 +12,18 @@ export interface SentEmail {
   time: string;
 }
 
-/** Clears MailDev's inbox — call before triggering an email-sending action so the next poll only sees emails from this test. */
+/** Emails already in MailDev when this worker last called `clearInbox` — `waitForEmail` ignores them. */
+const seenEmailIds = new Set<string>();
+
+/**
+ * "Only emails from now on" — call before an action that sends one. It
+ * doesn't empty MailDev; it remembers what's there, and `waitForEmail`
+ * ignores those (D-241: nothing a test does removes another's mail, and no
+ * request races a delete). global-setup empties the inbox once per run.
+ */
 export async function clearInbox(): Promise<void> {
-  await fetch(`${MAILDEV_URL}/api/email/all`, { method: "DELETE" });
+  const res = await fetch(`${MAILDEV_URL}/api/email`);
+  for (const email of (await res.json()) as SentEmail[]) seenEmailIds.add(email.id);
 }
 
 /**
@@ -37,7 +47,7 @@ export async function waitForEmail(matcher: (email: SentEmail) => boolean, timeo
   while (Date.now() - start < timeoutMs) {
     const res = await fetch(`${MAILDEV_URL}/api/email`);
     const emails = (await res.json()) as SentEmail[];
-    const found = emails.find(matcher);
+    const found = emails.find((email) => !seenEmailIds.has(email.id) && matcher(email));
     if (found) return found;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
@@ -55,14 +65,34 @@ export function extractLink(email: SentEmail): string {
 }
 
 /** Signs up a brand-new org (first user becomes Primary Owner) and lands on /onboarding, then skips straight to /dashboard — mirrors CLAUDE.md's "onboarding is never a gate" rule. */
+/** The API and the app's origin (Better Auth checks the Origin of a sign-in or sign-up). */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
+const APP_URL = process.env.APP_URL ?? "http://localhost:3110";
+
+/**
+ * A new account and business, signed in, with onboarding skipped, on the
+ * dashboard — through the API rather than the sign-up and onboarding pages
+ * (D-241: those have their own specs). The session cookie lands in the
+ * page's browser context, exactly as signing up in the browser leaves it.
+ */
 export async function signUpNewOrg(page: Page, { name, email, password }: { name: string; email: string; password: string }): Promise<void> {
-  await page.goto("/signup");
-  await page.getByLabel("Name").fill(name);
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL("**/onboarding");
-  await page.getByRole("button", { name: "Skip to dashboard" }).click();
+  const signUp = await page.request.post(`${API_URL}/api/auth/sign-up/email`, { data: { name, email, password }, headers: { Origin: APP_URL } });
+  if (!signUp.ok()) throw new Error(`Sign-up failed: ${signUp.status()} ${await signUp.text()}`);
+  const skip = await page.request.put(`${API_URL}/org/settings/onboarding_status`, { data: { value: { skipped: true } }, headers: { Origin: APP_URL, "Idempotency-Key": randomUUID() } });
+  if (!skip.ok()) throw new Error(`Skipping onboarding failed: ${skip.status()} ${await skip.text()}`);
+  await openSettledDashboard(page);
+}
+
+/**
+ * Opens the dashboard, where the sign-up and login pages used to land. Its
+ * requests (the person's permissions among them) may still be running: a
+ * test that reads permission-dependent UI waits for it, and one that
+ * intercepts requests or clears cookies next leaves for `about:blank` first.
+ * (Waiting here for the permissions response cost every sign-in its full
+ * timeout in CI, where the response wasn't seen — D-241.)
+ */
+export async function openSettledDashboard(page: Page): Promise<void> {
+  await page.goto("/dashboard");
   await page.waitForURL("**/dashboard");
 }
 
@@ -91,7 +121,7 @@ export async function sendQuoteAndGetPublicLink(
   await page.getByRole("option", { name: contactName }).click();
 
   await page.getByPlaceholder("Item name").fill(itemName);
-  const unitPriceInput = page.locator("div", { hasText: /^Unit price/ }).getByRole("textbox");
+  const unitPriceInput = page.getByLabel("Unit price").first();
   await unitPriceInput.fill(unitPrice);
 
   await page.getByRole("button", { name: /Save as draft/ }).click();

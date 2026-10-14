@@ -32,7 +32,7 @@ import type { VendorCredit } from "./types";
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** US-PUR-26 — `VendorRefundDialog`: money the vendor paid back against a credit (P25). Up to the credit's balance. */
-export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: { open: boolean; onOpenChange: (open: boolean) => void; credit: VendorCredit; onRecorded: () => void }) {
+export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: { open: boolean; onOpenChange: (open: boolean) => void; credit: VendorCredit; onRecorded: (amount: bigint) => void }) {
   const balance = BigInt(credit.balanceAmount);
   const [amount, setAmount] = useState<bigint>(balance);
   const [date, setDate] = useState<Date>(new Date());
@@ -65,7 +65,7 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
     try {
       await apiClient.post(`/vendor-credits/${credit.id}/refunds`, { amount: amount.toString(), date: iso(date), moneyAccountId: moneyAccountId || null, method, reference: reference.trim() || null });
       onOpenChange(false);
-      onRecorded();
+      onRecorded(amount);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't record this refund.");
     } finally {

@@ -6,8 +6,10 @@ import { TeamsModule } from "../teams/teams.module";
 import { AccountsController } from "./accounts.controller";
 import { AccountsService } from "./accounts.service";
 import { InvitationsController } from "./invitations.controller";
+import { InvitationsService } from "./invitations.service";
 import { MembersController } from "./members.controller";
 import { MembersService } from "./members.service";
+import { MemberPasswordService } from "./member-password.service";
 import { PublicInvitationsController } from "./public-invitations.controller";
 import { PublicPasswordResetController } from "./public-password-reset.controller";
 import { PublicSignupController } from "./public-signup.controller";
@@ -19,7 +21,7 @@ import { QuoteConversionGuardService } from "./quote-conversion-guard.service";
 @Module({
   imports: [TeamsModule, AuditModule],
   controllers: [ModulesController, SettingsController, AccountsController, InvitationsController, PublicInvitationsController, PublicSignupController, PublicPasswordResetController, MembersController],
-  providers: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService, ModulesService],
+  providers: [SettingsService, AccountsService, MembersService, MemberPasswordService, InvitationsService, QuoteConversionGuardService, IndustryTemplateService, ModulesService],
   exports: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService, ModulesService],
 })
 export class OrgModule {}

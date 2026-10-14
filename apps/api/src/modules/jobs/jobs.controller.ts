@@ -12,7 +12,8 @@ import {
   createVariationOrderSchema,
   assignJobSchema,
 } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { PickerAllowed, RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
+import { SectionClosed, pickFields } from "../../common/picker";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { JobsService } from "./jobs.service";
@@ -42,6 +43,7 @@ import { AddJobNoteDto, AddJobPhotoDto, AssignJobDto, CompleteMilestoneDto } fro
  * pattern as every other own/others module in this codebase.
  */
 @Controller("jobs")
+@RequireSectionOpen("jobs.open")
 export class JobsController {
   constructor(
     private readonly jobsService: JobsService,
@@ -54,8 +56,10 @@ export class JobsController {
 
   /** `assignedToMe` (Phase 5 mobile home screen, S-11.2) mirrors `GET /expenses?mine=true`'s own precedent — narrows to jobs the requesting user is assigned to via `job_assignments`. */
   @Get()
+  @PickerAllowed()
   async list(
     @Session() session: UserSession,
+    @SectionClosed() closed: boolean,
     @Query("status") status?: string,
     @Query("contactId") contactId?: string,
     @Query("assignedToMe") assignedToMe?: string,
@@ -69,6 +73,8 @@ export class JobsController {
       contactId,
       assignedToUserId: field || assignedToMe === "true" ? session.user.id : undefined,
     });
+    // US-TEAM-31: an expense, bill or journal picks a job while Jobs is closed.
+    if (closed) return rows.map((row) => pickFields(row, ["id", "number", "name", "status", "contactId", "contactName"] as const));
     const includes = new Set((include ?? "").split(",").filter(Boolean));
     // US-DASH-18: each job's next pending milestone, for the dashboard's "My jobs".
     const withNextOnly = includes.has("next_milestone") ? await this.jobsService.withNextMilestone(rows) : rows;
@@ -77,8 +83,10 @@ export class JobsController {
     // US-MOB-04: milestone counts for the phone's "All milestones complete".
     const withNext = includes.has("milestone_counts") ? await this.jobsService.withMilestoneCounts(withContact) : withContact;
     if (field) return withNext.map(withoutMoney);
+    // US-JOB-31 (D-215): billed, ready to bill and retention held, for Owners and Staff.
+    const withBilling = includes.has("billing") ? await this.jobCostingService.withBilling(orgId, withNext) : withNext;
     // US-JOB-25: budget used per job, only for members who may see job profitability.
-    return includes.has("costing") ? this.jobCostingService.withCosting(orgId, session.user.id, withNext) : withNext;
+    return includes.has("costing") ? this.jobCostingService.withCosting(orgId, session.user.id, withBilling) : withBilling;
   }
 
   /**
@@ -99,11 +107,22 @@ export class JobsController {
   }
 
   @Get(":id")
-  async getOne(@Session() session: UserSession, @Param("id") id: string) {
+  async getOne(@Session() session: UserSession, @Param("id") id: string, @Query("include") include?: string) {
     const orgId = requireOrgId(session);
     const { field } = await this.jobAccess.check(orgId, session.user.id, id);
     const [job] = await this.jobsService.withSiteContact([await this.jobsService.getOne(orgId, id)]);
-    return field ? withoutMoney(job!) : job!;
+    if (field) return withoutMoney(job!);
+    // US-JOB-34 (D-215): the job page's figures and next step, for Owners and Staff.
+    if ((include ?? "").split(",").includes("billing")) return (await this.jobCostingService.withBilling(orgId, [job!]))[0]!;
+    return job!;
+  }
+
+  /** US-JOB-37 (D-215) — the job's story, newest first. Owners and Staff only: Field gets no Activity (it names invoices and money changes). */
+  @Get(":id/activity")
+  @OrgRoles(["owner", "staff"])
+  async activity(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.activity(orgId, id);
   }
 
   /** `GET /jobs/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "job"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */

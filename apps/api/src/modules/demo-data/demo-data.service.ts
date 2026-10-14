@@ -19,11 +19,20 @@ import { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import {
+  bankReconciliations,
+  bankStatementImports,
   bankStatementLineMatches,
   bankStatementLines,
+  bankTransactions,
+  bankTransfers,
+  moneyAccounts,
+  accounts,
+  catalogBundles,
   catalogItems,
   contacts,
+  creditNoteAllocations,
   creditNotes,
+  customerRefunds,
   expenseCategories,
   expenses,
   invoices,
@@ -32,6 +41,8 @@ import {
   journalLines,
   meetings as meetingsTable,
   member,
+  invitation,
+  teams,
   numberSequences,
   payments,
   quotes,
@@ -40,9 +51,14 @@ import {
   taxRates,
   vendorBills,
   vendorPayments,
+  vendorCredits,
+  vendorCreditAllocations,
+  vendorRefunds,
+  recurringBills,
 } from "../../db/schema";
 import { AuditLogService, type AuditEntityType } from "../audit/audit-log.service";
 import { SettingsService } from "../org/settings.service";
+import { FilesService } from "../files/files.service";
 import { DemoSeederService } from "./demo-seeder.service";
 
 /** `settings.demo_data` — which demo is loaded, and the setup it added (D-192). */
@@ -53,6 +69,11 @@ export interface DemoDataSetting {
   businessName?: string;
   createdTaxRateIds?: string[];
   createdTaxGroupIds?: string[];
+  /** US-ONB-27 — the bundles the demo made (bundles carry no demo flag). */
+  createdBundleIds?: string[];
+  /** US-ONB-32 — the archived category the demo added, and the categories it gave a default rate. */
+  createdCategoryIds?: string[];
+  defaultedCategoryIds?: string[];
 }
 
 /** `POST /demo-data/seed` — both optional; no body loads the default (US construction). */
@@ -82,6 +103,7 @@ export class DemoDataService {
     private readonly auditLog: AuditLogService,
     private readonly settingsService: SettingsService,
     private readonly seeder: DemoSeederService,
+    private readonly filesService: FilesService,
   ) {}
 
   /** Whether the business has records of its own: any journal entry that isn't demo. */
@@ -115,7 +137,7 @@ export class DemoDataService {
       await this.deleteAll(orgId, actorUserId).catch(() => undefined);
       throw error;
     }
-    const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds };
+    const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds, createdBundleIds: result.createdBundleIds, createdCategoryIds: result.createdCategoryIds, defaultedCategoryIds: result.defaultedCategoryIds };
     await this.settingsService.set(orgId, DEMO_DATA_KEY, loaded);
     return { country, industry, businessName: plan.business.name, ...result.counts };
   }
@@ -135,7 +157,9 @@ export class DemoDataService {
    * documents before their jobs and contacts.
    */
   async deleteAll(orgId: string, actorUserId: string) {
-    return this.db.transaction(async (tx) => {
+    // US-ONB-31: the receipts printed for demo expenses go with them, once nothing points at them.
+    const receiptFileIds: string[] = [];
+    const result = await this.db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('spine.deleting_demo', 'on', true)`);
       const kept = new Set<string>();
 
@@ -167,6 +191,12 @@ export class DemoDataService {
         await tx.select({ id: payments.id, number: payments.number, contactId: payments.contactId }).from(payments).where(and(eq(payments.orgId, orgId), eq(payments.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(payments).where(eq(payments.id, r.id)), { entityType: "payment", contactId: r.contactId, field: "number", from: r.number }),
       );
+      // US-ONB-29: a demo credit note's applied credit and refunds go with it (their entries are demo entries).
+      const demoNoteIds = (await tx.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true)))).map((r) => r.id);
+      if (demoNoteIds.length) {
+        await tx.delete(creditNoteAllocations).where(inArray(creditNoteAllocations.creditNoteId, demoNoteIds));
+        await tx.delete(customerRefunds).where(inArray(customerRefunds.sourceCreditNoteId, demoNoteIds));
+      }
       const creditNotesDeleted = await count(
         await tx.select({ id: creditNotes.id, number: creditNotes.number, contactId: creditNotes.contactId }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(creditNotes).where(eq(creditNotes.id, r.id)), { entityType: "credit_note", contactId: r.contactId, field: "number", from: r.number }),
@@ -175,17 +205,59 @@ export class DemoDataService {
         await tx.select({ id: invoices.id, number: invoices.number, contactId: invoices.contactId }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(invoices).where(eq(invoices.id, r.id)), { entityType: "invoice", contactId: r.contactId, field: "number", from: r.number }),
       );
+      // US-ONB-30: demo vendor credits, with their applications and refunds (whose entries are demo entries), go before the bills.
+      const demoCreditIds = (await tx.select({ id: vendorCredits.id }).from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.isDemo, true)))).map((r) => r.id);
+      if (demoCreditIds.length) {
+        await tx.delete(vendorCreditAllocations).where(inArray(vendorCreditAllocations.vendorCreditId, demoCreditIds));
+        await tx.delete(vendorRefunds).where(inArray(vendorRefunds.vendorCreditId, demoCreditIds));
+      }
+      const vendorCreditsDeleted = await count(
+        await tx.select({ id: vendorCredits.id, number: vendorCredits.number, vendorReference: vendorCredits.vendorReference, contactId: vendorCredits.contactId }).from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(vendorCredits).where(eq(vendorCredits.id, r.id)), { entityType: "vendor_credit", contactId: r.contactId, field: "number", from: r.number ?? r.vendorReference }),
+      );
+      const recurringBillsDeleted = await count(
+        await tx.select({ id: recurringBills.id, name: recurringBills.name, contactId: recurringBills.contactId }).from(recurringBills).where(and(eq(recurringBills.orgId, orgId), eq(recurringBills.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(recurringBills).where(eq(recurringBills.id, r.id)), { entityType: "recurring_bill", contactId: r.contactId, field: "name", from: r.name }),
+      );
       const vendorBillsDeleted = await count(
         await tx.select({ id: vendorBills.id, billNumber: vendorBills.billNumber, contactId: vendorBills.contactId }).from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(vendorBills).where(eq(vendorBills.id, r.id)), { entityType: "vendor_bill", contactId: r.contactId, field: "billNumber", from: r.billNumber }),
       );
       const expensesDeleted = await count(
-        await tx.select({ id: expenses.id, number: expenses.number }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true))),
-        (r) => remove(r.id, (sp) => sp.delete(expenses).where(eq(expenses.id, r.id)), { entityType: "expense", contactId: null, field: "number", from: r.number }),
+        await tx.select({ id: expenses.id, number: expenses.number, receiptFileId: expenses.receiptFileId }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true))),
+        async (r) => {
+          const deleted = await remove(r.id, (sp) => sp.delete(expenses).where(eq(expenses.id, r.id)), { entityType: "expense", contactId: null, field: "number", from: r.number });
+          if (deleted && r.receiptFileId) receiptFileIds.push(r.receiptFileId);
+          return deleted;
+        },
       );
       const quotesDeleted = await count(
         await tx.select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId }).from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true))),
         (r) => remove(r.id, (sp) => sp.delete(quotes).where(eq(quotes.id, r.id)), { entityType: "quote", contactId: r.contactId, field: "number", from: r.number }),
+      );
+
+      // US-ONB-34: the demo's reconciliations and statement first (taking the tick off what they reconciled), then its bank entries.
+      const demoRecIds = (await tx.select({ id: bankReconciliations.id }).from(bankReconciliations).where(and(eq(bankReconciliations.orgId, orgId), eq(bankReconciliations.isDemo, true)))).map((r) => r.id);
+      if (demoRecIds.length) {
+        await tx.update(journalLines).set({ reconciliationId: null }).where(inArray(journalLines.reconciliationId, demoRecIds));
+        await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.reconciliationId, demoRecIds));
+        await tx.update(bankStatementLines).set({ status: "unmatched", excludeNote: null, reconciliationId: null }).where(inArray(bankStatementLines.reconciliationId, demoRecIds));
+      }
+      const demoImportIds = (await tx.select({ id: bankStatementImports.id }).from(bankStatementImports).where(and(eq(bankStatementImports.orgId, orgId), eq(bankStatementImports.isDemo, true)))).map((r) => r.id);
+      if (demoImportIds.length) {
+        const demoLineIds = (await tx.select({ id: bankStatementLines.id }).from(bankStatementLines).where(inArray(bankStatementLines.importId, demoImportIds))).map((r) => r.id);
+        if (demoLineIds.length) await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.statementLineId, demoLineIds));
+        await tx.delete(bankStatementLines).where(inArray(bankStatementLines.importId, demoImportIds));
+        await tx.delete(bankStatementImports).where(inArray(bankStatementImports.id, demoImportIds));
+      }
+      if (demoRecIds.length) await tx.delete(bankReconciliations).where(inArray(bankReconciliations.id, demoRecIds));
+      const bankTransfersDeleted = await count(
+        await tx.select({ id: bankTransfers.id, reference: bankTransfers.reference }).from(bankTransfers).where(and(eq(bankTransfers.orgId, orgId), eq(bankTransfers.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(bankTransfers).where(eq(bankTransfers.id, r.id)), { entityType: "bank_transfer", contactId: null, field: "reference", from: r.reference }),
+      );
+      const bankTransactionsDeleted = await count(
+        await tx.select({ id: bankTransactions.id, description: bankTransactions.description, contactId: bankTransactions.contactId }).from(bankTransactions).where(and(eq(bankTransactions.orgId, orgId), eq(bankTransactions.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(bankTransactions).where(eq(bankTransactions.id, r.id)), { entityType: "bank_transaction", contactId: r.contactId, field: "description", from: r.description }),
       );
 
       // The demo's journal entries, except those of a document that was kept.
@@ -202,6 +274,20 @@ export class DemoDataService {
         }
         await tx.delete(journalEntries).where(inArray(journalEntries.id, entryIds));
       }
+
+      // US-ONB-34: the demo's card account, and its ledger account, once its entries are gone.
+      const moneyAccountsDeleted = await count(
+        await tx.select({ id: moneyAccounts.id, name: moneyAccounts.name, accountId: moneyAccounts.accountId }).from(moneyAccounts).where(and(eq(moneyAccounts.orgId, orgId), eq(moneyAccounts.isDemo, true))),
+        (r) =>
+          remove(
+            r.id,
+            async (sp) => {
+              await sp.delete(moneyAccounts).where(eq(moneyAccounts.id, r.id));
+              await sp.delete(accounts).where(eq(accounts.id, r.accountId));
+            },
+            { entityType: "money_account", contactId: null, field: "name", from: r.name },
+          ),
+      );
 
       const jobsDeleted = await count(
         await tx.select({ id: jobs.id, name: jobs.name, contactId: jobs.contactId }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.isDemo, true))),
@@ -222,10 +308,16 @@ export class DemoDataService {
       // rates and group it created (recorded when it was loaded; Riverstone
       // from before then is found by name), once nothing uses them.
       const loaded = await this.settingsService.get<DemoDataSetting>(orgId, DEMO_DATA_KEY);
+      // US-ONB-27: and the bundles it made.
+      const bundleIds = loaded?.createdBundleIds ?? [];
+      const bundlesDeleted = bundleIds.length ? (await tx.delete(catalogBundles).where(and(eq(catalogBundles.orgId, orgId), inArray(catalogBundles.id, bundleIds))).returning({ id: catalogBundles.id })).length : 0;
       const groupIds = loaded?.createdTaxGroupIds ?? (await tx.select({ id: taxGroups.id }).from(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.name, "Sales Tax + Surcharge")))).map((g) => g.id);
       const rateIds = loaded?.createdTaxRateIds ?? (await tx.select({ id: taxRates.id }).from(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.name, ["Sales Tax", "State Surcharge"])))).map((r) => r.id);
       for (const id of groupIds) await tx.transaction((sp) => sp.delete(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.id, id)))).catch(swallowForeignKey);
       for (const id of rateIds) await tx.transaction((sp) => sp.delete(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.id, id)))).catch(swallowForeignKey);
+      // US-ONB-32: the category the demo added goes (unless something now uses it), and the defaults it set are cleared.
+      for (const id of loaded?.createdCategoryIds ?? []) await tx.transaction((sp) => sp.delete(expenseCategories).where(and(eq(expenseCategories.orgId, orgId), eq(expenseCategories.id, id)))).catch(swallowForeignKey);
+      if (loaded?.defaultedCategoryIds?.length) await tx.update(expenseCategories).set({ defaultTaxRateId: null }).where(and(eq(expenseCategories.orgId, orgId), inArray(expenseCategories.id, loaded.defaultedCategoryIds)));
       if (!loaded) {
         // Riverstone loaded before US-ONB-20 made its own categories outside a template.
         await tx
@@ -236,6 +328,9 @@ export class DemoDataService {
 
       // The demo Staff and Field people lose access here; their logins stay (member.isDemo's own comment).
       const membersDeleted = (await tx.delete(member).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true))).returning({ id: member.id })).length;
+      // US-ONB-35: the demo's invites (their Teams cascade) and its "Accounts" Team (its grants and memberships cascade).
+      const invitesDeleted = (await tx.delete(invitation).where(and(eq(invitation.organizationId, orgId), eq(invitation.isDemo, true))).returning({ id: invitation.id })).length;
+      const teamsDeleted = (await tx.delete(teams).where(and(eq(teams.orgId, orgId), eq(teams.isDemo, true))).returning({ id: teams.id })).length;
 
       // A demo loaded again starts its series at 0001.
       await tx.delete(numberSequences).where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.isDemo, true)));
@@ -244,19 +339,32 @@ export class DemoDataService {
       return {
         contactsDeleted,
         catalogItemsDeleted,
+        bundlesDeleted,
         quotesDeleted,
         invoicesDeleted,
         paymentsDeleted,
         jobsDeleted,
         vendorPaymentsDeleted,
+        bankTransfersDeleted,
+        bankTransactionsDeleted,
+        moneyAccountsDeleted,
         vendorBillsDeleted,
+        vendorCreditsDeleted,
+        recurringBillsDeleted,
         expensesDeleted,
         creditNotesDeleted,
         meetingsDeleted,
         membersDeleted,
+        invitesDeleted,
+        teamsDeleted,
         kept: { contacts: demoContacts.length - contactsDeleted },
       };
     });
+    for (const id of receiptFileIds) {
+      if ((await this.filesService.owningRecords(orgId, id)).length) continue;
+      await this.filesService.deleteStored(orgId, id).catch(() => undefined);
+    }
+    return result;
   }
 
   /**

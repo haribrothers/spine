@@ -11,7 +11,7 @@ The design system is already built and is reused, not redesigned ([D-037](12-dec
 | [motion.md](../design/motion.md) | Durations, easing, per-pattern motion, reduced motion |
 | [components/](../design/components/) | One page per component: 79 web (`@spine/ui`), 31 native (`@spine/ui-native`) |
 | [index.d.ts](../design/index.d.ts) | Points to the packages' real type entry points |
-| [logo/](../design/logo/) | Horizontal (light and dark) and square marks |
+| [logos/](../logos/) | The Spine mark, horizontal and vertical lockups, silhouettes and app-icon art (SVG); drawn in apps by `SpineLogo` (D-206) |
 | [native-notes.md](../design/native-notes.md) | Native implementation rules (moved from CLAUDE.md) |
 | [screens.md](../design/screens.md) and `screens/` | Every screen: captured from the app or drawn on the design canvas |
 
@@ -21,12 +21,12 @@ The design canvas with every drawn screen is the "Spine — New screens" artifac
 
 1. **Values come from tokens.** Web: CSS variables in `packages/config/tailwind-preset.css` (authored from `docs/DESIGN.md` front matter). Native: `packages/ui-native/src/tokens`. No hex values, magic spacing or arbitrary `z-[…]` in components.
 2. **Use the library.** Screens compose `@spine/ui` / `@spine/ui-native` components; a new pattern becomes a library component first.
-3. **One primary action per screen.** Confirmation buttons are primary unless they delete, void or remove ([D-058](12-decisions.md)).
+3. **One primary action per screen.** Confirmation buttons are primary unless they delete, void or remove ([D-058](12-decisions.md)). A major action — issuing, recording or voiding, deleting or removing, emailing a customer, a bulk change — asks first with `useConfirm()` from `@spine/ui`, saying what happens to the person's data ([D-218](12-decisions.md)), and when it's done says so with `useToast()` from the app's `ToastHost` — also after opening another page ([D-223](12-decisions.md)).
 4. **Status colours are reserved** for paid / due-soon / overdue / draft (and their workflow equivalents) and always carry a text label.
 5. **Dark mode is real.** Every screen works in light and dark through tokens; text on filled controls uses `on-primary`/`on-danger` ([D-099](12-decisions.md)); dark designs for representative screens end in `Dark` in [screens.md](../design/screens.md) ([D-100](12-decisions.md)). Every themed class on native has its `dark:` pair; React Navigation / native chrome gets its theme from props, not classes ([native notes](../design/native-notes.md)).
 6. **Accessibility ships with the component.** Web: axe-core test per component, enforced by `check-a11y-coverage.mjs`. Native: prop-level tests plus VoiceOver/TalkBack checks.
-7. **Docs ship with the component.** Web: `apps/design-system` page + nav entry. Native: `apps/showcase-native` for `@expo/ui` components, `apps/design-system-native` for NativeWind ones ([D-034](12-decisions.md)).
-8. **Icons:** Lucide, per-icon imports on native; native tab bars use SF Symbols / Material Symbols.
+7. **Docs ship with the component.** Web: `apps/design-system` page + nav entry. Native: a demo in `apps/showcase-native` for every component ([D-034](12-decisions.md), [D-240](12-decisions.md)).
+8. **Icons:** Lucide, per-icon imports on native; native tab bars use SF Symbols / Material Symbols. Every action in a menu has its icon from the D-222 vocabulary (`apps/web/src/lib/menu-icons.ts`); the menu components own the icon's size, colour and spacing ([D-222](12-decisions.md)).
 9. **Mobile is native-first** on both platforms; Android follows Material 3 ([D-022](12-decisions.md), [D-051](12-decisions.md)).
 10. **New components in Phase 7:** `CommandPalette` (global search, US-OPS-23, built on `cmdk`), a selection toolbar for bulk actions (US-INV-23, US-PUR-21), and the KPI card with sparkline and comparison (US-DASH-14). Each ships with its doc page and axe test (D-033).
 11. **New components in Phases 8–9:** `FileDropzone` and `AttachmentList` (US-OPS-33–US-OPS-35). Everything else in those screens composes existing components ([../design/README.md](../design/README.md#phases-89-books-tax-and-setup-screens)). The AI assistant (US-AI-01–US-AI-14) adds no new component either: its button is a secondary `Button` with the Lucide `Sparkles` icon, and "Suggested by AI" is a text label plus an `info` tint on the field, never colour alone.

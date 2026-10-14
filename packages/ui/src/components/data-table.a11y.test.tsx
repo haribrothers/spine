@@ -65,4 +65,18 @@ describe("DataTable a11y", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Search by contact…" }), { target: { value: "acme" } });
     expect(onSearchChange).toHaveBeenCalledWith("acme");
   });
+
+  it("has no violations with the page's own search in place of the built-in box (toolbarStart)", async () => {
+    const { container } = render(
+      <DataTable
+        rowKey={(row: { contact: string }) => row.contact}
+        columns={[{ key: "contact", header: "Contact", render: (row: { contact: string }) => row.contact }]}
+        data={[{ contact: "Acme" }]}
+        toolbarStart={<input aria-label="Search contacts" />}
+      />,
+    );
+    expect(screen.getByRole("textbox", { name: "Search contacts" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Columns/ })).toBeTruthy();
+    await expectNoA11yViolations(container);
+  });
 });

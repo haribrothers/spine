@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { Button, Card, Spinner, cn } from "@spine/ui";
 import { describeAttention, type AttentionItem, type AttentionKind } from "@spine/shared";
-import { ArrowUpRight, Check, CircleAlert, Clock, DollarSign, OctagonAlert, Percent } from "lucide-react";
+import { ArrowUpRight, Check, CircleAlert, Clock, DollarSign, MailX, OctagonAlert, Percent } from "lucide-react";
 import { formatMoney } from "../../../lib/money";
+import { WidgetSkeleton } from "./dashboard-skeleton";
 
 const KIND_STYLE: Record<AttentionKind, { icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>; tone: string }> = {
   invoices_overdue: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
@@ -17,6 +18,7 @@ const KIND_STYLE: Record<AttentionKind, { icon: React.ComponentType<{ size?: num
   followups_overdue: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
   milestones_due: { icon: Clock, tone: "bg-due-soon-bg text-due-soon" },
   expenses_rejected: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
+  emails_failed: { icon: MailX, tone: "bg-overdue-bg text-overdue" },
 };
 
 /** Where a row's button goes (US-DASH-13 turns some into one-click actions). */
@@ -27,7 +29,7 @@ export function attentionHref(item: AttentionItem): string {
     case "invoices_overdue":
       return one ? `/invoices/${first.id}` : "/invoices?status=overdue&select=overdue";
     case "expenses_awaiting_approval":
-      return "/expenses?status=submitted";
+      return "/expenses?card=wait";
     case "quotes_discount_approval":
     case "quotes_expiring":
       return one ? `/quotes/${first.id}` : "/quotes";
@@ -43,7 +45,10 @@ export function attentionHref(item: AttentionItem): string {
       // The oldest one's contact, where its Activities live; a lead without a contact opens the pipeline.
       return first?.contactId ? `/contacts/${first.contactId}` : "/leads";
     case "expenses_rejected":
-      return one ? `/expenses?id=${first.id}` : "/expenses?mine=true&status=rejected";
+      return one ? `/expenses/${first.id}` : "/expenses?by=me&state=rej";
+    case "emails_failed":
+      // US-DASH-30: the email log, filtered to the failed ones.
+      return "/emails?card=failed";
   }
 }
 
@@ -92,7 +97,7 @@ export function AttentionCard({
   }
 
   return (
-    <Card className={cn("flex flex-col gap-2", className)} data-testid="attention-card">
+    <Card className={cn("@container flex flex-col gap-2", className)} data-testid="attention-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-[16px] font-semibold text-on-surface">
           Needs your attention
@@ -105,8 +110,8 @@ export function AttentionCard({
         <span className="text-[12px] text-on-surface-muted">{note}</span>
       </div>
       {!items ? (
-        <div className="flex justify-center py-6">
-          <Spinner size="sm" />
+        <div className="pt-2">
+          <WidgetSkeleton kind="rows" rows={3} />
         </div>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
@@ -115,23 +120,26 @@ export function AttentionCard({
             const { icon: Icon, tone } = KIND_STYLE[item.kind];
             const action = actionFor ? actionFor(item, text.action) : { label: text.action, href: attentionHref(item) };
             return (
-              <li key={item.kind} className="flex items-center gap-3 py-3" data-kind={item.kind}>
+              <li key={item.kind} className="flex items-start gap-3 py-3 @[28rem]:items-center" data-kind={item.kind}>
                 <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", tone)}>
                   <Icon size={16} aria-hidden />
                 </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[14px] font-semibold text-on-surface">{text.title}</span>
-                  <span className="truncate text-[13px] text-on-surface-muted">{text.detail}</span>
+                {/* US-DASH-29: in the narrow side column the button goes under the text. */}
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 @[28rem]:flex-row @[28rem]:items-center @[28rem]:gap-3">
+                  <div className="flex w-full min-w-0 flex-1 flex-col">
+                    <span className="text-[14px] font-semibold text-on-surface">{text.title}</span>
+                    <span className="truncate text-[13px] text-on-surface-muted" title={text.detail}>{text.detail}</span>
+                  </div>
+                  {action.href ? (
+                    <Button asChild variant="secondary" size="sm" className="shrink-0">
+                      <Link href={action.href}>{action.label}</Link>
+                    </Button>
+                  ) : (
+                    <Button variant="secondary" size="sm" className="shrink-0" onClick={action.onClick} disabled={action.busy}>
+                      {action.busy ? <Spinner size="sm" /> : action.label}
+                    </Button>
+                  )}
                 </div>
-                {action.href ? (
-                  <Button asChild variant="secondary" size="sm">
-                    <Link href={action.href}>{action.label}</Link>
-                  </Button>
-                ) : (
-                  <Button variant="secondary" size="sm" onClick={action.onClick} disabled={action.busy}>
-                    {action.busy ? <Spinner size="sm" /> : action.label}
-                  </Button>
-                )}
               </li>
             );
           })}

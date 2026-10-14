@@ -54,33 +54,37 @@ interface CurrencyLocaleValue {
 export function CatalogForm({
   formId,
   item,
+  prefill,
   onSubmittingChange,
   onSuccess,
 }: {
   formId: string;
   item?: CatalogItem;
+  /** US-CAT-12 — a new item filled from another (Duplicate); saving creates a new item. */
+  prefill?: CatalogItem;
   onSubmittingChange?: (saving: boolean) => void;
   onSuccess: (item: CatalogItem) => void;
 }) {
-  const [name, setName] = useState(item?.name ?? "");
-  const [description, setDescription] = useState(item?.description ?? "");
-  const [unit, setUnit] = useState(item?.unit ?? "");
-  const [category, setCategory] = useState(item?.category ?? "");
-  const [currency, setCurrency] = useState(item?.defaultPriceCurrency ?? "USD");
-  const [priceAmount, setPriceAmount] = useState<bigint>(item ? BigInt(item.defaultPriceAmount) : 0n);
+  const source = item ?? prefill;
+  const [name, setName] = useState(source?.name ?? "");
+  const [description, setDescription] = useState(source?.description ?? "");
+  const [unit, setUnit] = useState(source?.unit ?? "");
+  const [category, setCategory] = useState(source?.category ?? "");
+  const [currency, setCurrency] = useState(source?.defaultPriceCurrency ?? "USD");
+  const [priceAmount, setPriceAmount] = useState<bigint>(source ? BigInt(source.defaultPriceAmount) : 0n);
   const [taxSelection, setTaxSelection] = useState(() =>
-    item?.defaultTaxRateId ? `rate:${item.defaultTaxRateId}` : item?.defaultTaxGroupId ? `group:${item.defaultTaxGroupId}` : NO_TAX,
+    source?.defaultTaxRateId ? `rate:${source.defaultTaxRateId}` : source?.defaultTaxGroupId ? `group:${source.defaultTaxGroupId}` : NO_TAX,
   );
   // US-TAX-13 — in India an item has an intra-state (above) and an inter-state tax.
   const [interSelection, setInterSelection] = useState(() =>
-    item?.interTaxRateId ? `rate:${item.interTaxRateId}` : item?.interTaxGroupId ? `group:${item.interTaxGroupId}` : NO_TAX,
+    source?.interTaxRateId ? `rate:${source.interTaxRateId}` : source?.interTaxGroupId ? `group:${source.interTaxGroupId}` : NO_TAX,
   );
   const [gst, setGst] = useState(false);
   // US-TAX-14 — the item's HSN (goods) or SAC (services) code.
-  const [hsnSac, setHsnSac] = useState(item?.hsnSac ?? "");
-  const [supplyClass, setSupplyClass] = useState<SupplyClass>(item?.supplyClass ?? "zero_rated");
-  const [incomeAccountId, setIncomeAccountId] = useState(item?.incomeAccountId ?? NO_ACCOUNT);
-  const [expenseAccountId, setExpenseAccountId] = useState(item?.expenseAccountId ?? NO_ACCOUNT);
+  const [hsnSac, setHsnSac] = useState(source?.hsnSac ?? "");
+  const [supplyClass, setSupplyClass] = useState<SupplyClass>(source?.supplyClass ?? "zero_rated");
+  const [incomeAccountId, setIncomeAccountId] = useState(source?.incomeAccountId ?? NO_ACCOUNT);
+  const [expenseAccountId, setExpenseAccountId] = useState(source?.expenseAccountId ?? NO_ACCOUNT);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
@@ -111,14 +115,14 @@ export function CatalogForm({
   // existing item's own stored values always win (they may have been
   // intentionally set differently from the org's current default).
   useEffect(() => {
-    if (item) return;
+    if (source) return;
     apiClient
       .get<{ key: string; value: CurrencyLocaleValue | null }>("/org/settings/currency")
       .then((res) => {
         if (res.value?.code) setCurrency(res.value.code);
       })
       .catch(() => {});
-  }, [item]);
+  }, [source]);
 
   useEffect(() => {
     apiClient
@@ -132,7 +136,7 @@ export function CatalogForm({
       .then((profile) => {
         if (profile.country !== "IN") return;
         setGst(true);
-        if (item) return;
+        if (source) return;
         // A new item starts from Settings › Tax › "Default tax preference".
         const token = (t: TaxChoice | null | undefined) => (t?.taxRateId ? `rate:${t.taxRateId}` : t?.taxGroupId ? `group:${t.taxGroupId}` : NO_TAX);
         setTaxSelection(token(profile.defaultIntraTax));
@@ -140,7 +144,7 @@ export function CatalogForm({
         if (profile.defaultIntraTax?.taxRateId || profile.defaultIntraTax?.taxGroupId) setSupplyClass("taxable");
       })
       .catch(() => {});
-  }, [item]);
+  }, [source]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -215,6 +219,7 @@ export function CatalogForm({
         </Alert>
       )}
 
+      <h3 className="text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Details</h3>
       <FormField label="Name" required>
         {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} required />}
       </FormField>
@@ -253,6 +258,7 @@ export function CatalogForm({
         </FormField>
       </div>
 
+      <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Price and tax</h3>
       <div className="grid grid-cols-2 gap-4">
         <FormField label="Default price" required>
           {(field) => (
@@ -335,6 +341,7 @@ export function CatalogForm({
         )}
       </FormField>
 
+      <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Accounts</h3>
       <FormField label="Default income account" helperText="Used when this item appears on an invoice line.">
         {(field) => (
           <Select value={incomeAccountId} onValueChange={setIncomeAccountId}>
@@ -342,7 +349,7 @@ export function CatalogForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={NO_ACCOUNT}>None</SelectItem>
+              <SelectItem value={NO_ACCOUNT}>None — posts to 4100 Sales — Services</SelectItem>
               {incomeAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.code} · {account.name}

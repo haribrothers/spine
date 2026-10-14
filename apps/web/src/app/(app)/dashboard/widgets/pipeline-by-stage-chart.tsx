@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Spinner, TrendBarChart } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, TrendBarChart } from "@spine/ui";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 
 /** One row per pipeline stage, in board order (US-CRM-19: the organisation's own stages). */
 interface StageSummaryRow {
@@ -23,17 +25,12 @@ interface StageSummaryRow {
  * orientation, same component the revenue trend widget uses.
  */
 export function PipelineByStageChart() {
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
   const [rows, setRows] = useState<StageSummaryRow[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code: string } | null }>("/org/settings/currency")
-      .then((res) => {
-        if (res.value?.code) setCurrency(res.value.code);
-      })
-      .catch(() => {});
     apiClient
       .get<StageSummaryRow[]>("/leads/summary-by-stage")
       .then(setRows)
@@ -55,7 +52,7 @@ export function PipelineByStageChart() {
   });
 
   return (
-    <Card>
+    <Card data-testid="pipeline-by-stage">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           Pipeline by stage
@@ -65,10 +62,8 @@ export function PipelineByStageChart() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!rows ? (
-          <div className="flex h-40 items-center justify-center">
-            <Spinner />
-          </div>
+        {!rows || !orgCurrency ? (
+          <WidgetSkeleton kind="bars" rows={5} />
         ) : (
           <TrendBarChart data={chartData} orientation="horizontal" emptyState="No leads yet." />
         )}

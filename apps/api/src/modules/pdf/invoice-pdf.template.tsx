@@ -11,6 +11,7 @@ import { ExportNote, GstCustomerLines, GstTotalsRows, PlaceOfSupplyBlock } from 
 import type { GstPdfContext } from "./gst-document";
 import type { UpiQr } from "./upi-qr";
 import { TaxSummaryTable } from "./tax-summary";
+import { DraftWatermark } from "./quote-pdf.template";
 
 export interface InvoicePdfBusinessProfile {
   name: string;
@@ -64,6 +65,8 @@ export interface InvoicePdfData {
   business: InvoicePdfBusinessProfile | null;
   /** See quote-pdf.template.tsx's identical field for the full reasoning. */
   logoDataUri?: string;
+  /** US-INV-34 — a draft's PDF says it isn't a valid invoice. */
+  watermark?: boolean;
 }
 
 // Styles are a near-exact copy of quote-pdf.template.tsx's own StyleSheet —
@@ -142,7 +145,7 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, gst, upiQr, layout: givenLayout }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, gst, upiQr, layout: givenLayout, watermark = false }: InvoicePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "invoice");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = invoice.currency;
@@ -155,6 +158,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
   return (
     <Document title={invoice.number ?? "Invoice"} author={business?.name ?? "Spine"}>
       <Page size={layout.paperSize} style={[styles.page, pagePaddingFor(brand)]}>
+        {watermark && <DraftWatermark document="invoice" />}
         <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>

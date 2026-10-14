@@ -58,6 +58,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P27 | Tax refund received (US-TAX-08) | `tax_refund` | The money account | 1200 Input Tax Receivable |
 | P28 | Recurring bill run (US-PUR-30) | — | Nothing new: a recorded bill posts P11; a draft posts nothing until recorded | |
 | P29 | Bank reconciliation (US-BANK-07–US-BANK-11) | — | Nothing: matching marks journal lines reconciled. Entries created from a statement line post by their own rule (P4, P13, P15, P22, P23, P25, P26) | |
+| P30 | Payment moved off an invoice (US-PAY-26, [D-221](12-decisions.md)) — dated the day it's moved; not for an advance invoice (P5a posts no AR) | `payment_unapply` | 1100 AR (the amount; contact-tagged, tagged with the invoice's job) | 2200 Customer Advances (contact-tagged) — the money becomes the payment's credit, to apply (P6) or refund (P23) |
 
 ## Invariants (tested)
 

@@ -1,3 +1,4 @@
+import type { LostReason } from "../schemas/contacts.ts";
 import type { IndustryTemplateValue } from "../schemas/industry-template.ts";
 import type { GstTreatment } from "../tax/gst.ts";
 import type { TaxCountry } from "../tax/presets/types.ts";
@@ -83,8 +84,28 @@ export interface DemoPlanContact {
   stateCode?: string;
   person: { name: string; title: string; email: string; phone: string };
   address: { line1: string; city: string; state: string; stateCode?: string; postalCode: string; country: string };
-  lead?: { stage: "new" | "qualified" | "proposal" | "won" | "lost"; value: bigint; title: string; source: string };
+  lead?: DemoPlanLead;
   activity?: { type: "call" | "meeting" | "note" | "task"; notes: string; dueInDays: number };
+  /** US-ONB-24 — a second lead on the same contact (a tender lost on price). */
+  lostLead?: DemoPlanLead;
+}
+
+/** A lead, with how it's being worked (US-ONB-24, D-216). */
+export interface DemoPlanLead {
+  stage: "new" | "qualified" | "proposal" | "won" | "lost";
+  value: bigint;
+  title: string;
+  source: string;
+  /** Who it belongs to: the person loading the demo, or the demo Staff person. */
+  owner?: "owner" | "staff";
+  /** Days since it moved into its stage (or was closed). */
+  daysInStage?: number;
+  /** Open leads: when it's expected to close. */
+  expectedCloseInDays?: number;
+  /** The one open lead with no activity for 14 days and more. */
+  cold?: boolean;
+  lostReason?: LostReason;
+  lostNote?: string;
 }
 
 export interface DemoPlanItem {
@@ -97,6 +118,15 @@ export interface DemoPlanItem {
   price: bigint;
   tax: DemoTax;
   hsnSac?: string;
+  /** US-ONB-27 — goods post to 4000 Sales — Goods; services keep the default (4100). */
+  income?: "goods" | "services";
+}
+
+/** US-ONB-27 — a bundle made from catalogue items. */
+export interface DemoPlanBundle {
+  name: string;
+  description: string;
+  items: [item: string, quantity: number][];
 }
 
 /** A line from a catalogue item, or one typed in (bills, variation orders). */
@@ -125,16 +155,32 @@ export interface DemoPlanInvoice {
   voidReason?: string;
   /** India: lines carry no tax and are zero-rated, changed by hand (an SEZ supply under LUT, D-181). */
   zeroRated?: boolean;
+  /** US-ONB-28 — days from today it was emailed to the customer, and a reminder sent (null is today). */
+  emailedInDays?: number | null;
+  remindedInDays?: number | null;
 }
 
 export interface DemoPlanQuote {
   contact: string;
+  /** US-ONB-25 */
+  title: string;
   validUntilInDays: number;
   notes?: string;
   terms?: string;
   lines: DemoPlanLine[];
-  /** "revised" sends it, then sends a revision too (US-QUO-22). */
-  outcome: "draft" | "sent" | "revised";
+  /** "revised" sends it, then sends a revision too (US-QUO-22); "accepted" and "declined" are answered through the customer's link. */
+  outcome: "draft" | "sent" | "revised" | "accepted" | "declined";
+  /** Days from today it was sent (a revised quote's first version; its revision goes out `revisedInDays`). */
+  sentInDays?: number;
+  revisedInDays?: number;
+  /** The customer's views of the link: how many, and the last one's day. */
+  views?: { count: number; lastInDays: number };
+  /** Accepted or declined that day (kept within this month for an acceptance meant to count as "Won this month"). */
+  respondedInDays?: number;
+  thisMonth?: boolean;
+  comment?: string;
+  /** For the contact's lost lead rather than its main one. */
+  forLostLead?: boolean;
 }
 
 export interface DemoPlanMilestone {
@@ -146,6 +192,8 @@ export interface DemoPlanMilestone {
   invoiceInDays?: number | null;
   /** Paid this many days after its invoice ("full"), when set. */
   paidAfterDays?: number;
+  /** US-ONB-26 — completed that day and left for the office to invoice (null: today). */
+  completeInDays?: number | null;
 }
 
 export interface DemoPlanJob {
@@ -163,6 +211,15 @@ export interface DemoPlanJob {
   milestoneTax?: { tax: DemoTax; hsnSac?: string };
   note: string;
   photoCaption: string;
+  /** US-ONB-26 */
+  endInDays: number;
+  /** A cost budget: near what the job has cost so far, or a share of the contract. */
+  budget?: "near" | number;
+  percentComplete?: number;
+  /** Marked completed once its milestones are billed. */
+  completed?: boolean;
+  /** US-ONB-25 — made from an accepted contract quote: one lump-sum line at the contract value. */
+  fromQuote?: { title: string; sentInDays: number; respondedInDays: number; viewedInDays: number };
 }
 
 export interface DemoPlanVariationOrder {
@@ -179,8 +236,44 @@ export interface DemoPlanBill {
   lines: Extract<DemoPlanLine, { name: string }>[];
   outcome: "draft" | "recorded" | "voided";
   job?: string;
-  payments?: { inDays: number | null }[];
+  /** Full unless `amount` is a fraction of the total (US-ONB-30: a partly paid bill); by bank transfer unless `method` says (US-ONB-33). */
+  payments?: { inDays: number | null; amount?: "full" | number; method?: DemoVendorPaymentMethod; reference?: string }[];
   voidReason?: string;
+}
+
+export type DemoVendorPaymentMethod = "bank_transfer" | "cheque" | "cash";
+
+/** US-ONB-33 — one vendor payment paying several plan bills (by number) in full, with its remittance advice emailed on a day. */
+export interface DemoPlanVendorPayment {
+  contact: string;
+  bills: string[];
+  inDays: number;
+  method: DemoVendorPaymentMethod;
+  reference?: string;
+  remittanceInDays?: number;
+}
+
+/** US-ONB-30 — a vendor credit, by the bill it's against (its number). */
+export interface DemoPlanVendorCredit {
+  contact: string;
+  vendorReference: string;
+  dateInDays: number;
+  againstBill?: string;
+  lines: Extract<DemoPlanLine, { name: string }>[];
+  outcome: "draft" | "recorded";
+  /** Applied to its bill on that day, this fraction of the credit. */
+  apply?: { inDays: number; fraction: number };
+  /** Refunded in full by the vendor on that day. */
+  refundInDays?: number;
+}
+
+/** US-ONB-30 — a monthly recurring bill; it starts in the future, so it hasn't run yet. */
+export interface DemoPlanRecurringBill {
+  contact: string;
+  name: string;
+  startsInDays: number;
+  dueDays: number;
+  lines: Extract<DemoPlanLine, { name: string }>[];
 }
 
 export interface DemoPlanExpense {
@@ -196,6 +289,8 @@ export interface DemoPlanExpense {
   outcome: "submitted" | "approved" | "rejected";
   job?: string;
   rejectReason?: string;
+  /** US-ONB-31 — a receipt the demo prints for it: the shop and its town. */
+  receipt?: { merchant: string; place: string };
 }
 
 export interface DemoPlanCreditNote {
@@ -203,12 +298,20 @@ export interface DemoPlanCreditNote {
   reason: string;
   /** Which invoice line (by position) and how many to credit. */
   lines: { line: number; quantity: number }[];
+  /** US-ONB-29 — days from today it was issued (kept within this month; null or absent is today). */
+  issuedInDays?: number | null;
+  /** Half of its spare credit applied to the customer's other open invoices that day (null is today). */
+  applyInDays?: number | null;
+  /** What's left of its spare credit refunded to the customer that day (null is today). */
+  refundInDays?: number | null;
 }
 
 export interface DemoPlanMeeting {
   title: string;
   contact: string | null;
   startInDays: number;
+  /** US-ONB-27 — local start time, "14:30" (9:00 when unset). */
+  startTime?: string;
   durationHours: number;
   location: string | null;
   description: string | null;
@@ -236,7 +339,39 @@ export interface DemoPlan {
   jobs: DemoPlanJob[];
   variationOrder?: DemoPlanVariationOrder;
   bills: DemoPlanBill[];
+  vendorCredits: DemoPlanVendorCredit[];
+  /** US-ONB-33 — payments across several bills. */
+  vendorPayments?: DemoPlanVendorPayment[];
+  /** US-ONB-34 — a card, transfers, money in and out, a statement and reconciliations. */
+  banking?: DemoPlanBanking;
+  recurringBills: DemoPlanRecurringBill[];
+  /**
+   * US-ONB-32 (D-228) — the rate the template's goods categories default to
+   * (a business without records of its own only); absent where expenses
+   * carry no tax.
+   */
+  categoryTaxDefault?: DemoTaxRef;
+  /** US-ONB-32 — a category the demo adds archived, so the Archived filter shows something. */
+  archivedCategory: { name: string; description: string };
   expenses: DemoPlanExpense[];
   creditNotes: DemoPlanCreditNote[];
   meetings: DemoPlanMeeting[];
+  bundles: DemoPlanBundle[];
+}
+
+/**
+ * US-ONB-34 (D-231) — the demo's banking: a credit card with spending on it
+ * and a payoff, a petty cash top-up, interest and bank charges, and the
+ * bank's statement for last month (reconciled on the 3rd) and this month
+ * (in progress, with a charge not yet in Spine). Amounts in minor units.
+ */
+export interface DemoPlanBanking {
+  card: { name: string; bankName: string; last4: string };
+  /** On the card: a subscription about 40 days ago (paid off a week later) and fuel last week. */
+  cardSpend: [bigint, bigint];
+  pettyCash: bigint;
+  interest: bigint;
+  bankCharges: bigint;
+  /** On this month's statement only: to Create or exclude. */
+  smsCharges: bigint;
 }

@@ -14,6 +14,11 @@ export const CLIENT_TOO_OLD_MESSAGE = "Update Spine to keep going";
 /** 403 — the caller's membership of the active organisation was deactivated. */
 export const ACCESS_REMOVED_ERROR = "ACCESS_REMOVED";
 
+/** 403 — an Owner set this person's password; they choose their own before anything else (US-TEAM-24, D-233). */
+export const PASSWORD_CHANGE_REQUIRED_ERROR = "PASSWORD_CHANGE_REQUIRED";
+export const PASSWORD_CHANGE_REQUIRED_MESSAGE = "Choose your own password to keep going.";
+export const SAME_AS_GIVEN_PASSWORD_MESSAGE = "That's the password you were given. Choose a different one.";
+
 /** "Your access to <Business> was removed." */
 export function accessRemovedMessage(businessName: string): string {
   return `Your access to ${businessName} was removed.`;

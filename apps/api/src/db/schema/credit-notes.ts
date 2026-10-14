@@ -1,11 +1,11 @@
 import { files } from "./files";
-import { supplyClassEnum, supplyTypeEnum } from "./tax";
 import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
-import { invoices } from "./invoices";
+import { invoiceLines, invoices } from "./invoices";
+import { supplyClassEnum, supplyTypeEnum, taxGroups, taxRates } from "./tax";
 import { journalEntries } from "./ledger";
 
 /**
@@ -151,6 +151,14 @@ export const creditNoteLines = pgTable(
     supplyClass: supplyClassEnum("supply_class"),
     /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
     hsnSac: text("hsn_sac"),
+    /**
+     * US-INV-36 (D-219) — the invoice line this credits; with its rate or
+     * tax group copied from it, so the credit's tax is named and split by
+     * component as on the invoice. Null on lines from before D-219.
+     */
+    invoiceLineId: uuid("invoice_line_id").references(() => invoiceLines.id, { onDelete: "set null" }),
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),
@@ -159,6 +167,7 @@ export const creditNoteLines = pgTable(
   },
   (table) => [
     index("credit_note_lines_credit_note_idx").on(table.creditNoteId),
+    index("credit_note_lines_invoice_line_idx").on(table.invoiceLineId),
     index("credit_note_lines_catalog_item_idx").on(table.catalogItemId),
   ],
 );

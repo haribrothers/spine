@@ -28,7 +28,7 @@ test.describe("US-CAT-06", () => {
     await oneOff.click();
     await expect(page.getByText("Added to the catalogue when you save the quote — give it a price first.")).toBeVisible();
 
-    await page.locator("div", { hasText: /^Unit price/ }).getByRole("textbox").fill("1250.00");
+    await page.getByLabel("Unit price").fill("1250.00");
     await expect(page.getByText("Added to the catalogue when you save the quote.")).toBeVisible();
     await page.getByRole("button", { name: /Save as draft/ }).click();
     await page.waitForURL(/\/quotes\/[0-9a-f-]{36}$/);

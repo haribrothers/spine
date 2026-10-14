@@ -13,6 +13,13 @@ export default function StatCardPage() {
         <StatCard label="Cash position" value="$48,210" trend={{ direction: "up", label: "+12% vs last month" }} className="w-64" />
       </ComponentPreview>
 
+      <ComponentPreview>
+        <div className="flex flex-wrap gap-4">
+          <StatCard label="Due in 7 days" value="$2,832.00" detail="2 invoices" tone="warning" className="w-64" />
+          <StatCard label="Overdue" value="$4,125.00" detail="3 invoices" tone="critical" className="w-64" />
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["An optional trend indicator colors green/red/neutral by direction, independent of financial-status semantics."]} />
       </DocSection>
@@ -28,6 +35,8 @@ export default () => <StatCard label="Cash position" value="$48,210" />;`} />
           rows={[
             { prop: "label", type: "string" },
             { prop: "value", type: "string" },
+            { prop: "detail", type: "string", description: "A smaller figure beside the value — the amount behind a count (Quotes' \"Open\" card)." },
+            { prop: "tone", type: "'default' | 'warning' | 'critical'", defaultValue: "'default'", description: "Warning colours the value due-soon, critical colours it overdue; the label still says why." },
             { prop: "trend", type: "{ direction: 'up' | 'down' | 'neutral'; label: string }" },
           ]}
         />

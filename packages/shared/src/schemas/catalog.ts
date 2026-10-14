@@ -48,3 +48,44 @@ export const createCatalogItemSchema = z.object({
 });
 
 export const updateCatalogItemSchema = createCatalogItemSchema.partial();
+
+/** US-CAT-12 — how many items one bulk change may touch. */
+export const MAX_CATALOG_BULK = 200;
+
+/**
+ * US-CAT-12 (D-213) — `POST /catalog-items/bulk`: archive, restore or
+ * change several items at once, all or nothing. `changes` (for "update")
+ * sets a category, the intra-state tax (a rate, a group, or neither for no
+ * tax) or the income account; a key left out isn't changed.
+ */
+export const bulkCatalogItemsSchema = z
+  .object({
+    ids: z.array(uuidSchema).min(1, "Choose at least one item.").max(MAX_CATALOG_BULK, `Change up to ${MAX_CATALOG_BULK} items at a time.`),
+    action: z.enum(["update", "archive", "restore"]),
+    changes: z
+      .object({
+        category: z.string().trim().max(120).optional().nullable(),
+        defaultTaxRateId: uuidSchema.optional().nullable(),
+        defaultTaxGroupId: uuidSchema.optional().nullable(),
+        incomeAccountId: uuidSchema.optional().nullable(),
+        /** US-TAX-13 — a GST business's inter-state tax, set alongside the default (intra-state) tax. */
+        interTaxRateId: uuidSchema.optional().nullable(),
+        interTaxGroupId: uuidSchema.optional().nullable(),
+      })
+      .optional(),
+  })
+  .refine((v) => v.action !== "update" || (v.changes && Object.keys(v.changes).length > 0), { message: "Choose what to change.", path: ["changes"] });
+export type BulkCatalogItemsInput = z.infer<typeof bulkCatalogItemsSchema>;
+
+/** US-CAT-15 — `GET /catalog-items/:id/usage`. */
+export interface CatalogItemUsage {
+  quotes: number;
+  invoices: number;
+  /** When a quote with a line from the item was last created; null if never. */
+  lastQuotedAt: string | null;
+}
+
+/** The message when some selected items can't be changed (US-CAT-12). */
+export function bulkRefusedMessage(count: number): string {
+  return `You can't change ${count} of these items. Unselect them and try again.`;
+}

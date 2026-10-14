@@ -96,4 +96,14 @@ export interface ReconciliationView extends ReconciliationSummary {
   clearedBalance: string;
   difference: string;
   fileNames: string[];
+  /**
+   * US-BANK-17 — entries in Spine up to the end date that aren't on the
+   * statement: still unmatched here, or (once finished) matched only by a
+   * later reconciliation. Amounts as `entries`'.
+   */
+  outstanding: ReconciliationEntry[];
+  /** Spine's balance of the account on the end date, in the account's own sense. */
+  spineBalance: string;
+  /** Excluded statement lines, in the account's own sense (they're on the statement, not in the books). */
+  excludedTotal: string;
 }

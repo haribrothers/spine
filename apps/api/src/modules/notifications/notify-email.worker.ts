@@ -6,6 +6,7 @@ import { loadEmailBrand } from "../email/email-brand";
 import { renderEmail } from "../email/email-layout";
 import { notificationEmail } from "../email/email-templates";
 import { EmailService } from "../email/email.service";
+import { EmailLogService } from "../email/email-log.service";
 import { NOTIFY_EMAIL_QUEUE, type NotifyEmailJobData } from "./notifications.service";
 
 /**
@@ -27,6 +28,7 @@ export class NotifyEmailWorker implements OnModuleInit {
     @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
     private readonly email: EmailService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   async onModuleInit() {
@@ -36,6 +38,11 @@ export class NotifyEmailWorker implements OnModuleInit {
   }
 
   async process(data: NotifyEmailJobData): Promise<void> {
+    // US-SET-27: each try is recorded in the email log; with email not set up the email waits there, untried.
+    await this.emailLog.attempt(data.emailLogId, () => this.tryOnce(data));
+  }
+
+  private async tryOnce(data: NotifyEmailJobData): Promise<void> {
     if (!this.email.isConfigured()) {
       throw new Error("SMTP is not configured — cannot send owner notification email");
     }

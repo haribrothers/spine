@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { numberSequences } from "../../db/schema";
+import { formatDocumentNumber } from "@spine/shared";
 
 /**
  * Canonical document types per docs/archive/spine-prd.md §14.3 — everything with a
@@ -175,7 +176,6 @@ export class NumberingService {
       .set({ nextValue: current.nextValue + 1, updatedAt: new Date() })
       .where(eq(numberSequences.id, current.id));
 
-    const padded = String(current.nextValue).padStart(current.padding, "0");
-    return current.yearToken ? `${current.prefix}-${current.yearToken}-${padded}` : `${current.prefix}-${padded}`;
+    return formatDocumentNumber(current, current.nextValue);
   }
 }

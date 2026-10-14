@@ -58,6 +58,12 @@ export const user = pgTable("user", {
   favouriteReports: jsonb("favourite_reports"),
   /** US-BANK-03 (D-140) — the money account this person last used on each kind of form: `{ payment, vendor_payment, expense, refund, tax_payment, money_in_out }`. */
   lastMoneyAccounts: jsonb("last_money_accounts"),
+  /** US-OPS-39 (D-238) — records this person opened, newest first (`[{ type, id, openedAt }]`, up to 10); titles and access are read again each time. */
+  recentItems: jsonb("recent_items").$type<{ type: string; id: string; openedAt: string }[]>(),
+  /** US-OPS-39 — searches this person opened a result from, newest first (up to 5). */
+  recentSearches: jsonb("recent_searches").$type<string[]>(),
+  /** US-TEAM-24 (D-233) — an Owner set this password; they choose their own before anything else works. */
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
   /**
    * PRD S-10.22 — per-user override of the org's default meeting-reminder
    * lead time (minutes before a meeting starts to send the S-10.21
@@ -231,6 +237,8 @@ export const invitation = pgTable(
     inviterId: text("inviter_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    /** US-ONB-35 — the demo's two invites: never usable, removed with the demo. */
+    isDemo: boolean("is_demo").default(false).notNull(),
   },
   (table) => [
     index("invitation_organizationId_idx").on(table.organizationId),

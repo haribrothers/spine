@@ -28,6 +28,7 @@
 | R-21 | Business data reaches a cloud AI provider the business didn't mean to use, or the provider keeps it | Privacy breach, loss of trust | Medium | Off by default; Owner acknowledgement for non-local providers (D-164); redaction and per-feature "What's sent" (D-165); local-model option; no prompt or reply stored in Spine (D-169) |
 | R-22 | AI costs run away or the provider is down | Unexpected bills, blocked work | Medium | Monthly budget with 80% warning and hard stop, per-person rate limit (D-168); forms never depend on AI (US-AI-07) |
 | R-23 | Text inside a document or enquiry tries to instruct the model (prompt injection) | Misleading suggestions | Low | Fixed JSON schema, every field validated, AI routes are read-only ([07-security](07-security.md)) |
+| R-24 | ~~Four E2E tests fail now and then in a full run and pass alone (dashboard "Edit layout", US-INV-23, US-OPS-26 job-costing, US-PUR-23)~~ — resolved 2026-10-14: the layout's two saves raced (the test now lets each land); US-INV-18 left automatic reminders on in the shared organisation, so their 15-minute job reminded US-INV-23's invoice first (it now switches them back off); the jobs list had paged the demo job off page one (US-OPS-26 now searches for it); and `GET /expenses/labour-trades` returned the first 20 trades alphabetically, so a business past 20 trades lost later ones (it now returns the 20 used most recently — a real fix). Also steadied: US-QUO-32, US-JOB-32, US-MTG-14, US-TEAM-18, US-AUTH-14, US-RPT-23, US-RPT-15 and US-INV-23's choice of invoice (D-241) | — | — | Closed |
 
 ## Open questions
 
@@ -56,7 +57,7 @@
 | Q-22 | ~~What does the field app show an Owner or Staff user when Jobs & field is off?~~ — closed by [D-198](12-decisions.md): jobs are hidden and expenses keep working | — | — | — |
 | Q-23 | ~~Should "New expense" on the phone offer the labour entry mode from US-PUR-23?~~ — closed by [D-199](12-decisions.md): yes | — | — | — |
 | Q-24 | ~~Should the field app get push notifications on the lock screen?~~ — closed by [D-200](12-decisions.md): no push in 1.0; the in-app list only | — | — | — |
-| Q-25 | When do the web app, the docs site and the web design system move to the new Spine logo and brand colours the field app uses ([D-203](12-decisions.md))? The web still shows the "S" logo. | A web rebrand story in Phase 6 · In Phase 11's 1.0 polish · After 1.0 | Phase 11 | Product owner |
+| Q-25 | ~~When do the web app, the docs site and the web design system move to the new Spine logo?~~ — closed by [D-206](12-decisions.md): now, before Phase 10 (US-SET-26); the docs site uses it when it's built in Phase 11 | — | — | — |
 | Q-20 | ~~An invoice posts to the ledger on the day it's issued, not on its issue date, so a backdated invoice lands in a different period in the Tax Summary (ledger) than in GSTR-1 (issue date), and US-TAX-17 flags the totals. Should invoices (and credit notes) post on their document date instead?~~ — closed by [D-185](12-decisions.md): invoices post on their issue date | Owner | Closed |
 
 ## Design follow-ups

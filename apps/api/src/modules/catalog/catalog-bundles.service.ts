@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { CatalogBundle, CreateCatalogBundleInput, UpdateCatalogBundleInput } from "@spine/shared";
+import { BUNDLE_ONE_CURRENCY, computeDocumentLine, type CatalogBundle, type CreateCatalogBundleInput, type UpdateCatalogBundleInput } from "@spine/shared";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { catalogBundleLines, catalogBundles, quoteLines, quotes } from "../../db/schema";
+import { catalogBundleLines, catalogBundles, catalogItems, quoteLines, quotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
@@ -79,9 +79,10 @@ export class CatalogBundlesService {
     return row;
   }
 
-  /** Copies the quote's lines (their snapshot prices and tax) into a new bundle. */
+  /** Copies the quote's lines (their snapshot prices and tax) into a new bundle, or (US-CAT-14) builds it from catalogue items. */
   async create(orgId: string, actorUserId: string, input: CreateCatalogBundleInput): Promise<CatalogBundle> {
-    const [quote] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, input.sourceQuoteId)));
+    if (input.items) return this.createFromItems(orgId, actorUserId, input as CreateCatalogBundleInput & { items: NonNullable<CreateCatalogBundleInput["items"]> });
+    const [quote] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, input.sourceQuoteId!)));
     if (!quote) throw new NotFoundException("Quote not found");
     const lines = await this.db.select().from(quoteLines).where(eq(quoteLines.quoteId, quote.id)).orderBy(quoteLines.sortOrder);
     if (!lines.some((l) => l.type === "item")) throw new BadRequestException("This quote has no item lines to save as a bundle.");
@@ -117,6 +118,74 @@ export class CatalogBundlesService {
           hsnSac: l.hsnSac,
         })),
       );
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "catalog_bundle",
+        entityId: bundle!.id,
+        contactId: null,
+        changes: [{ field: "name", from: null, to: bundle!.name }],
+      });
+      return bundle!.id;
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /**
+   * US-CAT-14 (D-213) — a bundle from catalogue items: each line copies the
+   * item's default price, tax, HSN/SAC and supply type, with the quantity
+   * given. The items must be this organisation's, active and in one currency.
+   */
+  private async createFromItems(orgId: string, actorUserId: string, input: CreateCatalogBundleInput & { items: NonNullable<CreateCatalogBundleInput["items"]> }): Promise<CatalogBundle> {
+    const ids = [...new Set(input.items.map((i) => i.catalogItemId))];
+    const rows = await this.db.select().from(catalogItems).where(and(eq(catalogItems.orgId, orgId), inArray(catalogItems.id, ids), isNull(catalogItems.archivedAt)));
+    if (rows.length !== ids.length) throw new BadRequestException("Some of these items are archived or no longer exist. Refresh and try again.");
+    const currencies = new Set(rows.map((r) => r.defaultPriceCurrency));
+    if (currencies.size > 1) throw new BadRequestException(BUNDLE_ONE_CURRENCY);
+    const currency = rows[0]!.defaultPriceCurrency;
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const lines = input.items.map((entry, i) => {
+      const item = byId.get(entry.catalogItemId)!;
+      const computed = computeDocumentLine({
+        quantity: entry.quantity,
+        unitPriceAmount: item.defaultPriceAmount,
+        currency,
+        rates: item.defaultTaxRatePercentage > 0 ? [{ id: "default", name: "default", percent: item.defaultTaxRatePercentage, isCompound: false }] : [],
+        inclusive: false,
+      });
+      return {
+        sortOrder: i,
+        type: "item" as const,
+        catalogItemId: item.id,
+        name: item.name,
+        description: item.description,
+        quantity: entry.quantity,
+        unitPriceAmount: item.defaultPriceAmount,
+        discountPercentage: 0,
+        taxRatePercentage: item.defaultTaxRatePercentage,
+        taxRateId: item.defaultTaxRateId,
+        taxGroupId: item.defaultTaxGroupId,
+        isTaxInclusive: false,
+        supplyClass: item.supplyClass,
+        hsnSac: item.hsnSac,
+        total: computed.tax.total.amount,
+      };
+    });
+
+    const id = await this.db.transaction(async (tx) => {
+      const [bundle] = await tx
+        .insert(catalogBundles)
+        .values({
+          orgId,
+          name: input.name.trim(),
+          description: input.description?.trim() || null,
+          currency,
+          totalAmount: lines.reduce((sum, l) => sum + l.total, 0n),
+          createdByUserId: actorUserId,
+        })
+        .returning();
+      await tx.insert(catalogBundleLines).values(lines.map(({ total: _total, ...line }) => ({ ...line, bundleId: bundle!.id })));
       await this.auditLog.record(tx, {
         orgId,
         actorUserId,

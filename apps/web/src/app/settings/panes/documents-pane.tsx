@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button, Checkbox, FormField, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, Tabs, TabsList, TabsTrigger, Textarea } from "@spine/ui";
 import {
   DOCUMENT_NOTES_TOO_LONG,
@@ -21,6 +21,7 @@ import {
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
+import { DocumentSample } from "./document-sample";
 
 const COLUMN_LABELS: { key: keyof DocumentColumns; label: string; gstOnly?: boolean }[] = [
   { key: "quantity", label: "Quantity and unit" },
@@ -29,13 +30,6 @@ const COLUMN_LABELS: { key: keyof DocumentColumns; label: string; gstOnly?: bool
   { key: "lineTax", label: "Tax per line" },
 ];
 
-/** The unsaved layout as the preview route reads it: base64url JSON. */
-function encodeLayout(layout: DocumentLayout): string {
-  const bytes = new TextEncoder().encode(JSON.stringify(layout));
-  let binary = "";
-  bytes.forEach((b) => (binary += String.fromCharCode(b)));
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
 
 /**
  * US-SET-17 (D-152) — Settings › Documents: per document type, the paper
@@ -111,7 +105,7 @@ export function DocumentsPane() {
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <PaperSizeField value={current.paperSize} onChange={(paperSize) => update({ paperSize })} />
@@ -122,6 +116,42 @@ export function DocumentsPane() {
             ) : (
               <FormField label="Title" helperText="e.g. Quotation, Tax Invoice, Estimate">
                 {(field) => <Input {...field} maxLength={60} value={layout[type]?.title ?? current.title} onChange={(e) => update({ title: e.target.value })} />}
+              </FormField>
+            )}
+            {/* US-QUO-36: new quotes start valid for this many days. */}
+            {type === "quote" && (
+              <FormField label="Quotes valid for" helperText="Days, 1 to 365. New quotes start with this validity.">
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={365}
+                    step={1}
+                    value={layout.quote?.validDays ?? current.validDays}
+                    onChange={(e) => update({ validDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    className="w-32"
+                  />
+                )}
+              </FormField>
+            )}
+            {/* US-INV-33: invoices are due this many days after they're issued. */}
+            {type === "invoice" && (
+              <FormField label="Invoices due in" helperText="Days after issue, 0 to 365. 0 is on receipt. Issued invoices without a due date get one from this.">
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={365}
+                    step={1}
+                    value={layout.invoice?.dueDays ?? current.dueDays}
+                    onChange={(e) => update({ dueDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    className="w-32"
+                  />
+                )}
               </FormField>
             )}
           </div>
@@ -165,7 +195,22 @@ export function DocumentsPane() {
             {(field) => <Textarea {...field} rows={3} value={current.notes} onChange={(e) => update({ notes: e.target.value })} />}
           </FormField>
         </div>
-        <DocumentPreview type={type} layout={layout} />
+        {/* D-237: an HTML sample of the document, drawn from the options on screen. */}
+        <div className="lg:sticky lg:top-0 lg:self-start">
+          <DocumentSample
+            type={type}
+            title={gst && type === "invoice" ? "Tax Invoice" : gst && type === "credit_note" ? "Credit Note" : (layout[type]?.title ?? current.title)}
+            paperSize={current.paperSize}
+            columns={current.columns}
+            taxSummary={current.taxSummary}
+            amountInWords={current.amountInWords}
+            signature={current.signature}
+            signatureFileId={layout.signatureFileId ?? null}
+            terms={current.terms}
+            notes={current.notes}
+            gst={gst}
+          />
+        </div>
       </div>
 
       <p className="text-[13px] text-on-surface-muted">Hidden columns don&apos;t change any amounts. Issued PDFs never change.</p>
@@ -272,45 +317,3 @@ function PaperSizeField({ value, onChange }: { value: string; onChange: (value: 
   );
 }
 
-/** A sample PDF with the unsaved options, refreshed shortly after each change. */
-function DocumentPreview({ type, layout }: { type: DocumentType; layout: DocumentLayout }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const previous = useRef<string | null>(null);
-  const query = useMemo(() => `type=${type}&layout=${encodeLayout(layout)}`, [type, layout]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      apiClient
-        .download(`/org/settings/document_layout/preview?${query}`)
-        .then(({ blob }) => {
-          if (cancelled) return;
-          const next = URL.createObjectURL(blob);
-          if (previous.current) URL.revokeObjectURL(previous.current);
-          previous.current = next;
-          setUrl(next);
-          setFailed(false);
-        })
-        .catch(() => !cancelled && setFailed(true));
-    }, 350);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [query]);
-
-  useEffect(() => () => {
-    if (previous.current) URL.revokeObjectURL(previous.current);
-  }, []);
-
-  return (
-    <div className="flex min-h-[320px] flex-col overflow-hidden rounded-md border border-border-strong bg-surface-sunken">
-      {url ? (
-        <iframe title={`${DOCUMENT_TYPE_LABELS[type]} preview`} src={`${url}#toolbar=0&navpanes=0&view=FitH`} className="h-full min-h-[320px] w-full flex-1 bg-white" />
-      ) : (
-        <div className="flex flex-1 items-center justify-center p-4 text-center text-[13px] text-on-surface-muted">{failed ? "The preview couldn't load. Your options still save." : <Spinner />}</div>
-      )}
-    </div>
-  );
-}

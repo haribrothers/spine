@@ -21,8 +21,7 @@ spine/
 │  ├─ mobile/                 Expo field app (Phase 5)
 │  ├─ e2e/                    Playwright suite against real api + web
 │  ├─ design-system/          Docs app for @spine/ui
-│  ├─ design-system-native/   Docs app for NativeWind @spine/ui-native components
-│  ├─ showcase-native/        Docs app for @expo/ui @spine/ui-native components (expo-router)
+│  ├─ showcase-native/        Docs app for every @spine/ui-native component (expo-router; D-240)
 │  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 11)
 ├─ packages/
 │  ├─ shared/                 money + tax engine, Zod schemas, capability list, shared types

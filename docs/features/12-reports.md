@@ -546,7 +546,7 @@ Decision: D-180
 - **Given** Profit & Loss, Balance Sheet, Trial Balance or Cash Flow, **when** it opens, **then** tabs switch between the four; General ledger and Day book share tabs too.
 - **Given** a statement (P&L, Balance Sheet, Cash Flow, Tax Summary, a ledger account), **when** it renders, **then** it's one table with the list tables' heading row and type size, uppercase section headings, bold subtotals and the total on a shaded footer row; a list report (Trial Balance, Job profitability, sales, purchases, registers) has search, Columns, a totals row and a pager.
 - **Given** Profit & Loss, **when** the range is 24 months or fewer, **then** a chart shows income and expenses for each month; the cards are Total income, Total expenses, Net profit and Net margin.
-- **Given** Receivables or Payables, **when** they open, **then** the cards are Total outstanding, Current, Overdue and 90+ days, a bar splits what's owed across all five ages with each age's amount and share, and "Show" picks all outstanding or overdue only (the dashboard's "Overdue" opens it on overdue only).
+- **Given** Receivables or Payables, **when** they open, **then** the cards are Total outstanding, Current, Overdue and 90+ days, a bar splits what's owed across all five ages with each age's amount and share, and "Show" picks all outstanding or overdue only (the dashboard's "Overdue" opens it on overdue only). Since D-224, Receivables keeps the cards and bar but uses the list layout — an age filter in the filter bar instead of "Show" (US-PAY-29).
 - **Given** the Trial Balance, **when** it balances, **then** the Difference card reads $0.00 "✓ balanced" and the footnote says so; when it doesn't, a red alert says by how much.
 
 **Implementation notes**

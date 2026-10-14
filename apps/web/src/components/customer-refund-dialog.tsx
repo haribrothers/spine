@@ -23,12 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import type { CustomerRefund } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 import { loadCustomerCredit, type CustomerCredit } from "../lib/customer-credit";
 import { formatMoney } from "../lib/money";
 import { MoneyAccountPicker } from "./money-account-picker";
+import { useToast } from "./toast-host";
 
 const METHODS: { value: string; label: string }[] = [
   { value: "bank_transfer", label: "Bank transfer" },
@@ -244,13 +246,23 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
       .catch(() => setRefunds([]));
   }, [contactId, sourceId, refreshKey]);
 
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const showToast = useToast();
   if (!refunds.length) return null;
 
   async function remove(refund: CustomerRefund) {
+    const ok = await confirm({
+      title: "Delete this refund?",
+      description: `The ${formatMoney(BigInt(refund.amount), refund.currency)} refund is reversed in your books, and the customer's credit goes back up by that much.`,
+      confirmLabel: "Delete refund",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     setBusyId(refund.id);
     try {
       await apiClient.delete(`/customer-refunds/${refund.id}`);
+      showToast("Refund deleted", `${formatMoney(BigInt(refund.amount), refund.currency)} is back in ${refund.contactName}'s credit and the refund is reversed in your books.`);
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't delete this refund.");
@@ -287,6 +299,7 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
           </span>
         </div>
       ))}
+      {confirmDialog}
     </div>
   );
 }

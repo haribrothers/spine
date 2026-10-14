@@ -13,6 +13,10 @@ Who can use Spine and what they can do: an Owner-only area with real pages for u
 | F-TEAM-02 | Owners and the Primary Owner | P1 | 0 | `UserActionsMenu`, `DemoteOwnerConfirm`, `TransferPrimaryOwnerDialog` |
 | F-TEAM-03 | Teams and the privilege matrix | P1 | 0 | `TeamTeams`, `CreateTeamDialog`, `TeamMembers`, `TeamPrivileges`, `TeamPrivilegesExpanded` |
 | F-TEAM-04 | People and access fixes | P2 | 6 | `TeamUsers`, `PromoteOwnerConfirm`, `EmailInvite` |
+| F-TEAM-05 | Users you can manage from: the shared list layout, Teams and access on each person, invites with Teams, Staff ↔ Field, and safer actions | P2 | Refinements | `TeamUsersRefined`, `TeamUsersDark`, `TeamInvites`, `InvitePeopleDialog`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm` |
+| F-TEAM-06 | Set a Staff or Field member's password: an Owner sets it from Users, the person is signed out and emailed, and chooses their own at next sign-in; no Owner's password is set this way | P2 | Refinements | `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile` |
+| F-TEAM-07 | Teams you can manage from: the shared list layout, create from or duplicate a Team, a Team page with members you add and remove safely, permissions you review before saving with what members can open, and every change in the audit log | P2 | Refinements | `TeamsListRefined`, `TeamsListDark`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamPageMembers`, `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`, `TeamPagePermissions`, `SavePermissionsConfirm`, `TeamPageHistory` |
+| F-TEAM-08 | Sections a Team can open: an Open permission per section, enforced on the sidebar, pages and API; closed records stay out of links and search but pickers still name them; sections switched in one place | P2 | Refinements | `TeamPageSections`, `TeamPagePermissionsOpen`, `TeamSectionClosedNoAccess`, `ClosedRecordAsText` |
 
 ## User stories
 
@@ -275,3 +279,212 @@ Review finding: Stage 5 #30
 - Screens: the trimmed sidebar is drawn on `DashboardFieldRedesign` (Phase 7); this story ships the sidebar filter alone in Phase 6, on today's dashboard.
 - UI: `apps/web/src/lib/nav-sections.tsx` filters items with `useCapabilities()` and role; each nav item declares its required capability or role.
 - The nav filter is a convenience; the server checks stay authoritative (07-security).
+
+### US-TEAM-19 · See everyone at a glance on the list layout
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamUsersRefined`, `TeamUsersDark`
+**As** an owner, **I want** Users to work like every other list, **so that** I can find a person and see how they stand without reading the whole page.
+
+Decision: D-210, D-222, D-232
+
+**Acceptance criteria**
+- **Given** Users, **when** it opens, **then** the header has "Invite people"; tabs "Active", "Deactivated" and "Invites" (with counts) sit under it; below them the cards, the filter bar (Role — "All roles", "Owner", "Staff", "Field" — on the left; "Updated just now" and Refresh on the right) and the search bar (name or email, with Columns). Tab, role, card and search are kept in the address.
+- **Given** the cards, **when** I look, **then** they read People (owners · staff · field), Staff without a Team (presses to show only them; warning when not zero) and Pending invites (with how many expired, opening the Invites tab).
+- **Given** a row, **when** it shows, **then** it has the avatar, name and email with "You", "Primary Owner", "Demo" and "Deactivated" badges where they apply, the role, the Teams (US-TEAM-20), "Last active" ("2 hours ago", "3 Oct", or "Never signed in") and "Joined" in the business's date format.
+- **Given** a row's menu, **when** I open it, **then** each item has its icon (D-222) and only appears where it applies: What they can open, Manage Teams (Staff), Change to Field / Change to Staff (US-TEAM-22), Promote to Owner (Staff), Demote to Staff (an Owner other than the Primary Owner and me), Transfer primary ownership (my own row, as Primary Owner), Deactivate or Reactivate.
+
+**Implementation notes**
+- API: for an Owner, `GET /org/members` rows gain `teams` (`[{ id, name }]`), `lastActiveAt` (the newest session's last use) and `isDemo`; other members get the rows as today.
+
+### US-TEAM-20 · See and fix each person's Teams and access
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ManageTeamsDialog`, `UserAccessDrawer`
+**As** an owner, **I want** to see each Staff member's Teams and what they can open, and change their Teams from Users, **so that** nobody joins and finds they can't do anything.
+
+Decision: D-232
+
+**Acceptance criteria**
+- **Given** a Staff member's row, **when** it shows, **then** their Teams are listed as chips (opening the Team); with none it reads "No Team — can't open anything" in the warning colour. Owners read "Everything"; Field reads "Field access".
+- **Given** Manage Teams, **when** the dialog opens, **then** it lists every Team with a tick for those they're on and each Team's member count; saving updates their Teams at once and the toast says what changed ("Sarah Mendes is on General Staff and Accounts").
+- **Given** "What they can open", **when** the drawer opens, **then** it shows their role, Teams, each section of Spine as "Can work here", "View only" or "Can't open" (as their sidebar and permissions decide) and how many permissions they have of each group, with "Edit on <Team>" links; for an Owner it says "Owners can open everything", for Field "Field access is fixed".
+
+**Implementation notes**
+- API: `PUT /org/members/:id/teams { teamIds }` (Owner; Staff only, else 400 "Only Staff are on Teams."); `GET /org/members/:id/access` → `{ role, teams, capabilities }` (Owner) — the same effective list the API enforces.
+
+### US-TEAM-21 · Invite several people, onto their Teams
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvitePeopleDialog`, `TeamInvites`
+**As** an owner, **I want** to invite a few people at once and put new Staff straight onto their Teams, **so that** they can work the moment they join.
+
+Decision: D-020, D-232
+
+**Acceptance criteria**
+- **Given** "Invite people", **when** the dialog opens, **then** it asks for emails (one or more, separated by commas, spaces or new lines; up to 20), the role ("Staff" or "Field") and, for Staff, the Teams they'll join (General Staff ticked by default); "Send invites (3)" sends them all.
+- **Given** some emails can't be invited, **when** I send, **then** the others are sent and the dialog lists which weren't and why ("already a member", "already invited — resend it instead", "not an email address").
+- **Given** a Staff invite with Teams, **when** it's accepted, **then** the new member is on those Teams.
+- **Given** the Invites tab, **when** it shows, **then** each invite has the email, role, Teams, "Invited by <name> · 3 Oct", and "Expires in 5 days" or "Expired"; its menu (with icons) offers Copy invite link, Resend and Cancel invite (asks first, as today).
+- **Given** Copy invite link, **when** I press it, **then** the link is copied and the toast says "Only <email> can use it, signed in with that address."
+
+**Implementation notes**
+- API: `POST /org/invitations` also takes `{ emails: string[], role, teamIds? }` → `{ invited: [{ id, email }], skipped: [{ email, reason }] }` (`{ email, role }` still works); `GET /org/invitations` rows gain `inviterName`, `createdAt`, `teams` and `acceptUrl`.
+- Data: `invitation_teams` (`invitation_id` → invitation, cascade; `team_id` → teams, cascade), applied when the invitation is accepted.
+
+### US-TEAM-22 · Change someone between Staff and Field
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ChangeRoleConfirm`
+**As** an owner, **I want** to move a person between Staff and Field, **so that** a promotion from the site to the office doesn't mean a new account.
+
+Decision: D-232
+
+**Acceptance criteria**
+- **Given** a Field member's menu, **when** I choose "Change to Staff", **then** "Change Marcus Webb to Staff?" says they'll have their Teams' access instead of Field access and asks which Teams to put them on (General Staff ticked); confirming changes the role and Teams together.
+- **Given** a Staff member's menu, **when** I choose "Change to Field", **then** the confirm says they'll only see the jobs they're assigned to, without money, and they'll come off their Teams (named); confirming changes it.
+- **Given** an Owner, **when** the menu shows, **then** there's no Change to Field (an Owner is demoted to Staff first); Owner is never set this way.
+- **Given** either change, **when** it's done, **then** the toast says it, it's in the audit log as a role change, and the person's next request uses the new role.
+
+**Implementation notes**
+- API: `PUT /org/members/:id/role { role: "staff" | "field", teamIds? }` (Owner); only Staff ↔ Field (else 400 "Only Staff and Field can be changed this way."); to Field removes their Team memberships.
+
+### US-TEAM-23 · Act on people safely
+**Feature:** F-TEAM-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamUsersRefined`
+**As** an owner, **I want** people actions to ask first and say what happened, **so that** access never changes by accident.
+
+Decision: D-218, D-223, D-232
+
+**Acceptance criteria**
+- **Given** my own row, **when** it shows, **then** it's marked "You" and offers no Deactivate; the API refuses it ("You can't deactivate yourself.").
+- **Given** Reactivate, **when** I choose it, **then** "Reactivate <name>?" says they get their previous role and Teams back and can sign in again.
+- **Given** any people action (deactivate, reactivate, promote, demote, change role, Teams, invite, resend, cancel), **when** it's done, **then** a toast says what happened (D-223) and a failure says what to do next above the list.
+- **Given** the demo's people, **when** they're listed, **then** they're marked "Demo" and the Deactivate confirm notes they go when the demo data is deleted.
+
+**Implementation notes**
+- API: `PUT /org/members/:id/deactivate` refuses the caller's own member (400).
+
+### US-TEAM-24 · Set a Staff or Field member's password
+**Feature:** F-TEAM-06 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamUsersPasswordMenu`, `ChangeMemberPasswordDialog`, `ChangeMemberPasswordDone`, `PrimaryOwnerNoPassword`, `ChooseOwnPassword`, `ChooseOwnPasswordMobile`
+**As** an owner, **I want** to set a new password for someone on my Staff or Field team, **so that** a person locked out can get back to work today — without anyone being able to take over an Owner's account.
+
+Decision: D-233
+
+**Acceptance criteria**
+- **Given** an active Staff or Field member's row, **when** I open its menu, **then** it has "Change password" (with its icon); an Owner's row — mine, another Owner's or the Primary Owner's — never has it, and the Primary Owner's menu says "Only <name> can change their own password, from Profile."
+- **Given** the dialog, **when** it opens, **then** it suggests a strong password (shown, with Copy and Hide), offers "Generate another" or a typed one, shows the strength meter and checklist used at sign-up (US-AUTH-15), and says what happens: they're signed out everywhere, we email them that an Owner changed it (never the password), and I give them the password myself.
+- **Given** "Change password", **when** it's done, **then** their sessions on web and phone end at once, the email goes (or is logged as not sent, US-SET-27), the audit log has "password set by <owner>" on the person (never the password), and the toast says "<name>'s password changed".
+- **Given** the password I set, **when** they next sign in with it, web or phone, **then** they must choose their own before anything else ("Choose your own password" with the same checklist); the one I set can't be reused, and until they choose, every other request is refused.
+- **Given** the API, **when** anyone asks to set the password of an Owner (the Primary Owner above all), themselves, someone in another business, or a deactivated member, **then** it refuses (403/400) whatever the screen shows.
+
+**Implementation notes**
+- API: `PUT /org/members/:id/password { newPassword }` (Owner; target Staff or Field, active, not the caller) — hashes as sign-in does, revokes the user's sessions, sets `user.must_change_password`, sends `password_set_by_owner` email, audits `password_set`. Server enforces the 8-character minimum and common list (US-AUTH-15).
+- Data: `user.must_change_password boolean default false`.
+- While `must_change_password` is set, a global guard answers 403 `{ error: "PASSWORD_CHANGE_REQUIRED" }` for everything but `PUT /org/members/me/password { newPassword }` (no current password — the session proves it; refuses the given one with "That's the password you were given. Choose a different one."; ends their other sessions), `GET /org/members/me` (gains `mustChangePassword` and `passwordSetBy { name, at }`) and Better Auth's own routes (sign-out); choosing clears the flag, and so does a reset by email link. Web sends them to `/choose-password`; the field app to its own screen.
+
+### US-TEAM-25 · See every Team at a glance on the list layout
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamsListRefined`, `TeamsListDark`, `DeleteTeamConfirm`
+**As** an owner, **I want** Teams to work like every other list, **so that** I can see what each Team allows and who is on it without opening each one.
+
+Decision: D-210, D-222, D-234
+
+**Acceptance criteria**
+- **Given** Teams, **when** it opens, **then** the header has "Create Team"; below it the cards Teams (count), Staff on no Team (opens Users filtered to them; warning when not zero) and Staff on several Teams; then search (Team name or description) with Columns. The search is kept in the address.
+- **Given** a row, **when** it shows, **then** it has the Team's name with "Default" and "Demo" badges and its description; its members as avatars with a count ("4 people", or "No one yet"); "Works in 7 of 18 sections" (sections where it allows at least one action, or a report it opens — reading records never needs a permission, so a section can be in members' sidebars and still be view only); and "38 of 105 permissions".
+- **Given** a row's menu, **when** I open it, **then** each item has its icon (D-222): Open, Rename, Duplicate and Delete; Delete isn't offered on the default Team or the only Team.
+- **Given** Delete, **when** I choose it, **then** "Delete <Team>?" names how many people lose what it allowed and who'd be left on no Team ("Kavya Iyer will be on no Team — they can't open anything"); confirming deletes it and the toast says so (D-218, D-223).
+
+**Implementation notes**
+- API: `GET /org/teams` rows gain `description`, `isDemo`, `members` (`[{ memberId, name }]`) and `granted` (the capabilities it grants).
+
+### US-TEAM-26 · Create a Team from another, or duplicate one
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `CreateTeamDialog`
+**As** an owner, **I want** to start a Team from one I already have, **so that** a similar Team doesn't mean switching 100 permissions on by hand.
+
+Decision: D-234
+
+**Acceptance criteria**
+- **Given** "Create Team", **when** the dialog opens, **then** it asks for the name, an optional description ("What this Team is for") and "Start from": "Nothing allowed" or any Team (its permissions are copied, not its members); creating opens the new Team's Permissions with a toast ("<Team> created — check what it allows").
+- **Given** a row's Duplicate, **when** I choose it, **then** the same dialog opens with "<Team> (copy)" and that Team chosen in "Start from".
+- **Given** a name another Team has, **when** I create or rename, **then** it says "There's already a Team called <name>." under the field.
+- **Given** Rename (from the list or the Team page), **when** I save, **then** the name and description change and the toast says so; the default Team's name stays, but its description can change.
+
+**Implementation notes**
+- Data: `teams.description text` (nullable, up to 200 characters).
+- API: `POST /org/teams { name, description?, copyFromTeamId? }`; `PUT /org/teams/:id { name?, description? }`; a duplicate name is 409 with that message.
+
+### US-TEAM-27 · Manage a Team's members safely
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageMembers`, `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`
+**As** an owner, **I want** a Team's page to show who's on it and change that safely, **so that** nobody loses access by accident.
+
+Decision: D-218, D-223, D-234
+
+**Acceptance criteria**
+- **Given** a Team's page, **when** it opens, **then** the header shows its name, description, "Default"/"Demo" badges and a menu (Rename, Duplicate, Delete — with icons), and tabs Members, Permissions and History (a count on Members), kept in the address.
+- **Given** Members, **when** I add, **then** "Add people" lets me tick several Staff not on this Team (with their current Teams beside them) and adds them at once; the toast names them.
+- **Given** a member's row, **when** it shows, **then** it has their name and email, their other Teams, when they were last active, and a menu: What they can open (US-TEAM-20) and Remove from <Team>.
+- **Given** Remove, **when** I choose it, **then** it asks first — and if this is their only Team, warns "<name> will be on no Team — they can't open anything"; confirming removes them and the toast says so.
+- **Given** Field and Owners, **when** I add people, **then** they're not offered (only Staff are on Teams), and a note says so.
+
+### US-TEAM-28 · Review permissions before saving
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPagePermissions`, `SavePermissionsConfirm`
+**As** an owner, **I want** to change a Team's permissions as a draft and see what they add up to, **so that** a mis-click never changes what people can do.
+
+Decision: D-218, D-234
+
+**Acceptance criteria**
+- **Given** Permissions, **when** I switch something, **then** nothing is saved yet: the switch is marked "Changed", a bar sticks to the bottom ("5 changes · Discard · Save changes"), and leaving the page with unsaved changes asks first.
+- **Given** a group, **when** it shows, **then** it reads "4 of 6" with its "toggle all" switch; "Expand all" / "Collapse all", a search over names and descriptions, and "Show changed only" sit above the list.
+- **Given** a change, **when** I make it, **then** the panel "What members will open" beside the list shows each section of Spine as "Can work here", "View only" (in their sidebar, nothing allowed there — reading never needs a permission) or "Can't open", marking sections the draft adds to or takes from.
+- **Given** Save changes, **when** I press it, **then** "Save <n> changes to <Team>?" lists what turns on and off — including ones turned on or off with them (US-BANK-12) — and that it applies to its <n> people at their next request; confirming saves them in one request and the toast says so.
+
+### US-TEAM-29 · See a Team's history
+**Feature:** F-TEAM-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageHistory`
+**As** an owner, **I want** to see who changed a Team and how, **so that** I can tell why someone can or can't do something.
+
+Decision: D-064, D-234
+
+**Acceptance criteria**
+- **Given** any change to a Team — created (and from which Team), renamed or described, members added or removed, permissions turned on or off, deleted — **when** it's saved, **then** it's in the audit log as record type "Team" with who and when, and the changes named (permissions by their labels).
+- **Given** the History tab, **when** it opens, **then** it lists those entries newest first ("Priya Raman turned on Reconcile accounts and View bank balances · 12 Oct, 10:42"), with "Open in audit log" for the full log filtered to this Team.
+
+**Implementation notes**
+- API: `GET /org/teams/:id/history` → `[{ at, actorName, action, changes }]`, newest first (Owner); `/org/audit-log` takes `entityId`. Audit actions on entity type `team`: `created`, `updated`, `members_changed`, `privileges_changed`, `deleted`.
+
+### US-TEAM-30 · Choose which sections a Team can open
+**Feature:** F-TEAM-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageSections`, `TeamSectionClosedNoAccess`
+**As** an owner, **I want** to close sections of Spine for a Team, **so that** people only see the parts of the business their work needs.
+
+Decision: D-235, D-234
+
+**Acceptance criteria**
+- **Given** a Team's permissions, **when** I look, **then** each of these groups starts with an "Open" permission: Open Contacts, Open Pipeline, Open Meetings, Open Catalogue, Open Quotes, Open Jobs, Open Invoices, Open Credit Notes, Open Payments, Open Vendor Bills, Open Vendor Credits, Open Vendor Payments — and Expenses has "See everyone's expenses".
+- **Given** an Open permission is off for every Team a Staff member is on, **when** they use Spine, **then** the section isn't in their sidebar, its pages show "You don't have access to <section>" (US-OPS-12), and the API refuses its lists, records, PDFs and history with 403.
+- **Given** "See everyone's expenses" is off, **when** a Staff member opens Expenses, **then** they see and record their own expenses only (as Field do); with it on, everyone's.
+- **Given** an action permission (e.g. "Create/edit own quotes"), **when** it's turned on, **then** its section's Open permission turns on with it; turning Open off turns its actions off — with a notice, in the draft (US-TEAM-28, US-BANK-12).
+- **Given** existing Teams, **when** this ships, **then** every Open permission is on for every Team (nothing changes until an Owner closes something); a Team created with "Nothing allowed" starts with every section closed. Owners and Field are unaffected.
+
+**Implementation notes**
+- Shared: 13 capabilities — `contacts.open`, `leads.open`, `meetings.open`, `catalog.open`, `quotes.open`, `jobs.open`, `invoices.open`, `credit_notes.open`, `payments.open`, `vendor_bills.open`, `vendor_credits.open`, `vendor_payments.open`, `expenses.view_others` — first in their groups, in `DEFAULT_TEAM_GRANTS` (on), and in `CAPABILITY_REQUIRES` (each action needs its Open; activities need Open Contacts).
+- API: `@RequireCapability` on each section's list, record, PDF and history routes; migration grants them to every existing Team.
+- Web: the sidebar and page access (`nav-sections.tsx`, `page-access.ts`) gate each section on its Open permission.
+
+### US-TEAM-31 · Keep closed records out of the way, not out of the work
+**Feature:** F-TEAM-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ClosedRecordAsText`
+**As** an owner, **I want** closed sections to stay closed everywhere, **so that** a link or a search doesn't open what a Team can't — while other work still names the records it needs.
+
+Decision: D-235
+
+**Acceptance criteria**
+- **Given** Open Contacts is off, **when** a Staff member picks a customer on an invoice, a vendor on a bill or a contact on a job, **then** the picker still lists them by name (only what the form needs).
+- **Given** Open Catalogue or Open Jobs is off, **when** a quote or invoice line picks an item, or an expense or bill picks a job, **then** the picker still works, with what the line needs.
+- **Given** a record in a closed section, **when** another page mentions it (a job's quote, an expense's bill, an invoice's job, an activity's lead), **then** its name shows as plain text, not a link.
+- **Given** global search (Ctrl/⌘ K), **when** a Staff member searches, **then** records of closed sections aren't in the results.
+- **Given** the dashboard, **when** a Staff member opens it, **then** cards about a closed section are left out (e.g. no quotes card without Open Quotes).
+
+**Implementation notes**
+- API: list routes used as pickers answer `?picker=1` without Open, returning only `{ id, name, … }` the forms need (contacts: type, email; catalogue items: unit price, tax; jobs: name, contact); `GET /search` filters by Open; dashboard widgets check them.
+
+### US-TEAM-32 · Open and close sections in one place
+**Feature:** F-TEAM-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `TeamPageSections`, `TeamPagePermissionsOpen`
+**As** an owner, **I want** to see and switch a Team's sections in one place, **so that** shaping what a Team sees doesn't mean opening 17 groups.
+
+Decision: D-235, D-234
+
+**Acceptance criteria**
+- **Given** a Team's Permissions tab, **when** it opens, **then** a "Sections" card above the groups lists every section with a switch (on: open; off: closed) and its state (Can work here, View only, Can't open), changing the same draft as the groups below.
+- **Given** a group, **when** it shows, **then** its Open permission comes first, and a closed section's actions show as unavailable until it's opened.
+- **Given** the panel "What members will open", the Teams list ("Works in") and "What they can open" on Users, **when** a section is closed, **then** it reads Can't open there.
+- **Given** Save changes, **when** I save, **then** the confirm says "They'll no longer see <section>" / "They'll see <section>" for each section opened or closed.

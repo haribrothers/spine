@@ -47,7 +47,7 @@ export interface EditableVendorBillLine {
 }
 
 let keySeq = 0;
-function newKey() {
+export function newKey() {
   keySeq += 1;
   return `bill-line-${Date.now()}-${keySeq}`;
 }
@@ -72,7 +72,7 @@ export function blankLine(): EditableVendorBillLine {
 }
 
 /** Resolves a line's chosen tax rate/group into `computeLineTax`'s input shape — mirrors invoices/invoice-line-editor.tsx's identical helper. */
-function resolveLineTaxRates(
+export function resolveLineTaxRates(
   line: EditableVendorBillLine,
   taxRates: TaxRateOption[],
   taxGroups: TaxGroupOption[],
@@ -150,7 +150,7 @@ export function VendorBillLineEditor({
 
   useEffect(() => {
     apiClient
-      .get<CatalogItemOption[]>("/catalog-items")
+      .get<CatalogItemOption[]>("/catalog-items?picker=1")
       .then(setCatalogItems)
       .catch(() => {});
     apiClient

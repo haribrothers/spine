@@ -13,7 +13,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
 } from "@spine/ui";
 import {
   TOP_EXPENSE_PERIOD_LABELS,
@@ -24,6 +23,8 @@ import {
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { useMyRole } from "../../../../lib/role-context";
 import { DrilldownDialog } from "../../reports/reports-explorer";
 
@@ -38,7 +39,8 @@ export function TopExpensesCard() {
   const [period, setPeriod] = useState<TopExpensePeriod>("quarter");
   const [data, setData] = useState<TopExpenses | null>(null);
   const [failed, setFailed] = useState(false);
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
   const [drill, setDrill] = useState<{
     accountId: string;
     code: string;
@@ -47,13 +49,6 @@ export function TopExpensesCard() {
   const isOwner = useMyRole() === "owner";
   const canReadLedger = useCapability("ledger.view");
   const canDrill = isOwner || canReadLedger;
-
-  useEffect(() => {
-    apiClient
-      .get<{ value: { code?: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     setData(null);
@@ -124,10 +119,8 @@ export function TopExpensesCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!data ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+        {!data || !orgCurrency ? (
+          <WidgetSkeleton kind="bars" rows={4} />
         ) : bars.length === 0 ? (
           <p className="py-6 text-center text-[14px] text-on-surface-muted">
             No expenses in this period.
@@ -136,11 +129,12 @@ export function TopExpensesCard() {
           <ul className="flex flex-col gap-3">
             {bars.map((b) => (
               <li key={b.key} className="flex flex-col gap-1.5 text-[14px]">
-                <div className="flex items-baseline justify-between gap-3">
+                <div className="flex min-w-0 items-baseline justify-between gap-3">
                   {b.row && canDrill ? (
                     <button
                       type="button"
                       className="truncate text-left text-on-surface hover:text-primary hover:underline"
+                      title={b.label}
                       onClick={() =>
                         setDrill({
                           accountId: b.row!.accountId,
@@ -152,9 +146,9 @@ export function TopExpensesCard() {
                       {b.label}
                     </button>
                   ) : (
-                    <span className="truncate text-on-surface">{b.label}</span>
+                    <span className="truncate text-on-surface" title={b.label}>{b.label}</span>
                   )}
-                  <span className="whitespace-nowrap text-right tabular-nums text-on-surface">
+                  <span className="shrink-0 whitespace-nowrap text-right tabular-nums text-on-surface">
                     {money(b.amount)}{" "}
                     <span className="text-on-surface-muted">
                       · {b.percent ?? "0.0"}%

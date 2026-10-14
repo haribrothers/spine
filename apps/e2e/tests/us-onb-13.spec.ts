@@ -17,7 +17,7 @@ test.describe("US-ONB-13", () => {
     ).toBeVisible();
     await pane.getByText("Construction / Contracting").click();
     await pane.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.goto("/expenses/categories");
@@ -34,8 +34,10 @@ test.describe("US-ONB-13", () => {
       ["Fuel & freight", "5400"],
       ["Site overheads & permits", "5500"],
     ]) {
-      const item = page.getByText(name!, { exact: true }).locator("..");
-      await expect(item).toContainText(`${account} ·`);
+      // US-PUR-46: a row with the account it posts to.
+      await expect(page.getByRole("row").filter({ has: page.getByText(name!, { exact: true }) })).toContainText(`${account} `);
     }
+    // US-ONB-32: each says what it's for.
+    await expect(page.getByRole("row").filter({ has: page.getByText("Materials", { exact: true }) })).toContainText("Cement, steel, sand — anything that goes into the build");
   });
 });

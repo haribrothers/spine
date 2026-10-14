@@ -7,11 +7,11 @@ export default function VendorBillsPage() {
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Purchases" }, { label: "Vendor Bills" }]}
-        title="Vendor Bills"
-        description="Record what you owe a vendor. Save as a draft, then record it to post to the ledger."
+        breadcrumb={[{ label: "Purchases" }, { label: "Vendor bills" }]}
+        title="Vendor bills"
+        description="Bills from your vendors — what you owe, what's due, and what's paid."
       />
-      {/* US-PUR-22: the job filter reads the URL. */}
+      {/* US-PUR-22, US-PUR-34: the filters, card, search, sort and page read the URL. */}
       <Suspense>
         <VendorBillsExplorer />
       </Suspense>

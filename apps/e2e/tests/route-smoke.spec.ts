@@ -21,16 +21,16 @@ test.describe("Route smoke pass", () => {
     { path: "/jobs", heading: "Jobs" },
     { path: "/meetings", heading: "Meetings" },
     { path: "/invoices", heading: "Invoices" },
-    { path: "/credit-notes", heading: "Credit Notes" },
+    { path: "/credit-notes", heading: "Credit notes" },
+    { path: "/emails", heading: "Email log" },
     { path: "/payments", heading: "Payments" },
     { path: "/receivables", heading: "Receivables" },
-    { path: "/vendor-bills", heading: "Vendor Bills" },
+    { path: "/vendor-bills", heading: "Vendor bills" },
     { path: "/expenses", heading: "Expenses" },
-    { path: "/vendor-payments", heading: "Vendor Payments" },
+    { path: "/vendor-payments", heading: "Vendor payments" },
     { path: "/payables", heading: "Payables" },
     { path: "/team/users", heading: "Users" },
     { path: "/team/teams", heading: "Teams" },
-    { path: "/profile", heading: "Profile & Preferences" },
   ];
 
   for (const { path, heading } of routes) {

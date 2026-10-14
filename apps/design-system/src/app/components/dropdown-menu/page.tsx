@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@spine/ui";
+import { Ban, Banknote, Copy, Eye, FileMinus } from "lucide-react";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
 import { ApiTable, DocLead, DocSection, DocTitle, FeatureList, KeyboardTable } from "@/components/doc-page";
@@ -29,10 +30,27 @@ export default function DropdownMenuPage() {
             <Button variant="secondary">Actions</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem>Duplicate</DropdownMenuItem>
-            <DropdownMenuItem>Issue credit note</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Eye aria-hidden />
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Banknote aria-hidden />
+              Record payment
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Copy aria-hidden />
+              Duplicate
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <FileMinus aria-hidden />
+              Issue credit note
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem destructive>Void invoice</DropdownMenuItem>
+            <DropdownMenuItem destructive>
+              <Ban aria-hidden />
+              Void invoice
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </ComponentPreview>
@@ -45,6 +63,7 @@ export default function DropdownMenuPage() {
             "Supports items, labels, groups, checkable items (single or multiple) and a separator.",
             "Focus is fully managed and customizable.",
             "Full keyboard navigation with typeahead.",
+            "An item's icon is its first child: 14 px, muted, 10 px before the label, red on a destructive item — the menu sets all of it, so a screen never adds spacing (US-OPS-37). Action items take their icon from the D-222 vocabulary; destructive items come last after a separator.",
             "Renders at the z-popover stacking tier, above Dialog/Drawer's z-modal tier — a DropdownMenu opened from inside a Dialog or Drawer always renders on top of it.",
           ]}
         />

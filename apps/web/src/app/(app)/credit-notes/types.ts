@@ -23,6 +23,14 @@ export interface CreditNoteRow {
   updatedAt: string;
   contactName: string | null;
   invoiceNumber: string | null;
+  /** US-PAY-16 — the part still held as customer credit. */
+  creditRemainingAmount: string;
+  /** US-INV-40 (D-219) — where its money went. */
+  offInvoiceAmount: string;
+  appliedAmount: string;
+  refundedAmount: string;
+  lastEmailedAt: string | null;
+  lineNames: string[];
 }
 
 export interface ContactOption {

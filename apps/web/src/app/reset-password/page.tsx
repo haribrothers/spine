@@ -3,12 +3,11 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, Input, Spinner } from "@spine/ui";
-import { AuthPageShell } from "../../components/auth-page-shell";
+import { Alert, AlertDescription, Button, FormField, PasswordInput, PasswordStrengthMeter, Spinner } from "@spine/ui";
+import { AuthFrame, AuthHeading } from "../../components/auth-frame";
+import { PASSWORDS_DONT_MATCH_MESSAGE, PASSWORD_TOO_COMMON_MESSAGE, passwordProblem } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { authClient } from "../../lib/auth-client";
-
-const MIN_PASSWORD_LENGTH = 8;
 
 export default function ResetPasswordPage() {
   return (
@@ -51,17 +50,19 @@ function ResetPasswordForm() {
     e.preventDefault();
     if (link.kind !== "valid") return;
     setError(null);
-    const tooShort = password.length < MIN_PASSWORD_LENGTH;
+    // US-AUTH-15: the same rules as sign-up and the server.
+    const problem = passwordProblem(password);
     const mismatch = password !== confirm;
-    setPasswordError(tooShort ? "Use at least 8 characters." : undefined);
-    setConfirmError(mismatch ? "The passwords don't match." : undefined);
-    if (tooShort || mismatch) return;
+    setPasswordError(problem ?? undefined);
+    setConfirmError(mismatch ? PASSWORDS_DONT_MATCH_MESSAGE : undefined);
+    if (problem || mismatch) return;
 
     setSaving(true);
     const { error: resetError } = await authClient.resetPassword({ newPassword: password, token });
     if (resetError) {
       setSaving(false);
       if (resetError.code === "INVALID_TOKEN") setLink({ kind: "invalid" });
+      else if (resetError.code === "PASSWORD_TOO_COMMON") setPasswordError(PASSWORD_TOO_COMMON_MESSAGE);
       else setError(resetError.message ?? "Couldn't save the password. Try again.");
       return;
     }
@@ -72,52 +73,51 @@ function ResetPasswordForm() {
   }
 
   return (
-    <AuthPageShell>
+    <AuthFrame scene="login">
       {link.kind === "checking" ? (
         <Spinner />
       ) : link.kind === "invalid" ? (
-        <Card className="w-full max-w-sm" data-testid="reset-link-invalid">
-          <CardHeader>
-            <CardTitle>This link can&apos;t be used</CardTitle>
-            <CardDescription>Reset links work once and expire after 1 hour.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/forgot-password">Request a new one</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div data-testid="reset-link-invalid" className="flex flex-col gap-6">
+          <AuthHeading title="This link can't be used">Reset links work once and expire after 1 hour.</AuthHeading>
+          <Button asChild size="touch" className="w-full">
+            <Link href="/forgot-password">Request a new one</Link>
+          </Button>
+        </div>
       ) : (
         <>
-          <Card className="w-full max-w-sm">
-            <CardHeader>
-              <CardTitle>Choose a new password</CardTitle>
-              <CardDescription>For {link.email}. You&apos;ll be signed out on your other devices.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
-                {error && (
-                  <Alert variant="critical">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                <FormField label="New password" helperText="At least 8 characters." errorText={passwordError} required>
-                  {(field) => (
-                    <Input {...field} type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                  )}
-                </FormField>
-                <FormField label="Confirm new password" errorText={confirmError} required>
-                  {(field) => (
-                    <Input {...field} type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-                  )}
-                </FormField>
-                <Button type="submit" disabled={saving} className="mt-1">
-                  {saving ? <Spinner size="sm" /> : "Save password"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-          <p className="text-[13px] text-on-surface-muted">
+          <AuthHeading title="Choose a new password">For {link.email}. You&apos;ll be signed out on your other devices.</AuthHeading>
+          <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+            {error && (
+              <Alert variant="critical">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <FormField label="New password" helperText="At least 8 characters." errorText={passwordError} required>
+              {(field) => (
+                <div className="flex flex-col gap-2">
+                  <PasswordInput
+                    {...field}
+                    aria-describedby={[field["aria-describedby"], "reset-password-strength"].filter(Boolean).join(" ")}
+                    autoComplete="new-password"
+                    autoFocus
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setPasswordError(undefined);
+                    }}
+                  />
+                  <PasswordStrengthMeter id="reset-password-strength" password={password} />
+                </div>
+              )}
+            </FormField>
+            <FormField label="Confirm new password" errorText={confirmError} required>
+              {(field) => <PasswordInput {...field} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
+            </FormField>
+            <Button type="submit" size="touch" disabled={saving} className="mt-1">
+              {saving ? <Spinner size="sm" /> : "Save password"}
+            </Button>
+          </form>
+          <p className="mt-5 text-center text-[13px] text-on-surface-muted">
             Link expired or already used?{" "}
             <Link href="/forgot-password" className="text-primary hover:underline">
               Request a new one.
@@ -125,6 +125,6 @@ function ResetPasswordForm() {
           </p>
         </>
       )}
-    </AuthPageShell>
+    </AuthFrame>
   );
 }

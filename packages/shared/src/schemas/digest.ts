@@ -78,6 +78,7 @@ export const DIGEST_LABELS: Record<AttentionKind, string> = {
   followups_overdue: "Overdue follow-ups",
   milestones_due: "Milestones due this week",
   expenses_rejected: "Expenses sent back to you",
+  emails_failed: "Emails that failed",
 };
 
 /** "Your Spine day: 6 things need you · Sun 4 Oct" */

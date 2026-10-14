@@ -54,8 +54,11 @@ export class CustomerRefundsService {
       }
       const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
       const advances = await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances");
+      // US-ONB-29 (D-219): a refund of a demo credit note's credit is demo money — the credit only exists in the demo.
+      const isDemo = source.kind === "credit_note" ? ((await tx.select({ isDemo: creditNotes.isDemo }).from(creditNotes).where(eq(creditNotes.id, source.id)))[0]?.isDemo ?? false) : false;
       const entryId = await this.ledger.postEntry(tx, {
         orgId,
+        isDemo,
         date: input.date,
         narration: `Refund to customer from ${source.label}`,
         sourceType: "customer_refund",
@@ -166,7 +169,9 @@ export class CustomerRefundsService {
       const brand = await loadEmailBrand(this.db, orgId);
       const template = refundEmail({ businessName: brand.name, locale: brand.locale, contactName: contact.name, amount: row.amount, currency: refund.currency, date: row.date, reference: row.reference });
       const email = renderEmail(brand, template.content);
-      await this.email.send({ to: contact.email, fromName: brand.name, subject: template.subject, text: email.text, html: email.html, attachments: email.attachments });
+      // US-SET-27: logged against the credit note or payment the money came from.
+      const source = row.sourceCreditNoteId ? { entityType: "credit_note", entityId: row.sourceCreditNoteId } : { entityType: "payment", entityId: row.sourcePaymentId };
+      await this.email.send({ to: contact.email, fromName: brand.name, subject: template.subject, text: email.text, html: email.html, attachments: email.attachments, log: { orgId, kind: "refund", ...source, userId: row.createdByUserId } });
       return { sent: true };
     } catch (err) {
       this.logger.warn(`Refund confirmation for ${row.id} failed: ${(err as Error).message}`);

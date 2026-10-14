@@ -59,6 +59,7 @@ export class CreditNoteEmailService {
       text: rendered.text,
       html: rendered.html,
       attachments: [...(pdf ? [{ filename: pdf.filename, content: pdf.buffer, contentType: "application/pdf" }] : []), ...rendered.attachments],
+      log: { orgId, kind: "credit_note", entityType: "credit_note", entityId: id, userId: actorUserId },
     });
     await this.audit.record(this.db, { orgId, actorUserId, action: "emailed", entityType: "credit_note", entityId: id, contactId: row.note.contactId, changes: { to } });
     return { sentTo: to };

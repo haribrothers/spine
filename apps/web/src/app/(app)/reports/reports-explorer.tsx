@@ -63,13 +63,14 @@ import { BsCompareTable, PlCompareTable } from "./compare-tables";
 import { ReportExportMenu } from "../../../components/report-export-menu";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { TaxPaymentDialog, TaxPaymentsList } from "./tax-payment-dialog";
-import { useEntityToast } from "../payments/entity-toast";
+import { useToast } from "../../../components/toast-host";
 import { ReportTabs, useCurrency } from "./analysis-shared";
 import { marginText, RangeFilters, ReportChart, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "./report-kit";
 import { useReportDetail } from "./report-shell";
 import { JOB_STATUS_LABELS, type Job } from "../jobs/types";
 import { STATUS_BADGE_CLASS } from "../jobs/jobs-table";
 
+import { SectionLink } from "../../../components/section-link";
 /** The local calendar date (toISOString would shift it a day in time zones ahead of UTC). */
 function toDateParam(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -242,11 +243,11 @@ export function ProfitAndLossTab() {
             </ReportFilter>
             <ReportFilter label="Basis">
               {(id) => (
-                <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as typeof basis)} aria-labelledby={id} className="h-10 rounded-md bg-surface-sunken p-1">
-                  <ToggleGroupItem value="accrual" className="h-8 px-3 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+                <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as typeof basis)} aria-labelledby={id}>
+                  <ToggleGroupItem value="accrual" className="px-3">
                     Accrual
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="cash" className="h-8 px-3 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+                  <ToggleGroupItem value="cash" className="px-3">
                     Cash
                   </ToggleGroupItem>
                 </ToggleGroup>
@@ -466,9 +467,9 @@ export function JobProfitabilityTab() {
       key: "job",
       header: "Job",
       render: (job) => (
-        <Link href={`/jobs/${job.jobId}`} className="font-medium text-primary hover:underline">
+        <SectionLink href={`/jobs/${job.jobId}`} className="font-medium text-primary hover:underline">
           {job.name}
-        </Link>
+        </SectionLink>
       ),
       sortValue: (job) => job.name,
     },
@@ -812,7 +813,7 @@ export function TaxSummaryTab() {
   // US-TAX-08
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentsVersion, setPaymentsVersion] = useState(0);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const url = `/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`;
   const { data: report, error, loading } = useReport<TaxSummaryReport>(url, FINANCIAL_STATEMENTS_NO_ACCESS);
@@ -927,7 +928,6 @@ export function TaxSummaryTab() {
           />
         </>
       )}
-      {toast}
     </>
   );
 }

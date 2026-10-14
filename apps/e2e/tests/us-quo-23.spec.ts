@@ -14,15 +14,17 @@ test.describe("US-QUO-23", () => {
     await expect(customer.getByText(/You accepted this quote/)).toBeVisible({ timeout: 10_000 });
     await customer.close();
 
-    // First conversion goes straight through.
+    // First conversion goes through once confirmed (D-218).
     await page.goto(quoteUrl);
     await page.getByRole("button", { name: "Convert to job" }).click();
+    await page.getByRole("alertdialog", { name: "Convert to a job?" }).getByRole("button", { name: "Convert to job" }).click();
     await page.waitForURL(/\/jobs\/[a-f0-9-]+$/);
     const firstJobUrl = page.url();
 
-    // Second conversion warns.
+    // Second conversion warns, once confirmed.
     await page.goto(quoteUrl);
     await page.getByRole("button", { name: "Convert to job" }).click();
+    await page.getByRole("alertdialog", { name: "Convert to a job?" }).getByRole("button", { name: "Convert to job" }).click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText(
       "Converting again creates a separate job. The amount isn't split between them. Only do this if you mean to bill or track this quote's work more than once.",

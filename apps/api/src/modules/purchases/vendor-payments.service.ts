@@ -1,11 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { contactIsDemo } from "../../common/demo";
-import type { createVendorPaymentSchema } from "@spine/shared";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import type { PossibleDuplicateVendorPayment, VendorPaymentActivityEntry, VendorPaymentsSummary, createVendorPaymentSchema } from "@spine/shared";
+import { and, asc, desc, eq, gt, inArray, lt, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { vendorPayments, vendorPaymentAllocations, vendorBills, contacts } from "../../db/schema";
+import { auditLog, bankStatementLineMatches, journalLines, moneyAccounts, settings, user, vendorPayments, vendorPaymentAllocations, vendorBills, contacts } from "../../db/schema";
+import { orgClock } from "../../common/org-clock";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
@@ -35,18 +36,30 @@ export class VendorPaymentsService {
     private readonly moneyAccounts: MoneyAccountsService,
   ) {}
 
+  /** US-PUR-51 (D-229) — newest first, each with the account it was paid from and the bills it paid. */
   async list(orgId: string, options: { contactId?: string }) {
     const conditions = [eq(vendorPayments.orgId, orgId)];
     if (options.contactId) conditions.push(eq(vendorPayments.contactId, options.contactId));
 
     const rows = await this.db
-      .select({ payment: vendorPayments, contactName: contacts.name })
+      .select({ payment: vendorPayments, contactName: contacts.name, moneyAccountName: moneyAccounts.name })
       .from(vendorPayments)
       .leftJoin(contacts, eq(vendorPayments.contactId, contacts.id))
+      .leftJoin(moneyAccounts, eq(vendorPayments.moneyAccountId, moneyAccounts.id))
       .where(and(...conditions))
-      .orderBy(asc(vendorPayments.date));
-
-    return rows.map((r) => ({ ...r.payment, contactName: r.contactName }));
+      .orderBy(desc(vendorPayments.date), desc(vendorPayments.createdAt));
+    const ids = rows.map((r) => r.payment.id);
+    const paid = ids.length
+      ? await this.db
+          .select({ paymentId: vendorPaymentAllocations.vendorPaymentId, billId: vendorBills.id, number: vendorBills.billNumber, dueDate: vendorBills.dueDate })
+          .from(vendorPaymentAllocations)
+          .innerJoin(vendorBills, eq(vendorPaymentAllocations.billId, vendorBills.id))
+          .where(inArray(vendorPaymentAllocations.vendorPaymentId, ids))
+          .orderBy(asc(vendorBills.dueDate), asc(vendorBills.billNumber))
+      : [];
+    const byPayment = new Map<string, { billId: string; number: string }[]>();
+    for (const p of paid) byPayment.set(p.paymentId, [...(byPayment.get(p.paymentId) ?? []), { billId: p.billId, number: p.number }]);
+    return rows.map((r) => ({ ...r.payment, contactName: r.contactName, moneyAccountName: r.moneyAccountName, paidTo: byPayment.get(r.payment.id) ?? [] }));
   }
 
   /** Every vendor payment with at least one allocation against `billId` — mirrors PaymentsService.listForInvoice exactly. */
@@ -73,18 +86,143 @@ export class VendorPaymentsService {
     }
 
     const allocations = await this.db
-      .select({ allocation: vendorPaymentAllocations, billNumber: vendorBills.billNumber, billTotal: vendorBills.totalAmount })
+      .select({ allocation: vendorPaymentAllocations, bill: vendorBills })
       .from(vendorPaymentAllocations)
-      .leftJoin(vendorBills, eq(vendorPaymentAllocations.billId, vendorBills.id))
-      .where(eq(vendorPaymentAllocations.vendorPaymentId, id));
+      .innerJoin(vendorBills, eq(vendorPaymentAllocations.billId, vendorBills.id))
+      .where(eq(vendorPaymentAllocations.vendorPaymentId, id))
+      .orderBy(asc(vendorBills.dueDate), asc(vendorBills.billNumber));
 
     const refs = await this.moneyAccounts.refs(orgId, [row.payment.moneyAccountId]);
+    const day = (d: Date | string | null) => (d ? (typeof d === "string" ? d : d.toISOString()).slice(0, 10) : null);
     return {
       ...row.payment,
       contactName: row.contactName,
       moneyAccount: row.payment.moneyAccountId ? (refs.get(row.payment.moneyAccountId) ?? null) : null,
-      allocations: allocations.map((a) => ({ ...a.allocation, billNumber: a.billNumber, billTotal: a.billTotal })),
+      allocations: allocations.map((a) => ({ ...a.allocation, billNumber: a.bill.billNumber, billTotal: a.bill.totalAmount })),
+      // US-PUR-49: each bill it paid, what it put there and what the bill still owes.
+      paidTo: allocations.map((a) => ({
+        allocationId: a.allocation.id,
+        billId: a.bill.id,
+        billNumber: a.bill.billNumber,
+        billDate: day(a.bill.date),
+        billTotal: a.bill.totalAmount.toString(),
+        billBalance: (a.bill.totalAmount - a.bill.amountPaid - a.bill.creditedAmount).toString(),
+        dueDate: day(a.bill.dueDate),
+        amount: a.allocation.amount.toString(),
+      })),
+      // US-PUR-50: a payment matched to a bank statement line can't be deleted until it's unmatched.
+      reconciled: await this.isReconciled(row.payment.journalEntryId),
     };
+  }
+
+  private async isReconciled(journalEntryId: string | null): Promise<boolean> {
+    if (!journalEntryId) return false;
+    const [match] = await this.db
+      .select({ id: bankStatementLineMatches.id })
+      .from(bankStatementLineMatches)
+      .innerJoin(journalLines, eq(bankStatementLineMatches.journalLineId, journalLines.id))
+      .where(eq(journalLines.entryId, journalEntryId))
+      .limit(1);
+    return Boolean(match);
+  }
+
+  /** US-PUR-49 — the payment's story: recorded, each bill it paid, remittance advice emailed; newest first. */
+  async activity(orgId: string, id: string): Promise<VendorPaymentActivityEntry[]> {
+    const payment = await this.getOne(orgId, id);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const audit = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "vendor_payment"), eq(auditLog.entityId, id)));
+    const entries: VendorPaymentActivityEntry[] = [];
+    const recordedBy = audit.find((a) => a.action === "created")?.actorName ?? null;
+    const recordedAt = audit.find((a) => a.action === "created")?.at ?? payment.createdAt;
+    entries.push({ type: "recorded", at: iso(recordedAt), actorName: recordedBy, amount: payment.amount.toString(), account: payment.moneyAccount?.name ?? null, method: payment.method });
+    for (const a of payment.paidTo) {
+      const created = payment.allocations.find((x) => x.id === a.allocationId)?.createdAt ?? payment.createdAt;
+      entries.push({ type: "applied", at: iso(created), actorName: recordedBy, amount: a.amount, detail: a.billNumber, linkId: a.billId });
+    }
+    for (const row of audit.filter((a) => a.action === "remittance_sent")) {
+      const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; to: unknown }[];
+      const to = changes.find((c) => c.field === "email")?.to;
+      entries.push({ type: "remittance_emailed", at: iso(row.at), actorName: row.actorName ?? null, detail: typeof to === "string" ? to : null });
+    }
+    // Same moment: what it paid reads above "Recorded".
+    const rank = { remittance_emailed: 0, applied: 1, recorded: 2 } as const;
+    return entries.sort((a, b) => b.at.localeCompare(a.at) || rank[a.type] - rank[b.type]);
+  }
+
+  /** US-PUR-51 — the list's cards, in the business's currency: paid this month and last (by payment date), and overdue bills still to pay. */
+  async summary(orgId: string): Promise<VendorPaymentsSummary> {
+    const [currencyRow] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+    const currency = (currencyRow?.value as { code?: string } | undefined)?.code ?? "USD";
+    const today = orgClock().date;
+    const thisMonth = `${today.slice(0, 7)}-01`;
+    const [y, m] = [Number(today.slice(0, 4)), Number(today.slice(5, 7))];
+    const lastMonth = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}-01`;
+    const [paid] = await this.db
+      .select({
+        thisMonth: sql<string>`coalesce(sum(${vendorPayments.amount}) filter (where ${vendorPayments.date} >= ${thisMonth}::date), 0)::text`,
+        thisMonthCount: sql<number>`(count(*) filter (where ${vendorPayments.date} >= ${thisMonth}::date))::int`,
+        lastMonth: sql<string>`coalesce(sum(${vendorPayments.amount}) filter (where ${vendorPayments.date} >= ${lastMonth}::date and ${vendorPayments.date} < ${thisMonth}::date), 0)::text`,
+        lastMonthCount: sql<number>`(count(*) filter (where ${vendorPayments.date} >= ${lastMonth}::date and ${vendorPayments.date} < ${thisMonth}::date))::int`,
+      })
+      .from(vendorPayments)
+      .where(and(eq(vendorPayments.orgId, orgId), eq(vendorPayments.currency, currency)));
+    const [owed] = await this.db
+      .select({
+        toPay: sql<string>`coalesce(sum(${vendorBills.totalAmount} - ${vendorBills.amountPaid} - ${vendorBills.creditedAmount}), 0)::text`,
+        toPayCount: sql<number>`count(*)::int`,
+      })
+      .from(vendorBills)
+      .where(
+        and(
+          eq(vendorBills.orgId, orgId),
+          eq(vendorBills.status, "recorded"),
+          eq(vendorBills.currency, currency),
+          lt(vendorBills.dueDate, sql`${today}::date`),
+          gt(sql`${vendorBills.totalAmount} - ${vendorBills.amountPaid} - ${vendorBills.creditedAmount}`, 0n),
+        ),
+      );
+    return {
+      currency,
+      paidThisMonth: paid?.thisMonth ?? "0",
+      paidThisMonthCount: Number(paid?.thisMonthCount ?? 0),
+      paidLastMonth: paid?.lastMonth ?? "0",
+      paidLastMonthCount: Number(paid?.lastMonthCount ?? 0),
+      toPay: owed?.toPay ?? "0",
+      toPayCount: Number(owed?.toPayCount ?? 0),
+    };
+  }
+
+  /** US-PUR-53 — the vendor's payments of the same amount within 3 days, or with the same reference. A warning only. */
+  async possibleDuplicates(orgId: string, query: { contactId: string; amount: bigint; date: string; reference?: string | null }): Promise<PossibleDuplicateVendorPayment[]> {
+    const ref = query.reference?.trim();
+    const rows = await this.db
+      .select()
+      .from(vendorPayments)
+      .where(
+        and(
+          eq(vendorPayments.orgId, orgId),
+          eq(vendorPayments.contactId, query.contactId),
+          or(
+            and(eq(vendorPayments.amount, query.amount), sql`${vendorPayments.date} between (${query.date}::date - 3) and (${query.date}::date + 3)`),
+            ref ? sql`lower(trim(${vendorPayments.reference})) = ${ref.toLowerCase()}` : undefined,
+          ),
+        ),
+      )
+      .orderBy(desc(vendorPayments.date))
+      .limit(3);
+    return rows.map((p) => ({
+      id: p.id,
+      number: p.number,
+      date: typeof p.date === "string" ? p.date : new Date(p.date).toISOString().slice(0, 10),
+      amount: p.amount.toString(),
+      currency: p.currency,
+      method: p.method,
+      reference: p.reference,
+    }));
   }
 
   /** `GET /vendor-payments/:id/history` — confirms the payment exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
@@ -219,7 +357,13 @@ export class VendorPaymentsService {
     return this.getOne(orgId, created!.id);
   }
 
-  /** Only deletable if nothing has been allocated yet — mirrors PaymentsService.delete exactly. Since this schema requires full allocation at create time, in practice a vendor payment is only deletable before... it never has zero allocations. Kept for symmetry/defensive cleanup, same as the customer side. */
+  /**
+   * US-PUR-50 (D-080, D-229) — deletes a vendor payment, allocated or not:
+   * under locks on the payment and its bills the allocations go, each
+   * bill's paid amount drops (it owes again), P14 reverses the payment's
+   * entry, and the payment and each bill record it. A payment matched to a
+   * bank statement line is refused until it's unmatched in Banking.
+   */
   async delete(orgId: string, id: string, actorUserId: string) {
     const [existing] = await this.db.select().from(vendorPayments).where(and(eq(vendorPayments.orgId, orgId), eq(vendorPayments.id, id)));
     if (!existing) {
@@ -229,11 +373,39 @@ export class VendorPaymentsService {
       own: "vendor_payments.delete_own",
       others: "vendor_payments.delete_others",
     });
-    if (existing.allocatedAmount > 0n) {
-      throw new BadRequestException("Cannot delete a vendor payment that has been allocated to a bill");
+    if (await this.isReconciled(existing.journalEntryId)) {
+      throw new BadRequestException(`${existing.number ?? "This payment"} is matched to a bank statement line. Unmatch it in Banking first, then delete it.`);
     }
 
     await this.db.transaction(async (tx) => {
+      await tx.select({ id: vendorPayments.id }).from(vendorPayments).where(eq(vendorPayments.id, id)).for("update");
+      const allocations = await tx.select().from(vendorPaymentAllocations).where(eq(vendorPaymentAllocations.vendorPaymentId, id));
+      const billIds = [...new Set(allocations.map((a) => a.billId))];
+      const bills = billIds.length ? await tx.select().from(vendorBills).where(inArray(vendorBills.id, billIds)).for("update") : [];
+      const billById = new Map(bills.map((b) => [b.id, b]));
+
+      await tx.delete(vendorPaymentAllocations).where(eq(vendorPaymentAllocations.vendorPaymentId, id));
+      for (const allocation of allocations) {
+        const bill = billById.get(allocation.billId)!;
+        const amountPaid = bill.amountPaid - allocation.amount;
+        bill.amountPaid = amountPaid;
+        await tx.update(vendorBills).set({ amountPaid, updatedAt: new Date() }).where(eq(vendorBills.id, bill.id));
+        // The bill's Activity keeps the payment and says it was deleted.
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "payment_deleted",
+          entityType: "vendor_bill",
+          entityId: bill.id,
+          contactId: existing.contactId,
+          changes: [
+            { field: "payment", from: existing.number, to: null },
+            { field: "amount", from: allocation.amount.toString(), to: null },
+            { field: "paidAt", from: allocation.createdAt.toISOString(), to: null },
+          ],
+        });
+      }
+
       if (existing.journalEntryId) {
         await this.ledger.reverseEntry(tx, existing.journalEntryId, {
           orgId,
@@ -257,6 +429,6 @@ export class VendorPaymentsService {
       await tx.delete(vendorPayments).where(eq(vendorPayments.id, id));
     });
 
-    return { id };
+    return { id, number: existing.number };
   }
 }

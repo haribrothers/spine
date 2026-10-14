@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { formatMoney } from "../../../../lib/money";
 
 interface JobProfitabilityRow {
@@ -24,9 +25,9 @@ function MarginRow({ job }: { job: JobProfitabilityRow }) {
   const widthPct = job.marginPct === null ? 0 : Math.min(100, Math.abs(job.marginPct));
   return (
     <Link href={`/reports`} className="flex flex-col gap-1 rounded-sm px-1 py-1.5 hover:bg-surface-secondary">
-      <div className="flex items-center justify-between text-[13px]">
-        <span className="truncate text-on-surface">{job.name}</span>
-        <span className={`tabular-nums ${negative ? "text-overdue" : "text-paid"}`}>
+      <div className="flex min-w-0 items-center justify-between gap-3 text-[13px]">
+        <span className="min-w-0 truncate text-on-surface" title={job.name}>{job.name}</span>
+        <span className={`shrink-0 whitespace-nowrap tabular-nums ${negative ? "text-overdue" : "text-paid"}`}>
           {formatMoney(margin, job.currency)}
         </span>
       </div>
@@ -64,7 +65,7 @@ export function JobProfitabilityRanked() {
   const bottom = jobs.length > 3 ? jobs.slice(-3).reverse() : [];
 
   return (
-    <Card>
+    <Card data-testid="job-profitability">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           Job profitability
@@ -75,9 +76,7 @@ export function JobProfitabilityRanked() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {!report ? (
-          <div className="flex h-40 items-center justify-center">
-            <Spinner />
-          </div>
+          <WidgetSkeleton kind="bars" rows={3} />
         ) : jobs.length === 0 ? (
           <p className="py-4 text-center text-[13px] text-on-surface-muted">No jobs yet.</p>
         ) : (

@@ -36,6 +36,8 @@
   --color-background: #f7f6f3;
   --color-surface: #ffffff;
   --color-surface-sunken: var(--color-neutral-50);
+  /* US-OPS-36 (D-210) — the chosen option in a toggle group: white in light, lifted in dark. */
+  --color-control-selected: var(--color-surface);
   --color-on-surface: var(--color-neutral-900);
   --color-on-surface-muted: var(--color-neutral-500);
   --color-border: var(--color-neutral-200);
@@ -53,7 +55,7 @@
   --color-inverse-on-surface: #ffffff;
   --color-inverse-on-surface-muted: #d3d0c9;
 
-  /* WCAG AA a11y pass (2026-08-06): darkened from #1a7f4b (4.44:1 on
+  /* WCAG AA a11y pass (2026-08-06): darkened from #187a48 (4.44:1 on
      paid-bg — fails 4.5:1 at the 12px chip text size) to #177044 (5.40:1). */
   --color-paid: #177044;
   --color-paid-bg: #e4f5eb;
@@ -72,7 +74,7 @@
 
   --color-category-blue: #2954e5;
   --color-category-blue-bg: #eaeffd;
-  --color-category-green: #1a7f4b;
+  --color-category-green: #187a48;
   --color-category-green-bg: #e4f5eb;
   --color-category-amber: #946000;
   --color-category-amber-bg: #fcf0d4;
@@ -134,6 +136,26 @@
   --z-popover: 1600;
   --z-toast: 1700;
   --z-tooltip: 1800;
+  /* US-SET-26 (D-206) — the Spine logo's colours, for the logo and icons
+     only: never text or status. Outside the [data-brand] theme rules, so a
+     business's theme never recolours Spine's own logo. */
+  --color-brand-teal: #04e9bc;
+  --color-brand-sky: #51a5f8;
+  --color-brand-deep: #054dc1;
+  --color-brand-wordmark: #2954e5;
+  /* The mark's three layers, top to bottom (tokens.json color.gradients.brand). */
+  --color-brand-layer-top-from: #5df3bd;
+  --color-brand-layer-top-to: #10a9c2;
+  --color-brand-layer-mid-from: #a8e1e3;
+  --color-brand-layer-mid-to: #63a4e0;
+  --color-brand-layer-base-from: #69aae1;
+  --color-brand-layer-base-to: #0545af;
+  /* The people in the signed-out illustration (US-AUTH-13, D-207): the same in both themes, like the brand. */
+  --color-illustration-ink: #14213d;
+  --color-illustration-skin: #ffffff;
+  --color-illustration-outfit-mint: #c6f6e4;
+  --color-illustration-outfit-sky: #d3e5fb;
+  --color-illustration-outfit-periwinkle: #dce1fb;
 }
 
 :root[data-theme="dark"] {
@@ -151,6 +173,7 @@
   --color-background: #121110;
   --color-surface: #191815;
   --color-surface-sunken: var(--color-neutral-200);
+  --color-control-selected: var(--color-neutral-200);
   --color-on-surface: var(--color-neutral-900);
   --color-on-surface-muted: var(--color-neutral-500);
   --color-border: var(--color-neutral-200);
@@ -191,6 +214,7 @@
   --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.45);
   --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.55);
   --shadow-toast: 0 4px 14px rgba(0, 0, 0, 0.55);
+  --color-brand-wordmark: #f3f2ee;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -209,6 +233,7 @@
     --color-background: #121110;
     --color-surface: #191815;
     --color-surface-sunken: var(--color-neutral-200);
+    --color-control-selected: var(--color-neutral-200);
     --color-on-surface: var(--color-neutral-900);
     --color-on-surface-muted: var(--color-neutral-500);
     --color-border: var(--color-neutral-200);
@@ -249,6 +274,7 @@
     --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.45);
     --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.55);
     --shadow-toast: 0 4px 14px rgba(0, 0, 0, 0.55);
+    --color-brand-wordmark: #f3f2ee;
   }
 }
 
@@ -331,6 +357,9 @@
 }
 
 @theme inline {
+  /* US-DASH-29 — tokens.json breakpoints.wide-plus: the dashboard's side column. */
+  --breakpoint-wide-plus: 90rem;
+
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
 
@@ -345,6 +374,7 @@
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
   --color-surface-sunken: var(--color-surface-sunken);
+  --color-control-selected: var(--color-control-selected);
   --color-inverse-surface: var(--color-inverse-surface);
   --color-inverse-on-surface: var(--color-inverse-on-surface);
   --color-inverse-on-surface-muted: var(--color-inverse-on-surface-muted);
@@ -421,6 +451,15 @@
     from {
       opacity: 0;
       scale: 0.97;
+    }
+  }
+
+  /* US-OPS-38 — a toast's entrance from the right; used only with motion-safe:, so reduced motion shows it at once. */
+  --animate-toast-in: toast-in var(--duration-base) var(--easing-decelerate);
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      translate: 16px 0;
     }
   }
 }

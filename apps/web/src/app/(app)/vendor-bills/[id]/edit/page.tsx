@@ -7,7 +7,7 @@ export default async function EditVendorBillPage({ params }: { params: Promise<{
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Purchases" }, { label: "Vendor Bills", href: "/vendor-bills" }, { label: "Edit" }]}
+        breadcrumb={[{ label: "Purchases" }, { label: "Vendor bills", href: "/vendor-bills" }, { label: "Edit" }]}
         title="Edit vendor bill"
         description="Only a draft can be edited — a recorded bill is immutable per CLAUDE.md."
       />

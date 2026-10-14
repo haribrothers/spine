@@ -18,6 +18,7 @@ import { ContextMenu, ContextMenuTrigger, ContextMenuGroup, ContextMenuSub, Cont
 
 ## Rules and behaviour
 
+- Items style their icon like `DropdownMenuItem` (14 px, muted, 10 px before the label, red on a `destructive` item; at least 32 px tall) — D-222, US-OPS-37.
 - Supports submenus, checkable items, and groups — the same sub-part shapes as DropdownMenu.
 - Full keyboard navigation with typeahead.
 

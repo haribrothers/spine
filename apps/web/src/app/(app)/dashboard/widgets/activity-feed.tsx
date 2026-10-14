@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import Link from "next/link";
 import type { ActivityFeedEntry } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { ActivityFeedList } from "../../../../components/activity-feed-list";
 import { useMyRole } from "../../../../lib/role-context";
 
@@ -38,7 +39,7 @@ export function ActivityFeed({ title = "Recent activity" }: { title?: string } =
   }
 
   return (
-    <Card>
+    <Card data-testid="activity-feed">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           {title}
@@ -49,9 +50,7 @@ export function ActivityFeed({ title = "Recent activity" }: { title?: string } =
       </CardHeader>
       <CardContent>
         {!entries ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+          <WidgetSkeleton kind="rows" rows={4} />
         ) : entries.length === 0 ? (
           <p className="py-4 text-center text-[13px] text-on-surface-muted">Nothing yet.</p>
         ) : (

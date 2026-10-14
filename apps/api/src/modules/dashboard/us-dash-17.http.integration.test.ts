@@ -72,7 +72,7 @@ describe("US-DASH-17 · a staff dashboard of only what I can act on (requires lo
     Object.assign(owner, await newUser("Alex Morgan"));
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;
     Object.assign(staff, await newUser("Sarah Mendes"));
-    await join(staff, ["expenses.approve", "reports.view_receivables"]);
+    await join(staff, ["quotes.open", "expenses.view_others", "expenses.approve", "reports.view_receivables"]);
     Object.assign(summaryStaff, await newUser("Summary Staff"));
     await join(summaryStaff, ["reports.view_dashboard_summary"]);
     Object.assign(plainStaff, await newUser("Plain Staff"));

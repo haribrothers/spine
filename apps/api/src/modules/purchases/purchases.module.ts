@@ -40,10 +40,13 @@ import { RecurringBillsController } from "./recurring-bills.controller";
 import { RecurringBillsService } from "./recurring-bills.service";
 import { RecurringBillRunService } from "./recurring-bill-run.service";
 import { RecurringBillRunWorker } from "./recurring-bill-run.worker";
+import { EmailModule } from "../email/email.module";
+import { OrgModule } from "../org/org.module";
+import { VendorRemittanceService } from "./vendor-remittance.service";
 @Module({
-  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
+  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule, EmailModule, OrgModule],
   controllers: [RecurringBillsController, VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
-  providers: [RecurringBillsService, RecurringBillRunService, RecurringBillRunWorker, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
-  exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
+  providers: [RecurringBillsService, RecurringBillRunService, RecurringBillRunWorker, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorRemittanceService, VendorCreditsService],
+  exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService, RecurringBillsService],
 })
 export class PurchasesModule {}

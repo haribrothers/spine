@@ -31,17 +31,24 @@ test.describe("US-BANK-11", () => {
     }
 
     await page.goto(`/banking/${bank.id}`);
-    await page.getByRole("link", { name: "Reconciliations" }).click();
+    // US-BANK-14: Reconciliations is under the register's More.
+    await page.getByRole("button", { name: "More" }).click();
+    await page.getByRole("menuitem", { name: "Reconciliations" }).click();
     await expect(page.getByRole("heading", { name: "Reconciliations" })).toBeVisible();
     await expect(page.getByText("Every finished reconciliation of Bank Account. Only the latest can be undone.")).toBeVisible();
     const rows = page.getByRole("row");
     await expect(rows.filter({ hasText: "Aug 28, 2026" })).toContainText("$1,500.00");
     await expect(rows.filter({ hasText: "Aug 28, 2026" })).toContainText("Latest");
     await expect(rows.filter({ hasText: "Aug 28, 2026" })).toContainText("History Owner");
-    await expect(rows.filter({ hasText: "Jul 28, 2026" })).toContainText("Undo the later reconciliations first.");
-    await expect(rows.filter({ hasText: "Jul 28, 2026" }).getByRole("button", { name: /Undo/ })).toHaveCount(0);
+    // US-BANK-17: each row's menu; only the newest can be undone.
+    await page.getByRole("button", { name: "Actions for the reconciliation to Jul 28, 2026" }).click();
+    await expect(page.getByRole("menuitem", { name: /^Undo/ })).toBeDisabled();
+    await expect(page.getByRole("menuitem", { name: /^Undo/ })).toContainText("Undo the later reconciliations first.");
+    await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Undo the reconciliation to Aug 28, 2026" }).click();
+    await page.getByRole("button", { name: "Actions for the reconciliation to Aug 28, 2026" }).click();
+    for (const item of ["View", "Download report"]) await expect(page.getByRole("menuitem", { name: item })).toBeVisible();
+    await page.getByRole("menuitem", { name: /^Undo/ }).click();
     const confirm = page.getByRole("alertdialog");
     await expect(confirm).toContainText("Undo this reconciliation?");
     await expect(confirm).toContainText("Statement to Aug 28, 2026 · 1 entries. Its entries go back to unreconciled; nothing is deleted.");

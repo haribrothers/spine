@@ -1,8 +1,8 @@
 "use client";
 
-import { SUPPLY_CLASS_LABELS, placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type EmailOverride } from "@spine/shared";
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type EmailOverride } from "@spine/shared";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -14,30 +14,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Badge,
+  Breadcrumb,
   Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Card,
   RichTextContent,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
-import { ArrowLeft, CheckCircle2, ChevronDown, Clock, XCircle } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock, Download, GitBranch, HardHat, Link2, MapPin, Pencil, Receipt, Send, User } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { useModule, useModules } from "../../../lib/modules-context";
-import { EmailQueueDialog } from "./email-queue-dialog";
+import { EmailFailedAlert } from "../../../components/email-failed-alert";
 import { SaveBundleDialog } from "./save-bundle-dialog";
 import { AcceptancePanel } from "./acceptance-panel";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
-import { useEntityToast } from "./entity-toast";
-import { formatMoney } from "../../../lib/money";
+import { useToast } from "../../../components/toast-host";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { QuoteActivity } from "./quote-activity";
+import { DocumentLinesTable } from "../../../components/document-lines-table";
+import { QuoteRelated } from "./quote-related";
+import { copyCustomerLink, QUOTE_TOASTS } from "./quote-row-actions";
+import { STATUS_BADGE_CLASS, ViewedChip } from "./quotes-table";
+import { calendarDate, shortDate, validityNote } from "./quotes-list-state";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { AttachmentsSection } from "../../../components/attachments-section";
 
+import { SectionLink } from "../../../components/section-link";
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
  * `quote_conversion_guard` setting is "warn" and this quote already has a
@@ -77,12 +88,6 @@ function quotePdfUrl(quoteId: string): string {
   return `${API_URL}/quotes/${quoteId}/pdf`;
 }
 
-const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
-  draft: "bg-draft-bg text-draft",
-  sent: "bg-due-soon-bg text-due-soon",
-  accepted: "bg-paid-bg text-paid",
-  rejected: "bg-overdue-bg text-overdue",
-};
 
 /**
  * Read-only-ish detail view for a quote — full line breakdown, totals, and
@@ -102,11 +107,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // D-217: revising, converting and approving ask first (`confirm` is taken by the conversion guard's retry flag below).
+  const { confirm: ask, dialog: confirmDialog } = useConfirm();
   const [conversionConfirm, setConversionConfirm] = useState<{
     action: "invoice" | "job";
     body: ConversionGuardBody;
   } | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const hasEditCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.edit_own", others: "quotes.edit_others" });
   const hasDeleteCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.delete_own", others: "quotes.delete_others" });
   const hasSendCapability = useCapability("quotes.send");
@@ -118,6 +125,12 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   // US-QUO-25: saving lines as a bundle creates a catalogue record.
   const canSaveBundle = useCapability("catalog.edit_own");
   const [bundleOpen, setBundleOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  // Bumped after "Copy customer link" so Activity shows it.
+  const [activityKey, setActivityKey] = useState(0);
+  // US-QUO-29/35: a row's menu or "Save and send" opens a quote with ?action=send (or convert-invoice, convert-job).
+  const searchParams = useSearchParams();
+  const action = useRef(searchParams.get("action"));
 
   const load = useCallback(() => {
     apiClient
@@ -191,6 +204,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setBusy(true);
     try {
       const copy = await apiClient.post<Quote>(`/quotes/${quote.id}/duplicate`);
+      showToast(...QUOTE_TOASTS.duplicated(quote));
       router.push(`/quotes/${copy.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not duplicate this quote.");
@@ -215,10 +229,12 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   async function handleRevise() {
     if (!quote) return;
+    if (!(await ask({ title: "Revise this quote?", description: `${quote.number ?? "This quote"} version ${quote.version + 1} is made as a draft from this one. Once it's sent, this version is superseded and the customer can only answer the newest.`, confirmLabel: "Revise quote" }))) return;
     setBusy(true);
     setError(null);
     try {
       const revised = await apiClient.post<Quote>(`/quotes/${quote.id}/revise`);
+      showToast(...QUOTE_TOASTS.revised(quote));
       router.push(`/quotes/${revised.id}/edit`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not revise this quote.");
@@ -238,11 +254,21 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
    */
   async function handleConvertToInvoice(confirm = false) {
     if (!quote) return;
+    if (
+      !confirm &&
+      !(await ask({
+        title: "Convert to an invoice?",
+        description: `A draft invoice for ${formatMoney(BigInt(quote.totalAmount), quote.currency)} is made for ${quote.contactName ?? "the customer"} from ${quote.number ?? "this quote"}'s lines. Nothing is issued or posted until you issue it.`,
+        confirmLabel: "Convert to invoice",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
       const invoice = await apiClient.post<{ id: string }>(`/invoices/from-quote/${quote.id}`, { confirm });
       setConversionConfirm(null);
+      showToast(...QUOTE_TOASTS.toInvoice(quote));
       router.push(`/invoices/${invoice.id}`);
     } catch (err) {
       if (isConversionGuardConflict(err)) {
@@ -266,11 +292,21 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
    */
   async function handleConvertToJob(confirm = false) {
     if (!quote) return;
+    if (
+      !confirm &&
+      !(await ask({
+        title: "Convert to a job?",
+        description: `A job is made for ${quote.contactName ?? "the customer"} with a contract value of ${formatMoney(BigInt(quote.totalAmount), quote.currency)} from ${quote.number ?? "this quote"}. You set up its milestones next.`,
+        confirmLabel: "Convert to job",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
-      const job = await apiClient.post<{ id: string }>(`/jobs/from-quote/${quote.id}`, { confirm });
+      const job = await apiClient.post<{ id: string; number: string | null }>(`/jobs/from-quote/${quote.id}`, { confirm });
       setConversionConfirm(null);
+      showToast(...QUOTE_TOASTS.toJob(quote, job.number));
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       if (isConversionGuardConflict(err)) {
@@ -285,6 +321,14 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   async function handleApproveDiscount() {
     if (!quote) return;
+    if (
+      !(await ask({
+        title: "Approve this discount?",
+        description: `${quote.number ?? "This quote"}'s discount, above your approval threshold, is approved in your name, and the quote can then be sent.`,
+        confirmLabel: "Approve discount",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -304,12 +348,24 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setError(null);
     try {
       await apiClient.delete(`/quotes/${quote.id}`);
+      showToast(...QUOTE_TOASTS.deleted(quote));
       router.push("/quotes");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete this quote.");
       setBusy(false);
     }
   }
+
+  // Runs the action a link asked for, once the quote has loaded, then drops it from the address.
+  useEffect(() => {
+    if (!quote || !action.current) return;
+    const next = action.current;
+    action.current = null;
+    window.history.replaceState(null, "", window.location.pathname);
+    if (next === "send" && quote.status === "draft") setSendDialog("send");
+    else if (next === "convert-invoice" && quote.status === "accepted") void handleConvertToInvoice();
+    else if (next === "convert-job" && quote.status === "accepted") void handleConvertToJob();
+  }, [quote]);
 
   if (error && !quote) {
     return (
@@ -327,61 +383,179 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     );
   }
 
-  // Each combines the status-based rule that was already here with the
-  // matching own/others (or dedicated) capability — see this file's own
-  // capability hooks above. UI convenience only; QuotesService enforces the
+  // Each combines the status-based rule with the matching own/others (or
+  // dedicated) capability. UI convenience only; QuotesService enforces the
   // same rules server-side regardless of what's shown here.
   const canEdit = quote.status === "draft" && hasEditCapability;
   const canDelete = quote.status === "draft" && hasDeleteCapability;
   const canSendQuote = quote.status === "draft" && hasSendCapability;
   const canRevise = quote.status !== "draft" && !quote.isSuperseded && hasReviseCapability;
-  // S-03.10 — both conversions share the same guard (only an accepted
-  // quote is convertible) and are independent actions, not mutually
-  // exclusive: a quote can become a job, an invoice, or both.
+  // S-03.10 — a quote can become a job, an invoice, or both.
   const canConvertToInvoice = quote.status === "accepted";
-  const canConvertToJob = quote.status === "accepted" && hasCreateJobCapability;
+  const canConvertToJob = quote.status === "accepted" && hasCreateJobCapability && jobsOn;
   // D-154: with Approvals switched off, discounts need no approval.
   const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId && approvalsOn;
+  const current = !quote.isSuperseded;
+  const canCopyLink = quote.status === "sent" && current && hasSendCapability;
+  const locale = orgLocaleTag();
+  const today = new Date();
+  const validity = validityNote(quote, today, locale);
+
+  // US-QUO-31: one primary button — the next step for the quote's status.
+  type Action = { key: string; label: string; icon: React.ReactNode; onClick?: () => void; href?: string; external?: boolean };
+  const pdf: Action = { key: "pdf", label: quote.status === "draft" ? "Preview PDF" : "Download PDF", icon: <Download size={14} aria-hidden />, href: quotePdfUrl(quote.id), external: true };
+  let primary: Action | null = null;
+  const secondary: Action[] = [];
+  if (quote.status === "draft") {
+    if (canSendQuote && !needsApproval) primary = { key: "send", label: "Send quote", icon: <Send size={14} aria-hidden />, onClick: () => setSendDialog("send") };
+    if (canEdit) secondary.push({ key: "edit", label: "Edit", icon: <Pencil size={14} aria-hidden />, href: `/quotes/${quote.id}/edit` });
+    secondary.push(pdf);
+  } else if (quote.status === "sent" && !quote.isExpired && current) {
+    if (canCopyLink) primary = { key: "link", label: "Copy customer link", icon: <Link2 size={14} aria-hidden />, onClick: () => void copyCustomerLink(quote.id, (t, d) => { showToast(t, d); setActivityKey((k) => k + 1); }, (t, m) => setError(`${t} ${m}`)) };
+    secondary.push(pdf);
+    if (canRevise) secondary.push({ key: "revise", label: "Revise", icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() });
+  } else if (quote.status === "accepted") {
+    if (canConvertToInvoice) primary = { key: "invoice", label: "Convert to invoice", icon: <Receipt size={14} aria-hidden />, onClick: () => void handleConvertToInvoice() };
+    secondary.push(pdf);
+    if (canConvertToJob) secondary.push({ key: "job", label: "Convert to job", icon: <HardHat size={14} aria-hidden />, onClick: () => void handleConvertToJob() });
+  } else {
+    // Declined, expired or superseded: revise it into a new version.
+    if (canRevise) primary = { key: "revise", label: "Revise", icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() };
+    secondary.push(pdf);
+  }
+
+  const renderAction = (a: Action, variant: "primary" | "secondary") =>
+    a.href ? (
+      <Button key={a.key} variant={variant} asChild>
+        {a.external ? (
+          <a href={a.href} target="_blank" rel="noreferrer">
+            {a.icon}
+            {a.label}
+          </a>
+        ) : (
+          <Link href={a.href}>
+            {a.icon}
+            {a.label}
+          </Link>
+        )}
+      </Button>
+    ) : (
+      <Button key={a.key} variant={variant} onClick={a.onClick} disabled={busy}>
+        {busy && variant === "primary" ? <Spinner size="sm" /> : a.icon}
+        {a.label}
+      </Button>
+    );
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Explicit back button, matching contact-detail.tsx's exact pattern
-          (the AppShellHeader breadcrumb above this component already offers
-          "Quotes", but a one-click back affordance next to the identity it
-          returns from reads clearer for a detail page one level deep). */}
-      <button
-        type="button"
-        onClick={() => router.push("/quotes")}
-        className="flex w-fit items-center gap-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface"
-      >
-        <ArrowLeft size={14} />
-        Back to quotes
-      </button>
-
-      {error && (
-        <Alert variant="critical">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <Card className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-[18px] font-semibold text-on-surface">{quote.number ?? "Draft quote"}</h2>
+    <div className="flex flex-col gap-5">
+      {/* US-QUO-31: the number is the page title; the breadcrumb leads back to Quotes. */}
+      <div className="flex flex-col gap-3">
+        <Breadcrumb items={[{ label: "Sales" }, { label: "Quotes", href: "/quotes" }, { label: quote.number ?? "Draft quote" }]} />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{quote.number ?? "Draft quote"}</h1>
               <Badge className={STATUS_BADGE_CLASS[quote.status]}>{QUOTE_STATUS_LABELS[quote.status]}</Badge>
               {quote.isExpired && <Badge className="bg-overdue-bg text-overdue">Expired</Badge>}
-              {quote.isSuperseded && <Badge className="bg-draft-bg text-draft">Superseded by v{quote.version + 1}</Badge>}
+              <ViewedChip quote={quote} now={today} />
             </div>
-            <p className="mt-1 text-[13px] text-on-surface-muted">
-              {quote.contactName ?? "Unknown contact"} · Version {quote.version}
-              {quote.validUntil && <> · Valid until {new Date(quote.validUntil).toLocaleDateString()}</>}
+            {quote.title && (
+              <p className="text-[15px] font-medium text-on-surface" data-testid="quote-title">
+                {quote.title}
+              </p>
+            )}
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="quote-meta">
+              <span className="inline-flex items-center gap-1.5">
+                <User size={14} aria-hidden />
+                <SectionLink href={`/contacts/${quote.contactId}`} className="font-medium text-primary hover:underline">
+                  {quote.contactName ?? "Unknown contact"}
+                </SectionLink>
+              </span>
+              {quote.sentAt && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Send size={14} aria-hidden />
+                  Sent {shortDate(quote.sentAt, today, locale)}
+                </span>
+              )}
+              {quote.validUntil && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays size={14} aria-hidden />
+                  Valid until {calendarDate(quote.validUntil, today, locale)}
+                  {validity.text && quote.status !== "accepted" && quote.status !== "rejected" && (
+                    <>
+                      {" · "}
+                      <span className={validity.tone === "soon" ? "font-medium text-due-soon" : validity.tone === "gone" ? "font-medium text-overdue" : ""}>{validity.text}</span>
+                    </>
+                  )}
+                </span>
+              )}
               {/* US-TAX-13: the place of supply snapshotted on the document. */}
-              {quote.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(quote.placeOfSupply)}{quote.supplyType ? ` (${SUPPLY_TYPE_LABELS[quote.supplyType].toLowerCase()})` : ""}</>}
+              {quote.placeOfSupply && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin size={14} aria-hidden />
+                  {placeOfSupplyLabel(quote.placeOfSupply)}
+                  {quote.supplyType ? ` (${SUPPLY_TYPE_LABELS[quote.supplyType].toLowerCase()})` : ""}
+                </span>
+              )}
+              <span>Version {quote.version}</span>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="quote-actions">
+            {secondary.map((a) => renderAction(a, "secondary"))}
+            {primary && renderAction(primary, "primary")}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" disabled={busy}>
+                  More <ChevronDown size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canDuplicate && (
+                  <DropdownMenuItem onSelect={handleDuplicate}>
+                    <MENU_ICONS.duplicate aria-hidden />
+                    Duplicate as new draft
+                  </DropdownMenuItem>
+                )}
+                {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
+                  <DropdownMenuItem onSelect={() => setBundleOpen(true)}>
+                    <MENU_ICONS.saveBundle aria-hidden />
+                    Save lines as a bundle…
+                  </DropdownMenuItem>
+                )}
+                {quote.status === "sent" && hasSendCapability && (
+                  <DropdownMenuItem onSelect={() => setSendDialog("resend")}>
+                    <MENU_ICONS.email aria-hidden />
+                    Email again
+                  </DropdownMenuItem>
+                )}
+                {canCopyLink && primary?.key !== "link" && (
+                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast, (t, m) => setError(`${t} ${m}`))}>
+                    <MENU_ICONS.copyLink aria-hidden />
+                    Copy customer link
+                  </DropdownMenuItem>
+                )}
+                {canRevise && primary?.key !== "revise" && !secondary.some((a) => a.key === "revise") && (
+                  <DropdownMenuItem onSelect={() => void handleRevise()}>
+                    <MENU_ICONS.revise aria-hidden />
+                    Revise
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                  <MENU_ICONS.history aria-hidden />
+                  View history
+                </DropdownMenuItem>
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
+                      <MENU_ICONS.delete aria-hidden />
+                      Delete draft
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" open={historyOpen} onOpenChange={setHistoryOpen} />
             <SaveBundleDialog
               open={bundleOpen}
@@ -391,174 +565,96 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               currency={quote.currency}
               onSaved={(bundle) => showToast("Bundle saved", `“${bundle.name}” is in the catalogue under Bundles.`)}
             />
-            {/* PRD S-03.3 / US-INV-17 — a draft previews live; a sent quote downloads the PDF stored when it was sent (see quotes.controller.ts's GET /:id/pdf). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
-            <Button variant="secondary" asChild>
-              <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
-                {quote.status === "draft" ? "Preview PDF" : "Download PDF"}
-              </a>
-            </Button>
-            {canEdit && (
-              <Button variant="secondary" asChild>
-                <Link href={`/quotes/${quote.id}/edit`}>Edit</Link>
-              </Button>
-            )}
-            {canSendQuote && !needsApproval && (
-              <Button onClick={() => setSendDialog("send")} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Send Quote"}
-              </Button>
-            )}
-            {canRevise && (
-              <Button onClick={handleRevise} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Revise"}
-              </Button>
-            )}
-            {canConvertToInvoice && (
-              <Button onClick={() => handleConvertToInvoice()} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Convert to invoice"}
-              </Button>
-            )}
-            {canConvertToJob && jobsOn && (
-              <Button variant="secondary" onClick={() => handleConvertToJob()} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Convert to job"}
-              </Button>
-            )}
-            {canDelete && (
-              <Button variant="ghost" onClick={handleDelete} disabled={busy}>
-                Delete draft
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" disabled={busy}>
-                  More <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canDuplicate && <DropdownMenuItem onSelect={handleDuplicate}>Duplicate as new draft</DropdownMenuItem>}
-                {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
-                  <DropdownMenuItem onSelect={() => setBundleOpen(true)}>Save lines as a bundle…</DropdownMenuItem>
-                )}
-                {quote.status === "sent" && hasSendCapability && <DropdownMenuItem onSelect={() => setSendDialog("resend")}>Email again</DropdownMenuItem>}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
+      </div>
 
-        {needsApproval && (
-          <Alert variant={isOwner ? "warning" : "critical"}>
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-              <span>This quote's discount is above the org's approval threshold and needs owner sign-off before it can be sent.</span>
-              {isOwner && (
-                <Button size="sm" onClick={handleApproveDiscount} disabled={busy}>
-                  {busy ? <Spinner size="sm" /> : "Approve discount"}
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-        {quote.approvedByUserId && (
-          <p className="text-[13px] text-on-surface-muted">
-            Discount approved {quote.approvedAt ? new Date(quote.approvedAt).toLocaleString() : ""}.
-          </p>
-        )}
-
-        {/* Item 7, user feedback — "was the email sent?" without needing the
-            Email queue screen. Nothing renders on a draft (emailStatus is
-            null until Send Quote is clicked). */}
-        {quote.emailStatus === "pending" && (
-          <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
-            <Clock size={14} className="shrink-0" />
-            Sending email to {quote.contactName ?? "the contact"}…
-          </p>
-        )}
-        {quote.emailStatus === "sent" && (
-          <p className="flex items-center gap-1.5 text-[13px] text-paid">
-            <CheckCircle2 size={14} className="shrink-0" />
-            Emailed to {quote.contactName ?? "the contact"}
-            {quote.emailSentAt && <> on {new Date(quote.emailSentAt).toLocaleString()}</>}.
-          </p>
-        )}
-        {quote.emailStatus === "failed" && (
-          <Alert variant="critical">
-            <AlertDescription className="flex flex-col gap-1">
-              <span className="flex items-center gap-1.5 font-medium">
-                <XCircle size={14} className="shrink-0" />
-                Email delivery failed
-              </span>
-              {quote.emailError && <span className="text-[13px]">{quote.emailError}</span>}
-              <span className="text-[13px]">
-                <EmailQueueDialog
-                  trigger={
-                    <button type="button" className="underline hover:text-on-surface">
-                      Check the email queue
-                    </button>
-                  }
-                />{" "}
-                — a retry may still be in progress.
-              </span>
-            </AlertDescription>
-          </Alert>
-        )}
-      </Card>
-
-      <AcceptancePanel quote={quote} />
-
-      <Card className="flex flex-col gap-3">
-        <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
-        <div className="flex flex-col divide-y divide-border">
-          {(quote.lines ?? []).map((line) => (
-            <div key={line.id} className="flex items-start justify-between gap-4 py-2">
-              <div>
-                <p className={line.type === "heading" ? "font-semibold text-on-surface" : "text-on-surface"}>{line.name}</p>
-                {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
-                {line.type === "item" && (
-                  <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), quote.currency)}
-                    {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
-                    {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
-                    {/* US-TAX-11: the supply type snapshotted on the line. */}
-                    {line.supplyClass && line.supplyClass !== "taxable" && <> · {SUPPLY_CLASS_LABELS[line.supplyClass]}</>}
-                  </p>
-                )}
-              </div>
-              {line.type === "item" && (
-                <span className="shrink-0 tabular-nums text-on-surface">
-                  {formatMoney(BigInt(line.lineTotalAmount), quote.currency)}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
-        <TotalRow label="Subtotal" value={quote.subtotalAmount} currency={quote.currency} />
-        <TotalRow label="Discount" value={formatMoney(-(BigInt(quote.discountAmount)), quote.currency)} currency="" raw />
-        <TotalRow label="Tax" value={quote.taxAmount} currency={quote.currency} />
-        <div className="border-t border-border pt-2">
-          <TotalRow label="Total" value={quote.totalAmount} currency={quote.currency} emphasize />
-        </div>
-      </Card>
-
-      <AttachmentsSection entityType="quote" entityId={quote.id} />
-
-      {(quote.notes || quote.termsAndConditions) && (
-        <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {quote.notes && (
-            <div>
-              <h3 className="text-[13px] font-semibold text-on-surface-muted">Notes</h3>
-              <RichTextContent html={quote.notes} />
-            </div>
-          )}
-          {quote.termsAndConditions && (
-            <div>
-              <h3 className="text-[13px] font-semibold text-on-surface-muted">Terms & conditions</h3>
-              <RichTextContent html={quote.termsAndConditions} />
-            </div>
-          )}
-        </Card>
+      {error && (
+        <Alert variant="critical">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
+
+      {quote.isSuperseded && quote.supersededByQuoteId && (
+        <Alert variant="info" data-testid="quote-superseded">
+          <AlertDescription>
+            Superseded by{" "}
+            <Link href={`/quotes/${quote.supersededByQuoteId}`} className="font-medium text-primary underline-offset-2 hover:underline">
+              v{quote.version + 1}
+            </Link>
+            . Customers can only answer the newest version.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          {needsApproval && (
+            <Alert variant={isOwner ? "warning" : "critical"}>
+              <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                <span>This quote&apos;s discount is above the business&apos;s approval threshold and needs an owner to approve it before it can be sent.</span>
+                {isOwner && (
+                  <Button size="sm" onClick={handleApproveDiscount} disabled={busy}>
+                    {busy ? <Spinner size="sm" /> : "Approve discount"}
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Item 7, user feedback — "was the email sent?"; the email log has the detail (US-SET-27). */}
+          {quote.emailStatus === "pending" && (
+            <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
+              <Clock size={14} className="shrink-0" />
+              Sending email to {quote.contactName ?? "the contact"}…
+            </p>
+          )}
+          {quote.emailStatus === "failed" && <EmailFailedAlert error={quote.emailError} recordId={quote.id} />}
+
+          <AcceptancePanel quote={quote} />
+
+          <DocumentLinesTable doc={quote} testIdPrefix="quote" />
+
+          {(quote.notes || quote.termsAndConditions) && (
+            <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {quote.notes && (
+                <div>
+                  <h3 className="text-[12px] font-semibold text-on-surface-muted">Notes</h3>
+                  <RichTextContent html={quote.notes} />
+                </div>
+              )}
+              {quote.termsAndConditions && (
+                <div>
+                  <h3 className="text-[12px] font-semibold text-on-surface-muted">Terms &amp; conditions</h3>
+                  <RichTextContent html={quote.termsAndConditions} />
+                </div>
+              )}
+            </Card>
+          )}
+
+          <AttachmentsSection entityType="quote" entityId={quote.id} />
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <QuoteActivity quoteId={quote.id} status={quote.status} refreshKey={`${quote.updatedAt}-${quote.emailStatus}-${activityKey}`} onViewHistory={() => setHistoryOpen(true)} />
+          <QuoteRelated quoteId={quote.id} refreshKey={quote.updatedAt} />
+        </div>
+      </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this draft quote?</AlertDialogTitle>
+            <AlertDialogDescription>This permanently removes the draft. This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <Button variant="danger" onClick={handleDelete} disabled={busy}>
+              Delete draft
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Org's `quote_conversion_guard` "warn" setting — see ConversionGuardBody's own doc comment. Only ever shown when a prior job and/or invoice already trace back to this quote. AlertDialog (not Dialog) since this is a pure yes/no confirmation with real consequences (creates a separate, unlinked job/invoice), per that component's own "reach for this when an action can't be undone" doc comment. */}
       <AlertDialog open={conversionConfirm !== null} onOpenChange={(open) => !open && setConversionConfirm(null)}>
@@ -579,9 +675,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   <ul className="flex flex-col gap-1">
                     {conversionConfirm.body.existing.jobs.map((j) => (
                       <li key={j.id}>
-                        <Link href={`/jobs/${j.id}`} className="text-primary hover:underline">
+                        <SectionLink href={`/jobs/${j.id}`} className="text-primary hover:underline">
                           {j.number ? `${j.number} · ${j.name}` : j.name}
-                        </Link>
+                        </SectionLink>
                       </li>
                     ))}
                   </ul>
@@ -595,9 +691,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   <ul className="flex flex-col gap-1">
                     {conversionConfirm.body.existing.invoices.map((i) => (
                       <li key={i.id}>
-                        <Link href={`/invoices/${i.id}`} className="text-primary hover:underline">
+                        <SectionLink href={`/invoices/${i.id}`} className="text-primary hover:underline">
                           {i.number ?? "Draft invoice"}
-                        </Link>
+                        </SectionLink>
                       </li>
                     ))}
                   </ul>
@@ -630,33 +726,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           onSend={(email) => (sendDialog === "send" ? handleMarkAsSent(email) : handleEmailAgain(email))}
         />
       )}
-      {toast}
+      {confirmDialog}
     </div>
   );
 }
 
-function TotalRow({
-  label,
-  value,
-  currency,
-  emphasize,
-  raw,
-}: {
-  label: string;
-  value: string;
-  currency: string;
-  emphasize?: boolean;
-  raw?: boolean;
-}) {
-  const display = raw ? value : formatMoney(BigInt(value), currency);
-  return (
-    <div className="flex items-center justify-between">
-      <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
-        {label}
-      </span>
-      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
-        {display}
-      </span>
-    </div>
-  );
-}

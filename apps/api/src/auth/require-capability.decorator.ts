@@ -35,3 +35,22 @@ export const CAPABILITY_KEY = "spine:requiredCapability";
  * simply by never putting @RequireCapability on those controllers.
  */
 export const RequireCapability = (capability: Capability) => SetMetadata(CAPABILITY_KEY, capability);
+
+export const SECTION_KEY = "spine:requiredSection";
+export const PICKER_KEY = "spine:pickerAllowed";
+
+/**
+ * US-TEAM-30 (D-235) — the section's Open permission, put on a section's
+ * controller. Checked as well as any @RequireCapability (never instead of
+ * it), so a Team with a section closed reaches none of its routes. Owners
+ * and Field pass, as for @RequireCapability.
+ */
+export const RequireSectionOpen = (capability: Capability) => SetMetadata(SECTION_KEY, capability);
+
+/**
+ * US-TEAM-31 — a route other sections use as a picker (a customer on an
+ * invoice, an item on a quote line, a job on an expense). With `?picker=1`
+ * it answers without the section's Open permission, and the guard marks the
+ * request `sectionClosed` so the route returns only what forms need.
+ */
+export const PickerAllowed = () => SetMetadata(PICKER_KEY, true);

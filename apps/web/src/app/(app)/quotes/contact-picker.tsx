@@ -14,15 +14,21 @@ import type { ContactOption } from "./types";
 export function ContactPicker({
   value,
   onValueChange,
+  ...field
 }: {
   value: string;
   onValueChange: (contactId: string) => void;
+  /** The form field's id and ARIA attributes, so its label names the picker. */
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
+  "aria-required"?: boolean;
 }) {
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
     apiClient
-      .get<ContactOption[]>("/contacts")
+      .get<ContactOption[]>("/contacts?picker=1")
       .then(setContacts)
       .catch(() => {});
   }, []);
@@ -32,5 +38,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
+  return <Combobox {...field} options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
 }

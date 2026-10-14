@@ -54,7 +54,8 @@ test.describe("Reports", () => {
 
     // The chart (US-RPT-15) names jobs too; the table is what this checks.
     const table = page.getByRole("main").getByRole("table");
-    await expect(table.getByText("Hotel lobby renovation")).toBeVisible();
+    // Active and on-hold jobs by default; the demo's finished job is completed (D-216).
+    await expect(table.getByText("Phase 2 townhomes — foundations")).toBeVisible();
     await expect(table.getByText("Margin %")).toBeVisible();
   });
 

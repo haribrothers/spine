@@ -1,6 +1,6 @@
 # DateTimePicker
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/date-time-picker.tsx` · **Doc page:** `apps/design-system-native/app/components/date-time-picker.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/date-time-picker.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/date-time-picker-demo.tsx`
 
 A compact, inline date/time control — same `Switch`-style row shape (label on the left, control on the right) as any other form row, rather than a full-width block field.
 

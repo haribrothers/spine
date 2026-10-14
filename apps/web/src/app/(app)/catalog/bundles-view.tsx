@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { ListChecks, MoreHorizontal, PackagePlus } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -25,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   EmptyState,
   FormField,
@@ -39,7 +40,8 @@ import { BUNDLE_NAME_REQUIRED, type CatalogBundle } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
-import { useEntityToast } from "./entity-toast";
+import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useToast } from "../../../components/toast-host";
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
@@ -52,19 +54,22 @@ const STATUS_OPTIONS = [
  * and delete need `catalog.delete_*`, own or others by who saved it — the
  * same rules the API applies.
  */
-export function BundlesView() {
+export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: () => void; onCountChange?: (active: number) => void } = {}) {
   const [bundles, setBundles] = useState<CatalogBundle[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
   const [editing, setEditing] = useState<CatalogBundle | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const load = useCallback(() => {
     apiClient
       .get<CatalogBundle[]>("/catalog-bundles?includeArchived=true")
-      .then(setBundles)
+      .then((rows) => {
+        setBundles(rows);
+        onCountChange?.(rows.filter((b) => !b.archivedAt).length);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load bundles."));
-  }, []);
+  }, [onCountChange]);
 
   useEffect(() => {
     load();
@@ -131,7 +136,22 @@ export function BundlesView() {
   return (
     <div className="flex flex-col gap-4">
       {bundles.length === 0 ? (
-        <EmptyState title="No bundles yet" description="Open a quote and choose More ▾ › Save lines as a bundle… to add a group of lines you quote often." />
+        // US-CAT-14 (D-213): say how to make one, and offer the way in.
+        <div className="rounded-lg border border-border bg-surface" data-testid="bundles-empty">
+          <EmptyState
+            icon={<PackagePlus />}
+            title="No bundles yet"
+            description="Group what you quote together. Select items and choose Make a bundle, or save a quote's lines from its More menu."
+            action={
+              onChooseItems ? (
+                <Button onClick={onChooseItems}>
+                  <ListChecks size={14} aria-hidden />
+                  Choose items
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
       ) : (
         <>
           <div className="w-56">
@@ -141,7 +161,6 @@ export function BundlesView() {
         </>
       )}
       <EditBundleDialog bundle={editing} onClose={() => setEditing(null)} onSaved={() => (showToast("Bundle saved", "Your changes have been saved."), load())} />
-      {toast}
     </div>
   );
 }
@@ -183,9 +202,27 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {canEdit && <DropdownMenuItem onSelect={() => onEdit(bundle)}>Edit</DropdownMenuItem>}
-          {canDelete && <DropdownMenuItem onSelect={toggleArchived}>{bundle.archivedAt ? "Restore" : "Archive"}</DropdownMenuItem>}
-          {canDelete && <DropdownMenuItem onSelect={() => setConfirmOpen(true)}>Delete</DropdownMenuItem>}
+          {canEdit && (
+            <DropdownMenuItem onSelect={() => onEdit(bundle)}>
+              <MENU_ICONS.edit aria-hidden />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem onSelect={toggleArchived}>
+              {bundle.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
+              {bundle.archivedAt ? "Restore" : "Archive"}
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                <MENU_ICONS.delete aria-hidden />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

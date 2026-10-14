@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
-import { CreditNoteDetailDrawer } from "./credit-note-detail-drawer";
 import { formatMoney } from "../../../lib/money";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
-import { useEntityToast } from "../payments/entity-toast";
+import { useToast } from "../../../components/toast-host";
 
+import { SectionLink } from "../../../components/section-link";
 interface CreditNoteRow {
   id: string;
   number: string | null;
@@ -21,19 +21,15 @@ interface CreditNoteRow {
 
 /**
  * Every credit note issued against this invoice — mirrors payments-
- * section.tsx's own shape (read-only summary, "no credit notes yet" when
- * empty). Clicking a row opens `CreditNoteDetailDrawer` — a minimal detail
- * view built specifically to give the new `GET /credit-notes/:id/history`
- * endpoint somewhere to render (credit notes still have no standalone list
- * page or route; S-05.6 never asked for one).
+ * section.tsx's own shape (nothing renders when there are none). Each row
+ * opens the credit note's page (US-INV-38, D-219).
  */
 export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: { invoiceId: string; refreshKey: number; canEmail?: boolean }) {
   const [creditNotes, setCreditNotes] = useState<CreditNoteRow[] | null>(null);
   // US-SET-21 — emailing a credit note, from the "Credit note" email template.
   const [emailing, setEmailing] = useState<CreditNoteRow | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
   const [error, setError] = useState<string | null>(null);
-  const [openCreditNoteId, setOpenCreditNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     setCreditNotes(null);
@@ -60,17 +56,16 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
           <div className="flex flex-col divide-y divide-border">
             {issued.map((cn) => (
               <div key={cn.id} className="flex items-center gap-2 py-2">
-                <button
-                  type="button"
-                  onClick={() => setOpenCreditNoteId(cn.id)}
+                <SectionLink
+                  href={`/credit-notes/${cn.id}`}
                   className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <div>
                     <span className="text-[13px] font-medium text-on-surface">{cn.number ?? "Credit note"}</span>
                     {cn.reason && <p className="text-[12px] text-on-surface-muted">{cn.reason}</p>}
                   </div>
-                  <span className="shrink-0 text-[13px] tabular-nums text-overdue">{formatMoney(-BigInt(cn.totalAmount), cn.currency)}</span>
-                </button>
+                  <span className="shrink-0 text-[13px] tabular-nums text-on-surface">{formatMoney(-BigInt(cn.totalAmount), cn.currency)}</span>
+                </SectionLink>
                 {canEmail && (
                   <Button variant="secondary" size="sm" onClick={() => setEmailing(cn)} aria-label={`Email credit note ${cn.number ?? ""}`.trim()}>
                     Email
@@ -96,13 +91,6 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
           }}
         />
       )}
-      {toast}
-      <CreditNoteDetailDrawer
-        creditNoteId={openCreditNoteId}
-        onOpenChange={(open) => {
-          if (!open) setOpenCreditNoteId(null);
-        }}
-      />
     </>
   );
 }

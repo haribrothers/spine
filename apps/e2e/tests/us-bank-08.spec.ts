@@ -56,14 +56,17 @@ test.describe("US-BANK-08", () => {
     await expect(cards).toContainText("Cleared in Spine$10,000.00opening $10,000.00 + 0 matched");
     await expect(page.getByTestId("reconcile-difference")).toContainText("$2,230.42");
     const line = (text: string) => page.getByTestId("statement-line").filter({ hasText: text });
+    // US-BANK-16: a matched or excluded line moves from To do to its own tab.
+    const tab = (name: string) => page.getByRole("tab", { name: new RegExp(`^${name}`) }).click();
+    const leaves = async (text: string) => expect(line(text)).toHaveCount(0);
     await expect(line("NEFT-MAPLE RIDGE DEV")).toContainText("Suggested match");
     await expect(line("CHQ 000214 COASTAL TIMBER")).toContainText("Suggested match");
     await expect(line("CARD SETTLEMENT")).toContainText("Unmatched");
 
     await line("NEFT-MAPLE RIDGE DEV").getByRole("button", { name: "Match" }).click();
-    await expect(line("NEFT-MAPLE RIDGE DEV")).toContainText("Matched");
+    await leaves("NEFT-MAPLE RIDGE DEV");
     await line("CHQ 000214 COASTAL TIMBER").getByRole("button", { name: "Match" }).click();
-    await expect(line("CHQ 000214 COASTAL TIMBER")).toContainText("Matched");
+    await leaves("CHQ 000214 COASTAL TIMBER");
 
     // "Not this one", then match by hand.
     await line("POS 4410 SHELL PORTLAND").getByRole("button", { name: "Not this one" }).click();
@@ -71,7 +74,7 @@ test.describe("US-BANK-08", () => {
     await line("POS 4410 SHELL PORTLAND").getByRole("button", { name: "POS 4410 SHELL PORTLAND" }).click();
     await page.getByRole("checkbox", { name: /Money out — Other Expenses.*−\$58\.20/ }).check();
     await page.getByTestId("match-bar").getByRole("button", { name: "Match" }).click();
-    await expect(line("POS 4410 SHELL PORTLAND")).toContainText("Matched");
+    await leaves("POS 4410 SHELL PORTLAND");
 
     // Several entries to one line, only when they add up.
     await line("CARD SETTLEMENT").getByRole("button", { name: "CARD SETTLEMENT" }).click();
@@ -81,13 +84,18 @@ test.describe("US-BANK-08", () => {
     await page.getByRole("checkbox", { name: /−\$40\.00/ }).check();
     await expect(page.getByTestId("match-bar")).toContainText("2 entries add up to the line.");
     await page.getByTestId("match-bar").getByRole("button", { name: "Match" }).click();
-    await expect(line("CARD SETTLEMENT")).toContainText("Matched");
+    await leaves("CARD SETTLEMENT");
 
     // Exclude a line that shouldn't be in the books.
     await line("INTEREST CREDIT").getByRole("button", { name: "Exclude" }).click();
     await page.getByRole("dialog").getByRole("textbox", { name: "Note" }).fill("Reversed by the bank");
     await page.getByRole("dialog").getByRole("button", { name: "Exclude line" }).click();
+    await leaves("INTEREST CREDIT");
+    await tab("Excluded");
     await expect(line("INTEREST CREDIT")).toContainText("Excluded — Reversed by the bank");
+    await tab("Matched");
+    for (const text of ["NEFT-MAPLE RIDGE DEV", "CHQ 000214 COASTAL TIMBER", "POS 4410 SHELL PORTLAND", "CARD SETTLEMENT"]) await expect(line(text)).toContainText("Matched");
+    await expect(page.getByTestId("reconcile-progress")).toContainText("5 of 5 lines done");
 
     await expect(page.getByTestId("reconcile-difference")).toContainText("$0.00");
     await expect(cards).toContainText("opening $10,000.00 + 5 matched");
@@ -95,6 +103,8 @@ test.describe("US-BANK-08", () => {
 
     // Leave and come back: the matches are saved.
     await page.reload();
+    await expect(page.getByText("Saved as you go — pick up where you left off.")).toBeVisible();
+    await tab("Matched");
     await expect(line("CARD SETTLEMENT")).toContainText("Matched");
     await expect(page.getByTestId("reconcile-difference")).toContainText("$0.00");
     await line("CARD SETTLEMENT").getByRole("button", { name: "Unmatch CARD SETTLEMENT" }).click();

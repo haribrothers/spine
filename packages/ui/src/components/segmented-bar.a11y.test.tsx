@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { SegmentedBar } from "./segmented-bar";
@@ -21,5 +21,15 @@ describe("SegmentedBar a11y", () => {
     const { container } = render(<SegmentedBar segments={segments.map((s) => ({ ...s, value: 0 }))} aria-label="Receivables by age" emptyState="Nothing outstanding." />);
     expect(container.textContent).toContain("Nothing outstanding.");
     await expectNoA11yViolations(container);
+  });
+
+  it("has no violations when its parts can be pressed, and says which is pressed (US-PAY-29)", async () => {
+    const pressed: string[] = [];
+    const { container, getByRole } = render(<SegmentedBar segments={segments} aria-label="Receivables by age" onSegmentClick={(key) => pressed.push(key)} selectedKeys={["0-30"]} />);
+    await expectNoA11yViolations(container);
+    expect(getByRole("button", { name: /1–30 days/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(getByRole("button", { name: /Current/ }).getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(getByRole("button", { name: /Current/ }));
+    expect(pressed).toEqual(["current"]);
   });
 });

@@ -55,7 +55,8 @@ test.describe("US-ONB-15", () => {
     await page.context().clearCookies();
     await logIn(page, DEMO_STAFF_USER);
     await page.getByRole("button", { name: /Sarah Mendes/ }).last().click();
-    await expect(page.getByRole("menuitem", { name: "Profile & Preferences" })).toBeVisible();
+    // US-SET-30: Settings is for everyone now (Your account only, for Staff).
+    await expect(page.getByRole("menuitem", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Set up Spine" })).toHaveCount(0);
     await page.keyboard.press("Escape");
     await page.goto("/setup");
@@ -76,7 +77,7 @@ test.describe("US-ONB-16", () => {
     await pane.getByLabel(/^Business name/).fill("Harbour Plumbing");
     await pane.getByLabel(/^Address/).fill("1 Quay Street, Auckland");
     await pane.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page).toHaveURL(/\/setup$/);
     await expect(business).toContainText("Done");

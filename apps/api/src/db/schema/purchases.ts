@@ -168,6 +168,8 @@ export const recurringBills = pgTable(
     status: recurringStatusEnum("status").notNull().default("active"),
     nextRunOn: date("next_run_on", { mode: "string" }),
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    /** US-ONB-30 — a demo schedule, removed with the demo; its runs create demo bills. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -221,7 +223,11 @@ export const expenseCategories = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    /** US-PUR-46 (D-228) — the "What it's for" line shown under the name in the expense form's picker. */
+    description: text("description"),
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
+    /** US-PUR-48 (D-228) — filled in on a new expense's form when the category is chosen; never applied to a saved expense. */
+    defaultTaxRateId: uuid("default_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     /** Own/others ownership split (PRD §9) — same nullable/never-reassigned pattern as contacts.createdByUserId. In practice most categories are set up during onboarding by the Primary Owner, so "own" resolves narrowly here — kept for consistency with every other resource in this pattern rather than a special-cased single capability. */
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -232,6 +238,9 @@ export const expenseCategories = pgTable(
     index("expense_categories_org_idx").on(table.orgId),
     index("expense_categories_account_idx").on(table.accountId),
     index("expense_categories_created_by_idx").on(table.createdByUserId),
+    // US-PUR-47 (D-228): one name per business, ignoring case and surrounding spaces, archived included.
+    uniqueIndex("expense_categories_org_name_uq").on(table.orgId, sql`lower(btrim(${table.name}))`),
+    check("expense_categories_description_len", sql`${table.description} is null or char_length(${table.description}) <= 120`),
   ],
 );
 
@@ -459,6 +468,8 @@ export const vendorCredits = pgTable(
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
     balanceAmount: bigint("balance_amount", { mode: "bigint" }).notNull().default(sql`0`),
     /** Brought in at the cutover date (US-RPT-18): no lines, posts P20 instead of P24. */
+    /** US-ONB-30 — a demo credit, removed with the demo. */
+    isDemo: boolean("is_demo").notNull().default(false),
     isOpening: boolean("is_opening").notNull().default(false),
     notes: text("notes"),
     voidReason: text("void_reason"),
@@ -571,6 +582,8 @@ export const vendorRefunds = pgTable(
       .notNull()
       .references(() => journalEntries.id),
     reversalEntryId: uuid("reversal_entry_id").references(() => journalEntries.id),
+    /** US-ONB-30 — a refund of a demo credit, removed with it. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

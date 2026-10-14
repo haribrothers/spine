@@ -1,6 +1,6 @@
 # 10 · Phases
 
-Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
+Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
 
 | Phase | Name | Stories | Milestone |
 |---|---|---|---|
@@ -9,7 +9,7 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow (
 | 2 | Money in | 22 | Quote → invoice → partial payment with a balanced trial balance |
 | 3 | Jobs & construction billing | 15 | A full contract lifecycle reconciles |
 | 4 | Money out & books | 62 | A simulated quarter produces accountant-acceptable reports |
-| 5 | Mobile field companion | 27 | The app works end-to-end in airplane mode and syncs without duplicates |
+| 5 | Mobile field companion | 31 | The app works end-to-end in airplane mode and syncs without duplicates |
 | 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
@@ -17,7 +17,7 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow (
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 427 stories.
+Total: 534 stories.
 
 ## Phase 0 · Foundation
 
@@ -755,6 +755,250 @@ Total: 427 stories.
 - US-SET-23 · Switch optional modules on or off (P1)
 - US-SET-24 · Hide everything a switched-off module owns (P1)
 - US-SET-25 · Switch a module back on with nothing lost (P1)
+
+## Refinements before Phase 10
+
+**Goal:** Web app refinements requested after Phase 9, one at a time, on the branch `refinements-web-pre-phase-10`.
+
+**Stories:**
+
+*Settings & administration*
+
+- US-SET-26 · See the Spine logo across the web app (P2)
+
+*Sign-in & account*
+
+- US-AUTH-13 · See a welcome page on a new install (P2)
+- US-AUTH-14 · Log in on a page that feels like Spine (P2)
+- US-AUTH-15 · Choose a strong password I can see (P2)
+
+*Onboarding & first run*
+
+- US-ONB-22 · Set up my business in four short stages with a live preview (P2)
+- US-ONB-23 · Finish setup on a screen that shows what's next (P2)
+
+*Dashboard*
+
+- US-DASH-27 · See the dashboard take shape while it loads (P2)
+- US-DASH-28 · Read big figures on calm, colour-coded cards (P2)
+- US-DASH-29 · Keep cards their own height, with my tasks in a side column (P2)
+
+*Contacts*
+
+- US-OPS-36 · See which toggle is on, and what each one does (P2)
+- US-CRM-21 · Read long names and emails in every contacts view (P2)
+- US-CRM-22 · Refresh the contacts list to see changes (P2)
+- US-CRM-23 · Search, filter and come back to the same contacts list (P2)
+
+*Pipeline*
+
+- US-CRM-24 · See the whole pipeline at a glance (P2)
+- US-CRM-25 · Spot leads going cold, and move a lead without dragging (P2)
+- US-CRM-26 · Say why a lead was lost, and quote a lead that's won (P2)
+- US-CRM-27 · Work a lead from one drawer (P2)
+- US-CRM-28 · Filter the pipeline by owner and source, and come back to it (P2)
+
+*Meetings*
+
+- US-MTG-13 · See which days have meetings in the mini calendar (P2)
+- US-MTG-14 · Start a meeting from a button, and open on the working day (P2)
+- US-MTG-15 · Get to a meeting or a contact from the sidebar lists (P2)
+- US-MTG-16 · Come back to the same calendar view and date (P2)
+- US-MTG-17 · Use the calendar on any screen size (P2)
+
+*Catalogue*
+
+- US-CAT-10 · Spot items that need setup from the stat cards (P2)
+- US-CAT-11 · Read an item's tax, HSN/SAC and description in the list (P2)
+- US-CAT-12 · Duplicate, change many items at once, and export (P2)
+- US-CAT-13 · Search, filter and come back to the same catalogue (P2)
+- US-CAT-14 · Make a bundle from items, and see bundles at a glance (P2)
+- US-CAT-15 · See where an item is used, in a drawer that's easy to scan (P2)
+
+*Quotes*
+
+- US-QUO-27 · See open, expiring and won quotes at a glance (P2)
+- US-QUO-28 · Search, filter and come back to the same quotes list (P2)
+- US-QUO-29 · Read a quote's progress in the list, and act on it from the row (P2)
+- US-QUO-30 · Give a quote a title (P2)
+- US-QUO-31 · See a quote at a glance, with one next step (P2)
+- US-QUO-32 · Follow what happened to a quote (P2)
+- US-QUO-33 · Get to a quote's lead, versions, job and invoices (P2)
+- US-QUO-34 · Build a quote in compact rows (P2)
+- US-QUO-35 · Save, preview and send from a bar that stays in view (P2)
+- US-QUO-36 · Start a quote valid for my usual number of days (P2)
+
+*Jobs*
+
+- US-JOB-30 · Start a job from the jobs list (P2)
+- US-JOB-31 · See active, ready-to-bill, over-budget jobs and retention at a glance (P2)
+- US-JOB-32 · Search, filter and come back to the same jobs list (P2)
+- US-JOB-33 · Read a job's next milestone and progress in the list (P2)
+- US-JOB-34 · See a job at a glance, change its status and take the next step (P2)
+- US-JOB-35 · Follow a job's milestones and billing at a glance (P2)
+- US-JOB-36 · Browse, upload and group site photos (P2)
+- US-JOB-37 · Follow what happened on a job (P2)
+- US-JOB-38 · Show real site photos in the demo (P3)
+
+*Demo data*
+
+- US-ONB-24 · Explore a pipeline that's being worked (P2)
+- US-ONB-25 · Explore quotes at every stage (P2)
+- US-ONB-26 · Explore jobs that need something (P2)
+- US-ONB-27 · Explore a catalogue and calendar that look kept (P2)
+- US-ONB-28 · Explore invoices at every stage (P2)
+- US-ONB-29 · Explore credit notes at every stage (P2)
+- US-ONB-30 · Explore bills and vendor credits at every stage (P2)
+- US-ONB-31 · Explore expenses with their receipts (P2)
+- US-ONB-32 · Explore expense categories that guide (P2)
+- US-ONB-33 · Explore vendor payments and payables you can pay from (P2)
+- US-ONB-34 · Explore banking with accounts, transfers and reconciliations (P2)
+- US-ONB-35 · Explore Users with a team that looks real (P2)
+
+*Invoices*
+
+- US-INV-27 · See what I'm owed, what's late and what's come in at a glance (P2)
+- US-INV-28 · Search, filter and come back to the same invoices list (P2)
+- US-INV-29 · Read an invoice's state in the list, and act on it from the row (P2)
+- US-INV-30 · See an invoice at a glance, with one next step (P2)
+- US-INV-31 · Read an invoice's lines and totals together (P2)
+- US-INV-32 · Follow what happened to an invoice (P2)
+- US-INV-33 · Give every invoice a due date from my payment terms (P1)
+- US-INV-34 · Build an invoice in compact rows, with a bar that stays in view (P2)
+- US-INV-35 · Duplicate an invoice (P2)
+
+*Credit notes*
+
+- US-INV-36 · Credit an invoice's lines, with their tax (P1)
+- US-INV-37 · Start a credit note from the credit notes list (P2)
+- US-INV-38 · See a credit note at a glance, with one next step (P2)
+- US-INV-39 · Follow what happened to a credit note (P2)
+- US-INV-40 · See where each credit went, at a glance (P2)
+- US-INV-41 · Search, filter and come back to the same credit notes list (P2)
+
+*Email log*
+
+- US-SET-27 · See every email Spine sends (P2)
+- US-SET-28 · Retry or cancel an email (P2)
+- US-SET-29 · Know when email isn't set up (P2)
+- US-DASH-30 · See failed emails in Needs your attention (P2)
+
+*Payments*
+
+- US-PAY-19 · See a payment at a glance, with one next step (P2)
+- US-PAY-20 · Follow what happened to a payment (P2)
+- US-PAY-21 · See money received at a glance (P2)
+- US-PAY-22 · Search, filter and come back to the same payments list (P2)
+- US-PAY-23 · Record a payment by ticking what it pays (P2)
+- US-PAY-24 · Be warned before recording the same payment twice (P2)
+- US-PAY-25 · Find a payment from search (P3)
+- US-PAY-26 · Move a payment off the wrong invoice (P2)
+
+*Menus*
+
+- US-OPS-37 · See what each menu action does at a glance (P2)
+
+*Confirm and toast*
+
+- US-OPS-38 · Know an action worked, wherever it takes me (P2)
+- US-CAT-16 · Confirm a change to many items before it happens (P2)
+
+*Receivables*
+
+- US-PAY-27 · See who owes me most, customer by customer (P2)
+- US-PAY-28 · Chase a customer without leaving Receivables (P2)
+- US-PAY-29 · Filter receivables by age (P2)
+- US-PAY-30 · Read a receivable at a glance (P2)
+- US-PAY-31 · Trust what Receivables counts (P2)
+
+*Vendor bills*
+
+- US-PUR-32 · See a bill at a glance, with one next step (P2)
+- US-PUR-33 · Pay a bill from its page (P2)
+- US-PUR-34 · See what we owe vendors at a glance (P2)
+- US-PUR-35 · Enter a bill faster, without entering it twice (P2)
+- US-PUR-36 · Record several draft bills at once (P3)
+
+*Vendor credits*
+
+- US-PUR-37 · See where a vendor credit stands, with one next step (P2)
+- US-PUR-38 · See what credit vendors owe us at a glance (P2)
+- US-PUR-39 · Enter a vendor credit like a bill (P2)
+- US-PUR-40 · Raise and use a credit from its bill (P2)
+- US-PUR-41 · Record several draft credits at once (P3)
+
+*Expenses*
+
+- US-PUR-42 · See what's waiting and what it's cost at a glance (P2)
+- US-PUR-43 · Review an expense on its own page (P2)
+- US-PUR-44 · Submit an expense faster (P2)
+- US-PUR-45 · Fix and resubmit a rejected expense (P2)
+- US-PUR-46 · See every expense category and how it's used (P2)
+- US-PUR-47 · Add, change and remove categories safely (P2)
+- US-PUR-48 · Pick the right category when submitting (P2)
+- US-PUR-49 · See a vendor payment on its own page (P2)
+- US-PUR-50 · Delete a wrong vendor payment (P2)
+- US-PUR-51 · See money paid out at a glance (P2)
+- US-PUR-52 · Pay a vendor by ticking bills (P2)
+- US-PUR-53 · Be warned before recording the same vendor payment twice (P2)
+- US-PUR-54 · Send a vendor a remittance advice (P3)
+- US-PUR-55 · Find a vendor payment from search (P3)
+- US-PUR-56 · See what we owe each vendor (P2)
+- US-PUR-57 · Read a payable at a glance (P2)
+- US-PUR-58 · Pay and apply credit from Payables (P2)
+- US-PUR-59 · Filter payables by age and see what's due this week (P2)
+- US-PUR-60 · Trust what Payables counts (P2)
+
+*Banking*
+
+- US-BANK-13 · See my accounts at a glance and act from them (P2)
+- US-BANK-14 · Work through an account's register (P2)
+- US-BANK-15 · Record money in, out and transfers safely (P2)
+- US-BANK-16 · Reconcile a long statement quickly (P2)
+- US-BANK-17 · Keep a reconciliation report (P2)
+
+*Team*
+
+- US-TEAM-19 · See everyone at a glance on the list layout (P2)
+- US-TEAM-20 · See and fix each person's Teams and access (P2)
+- US-TEAM-21 · Invite several people, onto their Teams (P2)
+- US-TEAM-22 · Change someone between Staff and Field (P2)
+- US-TEAM-23 · Act on people safely (P2)
+- US-TEAM-24 · Set a Staff or Field member's password (P2)
+- US-TEAM-25 · See every Team at a glance on the list layout (P2)
+- US-TEAM-26 · Create a Team from another, or duplicate one (P2)
+- US-TEAM-27 · Manage a Team's members safely (P2)
+- US-TEAM-28 · Review permissions before saving (P2)
+- US-TEAM-29 · See a Team's history (P2)
+- US-TEAM-30 · Choose which sections a Team can open (P2)
+- US-TEAM-31 · Keep closed records out of the way, not out of the work (P2)
+- US-TEAM-32 · Open and close sections in one place (P2)
+
+*Settings & your account*
+
+- US-AUTH-16 · One theme, wherever I sign in (P2)
+- US-AUTH-17 · See where I'm signed in and sign out elsewhere (P2)
+- US-AUTH-18 · Change my email safely (P2)
+- US-AUTH-19 · My account looks after the details (P2)
+- US-SET-30 · Find my own settings and the business's in one place (P2)
+- US-SET-31 · Settings grouped the way I think about my business (P2)
+- US-SET-32 · Settings that use the screen (P2)
+- US-SET-33 · Come back to the same setting, without losing edits (P2)
+- US-SET-34 · Search what's inside settings (P2)
+
+*Search*
+
+- US-OPS-39 · Pick up where I left off from search (P2)
+- US-OPS-40 · See every match in its list (P2)
+- US-OPS-41 · Go to a page or a setting from search (P2)
+- US-OPS-42 · Start something new from search (P2)
+- US-OPS-43 · Find leads, meetings, catalogue items and vendor credits (P2)
+- US-OPS-44 · Find a contact by phone, tax ID or one of their people (P2)
+- US-OPS-45 · Find a document by its amount (P2)
+- US-OPS-46 · Find archived records when I need them (P2)
+- US-OPS-47 · Read search results at a glance (P2)
+- US-OPS-48 · See search in the sidebar (P2)
+- US-OPS-49 · Narrow search to one area (P2)
 
 ## Phase 10 · AI assistant
 

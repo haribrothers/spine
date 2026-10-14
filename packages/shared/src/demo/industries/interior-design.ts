@@ -42,11 +42,16 @@ export const INTERIOR_DESIGN: IndustryPack = {
     overseas: { title: "Villa interiors — design only", value: 12000, stage: "won", source: "Referral", activity: { type: "call", notes: "Video call to present the final 3D views.", dueInDays: 6 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Meeting rooms on the 4th floor — design and fit-out.", terms: "50% on order, 40% on delivery, 10% on handover. Valid for 30 days.", lines: [["concept", 1], ["ceiling", 180], ["lighting", 24], ["carpentry", 120]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Second showroom — bulk furniture pricing.", lines: [["sofa", 6, 30], ["lighting", 40, 30], ["carpentry", 160]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Doctors' lounge — furniture and lighting.", lines: [["sofa", 2], ["lighting", 10], ["painting", 120]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "Apartment interiors — revised after the site visit; see the latest version.", lines: [["concept", 1], ["kitchen", 3], ["wardrobe", 6], ["painting", 260]], outcome: "revised" },
-    { slot: "overseas", validUntilInDays: 10, notes: "Guest suites — design only, pending the client's brief.", lines: [["concept", 1], ["consult", 12]], outcome: "draft" },
+    { slot: "anchor", title: "Meeting rooms — 4th floor", validUntilInDays: 30, notes: "Meeting rooms on the 4th floor — design and fit-out.", terms: "50% on order, 40% on delivery, 10% on handover. Valid for 30 days.", lines: [["concept", 1], ["ceiling", 180], ["lighting", 24], ["carpentry", 120]], outcome: "sent" },
+    { slot: "regional", title: "Second showroom furniture", validUntilInDays: 21, notes: "Second showroom — bulk furniture pricing.", lines: [["sofa", 6, 30], ["lighting", 40, 30], ["carpentry", 160]], outcome: "draft" },
+    { slot: "institution", title: "Doctors' lounge", validUntilInDays: 14, notes: "Doctors' lounge — furniture and lighting.", lines: [["sofa", 2], ["lighting", 10], ["painting", 120]], outcome: "sent" },
+    { slot: "consumer", title: "Apartment interiors", validUntilInDays: 45, notes: "Apartment interiors — revised after the site visit; see the latest version.", lines: [["concept", 1], ["kitchen", 3], ["wardrobe", 6], ["painting", 260]], outcome: "revised" },
+    { slot: "overseas", title: "Guest suites — design", validUntilInDays: 10, notes: "Guest suites — design only, pending the client's brief.", lines: [["concept", 1], ["consult", 12]], outcome: "draft" },
+  ],
+  lostLead: { title: "Second showroom fit-out — tender", value: 70000, lines: [["ceiling", 120], ["lighting", 12], ["carpentry", 80]], note: "They chose a local firm at a lower price." },
+  bundles: [
+    { name: "Bedroom package", description: "Two wardrobes, painting and lighting for one bedroom.", items: [["wardrobe", 6], ["painting", 45], ["lighting", 2]] },
+    { name: "Office cabin fit-out", description: "False ceiling, carpentry and lighting for a manager's cabin.", items: [["ceiling", 14], ["carpentry", 24], ["lighting", 4]] },
   ],
   invoices: {
     inv01: { notes: "Office fit-out — design fee.", lines: [["concept", 1], ["consult", 10]] },
@@ -85,7 +90,14 @@ export const INTERIOR_DESIGN: IndustryPack = {
     bill4: { ref: "CAD-1190", lines: [{ name: "Design software — annual licence", quantity: 2, price: 1100, service: true, in: { price: 42000, hsnSac: "997331", slab: 18 } }] },
     bill5: { ref: "WPL-3402", lines: [{ name: "Laminates and edge band", quantity: 80, price: 28, in: { price: 1350, hsnSac: "4823", slab: 18 } }] },
     bill6: { ref: "LLC-7901", lines: [{ name: "Cove lighting strips", quantity: 50, price: 22, in: { price: 900, hsnSac: "9405", slab: 18 } }] },
+    bill7: { ref: "CAD-1244", lines: [{ name: "Rendering plug-in — 3 seats", quantity: 3, price: 160, service: true, in: { price: 5200, hsnSac: "997331", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late on a job, and two paid together.
+    bill8: { ref: "WPL-3288", lines: [{ name: "Veneer sheets — walnut", quantity: 20, price: 65, in: { price: 2900, hsnSac: "4408", slab: 18 } }] },
+    bill9: { ref: "CAD-1215", lines: [{ name: "3D walkthrough render — showroom", quantity: 1, price: 450, service: true, in: { price: 15000, hsnSac: "998391", slab: 18 } }] },
+    bill10: { ref: "LLC-7820", lines: [{ name: "Wall washers", quantity: 12, price: 48, in: { price: 1900, hsnSac: "9405", slab: 18 } }] },
+    bill11: { ref: "LLC-7846", lines: [{ name: "LED drivers and dimmers", quantity: 10, price: 35, in: { price: 1400, hsnSac: "8504", slab: 18 } }] },
   },
+  recurringBill: { name: "Design software subscription", line: { name: "Design software — monthly seats", quantity: 4, price: 85, service: true, in: { price: 2900, hsnSac: "997331", slab: 18 } } },
   expenses: {
     exp1: { category: "Design software & samples", amount: 160, inAmount: 4800, description: "Fabric and laminate samples", paidBy: "company" },
     exp2: { category: "Freight & delivery", amount: 220, inAmount: 6500, description: "Delivery of sofas to the hospital", paidBy: "company" },

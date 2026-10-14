@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Badge, Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { formatMoney } from "../../../../lib/money";
 
 interface InvoiceDueRow {
@@ -45,7 +46,7 @@ export function InvoicesDue() {
   }
 
   return (
-    <Card>
+    <Card data-testid="invoices-due">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           Invoices due this week
@@ -56,9 +57,7 @@ export function InvoicesDue() {
       </CardHeader>
       <CardContent>
         {!rows ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+          <WidgetSkeleton kind="rows" rows={3} />
         ) : rows.length === 0 ? (
           <p className="py-4 text-center text-[13px] text-on-surface-muted">Nothing due this week.</p>
         ) : (

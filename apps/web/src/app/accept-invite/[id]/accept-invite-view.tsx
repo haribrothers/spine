@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { XCircle } from "lucide-react";
-import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Button, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { authClient } from "../../../lib/auth-client";
-import { ThemeToggle } from "../../../components/theme-toggle";
+import { AuthFrame, AuthHeading } from "../../../components/auth-frame";
 
 interface InvitationInfo {
   id: string;
@@ -110,25 +109,9 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
   if (preview.kind === "unusable") return <InviteUnusable />;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <div className="flex w-full max-w-sm items-center justify-center">
-        <Image src="/spine-logo-horizontal.png" alt="Spine" width={140} height={41} priority className="dark:hidden" />
-        <Image
-          src="/spine-logo-horizontal-light.png"
-          alt="Spine"
-          width={140}
-          height={41}
-          priority
-          className="hidden dark:block"
-        />
-      </div>
-      <ThemeToggle />
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>You&apos;ve been invited</CardTitle>
-          <CardDescription>Join an organisation on Spine.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+    <AuthFrame scene="login">
+      <AuthHeading title="You've been invited">Join an organisation on Spine.</AuthHeading>
+      <div className="mt-6 flex flex-col gap-4">
           {sessionLoading || preview.kind === "loading" ? (
             <div className="flex justify-center py-4">
               <Spinner />
@@ -182,38 +165,27 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
               </div>
             </>
           ) : null}
-        </CardContent>
-      </Card>
-    </main>
+      </div>
+    </AuthFrame>
   );
 }
 
 /** US-AUTH-11 — never names the business, so an unknown id reveals nothing. */
 function InviteUnusable() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <div className="flex w-full max-w-sm items-center justify-center">
-        <Image src="/spine-logo-horizontal.png" alt="Spine" width={140} height={41} priority className="dark:hidden" />
-        <Image src="/spine-logo-horizontal-light.png" alt="Spine" width={140} height={41} priority className="hidden dark:block" />
+    <AuthFrame scene="login">
+      <div data-testid="invite-unusable" className="flex flex-col gap-5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-overdue-bg text-overdue" aria-hidden="true">
+          <XCircle size={18} />
+        </span>
+        <AuthHeading title="This invitation can't be used">
+          It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one.
+        </AuthHeading>
+        <Button asChild variant="secondary" size="touch" className="w-full">
+          <Link href="/login">Log in instead</Link>
+        </Button>
       </div>
-      <ThemeToggle />
-      <Card className="w-full max-w-sm" data-testid="invite-unusable">
-        <CardHeader>
-          <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-overdue-bg text-overdue" aria-hidden="true">
-            <XCircle size={18} />
-          </span>
-          <CardTitle>This invitation can&apos;t be used</CardTitle>
-          <CardDescription>
-            It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="secondary" className="w-full">
-            <Link href="/login">Log in instead</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </main>
+    </AuthFrame>
   );
 }
 

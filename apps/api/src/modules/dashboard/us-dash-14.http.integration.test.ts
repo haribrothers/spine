@@ -35,7 +35,7 @@ describe("US-DASH-14 · see key figures with a trend and a comparison (requires 
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     const email = `us-dash-14-${randomUUID()}@example.com`;
     emails.push(email);

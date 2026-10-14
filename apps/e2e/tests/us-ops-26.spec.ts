@@ -1,8 +1,16 @@
+import { randomUUID } from "node:crypto";
 import type { Page, TestInfo } from "@playwright/test";
 import { test, expect, logIn, DEMO_FIELD_USER } from "./fixtures";
 import { expectNoAxeViolations } from "./axe";
 
 type Theme = "light" | "dark";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
+
+/** US-AUTH-16: the saved theme wins when a tab starts, so set it on the signed-in account (no-op before sign-in). */
+async function setAccountTheme(page: Page, theme: Theme | "system") {
+  await page.request.put(`${API_URL}/users/me/preferences`, { headers: { "Idempotency-Key": randomUUID() }, data: { themePreference: theme } });
+}
 
 /** Page and surface colours from the tokens (US-OPS-26, D-100). */
 const COLOURS: Record<Theme, { background: string; surface: string }> = {
@@ -12,8 +20,10 @@ const COLOURS: Record<Theme, { background: string; surface: string }> = {
 
 const style = (selector: string, prop: string) => `(() => { const el = document.querySelector(${JSON.stringify(selector)}); return el ? getComputedStyle(el)[${JSON.stringify(prop)}] : null; })()`;
 
+/** US-AUTH-16: the theme is the account's; it's put back to System after each test. */
 async function useTheme(page: Page, theme: Theme) {
   await page.addInitScript({ content: `localStorage.setItem("theme", "${theme}");` });
+  await setAccountTheme(page, theme);
 }
 
 async function shoot(page: Page, testInfo: TestInfo, name: string, theme: Theme) {
@@ -86,7 +96,7 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
   {
     name: "profile-notifications",
     open: async (page) => {
-      await page.goto("/profile?tab=notifications");
+      await page.goto("/dashboard?settings=notifications");
       await expect(page.getByTestId("daily-digest")).toBeVisible();
     },
   },
@@ -100,7 +110,8 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
   {
     name: "job-costing",
     open: async (page) => {
-      await page.goto("/jobs");
+      // Earlier specs add jobs to the shared organisation, so find the demo's job rather than expect it on page one.
+      await page.goto("/jobs?q=Hotel%20lobby%20renovation");
       await page.getByRole("link", { name: /Hotel lobby renovation/ }).first().click();
       await page.getByRole("tab", { name: /Costing/ }).click();
       await expect(page.getByRole("tabpanel")).toBeVisible();
@@ -116,6 +127,9 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
 ];
 
 test.describe("US-OPS-26", () => {
+  // The seeded Owner is shared with other specs: back to following the system.
+  test.afterEach(async ({ page }) => setAccountTheme(page, "system"));
+
   for (const theme of ["light", "dark"] as const) {
     for (const screen of SCREENS) {
       test(`${screen.name} in ${theme} mode: token colours, a screenshot, and axe passes`, async ({ page, seededOrg: _ }, testInfo) => {
@@ -133,11 +147,15 @@ test.describe("US-OPS-26", () => {
       const fieldPage = await context.newPage();
       await useTheme(fieldPage, theme);
       await logIn(fieldPage, DEMO_FIELD_USER);
-      await fieldPage.goto("/dashboard");
-      await expect(fieldPage.getByTestId("my-jobs")).toBeVisible({ timeout: 15_000 });
-      await checkTheme(fieldPage, theme);
-      await shoot(fieldPage, testInfo, "dashboard-field", theme);
-      await expectNoAxeViolations(fieldPage);
+      // US-AUTH-16: their saved theme applies when a tab starts — save it, then start a fresh tab.
+      await setAccountTheme(fieldPage, theme);
+      const tab = await context.newPage();
+      await tab.goto("/dashboard");
+      await expect(tab.getByTestId("my-jobs")).toBeVisible({ timeout: 15_000 });
+      await checkTheme(tab, theme);
+      await shoot(tab, testInfo, "dashboard-field", theme);
+      await expectNoAxeViolations(tab);
+      await setAccountTheme(tab, "system");
       await context.close();
     });
   }
@@ -146,7 +164,10 @@ test.describe("US-OPS-26", () => {
     await useTheme(page, "dark");
     await page.goto("/dashboard");
     await expect(page.getByRole("main")).toBeVisible();
-    await expect(page.locator('img[src*="spine-logo-horizontal-light"]').first()).toBeVisible();
+    // The logo's wordmark is light text in dark mode (US-SET-26: SpineLogo, --color-brand-wordmark).
+    const logo = page.getByRole("complementary").getByRole("img", { name: "Spine" }).first();
+    await expect(logo).toBeVisible();
+    expect(await logo.locator("path[style]").first().evaluate((el) => (globalThis as unknown as { getComputedStyle(e: unknown): { fill: string } }).getComputedStyle(el).fill)).toBe("rgb(243, 242, 238)");
 
     await page.keyboard.press("ControlOrMeta+k");
     const palette = page.getByRole("dialog", { name: "Search" });

@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import { inputTaxOverMessage, type MoneyAccount, type TaxPayment } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -270,6 +271,7 @@ export function TaxPaymentDialog({
 /** Tax payments and refunds for the report's range (paid in it, or covering it), each deletable by the Owner. */
 export function TaxPaymentsList({ from, to, currency, version, onChanged }: { from: string; to: string; currency: string; version: number; onChanged: () => void }) {
   const [rows, setRows] = useState<TaxPayment[] | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -321,7 +323,18 @@ export function TaxPaymentsList({ from, to, currency, version, onChanged }: { fr
               {r.deletedAt ? (
                 <span className="text-on-surface-muted">Deleted</span>
               ) : (
-                <Button variant="ghost" size="sm" aria-label={`Delete ${what.toLowerCase()} of ${formatMoney(total, currency)}`} onClick={() => remove(r.id)} disabled={busy}>
+                <Button variant="ghost" size="sm" aria-label={`Delete ${what.toLowerCase()} of ${formatMoney(total, currency)}`} onClick={async () => {
+                    const noun = r.kind === "payment" ? "tax payment" : "tax refund";
+                    const ok = await confirm({
+                      title: `Delete this ${noun}?`,
+                      description: `${what} of ${formatMoney(total, currency)} is reversed in your books, so ${r.kind === "payment" ? "the tax it paid shows as owed again" : "the refund no longer counts"}. It stays listed, marked deleted.`,
+                      confirmLabel: `Delete ${noun}`,
+                      danger: true,
+                    });
+                    if (ok) void remove(r.id);
+                  }}
+                  disabled={busy}
+                >
                   Delete
                 </Button>
               )}
@@ -329,6 +342,7 @@ export function TaxPaymentsList({ from, to, currency, version, onChanged }: { fr
           </div>
         );
       })}
+      {confirmDialog}
     </div>
   );
 }

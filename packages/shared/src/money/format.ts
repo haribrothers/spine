@@ -99,3 +99,24 @@ export function formatMoney(
   }
   return parts.map((p) => (p.type === "minusSign" ? MINUS_SIGN : p.value)).join("");
 }
+
+/**
+ * US-DASH-28 (D-209) — a short form for one tight spot: the centre of the
+ * Receivables aging ring. The locale's compact notation with one decimal
+ * ("₹44.9L", "$4.5M", "£4.5m") and a true minus sign. Everywhere else money
+ * keeps `formatMoney` (D-089), and the full amount is always shown nearby.
+ */
+export function formatMoneyCompact(amount: bigint | string | number, currency: string, locale = "en-US"): string {
+  const code = (currency || "USD").toUpperCase();
+  const minor = typeof amount === "bigint" ? amount : BigInt(typeof amount === "number" ? Math.round(amount) : amount || "0");
+  const value = Number(toDecimalString({ amount: minor, currency: code }));
+  // An explicit minimum: without it some Node/ICU versions keep a trailing zero ("$950.0").
+  const options: Intl.NumberFormatOptions = { style: "currency", currency: code, notation: "compact", minimumFractionDigits: 0, maximumFractionDigits: 1 };
+  let formatter: Intl.NumberFormat;
+  try {
+    formatter = new Intl.NumberFormat(locale || "en-US", options);
+  } catch {
+    formatter = new Intl.NumberFormat("en-US", options);
+  }
+  return formatter.format(value).replace("-", MINUS_SIGN);
+}

@@ -35,6 +35,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   recurring_invoice: "Recurring invoice",
   recurring_bill: "Recurring bill",
   user: "User",
+  team: "Team",
   data_export: "Data export",
   money_account: "Money account",
   bank_transfer: "Transfer",
@@ -47,6 +48,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   gstr1_export: "GSTR-1 file",
   tally_export: "Tally export",
   modules: "Modules",
+  email: "Email",
 };
 
 function sentenceCase(key: string): string {
@@ -60,7 +62,7 @@ export function auditEntityLabel(entityType: string): string {
 
 /** "accepted_in_person" → "Accepted in person"; "approve" → "Approved". */
 export function auditActionLabel(action: string): string {
-  const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred" };
+  const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred", password_set: "Password set by an owner", members_changed: "Members changed", privileges_changed: "Permissions changed" };
   return special[action] ?? sentenceCase(action);
 }
 

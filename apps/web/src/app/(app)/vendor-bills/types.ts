@@ -37,6 +37,8 @@ export interface VendorBill {
   supplyType: "intra" | "inter" | "export" | null;
   contactName: string | null;
   jobId: string | null;
+  /** US-PUR-32/34 — the job's name, when tagged to one. */
+  jobName?: string | null;
   status: VendorBillStatus;
   /** Vendor-supplied identifier, never system-allocated — see vendorBills' own schema doc comment. */
   billNumber: string;

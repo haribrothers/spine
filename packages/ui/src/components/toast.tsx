@@ -27,6 +27,12 @@ function passEscapeOn(toast: Element, from: Element) {
   win.requestAnimationFrame(step);
 }
 
+/**
+ * Where toasts stack (US-OPS-38, D-223): the bottom-right corner, newest on
+ * top. Toasts are rendered oldest first — the order Radix tabs through them
+ * newest first — and shown in reverse; below `sm` the stack spans the
+ * bottom of the screen.
+ */
 export const ToastViewport = forwardRef<
   React.ElementRef<typeof ToastPrimitive.Viewport>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitive.Viewport>
@@ -34,7 +40,7 @@ export const ToastViewport = forwardRef<
   <ToastPrimitive.Viewport
     ref={ref}
     className={cn(
-      "fixed bottom-0 right-0 z-[var(--z-toast)] flex w-full max-w-sm flex-col gap-2 p-4 outline-none",
+      "fixed bottom-0 right-0 z-[var(--z-toast)] flex w-full flex-col-reverse gap-2 p-3 outline-none sm:max-w-sm sm:p-4",
       className,
     )}
     {...props}
@@ -77,7 +83,7 @@ export const Toast = forwardRef<
     <ToastPrimitive.Root
       ref={setRefs}
       className={cn(
-        "flex items-center justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-toast transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
+        "flex items-start justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-toast transition-all dark:ring-1 dark:ring-border duration-base motion-safe:data-[state=open]:animate-toast-in data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
         className,
       )}
       onEscapeKeyDown={(event) => {

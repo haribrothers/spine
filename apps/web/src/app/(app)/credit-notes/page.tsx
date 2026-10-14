@@ -1,16 +1,20 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { CreditNotesExplorer } from "./credit-notes-explorer";
 
-/** PRD F5 S-05.6 — previously reachable only from an invoice's own detail page; a standalone list closes that gap. */
+/** US-INV-40 (D-219) — every credit note: what was credited, the credit customers still hold, and where each went. */
 export default function CreditNotesPage() {
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Billing" }, { label: "Credit Notes" }]}
-        title="Credit Notes"
-        description="Every credit note issued across the org, correcting or refunding part of an invoice."
+        breadcrumb={[{ label: "Billing" }, { label: "Credit notes" }]}
+        title="Credit notes"
+        description="Corrections to issued invoices — what came off them, and the credit customers can use or be paid back."
       />
-      <CreditNotesExplorer />
+      {/* US-INV-41: the explorer reads its state from the address. */}
+      <Suspense>
+        <CreditNotesExplorer />
+      </Suspense>
     </>
   );
 }

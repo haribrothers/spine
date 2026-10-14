@@ -19,14 +19,19 @@ test.describe("US-BANK-06", () => {
 
     await page.goto("/banking");
     const table = page.getByTestId("money-accounts-table");
-    const archive = async (name: string) => {
+    // US-BANK-13: Archive asks first (the default account says why it can't instead).
+    const archive = async (name: string, ask = true) => {
       await table.getByRole("button", { name: `Actions for ${name}` }).click();
       await page.getByRole("menuitem", { name: "Archive" }).click();
+      if (!ask) return;
+      const confirm = page.getByRole("alertdialog", { name: `Archive ${name}?` });
+      await expect(confirm).toContainText("It leaves the account pickers");
+      await confirm.getByRole("button", { name: "Archive account" }).click();
     };
 
     await archive("Old savings");
     await expect(page.getByText("Move the $1,000.00 out of this account before archiving it.").first()).toBeVisible();
-    await archive("Bank Account");
+    await archive("Bank Account", false);
     await expect(page.getByText("Choose another default account first.").first()).toBeVisible();
 
     await post("/bank-transfers", { fromMoneyAccountId: old.id, toMoneyAccountId: bank.id, amount: "100000", date: "2026-09-02" });
@@ -35,8 +40,8 @@ test.describe("US-BANK-06", () => {
     await expect(page.getByText("Account archived").first()).toBeVisible();
     await expect(table.getByRole("row", { name: /Old savings/ })).toHaveCount(0);
 
-    await page.getByRole("combobox", { name: "Which accounts" }).click();
-    await page.getByRole("option", { name: "Archived accounts" }).click();
+    await page.getByRole("tab", { name: /^Archived/ }).click();
+    await expect(page).toHaveURL(/tab=archived/);
     await expect(table.getByRole("row", { name: /Old savings/ })).toBeVisible();
 
     // Gone from the payment picker.
@@ -49,13 +54,11 @@ test.describe("US-BANK-06", () => {
     await page.keyboard.press("Escape");
 
     await page.goto("/banking");
-    await page.getByRole("combobox", { name: "Which accounts" }).click();
-    await page.getByRole("option", { name: "Archived accounts" }).click();
+    await page.getByRole("tab", { name: /^Archived/ }).click();
     await table.getByRole("button", { name: "Actions for Old savings" }).click();
     await page.getByRole("menuitem", { name: "Restore" }).click();
     await expect(page.getByText("Account restored").first()).toBeVisible();
-    await page.getByRole("combobox", { name: "Which accounts" }).click();
-    await page.getByRole("option", { name: "Active accounts" }).click();
+    await page.getByRole("tab", { name: /^Active/ }).click();
     await expect(table.getByRole("row", { name: /Old savings/ })).toBeVisible();
   });
 });

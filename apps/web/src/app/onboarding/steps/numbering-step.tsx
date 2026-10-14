@@ -28,15 +28,19 @@ export interface NumberingStepProps {
   onSkip?: () => void;
   /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
   saveLabel?: string;
+  /** US-ONB-22 — the rows as edited so far, before they're saved, for the live preview. */
+  onChange?: (value: NumberingSequenceValue[]) => void;
 }
 
 /** S-10.5 / numbering step of the wizard — prefix + padding + starting number per document type, per §14.3's canonical list. */
-export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: NumberingStepProps) {
+export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: NumberingStepProps) {
   const [rows, setRows] = useState<NumberingSequenceValue[]>(initialValue);
   const [saving, setSaving] = useState(false);
 
   function updateRow(documentType: string, patch: Partial<NumberingSequenceValue>) {
-    setRows((prev) => prev.map((row) => (row.documentType === documentType ? { ...row, ...patch } : row)));
+    const next = rows.map((row) => (row.documentType === documentType ? { ...row, ...patch } : row));
+    setRows(next);
+    onChange?.(next);
   }
 
   async function handleContinue() {

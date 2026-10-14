@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import {
+  type BankEntryDetails,
   CONTROL_ACCOUNT_CODES,
   CONTROL_ACCOUNT_HINT,
   MONEY_ACCOUNT_AS_CATEGORY,
@@ -13,7 +14,7 @@ import {
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, bankTransactions, contacts, moneyAccounts } from "../../db/schema";
+import { accounts, bankTransactions, contacts, journalLines, moneyAccounts, taxGroups, taxRates, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService, type PostingLine } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
@@ -37,7 +38,8 @@ export class BankTransactionsService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  async create(orgId: string, actorUserId: string, input: CreateBankTransactionInput): Promise<BankTransaction> {
+  /** `isDemo` (US-ONB-34): loaded by the demo — the row and its entry are demo data. */
+  async create(orgId: string, actorUserId: string, input: CreateBankTransactionInput, isDemo = false): Promise<BankTransaction> {
     return this.db.transaction(async (tx) => {
       const moneyAccount = await this.moneyAccounts.requireActive(tx, orgId, input.moneyAccountId);
       const category = await this.requireCategory(tx, orgId, input.accountId);
@@ -67,6 +69,7 @@ export class BankTransactionsService {
         sourceType: "bank_transaction",
         sourceId: id,
         lines,
+        isDemo,
       });
 
       const [row] = await tx
@@ -86,6 +89,7 @@ export class BankTransactionsService {
           description: input.description,
           entryId,
           createdByUserId: actorUserId,
+          isDemo,
         })
         .returning();
       await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "money_in_out", moneyAccount.id);
@@ -100,6 +104,33 @@ export class BankTransactionsService {
       });
       return this.toResponse(row!, { id: moneyAccount.id, name: moneyAccount.name }, category, contact);
     });
+  }
+
+  /** US-BANK-14 — one entry, for the register's drawer: its category, tax, contact, who recorded it and whether it's reconciled. */
+  async getOne(orgId: string, id: string): Promise<BankTransaction & BankEntryDetails> {
+    const [row] = await this.db
+      .select({ t: bankTransactions, money: moneyAccounts, account: accounts, contactName: contacts.name, rateName: taxRates.name, groupName: taxGroups.name, createdBy: user.name })
+      .from(bankTransactions)
+      .innerJoin(moneyAccounts, eq(moneyAccounts.id, bankTransactions.moneyAccountId))
+      .innerJoin(accounts, eq(accounts.id, bankTransactions.accountId))
+      .leftJoin(contacts, eq(contacts.id, bankTransactions.contactId))
+      .leftJoin(taxRates, eq(taxRates.id, bankTransactions.taxRateId))
+      .leftJoin(taxGroups, eq(taxGroups.id, bankTransactions.taxGroupId))
+      .leftJoin(user, eq(user.id, bankTransactions.createdByUserId))
+      .where(and(eq(bankTransactions.orgId, orgId), eq(bankTransactions.id, id)));
+    if (!row) throw new NotFoundException("Entry not found");
+    const [reconciled] = await this.db
+      .select({ id: journalLines.id })
+      .from(journalLines)
+      .where(and(eq(journalLines.entryId, row.t.entryId), eq(journalLines.accountId, row.money.accountId), isNotNull(journalLines.reconciliationId)))
+      .limit(1);
+    return {
+      ...this.toResponse(row.t, { id: row.money.id, name: row.money.name }, row.account, row.t.contactId && row.contactName ? { id: row.t.contactId, name: row.contactName } : null),
+      reconciled: Boolean(reconciled),
+      taxName: row.rateName ?? row.groupName ?? null,
+      createdBy: row.createdBy ?? null,
+      createdAt: row.t.createdAt.toISOString(),
+    };
   }
 
   async remove(orgId: string, id: string, actorUserId: string): Promise<{ id: string }> {

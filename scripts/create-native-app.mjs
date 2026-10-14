@@ -289,9 +289,9 @@ function isValidPreference(value: string | null): value is ThemePreference {
 
 /**
  * \`expo-secure-store\`-backed implementation of @spine/ui-native's
- * \`ThemeStorage\` contract. This app is native-only (no web target) — see
- * apps/design-system-native/src/lib/theme-storage.ts for the pattern with a
- * \`localStorage\` web fallback if this app later adds one.
+ * \`ThemeStorage\` contract. This app is native-only (no web target); if it
+ * ever gets one, \`expo-secure-store\` has no web implementation, so branch on
+ * \`Platform.OS\` and use \`localStorage\` there.
  */
 export const persistentThemeStorage: ThemeStorage = {
   async getPreference() {

@@ -11,7 +11,9 @@ test.describe("US-SET-14", () => {
     const sections = dialog.getByTestId("settings-sections").getByRole("button");
     const pane = dialog.getByTestId("settings-pane");
 
-    const labels = await sections.allInnerTexts();
+    await expect(sections.first()).toBeVisible();
+    // US-SET-31: Team links open pages, not panes.
+    const labels = (await sections.allInnerTexts()).filter((l) => !["Users", "Teams", "Audit log", "Email log"].includes(l.trim()));
     expect(labels.length).toBeGreaterThan(5);
     for (const label of labels) {
       await sections.filter({ hasText: label }).first().click();

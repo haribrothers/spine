@@ -49,6 +49,14 @@ export class AccessRemovedError extends Error {
   }
 }
 
+/** 403 PASSWORD_CHANGE_REQUIRED — an Owner set this password; choose your own first (US-TEAM-24). */
+export class PasswordChangeRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PasswordChangeRequiredError";
+  }
+}
+
 /** 401 — the session expired or was revoked elsewhere. */
 export class SessionExpiredError extends Error {
   constructor() {

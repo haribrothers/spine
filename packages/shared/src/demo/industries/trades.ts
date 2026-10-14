@@ -45,11 +45,16 @@ export const TRADES: IndustryPack = {
     overseas: { title: "Overseas enquiry", value: 0, stage: "lost", source: "Website", activity: { type: "note", notes: "Outside our service area.", dueInDays: -30 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Annual maintenance contract — renewal.", terms: "Billed yearly in advance. Valid for 30 days.", lines: [["amc", 1], ["callout", 4]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Second production line — bulk pricing on cable and boards.", lines: [["cable", 2500, 30], ["dbboard", 12, 30], ["electrician", 120]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Science block — replace hot water lines.", terms: "Work during the school holidays.", lines: [["pipes", 260], ["plumber", 60]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "House rewiring — revised to add the kitchen; see the latest version.", lines: [["rewire", 4], ["dbboard", 1], ["callout", 1]], outcome: "revised" },
-    { slot: "sez", validUntilInDays: 10, notes: "Server room cooling — pending the heat-load survey.", lines: [["acunit", 4], ["acinstall", 4]], outcome: "draft" },
+    { slot: "anchor", title: "Maintenance contract renewal", validUntilInDays: 30, notes: "Annual maintenance contract — renewal.", terms: "Billed yearly in advance. Valid for 30 days.", lines: [["amc", 1], ["callout", 4]], outcome: "sent" },
+    { slot: "regional", title: "Second production line", validUntilInDays: 21, notes: "Second production line — bulk pricing on cable and boards.", lines: [["cable", 2500, 30], ["dbboard", 12, 30], ["electrician", 120]], outcome: "draft" },
+    { slot: "institution", title: "Science block hot water", validUntilInDays: 14, notes: "Science block — replace hot water lines.", terms: "Work during the school holidays.", lines: [["pipes", 260], ["plumber", 60]], outcome: "sent" },
+    { slot: "consumer", title: "House rewiring", validUntilInDays: 45, notes: "House rewiring — revised to add the kitchen; see the latest version.", lines: [["rewire", 4], ["dbboard", 1], ["callout", 1]], outcome: "revised" },
+    { slot: "sez", title: "Server room cooling", validUntilInDays: 10, notes: "Server room cooling — pending the heat-load survey.", lines: [["acunit", 4], ["acinstall", 4]], outcome: "draft" },
+  ],
+  lostLead: { title: "Second factory rewire — tender", value: 45000, lines: [["rewire", 30], ["dbboard", 4], ["cable", 800]], note: "Another contractor quoted lower." },
+  bundles: [
+    { name: "Split AC fitted", description: "An inverter split AC, installed, with the first call-out.", items: [["acunit", 1], ["acinstall", 1], ["callout", 1]] },
+    { name: "Room rewire", description: "Rewiring one room with cable and an electrician's time.", items: [["rewire", 1], ["cable", 50], ["electrician", 4]] },
   ],
   invoices: {
     inv01: { notes: "Office tower — AC servicing, first quarter.", lines: [["amc", 1]] },
@@ -88,7 +93,14 @@ export const TRADES: IndustryPack = {
     bill4: { ref: "RTH-2205", lines: [{ name: "Scissor lift hire — 4 days", quantity: 4, price: 180, service: true, in: { price: 5500, hsnSac: "9973", slab: 18 } }] },
     bill5: { ref: "NEW-1288", lines: [{ name: "Ducting and insulation", quantity: 140, price: 22, in: { price: 780, hsnSac: "7306", slab: 18 } }] },
     bill6: { ref: "CAD-4502", lines: [{ name: "Cassette AC units", quantity: 4, price: 950, in: { price: 52000, hsnSac: "8415", slab: 18 } }] },
+    bill7: { ref: "RTH-2261", lines: [{ name: "Pipe threader hire — 2 days", quantity: 2, price: 75, service: true, in: { price: 2200, hsnSac: "9973", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late on a job, and two paid together.
+    bill8: { ref: "NEW-1162", lines: [{ name: "Conduit and fittings", quantity: 200, price: 3.5, in: { price: 140, hsnSac: "3917", slab: 18 } }] },
+    bill9: { ref: "RTH-2238", lines: [{ name: "Core drill hire — 3 days", quantity: 3, price: 85, service: true, in: { price: 2600, hsnSac: "9973", slab: 18 } }] },
+    bill10: { ref: "CAD-4446", lines: [{ name: "Copper pipe coils", quantity: 10, price: 95, in: { price: 4200, hsnSac: "7411", slab: 18 } }] },
+    bill11: { ref: "CAD-4468", lines: [{ name: "Refrigerant cylinders", quantity: 4, price: 120, in: { price: 5600, hsnSac: "2903", slab: 18 } }] },
   },
+  recurringBill: { name: "Van tool storage", line: { name: "Tool storage unit — monthly", quantity: 1, price: 210, service: true, in: { price: 6000, hsnSac: "997212", slab: 18 } } },
   expenses: {
     exp1: { category: "Vehicle & fuel", amount: 210, inAmount: 7200, description: "Van fuel — month", paidBy: "company" },
     exp2: { category: "Permits & certification", amount: 320, inAmount: 9500, description: "Electrical safety certificate renewal", paidBy: "company" },

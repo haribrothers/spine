@@ -1,6 +1,6 @@
 # Avatar
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/avatar.tsx` · **Doc page:** `apps/design-system-native/app/components/avatar.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/avatar.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/avatar-demo.tsx`
 
 A circular image with a fallback for representing a user or organization — initials on a primary-color fill by default, or an image when available.
 

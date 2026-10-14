@@ -387,6 +387,8 @@ Shows: "Sales > Contacts" · "Contacts" · "Customers and vendors you do busines
 ### LeadsBoard — Pipeline board by stage
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-CRM-11, US-CRM-17, US-CRM-19 · **Source:** Captured
 
+Replaced by `PipelineBoard` (US-CRM-24 to US-CRM-28).
+
 ![LeadsBoard](screens/LeadsBoard.webp)
 
 Links to: `LeadsBoardEmpty`, `ContactActivities`, `LeadStagesSettings`
@@ -404,6 +406,8 @@ Shows: "Sales > Pipeline" · "Pipeline" · "Every open lead, grouped by stage." 
 
 ### LeadDialog — Add/edit lead
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-CRM-10, US-CRM-13 · **Source:** Captured
+
+On the board, replaced by `LeadDrawer` (US-CRM-27).
 
 ![LeadDialog](screens/LeadDialog.webp)
 
@@ -435,6 +439,8 @@ Shows: "Edit contact — Spine" · "Sales" · "Contacts" · "Customers and vendo
 ### MeetingsWeek — Calendar — week view + mini-calendar sidebar
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-MTG-01, US-MTG-02, US-MTG-03 · **Source:** Captured
 
+Refined by `MeetingsWeekRefined` (D-212).
+
 ![MeetingsWeek](screens/MeetingsWeek.webp)
 
 Links to: `MeetingEditorDetails`, `MeetingsMonth`, `MeetingsAgenda`, `MeetingsEmpty`
@@ -444,6 +450,8 @@ Shows: "Sales > Meetings" · "Meetings" · "Schedule and view meetings with your
 ### MeetingsMonth — Calendar — month view
 **Priority:** P2 · **Phase:** 1 · **Stories:** US-MTG-02 · **Source:** Captured
 
+Refined by `MeetingsMonthRefined` (D-212).
+
 ![MeetingsMonth](screens/MeetingsMonth.webp)
 
 Links to: `MeetingsWeek`, `MeetingsAgenda`, `MeetingsEmpty`
@@ -452,6 +460,8 @@ Shows: "Sales > Meetings" · "Meetings" · "Schedule and view meetings with your
 
 ### MeetingsAgenda — Calendar — agenda view
 **Priority:** P3 · **Phase:** 1 · **Stories:** US-MTG-02 · **Source:** Captured
+
+Refined by `MeetingsAgendaRefined` (D-212).
 
 ![MeetingsAgenda](screens/MeetingsAgenda.webp)
 
@@ -470,6 +480,8 @@ Shows: "Sales > Meetings" · "OVERVIEW" · "Meetings" · "98 Dashboard" · "Sche
 
 ### MeetingQuickView — Event quick-view popover (RSVP)
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-MTG-07, US-MTG-08, US-MTG-10, US-MTG-11, US-MTG-12 · **Source:** Captured
+
+Refined by `MeetingQuickViewFits` (D-212).
 
 ![MeetingQuickView](screens/MeetingQuickView.webp)
 
@@ -529,6 +541,8 @@ Shows: "Sales > Meetings" · "Meetings" · "Schedule and view meetings with your
 
 ![CatalogList](screens/CatalogList.webp)
 
+Refined by `CatalogListRefined` (D-213).
+
 Links to: `CatalogEmpty`
 
 Shows: "Sales › Catalogue" · "OVERVIEW" · "Catalogue" · "98 Dashboard" · "Goods and services you quote, invoice and sell." · "SALES" · "9, Contacts" · "Total items" · "Categories" · "Missing tax rate" · "Missing account mapping" · "Pipeline" · "15" · "Meetings" · "Active" · "Category" · "Min price" · "Max price" · "Add item" · "Quotes" · "JOBS" · "Search items" · "*= Columns" · "• Jobs" · "Name til" · "Category 11" · "Unit" · "Default price t" · "Tax tu" · "Status" · "BILLING" · "$ Invoices" · "Drywall installation & finishing" · "Interior" · "sq ft" · "3.50 USD" · "15%" · "• Credit Notes" · "Electrical rough-in" · "Electrical" · "room" · "450.00 USD" · "..." · "•• Payments" · "Equipment rental - mini excavator" · …
@@ -538,6 +552,8 @@ Shows: "Sales › Catalogue" · "OVERVIEW" · "Catalogue" · "98 Dashboard" · "
 
 ![CatalogEmpty](screens/CatalogEmpty.webp)
 
+Refined by `CatalogListRefined` (D-213).
+
 Links to: `CatalogList`
 
 Shows: "Sales › Catalogue" · "Catalogue" · "Goods and services you quote, invoice and sell." · "Total items" · "Categorles" · "Missing tax rate" · "Missing account mapping" · "Active" · "Category" · "Min price" · "Max price" · "Add item" · "No catalogue items yet" · "Add your first good or service to quote faster - default price" · "and tax rate prefill every new quote line."
@@ -546,6 +562,8 @@ Shows: "Sales › Catalogue" · "Catalogue" · "Goods and services you quote, in
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-CAT-01, US-CAT-02 · **Source:** Captured
 
 ![CatalogItemDrawer](screens/CatalogItemDrawer.webp)
+
+Refined by `CatalogItemDrawerRefined` (D-213).
 
 Links to: —
 
@@ -565,12 +583,16 @@ Shows: "Sales > Catalogue" · "Catalogue" · "Goods and services you quote, invo
 
 ![QuoteBuilder](screens/QuoteBuilder.webp)
 
+Refined by `QuoteBuilderCompact` (D-214).
+
 Links to: `QuoteBuilderDraft`, `TaxRateDialog`, `OnbFinancialYear`, `OnbInviteTeam`, `TeamPrivilegesExpanded`, `QuoteDetailAccepted`
 
 Shows: "Sales › Quotes > New" · "New quote" · "Build a multi-line quote. It saves as a draft until you send it." · "Contact *" · "Currency*" · "Valid until" · "Select a contact..." · "USD" · "Pick a date" · "Quote shows as expired after this date (S-03.11)." · "Lines" · "Item name" · "Prefill from catalogu... -" · "Description (optional)" · "Qty" · "Unit price" · "Discount %" · "Line total" · "0.00" · "Tax" · "No tax" · "Price includes tax" · "+ Add item" · "+ Add heading" · "+ Add text line" · "Notes" · "Terms & conditions" · "в І" · "в I" · "Notes for the customer..." · "Payment terms, validity, etc..." · "Visible to the customer on the quote." · "Subtotal" · "0.00 USD" · "Total" · "Cancel" · "Save as draft"
 
 ### TeamPrivilegesExpanded — Team privileges — group expanded
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-CAT-08, US-TEAM-11, US-OPS-21 · **Source:** Captured
+
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
 
 ![TeamPrivilegesExpanded](screens/TeamPrivilegesExpanded.webp)
 
@@ -613,6 +635,8 @@ Shows: "Edit item — Spine" · "Sales" · "Catalogue" · "Goods and services yo
 
 ![QuotesList](screens/QuotesList.webp)
 
+Refined by `QuotesListRefined` (D-214).
+
 Links to: `QuoteDetail`, `QuotesEmpty`
 
 Shows: "Sales › Quotes" · "OVERVIEW" · "Quotes" · "98 Dashboard" · "Build multi-line quotes, revise sent quotes into new versions, and track validity." · "SALES" · "9, Contacts" · "Total quotes" · "Draft" · "Sent" · "Accepted" · "Pipeline" · "Meetings" · "Catalogue" · "Status" · "All contacts" · "• Email queue" · "New quote" · "JOBS" · "Search quotes" · "*= Columns" · "• Jobs" · "Number 11" · "Contact tu" · "Valid until ti" · "Total Ti" · "BILLING" · "5 Invoices" · "QUO-0004" · "Harborview Construction Co." · "510.00 USD" · "• Credit Notes" · "- (unsent draft)" · "Marcus Webb (Freelance Surveyor)" · "10/13/2026" · "4542.50 USD" · "•.." · "•• Payments" · "> - (unsent draft)" · "Bluewater Hospitality Group" · "V2" · "11/17/2026" · "18860.00 USD" · "..." · "• Receivables" · …
@@ -639,6 +663,8 @@ Shows: "Sales › Quotes > Edit" · "Edit quote" · "Only a draft can be edited 
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-QUO-05, US-QUO-06, US-QUO-11, US-QUO-13, US-QUO-17, US-QUO-18 · **Source:** Captured
 
 ![QuoteDetail](screens/QuoteDetail.webp)
+
+Refined by `QuoteDetailRefined` (D-214).
 
 Links to: `QuotesList`, `QuotePdf`, `EmailQuote`
 
@@ -691,6 +717,8 @@ Shows: "Sales > Quotes > Detail" · "OVERVIEW" · "Quote" · "B8 Dashboard" · "
 
 ### EmailQueueDialog — Email queue
 **Priority:** P3 · **Phase:** 1 · **Stories:** US-QUO-07 · **Source:** Captured
+
+**Retired** by the email log (US-SET-27, D-220): see `EmailLog`.
 
 ![EmailQueueDialog](screens/EmailQueueDialog.webp)
 
@@ -820,6 +848,8 @@ Shows: "Quotes" · "Detail" · "QUO-0004" · "Harborview Construction Co. · $51
 ### JobsList — Jobs list
 **Priority:** P1 · **Phase:** 3 · **Stories:** US-JOB-01, US-JOB-22, US-JOB-23 · **Source:** Captured
 
+Refined by `JobsListRefined` (D-215).
+
 ![JobsList](screens/JobsList.webp)
 
 Links to: `JobFromQuote`, `JobsEmpty`, `MobJobDetail`
@@ -828,6 +858,8 @@ Shows: "Jobs" · "OVERVIEW" · "98 Dashboard" · "Track work from an accepted qu
 
 ### JobsListBilling — Jobs list with billed and budget used
 **Priority:** P1 · **Phase:** 7 · **Stories:** US-JOB-25, US-JOB-27 · **Source:** Drawn
+
+Refined by `JobsListRefined` (D-215).
 
 ![JobsListBilling](screens/JobsListBilling.webp)
 
@@ -868,6 +900,8 @@ Replaces `JobEditDialog` once US-JOB-24 ships.
 
 ### JobMilestones — Job detail — Milestones (retention)
 **Priority:** P1 · **Phase:** 3 · **Stories:** US-JOB-03, US-JOB-06, US-JOB-07, US-JOB-17, US-JOB-18, US-JOB-20 · **Source:** Captured
+
+Refined by `JobDetailRefined` and `JobDetailCompleted` (D-215).
 
 ![JobMilestones](screens/JobMilestones.webp)
 
@@ -922,6 +956,8 @@ Shows: "Jobs > Detail" · "OVERVIEW" · "Job" · "B8 Dashboard" · "< Back to lo
 
 ### JobPhotos — Job detail — Photos
 **Priority:** P2 · **Phase:** 3 · **Stories:** US-JOB-11 · **Source:** Captured
+
+Refined by `JobPhotosGrouped` and `JobPhotosViewer` (D-215).
 
 ![JobPhotos](screens/JobPhotos.webp)
 
@@ -1008,6 +1044,8 @@ Shows: "INV-0013" · "Maple Ridge Developments · Progress claim 2 · due Oct 18
 ### InvoicesList — Invoices list (overdue flags)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-04, US-INV-12, US-INV-13, US-OPS-21 · **Source:** Captured
 
+Refined by `InvoicesListRefined` (D-217).
+
 ![InvoicesList](screens/InvoicesList.webp)
 
 Links to: `InvoiceDetail`, `InvoicesEmpty`, `OnbFinancialYear`, `OnbInviteTeam`, `QuoteBuilder`, `TeamPrivilegesExpanded`
@@ -1025,6 +1063,8 @@ Shows: "Billing > Invoices" · "OVERVIEW" · "Invoices" · "98 Dashboard" · "Bu
 
 ### InvoiceBuilder — New/edit invoice (standard/advance)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-01, US-OPS-21 · **Source:** Captured
+
+Refined by `InvoiceBuilderCompact` (D-217).
 
 ![InvoiceBuilder](screens/InvoiceBuilder.webp)
 
@@ -1044,6 +1084,8 @@ Shows: "Billing > Invoices > New" · "New invoice" · "Build a multi-line invoic
 ### InvoiceDetailDraft — Invoice detail — draft
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-02 · **Source:** Captured
 
+Refined by `InvoiceDetailDraftRefined` (D-217).
+
 ![InvoiceDetailDraft](screens/InvoiceDetailDraft.webp)
 
 Links to: —
@@ -1052,6 +1094,8 @@ Shows: "Billing > Invoices > Detail" · "OVERVIEW" · "Invoice" · "98 Dashboard
 
 ### InvoiceDetail — Invoice detail (payments, credit notes)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-03, US-INV-09, US-INV-11, US-INV-12, US-INV-13, US-INV-14, US-PAY-01, US-PAY-03 · **Source:** Captured
+
+Refined by `InvoiceDetailRefined` (D-217).
 
 ![InvoiceDetail](screens/InvoiceDetail.webp)
 
@@ -1089,6 +1133,8 @@ Shows: "Billing > Invoices" · "Invoices" · "Build multi-line invoices, issue t
 ### CreditNoteDialog — Issue a credit note
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-INV-09 · **Source:** Captured
 
+Refined by `CreditNoteDialogLines` and `CreditNoteDialogAmount` (D-219).
+
 ![CreditNoteDialog](screens/CreditNoteDialog.webp)
 
 Links to: `InvoiceDetail`
@@ -1097,6 +1143,8 @@ Shows: "Billing > Invoices > Detail" · "Invoice" · "< Back to invoices" · "IN
 
 ### CreditNotesList — Credit notes list
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-INV-10 · **Source:** Captured
+
+Refined by `CreditNotesListRefined` (D-219).
 
 ![CreditNotesList](screens/CreditNotesList.webp)
 
@@ -1115,6 +1163,8 @@ Shows: "Billing > Credit Notes" · "Credit Notes" · "Every credit note issued a
 
 ### CreditNoteDrawer — Credit note detail
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-INV-10 · **Source:** Captured
+
+Replaced by the page `CreditNoteDetailRefined` (D-219).
 
 ![CreditNoteDrawer](screens/CreditNoteDrawer.webp)
 
@@ -1236,6 +1286,8 @@ Shows: "Tax Invoice PDF — Spine" · "KI" · "Kaveri Interiors Pvt Ltd" · "14 
 ### PaymentsList — Payments list
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-PAY-04, US-PAY-12 · **Source:** Captured
 
+**Refined** by `PaymentsListRefined` (US-PAY-21, D-221).
+
 ![PaymentsList](screens/PaymentsList.webp)
 
 Links to: `PaymentDrawer`, `PaymentsEmpty`
@@ -1254,6 +1306,8 @@ Shows: "Billing > Payments" · "OVERVIEW" · "Payments" · "98 Dashboard" · "Re
 ### NewPaymentDialog — Record a payment (allocate, oldest-first)
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-PAY-02, US-PAY-05, US-PAY-13 · **Source:** Captured
 
+**Replaced** by `RecordPaymentRefined` (US-PAY-23, D-221).
+
 ![NewPaymentDialog](screens/NewPaymentDialog.webp)
 
 Links to: `PaymentDrawerCredit`, `RecordPaymentDialog`
@@ -1262,6 +1316,8 @@ Shows: "Billing > Payments" · "OVERVIEW" · "Payments" · "98 Dashboard" · "Re
 
 ### RecordPaymentDialog — Record payment from an invoice
 **Priority:** P1 · **Phase:** 2 · **Stories:** US-PAY-01, US-PAY-13 · **Source:** Captured
+
+**Replaced** by `RecordPaymentRefined` (US-PAY-23, D-221): one dialog everywhere.
 
 ![RecordPaymentDialog](screens/RecordPaymentDialog.webp)
 
@@ -1272,6 +1328,8 @@ Shows: "Billing > Invoices > Detail" · "OVERVIEW" · "Invoice" · "B8 Dashboard
 ### PaymentDrawer — Payment detail
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-PAY-04, US-PAY-07, US-PAY-11, US-PAY-12 · **Source:** Captured
 
+**Replaced** by the payment page, `PaymentDetailRefined` (US-PAY-19, D-221).
+
 ![PaymentDrawer](screens/PaymentDrawer.webp)
 
 Links to: `PaymentsList`, `PaymentsEmpty`, `ReceiptPdf`, `EmailReceipt`
@@ -1280,6 +1338,8 @@ Shows: "RCP-0001" · "Billing > Payments" · "Priya Nair" · "Payments" · "Reco
 
 ### PaymentDrawerCredit — Payment drawer — customer credit
 **Priority:** P2 · **Phase:** 2 · **Stories:** US-PAY-05, US-PAY-13 · **Source:** Captured
+
+**Replaced** by `PaymentDetailCredit` (US-PAY-19, D-221).
 
 ![PaymentDrawerCredit](screens/PaymentDrawerCredit.webp)
 
@@ -1328,6 +1388,8 @@ Shows: "Prıya Nalr pald 7009.25 USD (RCP-0001)•"
 
 ![Receivables](screens/Receivables.webp)
 
+Superseded by `ReceivablesByCustomer` and `ReceivablesByInvoice` (D-224).
+
 Links to: `ReceivablesEmpty`
 
 Shows: "Billing > Receivables" · "Receivables" · "Outstanding invoice balances, bucketed by how overdue they are." · "Current" · "1-30 days" · "31-60 days" · "61-90 days" · "90+ days" · "30623.00" · "4542.50" · "USD" · "Total outstanding" · "35165.50 USD" · "Search receivables" · "* Columns" · "Invoice tu" · "Contact t" · "Due date t" · "Aging N" · "Balance due T" · "INV-0002" · "Harborview Construction Co." · "9/28/2026" · "4542.50 USD" · "INV-0005" · "Maple Ridge Developments" · "3937.50 USD" · "INV-0006" · "INV-0007" · "Bluewater Hospitality Group" · "4830.00 USD" · "INV-0008" · "9660.00 USD" · "INV-0009" · "INV-0010" · "1680.00 USD" · "INV-0003" · "10/24/2026" · "1748.00 USD" · "1-8 of 8 per page" · "10"
@@ -1362,6 +1424,8 @@ Shows: "RB" · "Riverstone Builders" · "12 Quarry Lane, Portland, ME 04101" · 
 ### CreditNoteDialogExcess — Credit note larger than the invoice's balance
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-PAY-16 · **Source:** Drawn
 
+Refined by `CreditNoteDialogLines`: the split now sits beside the totals (D-219).
+
 ![CreditNoteDialogExcess](screens/CreditNoteDialogExcess.webp)
 
 Links to: `CustomerRefundDialog`
@@ -1384,6 +1448,8 @@ Shows: "Refund — Spine" · "Billing" · "Payments" · "Record payments against
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-03, US-PUR-17, US-PUR-18 · **Source:** Captured
 
 ![VendorBillsList](screens/VendorBillsList.webp)
+
+Superseded by `VendorBillsListRefined` (D-225).
 
 Links to: `ExpensesList`, `VendorBillsEmpty`
 
@@ -1421,6 +1487,8 @@ Shows: "Purchases › Vendor Bills › Detail" · "Vendor bill" · "< Back to ve
 
 ![VendorBillDetail](screens/VendorBillDetail.webp)
 
+Superseded by `VendorBillPage` (D-225).
+
 Links to: —
 
 Shows: "Purchases › Vendor Bills › Detail" · "OVERVIEW" · "Vendor bill" · "98 Dashboard" · "< Back to vendor bills" · "SALES" · "9, Contacts" · "GSC-8834 Recorded" · "Pipeline" · "Record payment" · "Void" · "Granite State Concrete • Due 9/28/2026" · "Meetings" · "Catalogue" · "• Quotes" · "Lines" · "JOBS" · "Ready-mix concrete pour" · "2160.00" · "• Jobs" · "12 × 180.00" · "BILLING" · "5 Invoices" · "Vendor Payments" · "• Credit Notes" · "No payments recorded against this bill yet." · "•• Payments" · "• Receivables" · "PURCHASES" · "Subtotal" · "2160.00 USD" · "• Vendor Bills" · "Tax" · "0.00 USD" · "Expenses" · "Total" · "2g Vendor Payments" · "• Payables" · "REPORTS" · "Lll Reports" · "TEAM" · "90 Users" · "• Teams" · "AM" · "Alex Morg... v"
@@ -1438,6 +1506,8 @@ Shows: "Purchases › Vendor Bills > Detail" · "Vendor bill" · "< Back to vend
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-06 · **Source:** Captured
 
 ![VendorPaymentsList](screens/VendorPaymentsList.webp)
+
+Superseded by `VendorPaymentsListRefined` (D-229).
 
 Links to: `VendorPaymentsEmpty`, `VendorPaymentDrawer`
 
@@ -1457,6 +1527,8 @@ Shows: "Purchases › Vendor Payments" · "Vendor Payments" · "Record a payment
 
 ![NewVendorPaymentDialog](screens/NewVendorPaymentDialog.webp)
 
+Superseded by `RecordVendorPaymentRefined` (D-229).
+
 Links to: —
 
 Shows: "Purchases > Vendor Payments" · "OVERVIEW" · "Vendor Payments" · "B8 Dashboard" · "Record a payment to a vendor, fully allocated across their recorded bills." · "SALES" · "• Contacts" · "Record a vendor payment" · "Pick a vendor, then allocate the full payment across their recorded bills - unlike a customer payment, this must be fully allocated" · "Pipeline" · "before It can be saved." · "Meetings" · "• Catalogue" · "Vendor *" · "Date *" · "Record payment" · "• Quotes" · "Select a vendor..." · "10/4/2026" · "JOBS" · "Method *" · "Reference" · "# Columns" · "_ Jobs" · "Bank transfer" · "Optional" · "Amount t" · "BILLING" · "Cheque number, transaction ID, etc." · "5 Invoices" · "4250.00 USD" · "Amount *" · "5 Credit Notes" · "0.00" · "•• Payments" · "• Receivables" · "PURCHASES" · "• Vendor Bills" · "El Expenses" · "2 Vendor Payments" · "• Payables" · "REPORTS" · "ill Reports" · "Cancel" · "TEAM" · …
@@ -1466,6 +1538,8 @@ Shows: "Purchases > Vendor Payments" · "OVERVIEW" · "Vendor Payments" · "B8 D
 
 ![VendorPaymentDrawer](screens/VendorPaymentDrawer.webp)
 
+Superseded by `VendorPaymentPage` (D-229).
+
 Links to: `VendorPaymentsList`, `VendorPaymentsEmpty`
 
 Shows: "VPY-0001" · "Purchases › Vendor Payments" · "Apex Timber Supply" · "Vendor Payments" · "Record a payment to a vendor, fully allocated across their recorded bills." · "Date" · "Method" · "10/3/2026" · "Bank transfer" · "Reference" · "Amount" · "Total payments" · "Total pald" · "4250.00 USD" · "4250.00" · "Allocated to" · "AT-20441" · "All vendors" · "Search vendor payments" · "Number N" · "Date tu" · "Vendor 1" · "Metl" · "Banl" · "1-1 of 1 per page" · "10" · "Close"
@@ -1474,6 +1548,8 @@ Shows: "VPY-0001" · "Purchases › Vendor Payments" · "Apex Timber Supply" · 
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-07, US-PUR-17, US-PUR-18 · **Source:** Captured
 
 ![ExpensesList](screens/ExpensesList.webp)
+
+Superseded by `ExpensesListRefined` (D-227).
 
 Links to: `VendorBillsList`, `ExpenseDialog`, `ExpensesEmpty`
 
@@ -1504,6 +1580,8 @@ Shows: "Purchases > Expenses" · "OVERVIEW" · "Expenses" · "98 Dashboard" · "
 
 ![ExpenseDialog](screens/ExpenseDialog.webp)
 
+Superseded by `ExpenseFormRefined` (D-227).
+
 Links to: `ExpensesList`, `ExpensesEmpty`, `ExpenseCategoryDialog`, `ExpenseCategories`
 
 Shows: "Purchases › Expenses" · "Expenses" · "Submit an expense for approval. Categories are managed from Settings → Purchases." · "Submit an expense" · "ejected" · "A submitted expense doesn't post to the ledger until an owner or staff member approves it." · "Category *" · "Job" · "Select a category..." · "No job" · "Submit expense" · "Optional — flows into job costing once approved." · "Date *" · "Currency *" · "= Columns" · "10/4/2026" · "USD" · "Submitted by t" · "Amount*" · "Tax rate" · "Alex Morgan" · "0.00" · "No tax" · "••." · "Tax amount" · "Paid by*" · "Company" · "Included in the amount above, not added on top." · "Description" · "What was this for?" · "Receipt" · "Upload receipt" · "Cancel" · "Save expense"
@@ -1512,6 +1590,8 @@ Shows: "Purchases › Expenses" · "Expenses" · "Submit an expense for approval
 **Priority:** P1 · **Phase:** 7 · **Stories:** US-PUR-23 · **Source:** Drawn
 
 ![ExpenseDialogLabour](screens/ExpenseDialogLabour.webp)
+
+Superseded by `ExpenseFormLabour` (D-227).
 
 Links to: `ExpensesList`, `ExpenseDrawerSubmitted`
 
@@ -1523,6 +1603,8 @@ The "Amount" side of the switch is today's `ExpenseDialog`.
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-08, US-PUR-10 · **Source:** Captured
 
 ![ExpenseDrawerSubmitted](screens/ExpenseDrawerSubmitted.webp)
+
+Superseded by `ExpensePage` (D-227).
 
 Links to: `ExpenseApproveConfirm`, `EmailExpenseApproved`
 
@@ -1551,6 +1633,8 @@ Shows: "Expense Submitted" · "Purchases > Expenses" · "Fuel & Vehicle" · "Exp
 
 ![ExpenseDrawerApproved](screens/ExpenseDrawerApproved.webp)
 
+Superseded by `ExpensePage` (D-227).
+
 Links to: `ExpenseBillToCustomer`
 
 Shows: "EXP-0003 Approved" · "Purchases › Expenses" · "Tools & Small Equipment" · "OVERVIEW" · "Expenses" · "98 Dashboard" · "Submit an expense for approval. Categories are managed from Settings → Purchases." · "Date" · "Category" · "9/13/2026" · "SALES" · "9 Contacts" · "Total expenses" · "Submitted" · "Amount" · "Tax" · "Approved" · "150.00 USD" · "0.00 USD" · "Pipeline" · "Paid by" · "Billable" · "Meetings" · "Company" · "No" · "• Catalogue" · "Description" · "Status" · "My expenses only" · "• Quotes" · "Replacement power tools" · "JOBS" · "Receipt" · "Search expenses" · "• Jobs" · "No receipt attached." · "Date t" · "Category 1" · "Job tu" · "Amount ti" · "BILLING" · "[ Invoices" · "9/25/2026" · "Site Meals" · "120.00 USD" · …
@@ -1578,6 +1662,8 @@ Shows: "Expense" · "BXP-0001 (FueL" · "& Vehicle, 85.00 USD) was approved."
 
 ![Payables](screens/Payables.webp)
 
+Superseded by `PayablesByVendor` and `PayablesByBill` (D-230).
+
 Links to: `PayablesEmpty`
 
 Shows: "Purchases › Payables" · "Payables" · "Outstanding vendor bill balances, bucketed by how overdue they are." · "Current" · "1-30 days" · "31-60 days" · "61-90 days" · "90+ days" · "2160.00" · "USD" · "Total outstanding" · "2160.00 USD" · "Search payables" · "* Columns" · "Bill T" · "Vendor t" · "Due date T" · "Aging 1" · "Balance due T" · "GSC-8834" · "Granite State Concrete" · "9/28/2026" · "1-1 of 1 per page" · "10"
@@ -1586,6 +1672,8 @@ Shows: "Purchases › Payables" · "Payables" · "Outstanding vendor bill balanc
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-13 · **Source:** Captured
 
 ![PayablesEmpty](screens/PayablesEmpty.webp)
+
+The empty state stays; the header now reads "What you owe vendors, by how late it is · as of …" and the cards "Total owed" (D-230).
 
 Links to: `Payables`
 
@@ -1605,6 +1693,8 @@ Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to 
 
 ![ExpenseCategoryDialog](screens/ExpenseCategoryDialog.webp)
 
+Superseded by `ExpenseCategoryDialogRefined` (D-228).
+
 Links to: `SettingsPurchases`, `ExpenseDialog`, `ExpenseCategories`
 
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "Q Search settings" · "Purchases" · "'xpense categories used when a team member submits an expense from the mobile app or" · "ORGANISATION" · "web. Each category can map to a default posting account" · "El Business profile" · "EXPENSE CATEGORIES" · "+ Add category" · "* Industry template" · "O, Currency & locale" · "Fuel & Vehicle" · "6300 - Travel & Vehicle" · "Financial year" · "% Tax" · "•.." · "Add category" · "# Numbering" · "Name" · "..." · "• Chart of accounts" · "e.g. Fuel" · "evenue this month" · "!? Purchases" · "Default posting account" · "15265.00 USD" · "• Repeat quote conversion" · "None" · "to Upcoming meetings" · "@ Meeting reminders" · "0 Edit layout" · "Cancel" · "Save" · "A Browser notifications" · "E Demo data" · "View board" · "Receivables aging" · "View all" · "Job profitability"
@@ -1623,6 +1713,8 @@ Shows: "Expenses" · "Submit an expense for approval. Categories are managed fro
 
 ![ExpenseCategories](screens/ExpenseCategories.webp)
 
+Superseded by `ExpenseCategoriesRefined` (D-228).
+
 Links to: `ExpenseDialog`, `ExpenseCategoryDialog`
 
 Shows: "Expenses" · "Submit an expense for approval. Categories are managed from Expenses › Categories." · "+ Add category" · "Categories" · "Name" · "Posting account" · "Used by" · "Status" · "Fuel" · "6300 · Travel & Vehicle" · "14 expenses" · "Active" · "Materials" · "5000 · Cost of Materials" · "22 expenses" · "Tools" · "6900 · Other Expenses" · "3 expenses" · "Travel" · "9 expenses" · "Meals" · "0 expenses" · "Archived" · "Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted."
@@ -1631,6 +1723,8 @@ Shows: "Expenses" · "Submit an expense for approval. Categories are managed fro
 **Priority:** P1 · **Phase:** 7 · **Stories:** US-ONB-13 · **Source:** Drawn
 
 ![ExpenseCategoriesConstruction](screens/ExpenseCategoriesConstruction.webp)
+
+Superseded by `ExpenseCategoriesRefined` (D-228).
 
 Links to: `ExpenseCategories`, `ExpenseCategoryDialog`
 
@@ -1643,6 +1737,8 @@ The note shows once, after the template is applied. `OnbIndustryTemplate`'s Cons
 
 ![ExpenseDrawerOwn](screens/ExpenseDrawerOwn.webp)
 
+Superseded by `ExpensePage` (D-227).
+
 Links to: `ExpenseApproveConfirm`
 
 Shows: "Expenses" · "Submit an expense for approval. Categories are managed from Expenses › Categories." · "+ Submit expense" · "Categories" · "Date" · "Submitted by" · "Category" · "Job" · "Amount" · "Status" · "Oct 2, 2026" · "Marcus Webb" · "Fuel" · "Marina office fit-out" · "$64.00" · "Submitted" · "Oct 1, 2026" · "Materials" · "Phase 2 townhomes" · "$192.00" · "Sep 30, 2026" · "Sarah Mendes" · "Travel" · "$85.00" · "Sep 28, 2026" · "Alex Morgan" · "Tools" · "$310.00" · "Approved" · "Expense · Travel" · "Sarah Mendes (you)" · "Paid by" · "Personal card" · "Description" · "Mileage to Burlington site visit" · "Receipt photo" · "Someone else needs to approve your own expense." · "Delete expense" · "Edit"
@@ -1651,6 +1747,8 @@ Shows: "Expenses" · "Submit an expense for approval. Categories are managed fro
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-24 · **Source:** Drawn
 
 ![VendorCreditsList](screens/VendorCreditsList.webp)
+
+Superseded by `VendorCreditsListRefined` (D-226).
 
 Links to: `VendorCreditBuilder`, `VendorCreditDetail`
 
@@ -1661,6 +1759,8 @@ Shows: "Vendor credits — Spine" · "Purchases" · "Vendor Credits" · "Credit 
 
 ![VendorCreditBuilder](screens/VendorCreditBuilder.webp)
 
+Superseded by `VendorCreditBuilderRefined` (D-226).
+
 Links to: —
 
 Shows: "New vendor credit — Spine" · "Purchases" · "Vendor Credits" · "New" · "New vendor credit" · "Record a vendor's credit note. It saves as a draft until you record it." · "Vendor" · "*" · "Coastal Timber Supply" · "Vendor's credit note number" · "CN-4471" · "The vendor's own number — Spine gives it a VCR number when recorded." · "Against bill" · "Bill 88213 · Sep 28, 2026" · "Optional — copy its lines, then edit them down." · "Currency" · "USD" · "Date" · "Oct 3, 2026" · "Job" · "J-0012 · Harbour Lofts fit-out" · "Lowers this job's cost once recorded." · "Lines" · "Returned: treated pine 90×45" · "Treated pine 90×45" · "20 lengths returned unused from site" · "Qty" · "20" · "Unit price" · "18.92" · "Discount %" · "0" · "Line total" · "378.40" · "Expense/COGS account" · "5000 · Cost of Materials" · "Tax" · "Sales Tax 8.875%" · "Price includes tax" · "Add line" · "Notes" · "Internal notes…" · "Subtotal" · "$378.40" · "$33.60"
@@ -1670,6 +1770,8 @@ Shows: "New vendor credit — Spine" · "Purchases" · "Vendor Credits" · "New"
 
 ![VendorCreditDetail](screens/VendorCreditDetail.webp)
 
+Superseded by `VendorCreditPage` (D-226).
+
 Links to: `ApplyVendorCreditDialog`, `VendorRefundDialog`
 
 Shows: "Vendor credit — Spine" · "Purchases" · "Vendor Credits" · "Detail" · "Vendor credit" · "Back to vendor credits" · "VCR-0003" · "Open" · "Coastal Timber Supply · their CN-4471 · Oct 3, 2026" · "Apply to bills" · "Record refund" · "Void" · "Lines" · "Returned: treated pine 90×45" · "20 × $18.92 · 5000 Cost of Materials · Sales Tax 8.875% · J-0012" · "$378.40" · "Applied to bills" · "Not applied to any bill yet." · "Refunds" · "No refunds recorded." · "Subtotal" · "Tax" · "$33.60" · "Total credit" · "$412.00" · "Applied" · "$0.00" · "Refunded" · "Balance" · "Void VCR-0003?" · "A reversing entry posts. Give a reason so the history explains it." · "Reason" · "*" · "Entered twice — duplicate of VCR-0002" · "Cancel" · "Void credit"
@@ -1678,6 +1780,8 @@ Shows: "Vendor credit — Spine" · "Purchases" · "Vendor Credits" · "Detail" 
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-25 · **Source:** Drawn
 
 ![ApplyVendorCreditDialog](screens/ApplyVendorCreditDialog.webp)
+
+Superseded by `VendorCreditApplyRefined` (D-226).
 
 Links to: —
 
@@ -1864,6 +1968,8 @@ Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "Q Search settings" �
 
 ### TeamPrivileges — Team privileges
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-RPT-10, US-TEAM-11, US-TEAM-13 · **Source:** Captured
+
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
 
 ![TeamPrivileges](screens/TeamPrivileges.webp)
 
@@ -2262,6 +2368,8 @@ Shows: "Account" · "Profile & Preferences" · "Your personal account settings. 
 ### TeamUsers — Users & pending invites
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-TEAM-01, US-TEAM-02, US-TEAM-03, US-TEAM-05, US-TEAM-14, US-TEAM-15, US-TEAM-17 · **Source:** Captured
 
+> Superseded by `TeamUsersRefined` and the screens under "Users you can manage from" (US-TEAM-19 to US-TEAM-23, D-232).
+
 ![TeamUsers](screens/TeamUsers.webp)
 
 Links to: `EmailInvite`
@@ -2307,6 +2415,8 @@ Shows: "Team > Users" · "Users" · "Everyone with access to this organisation."
 ### TeamTeams — Teams
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-TEAM-09, US-TEAM-12 · **Source:** Captured
 
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
+
 ![TeamTeams](screens/TeamTeams.webp)
 
 Links to: `CreateTeamDialog`
@@ -2325,6 +2435,8 @@ Shows: "Team > Teams" · "Teams" · "Group Staff members and configure what each
 ### TeamMembers — Team members
 **Priority:** P1 · **Phase:** 0 · **Stories:** US-TEAM-10 · **Source:** Captured
 
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
+
 ![TeamMembers](screens/TeamMembers.webp)
 
 Links to: —
@@ -2342,6 +2454,8 @@ Shows: "Team › Users" · "Users" · "Everyone with access to this organisation
 
 ### TeamPrivilegesBooks — Team privileges — accountant access, banking, refunds, vendor credits
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-12, US-PAY-18, US-PUR-28, US-RPT-36 · **Source:** Drawn
+
+> Superseded by the screens under "Teams you can manage from" (US-TEAM-25 to US-TEAM-29, D-234).
 
 ![TeamPrivilegesBooks](screens/TeamPrivilegesBooks.webp)
 
@@ -2501,6 +2615,8 @@ Shows: "Settings — Payment instructions — Spine" · "Overview" · "Dashboard
 
 ![SettingsDocumentLayout](screens/SettingsDocumentLayout.webp)
 
+As built (D-237), the preview is an HTML sample of the page — top colour bar, business, title and number, bill to, the lines with the chosen columns, totals, tax summary, amount in words, terms, notes, signature and footer — in a 380 px column (300 px below 1280 px), not the PDF. See `SettingsLarge`.
+
 Links to: —
 
 Shows: "Settings — Documents — Spine" · "Overview" · "Dashboard" · "Good afternoon, Alex" · "Cash position" · "Profit this month" · "Receivables" · "Overdue" · "Search settings" · "ORGANISATION" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Choose what each document shows. The preview updates as you change options." · "Quotes" · "Invoices" · "Credit notes" · "Receipts" · "Statements" · "Paper size" · "A4" · "Title" · "Tax Invoice" · "Columns" · "Quantity and unit" · "Discount" · "HSN/SAC" · "Tax per line"
@@ -2514,6 +2630,2045 @@ Links to: —
 
 Shows: "Settings — Emails — Spine" · "Overview" · "Dashboard" · "Good afternoon, Alex" · "Cash position" · "Profit this month" · "Receivables" · "Overdue" · "Search settings" · "ORGANISATION" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Your own words in the emails customers get. The branded layout around them stays the same." · "Quote" · "Invoice" · "Payment reminder" · "Receipt" · "Credit note" · "Statement" · "Subject" · "Invoice {document_number} from {business_name}" · "Message" · "Hi {customer_name}, Your invoice {document_number} for {amount} is attached. It's due on {due_date}. Thanks for choosing us, {business_name}" · "Insert" · "{customer_name}" · "{document_number}" · "{amount}"
 
+
+## Spine brand on the web
+
+Drawn in Claude Design for US-SET-26 (D-206): project "Spine web — refinements before Phase 10", canvas "01 Spine logo on the web". Screens captured before this change still show the old "S" logo; retake each one when its screen is next touched.
+
+### BrandSidebar — Sidebar with the Spine logo
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandSidebar](screens/BrandSidebar.webp)
+
+Links to: `DashboardOwnerRedesign`
+
+Shows: The horizontal logo (96 × 28) · collapsed, the 28 px mark as the "Expand sidebar" button, showing the expand icon on hover · "Overview" · "Dashboard" · "Sales" · "Contacts" · "Pipeline" · "Quotes" · "Billing" · "Invoices"
+
+### BrandSidebarDark — Sidebar with the Spine logo, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandSidebarDark](screens/BrandSidebarDark.webp)
+
+Links to: `DashboardOwnerRedesignDark`
+
+Shows: The horizontal logo with the light-text wordmark · the collapsed rail's mark
+
+### BrandSignIn — Login with the Spine logo
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandSignIn](screens/BrandSignIn.webp)
+
+Links to: `SignIn`
+
+Shows: The horizontal logo (140 × 41) above "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Log in"
+
+### BrandBrowserIcons — Favicon in the browser tab
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandBrowserIcons](screens/BrandBrowserIcons.webp)
+
+Links to: —
+
+Shows: The app-icon tile with a solid white mark in the tab "Dashboard — Spine", light and dark browser chrome
+
+### BrandPublicQuoteFooter — Public quote footer
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandPublicQuoteFooter](screens/BrandPublicQuoteFooter.webp)
+
+Links to: `PublicQuote`
+
+Shows: The 20 px mark before "Sent with Spine", light and dark
+
+## Welcome, login and sign-up
+
+Drawn in Claude Design for US-AUTH-13 to US-AUTH-15 (D-207): project "Spine web — refinements before Phase 10", canvas "02 Welcome, login and sign-up" (the people were chosen on "02b Signed-out illustration - people": Open Peeps, soft colours). Every signed-out page uses the same frame (`AuthFrame`): the form on one side, the illustration on the other (left out below 1024 px) — people in soft brand outfits with Spine's cards around them, showing only icons, placeholder lines and statuses. `SignIn`, `SignUp` and `SignUpClosed` above show the old card layout; these replace them.
+
+### AuthWelcome — Welcome on a new install
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-13 · **Source:** Claude Design
+
+![AuthWelcome](screens/AuthWelcome.webp)
+
+Links to: `AuthSignUp`
+
+Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place." · the team of three and the cards: quote Sent → Accepted, invoice Due → Paid, payment Paid
+
+### AuthWelcomeDark — Welcome on a new install, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-13 · **Source:** Claude Design
+
+![AuthWelcomeDark](screens/AuthWelcomeDark.webp)
+
+Links to: `AuthSignUp`
+
+Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place." · the team of three and the cards: quote Sent → Accepted, invoice Due → Paid, payment Paid
+
+### AuthLogin — Log in
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthLogin](screens/AuthLogin.webp)
+
+Links to: `DashboardOwnerRedesign`, `ForgotPassword`
+
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · a man with a coffee beside today's jobs and an "Accepted" quote
+
+### AuthLoginDark — Log in, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthLoginDark](screens/AuthLoginDark.webp)
+
+Links to: `DashboardOwnerRedesignDark`, `ForgotPassword`
+
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · a man with a coffee beside today's jobs and an "Accepted" quote
+
+### AuthLoginError — Log in, wrong password and Caps Lock
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthLoginError](screens/AuthLoginError.webp)
+
+Links to: `ForgotPassword`
+
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · a man with a coffee beside today's jobs and an "Accepted" quote · "That email and password don't match. Check both, or reset your password." · "Caps Lock is on."
+
+### AuthSignUp — Create your account, password shown, Fair
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-15 · **Source:** Claude Design
+
+![AuthSignUp](screens/AuthSignUp.webp)
+
+Links to: `OnbWelcome`
+
+Shows: "Create your account" · "Sets up a new organisation with you as the owner." · "Name" · "Email" · "Password" · "Password strength: Fair" · "At least 8 characters" · "12 or more characters" · "Letters, numbers and symbols" · "Not a common password" · "No repeats or sequences like aaaa or 1234" · "Confirm password" · "Create account" · "Already have an account? Log in"
+
+### AuthSignUpStrength — Create your account, Strong, passwords don't match
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-15 · **Source:** Claude Design
+
+![AuthSignUpStrength](screens/AuthSignUpStrength.webp)
+
+Links to: `OnbWelcome`
+
+Shows: "Password strength: Strong" · "The passwords don't match."
+
+### AuthInvite — Join a business from an invitation
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14, US-AUTH-15 · **Source:** Claude Design
+
+![AuthInvite](screens/AuthInvite.webp)
+
+Links to: `AcceptInvite`
+
+Shows: "Join Riverstone Builders on Spine" · the invited email, locked · "Password strength: Good" · "Create account and join" · "Already have an account? Log in to accept"
+
+### AuthNarrow — Log in in a narrow window
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthNarrow](screens/AuthNarrow.webp)
+
+Links to: `DashboardOwnerRedesign`
+
+Shows: The logo above "Log in" and the form; no illustration
+
+## Onboarding in four stages
+
+Drawn in Claude Design for US-ONB-22 and US-ONB-23 (D-208): project "Spine web — refinements before Phase 10", canvas "03 Onboarding". The start and finish screens use the signed-out frame (`AuthFrame`) with their own illustration; the steps sit in a shell with the stage rail, a tip under each form and, from 1280 px, a live preview. In the built wizard Back sits above the step, beside "Stage n of 4 · …", rather than in the form's footer, and the preview's tax line reads "Tax — set in the Tax step" until then. `OnbWelcome` and the per-step `Onb*` screens above show the old single-card wizard; these replace their look, and the forms inside are unchanged.
+
+### OnbStart — Start: four stages, and Spine drawn small
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStart](screens/OnbStart.webp)
+
+Links to: `OnbStageBusiness`, `SettingsDemoData`, `DashboardOwnerRedesign`
+
+Shows: "Welcome to Spine, <first name>" · "Four short stages, about 6 minutes. Skip anything — it's all in Settings later." · the four stages with a line each · "Set up my business" · "Just show me around (use defaults)" · "Skip to dashboard" · "Everything in one place."
+
+### OnbStartDark — Start, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStartDark](screens/OnbStartDark.webp)
+
+Links to: `OnbStageBusiness`
+
+Shows: As `OnbStart`
+
+### OnbStageBusiness — Business · Details, with the preview
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageBusiness](screens/OnbStageBusiness.webp)
+
+Links to: `OnbStageMoney`
+
+Shows: "Set up Spine" · "About 6 min left" · the rail · "Stage 1 of 4 · Business · Step 1 of 2" · "Tell us about your business" · "Why this matters" · "Change it later in Settings › Business profile." · "Preview · your first invoice" · "Updates as you type"
+
+### OnbStageMoney — Money · Currency, rupees in the preview
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageMoney](screens/OnbStageMoney.webp)
+
+Links to: `OnbStageDocuments`
+
+Shows: "Stage 2 of 4 · Money · Step 1 of 3" · "Currency & locale" · "Back" · "Good to know" · "Change it later in Settings › Currency & locale." · "Amounts and dates use your currency and locale."
+
+### OnbStageDocuments — Documents · Numbering, the first invoice number
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageDocuments](screens/OnbStageDocuments.webp)
+
+Links to: `OnbStageBooks`
+
+Shows: "Stage 3 of 4 · Documents · Step 1 of 1" · "Document numbering" · "Your first invoice will be INV-1042."
+
+### OnbStageBooks — Books & team · Team, the books and team preview
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22, US-ONB-23 · **Source:** Claude Design
+
+![OnbStageBooks](screens/OnbStageBooks.webp)
+
+Links to: `OnbFinish`
+
+Shows: "Stage 4 of 4 · Books & team · Step 2 of 2" · "Invite your team" · "Who sees what" · "Preview · your books and team" · "Your books" · "Your team" · "Set so far" · "Finish"
+
+### OnbStageDark — Money · Currency, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageDark](screens/OnbStageDark.webp)
+
+Links to: `OnbStageDocuments`
+
+Shows: As `OnbStageMoney`
+
+### OnbNarrow — A step in a narrow window
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbNarrow](screens/OnbNarrow.webp)
+
+Links to: `OnbStageDocuments`
+
+Shows: "Stage 2 of 4 · Money · About 4 min left" and a progress line above the step; no rail or preview
+
+### OnbFinish — Finish: what you set, and what to do next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-23 · **Source:** Claude Design
+
+![OnbFinish](screens/OnbFinish.webp)
+
+Links to: `DashboardOwnerRedesign`, `SetupSpine`, `ContactCreateDrawer`, `CatalogList`, `QuoteBuilder`
+
+Shows: "You're set up" · "Spine is ready for <business>." · Business, Money, Documents and Team with "Change" · "What to do next" · "Add your first customer" · "Add something you sell" · "Send your first quote" · "See what's left to set up — <n> left" · "Go to dashboard"
+
+### OnbFinishDark — Finish, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-23 · **Source:** Claude Design
+
+![OnbFinishDark](screens/OnbFinishDark.webp)
+
+Links to: `DashboardOwnerRedesign`
+
+Shows: As `OnbFinish`
+
+## Dashboard polish
+
+Drawn in Claude Design for US-DASH-27 to US-DASH-29 (D-209): project "Spine web — refinements before Phase 10", canvas "04 Dashboard polish". The figures are an Indian construction business's (the demo seeded with India), so the long amounts are real. From 1440 px "Needs your attention", "Today" and Recent activity sit in a column on the right; below that attention and Today stay at the top. Income and expenses is the one wide card and follows the KPI row; every other card keeps its height and goes into the shortest column. In the built page the column count is 2 from 1024 px and 3 from 1280 px. These replace the layout of `DashboardOwnerRedesign` and `DashboardOwnerBooks`; the cards' content is unchanged apart from the KPI cards, the stacked figures, the ring's centre and Jobs in progress's two-line rows.
+
+### DashboardLoading — While the dashboard loads
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-27 · **Source:** Claude Design
+
+![DashboardLoading](screens/DashboardLoading.webp)
+
+Links to: `DashboardWide`
+
+Shows: "Good morning, Priya" · "Loading dashboard" · four grey KPI cards · grey cards with their titles: "Income and expenses" · "Accounts" · "Ready to bill" · "Payables" · "Tax this period" · "Needs your attention" · "Today" · "Recent activity"
+
+### DashboardWide — 1440 px and wider: a side column, no gaps between cards
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28, US-DASH-29 · **Source:** Claude Design
+
+![DashboardWide](screens/DashboardWide.webp)
+
+Links to: `DashboardEditLayout`, `DashboardBigFigures`
+
+Shows: "Get started" · "Cash position" · "₹90,87,504.00" · "Profit this month" · "Receivables" · "Overdue" · "Income and expenses" · "Accounts" · "Payables" · "Current" · "Overdue" · "Total" · "Ready to bill" · "Tax this period" · "Collected" · "Input tax" · "Net payable" · "Top expenses" · "Pipeline by stage" · "Retention held" · "Jobs in progress" · "118% billed · No budget" · "Receivables aging" · "Total ₹44,88,682.00" · "₹44.9L" · "Job profitability" · "−₹1,60,500.00" · "Needs your attention" · "Send reminder" · "Today" · "Open calendar" · "Recent activity"
+
+### DashboardWideDark — 1440 px, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28, US-DASH-29 · **Source:** Claude Design
+
+![DashboardWideDark](screens/DashboardWideDark.webp)
+
+Links to: `DashboardWide`
+
+Shows: As `DashboardWide`
+
+### DashboardLaptop — Narrower than 1440 px: tasks at the top
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28, US-DASH-29 · **Source:** Claude Design
+
+![DashboardLaptop](screens/DashboardLaptop.webp)
+
+Links to: `DashboardWide`
+
+Shows: "Needs your attention" and "Today" side by side at the same height · the KPI cards four across · "Income and expenses" across two of three columns · the other cards in the shortest column first · "Recent activity" as a card
+
+### DashboardBigFigures — Big figures always fit
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28 · **Source:** Claude Design
+
+![DashboardBigFigures](screens/DashboardBigFigures.webp)
+
+Links to: —
+
+Shows: KPI figures on their own line · stacked "Current · Overdue · Total" and "Collected · Input tax · Net payable" · "₹44.9L" in the ring with "Total ₹44,88,682.00" under the title · "Office block — structural works" cut short beside "−₹1,60,500.00"
+
+## Contacts list polish and toggles
+
+Drawn in Claude Design for US-OPS-36 and US-CRM-21 to US-CRM-23 (D-210): project "Spine web — refinements before Phase 10", canvas "05 Contacts polish". Every toggle group in the app uses the segmented look in `ToggleStates`; the contacts list gets search on its own row in every view (with Columns on the right in the Table view), Refresh with "Updated … ago", stat cards that filter, the existing pagination bar, and names and emails that stay inside their card or row. In the built page the chosen option's tooltip uses the `@spine/ui` `Tooltip` (no arrow). These replace the toolbar of `ContactsList` and `ContactsCards`.
+
+### ToggleStates — Toggle groups: chosen, hover, focus, tooltip, disabled
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36 · **Source:** Claude Design
+
+![ToggleStates](screens/ToggleStates.webp)
+
+Links to: —
+
+Shows: the view switcher chosen, hovered and focused · "Table view" tooltip · "Accrual" / "Cash" · "3M" / "6M" / "12M" · "Light" / "Dark" / "System" · disabled · a single toggle off and on · "Refresh list" tooltip · "Updating…"
+
+### ToggleStatesDark — Toggle groups, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36 · **Source:** Claude Design
+
+![ToggleStatesDark](screens/ToggleStatesDark.webp)
+
+Links to: —
+
+Shows: As `ToggleStates`
+
+### ContactsCardsPolish — Contacts, Card view: names that fit, search, refresh
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36, US-CRM-21, US-CRM-22, US-CRM-23 · **Source:** Claude Design
+
+![ContactsCardsPolish](screens/ContactsCardsPolish.webp)
+
+Links to: `ContactsTablePolish`, `ContactCreateDrawer`, `ImportContactsDialog`, `LeadsBoard`
+
+Shows: "Total contacts" · "Clear the type filter" · "Customers" · "Show customers" · "Vendors" · "Show vendors" · "Active leads" · "Open the pipeline" · "All types" · "Active" · "Updated just now" · "Refresh list" · "Card view" · "Import CSV" · "Add contact" · "Search contacts" · "H2Z Facades and Interiors Factory Private Limited" · "Ridgeline Equipment Rentals and Scaffolding Hire Private…" · "1–10 of 12" · "per page"
+
+### ContactsCardsPolishDark — Contacts, Card view, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36, US-CRM-21 · **Source:** Claude Design
+
+![ContactsCardsPolishDark](screens/ContactsCardsPolishDark.webp)
+
+Links to: `ContactsCardsPolish`
+
+Shows: As `ContactsCardsPolish`
+
+### ContactsTablePolish — Contacts, Table view: a stat card's filter, in the address, while refreshing
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-21, US-CRM-22, US-CRM-23 · **Source:** Claude Design
+
+![ContactsTablePolish](screens/ContactsTablePolish.webp)
+
+Links to: `ContactsCardsPolish`
+
+Shows: "Vendors" pressed · "Showing these · press again to clear" · "/contacts?type=vendor&status=active" · "2 types" · "Updating…" · "Search contacts" · "Columns" · "accounts.payable.department@h2zfacade…" · "Status" · "1–5 of 5"
+
+## A pipeline that works
+
+Drawn in Claude Design for US-CRM-24 to US-CRM-28 (D-211): project "Spine web — refinements before Phase 10", canvas "06 Pipeline". The open stages share the width and every column, Won and Lost included, runs the full height of the page (a long column scrolls on its own); Won and Lost are slim columns with the last 30 days that open on press. A summary strip sits above the toolbar. Cards show the owner, days in stage, the next follow-up and a nudge for cold leads, with a "⋯" menu (Open, Move to…, Delete). Moving to Lost asks why; moving to Won offers a quote. A lead opens in a drawer. These replace `LeadsBoard` and, on the board, `LeadDialog` (the contact page's Leads tab keeps its own dialog). In the built page the column totals sit under the name, the "Move to…" submenu flips to the left near the right edge, and the drawer's expected close date is a date field.
+
+### PipelineBoard — Pipeline: open stages that fit, slim Won and Lost, summary strip
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-24, US-CRM-25, US-CRM-28 · **Source:** Claude Design
+
+![PipelineBoard](screens/PipelineBoard.webp)
+
+Links to: `PipelineClosedOpen`, `LeadDrawer`, `LeadLostDialog`, `LeadWonDialog`
+
+Shows: "Your open leads by stage, and what you've won and lost lately." · "Open pipeline" · "Won this month" · "Win rate" · "4 of 6 closed in the last 90 days" · "Overdue follow-ups" · "Show these leads" · "All owners" · "All sources" · "Updated just now" · "3 days in stage" · "Call · Tomorrow 10:00" · "No activity for 16 days" · "Call · Overdue · Tue 6 Oct" · "Open" · "Move to…" · "Delete" · "Won" · "Lost" · "· 30 days"
+
+### PipelineBoardDark — Pipeline, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-24, US-CRM-25 · **Source:** Claude Design
+
+![PipelineBoardDark](screens/PipelineBoardDark.webp)
+
+Links to: —
+
+Shows: As `PipelineBoard`, with a card focused by keyboard
+
+### PipelineClosedOpen — Pipeline with Won opened
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-24 · **Source:** Claude Design
+
+![PipelineClosedOpen](screens/PipelineClosedOpen.webp)
+
+Links to: `PipelineBoard`
+
+Shows: "Won · last 30 days" · "Won 2 Oct" · "Older won leads: choose Won in the stage filter"
+
+### LeadLostDialog — Why was it lost?
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-26 · **Source:** Claude Design
+
+![LeadLostDialog](screens/LeadLostDialog.webp)
+
+Links to: —
+
+Shows: "Why was it lost?" · "Price" · "Timing" · "Went with a competitor" · "No response" · "Other" · "Note (optional)" · "Skip" · "Save reason"
+
+### LeadWonDialog — Won: create a quote
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-26 · **Source:** Claude Design
+
+![LeadWonDialog](screens/LeadWonDialog.webp)
+
+Links to: `QuoteBuilder`
+
+Shows: "Won — Ground-floor extension" · "Start a quote for Ananya Rao? It's linked to this lead, so you'll find it in the lead's Quotes." · "Contact" · "Value" · "Owner" · "Not now" · "Create quote"
+
+### LeadDrawer — A lead: details, follow-ups, quotes and history
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-26, US-CRM-27 · **Source:** Claude Design
+
+![LeadDrawer](screens/LeadDrawer.webp)
+
+Links to: `ContactTimeline`, `QuoteDetail`
+
+Shows: "9 days in stage · created by Arjun Kumar" · "Owner" · "Expected close" · "Follow-ups" · "Log activity" · "Add follow-up" · "Quotes" · "Create quote" · "History" · "Moved to Proposal from Qualified" · "Created in New" · "Delete" · "Cancel" · "Save changes"
+
+## A calendar that's easy to use
+
+Drawn in Claude Design for US-MTG-13 to US-MTG-17 (D-212): project "Spine web — refinements before Phase 10", canvas "07 Meetings". The mini calendar dots busy days (one dot, the count on hover), shades the week or day on screen and follows the main view's month. The toolbar has New meeting; Week and Day open on the working day with a now line on today; the quick view always fits. Upcoming says when and opens the meeting; Meetings by contact counts the range on screen and links to each contact. The calendar fills the window; a phone opens in Agenda without Week, and under 1024 px the mini calendar opens in a sheet. These refine `MeetingsWeek`, `MeetingsMonth`, `MeetingsAgenda` and `MeetingQuickView`. In the built page the shaded week is one band, event colours keep the calendar's existing category tokens, and the now line has no time label. The app's left navigation has no phone layout yet; `MeetingsPhone` shows the calendar with it collapsed.
+
+### MeetingsWeekRefined — Week: busy days, New meeting, the working day
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-13, US-MTG-14, US-MTG-15 · **Source:** Claude Design
+
+![MeetingsWeekRefined](screens/MeetingsWeekRefined.webp)
+
+Links to: `MeetingQuickViewFits`, `ContactTimeline`
+
+Shows: "New meeting" · the week 4 – 10 Oct shaded in the mini calendar · a dot under each busy day · "Wednesday, October 7 · 2 meetings" · the now line on today · "Upcoming" "Next 60 days" · "Today · 1:00 PM" · "Meetings by contact" "This week"
+
+### MeetingsWeekRefinedDark — Week, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-13, US-MTG-14 · **Source:** Claude Design
+
+![MeetingsWeekRefinedDark](screens/MeetingsWeekRefinedDark.webp)
+
+Links to: —
+
+Shows: As `MeetingsWeekRefined`
+
+### MeetingsMonthRefined — Month with the same dots
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-13 · **Source:** Claude Design
+
+![MeetingsMonthRefined](screens/MeetingsMonthRefined.webp)
+
+Links to: `MeetingsWeekRefined`
+
+Shows: two meetings a day and "+1 more" · titles ending in "…" inside their day · "Meetings by contact" "This month"
+
+### MeetingsAgendaRefined — Agenda with place and contact
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-17 · **Source:** Claude Design
+
+![MeetingsAgendaRefined](screens/MeetingsAgendaRefined.webp)
+
+Links to: `MeetingQuickViewFits`
+
+Shows: "1:00 PM – 2:00 PM" · "Plot 14, Whitefield, Bengaluru" · "Karthik Subramanian" · "Internal" · "All day"
+
+### MeetingsPhone — A phone in Agenda
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-17 · **Source:** Claude Design
+
+![MeetingsPhone](screens/MeetingsPhone.webp)
+
+Links to: —
+
+Shows: "Today" · "From Oct 10" · the mini calendar button · "Day" "Month" "Agenda" (no Week) · "New"
+
+### MeetingQuickViewFits — A late meeting's quick view opens upwards
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-14 · **Source:** Claude Design
+
+![MeetingQuickViewFits](screens/MeetingQuickViewFits.webp)
+
+Links to: `MeetingsWeekRefined`
+
+Shows: "Quote walkthrough — Ananya Rao" above its 4 PM block · "Attendees" · "Accepted" · "Tentative" · "No response"
+
+
+## A catalogue that's easy to keep
+
+Drawn in Claude Design for US-CAT-10 to US-CAT-15 (D-213): project "Spine web — refinements before Phase 10", canvas "08 Catalogue". The tabs show counts; "Missing tax rate" and "No income account" are filters and "Total items" clears. The table names each item's tax (flagging "No tax" with an icon), shows HSN/SAC for a GST business and the description under the name; only archived rows carry a badge. Price is one filter button; Refresh, Export, Import and Add item sit on the right, and search has its own row beside Columns. Ticked rows get a bar to set category, tax or income account, archive or make a bundle. The drawer groups its fields and says where the item is used. These refine `CatalogList`, `CatalogEmpty` and `CatalogItemDrawer`. In the built page the Price button's icon doesn't name a currency (items can be in several), the "Missing tax rate" number keeps the card's usual colour, and Set category opens a small dialog, since a category can be typed as well as chosen.
+
+### CatalogListRefined — Items: setup filters, tax names, one Price filter
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-10, US-CAT-11, US-CAT-13 · **Source:** Claude Design
+
+![CatalogListRefined](screens/CatalogListRefined.webp)
+
+Links to: `CatalogItemDrawerRefined`, `CatalogBulkSelect`, `CatalogBundlesEmpty`
+
+Shows: "Items 11" · "Bundles 0" · "Total items" "Clear the filters" · "Categories" "Labour, Materials and 4 more" · "Missing tax rate" "Show these items" · "No income account" "Posts to 4100 Sales — Services" · "Price" · "Updated just now" · "Export" · "Import" · "Add item" · "Search items" · "Columns" · "HSN/SAC" · "GST 18%" · "No tax" with a warning icon · a description under each name
+
+### CatalogListRefinedDark — Items, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-10, US-CAT-11 · **Source:** Claude Design
+
+![CatalogListRefinedDark](screens/CatalogListRefinedDark.webp)
+
+Links to: —
+
+Shows: As `CatalogListRefined`
+
+### CatalogBulkSelect — Three items selected, Set tax open
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-12 · **Source:** Claude Design
+
+![CatalogBulkSelect](screens/CatalogBulkSelect.webp)
+
+Links to: `CatalogMakeBundle`
+
+Shows: the header box part-ticked · "3 selected" · "Set category" · "Set tax" · "Set income account" · "Archive" · "Make a bundle" · "Clear" · "Intra-state tax" · "No tax" · "GST 18%" "9% + 9%" · "Inter-state tax follows" · selected rows tinted
+
+### CatalogMakeBundle — Make a bundle from the selection
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-14 · **Source:** Claude Design
+
+![CatalogMakeBundle](screens/CatalogMakeBundle.webp)
+
+Links to: `CatalogBundlesEmpty`
+
+Shows: "Make a bundle" · "Group these items so they're one pick on a quote or invoice. Prices and tax come from each item; you can change them on the document." · "Name" · "Description (optional)" · "Item" "Quantity" "Amount" · "bag · ₹410.00 · GST 18%" · "Total before tax" · "Cancel" · "Save bundle"
+
+### CatalogBundlesEmpty — Bundles, none yet
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-14 · **Source:** Claude Design
+
+![CatalogBundlesEmpty](screens/CatalogBundlesEmpty.webp)
+
+Links to: `CatalogListRefined`
+
+Shows: "No bundles yet" · "Group what you quote together. Select items and choose Make a bundle, or save a quote's lines from its More menu." · "Choose items"
+
+### CatalogItemDrawerRefined — Edit item, grouped, with where it's used
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-15 · **Source:** Claude Design
+
+![CatalogItemDrawerRefined](screens/CatalogItemDrawerRefined.webp)
+
+Links to: —
+
+Shows: "Edit item" · "Used on 4 quotes and 2 invoices · last quoted 3 Oct 2026" · "DETAILS" · "PRICE AND TAX" · "Intra-state tax" · "Inter-state tax" · "Supply type" · "ACCOUNTS" · "None — posts to 4100 Sales — Services" · "Cancel" · "Save item"
+
+
+## Quotes you can work from
+
+Drawn in Claude Design for US-QUO-27 to US-QUO-36 (D-214): project "Spine web — refinements before Phase 10", canvas "09 Quotes". The list's cards are Open (with its value), Expiring in 7 days, Won this month (with its value) and Win rate; the first three filter. Rows show the title under the number, "Viewed 3×", when the quote was sent and a validity countdown, and the row menu offers what to do next. The quote page has the number as its title, one primary button for the next step, the lines as a table, and Activity and Related panels. The builder has a title, compact rows with the description under each item, a default validity with quick picks, and a bar at the bottom with the totals and Save and send. These refine `QuotesList`, `QuoteDetail`, `QuoteDetailAccepted` and `QuoteBuilder`. In the built page, a new quote's button reads "Save as draft" (an existing draft's, "Save draft"); Email again is under More on a sent quote; an untaxed line's details row is open already, since it shows its supply type; and the accepted quote keeps its existing acceptance card above the lines.
+
+### QuotesListRefined — Cards that filter, progress in each row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-27, US-QUO-28, US-QUO-29, US-QUO-30 · **Source:** Claude Design
+
+![QuotesListRefined](screens/QuotesListRefined.webp)
+
+Links to: `QuoteDetailRefined`, `QuoteBuilderCompact`
+
+Shows: "Open" "4" "₹16,82,330" "Sent and still valid" · "Expiring in 7 days" · "Won this month" · "Win rate" "42%" "5 of 12 in the last 90 days" · "Updated just now" · "Email queue" · "New quote" · "Search quotes, titles or lines" · "Draft" in italics · "Bathroom refit — 2nd floor" under the number · "Viewed 3×" with "Last viewed 14 Oct, 3:20 PM" · "in 5 days" · "Expired 6 days ago" · a row menu with "Copy customer link", "Download PDF", "Email again", "Duplicate", "Revise"
+
+### QuotesListRefinedDark — "Expiring in 7 days" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-27 · **Source:** Claude Design
+
+![QuotesListRefinedDark](screens/QuotesListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · two quotes expiring within the week
+
+### QuoteDetailRefined — A sent quote: one next step, lines, activity
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-31, US-QUO-32, US-QUO-33 · **Source:** Claude Design
+
+![QuoteDetailRefined](screens/QuoteDetailRefined.webp)
+
+Links to: `QuoteDetailAcceptedRefined`, `ContactDetail`
+
+Shows: "QUO-0046" "Sent" "Viewed 3×" · "Bathroom refit — 2nd floor" · "Ananya Rao" · "Sent 12 Oct" · "Valid until 15 Oct · in 5 days" · "Download PDF" · "Copy customer link" · "More" · "Item" "Qty" "Rate" "Disc." "Tax" "Amount" · "CGST (9%)" "SGST (9%)" · "Activity" "Viewed by the customer 3 times" "Link copied" "Emailed to …" "Sent" "Revised from v1" · "Related" "Lead" "Versions" · "Link copied" "It works for 30 days, or until you revise the quote."
+
+### QuoteDetailAcceptedRefined — Accepted, converted to a job and an invoice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-31, US-QUO-32, US-QUO-33 · **Source:** Claude Design
+
+![QuoteDetailAcceptedRefined](screens/QuoteDetailAcceptedRefined.webp)
+
+Links to: `JobDetail`, `InvoiceDetail`
+
+Shows: "Accepted" · "Convert to invoice" · "Convert to job" · "Accepted online by Ananya Rao on 14 Oct." with the comment · "Converted to a job · JOB-0012" · "Converted to an invoice · INV-0031" · "Show 4 earlier" · "Made from this quote"
+
+### QuoteBuilderCompact — Compact rows and a bar that stays in view
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-30, US-QUO-34, US-QUO-35, US-QUO-36 · **Source:** Claude Design
+
+![QuoteBuilderCompact](screens/QuoteBuilderCompact.webp)
+
+Links to: `QuoteDetailRefined`
+
+Shows: "Title (optional)" · "Valid until" with "+15 days" "+30 days" "+60 days" · "Place of supply" · "For lead" · a row being dragged · "HSN/SAC 9954" under an item · "Add description" · "Search items or bundles…" · "Enter adds a row · Alt + ↑/↓ moves it" · "Subtotal" "Tax" "Total" · "Unsaved changes" · "Cancel" "Preview PDF" "Save draft" "Save and send"
+
+### QuoteBuilderCompactDark — Leaving with unsaved changes, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-35 · **Source:** Claude Design
+
+![QuoteBuilderCompactDark](screens/QuoteBuilderCompactDark.webp)
+
+Links to: —
+
+Shows: "Leave without saving?" · "Your changes to this quote will be lost." · "Leave" · "Keep editing"
+
+## Jobs you can run from one place
+
+Drawn in Claude Design for US-JOB-30 to US-JOB-38 (D-215): project "Spine web — refinements before Phase 10", canvas "10 Jobs". The list has New job in the toolbar, and its cards are Active (with its contract value), Ready to bill (with the amount), Over or near budget and Retention held; the first three filter. Rows show the number and site under the name, the next milestone with its due state, complete % beside billed % (billing over the contract flagged), the end date and the contract value. The job page has the number as its title with a status menu, one primary button for the next step, a strip of figures, tab counts, milestones as progress beside the job's Activity, and photos grouped by milestone with a full-size viewer. These refine `JobsList`, `JobsListBilling`, `JobMilestones` and `JobPhotos`. In the built page, Budget used and Retention are in the list's Columns; the rows have no menu (each row opens its job); "Start from an accepted quote" fills in the contact, name and contract value (the quote's milestones aren't copied, as when converting from the quote's page); and uploads show in their own row above the groups until they finish.
+
+### JobsListRefined — Cards that filter, progress in each row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-30, US-JOB-31, US-JOB-32, US-JOB-33 · **Source:** Claude Design
+
+![JobsListRefined](screens/JobsListRefined.webp)
+
+Links to: `JobNewDrawer`, `JobDetailRefined`
+
+Shows: "Active" "5" "₹3,42,00,000" · "Ready to bill" "2" "₹47,60,000" · "Over or near budget" · "Retention held" "₹14,85,000" "Across 4 jobs" · "Updated just now" · "New job" · "Search jobs, numbers or sites" · "JOB-001 · Whitefield, Bengaluru" under the name · "Foundations" "Due in 3 days" · "Raised floor" "Overdue 2 days" · "All billed" · "Complete" and "Billed" bars · "118%" with "Billed over the contract"
+
+### JobsListRefinedDark — "Ready to bill" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-31 · **Source:** Claude Design
+
+![JobsListRefinedDark](screens/JobsListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · the two jobs with a milestone to invoice
+
+### JobNewDrawer — New job
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-30 · **Source:** Claude Design
+
+![JobNewDrawer](screens/JobNewDrawer.webp)
+
+Links to: `JobDetailRefined`
+
+Shows: "New job" · "Start from an accepted quote" "Choose a quote" · "Contact" · "Job name" · "Site address" "From Ananya Rao's site address — change it if the work is elsewhere." · "Currency" · "Contract value" · "Retention %" · "Start date" "End date" · "Notes" · "Cancel" "Create job"
+
+### JobDetailRefined — Active, with a milestone to invoice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-34, US-JOB-35, US-JOB-37 · **Source:** Claude Design
+
+![JobDetailRefined](screens/JobDetailRefined.webp)
+
+Links to: `JobDetailCompleted`, `JobPhotosGrouped`, `InvoiceDetail`, `QuoteDetailRefined`
+
+Shows: "JOB-002" "Active" · "Warehouse extension" · "Sahyadri Retail Pvt Ltd" · "Baner Road, Pune 411045" · "Started 22 Jul · Due 30 Nov" · "From QUO-0031" · "Edit job" "Raise variation" "Invoice Steel structure" "More" · "Contract" "incl. 1 variation (+₹4,00,000)" · "Billed" "83% of contract" · "Cost" "71% of ₹54,00,000 budget" · "Margin" · "Complete" · "Milestones 3" "Variation orders 1" "Photos 6" "Notes 2" "Crew 2" · "Billed ₹47,60,000 of ₹68,00,000" · "not invoiced yet" · "View invoice" "Raise invoice" "Mark complete" · "Activity" "3 photos added with Steel structure" "Variation applied" "Created from QUO-0031" "Show 3 earlier"
+
+### JobDetailCompleted — Completed, status menu open, Release retention next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-34, US-JOB-35 · **Source:** Claude Design
+
+![JobDetailCompleted](screens/JobDetailCompleted.webp)
+
+Links to: `JobDetailRefined`
+
+Shows: "Active" "On hold" "Completed" "Cancelled" in the status menu · "Release retention" · "Retention held ₹3,40,000 (5%) — release it now the job is complete." · "Status changed to Completed"
+
+### JobPhotosGrouped — Photos grouped by milestone, one uploading
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-36, US-JOB-38 · **Source:** Claude Design
+
+![JobPhotosGrouped](screens/JobPhotosGrouped.webp)
+
+Links to: `JobPhotosViewer`
+
+Shows: "Add photos" · "Site photos · 2" · "Site preparation · completed 7 Aug · 2" · "Steel structure · completed 2 Oct · 3" · a tile uploading "gate-north.jpg"
+
+### JobPhotosViewer — A photo full size
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-36 · **Source:** Claude Design
+
+![JobPhotosViewer](screens/JobPhotosViewer.webp)
+
+Links to: `JobPhotosGrouped`
+
+Shows: "Steel structure · 2 of 3" · "Download" "Close" · previous and next · "Roof trusses" · "Added by Ravi Kumar with “Steel structure” · 2 Oct, 4:38 PM · ← → to move, Esc to close"
+
+## Invoices you can work from
+
+Drawn in Claude Design for US-INV-27 to US-INV-35 (D-217): project "Spine web — refinements before Phase 10", canvas "11 Invoices". The list's cards are Outstanding, Overdue and Due in 7 days (balance totals with counts, each filtering the list) and Paid this month; each row has one status badge, what kind of invoice it is under the number, the issue date, a due countdown or "Paid 2 Oct", and the balance with a bar of what's paid; the row menu acts. The invoice page has the number as its title, one primary button for the next step, a strip of Total, Paid, Retention held or Credited and Balance due, the lines as a table with the totals, Paid and Balance due under them, and Activity beside them. The builder has compact rows, due-date quick picks from the business's terms and a bar that stays in view. These refine `InvoicesList`, `InvoiceDetail`, `InvoiceDetailDraft` and `InvoiceBuilder`. In the built page, Paid this month counts payments rather than invoices; payments, credit notes and attachments follow the lines in the left column; a draft's More menu holds Duplicate, View history and Delete draft; and the duplicated draft's toast reads "Duplicated from INV-0031. Check the dates and lines, then save."
+
+### InvoicesListRefined — Cards that filter, one status per row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-27, US-INV-28, US-INV-29 · **Source:** Claude Design
+
+![InvoicesListRefined](screens/InvoicesListRefined.webp)
+
+Links to: `InvoiceDetailRefined`, `InvoiceBuilderCompact`
+
+Shows: "Outstanding" · "Overdue" · "Due in 7 days" · "Paid this month" "Received since 1 Oct" · "Updated just now" · "Search invoices, lines or jobs" · "Status" "All contacts" · "New invoice" · "Progress claim 2 · JOB-002" under the number · "Deposit" · "Due" "Part paid" "Paid" "Overdue" "Draft" badges · "in 2 days" · "Overdue 6 days" · "Paid 2 Oct" · a paid bar under the balance · the row menu "View" "Record payment" "Send reminder" "Download PDF" "Duplicate" "Void"
+
+### InvoicesListRefinedDark — "Overdue" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-27 · **Source:** Claude Design
+
+![InvoicesListRefinedDark](screens/InvoicesListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · the overdue invoices only
+
+### InvoiceDetailRefined — Issued, part paid, overdue: Send reminder next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-30, US-INV-31, US-INV-32 · **Source:** Claude Design
+
+![InvoiceDetailRefined](screens/InvoiceDetailRefined.webp)
+
+Links to: `InvoicesListRefined`, `JobDetailRefined`, `RecordPaymentDialog`
+
+Shows: "Billing › Invoices › INV-0038" · "INV-0038" "Overdue" "Progress claim 2" · "Sahyadri Retail Pvt Ltd" · "Issued 4 Sept" · "Due 4 Oct · Overdue 6 days" · "Maharashtra (inter-state)" · "JOB-002 · Steel structure" · "Download PDF" "Record payment" "Send reminder" "More" · "Total" "incl. IGST" · "Paid" "last on 2 Oct" · "Retention held" · "Balance due" · "Lines" "Item" "Qty" "Rate" "Disc." "Tax" "Amount" · "Retention held (5%)" "Paid" "Balance due" · "Payments" "RCP-0028" · "Activity" "Automatic reminder sent" "Payment recorded · RCP-0028" "Reminder sent" "Emailed to accounts@sahyadriretail.example" "Issued" "Created from milestone Steel structure" "View history"
+
+### InvoiceDetailDraftRefined — A duplicated draft: Issue invoice next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-30, US-INV-35 · **Source:** Claude Design
+
+![InvoiceDetailDraftRefined](screens/InvoiceDetailDraftRefined.webp)
+
+Links to: `InvoiceBuilderCompact`
+
+Shows: "Draft invoice" "Draft" · "Not issued yet · due 30 days after issue" · "Edit" "Preview PDF" "Issue invoice" "More" · "Activity" "Edited" "Duplicated from INV-0031"
+
+### InvoiceBuilderCompact — Compact rows, due-date picks, a bar that stays in view
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-33, US-INV-34 · **Source:** Claude Design
+
+![InvoiceBuilderCompact](screens/InvoiceBuilderCompact.webp)
+
+Links to: `InvoiceDetailRefined`
+
+Shows: "New invoice" · "Contact" "Type" "Currency" "Place of supply" · "Issue date" "Today if left blank when issued." · "Due date" "On receipt" "+15 days" "+30 days" "+60 days" · "Your terms: due 30 days after issue (Settings › Documents)." · "Lines" "Notes and terms ↓" · "Item" "Qty" "Rate" "Disc. %" "Tax" "Amount" · "HSN/SAC 995411" · "Add item" "Add heading" "Add text line" · "Enter adds a row · Alt + ↑/↓ moves it" · "Subtotal" "IGST" "Total" · "Unsaved changes" · "Cancel" "Preview PDF" "Save draft" "Save and issue"
+
+## Credit notes you can work from
+
+Drawn in Claude Design for US-INV-36 to US-INV-41 (D-219): project "Spine web — refinements before Phase 10", canvas "12 Credit notes". Issuing credits the invoice's own lines — ticked lines and how many, or an amount spread over the lines by what's left on each — with each part's tax taken back at its line's rate, the totals and tax by name shown before the button, and the split between what comes off the invoice and what becomes the customer's credit. A credit note has its own page with one next step, a strip of where its money went, the lines with tax and an Activity panel. The list's cards are Credited this month, Credit to use (a filter) and Refunded this month; each row says where the credit went; New credit note picks the invoice first. These refine `CreditNoteDialog`, `CreditNoteDialogExcess`, `CreditNotesList` and replace `CreditNoteDrawer`. In the built screens, "Where it went" says "Applied ₹10,000.00" rather than naming the invoice (the page names it), and the amount-mode figures in `CreditNoteDialogAmount` are drawn slightly off: ₹50,000 over those lines is ₹30,674.84 and ₹19,325.16.
+
+### CreditNotesListRefined — Cards, where each credit went, a row's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-37, US-INV-40, US-INV-41 · **Source:** Claude Design
+
+![CreditNotesListRefined](screens/CreditNotesListRefined.webp)
+
+Links to: `CreditNoteDetailRefined`, `CreditNotesNewPicker`
+
+Shows: "Credited this month" "3 credit notes" "Issued since 1 Oct" · "Credit to use" "2 customers" "Show these credit notes" · "Refunded this month" "Paid back since 1 Oct" · "Where it went" "All contacts" · "Updated just now" · "New credit note" · "Search credit notes, invoices or reasons" · the reason under the number · "Off INV-0045" · "Refunded ₹5,900.00" · "₹7,856.00 left" · the row menu "View" "Apply credit" "Refund" "Email credit note" "Download PDF"
+
+### CreditNotesListRefinedDark — "Credit to use" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-40 · **Source:** Claude Design
+
+![CreditNotesListRefinedDark](screens/CreditNotesListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · only credit notes with credit left
+
+### CreditNotesNewPicker — New credit note: which invoice?
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-37 · **Source:** Claude Design
+
+![CreditNotesNewPicker](screens/CreditNotesNewPicker.webp)
+
+Links to: `CreditNoteDialogLines`
+
+Shows: "New credit note" · "Which invoice does it correct? Only issued invoices with something left to credit are listed." · a search · each invoice's customer, issue date and "Left to credit" · "Cancel" "Continue"
+
+### CreditNoteDetailRefined — Part off its invoice, part applied, credit left
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-INV-38, US-INV-39 · **Source:** Claude Design
+
+![CreditNoteDetailRefined](screens/CreditNoteDetailRefined.webp)
+
+Links to: `CreditNotesListRefined`, `InvoiceDetailRefined`, `CustomerRefundDialog`
+
+Shows: "Billing › Credit notes › CRN-0007" · "CRN-0007" "Credit left" · the customer · "Against INV-0041" · "Issued 6 Oct" · the place of supply · the reason · "Download PDF" "Refund" "Apply credit" "More" · "Credited" "incl. CGST + SGST" · "Off INV-0041" "What was still owed on it" · "Applied" "To INV-0044" · "Credit left" "To apply or refund" · "Lines" with CGST (9%) and SGST (9%) · "Total credited" "Off INV-0041" "Applied to INV-0044" "Credit left" · "Activity" "Credit applied" "Emailed to …" "Issued against INV-0041 · ₹41,616.00 off it, ₹17,856.00 as credit" "View history"
+
+### CreditNoteDialogLines — Credit lines, with their tax
+**Priority:** P1 · **Phase:** Refinements · **Stories:** US-INV-36 · **Source:** Claude Design
+
+![CreditNoteDialogLines](screens/CreditNoteDialogLines.webp)
+
+Links to: `CreditNoteDetailRefined`
+
+Shows: "Issue a credit note" · "Against INV-0041 · Sahyadri Retail Pvt Ltd · ₹41,616.00 still owed. Takes back the tax with the amount, without editing the issued invoice." · "Credit lines" "Credit an amount" · "1 of 1 left" · "12 of 36 left" · "Fully credited · CRN-0003" · "Reason" · "₹41,616.00 reduces what's owed on INV-0041; ₹17,856.00 becomes credit for …" · "Subtotal" "CGST (9%)" "SGST (9%)" "Total" · "It gets a number and is posted to your books when issued; it can't be edited after." · "Cancel" "Issue credit note"
+
+### CreditNoteDialogAmount — Credit an amount, spread over the lines
+**Priority:** P1 · **Phase:** Refinements · **Stories:** US-INV-36 · **Source:** Claude Design
+
+![CreditNoteDialogAmount](screens/CreditNoteDialogAmount.webp)
+
+Links to: `CreditNoteDetailRefined`
+
+Shows: "Amount · tax included" · "Spread over the invoice's lines by what's left to credit on each; each part's tax is taken back at that line's rate." · "Left to credit" "Before tax" "Tax" "Part" · the totals and the split
+
+## The email log
+
+Drawn in Claude Design for US-SET-27 to US-SET-29 and US-DASH-30 (D-220): project "Spine web — refinements before Phase 10", canvas "13 Email log". One Owner-only list of every email Spine sends — queued or sent straight away — with when, to whom, the kind and subject, the record, the status in words, attempts and the error; Retry now and Cancel for queued emails, each asking first; a warning when email isn't set up; and failed emails in an Owner's Needs your attention. It replaces `EmailQueueDialog` (US-QUO-07, retired). In the built screens the range is a "Last 30 days" select (7, 30, 90 or 180 days), and the setup warning has no "How to set up email" link until the docs site ships (Phase 11).
+
+### EmailLog — Every email, a retrying email's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-27, US-SET-28 · **Source:** Claude Design
+
+![EmailLog](screens/EmailLog.webp)
+
+Links to: `EmailLogRetryConfirm`, the record's page
+
+Shows: "Settings › Email log" · "Email log" · "Every email Spine sends — to customers and your team — and what happened to it. Kept for 180 days." · "Waiting" "Queued or retrying" "Show these emails" · "Failed in the last 7 days" "Not retried or cancelled" · "Sent today" "Since midnight" · "Status" "Kind" "Last 30 days" · "Updated just now" · "Search recipient, subject or record" · "When" "To" "Subject" "Record" "Status" "Attempts" · the kind beside the subject ("Quote", "Reminder", "Daily digest") · "Retrying at 12:28 PM · Connection timed out" · "550 5.1.1 Mailbox unavailable" · "Cancelled by Priya Raman" · "Sent" "Retrying" "Failed" "Cancelled" · "2 of 4" · the row menu "Retry now" "Cancel" "Open QUO-0034"
+
+### EmailLogDark — "Failed in the last 7 days" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-27 · **Source:** Claude Design
+
+![EmailLogDark](screens/EmailLogDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · only emails that failed in the last 7 days
+
+### EmailLogRetryConfirm — Retry now asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-28 · **Source:** Claude Design
+
+![EmailLogRetryConfirm](screens/EmailLogRetryConfirm.webp)
+
+Links to: `EmailLog`
+
+Shows: "Retry this email?" · "The payment reminder for INV-0039 goes to accounts@halcyontech.example again now, with four attempts. Last time it failed: “550 5.1.1 Mailbox unavailable” — check the address on the contact first if it's wrong." · "Go back" · "Retry email"
+
+### EmailLogNoSmtp — Email isn't set up
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-29 · **Source:** Claude Design
+
+![EmailLogNoSmtp](screens/EmailLogNoSmtp.webp)
+
+Links to: —
+
+Shows: "Email isn't set up — 12 emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." · "Queued" "0 of 4" · "Waiting for email to be set up" · a credit note "Failed" with "Email isn't set up (SMTP_HOST is unset)"
+
+### DashboardAttentionEmails — Failed emails in Needs your attention
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-30 · **Source:** Claude Design
+
+![DashboardAttentionEmails](screens/DashboardAttentionEmails.webp)
+
+Links to: `EmailLog` (filtered to Failed)
+
+Shows: "2 emails failed" · "Reminder INV-0039 to accounts@halcyontech.example" · "Review"
+
+## Payments you can work from
+
+Drawn in Claude Design for US-PAY-19 to US-PAY-26 (D-221): project "Spine web — refinements before Phase 10", canvas "14 Payments". A payment gets its own page — where its money stands, one next step, a strip of Received, Applied, Refunded and Credit left, "Applied to" with what each invoice still owes, and Activity — and can be moved off the wrong invoice. The list's cards are Received this month, Credit to use (a filter) and Refunded this month; each row says what the payment was applied to. One "Record payment" dialog ticks the invoices it pays, says what becomes credit, and flags a likely duplicate. Search finds payments. These replace `PaymentDrawer`, `PaymentDrawerCredit`, `NewPaymentDialog` and `RecordPaymentDialog`, and refine `PaymentsList`. In the built screens the date range defaults to All time, and the Record dialog's amount boxes show plain figures (1000.00) as every money input does.
+
+### PaymentsListRefined — Cards, what each payment paid, a row's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-21, US-PAY-22 · **Source:** Claude Design
+
+![PaymentsListRefined](screens/PaymentsListRefined.webp)
+
+Links to: `PaymentDetailRefined`, `RecordPaymentRefined`
+
+Shows: "Received this month" "5 payments" "Received since 1 Oct" · "Credit to use" "2 customers" "Show these payments" · "Refunded this month" "1 refund" · "All contacts" "Method" "This month" · "Updated just now" · "Record payment" · "Search receipts, references, customers or invoices" · the reference under the receipt number ("UTR 4471 2280") · the account under the method ("HDFC Current") · "Applied to" "INV-0041, INV-0042" / "Not applied" / "3 invoices" · "Credit left" "₹38,000.00" · the row menu "View" "Apply credit" "Refund" "Email receipt" "Download PDF"
+
+### PaymentsListRefinedDark — "Credit to use" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-21 · **Source:** Claude Design
+
+![PaymentsListRefinedDark](screens/PaymentsListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · only payments with credit left
+
+### PaymentDetailRefined — A payment, fully applied
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-19, US-PAY-20 · **Source:** Claude Design
+
+![PaymentDetailRefined](screens/PaymentDetailRefined.webp)
+
+Links to: the invoices, the customer
+
+Shows: "Billing › Payments › RCP-0030" · "RCP-0030" "Fully applied" · "Sahyadri Retail Pvt Ltd" · "Bank transfer · 9 Oct" · "Paid into HDFC Current" · "NEFT HDFCN52023" · "Download PDF" "Email receipt" "More" · "Received" "Applied" "To 2 invoices" "Credit left" "Nothing left to apply" · "Applied to": "Invoice" "Invoice total" "From this payment" "Still owes" ("Paid") "Applied" · "Activity" "View history": "Applied ₹38,384.00 to INV-0042", "Recorded · ₹5,00,000.00 by bank transfer into HDFC Current"
+
+### PaymentDetailCredit — Credit left, an applied invoice's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-19, US-PAY-26 · **Source:** Claude Design
+
+![PaymentDetailCredit](screens/PaymentDetailCredit.webp)
+
+Links to: `PaymentUnapplyConfirm`
+
+Shows: "RCP-0029" "Credit left" · "Download PDF" "Refund" "Apply credit" "More" · "Credit left" "₹38,000.00" "To apply or refund" · the menu "Open INV-0037" "Move off INV-0037" · "Notes" · "Receipt emailed to accounts@lakshmihospital.example"
+
+### PaymentUnapplyConfirm — Move a payment off an invoice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-26 · **Source:** Claude Design
+
+![PaymentUnapplyConfirm](screens/PaymentUnapplyConfirm.webp)
+
+Links to: `PaymentDetailCredit`
+
+Shows: "Move ₹42,000.00 off INV-0037?" · "INV-0037 will owe ₹96,000.00 again, and ₹42,000.00 becomes credit for Lakshmi Multispeciality Hospital to apply to the right invoice or refund. The receipt already sent isn't changed." · "Reason · optional, kept in the history" · "Go back" "Move off invoice"
+
+### RecordPaymentRefined — Record a payment by ticking what it pays
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-23 · **Source:** Claude Design
+
+![RecordPaymentRefined](screens/RecordPaymentRefined.webp)
+
+Links to: `PaymentDetailRefined`
+
+Shows: "Record a payment" · "Tick what it pays; anything over becomes the customer's credit, to apply later or refund." · "Customer" "Amount" "Date" "Method" "Paid into" "Reference" · "What it pays" "Pay all" · "Invoice" "Due" "Balance" "Pay" · "Due 28 Sept" "13 days late" · "Deposit" · "₹3,55,000.00 goes on 2 invoices; ₹45,000.00 becomes credit for Halcyon Tech Parks Pvt Ltd." · "Email a receipt to accounts@halcyontech.example" · "It gets a receipt number and is posted to your books when recorded." · "Cancel" "Record payment"
+
+### RecordPaymentDuplicate — A payment that looks already recorded
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-24 · **Source:** Claude Design
+
+![RecordPaymentDuplicate](screens/RecordPaymentDuplicate.webp)
+
+Links to: the payment it looks like
+
+Shows: "This looks like RCP-0031 — ₹45,000.00 from Halcyon Tech Parks Pvt Ltd on 10 Oct (UPI · UTR 4471 2280). Record it anyway if it's a second payment." · "Open RCP-0031"
+
+### SearchPayments — Search finds payments
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PAY-25 · **Source:** Claude Design
+
+![SearchPayments](screens/SearchPayments.webp)
+
+Links to: `PaymentDetailRefined`
+
+Shows: "Payments" · "RCP-0031 · Halcyon Tech Parks Pvt Ltd · ₹45,000.00 · 10 Oct"
+
+## Menus that read at a glance
+
+Drawn in Claude Design for US-OPS-37 (D-222): project "Spine web — refinements before Phase 10", canvas "15 Menus". One menu style owned by the `@spine/ui` menu components — a 14 px muted icon 10 px before the label, rows at least 32 px tall, the highlight across the whole row, destructive actions red and last after a divider — and one icon per action across the refined modules. Choice menus (a lead's stage, a job's status, the catalogue's tax picker) keep their markers.
+
+### MenuIcons — The refined modules' menus
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-37 · **Source:** Claude Design
+
+![MenuIcons](screens/MenuIcons.webp)
+
+Links to: —
+
+Shows: "Invoices · row" "View" "Record payment" "Send reminder" "Email invoice" "Download PDF" "Duplicate" "Void" · "Invoice page · More" "Issue credit note" "View history" "Void invoice" · "Quotes · row" "Send" "Copy customer link" "Delete" · "Quote page · More" "Save lines as a bundle" "Email again" "Revise" · "Payments · row" "Apply credit" "Refund" "Email receipt" "Delete payment" · "Payment page · Applied to" "Open INV-0037" "Move off INV-0037" · "Credit notes · row" · "Email log · row" "Retry now" "Open QUO-0034" "Cancel" · "Contacts · row" "Edit" "Archive" "Delete" · "Catalogue · row" "Restore" · "Job page · More" "Add photos" "Release retention" · "Pipeline · lead card" "Open" "Move to" stages with dots and a tick
+
+### MenuIconsDark — The same menus, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-37 · **Source:** Claude Design
+
+![MenuIconsDark](screens/MenuIconsDark.webp)
+
+Links to: —
+
+Shows: the same menus on the dark surface; red destructive items; muted icons
+
+### MenuAnatomy — One item, close up
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-37 · **Source:** Claude Design
+
+![MenuAnatomy](screens/MenuAnatomy.webp)
+
+Links to: —
+
+Shows: "min height 32 px · padding 6 px 8 px" · "highlight covers the whole row" · "icon 14 px, muted — 10 px before the label" · "divider before destructive actions" · "destructive: red icon and label, last"
+
+## Every action says when it's done
+
+Drawn in Claude Design for US-OPS-38 and US-CAT-16 (D-223): project "Spine web — refinements before Phase 10", canvas "16 Toasts". One toast host in the app layout: a toast shown just before a page opens shows on that page. Toasts stack in the bottom-right corner newest on top, three at most by default (a new one over the maximum closes the oldest at once), each closing after 5 seconds by default, paused while the stack is hovered or a toast focused. On a phone they span the bottom, two at most. A bulk change to the catalogue's tax or category asks first.
+
+### ToastAfterNavigate — The toast on the page an action opens
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastAfterNavigate](screens/ToastAfterNavigate.webp)
+
+Links to: —
+
+Shows: the payment's page after Record payment on the payments list · "RCP-0032 recorded" "₹38,000.00 is credit for Lakshmi Multispeciality Hospital — apply it or refund it." with a close ×
+
+### ToastStack — Three in a row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastStack](screens/ToastStack.webp)
+
+Links to: —
+
+Shows: "RCP-0032 recorded" on top, "Receipt sent", "Lead deleted" at the bottom · "newest — on top" · "oldest — closes first; a 4th toast closes it at once" · "max 3 · 5 s each · paused while hovered or focused"
+
+### ToastStackDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastStackDark](screens/ToastStackDark.webp)
+
+Links to: —
+
+Shows: the same stack on the dark app, each toast with a thin outline
+
+### ToastStackPhone — Phone width
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-38 · **Source:** Claude Design
+
+![ToastStackPhone](screens/ToastStackPhone.webp)
+
+Links to: —
+
+Shows: two toasts spanning the bottom of the screen — "RCP-0032 recorded", "Receipt sent"
+
+### CatalogBulkConfirm — A change to many items asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-16 · **Source:** Claude Design
+
+![CatalogBulkConfirm](screens/CatalogBulkConfirm.webp)
+
+Links to: `CatalogBulkSelect`
+
+Shows: "3 selected" · "Change the tax on 3 items?" "They'll use GST 18% (9% + 9%) on new quotes and invoices. Quotes and invoices already issued keep their tax." · "Go back" "Change tax"
+
+## Receivables you can chase from
+
+Drawn in Claude Design for US-PAY-27 to US-PAY-31 (D-224): project "Spine web — refinements before Phase 10", canvas "17 Receivables". The list layout every refined list shares — tabs (By customer, By invoice) under the header, the cards and the age bar (both pressable, to filter by age), the filter bar (an age filter; Updated, Refresh and Export) and the search bar with Columns. Rows act through the existing dialogs; ticked invoices get Send reminders.
+
+### ReceivablesByCustomer — Who owes most, customer by customer
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-27, US-PAY-31 · **Source:** Claude Design
+
+![ReceivablesByCustomer](screens/ReceivablesByCustomer.webp)
+
+Links to: `ReceivablesByInvoice`, `ContactStatementDialog`
+
+Shows: "What customers owe you, by how late it is · as of 11 Oct 2026" · "By customer 6" "By invoice 10" · "Total outstanding" "₹13,48,584.00" "10 invoices · 6 customers" · "Current" "Overdue" "90+ days" · "Outstanding by age" · "₹2,40,000.00 retention held on 3 jobs isn't counted here — it's owed once you release it on the job." "See jobs" · "All ages" "Updated just now" "Export" · "Search customers" "Columns" · "Customer" "Open" "Oldest" "Overdue" "Total owed" "Credit to use" "Last reminded" · Halcyon expanded: "INV-0031 · Wing B fit-out" "Due 8 Aug" "61–90 days" "64 days late" · "6 customers" "10 invoices" totals
+
+### ReceivablesByInvoice — Filter by age, act from the row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-28, US-PAY-29, US-PAY-30 · **Source:** Claude Design
+
+![ReceivablesByInvoice](screens/ReceivablesByInvoice.webp)
+
+Links to: `InvoiceDetail`, `RecordPaymentRefined`
+
+Shows: "Overdue" pressed, "Showing these · press again to clear", Current faded on the bar · "Overdue" in the age filter · "Invoice" "Customer" "Due" "How late" "Balance due" · "Store 14 refit · Deposit" · "Last reminded 3 Oct" "Never reminded" · "64 days late" · INV-0031's menu: "Record payment" "Apply credit" "Send reminder" "Download PDF" "Open invoice"
+
+### ReceivablesRemindConfirm — Remind several at once
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-28 · **Source:** Claude Design
+
+![ReceivablesRemindConfirm](screens/ReceivablesRemindConfirm.webp)
+
+Links to: —
+
+Shows: "4 selected" "Send reminders (3)" "Clear" · "Send 3 payment reminders?" "Each customer gets the reminder email with the invoice attached, straight away. 1 of the selected invoices is skipped: INV-0040 — the customer has no email address." · "Go back" "Send reminders"
+
+### ReceivablesDark — By customer, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-27 · **Source:** Claude Design
+
+![ReceivablesDark](screens/ReceivablesDark.webp)
+
+Links to: —
+
+Shows: the By customer view on the dark app, every row closed
+
+## Vendor bills you can work from
+
+Drawn in Claude Design for US-PUR-32 to US-PUR-36 (D-225): project "Spine web — refinements before Phase 10", canvas "18 Vendor bills". A bill's page laid out like a payment's, with its state in words and one next step; paying and applying credit from it; a list that shows money, in the layout every refined list shares; a warning before entering a bill twice.
+
+### VendorBillPage — A bill at a glance
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-32 · **Source:** Claude Design
+
+![VendorBillPage](screens/VendorBillPage.webp)
+
+Links to: `VendorBillPayDialog`, `VendorBillDuplicateWarning`
+
+Shows: "Purchases › Vendor bills › RTE-3302" · "RTE-3302" "Partly paid" · "Ridgeline Equipment Rentals Pvt Ltd" "Bill date 25 Sept" "Due 15 Oct · Due in 4 days" "Wing C fit-out" "Karnataka (29)" · "Apply credit" "Pay bill" "More" · "Total" "Paid" "Credits applied" "Balance due" · Lines with totals · Payments "VPY-0014" · Attachments · Activity "Paid ₹75,000.00 by VPY-0014" "Recorded" "Created as a draft" · More: "View history" "Make recurring" "Duplicate" "Void bill"
+
+### VendorBillPayDialog — Pay from the bill
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-33 · **Source:** Claude Design
+
+![VendorBillPayDialog](screens/VendorBillPayDialog.webp)
+
+Links to: `VendorBillPage`
+
+Shows: the vendor payment dialog on Ridgeline with RTE-3302 ticked for ₹40,640.00 · the vendor's credit to use
+
+### VendorBillsListRefined — What we owe, what's due, what's paid
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-34 · **Source:** Claude Design
+
+![VendorBillsListRefined](screens/VendorBillsListRefined.webp)
+
+Links to: `VendorBillPage`, `VendorBillsBulkRecord`
+
+Shows: "To pay" "Overdue" "Due in 7 days" "Drafts to record" · State, All vendors, All jobs · Updated, Refresh, "Recurring bills", "New vendor bill" · "Search bill numbers, vendors or jobs" "Columns" · "Bill" "Vendor" "Bill date" "Due" "Job" "State" "Total" "Balance" · "Draft" "Unpaid" "Partly paid" "Overdue" "Paid" "Void" · "30 days late" · row menu "View" "Pay bill" "Duplicate" "Void"
+
+### VendorBillsListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-34 · **Source:** Claude Design
+
+![VendorBillsListDark](screens/VendorBillsListDark.webp)
+
+Links to: —
+
+Shows: the list on the dark app with Overdue pressed
+
+### VendorBillsBulkRecord — Record several drafts
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-36 · **Source:** Claude Design
+
+![VendorBillsBulkRecord](screens/VendorBillsBulkRecord.webp)
+
+Links to: —
+
+Shows: "Drafts to record" pressed · "2 selected" "Record (2)" "Clear" · "Record 2 bills?" "CSW-5611 and KSE-771 — ₹3,06,800.00 in all — are posted to your books as owed. After that they can't be edited, only voided." "Go back" "Record bills"
+
+### VendorBillDuplicateWarning — Enter a bill without entering it twice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-35 · **Source:** Claude Design
+
+![VendorBillDuplicateWarning](screens/VendorBillDuplicateWarning.webp)
+
+Links to: `VendorBillPage`
+
+Shows: the invoice builder's layout — header card "Vendor" "Bill number" "Job" "Currency" · "Apex Building Materials already has bill ABM-20587 — 1 Oct, ₹1,80,540.00, unpaid. Check it isn't the same bill before you save. Open ABM-20587" · "Bill date" "Due date" with "On receipt" "+15 days" "+30 days" "+60 days" · "Suggested: 30 days, as on this vendor's last bill" · "Place of supply" · Lines "Item" "Qty" "Rate" "Tax" "Account" "Amount" · "Add item" (no headings or text lines) · "Notes and attachments ↓" · bar "Subtotal" "GST" "Total" "Unsaved changes" "Cancel" "Save draft" "Save and record"
+
+## Vendor credits you can work from
+
+Drawn in Claude Design for US-PUR-37 to US-PUR-41 (D-226): project "Spine web — refinements before Phase 10", canvas "19 Vendor credits". A credit's page laid out like a bill's, with its state in words and one next step; a list that shows money and old unused credit, in the layout every refined list shares; entering a credit like a bill; raising a credit from its bill and using it there first.
+
+### VendorCreditPage — A credit at a glance
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-37 · **Source:** Claude Design
+
+![VendorCreditPage](screens/VendorCreditPage.webp)
+
+Links to: `VendorCreditApplyRefined`, `VendorRefundDialog`
+
+Shows: "Purchases › Vendor credits › VCR-0007" · "VCR-0007" "Partly used" · "Ridgeline Equipment Rentals Pvt Ltd" "Their CN-77" "3 Oct" "Against RTE-3302" "Wing C fit-out" "Karnataka (29)" · "Record refund" "Apply to bills" "More" · "Total" "Applied to bills" "Refunded" "Left to use" "Apply it or ask for a refund" · Lines with tax and account · "Applied to bills" "RPH-8790" · "Refunds" "None yet. Record a refund when Ridgeline pays you back." · Attachments · Activity "Applied ₹9,912.00 to RPH-8790" "Recorded · ₹17,700.00 off what you owe Ridgeline" "Created as a draft, against RTE-3302" · More: "View history" "Void credit"
+
+### VendorCreditsListRefined — What credit vendors owe us
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-38 · **Source:** Claude Design
+
+![VendorCreditsListRefined](screens/VendorCreditsListRefined.webp)
+
+Links to: `VendorCreditPage`, `VendorCreditBuilderRefined`
+
+Shows: "Vendor credits" · "Credit to use" "₹31,488.00" "3 credits open or partly used" · "Drafts to record" · "Partly used" · "Unused 60+ days" "ask for a refund?" · "Status" "All vendors" "All jobs" · "Updated just now" · "New vendor credit" · "Search numbers, vendors or bills" "Columns" · "Number" "Their no." "Vendor" "Date ↓" "Against bill" "Job" "State" "Total" "Left to use" · "—" on drafts and on a void credit's Left to use · row menu: "View" "Apply to bills" "Record refund" "Void"
+
+### VendorCreditsListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-38 · **Source:** Claude Design
+
+![VendorCreditsListDark](screens/VendorCreditsListDark.webp)
+
+Links to: `VendorCreditPage`
+
+Shows: the list on the dark app with "Unused 60+ days" pressed · "Showing these · press again to clear"
+
+### VendorCreditsBulkRecord — Record several draft credits
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-41 · **Source:** Claude Design
+
+![VendorCreditsBulkRecord](screens/VendorCreditsBulkRecord.webp)
+
+Links to: —
+
+Shows: "Drafts to record" pressed · "2 selected" "Record (2)" "Clear" · "Record 2 vendor credits?" "Coastline Steel Works' CN-4502 and Kaveri Sand & Earthmovers' CN-118 — ₹9,440.00 in all — are posted to your books, lowering what you owe them. After that they can't be edited, only voided." "Go back" "Record credits"
+
+### VendorCreditBuilderRefined — Enter a credit like a bill
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-39 · **Source:** Claude Design
+
+![VendorCreditBuilderRefined](screens/VendorCreditBuilderRefined.webp)
+
+Links to: `VendorCreditPage`
+
+Shows: the bill builder's layout — header card "Vendor" "Vendor's credit note number" "Against bill" "Currency" · "Ridgeline Equipment Rentals already has credit note CN-77 — VCR-0007, 3 Oct, ₹17,700.00, partly used. Check it isn't the same credit note before you save. Open VCR-0007" · "Date" "Job" "Place of supply" · Lines "Item" "Qty" "Rate" "Tax" "Account" "Amount" · "Add item" · "Notes and attachments ↓" · bar "Subtotal" "GST" "Total credit" "Unsaved changes" "Cancel" "Save draft" "Save and record"
+
+### VendorCreditReplaceLines — Ask before replacing lines
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-39 · **Source:** Claude Design
+
+![VendorCreditReplaceLines](screens/VendorCreditReplaceLines.webp)
+
+Links to: —
+
+Shows: "Replace your lines with RTE-3340's?" "The 2 lines you've entered are replaced by RTE-3340's 3 lines, for you to edit down. Keep yours to leave the lines as they are." "Keep my lines" "Replace lines"
+
+### VendorBillRecordCredit — Raise a credit from its bill
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-40 · **Source:** Claude Design
+
+![VendorBillRecordCredit](screens/VendorBillRecordCredit.webp)
+
+Links to: `VendorCreditBuilderRefined`
+
+Shows: the bill page's More menu: "View history" "Make recurring" "Duplicate" "Record vendor credit" "Void bill"
+
+### VendorCreditApplyRefined — Use a credit on its bill first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-40 · **Source:** Claude Design
+
+![VendorCreditApplyRefined](screens/VendorCreditApplyRefined.webp)
+
+Links to: —
+
+Shows: "Apply VCR-0007 to bills" "₹7,788.00 left to use. Nothing is posted; what you owe on each bill drops." · "Ridgeline's open bills — the one it's against first, then oldest first" · "Bill" "Due" "Balance" "Apply" · "RTE-3302" "Against this credit" "Bill date 25 Sept" "15 Oct" "Due in 4 days" · "RTE-3340" "Due in 21 days" · "Applying ₹7,788.00" "₹0.00 left on VCR-0007" · "Cancel" "Apply ₹7,788.00"
+
+## Expenses you can work from
+
+Drawn in Claude Design for US-PUR-42 to US-PUR-45 (D-227): project "Spine web — refinements before Phase 10", canvases "20 Expenses" and "20b Expenses labour". A list that shows what's waiting and what it's cost, in the layout every refined list shares; an expense on its own page with the receipt beside what was claimed; a faster form with a files pane that scrolls on its own; fixing and resubmitting a rejected expense; headcount × day rate new, on its page and edited.
+
+### ExpensesListRefined — What's waiting and what it's cost
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-42 · **Source:** Claude Design
+
+![ExpensesListRefined](screens/ExpensesListRefined.webp)
+
+Links to: `ExpensePage`, `ExpenseFormRefined`
+
+Shows: "Purchases › Expenses" · tabs "Expenses" "Categories" · "Waiting for approval" "₹6,650.00" "2 expenses from others" · "Approved this month" · "Ready to bill" "billable, not invoiced" · "Rejected" "to fix and resubmit" · "State" "All categories" "Submitted by" "All jobs" · "Updated just now" · "Submit expense" · "Search numbers, descriptions, jobs or people" "Columns" · "Date ↓" "Number" "Description" "Job" "Submitted by" "Paid by" "State" "Amount" · "—" before a number · "Waiting for approval" "Approved" "Billable" "Billed" "Rejected" · row menu: "View" "Edit" "Approve" "Reject" "Delete"
+
+### ExpensesListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-42 · **Source:** Claude Design
+
+![ExpensesListDark](screens/ExpensesListDark.webp)
+
+Links to: `ExpensePage`
+
+Shows: the list on the dark app with "Waiting for approval" pressed · "Showing these · press again to clear"
+
+### ExpensePage — An expense on its own page
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-43 · **Source:** Claude Design
+
+![ExpensePage](screens/ExpensePage.webp)
+
+Links to: `ExpensesListRefined`, `ExpenseApproveConfirm`, `ExpenseRejectDialog`, `ExpenseBillToCustomer`
+
+Shows: "Purchases › Expenses › Expense" · "Expense" "Waiting for approval" · "Fuel & freight" "11 Oct" "Submitted by Arjun Mehta" "Wing C fit-out" "Paid by employee" · "Reject" "Approve and next" "Approve" "More" · "Amount" "Tax" "GST 18%, included" "Paid from" "Billable" · "Receipt" "Open full size" with the receipt previewed beside "Description" "Category · posts to 6100 Fuel & Travel" "Date on the receipt" · "Attachments" "Add files" the receipt tagged "Receipt" · Activity "Edited · receipt added" "Submitted for approval"
+
+### ExpenseRejectedResubmit — Fix and resubmit a rejected expense
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-43, US-PUR-45 · **Source:** Claude Design
+
+![ExpenseRejectedResubmit](screens/ExpenseRejectedResubmit.webp)
+
+Links to: `ExpenseFormRefined`
+
+Shows: "Expense" "Rejected" · "Submitted by you" · "Fix and resubmit" "More" · "Rejected by Priya Raman on 4 Oct: “Use the site van for supplier runs — a taxi isn't covered.” Fix it and resubmit, or delete it if it shouldn't be claimed." · "Paid from" "Chosen when approved" · Activity "Rejected · “…”" "Submitted for approval"
+
+### ExpenseFormRefined — Submit an expense in seconds
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-44 · **Source:** Claude Design
+
+![ExpenseFormRefined](screens/ExpenseFormRefined.webp)
+
+Links to: `ExpensePage`
+
+Shows: "Submit an expense" "Drop the receipt, check the amounts, and it goes to an approver." · files pane, scrolling on its own: "Receipt and files" "Add files" · the receipt previewed with "Replace" "Remove" "diesel-11-oct.jpg · the receipt" · further files listed, each with a remove button · "Drop more photos or PDFs to add them." · "Enter as" "Amount" "Headcount × day rate" · "Category" "Job" "Date" "Currency" (a picker) "Amount" "Tax rate" "Tax amount" "Worked out from GST 18%, included in the amount." "Paid by" · "You submitted ₹4,850.00 on 11 Oct already — Fuel & freight, waiting for approval. Check it isn't the same receipt before you submit. Open it →" · "Description" · "Billable to a customer" · "Cancel" "Submit and add another" "Submit expense"
+
+### ExpenseFormLabour — A day's labour, new
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-23, US-PUR-44 · **Source:** Claude Design
+
+![ExpenseFormLabour](screens/ExpenseFormLabour.webp)
+
+Links to: `ExpenseLabourPage`
+
+Shows: "Submit an expense" "A day's labour on site: workers per trade × their day rate." · "Receipt and files" "Add files" · "Drop a muster sheet or site photo here, or choose files. Optional for labour." · "Headcount × day rate" · "Category" "Direct labour" "Preselected: posts to 5200 Direct Labour." · "Job*" "Labour is always for a job." · "Trade" "Workers" "Day rate" "Total" · a trade suggested: "Helper" "last ₹650.00 a day" · "Add trade" · "Total for the day · 7 workers" · "Only headcounts and day rates are recorded — no names, attendance or hours." · "Paid by" "Paid from"
+
+### ExpenseLabourPage — A labour expense's page
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-23, US-PUR-43 · **Source:** Claude Design
+
+![ExpenseLabourPage](screens/ExpenseLabourPage.webp)
+
+Links to: `ExpenseBillToCustomer`
+
+Shows: "EXP-0044" "Approved" "Billable" · "Direct labour" · "Bill to customer" "More" · "Amount" "15 workers · 3 trades" "Tax" "No tax on labour" · "Labour · headcount × day rate" "Trade" "Workers" "Day rate" "Total" · "Total for the day · 15 workers" · "Details" "Review comment" · "Attachments" "No receipt — a labour day doesn't need one." · Activity "Approved · posted ₹11,700.00 from HDFC Current"
+
+### ExpenseFormLabourEdit — Edit a waiting labour expense
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-23, US-PUR-44 · **Source:** Claude Design
+
+![ExpenseFormLabourEdit](screens/ExpenseFormLabourEdit.webp)
+
+Links to: `ExpenseLabourPage`
+
+Shows: "Edit expense" "It stays waiting for approval. Changing the rows changes the amount." · "Receipt and files" "Add files" · a muster sheet as the receipt with a site photo listed under it · the rows filled in · "Total for the day · 17 workers" · "Cancel" "Save changes"
+
+## Expense categories that guide
+
+Drawn in Claude Design for US-PUR-46 to US-PUR-48 (D-228): project "Spine web — refinements before Phase 10", canvas "21 Expense categories". The Categories tab as a table on the layout every refined list shares, with what each category is for, where it posts, its default tax and how much it's used; one form for adding and editing that catches a taken name; Archive and Delete asking first; and the expense form's picker showing what each category is for and filling in its usual rate.
+
+### ExpenseCategoriesRefined — Every category and how it's used
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-46, US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoriesRefined](screens/ExpenseCategoriesRefined.webp)
+
+Links to: `ExpenseCategoryDialogRefined`, `ExpenseCategoryArchiveConfirm`, `ExpensesListRefined`
+
+Shows: "Purchases › Expenses › Categories" · tabs "Expenses" "Categories" · "Active" · "Updated just now" · "Add category" · "Search categories" "Columns" · "Name ↑" "Posts to" "Default tax" "Expenses" "Approved this month" "State" · each name over its line ("Diesel, petrol, tolls and getting materials to site") · "Headcount × day rate" on Site labour · "6900 Other Expenses · default" when none is set · "Active" · row menu: "Edit" "View history" "Archive" and a disabled "Delete" with "In use — archive it instead" · "Archived categories leave the expense form; their expenses keep them. A category no expense uses can be deleted."
+
+### ExpenseCategoriesDark — Archived categories, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-46, US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoriesDark](screens/ExpenseCategoriesDark.webp)
+
+Links to: `ExpenseCategoryDeleteConfirm`
+
+Shows: the table on the dark app filtered to "Archived" · "Client entertainment" "Archived" · row menu: "Edit" "View history" "Restore" "Delete"
+
+### ExpenseCategoryDialogRefined — Edit a category
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryDialogRefined](screens/ExpenseCategoryDialogRefined.webp)
+
+Links to: `ExpenseCategoriesRefined`
+
+Shows: "Edit category" · "Name" · "What it's for (optional)" "Shown under the name when people pick a category." "52 / 120" · "Posts to" · "Expenses already approved stay in … Expenses approved from now on post to …" · "Default tax rate" "Filled in on the expense form when this category is chosen — people can still change it." · "Cancel" "Save changes"
+
+### ExpenseCategoryNameTaken — A name that's taken
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryNameTaken](screens/ExpenseCategoryNameTaken.webp)
+
+Links to: `ExpenseCategoriesRefined`
+
+Shows: "Add category" "Name it, say what it's for, and choose where it posts." · "client entertainment" · "Client entertainment is already a category — it's archived." "Restore it" · "Cancel" "Add category"
+
+### ExpenseCategoryArchiveConfirm — Archive asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryArchiveConfirm](screens/ExpenseCategoryArchiveConfirm.webp)
+
+Links to: —
+
+Shows: "Archive Fuel & freight?" "It leaves the expense form, so no new expense can use it. Its 6 expenses keep it, and you can restore it at any time." · "Go back" "Archive category"
+
+### ExpenseCategoryDeleteConfirm — Delete asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-47 · **Source:** Claude Design
+
+![ExpenseCategoryDeleteConfirm](screens/ExpenseCategoryDeleteConfirm.webp)
+
+Links to: —
+
+Shows: "Delete Client entertainment?" "No expense uses it, so it's removed for good. This can't be undone." · "Go back" "Delete category"
+
+### ExpenseFormCategoryHint — What each category is for
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-48 · **Source:** Claude Design
+
+![ExpenseFormCategoryHint](screens/ExpenseFormCategoryHint.webp)
+
+Links to: `ExpenseFormCategoryTax`
+
+Shows: "Submit an expense" · the category picker open: search, then each category with its line under the name ("Materials" "Cement, steel, sand — anything that goes into the build")
+
+### ExpenseFormCategoryTax — A category's usual rate filled in
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-48 · **Source:** Claude Design
+
+![ExpenseFormCategoryTax](screens/ExpenseFormCategoryTax.webp)
+
+Links to: `ExpensePage`
+
+Shows: "Category" "Materials" with its line under the field · "Tax rate" "GST 18%" "Materials' usual rate — change it if this receipt differs." · "Tax amount" "Worked out from GST 18%, included in the amount."
+
+## Vendor payments you can work from
+
+Drawn in Claude Design for US-PUR-49 to US-PUR-55 (D-229): project "Spine web — refinements before Phase 10", canvas "22 Vendor payments". A list that shows what went out and what each payment paid, in the layout every refined list shares; a payment on its own page with what it paid and its Activity; deleting safely; paying by ticking bills; a remittance advice to download or email; search.
+
+### VendorPaymentsListRefined — What went out, and what each paid
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-51 · **Source:** Claude Design
+
+![VendorPaymentsListRefined](screens/VendorPaymentsListRefined.webp)
+
+Links to: `VendorPaymentPage`, `RecordVendorPaymentRefined`, `VendorBillsListRefined`
+
+Shows: "Purchases › Vendor payments" · "Paid this month" "3 payments" · "Paid last month" · "To pay" "4 overdue bills · open Vendor bills" · "All vendors" "Method" "All time" · "Updated just now" · "Record payment" · "Search numbers, references, vendors or bills" "Columns" · "Number" (reference under it) "Date ↓" "Vendor" "Method" (account under it) "Amount" "Bills paid" ("RTE-3302, RTE-3340", "3 bills") · row menu: "View" "Download remittance advice" "Email remittance advice" "Delete payment"
+
+### VendorPaymentsListDark — The list, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-51 · **Source:** Claude Design
+
+![VendorPaymentsListDark](screens/VendorPaymentsListDark.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: one vendor, "Bank transfer", "Last 90 days" · "Clear filters"
+
+### VendorPaymentPage — A vendor payment on its own page
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-49, US-PUR-54 · **Source:** Claude Design
+
+![VendorPaymentPage](screens/VendorPaymentPage.webp)
+
+Links to: `RemittanceEmailDialog`, `VendorPaymentDeleteConfirm`, `VendorBillPage`
+
+Shows: "Purchases › Vendor payments › VPY-0014" · "VPY-0014" · vendor (a link) "11 Oct" "Bank transfer" "Paid from HDFC Current" "NEFT 4471 2280" · "Download remittance advice" "Email remittance advice" "More" ("View history" "Delete payment") · "Paid" "Bills paid" "RTE-3302 in full, part of RTE-3340" · "Paid to" "Bill" "Bill total" "From this payment" "Still owes" ("Paid") "Due" · Attachments · Notes · Activity "Remittance advice emailed to …" "Paid ₹8,000.00 on RTE-3340" "Recorded · ₹48,000.00 by bank transfer from HDFC Current". As built, a bill shows its date under its number (a bill has only the vendor's number).
+
+### VendorPaymentDeleteConfirm — Delete asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-50 · **Source:** Claude Design
+
+![VendorPaymentDeleteConfirm](screens/VendorPaymentDeleteConfirm.webp)
+
+Links to: `VendorPaymentsListRefined`
+
+Shows: "Delete VPY-0014?" "It's removed for good, and a reversing entry posts today." the bills that will owe again · "Go back" "Delete payment"
+
+### VendorPaymentDeleteReconciled — Unmatch first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-50 · **Source:** Claude Design
+
+![VendorPaymentDeleteReconciled](screens/VendorPaymentDeleteReconciled.webp)
+
+Links to: `AccountRegister`
+
+Shows: "Can't delete VPY-0014 yet" "VPY-0014 is matched to a bank statement line in HDFC Current. Unmatch it in Banking first, then delete it — so your reconciled figures don't change." · "Close" "Open HDFC Current"
+
+### RecordVendorPaymentRefined — Pay a vendor by ticking bills
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-52 · **Source:** Claude Design
+
+![RecordVendorPaymentRefined](screens/RecordVendorPaymentRefined.webp)
+
+Links to: `RecordVendorPaymentConfirm`, `VendorCreditApplyRefined`
+
+Shows: "Record a vendor payment" "Tick the bills it pays, oldest due first; a typed amount is spread over them." · "<Vendor> has ₹7,788.00 of credit. Apply it first?" · "Vendor" "Amount" "Date" "Method" "Paid from" "Reference" · "What it pays" "Pay all" · "Bill" "Due" ("12 days late") "Balance" "Pay" with tick boxes · "₹48,000.00 pays RTE-3302 in full and ₹8,000.00 of RTE-3340." · "Cancel" "Record payment". As built, the line under a bill's number is its date.
+
+### RecordVendorPaymentConfirm — Record asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-52 · **Source:** Claude Design
+
+![RecordVendorPaymentConfirm](screens/RecordVendorPaymentConfirm.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: "Record this payment?" "₹48,000.00 to Ridgeline Equipment Rentals Pvt Ltd by bank transfer … It pays RTE-3302 in full and ₹8,000.00 of RTE-3340, and is posted to your books." · "Go back" "Record payment"
+
+### RecordVendorPaymentDuplicate — The same payment twice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-53 · **Source:** Claude Design
+
+![RecordVendorPaymentDuplicate](screens/RecordVendorPaymentDuplicate.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: "This looks like VPY-0013 — ₹12,400.00 to Kaveri Sand & Earthmovers on 9 Oct (UPI · 2291). Record it anyway if it's a second payment. Open VPY-0013 →"
+
+### RemittanceEmailDialog — Email a remittance advice
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-54 · **Source:** Claude Design
+
+![RemittanceEmailDialog](screens/RemittanceEmailDialog.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: "Email remittance advice" "Tells Ridgeline what VPY-0014 paid, bill by bill. Sent from your business email." · "To" "Subject" "Message" · "remittance-VPY-0014.pdf" · "Cancel" "Send"
+
+### RemittanceAdvicePdf — The remittance advice
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-54 · **Source:** Claude Design
+
+![RemittanceAdvicePdf](screens/RemittanceAdvicePdf.webp)
+
+Links to: —
+
+Shows: the business, "REMITTANCE ADVICE" "VPY-0014 · 11 Oct 2026" · "Paid to" · "Payment date" "Method" "Reference" "From" "Amount" · "Your invoice" … "Paid now" "Still owed" · "Total paid" · "it is not a tax invoice". As built, the table is Your invoice, Invoice date, Invoice total, Paid now and Still owed (a bill has no number of ours).
+
+### SearchVendorPayments — Search finds vendor payments
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-PUR-55 · **Source:** Claude Design
+
+![SearchVendorPayments](screens/SearchVendorPayments.webp)
+
+Links to: `VendorPaymentPage`
+
+Shows: ⌘K "ridgeline" · "Contacts" · "Vendor payments" "VPY-0014 · Ridgeline Equipment Rentals Pvt Ltd · ₹48,000.00 · 11 Oct" · "Vendor bills"
+
+## Payables you can pay from
+
+Drawn in Claude Design for US-PUR-56 to US-PUR-60 (D-230): project "Spine web — refinements before Phase 10", canvas "23 Payables". Payables mirrors Receivables (D-224): what we owe each vendor or each bill, in the layout every refined list shares, with ages that filter, what's due this week, paying and applying credit from the rows, and a page that says what it counts.
+
+### PayablesByVendor — What we owe each vendor
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-56, US-PUR-58, US-PUR-60 · **Source:** Claude Design
+
+![PayablesByVendor](screens/PayablesByVendor.webp)
+
+Links to: `PayablesByBill`, `RecordVendorPaymentRefined`, `VendorBillsListRefined`
+
+Shows: "Purchases › Payables" · "What you owe vendors, by how late it is · as of 12 Oct 2026" · tabs "By vendor 5" "By bill 9" · "Total owed" "9 bills · 5 vendors" · "Overdue" "4 bills" · "Due in 7 days" "2 bills · not yet overdue" · "90+ days" · "Owed by age" with every age · "2 draft bills (₹18,400.00) aren't counted here — record them to include them." "See drafts" · "All ages" · "Updated just now" Refresh "Export" · "Search vendors" "Columns" · "Vendor" "Open" "Oldest" "Overdue ↓" "Total owed" "Credit to use" "Last paid" ("Never") · a vendor expanded to its bills (number · job, "Due 26 Aug", age and "47 days late", balance) · totals row · vendor menu "Pay vendor" "Apply credit" "Open contact". As built, the menu's payment icon is the app's Record payment icon (D-222).
+
+### PayablesDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-56 · **Source:** Claude Design
+
+![PayablesDark](screens/PayablesDark.webp)
+
+Links to: `PayablesByVendor`
+
+Shows: By vendor in dark mode.
+
+### PayablesByBill — Each bill, how late, and its menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-57, US-PUR-58, US-PUR-59 · **Source:** Claude Design
+
+![PayablesByBill](screens/PayablesByBill.webp)
+
+Links to: `RecordVendorPaymentRefined`, `VendorBillPage`
+
+Shows: "Overdue" pressed ("Showing these · press again to clear"), the age filter "Overdue" · "Search bills, vendors or jobs" · "Bill" (job under it) "Vendor" "Due" "How late ↓" ("90+ days" "95 days late") "Balance due" · bill menu "Pay bill" "Apply credit" "Open bill". Bill date, Bill total and Paid so far are in Columns.
+
+### PayablesDueThisWeek — What's due in the next 7 days
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-59 · **Source:** Claude Design
+
+![PayablesDueThisWeek](screens/PayablesDueThisWeek.webp)
+
+Links to: `PayablesByBill`
+
+Shows: "Due in 7 days" pressed · the age filter "Due in 7 days" · "Current" "Due in 3 days", "Due in 5 days". An age with nothing in it says "Nothing due in the next 7 days." with "Show all".
+
+### PayablesPaySelected — Pay several bills from one vendor
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-58 · **Source:** Claude Design
+
+![PayablesPaySelected](screens/PayablesPaySelected.webp)
+
+Links to: `RecordVendorPaymentConfirm`
+
+Shows: "2 selected" "Pay (2)" "Clear" · "Record a vendor payment" with both bills ticked for their balances · "Coastline Steel Works has ₹9,440.00 of credit. Apply it first?" · "₹96,200.00 pays CSW-4471 in full and CSW-4490 in full."
+
+### PayablesPayMixed — Bills from two vendors can't be paid together
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PUR-58 · **Source:** Claude Design
+
+![PayablesPayMixed](screens/PayablesPayMixed.webp)
+
+Links to: `PayablesByBill`
+
+Shows: "2 selected" "Pay (2)" off · "Pick bills from one vendor — a payment is for one vendor." · "Clear"
+
+## Banking you can work from
+
+Drawn in Claude Design for US-BANK-13 to US-BANK-17 (D-231): project "Spine web — refinements before Phase 10", canvas "24 Banking". Banking and an account's register on the shared list layout, recording that asks first, reconciling a long statement quickly, and a finished reconciliation as a report.
+
+### BankingAccountsRefined — Every account at a glance, and its menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-13 · **Source:** Claude Design
+
+![BankingAccountsRefined](screens/BankingAccountsRefined.webp)
+
+Links to: `AccountRegisterRefined`, `ReconcileRefined`, `StatementImportDialog`, `MoneyOutConfirm`, `TransferConfirm`, `MoneyAccountDialog`, `BankingArchiveConfirm`
+
+Shows: "Money › Banking" · tabs "Active 4" "Archived 1" · "Bank and cash" "Owed on cards" "Not yet reconciled" (presses to filter) "Last reconciled" · "All types" · "Updated just now" Refresh "Transfer" "Money in" "Money out" "Add account" · "Search accounts" "Columns" · "Account" (type icon, name, "Default", bank line) "Type" "Balance in Spine" ("owed" on a card) "Reconciliation" ("Reconciled to 30 Sept", "Never reconciled") "Unreconciled" ("14 unreconciled") · row menu "Open register" · "Reconcile" "Import statement" · "Money in" "Money out" "Transfer" · "Set as default" "Edit" "Archive". As built, the Reconciliation column shows the date only (not who and when).
+
+### BankingAccountsDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-13 · **Source:** Claude Design
+
+![BankingAccountsDark](screens/BankingAccountsDark.webp)
+
+Links to: `BankingAccountsRefined`
+
+Shows: dark mode, "Not yet reconciled" pressed ("Showing these · press again to clear").
+
+### BankingArchiveConfirm — Archive asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-13 · **Source:** Claude Design
+
+![BankingArchiveConfirm](screens/BankingArchiveConfirm.webp)
+
+Links to: `BankingAccountsRefined`
+
+Shows: "Archive ICICI Operating?" "It leaves the account pickers on payments, expenses and transfers. Its register, reconciliations and ledger history stay, and you can restore it from Archived." · "Go back" "Archive account"
+
+### AccountRegisterRefined — An account's register you can work from
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-14, US-BANK-15 · **Source:** Claude Design
+
+![AccountRegisterRefined](screens/AccountRegisterRefined.webp)
+
+Links to: `RegisterEntryDrawer`, `ReconcileRefined`, `MoneyOutConfirm`, `TransferConfirm`
+
+Shows: "Money › Banking › HDFC Current" · bank line, kind and ledger code · "More" (Import statement, Reconciliations, Edit account) "Record" (Money in, Money out, Transfer) "Reconcile" · "Balance in Spine" "Money in" "Money out" "Unreconciled" (presses to filter) · range ("Last 90 days"; This month, Last month, This quarter, This year, Custom range) "All entries" (type) "All" (show) · "Updated just now" Refresh "Export" · "Search what, contact or reference" "Columns" · "Date" "What" "Contact" "Reference" "Money in" "Money out" "Balance" "Reconciled" (a tick, or nothing) · "Opening balance on …".
+
+### RegisterEntryDrawer — A money in or out entry, or a transfer
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-14 · **Source:** Claude Design
+
+![RegisterEntryDrawer](screens/RegisterEntryDrawer.webp)
+
+Links to: `AccountRegisterRefined`
+
+Shows: "Money out · Bank charges" "12 Oct 2026 · recorded by Priya Raman" · "Amount" "From" "Category" "Tax" ("GST 18% · ₹90.00 included") "Contact" "Description" "Reconciled" · Attachments · "Deleting posts a reversing entry today." "Delete entry". As built, a money in or out entry has no reference (a transfer shows its reference instead of a category).
+
+### MoneyOutConfirm — Money out asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-15 · **Source:** Claude Design
+
+![MoneyOutConfirm](screens/MoneyOutConfirm.webp)
+
+Links to: `AccountRegisterRefined`
+
+Shows: "Record money out?" "₹590.00 from HDFC Current to Bank charges on 12 Oct 2026, including ₹90.00 tax. It's posted to your books." · "Go back" "Record"
+
+### TransferConfirm — A transfer asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-15 · **Source:** Claude Design
+
+![TransferConfirm](screens/TransferConfirm.webp)
+
+Links to: `AccountRegisterRefined`
+
+Shows: "Move ₹10,000.00 from HDFC Current to Petty cash?" "Both balances change on 8 Oct 2026, and both registers show the transfer." · "Go back" "Move money"
+
+### ReconcileRefined — Reconcile a long statement quickly
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-16 · **Source:** Claude Design
+
+![ReconcileRefined](screens/ReconcileRefined.webp)
+
+Links to: `ReconcileMatchAllConfirm`, `ReconcileCreateDrawer`, `ReconciliationsHistory`
+
+Shows: "Statement end date" and "Closing balance on the statement" filled from "hdfc-oct-2026.csv · 12 Oct" · "Saved as you go — pick up where you left off." · "18 of 26 lines done" "16 matched · 2 excluded · 5 suggested to check · 3 to do" with a bar · Statement lines with "Match all suggested (5)", tabs "To do" "Suggested" "Matched" "Excluded" and a search · a selected line · Unreconciled in Spine with search, "Same amount" first · "Difference … — match or create entries until it's zero." "Finish reconciliation". As built, the Difference stays in its card.
+
+### ReconcileMatchAllConfirm — Match every suggestion at once
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-16 · **Source:** Claude Design
+
+![ReconcileMatchAllConfirm](screens/ReconcileMatchAllConfirm.webp)
+
+Links to: `ReconcileRefined`
+
+Shows: "Match 5 suggested lines?" "Each statement line is matched to the entry Spine suggested. You can unmatch any of them before you finish." with each line → entry and amount · "Go back" "Match 5 lines"
+
+### ReconciliationReport — A finished reconciliation
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-17 · **Source:** Claude Design
+
+![ReconciliationReport](screens/ReconciliationReport.webp)
+
+Links to: `ReconciliationReportPdf`, `ReconciliationsHistory`
+
+Shows: "Reconciliation to 30 Sept 2026" · account, finished by and when, file · "Undo" (the newest) "Download report" · "Statement closing balance + Deposits not yet on the statement − Payments not yet on the statement = Balance in Spine on 30 Sept" · "Opening balance" "Cleared in Spine" "Excluded" · "What's outstanding" · "Matched lines" ("Show all 31 matched lines") · "Excluded" with notes.
+
+### ReconciliationReportPdf — The reconciliation report as a PDF
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-BANK-17 · **Source:** Claude Design
+
+![ReconciliationReportPdf](screens/ReconciliationReportPdf.webp)
+
+Links to: —
+
+Shows: "RECONCILIATION REPORT" · account and statement date · Summary · Reconciled (opening, lines matched and excluded, finished) · "Not yet on the statement" · matched lines · excluded lines · "Generated from Spine on …". As built, every matched line is listed.
+
+## Users you can manage from
+
+Drawn in Claude Design for US-TEAM-19 to US-TEAM-23 (D-232): project "Spine web — refinements before Phase 10", canvas "25 Users". Users on the shared list layout, each Staff member's Teams and what they can open, inviting several people onto their Teams, moving someone between Staff and Field, and people actions that ask first. Supersedes `TeamUsers` for the Users page.
+
+### TeamUsersRefined — Everyone at a glance, with their Teams
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-19, US-TEAM-20, US-TEAM-23 · **Source:** Claude Design
+
+![TeamUsersRefined](screens/TeamUsersRefined.webp)
+
+Links to: `InvitePeopleDialog`, `TeamInvites`, `ManageTeamsDialog`, `UserAccessDrawer`, `ChangeRoleConfirm`, `TeamMembers`
+
+Shows: "Team › Users" · "Everyone with access to <Business>, and the invites on their way." · "Invite people" · tabs "Active 6" "Deactivated 1" "Invites 3" · "People" (owners · staff · field) "Staff without a Team" (presses to filter) "Pending invites" (expired, opens Invites) · "All roles" · "Updated just now" Refresh · "Search names or emails" "Columns" · "Person" (avatar, name, "You" "Primary Owner" "Demo", email) "Role" "Teams" (chips opening the Team, "No Team — can't open anything", "Everything", "Field access") "Last active" ("Just now", "2 hours ago", "Yesterday", "Never signed in") "Joined" · row menu "What they can open" "Manage Teams" "Change to Field" "Promote to Owner" · "Deactivate". Your own row has no Deactivate. As built, the Teams column's chips link to the Team, and the rows keep joining order.
+
+### TeamUsersDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-19 · **Source:** Claude Design
+
+![TeamUsersDark](screens/TeamUsersDark.webp)
+
+Links to: `TeamUsersRefined`
+
+Shows: dark mode, "Staff without a Team" pressed ("Showing these · press again to clear").
+
+### ManageTeamsDialog — Tick the Teams someone is on
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-20 · **Source:** Claude Design
+
+![ManageTeamsDialog](screens/ManageTeamsDialog.webp)
+
+Links to: `TeamUsersRefined`, `TeamTeams`
+
+Shows: "Manage Teams — Kavya Iyer" · "Kavya can open what their Teams allow, together. Without a Team, they can't open anything." · each Team with a tick and "<n> people" · "Change what a Team allows on its own page under Teams." · "Cancel" "Save Teams" · toast "Teams saved" "<name> is on General Staff and Accounts".
+
+### UserAccessDrawer — What they can open
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-20 · **Source:** Claude Design
+
+![UserAccessDrawer](screens/UserAccessDrawer.webp)
+
+Links to: `TeamPrivileges`, `ManageTeamsDialog`
+
+Shows: "What Sarah Mendes can open" · "Staff · on General Staff and Accounts — everything any of them allows." · "Sections" (ticked or not, as their sidebar shows them) · "Permissions by group" ("<granted> of <total>", as the Team matrix groups them) · "Change what they can do" "Edit on <Team> →" "Manage Teams". Owners: "Owners can open everything, including Users, Teams and Settings."; Field: "Field access is fixed: …".
+
+### ChangeRoleConfirm — Between Field and Staff, asking first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-22 · **Source:** Claude Design
+
+![ChangeRoleConfirm](screens/ChangeRoleConfirm.webp)
+
+Links to: `TeamUsersRefined`
+
+Shows: "Change Marcus Webb to Staff?" "Marcus will have their Teams' access instead of Field access — the office pages, not only the jobs they're assigned to. It applies the next time they open Spine." · "Teams they'll be on" (General Staff ticked) · "Go back" "Change to Staff". To Field: "… will only see the jobs they're assigned to, without money, and their own meetings and expenses. They'll come off <Teams>." · "Change to Field".
+
+### InvitePeopleDialog — Several people, onto their Teams
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-21 · **Source:** Claude Design
+
+![InvitePeopleDialog](screens/InvitePeopleDialog.webp)
+
+Links to: `TeamInvites`, `EmailInvite`
+
+Shows: "Invite people" "Each gets an email with a link to join <Business>. Owners are made by promoting Staff, not by invite." · "Emails" (commas, spaces or new lines; "Up to 20 at once."; each address shown, one that isn't an address in red: "<x> isn't an email address — fix or remove it.") · "Role" (Staff, Field) · "Teams they'll join" (General Staff ticked) · "Cancel" "Send invites (2)". After sending, any skipped stay listed: "These weren't invited: <email> — already a member / already invited — resend it instead / not an email address". As built, the emails are a text box with the addresses shown under it.
+
+### TeamInvites — The Invites tab
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-21 · **Source:** Claude Design
+
+![TeamInvites](screens/TeamInvites.webp)
+
+Links to: `TeamUsersRefined`, `AcceptInvite`
+
+Shows: "Email" "Role" "Teams on joining" "Invited" ("Priya Raman · 9 Oct") "Expires" ("Expires in 2 days", "Expires tomorrow", "Expired" in red) · row menu "Copy invite link" "Resend" · "Cancel invite" (asks first) · toast "Invite link copied" "Only <email> can use it, signed in with that address." As built, an expired invite's menu has no Copy invite link.
+
+## Setting a Staff or Field member's password
+
+Drawn in Claude Design for US-TEAM-24 (D-233): project "Spine web — refinements before Phase 10", canvases "26 User passwords" and "26b Choose your own password". An Owner sets a Staff or Field member's password from Users; the person chooses their own at next sign-in, on the web or the field app. No Owner's password is set this way.
+
+### TeamUsersPasswordMenu — Change password in a Staff or Field row's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![TeamUsersPasswordMenu](screens/TeamUsersPasswordMenu.webp)
+
+Links to: `ChangeMemberPasswordDialog`
+
+Shows: a Staff row's menu with "Change password" (key icon) between the role actions and Deactivate. Owner rows — yours, another Owner's, the Primary Owner's — never have it.
+
+### ChangeMemberPasswordDialog — A strong suggestion, shown to pass on
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![ChangeMemberPasswordDialog](screens/ChangeMemberPasswordDialog.webp)
+
+Links to: `ChangeMemberPasswordDone`
+
+Shows: "Change <name>'s password" "Set a new password for <first name>. Their current one stops working at once." · "New password" (a suggested password like "copper-Tide-48-lantern", shown, with Copy and Hide) · "Generate another" "Shown so you can pass it on" · the strength meter and checklist used at sign-up · "What happens": signed out on every device, web and phone; "We email <first name> that an owner changed their password — never the password itself."; "Give them the new password yourself, in person or by phone. When they sign in with it, they choose their own." · "Cancel" "Change password".
+
+### ChangeMemberPasswordDone — The toast
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![ChangeMemberPasswordDone](screens/ChangeMemberPasswordDone.webp)
+
+Links to: `TeamUsersRefined`
+
+Shows: toast "<name>'s password changed" "They're signed out everywhere and we've emailed them. Give them the new password yourself."
+
+### PrimaryOwnerNoPassword — Nobody sets the Primary Owner's password
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![PrimaryOwnerNoPassword](screens/PrimaryOwnerNoPassword.webp)
+
+Links to: `ProfilePreferences`
+
+Shows: another Owner's view of the Primary Owner's menu: "What they can open", then "Only <first name> can change their own password, from Profile." with a lock. As built, the line reads just that sentence.
+
+### ChooseOwnPassword — Choose your own, before anything else (web)
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Captured
+
+![ChooseOwnPassword](screens/ChooseOwnPassword.webp)
+
+Links to: `DashboardStaff`, `AuthLogin`
+
+Shows: the signed-out frame · "Choose your own password" "<Owner> set a password for you on <date>. Choose one only you know to keep going — it signs you in from now on." · "New password" with the meter and checklist, "At least 8 characters, not the one you were given." · "Confirm password" · "Save and continue" · "Not you? Sign out" · "Nobody else at <Business> will see it." Reusing the given password: "That's the password you were given. Choose a different one." under the field.
+
+### ChooseOwnPasswordMobile — The same on the field app
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-24 · **Source:** Claude Design
+
+![ChooseOwnPasswordMobile](screens/ChooseOwnPasswordMobile.webp)
+
+Links to: `MobHome`, `MobSignIn`
+
+Shows: the compact logo · "Choose your own password" · who set it · "New password" (iOS form rows; Android outlined fields) with "Password strength: <level>" · "Confirm password" · "Save and continue" · "Sign out". As built, the phone shows the strength level as a line, not the four-part meter.
+
+## Teams you can manage from
+
+Drawn in Claude Design for US-TEAM-25 to US-TEAM-29 (D-234): project "Spine web — refinements before Phase 10", canvas "27 Teams". Teams on the shared list layout, Teams that start from another's permissions, a Team page with members changed safely, permissions changed as a draft and saved after review, and every change in the Team's history. Supersedes `TeamTeams`, `TeamMembers`, `TeamPrivileges`, `TeamPrivilegesExpanded` and `TeamPrivilegesBooks`.
+
+### TeamsListRefined — Every Team at a glance
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
+
+![TeamsListRefined](screens/TeamsListRefined.webp)
+
+Links to: `TeamPageMembers`, `CreateTeamDialog`, `DeleteTeamConfirm`, `TeamUsersRefined`
+
+Shows: "Team › Teams" · "What each group of Staff can open and do. Someone on several Teams gets everything any of them allows." · "Create Team" · cards "Teams" (default · with no one yet) "Staff on no Team" (opens Users filtered to them) "Staff on several Teams" · "Search Teams" "Columns" · "Team" (name, "Default"/"Demo", description) "Members" (avatars, "2 people" or "No one yet") "Works in" ("7 of 18 sections") "Permissions" ("30 of 104") · row menu "Open" "Rename" "Duplicate" · "Delete" (not on the default Team or the only Team). As built, the column is "Works in": sections where the Team allows at least one action, or a report it opens (sections it opens with nothing allowed are view only, and closed sections don't count — US-TEAM-30; the Owner-only Team section isn't counted); the totals follow the business's modules.
+
+### TeamsListDark — The same, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
+
+![TeamsListDark](screens/TeamsListDark.webp)
+
+Links to: `TeamsListRefined`
+
+Shows: dark mode.
+
+### CreateTeamDialog — Create, Duplicate or Rename
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-26 · **Source:** Claude Design
+
+![CreateTeamDialog](screens/CreateTeamDialog.webp)
+
+Links to: `TeamPagePermissions`
+
+Shows: "Duplicate Accounts" "A new Team starting with Accounts' permissions. Its members aren't copied — add people once it's made." · "Name" ("Accounts (copy)") · "Description" (optional, "What this Team is for…") · "Start from" ("Nothing allowed" or a Team with its permission count) · "Cancel" "Create Team". A taken name: "There's already a Team called <name>." under Name. Rename shows Name and Description only; the default Team's name can't change.
+
+### DeleteTeamConfirm — Delete asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-25 · **Source:** Claude Design
+
+![DeleteTeamConfirm](screens/DeleteTeamConfirm.webp)
+
+Links to: `TeamsListRefined`
+
+Shows: "Delete <Team>?" "Its 1 person loses what it allowed. Its permissions and history go; nobody's login does." · "<name> will be on no Team — they can't open anything until you add them to one." · "Go back" "Delete Team" · toast "<Team> deleted".
+
+### TeamPageMembers — A Team's page: members
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-27 · **Source:** Claude Design
+
+![TeamPageMembers](screens/TeamPageMembers.webp)
+
+Links to: `AddTeamMembersDialog`, `RemoveTeamMemberConfirm`, `UserAccessDrawer`, `TeamPagePermissions`, `TeamPageHistory`
+
+Shows: "Team › Teams › <Team>" · the name and description, "Default"/"Demo" · "Add people" and a menu (Rename, Duplicate, Delete) · tabs "Members 2" "Permissions" "History" (kept in the address) · "Person" "Also on" (their other Teams, or "Only this Team") "Last active" · row menu "What they can open" · "Remove from <Team>" · "Only Staff are on Teams. Owners can open everything; Field access is fixed."
+
+### AddTeamMembersDialog — Add several people at once
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-27 · **Source:** Claude Design
+
+![AddTeamMembersDialog](screens/AddTeamMembersDialog.webp)
+
+Links to: `TeamPageMembers`
+
+Shows: "Add people to <Team>" "They can open what <Team> allows, on top of their other Teams." · "Search Staff" · each Staff member not on it with their current Teams ("No Team" in amber) and a tick · "Owners and Field aren't listed — only Staff are on Teams." · "Cancel" "Add 2 people" · toast "Added <names> to <Team>".
+
+### RemoveTeamMemberConfirm — Removing asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-27 · **Source:** Claude Design
+
+![RemoveTeamMemberConfirm](screens/RemoveTeamMemberConfirm.webp)
+
+Links to: `TeamPageMembers`
+
+Shows: "Remove <name> from <Team>?" "They lose what <Team> allowed at their next request." · on their only Team: "This is their only Team — <first name> will be on no Team and can't open anything until you add them to one." · "Go back" "Remove" · toast.
+
+### TeamPagePermissions — Permissions as a draft
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-28 · **Source:** Claude Design
+
+![TeamPagePermissions](screens/TeamPagePermissions.webp)
+
+Links to: `SavePermissionsConfirm`
+
+Shows: "Search permissions" "Show changed only" "Expand all"/"Collapse all" · groups with "<on> of <total>" (and "· was <n>" once changed) and their "toggle all" switch · each permission's label, description, "Changed" and switch · side panel "What members will open" — each section "Can work here" (tick), "View only" (eye) or "Can't open" (minus), with a key, and "Added"/"Lost" when the draft changes it "Applies to <n> people at their next request." · bar "<n> changes · Discard · Save changes" · a notice when a switch brings another with it (US-BANK-12). Leaving the tab or the page with changes asks "Discard <n> unsaved changes?".
+
+### SavePermissionsConfirm — Save after review
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-28 · **Source:** Claude Design
+
+![SavePermissionsConfirm](screens/SavePermissionsConfirm.webp)
+
+Links to: `TeamPageHistory`
+
+Shows: "Save <n> changes to <Team>?" "<names> get this at their next request." · "Turn on/off <permission>" (with why, for one that came with another) · "They'll see <section>" / "They'll work in <section>" / "They'll only view <section>" / "They'll no longer see <section>" (US-TEAM-32) · "Go back" "Save changes" · toast "<Team> saved".
+
+### TeamPageHistory — Who changed what
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-29 · **Source:** Claude Design
+
+![TeamPageHistory](screens/TeamPageHistory.webp)
+
+Links to: `OrgAuditLog`
+
+Shows: newest first, "<person> turned on <permissions>", "added <names>", "changed the description" (from → to), "created <Team> from <Team>", with the date and time and chips ("+ <permission>", "− <permission>") · "Open in audit log →" (the audit log filtered to this Team, "One record · Show all").
+
+## Sections a Team can open
+
+Drawn in Claude Design for US-TEAM-30 to US-TEAM-32 (D-235): project "Spine web — refinements before Phase 10", canvas "28 Team sections". A Team's Permissions tab starts with its sections — one switch each, in the same draft as the groups — and each group starts with its Open permission. A closed section leaves its Staff's sidebar, its pages show no access, and other pages name its records without linking them.
+
+### TeamPageSections — Open and close a Team's sections
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-30, US-TEAM-32 · **Source:** Claude Design
+
+![TeamPageSections](screens/TeamPageSections.webp)
+
+Links to: `SavePermissionsConfirm`
+
+Shows: card "Sections" "Closed sections leave members’ sidebar. Receivables, Payables, Banking and Reports open with their permissions below." · one row per section (Contacts, Pipeline, Meetings, Catalogue, Quotes, Jobs, Invoices, Credit Notes, Payments, Vendor Bills, Vendor Credits, Vendor Payments — those of switched-on modules) with "Can work here" / "View only" / "Can't open", "Changed" and a switch · below, the groups and the side panel as on `TeamPagePermissions`. As built, the design's "Closed" reads "Can't open" (as in the panel), and Expenses has no switch here: it always opens, and "See everyone's expenses" stays in its group.
+
+### TeamPagePermissionsOpen — Open first in each group
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-30, US-TEAM-32 · **Source:** Claude Design
+
+![TeamPagePermissionsOpen](screens/TeamPagePermissionsOpen.webp)
+
+Links to: —
+
+Shows: a group starting with "Open <section>" ("See the <section> section and its <records>. Off: <section> leaves the sidebar and its pages say there's no access; other pages name a <record> without linking it.") · while it's off, the group's actions are dimmed with "Open <section> first." in place of their description and can't be switched (Expenses' others-only actions: "Turn on “See everyone's expenses” first.") · turning an action on from the group's switch brings Open with it, and turning Open off turns them off, with a notice (US-BANK-12).
+
+### TeamSectionClosedNoAccess — A closed section, for its Team
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-30 · **Source:** Claude Design
+
+![TeamSectionClosedNoAccess](screens/TeamSectionClosedNoAccess.webp)
+
+Links to: `DashboardStaff`
+
+Shows: the section gone from the sidebar · its address shows the no-access page (US-OPS-12) "You don’t have access to <section>" "Your account can’t open this page. If you need it for your work, ask an owner — <names> — to change your team’s permissions." "Go to dashboard". Search leaves its records out; dashboard cards about it are left out.
+
+### ClosedRecordAsText — A closed section's record named, not linked
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-TEAM-31 · **Source:** Claude Design
+
+![ClosedRecordAsText](screens/ClosedRecordAsText.webp)
+
+Links to: —
+
+Shows: on another section's page, a record in a closed section as plain text with a small lock ("QUO-0012" on a job; screen readers hear "(Quotes is closed for your Team)") while records in open sections stay links · a button that only opens such a record (a milestone's "View invoice") is left out. As built, the design's note under the details isn't shown.
+
+## One Settings for everyone
+
+Drawn in Claude Design for US-AUTH-16 to US-AUTH-19 and US-SET-30 to US-SET-34 (D-236): project "Spine web — refinements before Phase 10", canvas "29 Settings for everyone". Profile & Preferences becomes Settings › Your account for every role; the list is grouped with Team links; the dialog is roomy on big screens and list-then-pane on phones; the open pane is in the address, unsaved changes ask first and search matches what panes contain. Supersedes `ProfilePreferences` and, for the list, `SettingsBusiness` and `SettingsSearch`. As built, devices show their IP address (no place name: Spine doesn't look addresses up), the Password & security cards stack, and Meeting reminders lists 5, 15, 30 and 60 min after the business default.
+
+### SettingsAccountProfile — Your account › Profile
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-30, US-AUTH-19 · **Source:** Claude Design
+
+![SettingsAccountProfile](screens/SettingsAccountProfile.webp)
+
+Links to: `ChangeEmailDialog`
+
+Shows: "Profile" "How you appear to your team and on what you send. Only you can change these." · Photo: the photo or initials, "Change photo" / "Upload photo", "Remove photo" (asks "Remove your photo?") "PNG or JPEG up to 10 MB. You can crop it after choosing." · Name with "Save" (off until the name changes; toast "Profile updated.") · Sign-in email with "You sign in with this address." and "Change email".
+
+### SettingsStaff — Settings for Staff and Field
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-30 · **Source:** Claude Design
+
+![SettingsStaff](screens/SettingsStaff.webp)
+
+Links to: `SettingsAccountProfile`
+
+Shows: the list holds Your account only — Profile, Password & security, Notifications; no business groups. `/profile` and `/profile?tab=…` open it on Profile, Password & security or Notifications.
+
+### SettingsSecurity — Your account › Password & security
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-17 · **Source:** Claude Design
+
+![SettingsSecurity](screens/SettingsSecurity.webp)
+
+Links to: `SignOutOtherDevicesConfirm`
+
+Shows: "Change password": Current password, New password with the strength meter (US-AUTH-15), Confirm new password, "Sign out of my other devices" (ticked), "Change password" (toast "Password changed. Your other devices are signed out.") · "Where you're signed in" "<n> devices. Sign out one you don't recognise or no longer use." with each device ("Chrome on macOS", "Spine app on iPhone"), its IP and "Active now" / "Last active <when>", "This device", and "Sign out" on the others · "Sign out of other devices".
+
+### SignOutOtherDevicesConfirm — Sign out of other devices
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-17 · **Source:** Claude Design
+
+![SignOutOtherDevicesConfirm](screens/SignOutOtherDevicesConfirm.webp)
+
+Links to: —
+
+Shows: "Sign out of <n> other devices?" "<devices> will need to sign in again. You stay signed in here." "Go back" "Sign out <n> devices" · toast "Signed out of <n> other devices." A single device asks "Sign out <device>?" "It'll need to sign in again."
+
+### ChangeEmailDialog — Change your sign-in email
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-18 · **Source:** Claude Design
+
+![ChangeEmailDialog](screens/ChangeEmailDialog.webp)
+
+Links to: `EmailChangedNotice`
+
+Shows: "Change your sign-in email" "You'll sign in with the new address from now on. We'll tell your current address it changed." · New email · Current password ("That password isn't right.") · "Another account uses that email." under New email · "Cancel" "Change email" · toast "Your sign-in email is now <email>."
+
+### EmailChangedNotice — The email to the old address
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-18 · **Source:** Claude Design
+
+![EmailChangedNotice](screens/EmailChangedNotice.webp)
+
+Links to: —
+
+Shows: subject "Your Spine sign-in email changed" · "Your sign-in email changed" "Hi <name>, The email you use to sign in to Spine for <business> was changed." · New sign-in email, When, From (browser and IP) · "If this was you, there's nothing to do. If it wasn't, contact an owner of <business> — <owners> — straight away so they can secure your account."
+
+### SettingsAccountNotifications — Your account › Notifications
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-30, US-AUTH-19 · **Source:** Claude Design
+
+![SettingsAccountNotifications](screens/SettingsAccountNotifications.webp)
+
+Links to: —
+
+Shows: Browser notifications · Daily digest with "Times are in <time zone>, the business's time zone." · Meeting reminders "Business default · <n> min", 5, 15, 30, 60 min. Each saves as it changes, with a toast.
+
+### UserMenuRefined — User menu, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-16, US-AUTH-19, US-SET-30 · **Source:** Claude Design
+
+![UserMenuRefined](screens/UserMenuRefined.webp)
+
+Links to: `SettingsAccountProfile`
+
+Shows: the photo (or initials), name and email · "Settings" (every role) · "Set up Spine" (Owners) · "Light" "Dark" "System" (named "Follow system"), saved to the account so it follows the person to every device · "Sign out". Each item has its standard menu icon (D-222).
+
+### UserMenuRefinedLight — User menu, light, following the system
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-16 · **Source:** Claude Design
+
+![UserMenuRefinedLight](screens/UserMenuRefinedLight.webp)
+
+Links to: —
+
+Shows: the same, light, with System chosen.
+
+### SettingsGrouped — Owner's Settings, grouped
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-31, US-SET-33 · **Source:** Claude Design
+
+![SettingsGrouped](screens/SettingsGrouped.webp)
+
+Links to: `SettingsUnsavedConfirm`
+
+Shows: "Search settings" · Your account · Business (Business profile, Branding, Industry template, Currency & locale, Modules) · Money & tax (Financial year, Tax, GST, Chart of accounts, Opening balances, Payment instructions) · Documents & emails (Numbering, Documents, Emails, Automatic reminders) · Sales & meetings (Pipeline stages, Repeat quote conversion, Upcoming meetings, Meeting reminders) · Data (Data export, Demo data) · Team (Users, Teams, Audit log, Email log — links ↗). The address carries `?settings=<pane>`.
+
+### SettingsLarge — Settings on a large screen
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-32 · **Source:** Claude Design
+
+![SettingsLarge](screens/SettingsLarge.webp)
+
+Links to: —
+
+Shows: up to 1152 × 960 px (90% of the window, 24 px margin) — Documents' options beside its live preview. `@spine/ui` Dialog `size="xl"`.
+
+### SettingsUnsavedConfirm — Discard unsaved changes
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-33 · **Source:** Claude Design
+
+![SettingsUnsavedConfirm](screens/SettingsUnsavedConfirm.webp)
+
+Links to: —
+
+Shows: a dot beside the pane (screen readers hear "<pane>, edited") · picking another pane, closing or Escape asks "Discard unsaved changes to <pane>?" "What you changed here hasn't been saved." "Keep editing" "Discard".
+
+### SettingsSearchKeywords — Search what's inside settings
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-34 · **Source:** Claude Design
+
+![SettingsSearchKeywords](screens/SettingsSearchKeywords.webp)
+
+Links to: —
+
+Shows: "prefix" lists Numbering under Documents & emails with "Matches: invoice prefix, quote prefix" · Enter opens the first result, ↑/↓ move · "No matching settings." with "Clear search".
+
+### SettingsPhoneList — Settings on a phone, the list
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-32 · **Source:** Claude Design
+
+![SettingsPhoneList](screens/SettingsPhoneList.webp)
+
+Links to: `SettingsPhonePane`
+
+Shows: full screen: "Settings", search and the grouped list, each row 44 px with a chevron.
+
+### SettingsPhonePane — Settings on a phone, a pane
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-32 · **Source:** Claude Design
+
+![SettingsPhonePane](screens/SettingsPhonePane.webp)
+
+Links to: `SettingsPhoneList`
+
+Shows: "Back to settings" above the pane; Escape or the close button closes Settings.
+
+## Search that finds more
+
+Drawn in Claude Design for US-OPS-39 to US-OPS-49 (D-238): project "Spine web — refinements before Phase 10", canvas "30 Search". Search shows recent records and searches before you type; finds leads, meetings, catalogue items and vendor credits, contacts by phone, tax ID and their people, and documents by amount; offers actions, pages and settings; narrows to one sidebar area with chips; ends each group with "See all … matching"; and sits as a field at the top of the sidebar. `SearchPalette` and `SearchPaletteDark` (under Self-hosting & system states) were redrawn with it. As built, the chips are the app's one segmented control (D-210) rather than the drawn pills, "Clear recent" is the last row of the recent lists (a row in the heading isn't reachable by keyboard inside the listbox), and a contact's status stays "Contact".
+
+### SearchPaletteRecent — Search before you type
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-39, US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteRecent](screens/SearchPaletteRecent.webp)
+
+Links to: `SearchPalette`
+
+Shows: Placeholder "Search records, pages and settings" · chips "All" "Sales" "Jobs" "Billing" "Purchases" · "RECENT" with "Clear recent" · INV-0014, JOB-001, Harborview Construction Co., BILL-8841, QUO-0011 · "RECENT SEARCHES" bluewater, 2,389.50, numbering · footer "↑↓ to move" "Enter to open" "Esc to close" and "Include archived".
+
+### SearchPaletteRecentDark — Search before you type, dark mode
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-39, US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteRecentDark](screens/SearchPaletteRecentDark.webp)
+
+Links to: `SearchPaletteRecent`
+
+Shows: The same in dark mode.
+
+### SearchPaletteFirstUse — Search with nothing recent yet
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-39, US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteFirstUse](screens/SearchPaletteFirstUse.webp)
+
+Links to: —
+
+Shows: "Type a name, a number like INV-0010 or an amount like 2,389.50." · "You can search contacts, leads, meetings, the catalogue, quotes, jobs, invoices, credit notes, payments, vendor bills, vendor credits, vendor payments and expenses."
+
+### SearchPaletteContactMatch — A contact found by phone
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-44 · **Source:** Claude Design
+
+![SearchPaletteContactMatch](screens/SearchPaletteContactMatch.webp)
+
+Links to: —
+
+Shows: "555 0107" · Bluewater Hospitality Group "Customer · Phone +1-555-0107" · Granite State Concrete "Vendor · Contact: Dana Lee · +1-555-0107 ext. 2" · "See all contacts matching “555 0107”".
+
+### SearchPaletteNoResults — No results
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-47 · **Source:** Claude Design
+
+![SearchPaletteNoResults](screens/SearchPaletteNoResults.webp)
+
+Links to: —
+
+Shows: "No results for “harbourside”" · "Check the spelling, or try part of a name, a number or an amount. Or turn on Include archived."
+
+### SearchPaletteGoTo — Actions, pages and settings
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-41, US-OPS-42 · **Source:** Claude Design
+
+![SearchPaletteGoTo](screens/SearchPaletteGoTo.webp)
+
+Links to: —
+
+Shows: "invoice" · "ACTIONS" New invoice · "PAGES" Invoices (Billing), Receivables · "SETTINGS" Numbering, Automatic reminders, Documents (Documents & emails) · "CREDIT NOTES" CN-0002 · "See all credit notes matching “invoice”".
+
+### SearchPaletteAmount — Documents found by amount
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-45 · **Source:** Claude Design
+
+![SearchPaletteAmount](screens/SearchPaletteAmount.webp)
+
+Links to: —
+
+Shows: "2,389.50" · QUO-0011, INV-0014, INV-0009, RCP-0021, BILL-8841 with the amount in bold · a "See all … matching “2,389.50”" row under each group.
+
+### SearchPaletteScoped — Search narrowed to Billing
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-49, US-OPS-40 · **Source:** Claude Design
+
+![SearchPaletteScoped](screens/SearchPaletteScoped.webp)
+
+Links to: —
+
+Shows: "har" with "Billing" chosen · "INVOICES" six rows · "CREDIT NOTES" · "PAYMENTS" · "See all invoices matching “har”".
+
+### SearchPalettePhone — Search on a phone
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-49 · **Source:** Claude Design
+
+![SearchPalettePhone](screens/SearchPalettePhone.webp)
+
+Links to: —
+
+Shows: Full screen with "Cancel" · chips that scroll sideways · groups with "See all … matching “har”".
+
+### SidebarSearchField — Search in the sidebar
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-48 · **Source:** Claude Design
+
+![SidebarSearchField](screens/SidebarSearchField.webp)
+
+Links to: `SearchPaletteRecent`
+
+Shows: "Search…" with "⌘K" under the logo; the footer keeps the account menu, help and notifications.
+
+### SidebarSearchFieldFocus — Search in the sidebar, focused
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-48 · **Source:** Claude Design
+
+![SidebarSearchFieldFocus](screens/SidebarSearchFieldFocus.webp)
+
+Links to: `SidebarSearchField`
+
+Shows: The field with its focus ring.
+
+### SidebarSearchCollapsed — Search in the collapsed sidebar
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-48 · **Source:** Claude Design
+
+![SidebarSearchCollapsed](screens/SidebarSearchCollapsed.webp)
+
+Links to: `SidebarSearchField`
+
+Shows: A search icon button under the logo with the tooltip "Search (⌘K)".
 
 ## Mobile field companion
 
@@ -3278,13 +5433,15 @@ Links to: `AppShellPhone`
 Shows: "Welcome, Alex Morgan" · "Overview" · "Dashboard" · "Sales" · "Contacts" · "Pipeline" · "Meetings" · "Catalogue" · "Quotes" · "Jobs" · "Billing" · "Invoices" · "Credit Notes" · "Payments" · "Receivables" · "Purchases" · "Vendor Bills" · "Expenses" · "Vendor Payments" · "Payables" · "Reports" · "Team" · "Users" · "Teams" · "Audit log" · "AM" · "Alex Morgan"
 
 ### SearchPalette — Global search (Cmd/Ctrl+K)
-**Priority:** P1 · **Phase:** 7 · **Stories:** US-OPS-22, US-OPS-23 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-OPS-22, US-OPS-23, US-OPS-40, US-OPS-43, US-OPS-46, US-OPS-47 · **Source:** Claude Design (redrawn for D-238)
 
 ![SearchPalette](screens/SearchPalette.webp)
 
-Links to: —
+Redrawn for D-238: chips, sidebar icons, bold matches, leads and meetings groups, "See all … matching" rows and the new footer (see "Search that finds more").
 
-Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "↑↓ to move" · "Enter to open" · "Searches contacts, quotes, invoices, jobs, bills and expenses"
+Links to: `SearchPaletteRecent`, `SearchPaletteScoped`
+
+Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "See all contacts matching “har”" · "↑↓ to move" · "Enter to open" · "Esc to close" · "Include archived"
 
 ### DashboardOwnerRedesignDark — Dashboard (redesign) — owner, dark mode
 **Priority:** P1 · **Phase:** 6 · **Stories:** US-OPS-25, US-OPS-26 · **Source:** Drawn
@@ -3314,13 +5471,15 @@ Links to: `DashboardOwnerRedesignDark`, `SearchPaletteDark`, `InvoicesBulkSelect
 Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "Numbering" · "Chart of accounts" · "Payment instructions" · "Automatic reminders" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Spine emails customers about unpaid invoices on a schedule, so you don't have to chase." · "Send reminders automatically" · "Off by default. Applies to every issued invoice with a balance due." · "Schedule" · "3 days before the due date" · "On the due date" · "7 days after the due date" · "14 days after the due date" · "Every 14 days after that, up to 3 more times" · "Send at" · "9:00 AM (organisation time)" · "Each reminder uses the branded reminder email. Customers are never sent more than one reminder a day, and nothing is sent once an invoice is paid, voided or credited in full. You can turn reminders off for one customer on their contact page." · "Save" · "Preview email"
 
 ### SearchPaletteDark — Global search, dark mode
-**Priority:** P1 · **Phase:** 6 · **Stories:** US-OPS-25, US-OPS-26 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 6 · **Stories:** US-OPS-25, US-OPS-26, US-OPS-47 · **Source:** Claude Design (redrawn for D-238)
 
 ![SearchPaletteDark](screens/SearchPaletteDark.webp)
 
+Redrawn for D-238 in the new layout.
+
 Links to: `DashboardOwnerRedesignDark`, `InvoicesBulkSelectDark`, `SettingsRemindersDark`
 
-Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "↑↓ to move" · "Enter to open" · "Searches contacts, quotes, invoices, jobs, bills and expenses"
+Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "See all contacts matching “har”" · "↑↓ to move" · "Enter to open" · "Esc to close" · "Include archived"
 
 ### VendorBillAttachments — Attachments on a vendor bill
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-OPS-33, US-OPS-34, US-OPS-35 · **Source:** Drawn
@@ -3422,6 +5581,8 @@ Shows: "Help" · "Search" · "Ctrl K" · "Online docs ↗" · "Auto ▾" · "You
 
 ![BankingAccounts](screens/BankingAccounts.webp)
 
+Superseded by `BankingAccountsRefined` (D-231).
+
 Links to: `AccountRegister`, `MoneyAccountDialog`, `TransferDialog`, `MoneyInOutDialog`, `ReconcileAccount`
 
 Shows: "Banking — Spine" · "Money" · "Banking" · "Bank, cash and card accounts, what moved through them, and reconciliation." · "Bank and cash" · "$58,124.40" · "3 accounts" · "Owed on cards" · "$1,284.60" · "1 card" · "Not yet reconciled" · "13" · "entries across 3 accounts" · "Last reconciled" · "Sep 30, 2026" · "First Coastal — Operating" · "All types" · "Active accounts" · "Transfer" · "Money in" · "Money out" · "Add account" · "Search accounts" · "Columns" · "Account" · "Type" · "Bank" · "Balance in Spine" · "Reconciliation" · "Unreconciled" · "Actions" · "Default" · "Bank account" · "First Coastal Bank · ••0193" · "$48,212.40" · "Reconciled" · "6 entries" · "First Coastal — Tax reserve" · "First Coastal Bank · ••7741" · "$9,500.00" · "0 entries" · "Cash in Hand" · "Cash" · "Site petty cash" · "$412.00"
@@ -3430,6 +5591,8 @@ Shows: "Banking — Spine" · "Money" · "Banking" · "Bank, cash and card accou
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-02 · **Source:** Drawn
 
 ![AccountRegister](screens/AccountRegister.webp)
+
+Superseded by `AccountRegisterRefined` and `RegisterEntryDrawer` (D-231).
 
 Links to: `ReconcileAccount`, `StatementImportDialog`
 
@@ -3458,6 +5621,8 @@ Shows: "Record payment — Spine" · "Billing" · "Invoices" · "Detail" · "Inv
 
 ![TransferDialog](screens/TransferDialog.webp)
 
+Move money asks first: `TransferConfirm` (D-231).
+
 Links to: —
 
 Shows: "Transfer — Spine" · "Money" · "Banking" · "Bank, cash and card accounts, what moved through them, and reconciliation." · "Bank and cash" · "$58,124.40" · "3 accounts" · "Owed on cards" · "$1,284.60" · "1 card" · "Not yet reconciled" · "13" · "entries across 3 accounts" · "Last reconciled" · "Sep 30, 2026" · "First Coastal — Operating" · "All types" · "Active accounts" · "Transfer" · "Money in" · "Money out" · "Add account" · "Search accounts" · "Columns" · "Account" · "Type" · "Bank" · "Balance in Spine" · "Reconciliation" · "Unreconciled" · "Actions" · "Default" · "Bank account" · "First Coastal Bank · ••0193" · "$48,212.40" · "Reconciled" · "6 entries" · "First Coastal — Tax reserve" · "First Coastal Bank · ••7741" · "$9,500.00" · "0 entries" · "Cash in Hand" · "Cash" · "Site petty cash" · "$412.00"
@@ -3466,6 +5631,8 @@ Shows: "Transfer — Spine" · "Money" · "Banking" · "Bank, cash and card acco
 **Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-05 · **Source:** Drawn
 
 ![MoneyInOutDialog](screens/MoneyInOutDialog.webp)
+
+Record asks first: `MoneyOutConfirm` (D-231).
 
 Links to: —
 
@@ -3485,6 +5652,8 @@ Shows: "Import statement — Spine" · "Money" · "Banking" · "First Coastal �
 
 ![ReconcileAccount](screens/ReconcileAccount.webp)
 
+Superseded by `ReconcileRefined` (D-231).
+
 Links to: `ReconcileCreateDrawer`, `ReconciliationsHistory`
 
 Shows: "Reconcile — Spine" · "Money" · "Banking" · "First Coastal — Operating" · "Reconcile" · "Reconcile First Coastal — Operating" · "Match each statement line to an entry in Spine until the difference is zero." · "Statement end date" · "Oct 4, 2026" · "Closing balance on the statement" · "$50,566.42" · "Import statement" · "Statement closing balance" · "Cleared in Spine" · "$50,618.50" · "opening $45,829.90 + 2 matched" · "Difference" · "−$52.08" · "match or create entries until it's zero" · "Statement lines" · "From statement-oct-2026.csv · 4 lines to Oct 4" · "Oct 1" · "NEFT-MAPLE RIDGE DEV · FT26100248" · "Suggested match" · "+4,542.50" · "Match" · "Not this one" · "CHQ 000214 COASTAL TIMBER" · "Matched" · "−2,160.00" · "Oct 3" · "INTEREST CREDIT" · "Unmatched" · "+6.12" · "Create" · "Exclude" · "Oct 4" · "POS 4410 SHELL PORTLAND" · "−58.20" · "Unreconciled in Spine" · "Entries on this account up to Oct 4" · "Oct 2" · "Payment RCT-0018 · Maple Ridge Developments" · "Vendor payment VP-0009 · Coastal Timber Supply" · "Expense EXP-0034 · Marcus Webb · Fuel"
@@ -3502,6 +5671,8 @@ Shows: "Reconcile — Spine" · "Money" · "Banking" · "First Coastal — Opera
 **Priority:** P2 · **Phase:** 8 · **Stories:** US-BANK-11 · **Source:** Drawn
 
 ![ReconciliationsHistory](screens/ReconciliationsHistory.webp)
+
+Rows open `ReconciliationReport` and have a menu: View, Download report, Undo (D-231).
 
 Links to: —
 

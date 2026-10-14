@@ -34,9 +34,8 @@ test.describe("US-OPS-34", () => {
     const expense = (await created.json()) as { id: string };
     await attach(page.request, "expense", expense.id, "fuel-docket.pdf");
 
-    await page.goto(`/expenses?id=${expense.id}`);
-    const drawer = page.getByRole("dialog");
-    const link = drawer.getByTestId("attachments").getByRole("link", { name: "fuel-docket.pdf", exact: true });
+    await page.goto(`/expenses/${expense.id}`);
+    const link = page.getByTestId("attachments").getByRole("link", { name: "fuel-docket.pdf", exact: true });
     await expect(link).toBeVisible();
     const href = await link.getAttribute("href");
     expect((await page.request.get(href!)).status()).toBe(200);

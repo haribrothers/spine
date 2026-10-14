@@ -14,6 +14,8 @@ export interface VendorCredit {
   billId: string | null;
   billNumber?: string | null;
   jobId: string | null;
+  /** US-PUR-37/38 — the tagged job's name. */
+  jobName?: string | null;
   date: string;
   status: VendorCreditStatus;
   currency: string;
@@ -24,7 +26,9 @@ export interface VendorCredit {
   notes: string | null;
   voidReason: string | null;
   createdByUserId: string | null;
-  lines?: (Omit<VendorBillLine, "billId"> & { vendorCreditId: string })[];
+  isOpening?: boolean;
+  createdAt?: string;
+  lines?: (Omit<VendorBillLine, "billId"> & { vendorCreditId: string; accountCode?: string | null; accountName?: string | null })[];
   /** US-PUR-25 — where the credit has been used. */
   allocations?: { id: string; billId: string; billNumber: string; amount: string; createdAt: string }[];
   /** US-PUR-26 — money the vendor paid back. */

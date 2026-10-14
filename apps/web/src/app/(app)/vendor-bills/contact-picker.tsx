@@ -12,8 +12,8 @@ import type { ContactOption } from "./types";
  * document). A vendor bill can only ever be raised against a contact the
  * org can actually pay, per ContactType's own "customer" | "vendor" | "both"
  * shape. Duplicated rather than shared, matching this codebase's established
- * per-feature-folder convention (contact-picker.tsx/entity-toast.tsx are
- * duplicated the same way across invoices/payments/quotes).
+ * per-feature-folder convention (contact-picker.tsx is duplicated the
+ * same way across invoices/payments/quotes).
  */
 export function ContactPicker({
   value,
@@ -26,7 +26,7 @@ export function ContactPicker({
 
   useEffect(() => {
     apiClient
-      .get<ContactOption[]>("/contacts?type=vendor&type=both")
+      .get<ContactOption[]>("/contacts?picker=1&type=vendor&type=both")
       .then(setContacts)
       .catch(() => {});
   }, []);

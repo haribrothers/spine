@@ -18,6 +18,17 @@ function ComboboxDemo() {
   return <Combobox options={contacts} value={value} onValueChange={setValue} placeholder="Select a contact…" />;
 }
 
+const categories = [
+  { value: "fuel", label: "Fuel & freight", description: "Diesel, petrol, tolls and getting materials to site" },
+  { value: "materials", label: "Materials", description: "Cement, steel, sand — anything that goes into the build" },
+  { value: "hire", label: "Plant & equipment hire", description: "Scaffolding, mixers, the JCB — hired by the day" },
+];
+
+function ComboboxDescribedDemo() {
+  const [value, setValue] = useState<string>();
+  return <Combobox options={categories} value={value} onValueChange={setValue} placeholder="Select a category…" />;
+}
+
 const units = [
   { value: "hour", label: "hour" },
   { value: "sq-ft", label: "sq ft" },
@@ -59,6 +70,7 @@ export default function ComboboxPage() {
             "Keyboard navigable — arrow keys move the highlight, Enter selects.",
             "Hosted in a Popover, matching the field's trigger width.",
             "Shows a configurable empty state when no options match.",
+            "Options can carry a description: a second, muted line under the label (what an expense category is for), searched along with it.",
             "Optional allowCreate mode: typing a value with no matching option offers a \"Create '…'\" row, for open-ended, org-defined vocabularies (e.g. a catalogue item's unit or category) rather than a fixed list.",
           ]}
         />
@@ -84,7 +96,7 @@ export default () => {
       <DocSection id="api-reference" title="API Reference">
         <ApiTable
           rows={[
-            { prop: "options", type: "{ value: string; label: string }[]" },
+            { prop: "options", type: "{ value: string; label: string; description?: string | null }[]" },
             { prop: "value", type: "string" },
             { prop: "onValueChange", type: "(value: string) => void" },
             { prop: "placeholder", type: "string", defaultValue: '"Select…"' },
@@ -108,6 +120,18 @@ export default () => {
 />`}
         >
           <ComboboxDemo />
+        </ComponentPreview>
+
+        <DocLead>With a description under each option</DocLead>
+        <ComponentPreview
+          code={`<Combobox
+  options={[{ value: "fuel", label: "Fuel & freight", description: "Diesel, petrol, tolls and getting materials to site" }]}
+  value={value}
+  onValueChange={setValue}
+  placeholder="Select a category…"
+/>`}
+        >
+          <ComboboxDescribedDemo />
         </ComponentPreview>
 
         <DocLead>Creatable (allowCreate)</DocLead>

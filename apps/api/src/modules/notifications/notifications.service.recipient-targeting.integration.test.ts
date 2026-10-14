@@ -4,6 +4,9 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
 import { member, notifications, user } from "../../db/schema";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
+import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "./notifications.service";
 
 /**
@@ -39,7 +42,7 @@ describe("NotificationsService recipient targeting (requires local Postgres)", (
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     const fakeQueue = { send: async () => {} };
     const fakePush = { isConfigured: () => false };
-    notificationsService = new NotificationsService(db, fakeQueue as never, fakePush as never);
+    notificationsService = new NotificationsService(db, fakePush as never, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
 
     const ownerEmail = `notify-target-owner-${randomUUID()}@example.com`;
     const staffAEmail = `notify-target-staff-a-${randomUUID()}@example.com`;

@@ -18,7 +18,7 @@ test.describe("US-OPS-33", () => {
     await page.getByRole("combobox").filter({ hasText: "Select a vendor…" }).click();
     await page.getByRole("option", { name: "Coastal Timber Supply" }).click();
     await page.getByPlaceholder("e.g. INV-1042").fill("88213");
-    await page.getByPlaceholder("Item name").first().fill("Treated pine 90×45");
+    await page.getByRole("combobox", { name: "Item" }).first().fill("Treated pine 90×45");
     const attachments = page.getByTestId("attachments");
     await attachments.getByLabel("Choose files to attach").setInputFiles({ name: "coastal-timber-88213.pdf", mimeType: "application/pdf", buffer: PDF });
     await expect(attachments).toContainText("coastal-timber-88213.pdf");

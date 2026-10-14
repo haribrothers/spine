@@ -1,6 +1,7 @@
 export * from "./components/accordion";
 export * from "./components/alert";
 export * from "./components/alert-dialog";
+export * from "./components/use-confirm";
 export * from "./components/banner";
 export * from "./components/app-shell";
 export * from "./components/aspect-ratio";
@@ -41,6 +42,9 @@ export * from "./components/input-group";
 export * from "./components/kanban";
 export * from "./components/reorderable-list";
 export * from "./components/kbd";
+export * from "./components/spine-logo";
+export * from "./components/password-input";
+export * from "./components/password-strength-meter";
 export * from "./components/label";
 export * from "./components/layout";
 export * from "./components/menubar";

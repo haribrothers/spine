@@ -10,9 +10,10 @@ async function download(page: import("@playwright/test").Page) {
 test.describe("US-PAY-10", () => {
   test("Receivables › Export CSV downloads what's on screen, search included", async ({ page, seededOrg }) => {
     void seededOrg;
-    await page.goto("/receivables");
+    await page.goto("/receivables?view=invoices");
     const rows = page.locator("tbody tr");
-    await expect(rows.first()).toBeVisible();
+    // Wait for the invoices themselves, not the loading skeleton's rows.
+    await expect(rows.first()).toContainText(/INV-/);
     const onScreen = await rows.count();
 
     const lines = await download(page);
@@ -21,7 +22,7 @@ test.describe("US-PAY-10", () => {
     expect(lines[1]).toMatch(/,[A-Z]{3},.*,\d+\.\d{2},\d+\.\d{2},/);
 
     const firstNumber = lines[1]!.split(",")[0]!;
-    await page.getByRole("textbox", { name: "Search receivables" }).fill(firstNumber);
+    await page.getByRole("searchbox", { name: "Search receivables" }).fill(firstNumber);
     await expect(rows).toHaveCount(1);
     const filtered = await download(page);
     expect(filtered).toHaveLength(2);

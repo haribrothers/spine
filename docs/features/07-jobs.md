@@ -2,7 +2,7 @@
 
 A job is the work behind an accepted quote: its contract value, billing milestones (percentages or fixed amounts that must add up), retention held on each progress invoice and released at the end, variation orders that change the scope, site photos and notes, the crew assigned to it, and live costing from the ledger — against a cost budget, split by cost category, with how much of the contract has been billed.
 
-**Screens:** `JobsList` (P1), `JobsEmpty` (P1), `JobFromQuote` (P1), `JobEditDialog` (P1), `JobMilestones` (P1), `MilestonesEditor` (P1), `CompleteMilestoneDialog` (P1), `ReleaseRetentionConfirm` (P2), `JobVariations` (P2), `RaiseVariationDialog` (P2), `JobPhotos` (P2), `JobNotes` (P2), `JobCosting` (P1), `JobCrew` (P2), `InvoiceDetailProgress` (P1), `MobJobsList` (P1), `InvoiceDetailRetention` (P1), `JobEditDialogBudget` (P1), `JobCostingBudget` (P1), `JobsListBilling` (P1), `InvoiceDetailProgressClaim` (P2)
+**Screens:** `JobsList` (P1), `JobsEmpty` (P1), `JobFromQuote` (P1), `JobEditDialog` (P1), `JobMilestones` (P1), `MilestonesEditor` (P1), `CompleteMilestoneDialog` (P1), `ReleaseRetentionConfirm` (P2), `JobVariations` (P2), `RaiseVariationDialog` (P2), `JobPhotos` (P2), `JobNotes` (P2), `JobCosting` (P1), `JobCrew` (P2), `InvoiceDetailProgress` (P1), `MobJobsList` (P1), `InvoiceDetailRetention` (P1), `JobEditDialogBudget` (P1), `JobCostingBudget` (P1), `JobsListBilling` (P1), `InvoiceDetailProgressClaim` (P2), `JobsListRefined` (P2), `JobsListRefinedDark` (P2), `JobNewDrawer` (P2), `JobDetailRefined` (P2), `JobDetailCompleted` (P2), `JobPhotosViewer` (P2)
 **Depends on:** 06 Quotes (conversion, variation quotes), 08 Invoicing (progress and retention invoices), 10 Purchases (costs), 17 Mobile.
 
 ## Features
@@ -18,6 +18,7 @@ A job is the work behind an accepted quote: its contract value, billing mileston
 | F-JOB-07 | Crew assignment | P2 | 5 | `JobCrew`, `MobJobsList` |
 | F-JOB-08 | Own/others job and milestone rights | P1 | 4 | `JobMilestones`, `JobEditDialog` |
 | F-JOB-09 | Cost budget and billing progress | P1 | 7 | `JobEditDialogBudget`, `JobCostingBudget`, `JobsListBilling`, `InvoiceDetailProgressClaim` |
+| F-JOB-10 | Jobs you can run from one place: start a job from the list, cards that filter, progress in each row, a job page that says what's next, photos you can browse, and what happened | P2 | Refinements | `JobsListRefined`, `JobsListRefinedDark`, `JobNewDrawer`, `JobDetailRefined`, `JobDetailCompleted`, `JobPhotosGrouped`, `JobPhotosViewer` |
 
 ## User stories
 
@@ -397,7 +398,7 @@ Decision: D-125
 - **Given** cost reaches 80% of the budget, **when** the card renders, **then** the bar shows the warning colour and the label "Nearing budget — 85% used" with a warning icon.
 - **Given** cost passes the budget, **when** the card renders, **then** it reads "Over budget by 1,450.00" with the danger colour and icon, "Remaining" shows "−1,450.00", and the bar is full.
 - **Given** a job with no budget, **when** the card renders, **then** it reads "No budget set" with "Set a budget" opening the edit dialog (hidden without `jobs.edit_*` on this job).
-- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Budget used" column shows each job's percentage with the same three states in text ("78%", "Nearing · 85%", "Over · 104%"), and "—" for jobs without a budget.
+- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Budget used" column (one of the list's Columns since D-215) shows each job's percentage with the same three states in text ("78%", "Nearing · 85%", "Over · 104%"), and "—" for jobs without a budget.
 - **Given** jobs over budget and a member with `reports.view_job_profitability`, **when** "Needs your attention" renders (US-DASH-12), **then** a row reads "<n> job(s) over budget" naming the first job and how much it is over, with "Review" opening its Costing tab; the row comes after vendor bills due.
 
 **Implementation notes**
@@ -431,7 +432,7 @@ Decision: D-127
 - **Given** a job with a 48,500.00 contract and issued progress invoices totalling 19,400.00, **when** I open "Costing", **then** a "Billing" card shows "Contract value 48,500.00", "Billed to date 19,400.00 (40%)" and "Left to bill 29,100.00" with a bar.
 - **Given** a credit note against one of those invoices, **when** I reload, **then** "Billed to date" drops by the credit note's total.
 - **Given** an advance invoice or a retention-release invoice on the job, **when** billed to date is worked out, **then** neither counts (the deposit is counted once it's offset on a progress invoice).
-- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Billed" column shows each job's percentage ("40%").
+- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** each job's billed percentage shows ("40%"; in the Progress column beside complete % since US-JOB-33).
 - **Given** billed to date exceeds the contract value, **when** the card renders, **then** "Left to bill" reads "Billed over contract by <amount>" so a missing variation order is noticed.
 
 **Implementation notes**
@@ -475,3 +476,126 @@ Decision: D-128
 - The invoice keeps its gapless organisation-wide number (D-007); the claim number is a per-job label, not a document number.
 - API: invoice responses gain `progressClaimNo`; the issued PDF stored at issue includes it (US-INV-17).
 
+### US-JOB-30 · Start a job from the jobs list
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobNewDrawer`
+**As** an owner, **I want** to start a job without a quote, **so that** work agreed on the phone or a site visit is tracked from day one.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** Jobs, **when** I have `jobs.edit_own`, **then** the toolbar and the empty state have "New job"; without the right, neither shows.
+- **Given** "New job", **when** the drawer opens, **then** it asks for Contact (required), Job name (required), Site address (filled from the contact's site address, else its billing address, and changeable), Currency (the business's), Contract value, Retention %, Start and End dates and Notes; an end date before the start says "End the job on or after its start date.".
+- **Given** the drawer, **when** I choose "Start from an accepted quote" and pick one, **then** the quote is converted as from the quote's page (its contact and contract value, named after its first item, and linked to it), with the repeat-conversion warning when it applies (US-QUO-16); quotes that already have a job aren't offered.
+- **Given** I save, **when** the job is created, **then** its page opens on Milestones with "Set up how this job is billed" and "Add milestones"; a toast says "Job JOB-007 created".
+
+**Implementation notes**
+- API: `POST /jobs` and `POST /jobs/from-quote/:quoteId` (built). UI: `new-job-drawer.tsx`; accepted quotes from `GET /quotes?status=accepted` without a job yet.
+
+### US-JOB-31 · See active, ready-to-bill, over-budget jobs and retention at a glance
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobsListRefined`, `JobsListRefinedDark`
+**As** an owner, **I want** the cards to say what needs doing, **so that** I bill on time and catch jobs going over.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** Jobs, **when** it shows, **then** the cards read "Active" (with their contract value), "Ready to bill" (jobs with a completed milestone not yet invoiced, with that amount), "Over or near budget" (only with `reports.view_job_profitability`) and "Retention held" (the total held on 1150 Retention Receivable for the jobs, with "Across N jobs").
+- **Given** "Active", "Ready to bill" or "Over or near budget", **when** I press it, **then** the table shows just those jobs, the card shows pressed and the address keeps it; pressing again clears it. With a keyboard or screen reader each is a button ("Show jobs ready to bill, 2").
+- **Given** a Field user, **when** Jobs shows, **then** no money cards show (US-JOB-19).
+
+**Implementation notes**
+- API: `GET /jobs?include=billing` (Owner and Staff) adds `readyToBillCount`, `readyToBillAmount` (completed, not invoiced milestones) and `retentionHeld` (the job's 1150 journal lines). UI: `jobs-list-state.ts`.
+
+### US-JOB-32 · Search, filter and come back to the same jobs list
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobsListRefined`
+**As** office staff, **I want** the jobs list to keep my search and filters and refresh on request, **so that** it works like the rest of the app.
+
+Decision: D-210, D-215
+
+**Acceptance criteria**
+- **Given** the toolbar, **when** it shows, **then** it has Status, Contact (only contacts with a job), "Updated … ago", Refresh and "New job", with search (number, name, contact, site address) on its own row beside Columns.
+- **Given** a search, filter, card, sort or page, **when** I set it, **then** the address keeps it (`/jobs?status=active&card=ready`); "Clear filters" clears them; Refresh, and coming back after 30 seconds, reload in place.
+
+**Implementation notes**
+- UI: the list-state pattern (`quotes-list-state.ts`), `replaceQuery`.
+
+### US-JOB-33 · Read a job's next milestone and progress in the list
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobsListRefined`
+**As** office staff, **I want** each row to say what's next and how far along it is, **so that** I don't open every job.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** the table, **when** a row shows, **then** it reads Job (the name, with the number and site address under it), Contact, Status, Next milestone (its name with "Due 14 Oct", "Due in 3 days" or "Overdue 2 days", or "All billed"), Progress (complete % and billed % as two short bars, with numbers), End date and Contract value.
+- **Given** a job billed over its contract, **when** the row shows, **then** Billed reads "118%" in the overdue colour with a warning icon and "Billed over the contract" on hover.
+- **Given** a Field user, **when** the table shows, **then** it has no money or billed figures (US-JOB-19).
+
+**Implementation notes**
+- API: `GET /jobs?include=next_milestone,costing,billing` (built and above). UI: `jobs-table.tsx`.
+
+### US-JOB-34 · See a job at a glance, change its status and take the next step
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobDetailRefined`, `JobDetailCompleted`
+**As** an owner, **I want** the job page to lead with where the job stands and what to do next, **so that** I act without hunting.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** a job, **when** its page opens, **then** the page title is its number, with the name, the contact (a link), the site address (opening a map), and "Started 22 Jul · Due 30 Nov" in the business's date format; there's no separate "Back to jobs" link.
+- **Given** the status, **when** I open it (with the right to edit the job), **then** I can choose Active, On hold, Completed or Cancelled; the change saves at once with a toast, and Cancelled asks first.
+- **Given** the job, **when** the page shows, **then** one primary button offers the next step: "Invoice <milestone>" when a milestone is completed and not invoiced, else "Complete <next milestone>", else "Release retention" when the job is completed with retention held; Edit job, Raise variation, Add photo and View history sit beside it or under More.
+- **Given** the figures, **when** they show, **then** a strip reads Contract (with "incl. variations"), Billed (amount, % and a bar), Cost against budget (with its state), Margin and % complete; Field users see only % complete.
+
+**Implementation notes**
+- API: `PUT /jobs/:id` `{ status }` (built). UI: `job-detail.tsx` header and figures.
+
+### US-JOB-35 · Follow a job's milestones and billing at a glance
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobDetailRefined`
+**As** office staff, **I want** the milestones shown as progress, **so that** I see what's billed and what's next.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** the tabs, **when** they show, **then** each has its count: Milestones 3, Variation orders 1, Photos 6, Notes 2, Crew 2.
+- **Given** Milestones, **when** it shows, **then** it starts with "Billed ₹56,16,800 of ₹68,00,000" and a bar, then each milestone in order with a step marker (invoiced, completed or pending), its amount and share, "Due 30 Oct · in 20 days" or "Overdue 3 days" (in the overdue colour), and its action (View invoice, Raise invoice, Mark complete).
+
+**Implementation notes**
+- UI: `milestones-section.tsx`; counts from the data the tabs already load.
+
+### US-JOB-36 · Browse, upload and group site photos
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobPhotosGrouped`, `JobPhotosViewer`
+**As** a site manager, **I want** to add several photos at once and look through them full size, **so that** the job's record is easy to keep and use.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** Photos, **when** I press "Add photos" or drop files, **then** I can add several at once, each uploading with its own progress; one that fails says why and the rest still upload.
+- **Given** photos, **when** they show, **then** they're grouped under "Site photos" and each milestone they were added with ("Site preparation · completed 7 Aug").
+- **Given** a photo, **when** I open it, **then** it shows full size with its caption, who added it and when, with Previous and Next (also ← and →) and Close (Esc); "Download" saves the original.
+
+**Implementation notes**
+- API: `POST /jobs/:id/photos` per file (built). UI: `photos-section.tsx`, `photo-viewer.tsx`.
+
+### US-JOB-37 · Follow what happened on a job
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobDetailRefined`
+**As** an owner, **I want** a job's story in one place, **so that** I know what changed and who did it.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** a job's page, **when** it shows, **then** an "Activity" panel lists, newest first: created (from quote <number>), status changed, milestones set, milestone completed and invoiced (with the invoice number), variation order raised and applied, photos and notes added, crew assigned or removed, and retention released, with who and when; more than eight show "Show N earlier".
+- **Given** a Field user, **when** the job shows, **then** there's no Activity panel.
+
+**Implementation notes**
+- API: `GET /jobs/:id/activity` → `[{ at, type, actorName, detail, linkId }]` from the job's audit entries and those of its milestones, photos and notes, plus its invoices (roles: owner, staff).
+
+### US-JOB-38 · Show real site photos in the demo
+**Feature:** F-JOB-10 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `JobPhotosViewer`
+**As** someone trying Spine, **I want** the demo's job photos to look like site photos, **so that** Photos doesn't look broken.
+
+Decision: D-215
+
+**Acceptance criteria**
+- **Given** demo data, **when** it's loaded, **then** each demo job's photos are real site photos from Unsplash (free to reuse; bundled, each under 150 KB, with each photo's source and licence recorded next to them) in place of the 1 × 1 placeholder.
+- **Given** demo data is removed, **when** it's deleted, **then** its photos are deleted with it, as today.
+
+**Implementation notes**
+- API: `apps/api/assets/demo/`; `DemoSeederService` uploads them through `StorageDriver`.

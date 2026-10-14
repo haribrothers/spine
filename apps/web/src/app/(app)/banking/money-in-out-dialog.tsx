@@ -24,6 +24,7 @@ import {
   SelectValue,
   Spinner,
   cn,
+  useConfirm,
 } from "@spine/ui";
 import {
   BANK_TRANSACTION_SHORTCUTS,
@@ -38,7 +39,7 @@ import {
 import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
-import { toIsoDate } from "./dates";
+import { formatDay, toIsoDate } from "./dates";
 
 interface LedgerAccount {
   id: string;
@@ -71,6 +72,7 @@ export function MoneyInOutDialog({
   currency,
   onRecorded,
   prefill,
+  initialAccountId,
 }: {
   direction: BankTransactionDirection;
   open: boolean;
@@ -80,6 +82,8 @@ export function MoneyInOutDialog({
   onRecorded: (entry: BankTransaction) => void;
   /** US-BANK-09 — from a statement line: account, amount and date are fixed. */
   prefill?: StatementPrefill;
+  /** US-BANK-15 — opened from an account (its row or its register): that account is chosen. */
+  initialAccountId?: string;
 }) {
   const isIn = direction === "in";
   const [moneyAccountId, setMoneyAccountId] = useState("");
@@ -94,10 +98,11 @@ export function MoneyInOutDialog({
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   useEffect(() => {
     if (!open) return;
-    setMoneyAccountId(prefill?.moneyAccountId ?? accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
+    setMoneyAccountId(prefill?.moneyAccountId ?? (initialAccountId && accounts.some((a) => a.id === initialAccountId) ? initialAccountId : undefined) ?? accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
     setDate(prefill ? prefillDate(prefill) : new Date());
     setCategoryId("");
     setAmount(prefill?.amount ?? 0n);
@@ -109,9 +114,9 @@ export function MoneyInOutDialog({
       .get<Record<string, LedgerAccount[]>>("/org/accounts")
       .then((grouped) => setLedger(Object.values(grouped).flat()))
       .catch(() => setLedger([]));
-    apiClient.get<{ id: string; name: string; archivedAt: string | null }[]>("/contacts").then(setContacts).catch(() => {});
+    apiClient.get<{ id: string; name: string; archivedAt: string | null }[]>("/contacts?picker=1").then(setContacts).catch(() => {});
     if (!isIn) apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
-  }, [open, accounts, isIn, prefill]);
+  }, [open, accounts, isIn, prefill, initialAccountId]);
 
   // Money accounts move by transfer, control accounts by their own documents.
   const categories = useMemo(() => {
@@ -135,6 +140,17 @@ export function MoneyInOutDialog({
       setError("Enter an amount greater than zero.");
       return;
     }
+    // US-BANK-15 (D-218): recording asks first, saying what posts where.
+    const accountName = accounts.find((a) => a.id === moneyAccountId)?.name ?? "the account";
+    const categoryName = categories.find((a) => a.id === categoryId)?.name ?? "the category";
+    const amountText = formatMoney(amount, currency);
+    const ok = await confirm({
+      title: isIn ? "Record money in?" : "Record money out?",
+      description: `${isIn ? `${amountText} into ${accountName} from ${categoryName}` : `${amountText} from ${accountName} to ${categoryName}`} on ${formatDay(toIsoDate(date))}${taxAmount > 0n ? `, including ${formatMoney(taxAmount, currency)} tax` : ""}. It's posted to your books.`,
+      confirmLabel: "Record",
+      cancelLabel: "Go back",
+    });
+    if (!ok) return;
     setSaving(true);
     try {
       const entry = await apiClient.post<BankTransaction>("/bank-transactions", {
@@ -283,6 +299,7 @@ export function MoneyInOutDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      {confirmDialog}
     </Dialog>
   );
 }

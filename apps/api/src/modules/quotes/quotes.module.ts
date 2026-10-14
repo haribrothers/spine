@@ -38,6 +38,6 @@ import { PublicQuotesService } from "./public-quotes.service";
   imports: [AuditModule, NumberingModule, OrgModule, FilesModule, PdfModule, EmailModule, NotificationsModule, TaxModule],
   controllers: [QuotesController, PublicQuotesController],
   providers: [QuotesService, QuoteEmailWorker, QuotePublicTokenService, PublicQuotesService],
-  exports: [QuotesService, QuotePublicTokenService],
+  exports: [QuotesService, QuotePublicTokenService, PublicQuotesService],
 })
 export class QuotesModule {}

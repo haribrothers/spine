@@ -27,7 +27,7 @@ export function useBundles(currency: string): { bundles: CatalogBundle[]; picker
   const [bundles, setBundles] = useState<CatalogBundle[]>([]);
   useEffect(() => {
     apiClient
-      .get<CatalogBundle[]>(`/catalog-bundles?currency=${encodeURIComponent(currency)}`)
+      .get<CatalogBundle[]>(`/catalog-bundles?picker=1&currency=${encodeURIComponent(currency)}`)
       .then(setBundles)
       .catch(() => setBundles([]));
   }, [currency]);

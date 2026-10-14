@@ -48,9 +48,16 @@ export const voidVendorBillSchema = z.object({
   reason: z.string().min(1, "A reason is required to void a vendor bill"),
 });
 
+/** US-PUR-47 (D-228) — the "What it's for" line's limit. */
+export const EXPENSE_CATEGORY_DESCRIPTION_MAX = 120;
+
 export const createExpenseCategorySchema = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1, "Give the category a name."),
+  /** US-PUR-46 — the "What it's for" line; empty clears it. */
+  description: z.string().trim().max(EXPENSE_CATEGORY_DESCRIPTION_MAX, "Keep what it's for under 120 characters.").nullable().optional(),
   accountId: uuidSchema.optional().nullable(),
+  /** US-PUR-48 — an active rate, filled in on a new expense's form. */
+  defaultTaxRateId: uuidSchema.optional().nullable(),
 });
 
 export const updateExpenseCategorySchema = createExpenseCategorySchema.partial();
@@ -180,3 +187,135 @@ export const createVendorRefundSchema = z.object({
   method: vendorPaymentMethodSchema,
   reference: z.string().trim().max(120).optional().nullable(),
 });
+
+/** US-PUR-32 (D-225) — one line of a vendor bill's Activity: `GET /vendor-bills/:id/activity`, newest first. */
+export interface VendorBillActivityEntry {
+  type: "created" | "recorded" | "paid" | "credit_applied" | "voided" | "payment_deleted";
+  at: string;
+  actorName: string | null;
+  /** Minor units: the bill's total when recorded, a payment's or credit's amount on this bill. */
+  amount?: string | null;
+  /** The payment or credit number; the reason a bill was voided. */
+  detail?: string | null;
+  /** The vendor payment or vendor credit it links to. */
+  linkId?: string | null;
+}
+
+/** US-PUR-35 — a bill this vendor already has with the same number: `GET /vendor-bills/possible-duplicates`. */
+export interface PossibleDuplicateVendorBill {
+  id: string;
+  billNumber: string;
+  date: string;
+  totalAmount: string;
+  currency: string;
+  status: "draft" | "recorded" | "void";
+}
+
+/** US-PUR-43 (D-227) — one line in an expense's Activity: `GET /expenses/:id/activity`. */
+export interface ExpenseActivityEntry {
+  type: "submitted" | "edited" | "rejected" | "resubmitted" | "approved" | "billed";
+  at: string;
+  actorName: string | null;
+  /** The amount approved. */
+  amount?: string | null;
+  /** The review comment; what was edited; the invoice number it was billed on. */
+  detail?: string | null;
+  /** The invoice it was billed on. */
+  linkId?: string | null;
+}
+
+/** US-PUR-44 — an expense of mine with the same amount on the same day: `GET /expenses/possible-duplicates`. */
+export interface PossibleDuplicateExpense {
+  id: string;
+  number: string | null;
+  date: string;
+  amount: string;
+  currency: string;
+  categoryName: string | null;
+  status: "submitted" | "approved" | "rejected";
+}
+
+/** US-PUR-37 (D-226) — one line in a vendor credit's Activity: `GET /vendor-credits/:id/activity`. */
+export interface VendorCreditActivityEntry {
+  type: "created" | "recorded" | "applied" | "unapplied" | "refunded" | "refund_deleted" | "voided";
+  at: string;
+  actorName: string | null;
+  /** Minor units: the credit's total when recorded, an application's or refund's amount. */
+  amount?: string | null;
+  /** The bill number applied to or removed from; the reason a credit was voided. */
+  detail?: string | null;
+  /** The vendor bill it links to. */
+  linkId?: string | null;
+}
+
+/** US-PUR-39 — a credit this vendor already has with the same credit note number: `GET /vendor-credits/possible-duplicates`. */
+export interface PossibleDuplicateVendorCredit {
+  id: string;
+  number: string | null;
+  vendorReference: string | null;
+  date: string;
+  totalAmount: string;
+  currency: string;
+  status: "draft" | "open" | "used" | "void";
+}
+
+/** US-PUR-35 — a bill number compared the way the duplicate check does: no spaces, any case. */
+export function normaliseBillNumber(billNumber: string): string {
+  return billNumber.replace(/\s+/g, "").toLowerCase();
+}
+
+/** US-PUR-46 (D-228) — `GET /expense-categories/usage`, Owners and Staff only. */
+export interface ExpenseCategoryUsage {
+  categoryId: string;
+  expenseCount: number;
+  /** Approved this month, by approval date, in the business's currency (minor units). */
+  approvedThisMonth: string;
+}
+
+/** US-PUR-49 (D-229) — one line of a vendor payment's Activity, newest first. */
+export interface VendorPaymentActivityEntry {
+  type: "recorded" | "applied" | "remittance_emailed";
+  at: string;
+  actorName: string | null;
+  /** Minor units: the payment's amount, or what it put on a bill. */
+  amount?: string | null;
+  /** The bill's number, or the address a remittance advice went to. */
+  detail?: string | null;
+  /** The bill, for `applied`. */
+  linkId?: string | null;
+  /** The money account, for `recorded`. */
+  account?: string | null;
+  /** The method, for `recorded`. */
+  method?: string | null;
+}
+
+/** US-PUR-53 — `GET /vendor-payments/possible-duplicates`. */
+export interface PossibleDuplicateVendorPayment {
+  id: string;
+  number: string | null;
+  date: string;
+  amount: string;
+  currency: string;
+  method: string;
+  reference: string | null;
+}
+
+/** US-PUR-51 — `GET /vendor-payments/summary`, in the business's currency (minor units). */
+export interface VendorPaymentsSummary {
+  currency: string;
+  paidThisMonth: string;
+  paidThisMonthCount: number;
+  paidLastMonth: string;
+  paidLastMonthCount: number;
+  toPay: string;
+  toPayCount: number;
+}
+
+/** US-PUR-54 — `POST /vendor-payments/:id/remittance/send`. */
+export const sendRemittanceSchema = z.object({
+  to: z.string().trim().email("Enter an email address to send the remittance advice to."),
+  subject: z.string().trim().min(1, "Give the email a subject.").max(200, "Keep the subject shorter."),
+  body: z.string().trim().min(1, "Write a short message.").max(20000, "Keep the message shorter."),
+});
+export type SendRemittanceInput = z.infer<typeof sendRemittanceSchema>;
+

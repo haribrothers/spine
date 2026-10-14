@@ -28,22 +28,29 @@ export function ContactsCardView({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {contacts.map((contact) => (
-        <Card key={contact.id} className="relative flex flex-col gap-3">
+        <Card key={contact.id} className="relative flex min-w-0 flex-col gap-3" data-testid="contact-card">
           <div className="absolute right-3 top-3">
             <ContactRowActions contact={contact} onChanged={onChanged} />
           </div>
-          <Link href={`/contacts/${contact.id}`} className="flex flex-col items-start gap-3">
+          <Link href={`/contacts/${contact.id}`} className="flex min-w-0 flex-col items-start gap-3">
             <ContactLogo name={contact.name} fileId={contact.logoFileId} size="lg" editable={false} onUploaded={() => {}} />
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="truncate font-medium text-on-surface hover:text-primary hover:underline">{contact.name}</span>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-1.5">
+            {/* US-CRM-21: the name wraps to two lines, clear of the menu; email and phone stay on one line. All cut short with the full text on hover. */}
+            <div className="flex w-full min-w-0 flex-col">
+              <span className="line-clamp-2 break-words pr-6 font-medium text-on-surface hover:text-primary hover:underline" title={contact.name}>
+                {contact.name}
+              </span>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 <Badge>{TYPE_LABELS[contact.type]}</Badge>
                 {contact.archivedAt && <Badge>Archived</Badge>}
               </div>
-              <p className="mt-2 truncate text-[12px] text-on-surface-muted">{contact.email ?? "No email"}</p>
-              {contact.phone && <p className="truncate text-[12px] text-on-surface-muted">{contact.phone}</p>}
+              <p className="mt-2 truncate text-[12px] text-on-surface-muted" title={contact.email ?? undefined}>
+                {contact.email ?? "No email"}
+              </p>
+              {contact.phone && (
+                <p className="truncate text-[12px] text-on-surface-muted" title={contact.phone}>
+                  {contact.phone}
+                </p>
+              )}
             </div>
           </Link>
         </Card>

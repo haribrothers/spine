@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createLeadSchema, updateLeadSchema } from "@spine/shared";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { LeadsService } from "./leads.service";
@@ -16,6 +16,7 @@ import { LeadsService } from "./leads.service";
  * unconditional for every Staff/Field user.
  */
 @Controller("leads")
+@RequireSectionOpen("leads.open")
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
@@ -30,6 +31,13 @@ export class LeadsController {
   async summaryByStage(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.leadsService.summaryByStage(orgId);
+  }
+
+  /** US-CRM-27 — the lead's creation and stage changes, from the audit log. Readable like the lead itself. */
+  @Get(":id/history")
+  async history(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.leadsService.history(orgId, id);
   }
 
   @Get(":id")

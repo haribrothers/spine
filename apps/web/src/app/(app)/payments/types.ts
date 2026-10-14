@@ -1,3 +1,5 @@
+import type { PaymentAppliedTo } from "@spine/shared";
+
 /** Mirrors apps/api/src/db/schema/payments.ts's row shapes — hand-written to match the API's JSON response, following invoices/quotes' types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
@@ -45,6 +47,17 @@ export interface Payment {
   updatedAt: string;
   /** Only present on GET /payments/:id, not the list endpoint. */
   allocations?: PaymentAllocation[];
+  /** US-PAY-17 — paid back out of this payment's credit. */
+  refundedAmount?: string;
+  /** US-PAY-21 — on the list: the invoices it was applied to, and the account's name. */
+  moneyAccountName?: string | null;
+  /** On the list `{ invoiceId, number }`; on GET /payments/:id the full `PaymentAppliedTo` (US-PAY-19). */
+  appliedTo?: { invoiceId: string; number?: string | null }[];
+}
+
+/** `GET /payments/:id` (US-PAY-19). */
+export interface PaymentDetailData extends Payment {
+  appliedTo: PaymentAppliedTo[];
 }
 
 /** Minimal shape used by the contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */

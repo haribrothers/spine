@@ -73,7 +73,7 @@ describe("US-DASH-12 · see what needs my attention first (requires local Postgr
     Object.assign(owner, await newUser("Alex Morgan"));
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;
     Object.assign(staff, await newUser("Sarah Mendes"));
-    await join(staff, "staff", ["expenses.approve"]);
+    await join(staff, "staff", ["invoices.open", "quotes.open", "expenses.view_others", "expenses.approve"]);
     Object.assign(plainStaff, await newUser("Plain Staff"));
     await join(plainStaff, "staff");
     Object.assign(field, await newUser("Marcus Webb"));
@@ -130,7 +130,8 @@ describe("US-DASH-12 · see what needs my attention first (requires local Postgr
     expect(forStaff.map((r) => r.kind)).toEqual(["invoices_overdue", "expenses_awaiting_approval"]);
     expect(forStaff[1]!.count).toBe(1);
     expect(forStaff[1]!.items[0]!.name).toBe("Marcus Webb");
-    expect((await attention(plainStaff)).map((r) => r.kind)).toEqual(["invoices_overdue"]);
+    // On no Team, Invoices is closed (US-TEAM-31), so not even overdue invoices.
+    expect(await attention(plainStaff)).toEqual([]);
     expect(await attention(field)).toEqual([]);
   });
 

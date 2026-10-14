@@ -14,7 +14,8 @@ test.describe("US-ONB-18", () => {
       await page.goto("/signup");
       await page.getByLabel("Name").fill("Demo Owner");
       await page.getByLabel("Email").fill(`e2e-onb-18-${randomUUID()}@example.com`);
-      await page.getByLabel("Password").fill("e2e-test-password-1");
+      await page.getByLabel(/^Password/).fill("e2e-test-password-1");
+      await page.getByLabel(/^Confirm password/).fill("e2e-test-password-1");
       await page.getByRole("button", { name: "Create account" }).click();
       await page.waitForURL("**/onboarding");
 

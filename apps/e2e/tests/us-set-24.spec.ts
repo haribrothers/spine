@@ -47,7 +47,7 @@ test.describe("US-SET-24", () => {
     // Teams: no jobs or leads privileges.
     const team = await (await page.request.post(`${API_URL}/org/teams`, { headers: { "Idempotency-Key": randomUUID() }, data: { name: "Office" } })).json();
     await page.goto(`/team/teams/${team.id}`);
-    await page.getByRole("tab", { name: "Privileges" }).click();
+    await page.getByRole("tab", { name: "Permissions" }).click();
     await expect(page.getByText("Manage Invoices").first()).toBeVisible();
     await expect(page.getByText("Manage Jobs")).toHaveCount(0);
     await expect(page.getByText("Manage Leads")).toHaveCount(0);

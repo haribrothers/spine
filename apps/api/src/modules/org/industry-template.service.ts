@@ -74,7 +74,8 @@ export class IndustryTemplateService {
         if (!before.categories.some((n) => n.toLowerCase() === seed.name.toLowerCase())) result.kept.push(`Kept your existing category “${found}”`);
         continue;
       }
-      await tx.insert(expenseCategories).values({ orgId, name: seed.name, accountId: byCode.get(seed.accountCode)?.id ?? null, createdByUserId: actorUserId });
+      // US-ONB-32: with its "What it's for" line; a category the business already had keeps its own.
+      await tx.insert(expenseCategories).values({ orgId, name: seed.name, description: seed.description, accountId: byCode.get(seed.accountCode)?.id ?? null, createdByUserId: actorUserId });
       result.categories.push(seed.name);
     }
 

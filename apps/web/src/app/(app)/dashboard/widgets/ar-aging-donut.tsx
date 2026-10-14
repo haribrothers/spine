@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, DonutChart, Spinner } from "@spine/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, DonutChart } from "@spine/ui";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, formatMoneyCompact } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 
 type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -36,19 +38,18 @@ const BUCKET_COLORS: Record<AgingBucket, string> = {
  * Uses `@spine/ui`'s `DonutChart` (added alongside this widget), which
  * gives it a real legend + center total — a color-only donut with no key
  * isn't legible without hovering every segment.
+ *
+ * US-DASH-28 (D-209): the ring's centre has the total in short form
+ * ("₹44.9L"), the one exception to D-089, with the full total under the
+ * title; a narrow card puts the legend under the ring.
  */
 export function ArAgingDonut() {
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
   const [report, setReport] = useState<ReceivablesReport | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code: string } | null }>("/org/settings/currency")
-      .then((res) => {
-        if (res.value?.code) setCurrency(res.value.code);
-      })
-      .catch(() => {});
     apiClient
       .get<ReceivablesReport>("/reports/receivables")
       .then(setReport)
@@ -69,7 +70,7 @@ export function ArAgingDonut() {
   }));
 
   return (
-    <Card>
+    <Card data-testid="ar-aging">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           Receivables aging
@@ -77,14 +78,17 @@ export function ArAgingDonut() {
             View all
           </Link>
         </CardTitle>
+        {report && orgCurrency && (
+          <CardDescription data-testid="aging-total">
+            Total <span className="font-semibold tabular-nums text-on-surface">{money(report.totalOutstanding)}</span>
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
-        {!report ? (
-          <div className="flex h-40 items-center justify-center">
-            <Spinner />
-          </div>
+        {!report || !orgCurrency ? (
+          <WidgetSkeleton kind="ring" />
         ) : (
-          <DonutChart segments={segments} centerLabel={money(report.totalOutstanding)} emptyState="Nothing outstanding." />
+          <DonutChart segments={segments} centerLabel={formatMoneyCompact(report.totalOutstanding, currency)} emptyState="Nothing outstanding." />
         )}
       </CardContent>
     </Card>

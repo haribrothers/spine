@@ -1,4 +1,4 @@
-import { billingFigures, budgetFigures, comparePeriods, type CompareLine, type MoneyInOutReport, type PlCompareMode, type ProfitAndLossComparison } from "@spine/shared";
+import { billingFigures, budgetFigures, comparePeriods, inPayablesAge, type CompareLine, type MoneyInOutReport, type PlCompareMode, type ProfitAndLossComparison } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 import { TAX_SETTLEMENT_SOURCES } from "../tax/tax-payments.service";
@@ -17,6 +17,10 @@ import {
   creditNotes,
   settings,
   taxPayments,
+  payments,
+  invoiceReminders,
+  vendorCredits,
+  vendorPayments,
 } from "../../db/schema";
 import { cashAccountCodes } from "../banking/cash-accounts";
 import { loadTaxBreakdown, type TaxBreakdownLine } from "../tax/tax-breakdown";
@@ -34,6 +38,30 @@ export interface ReceivablesInvoiceRow {
   balanceDue: string;
   daysOverdue: number;
   bucket: AgingBucket;
+  /** US-PAY-30 — the issue date, the kind (a deposit is `advance`), what's been paid and credited, the job, and the last reminder (organisation date). */
+  issueDate: string | null;
+  type: string;
+  paidAmount: string;
+  jobId: string | null;
+  jobName: string | null;
+  lastReminderOn: string | null;
+  remindedToday: boolean;
+  contactHasEmail: boolean;
+}
+
+/** US-PAY-27 — one customer who owes: the open invoices added up, their credit and the last reminder. */
+export interface ReceivablesCustomerRow {
+  contactId: string;
+  name: string | null;
+  email: string | null;
+  invoiceCount: number;
+  overdueAmount: string;
+  totalOutstanding: string;
+  /** Days late of the oldest overdue invoice; 0 or less when nothing is overdue yet. */
+  oldestDaysOverdue: number;
+  /** Unapplied payments (amount − applied − refunded) and issued credit notes' remaining credit. */
+  credit: string;
+  lastReminderOn: string | null;
 }
 
 export interface ReceivablesReport {
@@ -41,6 +69,9 @@ export interface ReceivablesReport {
   totalOutstanding: string;
   buckets: Record<AgingBucket, string>;
   invoices: ReceivablesInvoiceRow[];
+  customers: ReceivablesCustomerRow[];
+  /** US-PAY-31 — retention held on jobs (1150), never part of the aging. */
+  retention: { held: string; jobCount: number };
 }
 
 export interface PayablesBillRow {
@@ -54,6 +85,26 @@ export interface PayablesBillRow {
   balanceDue: string;
   daysOverdue: number;
   bucket: AgingBucket;
+  /** US-PUR-57 — the bill date, what's been paid and credited, and the job. */
+  date: string;
+  paidAmount: string;
+  jobId: string | null;
+  jobName: string | null;
+}
+
+/** US-PUR-56 — one vendor we owe: the open bills added up, their open vendor credit and when we last paid them. */
+export interface PayablesVendorRow {
+  contactId: string;
+  name: string | null;
+  billCount: number;
+  overdueAmount: string;
+  totalOutstanding: string;
+  /** Days late of the oldest bill; 0 or less when nothing is overdue yet. */
+  oldestDaysOverdue: number;
+  /** The oldest bill's due date; null when none of the bills has one. */
+  oldestDueDate: string | null;
+  credit: string;
+  lastPaidOn: string | null;
 }
 
 export interface PayablesReport {
@@ -61,6 +112,11 @@ export interface PayablesReport {
   totalOutstanding: string;
   buckets: Record<AgingBucket, string>;
   bills: PayablesBillRow[];
+  vendors: PayablesVendorRow[];
+  /** US-PUR-59 — not yet overdue, due within a week. */
+  dueSoon: { amount: string; count: number };
+  /** US-PUR-60 — draft bills, which aren't counted. */
+  drafts: { count: number; amount: string };
 }
 
 /**
@@ -98,10 +154,18 @@ export class ReportsService {
 
   async receivables(orgId: string): Promise<ReceivablesReport> {
     const rows = await this.db
-      .select({ invoice: invoices, contactName: contacts.name })
+      .select({
+        invoice: invoices,
+        contactName: contacts.name,
+        contactEmail: contacts.email,
+        jobName: jobs.name,
+        lastReminderOn: sql<string | null>`(select max(${invoiceReminders.sentOn})::text from ${invoiceReminders} where ${invoiceReminders.invoiceId} = ${invoices.id})`,
+      })
       .from(invoices)
       .leftJoin(contacts, eq(invoices.contactId, contacts.id))
+      .leftJoin(jobs, eq(invoices.jobId, jobs.id))
       .where(and(eq(invoices.orgId, orgId), eq(invoices.status, "issued")));
+    const reminderToday = orgClock().date;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -115,6 +179,7 @@ export class ReportsService {
     };
 
     const invoiceRows: ReceivablesInvoiceRow[] = [];
+    const emails = new Map<string, string | null>();
     let totalOutstanding = 0n;
 
     for (const row of rows) {
@@ -138,10 +203,21 @@ export class ReportsService {
         balanceDue: balanceDue.toString(),
         daysOverdue,
         bucket,
+        issueDate: row.invoice.issueDate ? new Date(row.invoice.issueDate).toISOString().slice(0, 10) : null,
+        type: row.invoice.type,
+        paidAmount: (row.invoice.amountPaid + row.invoice.creditedAmount).toString(),
+        jobId: row.invoice.jobId,
+        jobName: row.jobName,
+        lastReminderOn: row.lastReminderOn,
+        remindedToday: row.lastReminderOn === reminderToday,
+        contactHasEmail: Boolean(row.contactEmail?.trim()),
       });
+      emails.set(row.invoice.contactId, row.contactEmail?.trim() || null);
     }
 
     invoiceRows.sort((a, b) => b.daysOverdue - a.daysOverdue);
+    const customers = await this.receivablesCustomers(orgId, invoiceRows, emails);
+    const retention = await this.retentionHeldTotal(orgId);
 
     return {
       asOf: today.toISOString().slice(0, 10),
@@ -154,7 +230,79 @@ export class ReportsService {
         "90+": buckets["90+"].toString(),
       },
       invoices: invoiceRows,
+      customers,
+      retention,
     };
+  }
+
+  /**
+   * US-PAY-27 — the open invoices added up per customer, with the credit
+   * they can still use (unapplied payments less refunds, and issued credit
+   * notes' remaining credit) and their last reminder. Most overdue money
+   * first, then the most owed.
+   */
+  private async receivablesCustomers(orgId: string, rows: ReceivablesInvoiceRow[], emails: Map<string, string | null>): Promise<ReceivablesCustomerRow[]> {
+    const byContact = new Map<string, ReceivablesCustomerRow & { overdue: bigint; total: bigint }>();
+    for (const row of rows) {
+      const c = byContact.get(row.contactId) ?? {
+        contactId: row.contactId,
+        name: row.contactName,
+        email: emails.get(row.contactId) ?? null,
+        invoiceCount: 0,
+        overdueAmount: "0",
+        totalOutstanding: "0",
+        oldestDaysOverdue: Number.NEGATIVE_INFINITY,
+        credit: "0",
+        lastReminderOn: null,
+        overdue: 0n,
+        total: 0n,
+      };
+      const balance = BigInt(row.balanceDue);
+      c.invoiceCount += 1;
+      c.total += balance;
+      if (row.bucket !== "current") c.overdue += balance;
+      c.oldestDaysOverdue = Math.max(c.oldestDaysOverdue, row.daysOverdue);
+      if (row.lastReminderOn && (!c.lastReminderOn || row.lastReminderOn > c.lastReminderOn)) c.lastReminderOn = row.lastReminderOn;
+      byContact.set(row.contactId, c);
+    }
+    const ids = [...byContact.keys()];
+    const credit = new Map<string, bigint>();
+    if (ids.length) {
+      const fromPayments = await this.db
+        .select({ contactId: payments.contactId, left: sql<string>`coalesce(sum(${payments.amount} - ${payments.allocatedAmount} - ${payments.refundedAmount}), 0)` })
+        .from(payments)
+        .where(and(eq(payments.orgId, orgId), inArray(payments.contactId, ids)))
+        .groupBy(payments.contactId);
+      const fromNotes = await this.db
+        .select({ contactId: creditNotes.contactId, left: sql<string>`coalesce(sum(${creditNotes.creditRemainingAmount}), 0)` })
+        .from(creditNotes)
+        .where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.status, "issued"), inArray(creditNotes.contactId, ids)))
+        .groupBy(creditNotes.contactId);
+      for (const r of [...fromPayments, ...fromNotes]) credit.set(r.contactId, (credit.get(r.contactId) ?? 0n) + BigInt(r.left));
+    }
+    const out = [...byContact.values()].map(({ overdue, total, ...c }) => ({
+      ...c,
+      overdueAmount: overdue.toString(),
+      totalOutstanding: total.toString(),
+      credit: (credit.get(c.contactId) ?? 0n).toString(),
+      _overdue: overdue,
+      _total: total,
+    }));
+    out.sort((a, b) => (b._overdue !== a._overdue ? (b._overdue > a._overdue ? 1 : -1) : b._total > a._total ? 1 : b._total < a._total ? -1 : 0));
+    return out.map(({ _overdue, _total, ...c }) => c);
+  }
+
+  /** US-PAY-31 — retention held on jobs: the balance of 1150 per job, as the dashboard's Retention held card (US-DASH-20). */
+  private async retentionHeldTotal(orgId: string): Promise<{ held: string; jobCount: number }> {
+    const rows = await this.db
+      .select({ jobId: journalLines.jobId, held: sql<string>`sum(${journalLines.debit} - ${journalLines.credit})` })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), eq(accounts.code, "1150"), sql`${journalLines.jobId} is not null`))
+      .groupBy(journalLines.jobId);
+    const holding = rows.map((r) => BigInt(r.held)).filter((h) => h > 0n);
+    return { held: holding.reduce((sum, h) => sum + h, 0n).toString(), jobCount: holding.length };
   }
 
   /**
@@ -170,9 +318,10 @@ export class ReportsService {
    */
   async payables(orgId: string): Promise<PayablesReport> {
     const rows = await this.db
-      .select({ bill: vendorBills, contactName: contacts.name })
+      .select({ bill: vendorBills, contactName: contacts.name, jobName: jobs.name })
       .from(vendorBills)
       .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .leftJoin(jobs, eq(vendorBills.jobId, jobs.id))
       .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.status, "recorded")));
 
     const today = new Date();
@@ -210,10 +359,19 @@ export class ReportsService {
         balanceDue: balanceDue.toString(),
         daysOverdue,
         bucket,
+        date: new Date(row.bill.date).toISOString().slice(0, 10),
+        paidAmount: (row.bill.amountPaid + row.bill.creditedAmount).toString(),
+        jobId: row.bill.jobId,
+        jobName: row.jobName,
       });
     }
 
     billRows.sort((a, b) => b.daysOverdue - a.daysOverdue);
+    const dueSoon = billRows.filter((b) => inPayablesAge(b, "due7"));
+    const [drafts] = await this.db
+      .select({ count: sql<number>`count(*)::int`, amount: sql<string>`coalesce(sum(${vendorBills.totalAmount}), 0)::text` })
+      .from(vendorBills)
+      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.status, "draft")));
 
     return {
       asOf: today.toISOString().slice(0, 10),
@@ -226,7 +384,73 @@ export class ReportsService {
         "90+": buckets["90+"].toString(),
       },
       bills: billRows,
+      vendors: await this.payablesVendors(orgId, billRows),
+      dueSoon: { amount: dueSoon.reduce((sum, b) => sum + BigInt(b.balanceDue), 0n).toString(), count: dueSoon.length },
+      drafts: { count: drafts?.count ?? 0, amount: drafts?.amount ?? "0" },
     };
+  }
+
+  /**
+   * US-PUR-56 — the open bills added up per vendor, with the vendor
+   * credit they can still use (open credits' balance) and the day we last
+   * paid them. Most overdue money first, then the most owed.
+   */
+  private async payablesVendors(orgId: string, rows: PayablesBillRow[]): Promise<PayablesVendorRow[]> {
+    const byContact = new Map<string, PayablesVendorRow & { overdue: bigint; total: bigint }>();
+    for (const row of rows) {
+      const v = byContact.get(row.contactId) ?? {
+        contactId: row.contactId,
+        name: row.contactName,
+        billCount: 0,
+        overdueAmount: "0",
+        totalOutstanding: "0",
+        oldestDaysOverdue: Number.NEGATIVE_INFINITY,
+        oldestDueDate: null,
+        credit: "0",
+        lastPaidOn: null,
+        overdue: 0n,
+        total: 0n,
+      };
+      const balance = BigInt(row.balanceDue);
+      v.billCount += 1;
+      v.total += balance;
+      if (row.bucket !== "current") v.overdue += balance;
+      if (row.dueDate && (!v.oldestDueDate || row.dueDate < v.oldestDueDate)) {
+        v.oldestDueDate = row.dueDate;
+        v.oldestDaysOverdue = row.daysOverdue;
+      }
+      byContact.set(row.contactId, v);
+    }
+    const ids = [...byContact.keys()];
+    const credit = new Map<string, bigint>();
+    const lastPaid = new Map<string, string>();
+    if (ids.length) {
+      const credits = await this.db
+        .select({ contactId: vendorCredits.contactId, left: sql<string>`coalesce(sum(${vendorCredits.balanceAmount}), 0)` })
+        .from(vendorCredits)
+        .where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.status, "open"), inArray(vendorCredits.contactId, ids)))
+        .groupBy(vendorCredits.contactId);
+      for (const r of credits) credit.set(r.contactId, BigInt(r.left));
+      const paid = await this.db
+        .select({ contactId: vendorPayments.contactId, on: sql<string>`max(${vendorPayments.date})::text` })
+        .from(vendorPayments)
+        .where(and(eq(vendorPayments.orgId, orgId), inArray(vendorPayments.contactId, ids)))
+        .groupBy(vendorPayments.contactId);
+      for (const r of paid) lastPaid.set(r.contactId, r.on);
+    }
+    const out = [...byContact.values()].map(({ overdue, total, ...v }) => ({
+      ...v,
+      // No due date on any bill: nothing is late.
+      oldestDaysOverdue: Number.isFinite(v.oldestDaysOverdue) ? v.oldestDaysOverdue : -1,
+      overdueAmount: overdue.toString(),
+      totalOutstanding: total.toString(),
+      credit: (credit.get(v.contactId) ?? 0n).toString(),
+      lastPaidOn: lastPaid.get(v.contactId) ?? null,
+      _overdue: overdue,
+      _total: total,
+    }));
+    out.sort((a, b) => (b._overdue !== a._overdue ? (b._overdue > a._overdue ? 1 : -1) : b._total > a._total ? 1 : b._total < a._total ? -1 : 0));
+    return out.map(({ _overdue, _total, ...v }) => v);
   }
 
   /**

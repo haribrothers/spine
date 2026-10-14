@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarNavItem } from "@spine/ui";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarNavItem, SpineLogo } from "@spine/ui";
 import { FileText, LayoutDashboard, Receipt, Users } from "lucide-react";
 import { useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
@@ -15,7 +15,7 @@ function SidebarDemo() {
       <SidebarHeader
         collapsed={collapsed}
         onCollapsedChange={setCollapsed}
-        logo={<span className="truncate text-[14px] font-semibold text-on-surface">{collapsed ? "S" : "Spine"}</span>}
+        logo={collapsed ? <SpineLogo variant="mark" size={28} /> : <SpineLogo variant="horizontal" size={96} />}
       />
       <SidebarContent>
         <SidebarGroup collapsed={collapsed}>
@@ -71,6 +71,7 @@ export default function SidebarPage() {
             "A collapsed prop switches to a 64px icon-only rail; SidebarNavItem and SidebarGroupLabel hide their label automatically in that state.",
             "When collapsed, SidebarNavItem becomes a centered 36px square (icon centered inside) rather than a full-width row — pass collapsed to the enclosing SidebarGroup too so it centers its items in the rail.",
             "SidebarHeader renders a built-in logo + collapse-toggle row when given a logo and/or onCollapsedChange — pass children instead for a fully custom header.",
+            "Collapsed, the logo itself is the expand button (named \"Expand sidebar\"): it shows the expand icon on hover or keyboard focus, so the narrow rail has room for the mark.",
             "Disabled nav items render greyed-out and non-interactive rather than being omitted, per the existing AppShell convention.",
           ]}
         />

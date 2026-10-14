@@ -15,7 +15,7 @@ test.describe("US-DASH-16", () => {
 
     await page.goto("/dashboard");
     const card = page.getByTestId("today-card");
-    await expect(card.getByText("Today", { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(card.getByRole("heading", { name: "Today" })).toBeVisible({ timeout: 15_000 });
 
     const followup = card.locator('li[data-kind="followup"]').filter({ hasText: "Call back Priya Nair" });
     await expect(followup).toContainText("Today");

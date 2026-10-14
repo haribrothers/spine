@@ -59,7 +59,8 @@ describe("US-ONB-18", () => {
     expect(issued.some((i) => i.outcome === "issued" && i.dueInDays < 0 && !i.payments)).toBe(true);
     expect(plan.invoices.some((i) => i.outcome === "draft")).toBe(true);
     expect(plan.invoices.some((i) => i.outcome === "voided")).toBe(true);
-    expect(new Set(plan.quotes.map((q) => q.outcome))).toEqual(new Set(["draft", "sent", "revised"]));
+    // D-216 (US-ONB-25): accepted and declined too.
+    expect(new Set(plan.quotes.map((q) => q.outcome))).toEqual(new Set(["draft", "sent", "revised", "accepted", "declined"]));
     expect(plan.expenses.map((e) => e.outcome)).toEqual(expect.arrayContaining(["approved", "submitted", "rejected"]));
     expect(plan.contacts.every((c) => c.type !== "customer" || c.lead)).toBe(true);
   });

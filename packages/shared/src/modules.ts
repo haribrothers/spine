@@ -49,6 +49,8 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     includes: "the pipeline, leads, meetings and meeting reminders",
     routes: [/^\/leads(\/|$)/, /^\/meetings(\/|$)/, /^\/org\/lead-stages(\/|$)/, /^\/users\/me\/meeting-reminder-lead-minutes$/],
     capabilities: [
+      "leads.open",
+      "meetings.open",
       "leads.edit_own",
       "leads.edit_others",
       "leads.delete_own",
@@ -61,7 +63,8 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     pages: ["/leads", "/meetings"],
     dashboardWidgets: ["pipeline-by-stage"],
     attention: [],
-    search: [],
+    // US-OPS-43
+    search: ["leads", "meetings"],
     notifications: ["meeting_invited", "meeting_starting_soon", "meeting_cancelled", "meeting_removed", "meeting_response_changed"],
     settingsPanes: ["lead-stages", "dashboard-meetings-scope", "meeting-reminder-lead-time"],
     reports: [],
@@ -72,6 +75,7 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     includes: "jobs, milestones, retention, variation orders, job costing, crews and the field app",
     routes: [/^\/jobs(\/|$)/, /^\/reports\/job-profitability(\/|$)/, /^\/dashboard\/retention$/],
     capabilities: [
+      "jobs.open",
       "jobs.edit_own",
       "jobs.edit_others",
       "jobs.release_retention",

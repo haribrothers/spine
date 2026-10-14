@@ -31,4 +31,13 @@ describe("Toggle a11y", () => {
     );
     await expectNoA11yViolations(container);
   });
+
+  it("has no violations with a tooltip", async () => {
+    const { container } = render(
+      <Toggle aria-label="Bold" tooltip="Bold (⌘B)">
+        <Bold size={16} />
+      </Toggle>,
+    );
+    await expectNoA11yViolations(container);
+  });
 });

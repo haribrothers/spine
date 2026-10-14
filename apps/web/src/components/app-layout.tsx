@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import Image from "next/image";
-import { useTheme } from "next-themes";
-import { AppShell, AppShellContent, AppShellSidebar } from "@spine/ui";
+import { Suspense, useEffect, useState } from "react";
+import { AppShell, AppShellContent, AppShellSidebar, SpineLogo } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { SearchButton, SearchPalette } from "./search-palette";
+import { RecentVisits } from "../lib/recent-visits";
 import { NotificationBell } from "./notification-bell";
 import { StorageBanner } from "./storage-banner";
 import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
@@ -21,6 +20,9 @@ import { RoleProvider } from "../lib/role-context";
 import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
 import { SessionExpiredDialog } from "./session-expired-dialog";
+import { ToastHost } from "./toast-host";
+import { SettingsRoute } from "./settings-route";
+import { AccountProvider } from "../lib/account-context";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -29,19 +31,13 @@ const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 // not a form/prose page) where the cap would only waste space.
 const FULL_WIDTH_ROUTES = ["/leads", "/meetings"];
 
+/**
+ * US-SET-26 (D-206) — the horizontal logo, or the gradient mark alone when
+ * the sidebar is collapsed. Dark mode comes from CSS, so it's right from the
+ * first frame.
+ */
 function AppLogo({ collapsed }: { collapsed: boolean }) {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Avoid a hydration mismatch on the theme-dependent src by rendering the
-  // light-mode asset until mounted, matching ThemeToggle's own pattern.
-  const src = mounted && resolvedTheme === "dark" ? "/spine-logo-horizontal-light.png" : "/spine-logo-horizontal.png";
-
-  if (collapsed) {
-    return <span className="text-[16px] font-bold text-primary">S</span>;
-  }
-  return <Image src={src} alt="Spine" width={92} height={24} priority />;
+  return collapsed ? <SpineLogo variant="mark" size={28} /> : <SpineLogo variant="horizontal" size={96} />;
 }
 
 export interface AppLayoutProps {
@@ -76,10 +72,20 @@ export function AppLayout(props: AppLayoutProps) {
   return (
     <RoleProvider value={props.role}>
       <CapabilitiesProvider>
-        <ModulesProvider>
-          <AppLayoutShell {...props} />
-        </ModulesProvider>
-        <PermissionToast />
+        {/* US-OPS-38 (D-223): the one toast host, mounted across pages. */}
+        <ToastHost max={3} duration={5000}>
+          {/* US-AUTH-16: the person, and their saved theme, for every page. */}
+          <AccountProvider>
+            <ModulesProvider>
+              <AppLayoutShell {...props} />
+              {/* US-SET-33: ?settings=<pane> opens Settings on any page. */}
+              <Suspense>
+                <SettingsRoute isOwner={props.isOwner} />
+              </Suspense>
+            </ModulesProvider>
+          </AccountProvider>
+          <PermissionToast />
+        </ToastHost>
         <SessionExpiredDialog email={props.userEmail} />
       </CapabilitiesProvider>
     </RoleProvider>
@@ -127,10 +133,10 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
             {content}
           </Link>
         )}
+        search={<SearchButton collapsed={hydrated ? collapsed : false} onClick={() => setSearchOpen(true)} />}
         userMenu={
           (hydrated ? collapsed : false) ? (
             <div className="flex flex-col items-center gap-1">
-              <SearchButton onClick={() => setSearchOpen(true)} />
               <HelpButton collapsed />
               <NotificationBell collapsed />
               <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
@@ -140,7 +146,6 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
               <div className="min-w-0 flex-1">
                 <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
               </div>
-              <SearchButton onClick={() => setSearchOpen(true)} />
               <HelpButton collapsed={false} />
               <NotificationBell collapsed={false} />
             </div>
@@ -156,7 +161,11 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
           <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />
         ) : null}
       </AppShellContent>
-      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <Suspense>
+        <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} sections={sections} isOwner={isOwner} />
+        {/* US-OPS-39: records opened, for search's Recent. */}
+        <RecentVisits />
+      </Suspense>
     </AppShell>
   );
 }

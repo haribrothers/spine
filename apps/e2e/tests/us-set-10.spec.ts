@@ -2,8 +2,11 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 async function openBranding(page: Page) {
-  await page.getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
-  await page.getByRole("menuitem", { name: "Settings" }).click();
+  // US-SET-33: after a reload Settings is still open (it's in the address).
+  if (!(await page.getByTestId("settings-dialog").isVisible())) {
+    await page.getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+  }
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId("settings-sections").getByRole("button", { name: "Branding" }).click();
   return dialog.getByTestId("settings-pane");
@@ -28,7 +31,7 @@ test.describe("US-SET-10", () => {
     await expect(preview.getByText(footer)).toBeVisible();
     await expect(preview.getByText("INVOICE")).toHaveCSS("color", "rgb(13, 110, 110)");
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
 
     await page.reload();
     const again = await openBranding(page);

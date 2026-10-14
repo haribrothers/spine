@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AlertDescription, Button, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, useConfirm } from "@spine/ui";
 import { X } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import type { MemberRow } from "../../../../lib/members";
 import type { Job, JobAssignee } from "../types";
+import { useToast } from "../../../../components/toast-host";
 
 /**
  * Phase 5 (Mobile) — who's assigned to this job's crew, backing S-11.2's
@@ -17,12 +18,15 @@ import type { Job, JobAssignee } from "../types";
  * why "who can edit this job's fields" and "who decides the crew" are
  * separate questions an Owner may want to grant separately.
  */
-export function CrewSection({ job }: { job: Job }) {
+/** `onChanged` lets the job page refresh its tab count and Activity (US-JOB-35, US-JOB-37). */
+export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => void }) {
   const canAssign = useCapability("jobs.assign");
+  const showToast = useToast();
   const [assignees, setAssignees] = useState<JobAssignee[] | null>(null);
   const [members, setMembers] = useState<MemberRow[] | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -52,6 +56,7 @@ export function CrewSection({ job }: { job: Job }) {
       await apiClient.post(`/jobs/${job.id}/assignees`, { userId: selectedUserId });
       setSelectedUserId("");
       load();
+      onChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not assign this user to the job.");
     } finally {
@@ -60,11 +65,21 @@ export function CrewSection({ job }: { job: Job }) {
   }
 
   async function handleUnassign(userId: string) {
+    const name = assignees?.find((a) => a.userId === userId)?.name ?? "This person";
+    const ok = await confirm({
+      title: `Remove ${name} from this job?`,
+      description: `${name} stops seeing ${job.name} — on the web and in the field app — and isn't notified about it any more. You can add them back.`,
+      confirmLabel: "Remove from job",
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
       await apiClient.delete(`/jobs/${job.id}/assignees/${userId}`);
+      showToast(`${name} removed`, `They no longer see ${job.name}.`);
       load();
+      onChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove this user from the job.");
     } finally {
@@ -137,6 +152,7 @@ export function CrewSection({ job }: { job: Job }) {
           ))}
         </div>
       )}
+      {confirmDialog}
     </Card>
   );
 }

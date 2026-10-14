@@ -54,7 +54,7 @@ describe("US-INV-24 · download several invoice PDFs at once (requires local Pos
   }, 120_000);
 
   beforeEach(() => {
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
   });
 
   afterAll(async () => {

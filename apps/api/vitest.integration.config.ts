@@ -1,5 +1,8 @@
 import swc from "unplugin-swc";
 import { defineConfig } from "vitest/config";
+import { integrationWorkers } from "./src/test-utils/integration-databases";
+
+const workers = integrationWorkers();
 
 export default defineConfig({
   plugins: [
@@ -17,9 +20,15 @@ export default defineConfig({
   ],
   test: {
     include: ["**/*.integration.test.ts"],
-    // Every file shares one database, and ledger-integrity TRUNCATEs
-    // `organization ... CASCADE` — run in parallel, files deleted each
-    // other's orgs mid-test (FK violations, deadlocks, "too many clients").
-    fileParallelism: false,
+    // D-239: files run in parallel, each worker against its own copy of the
+    // test database (made before the run, dropped after), so no file sees
+    // another's rows — ledger-integrity's TRUNCATE empties only its worker's
+    // copy. One shared database made them run one at a time before.
+    // SPINE_TEST_WORKERS sets how many (1 in CI, 4 locally).
+    pool: "forks",
+    poolOptions: { forks: { minForks: 1, maxForks: workers } },
+    fileParallelism: workers > 1,
+    globalSetup: ["./src/test-utils/integration-global-setup.ts"],
+    setupFiles: ["./src/test-utils/integration-worker-db.ts"],
   },
 });

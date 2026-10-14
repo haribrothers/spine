@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Progress, Spinner, cn } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, Progress, cn } from "@spine/ui";
 import { budgetUsedLabel, type BudgetState } from "@spine/shared";
 import { CircleAlert } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { formatMoney } from "../../../../lib/money";
 
 interface JobRow {
@@ -21,7 +22,8 @@ interface JobRow {
 
 /**
  * US-DASH-20 — each active job: name, number and contract value, a bar of
- * billed % of contract, and "Budget used" with its state (US-JOB-25). Links
+ * billed % of contract, and "Budget used" with its state (US-JOB-25).
+ * US-DASH-29: one column wide, so each job takes two lines. Links
  * to Job Profitability. Renders nothing without
  * `reports.view_job_profitability` (the costing fields are then absent).
  */
@@ -50,49 +52,36 @@ export function JobsInProgress() {
       </CardHeader>
       <CardContent>
         {!jobs ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+          <WidgetSkeleton kind="rows" rows={3} />
         ) : jobs.length === 0 ? (
           <p className="py-4 text-center text-[13px] text-on-surface-muted">No jobs in progress.</p>
         ) : (
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="text-left text-[12px] text-on-surface-muted">
-                <th className="pb-2 font-medium">Job</th>
-                <th className="pb-2 font-medium">Billed of contract</th>
-                <th className="pb-2 text-right font-medium">Budget used</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border border-t border-border">
-              {jobs.map((job) => {
-                const billed = job.billedPct ?? 0;
-                const over = job.budgetState === "over";
-                return (
-                  <tr key={job.id} data-job={job.id}>
-                    <td className="py-2.5 pr-3">
-                      <Link href={`/jobs/${job.id}`} className="font-semibold text-on-surface hover:underline">
-                        {job.name}
-                      </Link>
-                      <div className="text-[12px] text-on-surface-muted">{[job.number, formatMoney(BigInt(job.contractValueAmount), job.currency)].filter(Boolean).join(" · ")}</div>
-                    </td>
-                    <td className="py-2.5 pr-3">
-                      <div className="flex items-center gap-3">
-                        <Progress value={Math.min(billed, 100)} className="h-1.5 w-full max-w-40" aria-label={`${job.name}: ${billed}% billed`} />
-                        <span className="shrink-0 text-[12px] tabular-nums text-on-surface-muted">{billed}% billed</span>
-                      </div>
-                    </td>
-                    <td className={cn("py-2.5 text-right tabular-nums", over ? "font-semibold text-overdue" : job.budgetState === "near" ? "text-due-soon" : "text-on-surface")}>
-                      <span className="inline-flex items-center gap-1">
-                        {over && <CircleAlert size={14} aria-hidden />}
+          <ul className="flex flex-col divide-y divide-border text-[13px]">
+            {jobs.map((job) => {
+              const billed = job.billedPct ?? 0;
+              const over = job.budgetState === "over";
+              return (
+                <li key={job.id} data-job={job.id} className="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <Link href={`/jobs/${job.id}`} className="block truncate font-semibold text-on-surface hover:underline" title={job.name}>
+                      {job.name}
+                    </Link>
+                    <div className="truncate text-[12px] text-on-surface-muted">{[job.number, formatMoney(BigInt(job.contractValueAmount), job.currency)].filter(Boolean).join(" · ")}</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Progress value={Math.min(billed, 100)} className="h-1.5 min-w-0 flex-1" aria-label={`${job.name}: ${billed}% billed`} />
+                    <span className="shrink-0 whitespace-nowrap text-[12px] tabular-nums text-on-surface-muted">
+                      {billed}% billed ·{" "}
+                      <span className={cn("inline-flex items-center gap-1", over ? "font-semibold text-overdue" : job.budgetState === "near" ? "text-due-soon" : "text-on-surface")}>
+                        {over && <CircleAlert size={13} aria-hidden />}
                         {job.budgetState === "none" || job.budgetState === undefined ? "No budget" : budgetUsedLabel(job.budgetState, job.budgetUsedPct)}
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </CardContent>
     </Card>

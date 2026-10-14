@@ -1,6 +1,6 @@
 # Progress
 
-Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 11 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Phases 0–9 are built (Phase 5 merged on 2026-10-09); Phases 10 and 11 are next. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 11 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
 
 ## Phase 0 · Foundation
 
@@ -274,6 +274,29 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-16 · Confirm before making someone an owner
 - [x] US-TEAM-17 · Protect the Primary Owner's row
 - [x] US-TEAM-18 · Show each person only the sections they can open
+- [x] US-TEAM-19 · See everyone at a glance on the list layout
+- [x] US-TEAM-20 · See and fix each person's Teams and access
+- [x] US-TEAM-21 · Invite several people, onto their Teams
+- [x] US-TEAM-22 · Change someone between Staff and Field
+- [x] US-TEAM-23 · Act on people safely
+- [x] US-TEAM-24 · Set a Staff or Field member's password
+- [x] US-TEAM-25 · See every Team at a glance on the list layout
+- [x] US-TEAM-26 · Create a Team from another, or duplicate one
+- [x] US-TEAM-27 · Manage a Team's members safely
+- [x] US-TEAM-28 · Review permissions before saving
+- [x] US-TEAM-29 · See a Team's history
+- [x] US-TEAM-30 · Choose which sections a Team can open
+- [x] US-TEAM-31 · Keep closed records out of the way, not out of the work
+- [x] US-TEAM-32 · Open and close sections in one place
+- [x] US-AUTH-16 · One theme, wherever I sign in
+- [x] US-AUTH-17 · See where I'm signed in and sign out elsewhere
+- [x] US-AUTH-18 · Change my email safely
+- [x] US-AUTH-19 · My account looks after the details
+- [x] US-SET-30 · Find my own settings and the business's in one place
+- [x] US-SET-31 · Settings grouped the way I think about my business
+- [x] US-SET-32 · Settings that use the screen
+- [x] US-SET-33 · Come back to the same setting, without losing edits
+- [x] US-SET-34 · Search what's inside settings
 - [x] US-SET-13 · Open contact history the same way as everywhere else
 - [x] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [x] US-OPS-08 · Make every mutating request safe to repeat
@@ -353,6 +376,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-BANK-10 · Finish a reconciliation when it balances
 - [x] US-BANK-11 · Review or undo a reconciliation
 - [x] US-BANK-12 · Let a Team see balances, record money and reconcile
+- [x] US-BANK-13 · See my accounts at a glance and act from them
+- [x] US-BANK-14 · Work through an account's register
+- [x] US-BANK-15 · Record money in, out and transfers safely
+- [x] US-BANK-16 · Reconcile a long statement quickly
+- [x] US-BANK-17 · Keep a reconciliation report
 - [x] US-CAT-09 · Import catalogue items from a spreadsheet
 - [x] US-PAY-16 · Keep a credit note's extra as customer credit
 - [x] US-PAY-17 · Refund a customer
@@ -431,6 +459,144 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-23 · Switch optional modules on or off (the "AI assistant" row lands with US-AI-01)
 - [x] US-SET-24 · Hide everything a switched-off module owns
 - [x] US-SET-25 · Switch a module back on with nothing lost
+
+## Refinements before Phase 10
+
+- [x] US-SET-26 · See the Spine logo across the web app
+- [x] US-AUTH-13 · See a welcome page on a new install
+- [x] US-AUTH-14 · Log in on a page that feels like Spine
+- [x] US-AUTH-15 · Choose a strong password I can see
+- [x] US-ONB-22 · Set up my business in four short stages with a live preview
+- [x] US-ONB-23 · Finish setup on a screen that shows what's next
+- [x] US-DASH-27 · See the dashboard take shape while it loads
+- [x] US-DASH-28 · Read big figures on calm, colour-coded cards
+- [x] US-DASH-29 · Keep cards their own height, with my tasks in a side column
+- [x] US-OPS-36 · See which toggle is on, and what each one does
+- [x] US-CRM-21 · Read long names and emails in every contacts view
+- [x] US-CRM-22 · Refresh the contacts list to see changes
+- [x] US-CRM-23 · Search, filter and come back to the same contacts list
+- [x] US-CRM-24 · See the whole pipeline at a glance
+- [x] US-CRM-25 · Spot leads going cold, and move a lead without dragging
+- [x] US-CRM-26 · Say why a lead was lost, and quote a lead that's won
+- [x] US-CRM-27 · Work a lead from one drawer
+- [x] US-CRM-28 · Filter the pipeline by owner and source, and come back to it
+- [x] US-MTG-13 · See which days have meetings in the mini calendar
+- [x] US-MTG-14 · Start a meeting from a button, and open on the working day
+- [x] US-MTG-15 · Get to a meeting or a contact from the sidebar lists
+- [x] US-MTG-16 · Come back to the same calendar view and date
+- [x] US-MTG-17 · Use the calendar on any screen size
+- [x] US-CAT-10 · Spot items that need setup from the stat cards
+- [x] US-CAT-11 · Read an item's tax, HSN/SAC and description in the list
+- [x] US-CAT-12 · Duplicate, change many items at once, and export
+- [x] US-CAT-13 · Search, filter and come back to the same catalogue
+- [x] US-CAT-14 · Make a bundle from items, and see bundles at a glance
+- [x] US-CAT-15 · See where an item is used, in a drawer that's easy to scan
+- [x] US-QUO-27 · See open, expiring and won quotes at a glance
+- [x] US-QUO-28 · Search, filter and come back to the same quotes list
+- [x] US-QUO-29 · Read a quote's progress in the list, and act on it from the row
+- [x] US-QUO-30 · Give a quote a title
+- [x] US-QUO-31 · See a quote at a glance, with one next step
+- [x] US-QUO-32 · Follow what happened to a quote
+- [x] US-QUO-33 · Get to a quote's lead, versions, job and invoices
+- [x] US-QUO-34 · Build a quote in compact rows
+- [x] US-QUO-35 · Save, preview and send from a bar that stays in view
+- [x] US-QUO-36 · Start a quote valid for my usual number of days
+- [x] US-JOB-30 · Start a job from the jobs list
+- [x] US-JOB-31 · See active, ready-to-bill, over-budget jobs and retention at a glance
+- [x] US-JOB-32 · Search, filter and come back to the same jobs list
+- [x] US-JOB-33 · Read a job's next milestone and progress in the list
+- [x] US-JOB-34 · See a job at a glance, change its status and take the next step
+- [x] US-JOB-35 · Follow a job's milestones and billing at a glance
+- [x] US-JOB-36 · Browse, upload and group site photos
+- [x] US-JOB-37 · Follow what happened on a job
+- [x] US-JOB-38 · Show real site photos in the demo
+- [x] US-ONB-24 · Explore a pipeline that's being worked
+- [x] US-ONB-25 · Explore quotes at every stage
+- [x] US-ONB-26 · Explore jobs that need something
+- [x] US-ONB-27 · Explore a catalogue and calendar that look kept
+- [x] US-ONB-28 · Explore invoices at every stage
+- [x] US-INV-27 · See what I'm owed, what's late and what's come in at a glance
+- [x] US-INV-28 · Search, filter and come back to the same invoices list
+- [x] US-INV-29 · Read an invoice's state in the list, and act on it from the row
+- [x] US-INV-30 · See an invoice at a glance, with one next step
+- [x] US-INV-31 · Read an invoice's lines and totals together
+- [x] US-INV-32 · Follow what happened to an invoice
+- [x] US-INV-33 · Give every invoice a due date from my payment terms
+- [x] US-INV-34 · Build an invoice in compact rows, with a bar that stays in view
+- [x] US-INV-35 · Duplicate an invoice
+- [x] US-ONB-29 · Explore credit notes at every stage
+- [x] US-ONB-30 · Explore bills and vendor credits at every stage
+- [x] US-ONB-31 · Explore expenses with their receipts
+- [x] US-ONB-32 · Explore expense categories that guide
+- [x] US-ONB-33 · Explore vendor payments and payables you can pay from
+- [x] US-ONB-34 · Explore banking with accounts, transfers and reconciliations
+- [x] US-ONB-35 · Explore Users with a team that looks real
+- [x] US-INV-36 · Credit an invoice's lines, with their tax
+- [x] US-INV-37 · Start a credit note from the credit notes list
+- [x] US-INV-38 · See a credit note at a glance, with one next step
+- [x] US-INV-39 · Follow what happened to a credit note
+- [x] US-INV-40 · See where each credit went, at a glance
+- [x] US-INV-41 · Search, filter and come back to the same credit notes list
+- [x] US-SET-27 · See every email Spine sends
+- [x] US-SET-28 · Retry or cancel an email
+- [x] US-SET-29 · Know when email isn't set up
+- [x] US-DASH-30 · See failed emails in Needs your attention
+- [x] US-PAY-19 · See a payment at a glance, with one next step
+- [x] US-PAY-20 · Follow what happened to a payment
+- [x] US-PAY-21 · See money received at a glance
+- [x] US-PAY-22 · Search, filter and come back to the same payments list
+- [x] US-PAY-23 · Record a payment by ticking what it pays
+- [x] US-PAY-24 · Be warned before recording the same payment twice
+- [x] US-PAY-25 · Find a payment from search
+- [x] US-PAY-26 · Move a payment off the wrong invoice
+- [x] US-OPS-37 · See what each menu action does at a glance
+- [x] US-OPS-38 · Know an action worked, wherever it takes me
+- [x] US-OPS-39 · Pick up where I left off from search
+- [x] US-OPS-40 · See every match in its list
+- [x] US-OPS-41 · Go to a page or a setting from search
+- [x] US-OPS-42 · Start something new from search
+- [x] US-OPS-43 · Find leads, meetings, catalogue items and vendor credits
+- [x] US-OPS-44 · Find a contact by phone, tax ID or one of their people
+- [x] US-OPS-45 · Find a document by its amount
+- [x] US-OPS-46 · Find archived records when I need them
+- [x] US-OPS-47 · Read search results at a glance
+- [x] US-OPS-48 · See search in the sidebar
+- [x] US-OPS-49 · Narrow search to one area
+- [x] US-CAT-16 · Confirm a change to many items before it happens
+- [x] US-PAY-27 · See who owes me most, customer by customer
+- [x] US-PAY-28 · Chase a customer without leaving Receivables
+- [x] US-PAY-29 · Filter receivables by age
+- [x] US-PAY-30 · Read a receivable at a glance
+- [x] US-PAY-31 · Trust what Receivables counts
+- [x] US-PUR-32 · See a bill at a glance, with one next step
+- [x] US-PUR-33 · Pay a bill from its page
+- [x] US-PUR-34 · See what we owe vendors at a glance
+- [x] US-PUR-35 · Enter a bill faster, without entering it twice
+- [x] US-PUR-36 · Record several draft bills at once
+- [x] US-PUR-37 · See where a vendor credit stands, with one next step
+- [x] US-PUR-38 · See what credit vendors owe us at a glance
+- [x] US-PUR-39 · Enter a vendor credit like a bill
+- [x] US-PUR-40 · Raise and use a credit from its bill
+- [x] US-PUR-41 · Record several draft credits at once
+- [x] US-PUR-42 · See what's waiting and what it's cost at a glance
+- [x] US-PUR-43 · Review an expense on its own page
+- [x] US-PUR-44 · Submit an expense faster
+- [x] US-PUR-45 · Fix and resubmit a rejected expense
+- [x] US-PUR-46 · See every expense category and how it's used
+- [x] US-PUR-47 · Add, change and remove categories safely
+- [x] US-PUR-48 · Pick the right category when submitting
+- [x] US-PUR-49 · See a vendor payment on its own page
+- [x] US-PUR-50 · Delete a wrong vendor payment
+- [x] US-PUR-51 · See money paid out at a glance
+- [x] US-PUR-52 · Pay a vendor by ticking bills
+- [x] US-PUR-53 · Be warned before recording the same vendor payment twice
+- [x] US-PUR-54 · Send a vendor a remittance advice
+- [x] US-PUR-55 · Find a vendor payment from search
+- [x] US-PUR-56 · See what we owe each vendor
+- [x] US-PUR-57 · Read a payable at a glance
+- [x] US-PUR-58 · Pay and apply credit from Payables
+- [x] US-PUR-59 · Filter payables by age and see what's due this week
+- [x] US-PUR-60 · Trust what Payables counts
 
 ## Phase 10 · AI assistant
 

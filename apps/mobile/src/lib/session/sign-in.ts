@@ -40,6 +40,9 @@ export interface Member {
   /** The business currency and locale, for money and dates (US-MOB-03); older servers leave them out. */
   currency?: string;
   locale?: string;
+  /** US-TEAM-24 — an Owner set this password: choose your own before anything else. */
+  mustChangePassword?: boolean;
+  passwordSetBy?: { name: string | null; at: string } | null;
 }
 
 const HEALTH_TIMEOUT_MS = 8_000;

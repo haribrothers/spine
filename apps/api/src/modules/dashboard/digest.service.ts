@@ -92,7 +92,7 @@ export class DigestService {
         const digest = await this.build(row.orgId, { userId: row.userId, name: row.name, email: row.email, role: row.role }, now, brand);
         if (digest) {
           const rendered = renderEmail(brand, digest.content);
-          await this.email.send({ to: row.email, fromName: brand.name, subject: digest.subject, text: rendered.text, html: rendered.html, attachments: rendered.attachments });
+          await this.email.send({ to: row.email, fromName: brand.name, subject: digest.subject, text: rendered.text, html: rendered.html, attachments: rendered.attachments, log: { orgId: row.orgId, kind: "digest" } });
           sent += 1;
         }
         // Sent, or nothing to report: either way, today is done for this member.

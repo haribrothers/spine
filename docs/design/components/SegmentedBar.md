@@ -17,12 +17,15 @@ import { SegmentedBar, SegmentedBarSegment } from "@spine/ui";
 | `segments` | SegmentedBarSegment[] | — |
 | `aria-label` | string | — |
 | `emptyState` | ReactNode | "Nothing to show." |
+| `onSegmentClick` | (key: string) => void | — (not pressable) |
+| `selectedKeys` | readonly string[] | — |
 
 ## Rules and behaviour
 
 - Each part's width is its share of the total; zero parts stay in the legend.
 - Colours are theme tokens — the reserved financial-status colours for ages.
 - The bar's accessible name lists every part and amount.
+- With `onSegmentClick` (Receivables, US-PAY-29) each legend entry is a button and the bar's parts respond to a pointer; parts not in `selectedKeys` fade, and a single selected part is marked pressed (`aria-pressed`) in the legend.
 
 ## Exports
 

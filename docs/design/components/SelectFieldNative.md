@@ -1,6 +1,6 @@
 # SelectField
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/select-field.tsx` · **Doc page:** `apps/design-system-native/app/components/select-field.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/select-field.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/select-field-demo.tsx`
 
 A `TextField`-styled select — same border, height, radius, and colors as TextField — for forms where a select needs to visually match surrounding text fields. Opens a real native menu (SwiftUI Menu on iOS, Jetpack Compose DropdownMenu on Android) on tap.
 

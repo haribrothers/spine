@@ -26,3 +26,4 @@ export * from "./refunds";
 export * from "./tax-payments";
 export * from "./opening-balances";
 export * from "./manual-journals";
+export * from "./email-log";

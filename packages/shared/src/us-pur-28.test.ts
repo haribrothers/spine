@@ -5,6 +5,8 @@ describe("US-PUR-28", () => {
   it("lists the vendor credit rights under 'Vendor credits', granted to General Staff", () => {
     const rights = CAPABILITIES.filter((c) => CAPABILITY_LABELS[c].group === "Vendor credits");
     expect(rights).toEqual([
+      // US-TEAM-30: the section's Open permission comes first.
+      "vendor_credits.open",
       "vendor_credits.edit_own",
       "vendor_credits.edit_others",
       "vendor_credits.delete_own",

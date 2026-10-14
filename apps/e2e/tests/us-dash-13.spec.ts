@@ -19,20 +19,25 @@ async function setGrant(page: Page, capability: string, granted: boolean) {
 }
 
 test.describe("US-DASH-13", () => {
-  test("one overdue invoice: 'Send reminder' sends it from the dashboard", async ({ page, seededOrg: _ }) => {
+  test("one overdue invoice: 'Send reminder' opens its reminder email to check and send", async ({ page, seededOrg: _ }) => {
     const overdue = (await rowsOf(page)).find((r) => r.kind === "invoices_overdue");
     expect(overdue?.count, "the demo data has one overdue invoice").toBe(1);
     await page.goto("/dashboard");
-    await page.locator('li[data-kind="invoices_overdue"]').getByRole("button", { name: "Send reminder" }).click();
-    await expect(page.getByText(`Reminder sent for ${overdue!.items[0]!.number}`).first()).toBeVisible();
+    await page.locator('li[data-kind="invoices_overdue"]').getByRole("link", { name: "Send reminder" }).click();
+    // Nothing is emailed from one click (D-217): the invoice opens with the reminder ready.
+    const dialog = page.getByRole("dialog", { name: `Send payment reminder — ${overdue!.items[0]!.number}` });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Send reminder" }).click();
+    await expect(page.getByText("Reminder sent", { exact: true }).first()).toBeVisible();
   });
 
   test("'Review' opens expenses waiting for approval", async ({ page, seededOrg: _ }) => {
     test.skip(!(await rowsOf(page)).some((r) => r.kind === "expenses_awaiting_approval"), "no expenses waiting in the demo data");
     await page.goto("/dashboard");
     await page.locator('li[data-kind="expenses_awaiting_approval"]').getByRole("link", { name: "Review" }).click();
-    await expect(page).toHaveURL(/\/expenses\?status=submitted/);
-    await expect(page.getByRole("combobox", { name: "Filter by status" })).toContainText("Submitted");
+    // US-PUR-42: the Waiting for approval card, pressed.
+    await expect(page).toHaveURL(/\/expenses\?card=wait/);
+    await expect(page.getByRole("button", { name: "Show waiting for approval only" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("several overdue invoices: 'Send reminder' opens Invoices filtered to overdue with them selected", async ({ page, seededOrg: _ }) => {

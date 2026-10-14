@@ -2,7 +2,7 @@
 
 One dashboard that adapts to who's looking: a pinned row of key figures, charts for owners and permitted staff, "my day" widgets for everyone, an organisation-wide activity feed, and per-user layout that follows the person across devices. Every widget is gated server-side by the same right as its full report, so the dashboard adds no new access.
 
-**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1), `DashboardOwnerBooks` (P1)
+**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1), `DashboardOwnerBooks` (P1), `DashboardLoading` (P2), `DashboardWide` (P2), `DashboardWideDark` (P2), `DashboardLaptop` (P2), `DashboardBigFigures` (P2)
 **Depends on:** 12 Reports, 03 Contacts (activities, leads), 04 Meetings, 07 Jobs, 08 Invoicing, 15 Team (capabilities).
 
 ## Features
@@ -18,6 +18,8 @@ One dashboard that adapts to who's looking: a pinned row of key figures, charts 
 | F-DASH-07 | Key figures, money chart and activity (redesign A) | P1 | 7 | `DashboardOwnerRedesign`, `DashboardStaffRedesign`, `DashboardOwnerConstruction` |
 | F-DASH-08 | Staff and field layouts (redesign A) | P1 | 7 | `DashboardStaffRedesign`, `DashboardFieldRedesign` |
 | F-DASH-09 | Books cards: payables, top expenses, account balances, ready to bill, tax, cash basis | P1 | 8 | `DashboardOwnerBooks` |
+| F-DASH-10 | Polish: loading placeholders, figures that fit, packed cards and a side column | P2 | Refinements | `DashboardLoading`, `DashboardWide`, `DashboardLaptop`, `DashboardBigFigures` |
+| F-DASH-11 | Failed emails in Needs your attention | P2 | Refinements | `DashboardAttentionEmails` |
 
 ## User stories
 
@@ -212,13 +214,13 @@ Decision: D-087, D-088
 Decision: D-088
 
 **Acceptance criteria**
-- **Given** "1 invoice is overdue", **when** I press "Send reminder", **then** the reminder email for that invoice is sent and a toast reads "Reminder sent for INV-<number>".
+- **Given** "1 invoice is overdue", **when** I press "Send reminder", **then** that invoice opens with its reminder email ready to check and send (D-217: an email to a customer is always confirmed first).
 - **Given** several overdue invoices, **when** I press "Send reminder", **then** the Invoices list opens filtered to overdue with those invoices selected (US-INV-23).
 - **Given** "Review", "Approve", "Raise invoice", "Follow up" or "Pay bill", **when** I press it, **then** the matching record opens (expenses filtered to submitted, the quote, the completed milestone's job, the expiring quote, the bill's payment dialog).
 - **Given** I lack the capability for the action (e.g. `invoices.send_reminder`), **when** the row renders, **then** the button is replaced by "Open".
 
 **Implementation notes**
-- UI: actions route to existing screens; no new mutation endpoints except reusing `POST /invoices/:id/send-reminder`.
+- UI: actions route to existing screens (`/invoices/:id?action=remind` for one overdue invoice); no new mutation endpoints.
 
 ### US-DASH-14 · See key figures with a trend and a comparison
 **Feature:** F-DASH-07 · **Priority:** P1 · **Phase:** 7 · **Screens:** `DashboardOwnerRedesign`, `DashboardStaffRedesign`
@@ -399,3 +401,71 @@ Decision: D-138
 
 **Implementation notes**
 - API: `GET /dashboard/kpis?basis=cash`; basis stored with the member's dashboard layout (US-DASH-11).
+
+### US-DASH-27 · See the dashboard take shape while it loads
+**Feature:** F-DASH-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `DashboardLoading`
+**As** any member, **I want** the dashboard to show its shape straight away and fill in calmly, **so that** nothing jumps while I start reading.
+
+Decision: D-209
+
+**Acceptance criteria**
+- **Given** I open the dashboard, **when** my layout, rights and modules are still loading, **then** a placeholder of the whole page shows: the header, grey cards where "Needs your attention" and "Today" go, four grey KPI cards (when I see the KPI row) and grey cards in my role's default layout. Nothing appears later and pushes the page down.
+- **Given** the layout is known, **when** a card's data is still on its way, **then** the card shows its title and a grey outline of its own content (rows, bars, a ring or figures) instead of a spinner. The KPI row keeps its four grey cards until the figures arrive.
+- **Given** money on any card, **when** it first shows, **then** it's in the organisation's currency (never "$" before "₹").
+- **Given** a card fails or I may not see it, **when** that's known, **then** its placeholder goes away and the cards around it close up (US-DASH-20, US-DASH-29).
+- **Given** Reduce Motion, **when** placeholders show, **then** they don't shimmer.
+- **Given** a screen reader, **when** the dashboard loads, **then** it hears "Loading dashboard" once (the region is busy), not once per card.
+
+**Implementation notes**
+- UI: `DashboardSkeleton` for the first paint; each widget renders `WidgetSkeleton` (`rows`, `bars`, `ring`, `figures`) while its data loads, built on `Skeleton` from `@spine/ui`. The organisation's currency is read once for the page (a `DashboardCurrency` provider) and widgets wait for it.
+- No API change.
+
+### US-DASH-28 · Read big figures on calm, colour-coded cards
+**Feature:** F-DASH-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `DashboardWide`, `DashboardWideDark`, `DashboardBigFigures`
+**As** an owner, **I want** each key figure easy to tell apart and every amount to fit, **so that** large numbers never overlap or get cut off.
+
+Decision: D-209
+
+**Acceptance criteria**
+- **Given** the KPI row, **when** it renders, **then** each card has an icon in a coloured chip and a very light tint of the same colour: Cash position (wallet, blue), Profit this month (trend, teal), Receivables (coins, purple) and Overdue (alert, red, since overdue is a status). Figures and labels stay in the main text colours and pass 4.5:1 on the tint, in light and dark.
+- **Given** a KPI figure, **when** it renders, **then** it has its own line with the 8-week line underneath across the card, and a long figure steps down in size so the whole amount shows on one line at 1280 px (e.g. "₹90,87,504.00", "$12,345,678.90"). Nothing is truncated or overlaps.
+- **Given** Payables (Current · Overdue · Total) and Tax this period (Collected · Input tax · Net payable), **when** the three figures don't fit side by side, **then** they stack, each with its label, instead of overlapping.
+- **Given** Receivables aging, **when** the ring renders, **then** its centre shows the total in short form for the locale ("₹44.9L", "$4.5M", "£4.5m") and the full total shows under the card title. The amounts beside the ring wrap rather than being cut off.
+- **Given** a row with an amount (job profitability, retention, top expenses, accounts), **when** the amount is long or negative, **then** it stays on one line ("−₹1,60,500.00") and the name beside it truncates, with the full name on hover.
+
+**Implementation notes**
+- Shared: `formatMoneyCompact(amount, currency, locale)` in `@spine/shared` (Intl compact notation, one decimal), used only in the ring's centre (D-209). Everything else keeps `formatMoney` (D-089).
+- UI: KPI tints from the category tokens (`category-blue-bg`, `-teal-bg`, `-purple-bg`) and `overdue-bg`, so the reserved status colours keep their meaning (D-025, D-089).
+
+### US-DASH-29 · Keep cards their own height, with my tasks in a side column
+**Feature:** F-DASH-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `DashboardWide`, `DashboardLaptop`
+**As** an owner, **I want** no stretched cards or empty gaps, and my tasks and recent activity in view on a wide screen, **so that** the dashboard reads like one tidy page.
+
+Decision: D-209
+
+**Acceptance criteria**
+- **Given** cards of different heights, **when** the dashboard lays them out, **then** each card keeps its own height and goes into whichever column is shortest so far, in my layout order. Columns only end unevenly at the bottom of the page: there are no stretched cards (Pipeline by stage, Receivables aging, Accounts, Ready to bill) and no empty gaps between cards.
+- **Given** a wide card (Income and expenses), **when** the cards are laid out, **then** it spans the columns and sits straight after the KPI row, ahead of the other cards, whatever its place in my layout; wide cards keep their order among themselves. Every other card, including Jobs in progress, is one column wide.
+- **Given** a window 1440 px or wider, **when** the dashboard shows, **then** "Needs your attention", "Today" and then Recent activity (when it's in my layout) sit in a column on the right (about 340 px) that stays in view while the rest scrolls, as long as it fits the window; if it's taller it scrolls with the page. The KPI row and the cards fill the space beside it, with the cards in 2 columns.
+- **Given** a window narrower than 1440 px, **when** the dashboard shows, **then** "Needs your attention" and "Today" stay at the top (side by side at the same height from 1280 px, one above the other below that), and the cards (Recent activity among them, in its layout place) use 3 columns from 1280 px and 2 from 1024 px (2 for Field).
+- **Given** the setup checklist ("Get started"), **when** it shows, **then** it sits at the top of the main area at its own height, not stretched to match another card.
+- **Given** Edit layout, **when** I drag or hide cards, **then** "Needs your attention" and "Today" aren't editable (like the KPI row), Recent activity can still be hidden, and the cards repack in the new order.
+- **Given** a keyboard or screen reader, **when** I move through the page, **then** the order is: header, "Needs your attention", "Today", the KPI row, then the cards in my layout order. Tasks still come first (US-DASH-12), wherever they sit on screen.
+
+**Implementation notes**
+- UI: the card grid uses CSS grid with small rows and `grid-auto-flow: dense`; each card's row span comes from its measured height (`ResizeObserver`). Wide cards are placed first (a stable sort, so the saved order is untouched), then each one-column card lands in the first column with room, which is the shortest. DOM order stays the layout order. Only `money-in-out` is wide now; `jobs-in-progress` becomes one column with a two-line row (name and number, then the bar with "% billed · budget"), and the activity widgets (`activity-feed`, `my-activity`) no longer fill their row. The side column is a sticky grid area (`max-height: 100vh`, sticky only when it fits) from a new `wide-plus` breakpoint (1440 px) in `tokens.json` and the Tailwind preset. `mergeDashboardLayout` and the saved layout are unchanged.
+- No API change.
+
+### US-DASH-30 · See failed emails in Needs your attention
+**Feature:** F-DASH-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `DashboardAttentionEmails`
+**As** an owner, **I want** failed emails on my dashboard, **so that** I notice a customer didn't get a quote or invoice.
+
+Decision: D-220
+
+**Acceptance criteria**
+- **Given** emails that failed in the last 7 days and haven't been retried or cancelled, **when** an Owner's dashboard shows, **then** "Needs your attention" has "<n> emails failed" naming the first ("Quote QUO-0031 to accounts@…"), with "Review" opening the email log filtered to Failed.
+- **Given** Staff or Field, **when** their dashboard shows, **then** there's no such row.
+
+**Implementation notes**
+- API: `GET /dashboard/attention` kind `emails_failed` (Owner only), from `email_log`.
+

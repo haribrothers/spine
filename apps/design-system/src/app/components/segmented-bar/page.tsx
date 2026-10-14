@@ -1,6 +1,7 @@
 "use client";
 
 import { SegmentedBar } from "@spine/ui";
+import { useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
 import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/components/doc-page";
@@ -33,6 +34,7 @@ export default function SegmentedBarPage() {
             "The legend names every part with its formatted amount and percentage.",
             "Colours are theme tokens — the reserved financial-status colours for ages.",
             "An empty state when everything is zero.",
+            "Optionally pressable: each part filters a list (Receivables, US-PAY-29) — the legend entries become buttons marked pressed, and the other parts fade on the bar.",
           ]}
         />
       </DocSection>
@@ -40,6 +42,19 @@ export default function SegmentedBarPage() {
       <DocSection id="empty" title="Empty">
         <ComponentPreview>
           <SegmentedBar segments={segments.map((s) => ({ ...s, value: 0 }))} aria-label="Outstanding by age" emptyState="Nothing outstanding." className="w-full" />
+        </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="pressable" title="Pressable parts">
+        <ComponentPreview
+          code={`<SegmentedBar
+  aria-label="Outstanding by age"
+  segments={segments}
+  selectedKeys={age ? [age] : []}
+  onSegmentClick={(key) => setAge(age === key ? null : key)}
+/>`}
+        >
+          <PressableExample />
         </ComponentPreview>
       </DocSection>
 
@@ -60,13 +75,20 @@ export default function SegmentedBarPage() {
             { prop: "segments", type: "SegmentedBarSegment[]", description: "{ key, label, value, formattedValue, color }" },
             { prop: "aria-label", type: "string", description: "Names the bar; every part's label and amount are added to it." },
             { prop: "emptyState", type: "ReactNode", defaultValue: '"Nothing to show."' },
+            { prop: "onSegmentClick", type: "(key: string) => void", description: "Makes each part pressable: a legend button, and the bar by pointer (US-PAY-29)." },
+            { prop: "selectedKeys", type: "readonly string[]", description: "The parts shown as pressed (aria-pressed); the others fade on the bar." },
           ]}
         />
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">
-        <DocLead>The bar is a labelled image whose name lists every part and amount; the legend repeats them in text.</DocLead>
+        <DocLead>The bar is a labelled image whose name lists every part and amount; the legend repeats them in text. When pressable, each legend entry is a button with aria-pressed, reachable with Tab — the bar itself is only a pointer shortcut.</DocLead>
       </DocSection>
     </div>
   );
+}
+
+function PressableExample() {
+  const [age, setAge] = useState<string | null>("0-30");
+  return <SegmentedBar segments={segments} aria-label="Outstanding by age" className="w-full" selectedKeys={age ? [age] : []} onSegmentClick={(key) => setAge(age === key ? null : key)} />;
 }

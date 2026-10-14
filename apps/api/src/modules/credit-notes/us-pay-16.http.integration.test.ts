@@ -45,7 +45,10 @@ describe("US-PAY-16 · keep a credit note's extra as customer credit (requires l
     await testApp.app.get(PaymentsService).create(orgId, owner.userId, createPaymentSchema.parse({ contactId, date: "2026-09-30", method: "bank_transfer", currency: "USD", amount, allocations: [{ invoiceId, amount }] }));
   }
   async function creditNote(invoiceId: string, amount: string, who: Who = owner) {
-    const draft = await json<{ id: string }>(await call(who, "POST", "/credit-notes", { invoiceId, lines: [{ type: "item", name: "Returned fittings", quantity: 1, unitPriceAmount: amount, taxRatePercentage: 0 }] }));
+    const created = await call(who, "POST", "/credit-notes", { invoiceId, lines: [{ type: "item", name: "Returned fittings", quantity: 1, unitPriceAmount: amount, taxRatePercentage: 0 }] });
+    // US-INV-36 (D-219): a credit beyond what's left on the invoice is refused when it's drafted, before it's issued.
+    if (created.status >= 400) return created;
+    const draft = (await created.json()) as { id: string };
     return call(who, "POST", `/credit-notes/${draft.id}/issue`);
   }
   async function linesOf(sourceType: string, sourceId: string) {

@@ -1,10 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createExpenseCategorySchema, updateExpenseCategorySchema } from "@spine/shared";
-import { and, asc, eq } from "drizzle-orm";
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { ExpenseCategoryUsage, createExpenseCategorySchema, updateExpenseCategorySchema } from "@spine/shared";
+import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenseCategories, expenses, accounts } from "../../db/schema";
+import { expenseCategories, expenses, accounts, settings, taxRates } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
@@ -23,12 +23,14 @@ export class ExpenseCategoriesService {
     // US-PUR-23: with the posting account's code and name, so the labour form can preselect the 5200 category.
     let rows = (
       await this.db
-        .select({ category: expenseCategories, accountCode: accounts.code, accountName: accounts.name })
+        .select({ category: expenseCategories, accountCode: accounts.code, accountName: accounts.name, defaultTaxRateName: taxRates.name })
         .from(expenseCategories)
         .leftJoin(accounts, eq(expenseCategories.accountId, accounts.id))
+        // US-PUR-46: the default tax rate's name, for the table and the form's hint.
+        .leftJoin(taxRates, eq(expenseCategories.defaultTaxRateId, taxRates.id))
         .where(eq(expenseCategories.orgId, orgId))
         .orderBy(asc(expenseCategories.name))
-    ).map((r) => ({ ...r.category, accountCode: r.accountCode, accountName: r.accountName }));
+    ).map((r) => ({ ...r.category, accountCode: r.accountCode, accountName: r.accountName, defaultTaxRateName: r.defaultTaxRateName }));
     if (!options.includeArchived) {
       rows = rows.filter((row) => row.archivedAt === null);
     }
@@ -52,11 +54,57 @@ export class ExpenseCategoriesService {
     return this.auditLog.listForEntity(orgId, "expense_category", id);
   }
 
+  /**
+   * US-PUR-46 (D-228) — how many expenses use each category, and what was
+   * approved in it this month (by approval date, UTC month, in the
+   * business's currency — the expenses list card's rule). Owners and Staff
+   * only (the controller); Field never sees other people's money.
+   */
+  async usage(orgId: string): Promise<ExpenseCategoryUsage[]> {
+    const [currencyRow] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+    const currency = (currencyRow?.value as { code?: string } | undefined)?.code ?? "USD";
+    const rows = await this.db
+      .select({
+        categoryId: expenses.categoryId,
+        expenseCount: sql<number>`count(*)::int`,
+        approvedThisMonth: sql<string>`coalesce(sum(${expenses.amount}) filter (where ${expenses.status} = 'approved' and ${expenses.currency} = ${currency} and to_char(${expenses.approvedAt} at time zone 'UTC', 'YYYY-MM') = to_char(now() at time zone 'UTC', 'YYYY-MM')), 0)::text`,
+      })
+      .from(expenses)
+      .where(eq(expenses.orgId, orgId))
+      .groupBy(expenses.categoryId);
+    return rows.map((r) => ({ categoryId: r.categoryId, expenseCount: Number(r.expenseCount), approvedThisMonth: r.approvedThisMonth }));
+  }
+
+  /** US-PUR-47 — a name another category has, ignoring case and surrounding spaces (archived included), is a 409 naming it. */
+  private async assertNameFree(orgId: string, name: string, exceptId?: string) {
+    const [clash] = await this.db
+      .select({ id: expenseCategories.id, name: expenseCategories.name, archivedAt: expenseCategories.archivedAt })
+      .from(expenseCategories)
+      .where(and(eq(expenseCategories.orgId, orgId), sql`lower(btrim(${expenseCategories.name})) = lower(btrim(${name}))`, exceptId ? ne(expenseCategories.id, exceptId) : undefined));
+    if (clash) {
+      throw new ConflictException({
+        error: "EXPENSE_CATEGORY_NAME_TAKEN",
+        message: `${clash.name} is already a category.`,
+        existingId: clash.id,
+        archived: clash.archivedAt !== null,
+      });
+    }
+  }
+
+  /** US-PUR-48 — a default tax rate must be one of the business's active rates. */
+  private async assertActiveRate(orgId: string, taxRateId: string | null | undefined) {
+    if (!taxRateId) return;
+    const [rate] = await this.db.select({ id: taxRates.id }).from(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.id, taxRateId), isNull(taxRates.archivedAt)));
+    if (!rate) throw new BadRequestException("Choose an active tax rate.");
+  }
+
   async create(orgId: string, actorUserId: string, input: CreateExpenseCategoryInput) {
+    await this.assertNameFree(orgId, input.name);
+    await this.assertActiveRate(orgId, input.defaultTaxRateId);
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .insert(expenseCategories)
-        .values({ orgId, name: input.name, accountId: input.accountId ?? null, createdByUserId: actorUserId })
+        .values({ orgId, name: input.name, description: input.description || null, accountId: input.accountId ?? null, defaultTaxRateId: input.defaultTaxRateId ?? null, createdByUserId: actorUserId })
         .returning();
       if (!row) {
         throw new BadRequestException("Failed to create expense category");
@@ -80,12 +128,17 @@ export class ExpenseCategoriesService {
       own: "expense_categories.edit_own",
       others: "expense_categories.edit_others",
     });
+    if (input.name !== undefined) await this.assertNameFree(orgId, input.name, id);
+    // A rate saved before it was archived can stay; a newly chosen one must be active.
+    if (input.defaultTaxRateId !== existing.defaultTaxRateId) await this.assertActiveRate(orgId, input.defaultTaxRateId);
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(expenseCategories)
         .set({
           ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.description !== undefined ? { description: input.description || null } : {}),
           ...(input.accountId !== undefined ? { accountId: input.accountId } : {}),
+          ...(input.defaultTaxRateId !== undefined ? { defaultTaxRateId: input.defaultTaxRateId } : {}),
           updatedAt: new Date(),
         })
         .where(eq(expenseCategories.id, id))
@@ -163,7 +216,7 @@ export class ExpenseCategoriesService {
     });
     const [used] = await this.db.select().from(expenses).where(eq(expenses.categoryId, id));
     if (used) {
-      throw new BadRequestException("Expense category is used by an expense and cannot be deleted — archive it instead");
+      throw new BadRequestException(`${existing.name} is used by an expense, so it can't be deleted — archive it instead.`);
     }
     await this.db.transaction(async (tx) => {
       await this.auditLog.record(tx, {

@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createVendorBillSchema, updateVendorBillSchema } from "@spine/shared";
+import type { BulkResult, createVendorBillSchema, PossibleDuplicateVendorBill, updateVendorBillSchema, VendorBillActivityEntry } from "@spine/shared";
 import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { vendorBills, vendorBillLines, vendorCreditAllocations, vendorCredits, contacts, accounts } from "../../db/schema";
+import { vendorBills, vendorBillLines, vendorCreditAllocations, vendorCredits, contacts, accounts, auditLog, user, vendorPayments, vendorPaymentAllocations, jobs } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
@@ -193,15 +193,18 @@ export class VendorBillsService {
     if (options.jobId) conditions.push(eq(vendorBills.jobId, options.jobId));
 
     const rows = await this.db
-      .select({ bill: vendorBills, contactName: contacts.name })
+      .select({ bill: vendorBills, contactName: contacts.name, jobName: jobs.name })
       .from(vendorBills)
       .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .leftJoin(jobs, eq(vendorBills.jobId, jobs.id))
       .where(and(...conditions))
       .orderBy(desc(vendorBills.createdAt));
 
     let result = rows.map((r) => ({
       ...r.bill,
       contactName: r.contactName,
+      // US-PUR-32/34: the job's name on the page and the list.
+      jobName: r.jobName,
       balanceDue: r.bill.totalAmount - r.bill.amountPaid - r.bill.creditedAmount,
     }));
 
@@ -216,9 +219,10 @@ export class VendorBillsService {
 
   async getOne(orgId: string, id: string) {
     const [row] = await this.db
-      .select({ bill: vendorBills, contactName: contacts.name })
+      .select({ bill: vendorBills, contactName: contacts.name, jobName: jobs.name })
       .from(vendorBills)
       .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .leftJoin(jobs, eq(vendorBills.jobId, jobs.id))
       .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)));
     if (!row) {
       throw new NotFoundException("Vendor bill not found");
@@ -240,6 +244,7 @@ export class VendorBillsService {
     return {
       ...row.bill,
       contactName: row.contactName,
+      jobName: row.jobName,
       balanceDue: row.bill.totalAmount - row.bill.amountPaid - row.bill.creditedAmount,
       lines,
       creditsApplied,
@@ -250,6 +255,122 @@ export class VendorBillsService {
   async getHistory(orgId: string, id: string) {
     await this.getOne(orgId, id);
     return this.auditLog.listForEntity(orgId, "vendor_bill", id);
+  }
+
+  /**
+   * US-PUR-32 (D-225) — what happened to the bill, newest first: created,
+   * recorded (with the total posted) and voided (with the reason) from the
+   * audit log; each payment and vendor credit put against it from their
+   * allocations, with who made them.
+   */
+  async activity(orgId: string, id: string): Promise<VendorBillActivityEntry[]> {
+    const bill = await this.getOne(orgId, id);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const entries: VendorBillActivityEntry[] = [];
+    const audit = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "vendor_bill"), eq(auditLog.entityId, id)));
+    for (const row of audit) {
+      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: row.actorName ?? null });
+      else if (row.action === "recorded") entries.push({ type: "recorded", at: iso(row.at), actorName: row.actorName ?? null, amount: bill.totalAmount.toString() });
+      else if (row.action === "voided") {
+        const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; to: unknown }[];
+        const reason = changes.find((c) => c.field === "voidReason")?.to;
+        entries.push({ type: "voided", at: iso(row.at), actorName: row.actorName ?? null, detail: typeof reason === "string" ? reason : bill.voidReason });
+      }
+      // US-PUR-50: a deleted payment keeps its "Paid" line, and says when it was deleted.
+      else if (row.action === "payment_deleted") {
+        const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown }[];
+        const from = (field: string) => changes.find((c) => c.field === field)?.from;
+        const number = typeof from("payment") === "string" ? (from("payment") as string) : null;
+        const amount = typeof from("amount") === "string" ? (from("amount") as string) : null;
+        const paidAt = from("paidAt");
+        if (typeof paidAt === "string") entries.push({ type: "paid", at: paidAt, actorName: null, amount, detail: number });
+        entries.push({ type: "payment_deleted", at: iso(row.at), actorName: row.actorName ?? null, amount, detail: number });
+      }
+    }
+    const paid = await this.db
+      .select({ amount: vendorPaymentAllocations.amount, at: vendorPaymentAllocations.createdAt, paymentId: vendorPayments.id, number: vendorPayments.number, actorName: user.name })
+      .from(vendorPaymentAllocations)
+      .innerJoin(vendorPayments, eq(vendorPayments.id, vendorPaymentAllocations.vendorPaymentId))
+      .leftJoin(user, eq(vendorPayments.createdByUserId, user.id))
+      .where(and(eq(vendorPaymentAllocations.orgId, orgId), eq(vendorPaymentAllocations.billId, id)));
+    for (const p of paid) entries.push({ type: "paid", at: iso(p.at), actorName: p.actorName ?? null, amount: p.amount.toString(), detail: p.number, linkId: p.paymentId });
+    const credited = await this.db
+      .select({ amount: vendorCreditAllocations.amount, at: vendorCreditAllocations.createdAt, creditId: vendorCredits.id, number: vendorCredits.number, actorName: user.name })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorCredits, eq(vendorCredits.id, vendorCreditAllocations.vendorCreditId))
+      .leftJoin(user, eq(vendorCreditAllocations.createdByUserId, user.id))
+      .where(eq(vendorCreditAllocations.billId, id));
+    for (const c of credited) entries.push({ type: "credit_applied", at: iso(c.at), actorName: c.actorName ?? null, amount: c.amount.toString(), detail: c.number, linkId: c.creditId });
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /**
+   * US-PUR-35 — this vendor's bills (not void) with the same number,
+   * ignoring case and spaces: a warning before entering a bill twice; the
+   * caller can still save.
+   */
+  async possibleDuplicates(orgId: string, query: { contactId: string; billNumber: string; excludeId?: string }): Promise<PossibleDuplicateVendorBill[]> {
+    const wanted = query.billNumber.replace(/\s+/g, "").toLowerCase();
+    if (!wanted) return [];
+    const rows = await this.db
+      .select()
+      .from(vendorBills)
+      .where(
+        and(
+          eq(vendorBills.orgId, orgId),
+          eq(vendorBills.contactId, query.contactId),
+          ne(vendorBills.status, "void"),
+          sql`lower(regexp_replace(${vendorBills.billNumber}, '[[:space:]]', '', 'g')) = ${wanted}`,
+          query.excludeId ? ne(vendorBills.id, query.excludeId) : undefined,
+        ),
+      )
+      .orderBy(desc(vendorBills.date))
+      .limit(3);
+    return rows.map((b) => ({
+      id: b.id,
+      billNumber: b.billNumber,
+      date: new Date(b.date).toISOString().slice(0, 10),
+      totalAmount: b.totalAmount.toString(),
+      currency: b.currency,
+      status: b.status,
+    }));
+  }
+
+  /**
+   * US-PUR-36 — records each draft in its own transaction (P11), so one
+   * that can't be recorded doesn't stop the rest; the skipped ones say why.
+   */
+  async bulkRecord(orgId: string, ids: string[], actorUserId: string): Promise<BulkResult> {
+    const done: string[] = [];
+    const skipped: BulkResult["skipped"] = [];
+    const rows = await this.db.select({ id: vendorBills.id, billNumber: vendorBills.billNumber, status: vendorBills.status }).from(vendorBills).where(eq(vendorBills.orgId, orgId));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    for (const id of [...new Set(ids)]) {
+      const bill = byId.get(id);
+      if (!bill) {
+        skipped.push({ id, label: null, reason: "Not found." });
+        continue;
+      }
+      if (bill.status === "recorded") {
+        skipped.push({ id, label: bill.billNumber, reason: "It's already recorded." });
+        continue;
+      }
+      if (bill.status === "void") {
+        skipped.push({ id, label: bill.billNumber, reason: "It's void." });
+        continue;
+      }
+      try {
+        await this.record(orgId, id, actorUserId);
+        done.push(id);
+      } catch (err) {
+        skipped.push({ id, label: bill.billNumber, reason: err instanceof Error ? err.message : "It couldn't be recorded." });
+      }
+    }
+    return { done, skipped };
   }
 
   /** `recurring` (US-PUR-30): the recurring bill and run date that created it — unique together, so a run never makes a second bill for one date. */

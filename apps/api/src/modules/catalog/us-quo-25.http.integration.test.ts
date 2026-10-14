@@ -47,6 +47,7 @@ describe("US-QUO-25 · save quote lines as a reusable bundle (requires local Pos
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, staff.userId));
     const [team] = await db.insert(teams).values({ orgId, name: `Own catalogue ${randomUUID()}` }).returning();
     await db.insert(teamPrivileges).values([
+      { teamId: team!.id, capability: "catalog.open", granted: true },
       { teamId: team!.id, capability: "catalog.edit_own", granted: true },
       { teamId: team!.id, capability: "catalog.delete_own", granted: true },
     ]);

@@ -25,6 +25,7 @@ import {
   SelectValue,
   Spinner,
   StatCard,
+  useConfirm,
 } from "@spine/ui";
 import { STATEMENT_DATE_FORMATS, parseStatementAmount, parseStatementDate, type OpeningBill, type OpeningImportResult, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -41,6 +42,7 @@ const NONE = "__none__";
  */
 export function OpeningBillsTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
   const [rows, setRows] = useState<OpeningBill[] | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
   const [editing, setEditing] = useState<OpeningBill | "new" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -131,7 +133,9 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
                       <Button variant="ghost" size="sm" aria-label={`Edit bill ${r.billNumber}`} onClick={() => setEditing(r)}>
                         Edit
                       </Button>
-                      <Button variant="ghost" size="sm" aria-label={`Remove bill ${r.billNumber}`} onClick={() => remove(r)}>
+                      <Button variant="ghost" size="sm" aria-label={`Remove bill ${r.billNumber}`} onClick={async () => {
+                      if (await confirm({ title: `Remove opening bill ${r.billNumber}?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r);
+                    }}>
                         Remove
                       </Button>
                     </span>
@@ -148,6 +152,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
 
       <OpeningBillDialog value={editing} onClose={() => setEditing(null)} vendors={vendors} currency={currency} onSaved={() => { setEditing(null); changed(); }} />
       <OpeningBillImport open={importOpen} onOpenChange={setImportOpen} currency={currency} onImported={() => { changed(); loadVendors(); }} />
+      {confirmDialog}
     </div>
   );
 }

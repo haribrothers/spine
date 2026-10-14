@@ -1,7 +1,8 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { FileText, LayoutDashboard, Receipt } from "lucide-react";
-import { describe, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
+import { SpineLogo } from "./spine-logo";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarNavItem } from "./sidebar";
 
 describe("Sidebar a11y", () => {
@@ -35,7 +36,7 @@ describe("Sidebar a11y", () => {
   it("has no violations collapsed", async () => {
     const { container } = render(
       <Sidebar collapsed className="h-80">
-        <SidebarHeader collapsed onCollapsedChange={() => {}} logo={<span className="text-[14px] font-semibold text-on-surface">S</span>} />
+        <SidebarHeader collapsed onCollapsedChange={() => {}} logo={<SpineLogo size={28} />} />
         <SidebarContent>
           <SidebarGroup collapsed>
             <SidebarGroupLabel collapsed>Overview</SidebarGroupLabel>
@@ -47,5 +48,13 @@ describe("Sidebar a11y", () => {
       </Sidebar>,
     );
     await expectNoA11yViolations(container);
+  });
+
+  it("collapsed, the logo is the expand button, named for what it does", () => {
+    const onCollapsedChange = vi.fn();
+    render(<SidebarHeader collapsed onCollapsedChange={onCollapsedChange} logo={<SpineLogo size={28} />} />);
+    const expand = screen.getByRole("button", { name: "Expand sidebar" });
+    fireEvent.click(expand);
+    expect(onCollapsedChange).toHaveBeenCalledWith(false);
   });
 });

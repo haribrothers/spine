@@ -22,7 +22,15 @@ export interface Expense {
   number: string | null;
   categoryId: string;
   categoryName: string | null;
+  /** US-PUR-43 — "5200 Direct Labour", the account its category posts to (on the page). */
+  categoryAccount?: string | null;
   jobId: string | null;
+  /** US-PUR-42 — the job's name, who submitted it, who reviewed it, and the invoice it was billed on. */
+  jobName?: string | null;
+  submittedByName?: string | null;
+  reviewerName?: string | null;
+  billedInvoiceId?: string | null;
+  billedInvoiceNumber?: string | null;
   date: string;
   currency: string;
   amount: string;
@@ -60,6 +68,11 @@ export interface ExpenseCategory {
   /** US-PUR-23 — the posting account, e.g. "5200" / "Direct Labour". */
   accountCode?: string | null;
   accountName?: string | null;
+  /** US-PUR-46 (D-228) — the "What it's for" line. */
+  description?: string | null;
+  /** US-PUR-48 — filled in on a new expense's form. */
+  defaultTaxRateId?: string | null;
+  defaultTaxRateName?: string | null;
   createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;

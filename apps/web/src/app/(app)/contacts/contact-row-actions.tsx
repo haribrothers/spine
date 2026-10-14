@@ -14,11 +14,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { Contact } from "./types";
 
 /**
@@ -93,16 +95,26 @@ export function ContactRowActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          {canEdit && <DropdownMenuItem onSelect={() => router.push(`/contacts/${contact.id}`)}>Edit</DropdownMenuItem>}
+          {canEdit && (
+            <DropdownMenuItem onSelect={() => router.push(`/contacts/${contact.id}`)}>
+              <MENU_ICONS.edit aria-hidden />
+              Edit
+            </DropdownMenuItem>
+          )}
           {canDelete && (
             <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
+              {contact.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
               {contact.archivedAt ? "Restore" : "Archive"}
             </DropdownMenuItem>
           )}
           {canDelete && (
-            <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
-              Delete
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                <MENU_ICONS.delete aria-hidden />
+                Delete
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

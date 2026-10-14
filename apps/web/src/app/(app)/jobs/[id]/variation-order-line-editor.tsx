@@ -125,7 +125,7 @@ export function VariationOrderLineEditor({
 
   useEffect(() => {
     apiClient
-      .get<VariationOrderCatalogItemOption[]>("/catalog-items")
+      .get<VariationOrderCatalogItemOption[]>("/catalog-items?picker=1")
       .then(setCatalogItems)
       .catch(() => {});
     apiClient

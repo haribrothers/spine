@@ -17,11 +17,16 @@ import { ToggleGroup, ToggleGroupItem } from "@spine/ui";
 | `type` | single \| multiple | — |
 | `value` | string \| string[] | — |
 | `onValueChange` | (value: string \| string[]) => void | — |
+| `ToggleGroupItem` `size` | default \| sm | default |
+| `ToggleGroupItem` `tooltip` | string \| false | the `aria-label` of an icon-only option |
 
 ## Rules and behaviour
 
 - Supports single or multiple selection.
 - Full keyboard navigation, roving tabindex.
+
+- One segmented look on every screen (US-OPS-36, D-210): a grey track (`neutral-100`, `border`) and the chosen option as a raised chip (`control-selected`, a `primary` outline, semibold `primary` label). Don't restyle the chosen state per screen.
+- `ToggleGroupItem` takes `size` (`default`, `sm`) and `tooltip`; an icon-only option shows its `aria-label` as a tooltip on hover and focus (the `@spine/ui` `Tooltip`). `tooltip={false}` turns it off.
 
 ## Exports
 

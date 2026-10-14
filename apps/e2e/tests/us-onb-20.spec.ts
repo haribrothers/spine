@@ -8,7 +8,8 @@ test.describe("US-ONB-20", () => {
     await page.goto("/signup");
     await page.getByLabel("Name").fill("Owner");
     await page.getByLabel("Email").fill(`us-onb-20-${randomUUID()}@example.com`);
-    await page.getByLabel("Password").fill("TestPassword123!");
+    await page.getByLabel(/^Password/).fill("TestPassword123!");
+    await page.getByLabel(/^Confirm password/).fill("TestPassword123!");
     await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForURL("**/onboarding");
     await page.getByRole("button", { name: "Set up my business" }).click();
@@ -54,7 +55,7 @@ test.describe("US-ONB-20", () => {
       ["Travel", "6300"],
       ["Office supplies", "6900"],
     ]) {
-      await expect(page.getByText(name!, { exact: true }).locator("..")).toContainText(`${account} ·`);
+      await expect(page.getByRole("row").filter({ has: page.getByText(name!, { exact: true }) })).toContainText(`${account} `);
     }
   });
 });

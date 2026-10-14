@@ -30,7 +30,7 @@ export function ExpensesHeader({ active }: { active: "expenses" | "categories" }
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Purchases" }, { label: "Expenses" }]}
+        breadcrumb={active === "categories" ? [{ label: "Purchases" }, { label: "Expenses", href: "/expenses" }, { label: "Categories" }] : [{ label: "Purchases" }, { label: "Expenses" }]}
         title="Expenses"
         description={expensesDescription(canManage)}
       />

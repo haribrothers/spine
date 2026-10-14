@@ -70,6 +70,7 @@ describe("US-SET-15 · export all my data (requires local Postgres)", () => {
     queued = [];
     vi.spyOn(testApp.app.get(QueueService), "send").mockImplementation(async (name: string, data: object) => {
       if (name === "data-export") queued.push(data as { exportId: string });
+      return null;
     });
     Object.assign(owner, await newUser("Alex Morgan"));
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;

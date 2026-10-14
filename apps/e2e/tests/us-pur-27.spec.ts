@@ -19,16 +19,22 @@ test.describe("US-PUR-27", () => {
 
     await page.goto(`/vendor-credits/${credit.id}`);
     const voidIt = async (reason: string) => {
-      await page.getByRole("button", { name: "Void", exact: true }).click();
-      const dialog = page.getByRole("alertdialog");
-      await expect(dialog.getByRole("button", { name: "Void credit" })).toBeDisabled();
-      await dialog.getByLabel("Reason").fill(reason);
+      await page.getByRole("button", { name: "More" }).click();
+      await page.getByRole("menuitem", { name: "Void credit" }).click();
+      const dialog = page.getByRole("dialog", { name: "Void VCR-0001?" });
       await dialog.getByRole("button", { name: "Void credit" }).click();
+      await expect(dialog).toContainText("Give a reason for voiding this credit.");
+      await dialog.getByLabel(/Reason/).fill(reason);
+      await dialog.getByRole("button", { name: "Void credit" }).click();
+      return dialog;
     };
-    await voidIt("Entered twice");
-    await expect(page.getByText("Remove its 1 applications and refunds first.")).toBeVisible();
+    const first = await voidIt("Entered twice");
+    await expect(first).toContainText("Remove its 1 applications and refunds first.");
+    await first.getByRole("button", { name: "Go back" }).click();
 
-    await page.getByTestId("vendor-refunds").getByRole("button", { name: /Delete refund/ }).click();
+    await page.getByTestId("vendor-refunds").getByRole("button", { name: /^Actions for the/ }).click();
+    await page.getByRole("menuitem", { name: "Delete refund" }).click();
+    await page.getByRole("alertdialog", { name: "Delete this refund?" }).getByRole("button", { name: "Delete refund" }).click();
     await expect(page.getByTestId("vendor-refunds")).toContainText("Deleted");
     await voidIt("Entered twice");
     await expect(page.getByText("Void — Entered twice")).toBeVisible();

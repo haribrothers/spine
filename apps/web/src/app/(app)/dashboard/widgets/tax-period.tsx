@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import type { TaxPeriod } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
+import { FigureTrio } from "./figure-trio";
 
 /**
  * US-DASH-25 (D-160) — `DashboardOwnerBooks` › Tax this period: tax
@@ -17,13 +20,10 @@ import { formatMoney } from "../../../../lib/money";
 export function TaxPeriodCard() {
   const [data, setData] = useState<TaxPeriod | null>(null);
   const [failed, setFailed] = useState(false);
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code?: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
     apiClient
       .get<TaxPeriod>("/dashboard/tax-period")
       .then(setData)
@@ -45,26 +45,18 @@ export function TaxPeriodCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!data ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+        {!data || !orgCurrency ? (
+          <WidgetSkeleton kind="figures" />
         ) : (
           <Link href={href} className="flex flex-col gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Tax for ${data.label}: net payable ${money(data.net)}. Open the Tax Summary.`}>
-            <div className="grid grid-cols-3 divide-x divide-border rounded-md border border-border hover:bg-surface-sunken">
-              <div className="p-3">
-                <p className="text-[12px] text-on-surface-muted">Collected</p>
-                <p className="text-[18px] font-semibold tabular-nums text-on-surface">{money(data.collected)}</p>
-              </div>
-              <div className="p-3">
-                <p className="text-[12px] text-on-surface-muted">Input tax</p>
-                <p className="text-[18px] font-semibold tabular-nums text-on-surface">{money(data.input)}</p>
-              </div>
-              <div className="p-3">
-                <p className="text-[12px] text-on-surface-muted">Net payable</p>
-                <p className="text-[18px] font-semibold tabular-nums text-primary">{money(data.net)}</p>
-              </div>
-            </div>
+            <FigureTrio
+              className="hover:bg-surface-sunken"
+              figures={[
+                { label: "Collected", value: money(data.collected) },
+                { label: "Input tax", value: money(data.input) },
+                { label: "Net payable", value: money(data.net), className: "text-primary" },
+              ]}
+            />
             <p className="text-[13px] text-on-surface-muted" data-testid="tax-period-note">
               {data.label} · {data.paid ? `paid ${money(data.paid)}` : "nothing paid yet"}
             </p>

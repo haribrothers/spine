@@ -5,7 +5,7 @@ Spine is a self-hosted business management app for small service and project bus
 ## Before you start any task
 1. Read `docs/README.md` once per session, then only the docs the task needs. Check `CHANGELOG.md` for what landed recently.
 2. For a story: read the story in `docs/features/<module>.md`, its screens in `docs/design/screens.md` (look at the images in `docs/design/screens/`), and the contracts it names in `docs/prd/04-data-model.md` and `docs/prd/05-api.md` (including "Contract additions from the feature files").
-3. For a phase: read `docs/prd/10-phases.md` for that phase and work through its stories in order. Phases 0–4 are built; check `docs/progress.md` for what's open.
+3. For a phase: read `docs/prd/10-phases.md` for that phase and work through its stories in order. Phases 0–9 are built; check `docs/progress.md` for what's open.
 4. Check `docs/prd/12-decisions.md` before choosing a library, a pattern or behaviour that isn't spelled out.
 5. Touching auth, roles or any endpoint's authorization: read `docs/prd/07-security.md` first, including its appendix. Touching `packages/ui-native` or a native app: read `docs/design/native-notes.md` first.
 
@@ -43,9 +43,10 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 
 ## UI rules
 - Values come from `docs/design/tokens.json` via CSS variables in `packages/config` / `packages/ui` (native: `packages/ui-native/src/tokens`). No hex values or magic numbers in components.
-- Use the design-system components (`docs/design/components/`). A component change ships with its doc page (`apps/design-system`, or `apps/showcase-native` / `apps/design-system-native`) and its a11y test in the same change.
-- Lucide icons only, per-icon imports on native; native themed classes always carry their `dark:` pair. See `docs/prd/09-design-system.md`.
+- Use the design-system components (`docs/design/components/`). A component change ships with its doc page (`apps/design-system`, or `apps/showcase-native` for native) and its a11y test in the same change.
+- Lucide icons only, per-icon imports on native; native themed classes always carry their `dark:` pair. Every menu action gets its icon from `lib/menu-icons.ts` (D-222); never add spacing around a menu icon. See `docs/prd/09-design-system.md`.
 - Copy: sentence case, verbs on buttons, say what happens to people's data, errors say what to do next.
+- A major action (issuing, recording, voiding, deleting, removing, emailing a customer, bulk changes) asks first with `useConfirm()` from `@spine/ui`; never one click from a menu (D-218). When it succeeds, `useToast()` (the app's one `ToastHost`) says what happened — call it before `router.push` and it shows on the next page (D-223).
 - Every screen works in light and dark mode: colours only from tokens (web CSS variables, native `dark:` pairs or `useNativeColors()`), text on filled controls uses `on-primary`/`on-danger`. PDFs and emails stay light.
 - Accessibility is required: WCAG 2.1 AA, keyboard, focus rings, 4.5:1 text contrast, reduce motion, no colour-only state, 44px touch targets on phone.
 
@@ -53,4 +54,4 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 `pnpm dev:infra:up` · `pnpm db:migrate:dev` · `pnpm db:seed:dev` · `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm --filter @spine/api test:integration` · `pnpm test:e2e` · `pnpm verify` · `pnpm dev:mobile` · `pnpm create:native-app <name>`
 
 ## Where things are
-`apps/api` NestJS · `apps/web` Next.js · `apps/mobile` field app · `apps/e2e` Playwright · `apps/design-system`, `apps/design-system-native`, `apps/showcase-native` component docs · `packages/shared` money/tax/schemas · `packages/ui`, `packages/ui-native` · `packages/config` · `docs/` spec.
+`apps/api` NestJS · `apps/web` Next.js · `apps/mobile` field app · `apps/e2e` Playwright · `apps/design-system`, `apps/showcase-native` component docs · `packages/shared` money/tax/schemas · `packages/ui`, `packages/ui-native` · `packages/config` · `docs/` spec.

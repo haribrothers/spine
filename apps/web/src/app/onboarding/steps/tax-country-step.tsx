@@ -20,6 +20,8 @@ export interface TaxCountryStepProps {
   initialValue: TaxCountry;
   onSave: (value: TaxCountry) => Promise<void>;
   onSkip?: () => void;
+  /** US-ONB-22 — the country picked so far, before it's saved, for the live preview. */
+  onChange?: (value: TaxCountry) => void;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface TaxCountryStepProps {
  * country with a preset gets its rates; "Another country" goes on to the
  * single-rate step as before (US-ONB-06).
  */
-export function TaxCountryStep({ initialValue, onSave, onSkip }: TaxCountryStepProps) {
+export function TaxCountryStep({ initialValue, onSave, onSkip, onChange }: TaxCountryStepProps) {
   const [value, setValue] = useState<TaxCountry>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -42,7 +44,10 @@ export function TaxCountryStep({ initialValue, onSave, onSkip }: TaxCountryStepP
 
   return (
     <div className="flex flex-col gap-4">
-      <RadioGroup value={value} onValueChange={(v) => setValue(v as TaxCountry)} className="gap-3" aria-label="Tax country">
+      <RadioGroup value={value} onValueChange={(v) => {
+          setValue(v as TaxCountry);
+          onChange?.(v as TaxCountry);
+        }} className="gap-3" aria-label="Tax country">
         {CHOICES.map((choice) => (
           <label
             key={choice.value}

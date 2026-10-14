@@ -43,9 +43,13 @@ test.describe("US-SET-19", () => {
     await pane.getByLabel("Signature image").setInputFiles({ name: "signature.png", mimeType: "image/png", buffer: tinyPng() });
     await expect(pane.getByRole("button", { name: "Replace signature" })).toBeVisible();
     await expect(pane.getByRole("checkbox", { name: "Signature" })).toBeChecked();
+    // D-237: the sample page shows the uploaded signature above "Authorised signatory".
+    const signature = pane.getByTestId("document-sample").getByRole("img", { name: "Your signature" });
+    await expect(signature).toBeVisible();
+    await expect.poll(() => signature.evaluate((img) => (img as unknown as { naturalWidth: number }).naturalWidth)).toBeGreaterThan(0);
     await pane.getByRole("checkbox", { name: "Amount in words" }).check();
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
 
     type Saved = { value: { signatureFileId: string | null; invoice: { signature: boolean; amountInWords: boolean } } };
     const saved = (await (await page.request.get(`${API_URL}/org/settings/document_layout`)).json()) as Saved;
@@ -53,6 +57,7 @@ test.describe("US-SET-19", () => {
     expect(saved.value.invoice).toMatchObject({ signature: true, amountInWords: true });
 
     await pane.getByRole("button", { name: "Remove signature" }).click();
+    await expect(pane.getByTestId("document-sample-signature")).toHaveCount(0);
     await pane.getByRole("button", { name: "Save" }).click();
     await expect.poll(async () => ((await (await page.request.get(`${API_URL}/org/settings/document_layout`)).json()) as Saved).value.signatureFileId).toBeNull();
   });

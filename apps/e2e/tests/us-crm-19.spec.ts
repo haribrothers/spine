@@ -2,7 +2,8 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 async function openStages(page: Page) {
-  await page.getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
+  // The account menu in the sidebar (a lead's Owner picker can carry the same name, D-216).
+  await page.getByRole("complementary").getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
   await page.getByRole("menuitem", { name: "Settings" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId("settings-sections").getByRole("button", { name: "Pipeline stages" }).click();
@@ -23,11 +24,12 @@ test.describe("US-CRM-19", () => {
     // Keyboard-friendly reorder: the new stage moves up above "Quote sent".
     await pane.getByRole("button", { name: "Move Site visit booked up" }).click();
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
 
     await page.goto("/leads");
-    const titles = page.locator("h3");
-    await expect(titles).toHaveText(["New", "Qualified", "Site visit booked", "Quote sent", "Won", "Lost"]);
+    // US-CRM-24: Won and Lost are slim columns at the end (no heading), so read each column's stage name.
+    const stageNames = () => page.locator("[data-stage]").evaluateAll((els) => els.map((el) => el.getAttribute("data-stage")));
+    await expect.poll(stageNames).toEqual(["New", "Qualified", "Site visit booked", "Quote sent", "Won", "Lost"]);
     // The renamed column keeps the three demo leads that were in "Proposal"; the new one starts empty.
     const count = (title: string) => page.locator("h3", { hasText: title }).locator("xpath=following-sibling::span[1]");
     await expect(count("Quote sent")).toHaveText("3");

@@ -26,6 +26,7 @@ import {
   SelectValue,
   Spinner,
   StatCard,
+  useConfirm,
 } from "@spine/ui";
 import { STATEMENT_DATE_FORMATS, parseStatementAmount, parseStatementDate, type OpeningImportResult, type OpeningInvoice, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -45,6 +46,7 @@ type JobOption = { id: string; name: string; number: string | null };
  */
 export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
   const [rows, setRows] = useState<OpeningInvoice[] | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [customers, setCustomers] = useState<Option[]>([]);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [editing, setEditing] = useState<OpeningInvoice | "new" | null>(null);
@@ -143,7 +145,9 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
                       <Button variant="ghost" size="sm" aria-label={`Edit ${r.number}`} onClick={() => setEditing(r)}>
                         Edit
                       </Button>
-                      <Button variant="ghost" size="sm" aria-label={`Remove ${r.number}`} onClick={() => remove(r)}>
+                      <Button variant="ghost" size="sm" aria-label={`Remove ${r.number}`} onClick={async () => {
+                      if (await confirm({ title: `Remove opening invoice ${r.number}?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r);
+                    }}>
                         Remove
                       </Button>
                     </span>
@@ -182,6 +186,7 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
             .catch(() => {});
         }}
       />
+      {confirmDialog}
     </div>
   );
 }

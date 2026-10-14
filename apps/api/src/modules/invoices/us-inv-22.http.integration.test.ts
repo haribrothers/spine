@@ -57,7 +57,7 @@ describe("US-INV-22 · pause, edit or stop a recurring invoice (requires local P
   }, 120_000);
 
   beforeEach(() => {
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
   });
 
   afterAll(async () => {

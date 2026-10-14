@@ -34,7 +34,7 @@ describe("US-MOB-09 · send each item exactly once and fix failures (requires lo
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     ctx = await ownerWithFieldUser(testApp.baseUrl, db, emails);
     ({ jobId } = await customerWithJob(db, ctx.orgId));

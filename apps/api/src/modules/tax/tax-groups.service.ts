@@ -53,7 +53,8 @@ export class TaxGroupsService {
   private async withRates(group: typeof taxGroups.$inferSelect) {
     const links = await this.db.select().from(taxGroupRates).where(eq(taxGroupRates.taxGroupId, group.id));
     const ids = links.map((l) => l.taxRateId);
-    const rates = ids.length ? await this.db.select().from(taxRates).where(inArray(taxRates.id, ids)) : [];
+    // In a fixed order — plain rates before compound ones, then by name — so a group always reads the same ("CGST (9%) + SGST (9%)").
+    const rates = ids.length ? await this.db.select().from(taxRates).where(inArray(taxRates.id, ids)).orderBy(asc(taxRates.isCompound), asc(taxRates.name)) : [];
     return { ...group, taxRates: rates };
   }
 

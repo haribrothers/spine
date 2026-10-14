@@ -2,7 +2,7 @@
 
 What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 11 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
-**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1)
+**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1), `ToggleStates` (P2), `ToggleStatesDark` (P2), `SearchPaletteRecent` (P2), `SearchPaletteRecentDark` (P2), `SearchPaletteGoTo` (P2), `SearchPaletteAmount` (P2), `SearchPaletteScoped` (P2), `SearchPalettePhone` (P2), `SidebarSearchField` (P2)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
 
 ## Features
@@ -19,6 +19,9 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 | F-OPS-08 | Global search | P1 | 7 | `SearchPalette` |
 | F-OPS-09 | File storage | P1 | 6 | `UpgradeNotice` |
 | F-OPS-10 | Attachments on records | P1 | 8 | `VendorBillAttachments` |
+| F-OPS-11 | Menus that read at a glance: an icon for every action, one spacing | P2 | Refinements | `MenuIcons`, `MenuIconsDark` |
+| F-OPS-12 | Every major action asks first and says when it's done | P2 | Refinements | `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`, `ToastStackPhone` |
+| F-OPS-13 | Search that finds more and takes me further | P2 | Refinements | `SearchPalette`, `SearchPaletteDark`, `SearchPaletteRecent`, `SearchPaletteRecentDark`, `SearchPaletteGoTo`, `SearchPaletteAmount`, `SearchPaletteScoped`, `SearchPalettePhone`, `SidebarSearchField` |
 
 ## User stories
 
@@ -344,7 +347,7 @@ Decision: D-095
 - **Given** a number like "INV-0010" or "QUO-4", **when** I type it, **then** the matching document is the first result.
 - **Given** a record I can't read (e.g. invoices for a Field user), **when** results are built, **then** it never appears.
 - **Given** no matches, **when** results return, **then** I see "No results for “<query>”".
-- **Given** the footer, **when** it renders, **then** it reads "↑↓ to move", "Enter to open" and "Searches contacts, quotes, invoices, jobs, bills and expenses".
+- **Given** the footer, **when** it renders, **then** it reads "↑↓ to move", "Enter to open" and "Searches contacts, quotes, invoices, jobs, bills and expenses". *(US-OPS-47 replaces this footer, and US-OPS-48 moves the search button into the sidebar.)*
 
 **Implementation notes**
 - API: `GET /search?q=&limit=5` (contract addition, any member, results filtered by the same read rules as each module) → p95 under 500 ms at target scale (NFR-PERF-06).
@@ -407,7 +410,7 @@ Decision: D-100
 **Acceptance criteria**
 - **Given** dark mode, **when** any Phase 7 screen renders, **then** every colour comes from a token with a dark value (no hex in components), matching the dark designs on the canvas.
 - **Given** the dashboard in dark mode, **when** charts, sparklines, aging bars and status chips render, **then** they use the dark status tokens (`paid` `#4ADE94`, `due-soon` `#F2B23D`, `overdue` `#F17B72`, `primary` `#6B8AFF`) and money-out bars use `border-strong`.
-- **Given** dark mode, **when** the sidebar renders, **then** the logo switches to the light wordmark (`spine-logo-horizontal-light.png`).
+- **Given** dark mode, **when** the sidebar renders, **then** the logo's wordmark turns light (`SpineLogo`, `--color-brand-wordmark`; US-SET-26).
 - **Given** dialogs, menus, the search palette and drawers in dark mode, **when** they open, **then** they use `surface` on a darkened overlay and stay distinguishable from the page (`background`).
 - **Given** PDFs and customer emails, **when** they're produced, **then** they're always light, whatever the viewer's theme.
 - **Given** the E2E suite, **when** it runs, **then** each Phase 7 screen has a light and a dark screenshot test, and axe passes in both.
@@ -558,3 +561,234 @@ Decision: D-156
 
 **Implementation notes**
 - API: `DELETE /attachments/:id { reason? }` (edit capability; Owner-only on locked records; audited).
+
+### US-OPS-36 · See which toggle is on, and what each one does
+**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToggleStates`, `ToggleStatesDark`, `ContactsCardsPolish`
+**As** any member, **I want** the chosen option in a toggle group to stand out and an icon-only toggle to tell me what it does, **so that** I can tell at a glance which view, range or basis I'm on.
+
+Decision: D-210
+
+**Acceptance criteria**
+- **Given** a toggle group (the contacts view switcher, Accrual / Cash, 3M / 6M / 12M, the theme switch on Profile and in the user menu, the expense entry mode), **when** it renders, **then** its options sit in one grey track and the chosen one is a raised white chip with an outline, a semibold label and a primary-coloured icon; the others are muted with no fill. It looks the same on every screen, in light and dark.
+- **Given** the chosen option, **when** it's checked, **then** its chip and outline differ from the track by at least 3:1 and its text by 4.5:1, in light and dark, and the choice is also announced (`aria-checked`), so colour is never the only cue.
+- **Given** an option that isn't chosen, **when** I hover it, **then** its text darkens and the track lightens under it; keyboard focus shows the focus ring; a disabled option is dimmed.
+- **Given** a toggle with only an icon (the view switcher), **when** I hover it or move focus to it, **then** after a short pause a tooltip shows its name ("Card view"); Escape hides it. The tooltip doesn't replace the accessible name.
+- **Given** a single toggle (`Toggle`, for example a formatting button), **when** it's on, **then** it has a light primary tint and a primary outline, not just a coloured icon.
+
+**Implementation notes**
+- UI: `packages/ui` `ToggleGroup` draws the track and `ToggleGroupItem` the chip (one style, no per-screen overrides; the expense form, Profile, the user menu and the dashboard drop theirs). `Toggle` and `ToggleGroupItem` take an optional `tooltip`; an icon-only item uses its `aria-label`. The chosen style keys off `aria-checked` / `aria-pressed` (a tooltip trigger sets its own `data-state`). A new token, `control-selected` (white in light, `#2C2B26` in dark), fills the chip. `TooltipProvider` is mounted once in the web app's root layout and the design-system app, and each `ToggleGroup` carries its own so it works anywhere. Doc pages (`toggle`, `toggle-group`, `tooltip`) and a11y tests change in the same commit.
+- No API change.
+
+### US-OPS-37 · See what each menu action does at a glance
+**Feature:** F-OPS-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MenuIcons`, `MenuIconsDark`
+**As** any member, **I want** every action in a row's or a page's menu to have the same kind of icon, spaced the same way, **so that** I can find "Record payment" or "Delete" without reading every line, and every menu looks like one product.
+
+Decision: D-222
+
+**Acceptance criteria**
+- **Given** any menu built on `DropdownMenu` (or `ContextMenu`), **when** an item has an icon, **then** the icon is 14 px, sits 10 px before the label, is vertically centred with it and is muted grey; on a destructive item (Delete, Void, Remove, Cancel) the icon and the label are both red. Items are at least 32 px tall with the same padding everywhere, so no screen adds its own spacing.
+- **Given** the action menus in the refined modules — Contacts (row), Catalogue (row, bundles), Pipeline (lead card), Meetings (quick view), Quotes (row, page's More, line), Jobs (page's More), Invoices (row, page's More, Payments), Credit notes (row, page's More), Payments (row, page's More, Applied to) and the Email log (row) — **when** a menu opens, **then** every action has the icon D-222 gives it, the same action has the same icon on every screen ("View" is always an eye, "Delete" always a bin), and a destructive action sits last after a divider.
+- **Given** a menu of choices rather than actions (a job's status, a lead's stage, the catalogue's tax picker, checkbox or radio items), **when** it opens, **then** it keeps its dot, tick or radio marker and isn't given action icons.
+- **Given** keyboard or screen-reader use, **when** an item is focused, **then** the focus highlight covers the whole row and the icon is hidden from assistive technology (`aria-hidden`), so the item is read by its label alone.
+- **Given** light and dark mode, **when** a menu opens, **then** the icons, text, red items and dividers meet the contrast rules (4.5:1 text, 3:1 icons) in both.
+
+**Implementation notes**
+- UI: `packages/ui` `DropdownMenuItem`, `DropdownMenuSubTrigger` and the `ContextMenu` items style a direct `svg` child (`gap-2.5`, `size-3.5`, `shrink-0`, `text-on-surface-muted`; `text-overdue` when destructive) and get `min-h-8`; `DropdownMenuContent` is at least 12rem wide. Screens drop their own spacing (typed spaces, `gap-2`). The doc page (`dropdown-menu`, `context-menu`) shows items with icons, a destructive item and a divider; the a11y tests cover them.
+- Web: `lib/menu-icons.ts` maps each action to its Lucide icon (D-222) and the menus listed above use it. Menus outside the refined modules (banking, expenses, vendor bills and payments, team, settings, report export) get the new spacing now and their icons when they're refined.
+- No API change.
+
+### US-OPS-38 · Know an action worked, wherever it takes me
+**Feature:** F-OPS-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`, `ToastStackPhone`
+**As** any member, **I want** a short message every time a major action finishes — even when it takes me to another page, **so that** I never wonder whether a delete, a conversion or a payment went through.
+
+Decision: D-218, D-223
+
+**Acceptance criteria**
+- **Given** any major action in the refined modules (D-218: issuing, recording, voiding, applying, deleting or removing, emailing, converting or revising, bulk changes), **when** it finishes, **then** a toast says what happened, titled with the thing and the past tense ("QUO-0034 revised", "Lead deleted", "RCP-0029 recorded") and a line that says what changed or what to do next.
+- **Given** an action that opens another page (converting a quote, revising it, deleting from a record's own page, issuing a credit note or recording a payment from a list, invoicing a milestone, duplicating), **when** the new page opens, **then** the toast shows there.
+- **Given** the actions that finish without a toast today — deleting a lead or marking it lost; deleting a meeting or an occurrence; deleting a quote or an invoice from its page; revising, converting to an invoice or a job and duplicating a quote from a row; issuing a credit note from the list; recording a payment from the list; completing or invoicing a milestone, applying a variation and removing someone from a job's crew; deleting a refund; removing an attachment — **when** each finishes, **then** it has its toast.
+- **Given** several actions in a row, **when** their toasts show, **then** they stack in the bottom-right corner with the newest on top, up to the host's maximum (3 by default, set on the component); a new toast over the maximum closes the oldest at once.
+- **Given** a toast, **when** it's shown, **then** it closes after its own interval (5 seconds by default, set on the component), so older toasts leave first; hovering the stack or focusing a toast pauses every timer; each can be closed with its × or Escape.
+- **Given** phone width, **when** toasts show, **then** they span the bottom of the screen and at most two show, whatever the maximum.
+- **Given** a screen reader, **when** a toast shows, **then** it's announced politely without moving focus; with Reduce Motion, it appears without sliding.
+- **Given** an action that fails, **when** it does, **then** the error stays where the action was — in the dialog, or above the list or page with a × to close it, cleared by the next action — saying what to do next; a toast never carries an error.
+
+**Implementation notes**
+- UI: one `ToastHost` in the app layout (`components/toast-host.tsx`, `<ToastHost max={3} duration={5000}>…</ToastHost>` around the app's pages) with `useToast()` → `toast(title, description, { duration?, testId? })`; the layout stays mounted across pages, so a toast shown before `router.push` stays. The host keeps a queue: newest last in the page (the viewport shows it on top), trimmed to `max` (2 below the `sm` breakpoint), each toast with its own `duration`. Every `entity-toast.tsx` copy (and its `{toast}` element), the contacts `sessionStorage` hand-off, the payments `?deleted=` hand-off and the new job's `?created=` hand-off give way to it; the permission toast (US-OPS-12) shows through it too. The errors that used to be toasts in the refined modules — deleting a payment from its page, Retry now and Cancel on the email log, a failed row or bulk action on the invoices list, a failed revise, duplicate or customer link on the quotes list or a quote's page, a failed bulk change on the catalogue, pausing or resuming a recurring invoice or bill — show above the list or page instead (`components/action-error.tsx`: a critical `Alert` with a close; a failed bulk change keeps the selection). Modules not yet refined (banking, expenses) keep theirs until they are. `@spine/ui` `ToastViewport` lays the stack out newest on top; its doc page shows a stack and the a11y test covers it.
+- No API change.
+
+
+### US-OPS-39 · Pick up where I left off from search
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPaletteRecent`, `SearchPaletteRecentDark`
+**As** any member, **I want** search to show what I opened last before I type anything, **so that** I can get back to the invoice or job I was just on in one keystroke.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** I open search and the field is empty, **when** it shows, **then** "RECENT" lists up to 5 records I opened most recently (from search, a list, a link or the dashboard), newest first, each looking like a search result (icon, title, second line, status); below it, "RECENT SEARCHES" lists my last 3 searches that I opened a result from.
+- **Given** a recent record, **when** I choose it, **then** it opens and search closes; **given** a recent search, **when** I choose it, **then** the field fills with it and its results show.
+- **Given** a recent record I can no longer open (deleted, its section closed by my Team, my role changed, its module switched off), **when** the list is built, **then** it's left out; a record I open twice shows once, at the top.
+- **Given** "Clear recent", the last row under the recent lists (an option like the others, so the keyboard reaches it), **when** I choose it, **then** both lists empty for me on every device, without asking first (it's my own history, not business data, D-238).
+- **Given** another person, **when** they open search, **then** they never see my recent records or searches; mine follow me to any browser I sign in on.
+- **Given** nothing recent yet, **when** search opens, **then** it shows the hint and what I can search (US-OPS-47).
+
+**Implementation notes**
+- Data: `user.recent_items jsonb` (`[{ type, id, openedAt }]`, newest first, up to 10 kept) and `user.recent_searches jsonb` (`[string]`, up to 5 kept, trimmed, case-insensitive duplicates folded).
+- API: `GET /search/recent` → `{ items: [SearchResult & { type }], searches: string[] }` — titles, second lines and statuses are read now (never stored), through the same read rules as `GET /search`, at most 5 items and 3 searches; `POST /search/recent { type, id }` or `{ query }` records one (204; an unknown type → 400); `DELETE /search/recent` clears both. Self only.
+- Web: `useRecordVisit()` in the app layout maps the address to a record (`/invoices/:id`, `/leads?lead=`, `/meetings?id=`, `/catalog?item=`, …) and records it once per visit; the palette records the query when a result is opened from it.
+
+### US-OPS-40 · See every match in its list
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPalette`, `SearchPaletteScoped`
+**As** any member, **I want** to go from search to the full list of matches, **so that** I'm not stuck with the first five when a customer has twenty invoices.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** a group with results, **when** it renders, **then** its last row reads "See all invoices matching “har”" (the group's name, lower case) with an arrow icon, and choosing it opens that section's list with its search box filled in (`/invoices?q=har`) and closes search.
+- **Given** a group whose page has no search box (Meetings), **when** it renders, **then** it has no "See all" row.
+- **Given** the keyboard, **when** I move through the results, **then** the "See all" rows are options like the others, reached with the arrows and opened with Enter.
+
+**Implementation notes**
+- Web only: each group's `listHref` (shared, beside `SEARCH_GROUP_LABELS`); every list page already reads `q` from the address.
+
+### US-OPS-41 · Go to a page or a setting from search
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPaletteGoTo`
+**As** any member, **I want** to type the name of a page or a setting and go there, **so that** I don't have to remember where "Numbering" or "Trial balance" lives.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** I type a page's name or a word for it ("bills", "receivables", "trial balance", "audit log"), **when** results show, **then** "PAGES" lists up to 3 pages I can open, each with its sidebar icon and its sidebar group as the second line ("Purchases"), and Enter opens it.
+- **Given** I type a setting's name or something inside it ("numbering", "logo", "reminders"), **when** results show, **then** "SETTINGS" lists up to 3 panes, matched the same way as Settings' own search (US-SET-34), with the Settings group as the second line, and Enter opens Settings on that pane.
+- **Given** a page or a pane I can't open (a section my Team has closed, Owner-only settings for Staff and Field, a switched-off module), **when** results are built, **then** it never appears.
+- **Given** a query that matches pages, settings or actions and records, **when** results show, **then** a document number match stays first (US-OPS-22), then actions, pages and settings, then the record groups.
+
+**Implementation notes**
+- Web only: pages come from the sidebar's own navigation list (the same visibility rules), settings from `SETTINGS_SECTIONS` and `searchSettings()`. Matching is by word start on the name and its keywords, so "har" doesn't pull in pages.
+
+### US-OPS-42 · Start something new from search
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPaletteGoTo`
+**As** any member, **I want** to type "new invoice" or "record payment" and get the form, **so that** I can start a task from wherever I am.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** I type the start of an action or the thing it makes ("new inv", "record pay", "invoice", "add contact"), **when** results show, **then** "ACTIONS" lists up to 3 of: Add contact, Add lead, New meeting, Add catalogue item, New quote, New job, New invoice, Record payment, New vendor bill, New vendor credit, Record vendor payment and Submit expense — named as on each page's button (the catalogue's "Add item" and vendor payments' "Record payment" say which), with a plus icon and the sidebar area as the second line.
+- **Given** an action I can't take (no permission to create it, its section closed, its module off), **when** results are built, **then** it's left out.
+- **Given** an action, **when** I choose it, **then** the same form its page's button opens appears, and nothing is saved until I save it there.
+
+**Implementation notes**
+- Web only: a list of actions in `components/search-actions.ts` with each one's capability (`<section>.edit_own`) and address, shown only when the page is in the person's sidebar and page access allows it. Pipeline, Meetings, Payments and Vendor payments learn `?new=1` (Contacts, Catalogue, Jobs and Expenses already had it; quotes, invoices, vendor bills and vendor credits have `/new` pages).
+
+### US-OPS-43 · Find leads, meetings, catalogue items and vendor credits
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPalette`
+**As** any member, **I want** search to find leads, meetings, catalogue items and vendor credits too, **so that** one box finds everything I work with.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** I type part of a lead's title or its contact, **when** results show, **then** "LEADS" lists it with the contact and estimated value as the second line and its stage as the status; Enter opens the lead's drawer on Pipeline.
+- **Given** I type part of a meeting's title, location or contact, **when** results show, **then** "MEETINGS" lists it with its next date and time (or its last, once it's over) and the contact as the second line, and "Upcoming" or "Past" as the status; Enter opens it on Meetings.
+- **Given** I type part of a catalogue item's name, description or HSN/SAC code, **when** results show, **then** "CATALOGUE" lists it with its category and default price as the second line; Enter opens it on Catalogue.
+- **Given** I type a vendor credit's number ("VCR-0003"), its vendor reference or its vendor, **when** results show, **then** "VENDOR CREDITS" lists it with the vendor and amount left as the second line and Open, Used or Void as the status; a number match comes first.
+- **Given** someone who can't open one of these sections (no Open permission, Leads & meetings switched off, Field for leads, catalogue and vendor credits), **when** results are built, **then** that group never appears; meetings follow the calendar's own rules, so a private meeting shows only to the people on it.
+- **Given** every group, **when** results show, **then** they're in the sidebar's order: Contacts, Leads, Meetings, Catalogue, Quotes, Jobs, Invoices, Credit notes, Payments, Vendor bills, Vendor credits, Vendor payments, Expenses.
+
+**Implementation notes**
+- API: `GET /search` gains `leads`, `meetings`, `catalog_items` and `vendor_credits` groups, gated like the others (`leads.open`, `meetings.open`, `catalog.open`, `vendor_credits.open`, and the module switch). Data: trigram indexes on `leads.title`, `meetings.title`, `catalog_items.name` and `vendor_credits.number`.
+- Web: Catalogue opens an item from `/catalog?item=<id>` (new), Pipeline from `?lead=` and Meetings from `?id=` (as today).
+
+### US-OPS-44 · Find a contact by phone, tax ID or one of their people
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPalette`
+**As** an Owner or Staff member, **I want** to find a contact from a phone number, a tax ID or the name of someone who works there, **so that** I can find who's calling or who sent an email.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** I type 4 or more digits of a phone number, in any format ("555 0107", "(555) 0107", "+15550107"), **when** results show, **then** contacts whose phone or one of whose people's phone contains those digits are listed.
+- **Given** I type a tax ID or part of one, ignoring case and spaces ("29aabfl"), **when** results show, **then** the contact with that tax ID or GSTIN is listed.
+- **Given** I type the name or email of one of a contact's people ("Priya"), **when** results show, **then** the contact is listed.
+- **Given** a contact found by something other than its name or email (its status stays "Contact", or "Archived"), **when** it shows, **then** the second line says what matched: "Contact: Priya Nair", "Phone +1-555-0107" or "GSTIN 29AABFL0000B1Z2".
+- **Given** a Field user, **when** they search, **then** contacts still never appear (US-TEAM-18).
+
+**Implementation notes**
+- API: the contacts group also matches `contacts.phone` and `contact_persons.phone` by digits only (`regexp_replace(phone, '\D', '', 'g')`), `contacts.tax_id` without spaces, and `contact_persons.name` and `email`; a contact shows once. Data: a trigram index on `contact_persons.name`.
+
+### US-OPS-45 · Find a document by its amount
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPaletteAmount`
+**As** an Owner or Staff member, **I want** to type an amount and find the documents for it, **so that** I can match a payment or a bank line to its invoice or bill.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** I type something that reads as an amount in the business's number format ("2,389.50", "2389.5", "$2,389.50", "2389"), **when** results show, **then** quotes, invoices, credit notes, payments, vendor bills, vendor credits, vendor payments and expenses whose total is that amount, and invoices and bills whose balance due is, appear first in their groups, with the amount in bold on the second line.
+- **Given** an amount with no decimals ("2,389"), **when** it's matched, **then** it finds 2,389.00 only, not 2,389.50.
+- **Given** the same text also matches by name or number, **when** results show, **then** those matches show too, after the amount matches.
+- **Given** a Field user, **when** they type an amount, **then** nothing is matched by amount.
+
+**Implementation notes**
+- Shared: `parseSearchAmount(query, locale)` → minor units or null (the business's decimal and grouping separators, an optional currency symbol, up to the currency's decimals). API: each group adds `total_amount = $amount` (and `balance_due` for invoices and bills) to its match when the query is an amount; no new index (filtered within the organisation).
+
+### US-OPS-46 · Find archived records when I need them
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPalette`
+**As** an Owner or Staff member, **I want** to include archived contacts and catalogue items in search when I ask for them, **so that** I can find an old customer without un-archiving them first.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** the footer, **when** search opens, **then** an "Include archived" checkbox sits at the right, off by default.
+- **Given** it's on, **when** results show, **then** archived contacts and catalogue items appear with the status "Archived"; when it's off, they never appear (as today).
+- **Given** I turn it on, **when** I open search again on this device, **then** it's still on.
+- **Given** a Field user, **when** search opens, **then** the checkbox isn't shown (they can't search contacts or the catalogue).
+
+**Implementation notes**
+- API: `GET /search` accepts `includeArchived=true`. Web: the choice is kept in `localStorage` (`spine.search.includeArchived`), a per-device convenience.
+
+### US-OPS-47 · Read search results at a glance
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPalette`, `SearchPaletteDark`, `SearchPaletteRecent`
+**As** any member, **I want** each result to show what it is and why it matched, and the words around search to be right, **so that** I pick the right record without reading every line.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** search opens, **when** the field is empty, **then** its placeholder reads "Search records, pages and settings".
+- **Given** a result, **when** it renders, **then** it starts with the icon its section has in the sidebar (hidden from screen readers), and the text I typed is bold wherever it appears in the title and the second line (bold, not colour alone).
+- **Given** the footer, **when** it renders, **then** it reads "↑↓ to move", "Enter to open" and "Esc to close" on the left, with "Include archived" on the right (US-OPS-46); the old "Searches contacts, quotes, …" line goes.
+- **Given** fewer than 2 characters and nothing recent, **when** search shows, **then** it reads "Type a name, a number like INV-0010 or an amount like 2,389.50." and below it "You can search <the areas this person can open>.", built from the groups open to them (Field: "You can search your jobs, meetings and expenses.").
+- **Given** no matches, **when** results return, **then** it reads "No results for “<query>”" and "Check the spelling, or try part of a name, a number or an amount." — adding "Or turn on Include archived." when it's off.
+- **Given** I choose a result, an action, a page or a setting, **when** its page takes a moment to load, **then** search stays open with a spinner on that row (a screen reader hears "Opening…") and closes once the page has loaded; choosing another row meanwhile does nothing.
+- **Given** dark mode, **when** search opens, **then** icons, bold matches and statuses meet the contrast rules (4.5:1 text, 3:1 icons).
+
+**Implementation notes**
+- Web: `SEARCH_GROUP_ICONS` maps each group to the sidebar's icon; `Highlight` splits the text on the query (ignoring case) into `<strong>` parts. No API change.
+
+### US-OPS-48 · See search in the sidebar
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SidebarSearchField`
+**As** any member, **I want** to see where search is, **so that** I find it without knowing the shortcut.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** the sidebar is expanded, **when** any page shows, **then** a field-like button under the logo reads "Search…" with the shortcut on the right ("⌘K" on a Mac, "Ctrl K" elsewhere), and clicking it opens search; the search icon in the sidebar's footer goes.
+- **Given** the sidebar is collapsed, **when** it shows, **then** search is an icon button with the tooltip "Search (⌘K)" in the same place.
+- **Given** phone width, **when** the web app's phone top bar arrives (US-OPS-14, Phase 10), **then** it carries the same search button.
+- **Given** a screen reader, **when** the button is focused, **then** it's read as "Search" with its shortcut (`aria-keyshortcuts`).
+
+**Implementation notes**
+- Web: `SearchButton` gains a `field` look for the expanded sidebar; light and dark from tokens. No API change.
+
+### US-OPS-49 · Narrow search to one area
+**Feature:** F-OPS-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `SearchPaletteScoped`, `SearchPalettePhone`
+**As** any member, **I want** to search only sales, jobs, billing or purchases, **so that** I see more of the results I'm after.
+
+Decision: D-238
+
+**Acceptance criteria**
+- **Given** search opens, **when** it shows, **then** chips under the field read "All", "Sales", "Jobs", "Billing" and "Purchases" — the sidebar's groups, drawn as the one segmented control (D-210) — with only the areas I can search in at least one group, and "All" chosen; with only one area, there are no chips.
+- **Given** I choose an area, **when** results show, **then** only its groups appear (Sales: contacts, leads, meetings, catalogue, quotes; Jobs: jobs; Billing: invoices, credit notes, payments; Purchases: vendor bills, vendor credits, vendor payments, expenses), up to 20 each, with no pages, settings or actions, and what I typed stays; with the field empty, recent records show only those in that area.
+- **Given** the keyboard, **when** I press Tab from the field, **then** focus moves to the chips (a radio group: arrows move, Space chooses) and Shift+Tab returns to the field.
+- **Given** I close search, **when** I open it again, **then** "All" is chosen.
+- **Given** phone width, **when** the chips don't fit, **then** they scroll sideways.
+
+**Implementation notes**
+- API: `GET /search` accepts `types=<group>,<group>` (unknown → 400 "Choose what to search."), and `limit` up to 20 when `types` is given (5 otherwise). Shared: `SEARCH_SCOPES` maps each area to its groups.

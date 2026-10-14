@@ -6,6 +6,9 @@ export const jobStatusSchema = z.enum(["active", "on_hold", "completed", "cancel
 export const milestoneAmountTypeSchema = z.enum(["fixed", "percent"]);
 export const milestoneStatusSchema = z.enum(["pending", "completed", "invoiced"]);
 
+/** US-JOB-30 */
+export const JOB_END_BEFORE_START = "End the job on or after its start date.";
+
 /**
  * PRD F4 (S-04.1) — a job created directly (not from a quote). The
  * from-quote path (`POST /jobs/from-quote/:quoteId`) doesn't use this
@@ -23,7 +26,7 @@ export const createJobSchema = z.object({
   contractValueAmount: z.coerce.bigint().default(0n),
   retentionPct: z.coerce.number().min(0).max(100).default(0),
   notes: z.string().optional().nullable(),
-});
+}).refine((v) => !v.startDate || !v.endDate || v.endDate >= v.startDate, { message: JOB_END_BEFORE_START, path: ["endDate"] });
 
 export const BUDGET_NOT_NEGATIVE = "Enter a budget of zero or more.";
 export const PERCENT_COMPLETE_RANGE = "Enter a percentage from 0 to 100.";
@@ -101,3 +104,51 @@ export const createVariationOrderSchema = z.object({
   termsAndConditions: z.string().optional().nullable(),
   lines: z.array(quoteLineInputSchema).default([]),
 });
+
+/**
+ * US-JOB-31, US-JOB-33 (D-215) — what `GET /jobs?include=billing` and
+ * `GET /jobs/:id?include=billing` add for Owners and Staff: billed to date
+ * (US-JOB-27's figure), the completed milestones not yet invoiced, and the
+ * retention held (the balance of the job's 1150 Retention Receivable
+ * journal lines). Money is minor units as strings.
+ */
+export interface JobBilling {
+  billedAmount: string;
+  /** Whole percent of the contract; null for a zero contract. */
+  billedPct: number | null;
+  readyToBillCount: number;
+  readyToBillAmount: string;
+  retentionHeld: string;
+}
+
+/** US-JOB-37 — what `GET /jobs/:id/activity` returns, newest first. */
+export const JOB_ACTIVITY_TYPES = [
+  "created",
+  "created_from_quote",
+  "status_changed",
+  "updated",
+  "milestones_set",
+  "milestone_completed",
+  "milestone_invoiced",
+  "variation_order_created",
+  "variation_order_applied",
+  "photo_added",
+  "note_added",
+  "crew_assigned",
+  "crew_unassigned",
+  "retention_released",
+] as const;
+export type JobActivityType = (typeof JOB_ACTIVITY_TYPES)[number];
+export interface JobActivityEntry {
+  at: string;
+  type: JobActivityType;
+  actorName: string | null;
+  /**
+   * The quote number it came from, the new status, the milestone's name
+   * (with its invoice number), the variation's quote number, the milestone
+   * a photo came with, the crew member's name, or the release invoice.
+   */
+  detail: string | null;
+  /** What it points at: the source quote, the invoice, or the variation quote. */
+  linkId?: string | null;
+}

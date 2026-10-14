@@ -16,22 +16,21 @@ test.describe("US-PAY-18", () => {
 
     await page.goto("/team/teams");
     await page.getByRole("link", { name: /General Staff/ }).click();
-    await page.getByRole("tab", { name: "Privileges" }).click();
+    await page.getByRole("tab", { name: "Permissions" }).click();
     await page.getByRole("button", { name: "Manage Payments" }).click();
     await expect(page.getByRole("switch", { name: "Refund customers" })).not.toBeChecked();
 
     // The Owner sees Refund on the payment.
-    await page.goto(`/payments?id=${payment.id}`);
-    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
-    await expect(page.getByRole("menuitem", { name: "Refund", exact: true })).toBeVisible();
+    await page.goto(`/payments/${payment.id}`);
+    await expect(page.getByTestId("payment-actions").getByRole("button", { name: "Refund", exact: true })).toBeVisible();
 
     await page.goto("about:blank");
     await page.context().clearCookies();
     await logIn(page, DEMO_STAFF_USER);
-    await page.goto(`/payments?id=${payment.id}`);
-    await expect(page.getByRole("dialog").getByRole("button", { name: "Apply credit" })).toBeVisible();
-    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
-    await expect(page.getByRole("menuitem", { name: "Download PDF" })).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: "Refund", exact: true })).toHaveCount(0);
+    await page.goto(`/payments/${payment.id}`);
+    const actions = page.getByTestId("payment-actions");
+    await expect(actions.getByRole("button", { name: "Apply credit" })).toBeVisible();
+    await expect(actions.getByRole("link", { name: "Download PDF" })).toBeVisible();
+    await expect(actions.getByRole("button", { name: "Refund", exact: true })).toHaveCount(0);
   });
 });

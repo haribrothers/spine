@@ -1,6 +1,7 @@
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
-import { Body, Controller, Get, Put, Req, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Req, UseInterceptors } from "@nestjs/common";
 import {
+  changeEmailSchema,
   changePasswordSchema,
   dashboardBasisSchema, dashboardLayoutSchema, favouriteReportsSchema,
   notificationPreferencesSchema,
@@ -23,6 +24,8 @@ import { UsersService } from "./users.service";
  */
 /** The member's current organisation, for role defaults (the digest, D-093). */
 const orgOf = (session: UserSession): string | null => (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
+/** US-AUTH-17 — the session making this request. */
+const sessionIdOf = (session: UserSession): string | null => (session.session as { id?: string }).id ?? null;
 
 @Controller("users")
 export class UsersController {
@@ -47,11 +50,45 @@ export class UsersController {
   @Put("me/password")
   @UseInterceptors(IdempotencyInterceptor)
   async changePassword(
+    @Session() session: UserSession,
     @Req() request: Request,
     @Body(new ZodValidationPipe(changePasswordSchema)) body: z.infer<typeof changePasswordSchema>,
   ) {
-    await this.usersService.changePassword(fromNodeHeaders(request.headers), body.currentPassword, body.newPassword);
+    const signOutOthers = (body.signOutOthers ?? true) ? { userId: session.user.id, currentSessionId: sessionIdOf(session) } : null;
+    await this.usersService.changePassword(fromNodeHeaders(request.headers), body.currentPassword, body.newPassword, signOutOthers);
     return { changed: true };
+  }
+
+  /** US-AUTH-18 — a new sign-in email, with the current password; the old address is told. */
+  @Put("me/email")
+  @UseInterceptors(IdempotencyInterceptor)
+  async changeEmail(
+    @Session() session: UserSession,
+    @Req() request: Request,
+    @Body(new ZodValidationPipe(changeEmailSchema)) body: z.infer<typeof changeEmailSchema>,
+  ) {
+    const from = { userAgent: request.headers["user-agent"] ?? null, ip: request.ip ?? null };
+    return this.usersService.changeEmail(session.user.id, orgOf(session), body, from);
+  }
+
+  /** US-AUTH-17 — where this account is signed in. */
+  @Get("me/sessions")
+  async listSessions(@Session() session: UserSession) {
+    return this.usersService.listSessions(session.user.id, sessionIdOf(session));
+  }
+
+  @Post("me/sessions/sign-out-others")
+  @HttpCode(200)
+  @UseInterceptors(IdempotencyInterceptor)
+  async endOtherSessions(@Session() session: UserSession) {
+    return this.usersService.endOtherSessions(session.user.id, sessionIdOf(session));
+  }
+
+  @Delete("me/sessions/:id")
+  @UseInterceptors(IdempotencyInterceptor)
+  async endSession(@Session() session: UserSession, @Param("id") id: string) {
+    await this.usersService.endSession(session.user.id, id, sessionIdOf(session));
+    return { ended: true };
   }
 
   @Put("me/preferences")

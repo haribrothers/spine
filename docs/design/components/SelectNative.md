@@ -1,6 +1,6 @@
 # Select
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/select.tsx` · **Doc page:** `apps/design-system-native/app/components/select.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/select.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/select-demo.tsx`
 
 A single-choice picker for simple flat option lists — the native counterpart to web&apos;s NativeSelect. Uses the OS&apos;s own native picker chrome (a wheel/dialog on iOS/Android, a real &lt;select&gt; on web), the lightest-weight option when a custom-styled menu isn&apos;t needed.
 

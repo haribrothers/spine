@@ -31,6 +31,8 @@ export interface PublicQuoteLine {
 export interface PublicQuoteView {
   id: string;
   number: string | null;
+  /** US-QUO-30 — the quote's title, when it has one. */
+  title?: string | null;
   status: PublicQuoteStatus;
   version: number;
   validUntil: string | null;

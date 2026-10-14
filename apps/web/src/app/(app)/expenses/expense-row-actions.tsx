@@ -1,67 +1,75 @@
 "use client";
 
-import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@spine/ui";
+import { useRouter } from "next/navigation";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, useConfirm } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { useCanEditOwnership } from "../../../lib/capabilities-context";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { formatMoney } from "../../../lib/money";
+import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useToast } from "../../../components/toast-host";
+import { canReviewThis, readyToBill } from "./expense-state";
 import type { Expense } from "./types";
 
-/**
- * Row-level "more" menu, mirroring vendor-bills/vendor-bill-row-actions.tsx's
- * exact pattern. "Edit"/"Delete" only appear for a submitted expense — an
- * approved expense has already posted to the ledger (ExpensesService's own
- * "approval is the posting trigger" rule) and a rejected one is a closed
- * review, so both are immutable per ExpensesService.update/delete's own
- * guards. "View" always opens the detail Drawer, unconditionally (read is
- * always unconditional). Delete additionally needs `expenses.delete_own`/
- * `delete_others` (own vs. others from `expense.submittedByUserId`) — Field
- * always has `delete_own` for their own expense regardless of Team grants
- * (Field is fixed/non-configurable; see `capability.util.ts`'s
- * `FIELD_OWN_CAPABILITIES`).
- */
-export function ExpenseRowActions({
-  expense,
-  onDeleted,
-  onOpen,
-  onEdit,
-}: {
-  expense: Expense;
-  onDeleted: (expense: Expense) => void;
-  onOpen: (expense: Expense) => void;
-  /** US-PUR-10 — opens the expense form on this expense. */
+export interface ExpenseRowHandlers {
+  /** An action finished: what to tell the person (D-223). */
+  onDone: (title: string, description: string) => void;
+  /** It didn't: shown above the list. */
+  onFailed: (title: string, message: string) => void;
   onEdit: (expense: Expense) => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const canDelete = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.delete_own", others: "expenses.delete_others" });
-  const canEdit = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.edit_own", others: "expenses.edit_others" });
+  onApprove: (expense: Expense) => void;
+  onReject: (expense: Expense) => void;
+}
 
-  async function handleDelete() {
-    setBusy(true);
-    setError(null);
+export const expenseLabel = (e: Pick<Expense, "number" | "description" | "categoryName">) => e.number ?? e.description ?? e.categoryName ?? "Expense";
+
+/**
+ * US-PUR-42 (D-222, D-227) — an expense row's menu: View; Edit (waiting or
+ * rejected, with the right); Approve and Reject (waiting, not my own unless
+ * I'm an Owner); Bill to customer (ready to bill); Delete (waiting),
+ * destructive last — each with its icon. Bill and Delete ask first here;
+ * Approve and Reject open the list's dialogs.
+ */
+export function ExpenseRowActions({ expense, me, isOwner, handlers }: { expense: Expense; me: string | null; isOwner: boolean; handlers: ExpenseRowHandlers }) {
+  const router = useRouter();
+  const showToast = useToast();
+  const { confirm, dialog } = useConfirm();
+  const canEditRight = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.edit_own", others: "expenses.edit_others" });
+  const canDeleteRight = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.delete_own", others: "expenses.delete_others" });
+  const canApproveRight = useCapability("expenses.approve");
+  const canRejectRight = useCapability("expenses.reject");
+  const canBillRight = useCapability("expenses.bill_to_customer");
+  const reviewable = canReviewThis(expense, me, isOwner);
+  const canEdit = (expense.status === "submitted" || expense.status === "rejected") && canEditRight;
+  const canDelete = expense.status === "submitted" && canDeleteRight;
+  const canBill = readyToBill(expense) && !!expense.jobId && canBillRight;
+  const label = expenseLabel(expense);
+  const amount = formatMoney(BigInt(expense.amount), expense.currency);
+
+  async function bill() {
+    const ok = await confirm({
+      title: "Bill this expense to the customer?",
+      description: `A new draft invoice for ${amount} is made for ${expense.jobName ?? "the job"}'s customer, and the expense is marked billed. You'll go to the invoice to check and send it.`,
+      confirmLabel: "Create invoice",
+    });
+    if (!ok) return;
+    try {
+      const invoice = await apiClient.post<{ id: string; number?: string | null }>(`/expenses/${expense.id}/bill-to-customer`);
+      showToast("Invoice drafted", `${label} is on a new draft invoice for ${amount}.`);
+      router.push(`/invoices/${invoice.id}`);
+    } catch (err) {
+      handlers.onFailed(`Couldn't bill ${label}.`, err instanceof Error ? err.message : "Try again.");
+    }
+  }
+
+  async function remove() {
+    const ok = await confirm({ title: "Delete this expense?", description: `${label} for ${amount} is removed for good. This can't be undone.`, confirmLabel: "Delete expense", danger: true });
+    if (!ok) return;
     try {
       await apiClient.delete(`/expenses/${expense.id}`);
-      setConfirmOpen(false);
-      onDeleted(expense);
+      handlers.onDone("Expense deleted", `${label} for ${amount} has been removed.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete this expense.");
-    } finally {
-      setBusy(false);
+      handlers.onFailed(`Couldn't delete ${label}.`, err instanceof Error ? err.message : "Try again.");
     }
   }
 
@@ -71,41 +79,51 @@ export function ExpenseRowActions({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="Actions for this expense"
-            onClick={(e) => e.stopPropagation()}
+            aria-label={`Actions for ${label}`}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
             <MoreHorizontal size={16} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onSelect={() => onOpen(expense)}>View</DropdownMenuItem>
-          {expense.status === "submitted" && canEdit && <DropdownMenuItem onSelect={() => onEdit(expense)}>Edit</DropdownMenuItem>}
-          {expense.status === "submitted" && canDelete && (
-            <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => router.push(`/expenses/${expense.id}`)}>
+            <MENU_ICONS.view aria-hidden />
+            View
+          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onSelect={() => handlers.onEdit(expense)}>
+              <MENU_ICONS.edit aria-hidden />
+              {expense.status === "rejected" ? "Fix and resubmit" : "Edit"}
+            </DropdownMenuItem>
+          )}
+          {reviewable && canApproveRight && (
+            <DropdownMenuItem onSelect={() => handlers.onApprove(expense)}>
+              <MENU_ICONS.approve aria-hidden />
+              Approve
+            </DropdownMenuItem>
+          )}
+          {reviewable && canRejectRight && (
+            <DropdownMenuItem onSelect={() => handlers.onReject(expense)}>
+              <MENU_ICONS.reject aria-hidden />
+              Reject
+            </DropdownMenuItem>
+          )}
+          {canBill && (
+            <DropdownMenuItem onSelect={() => void bill()}>
+              <MENU_ICONS.convertToInvoice aria-hidden />
+              Bill to customer
+            </DropdownMenuItem>
+          )}
+          {canDelete && <DropdownMenuSeparator />}
+          {canDelete && (
+            <DropdownMenuItem destructive onSelect={() => void remove()}>
+              <MENU_ICONS.delete aria-hidden />
               Delete
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this expense?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently removes the expense. This cannot be undone.
-              {error && <span className="mt-2 block text-overdue">{error}</span>}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {dialog}
     </>
   );
 }

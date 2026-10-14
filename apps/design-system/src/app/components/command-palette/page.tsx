@@ -25,6 +25,10 @@ export default function CommandPalettePage() {
             "Scales in only when the person allows motion (motion-safe).",
             "The first result is highlighted as soon as results arrive, and the palette keeps aria-activedescendant in step itself (cmdk works it out only once).",
             "Focus goes back to the element that had it before opening — also when opened by a shortcut with no trigger.",
+            "US-OPS-47 (D-238): each result can start with an icon in a tile (its section's sidebar icon), the typed text is bold in titles and second lines (`highlight`, or an item's own `highlight` for an amount or phone that matched), and the status can be coloured by what it says (`metaTone`) — never colour alone, the word is always there.",
+            "US-OPS-40: a `link` item is a one-line row in the primary colour (\"See all invoices matching “har”\"), reached with the arrows like any option.",
+            "US-OPS-49: `toolbar` puts controls under the field (the app's area chips, a ToggleGroup); Tab goes from the field to them — the Esc key-cap is a mouse affordance outside the tab order, and Escape still closes.",
+            "The highlighted row shows an Enter key icon on the right; `pendingId` swaps it for a spinner on the row being opened and announces \"Opening…\" (the app keeps search open until the next page has rendered).",
           ]}
         />
       </DocSection>
@@ -53,7 +57,10 @@ export default function CommandPalettePage() {
             { prop: "open / onOpenChange", type: "boolean / (open: boolean) => void" },
             { prop: "label", type: "string" },
             { prop: "query / onQueryChange", type: "string / (query: string) => void" },
-            { prop: "groups", type: "{ heading: string; items: { id, title, subtitle?, meta? }[] }[]" },
+            { prop: "groups", type: "{ heading: string; items: { id, title, subtitle?, meta?, metaTone?, icon?, highlight?, variant? }[] }[]" },
+            { prop: "highlight", type: "string — bolded wherever it appears" },
+            { prop: "toolbar", type: "ReactNode — under the field" },
+            { prop: "pendingId", type: "string | null — the row being opened" },
             { prop: "onSelect", type: "(item) => void" },
             { prop: "loading", type: "boolean" },
             { prop: "emptyMessage / hint", type: "ReactNode" },
@@ -68,6 +75,7 @@ export default function CommandPalettePage() {
             { keys: "⌘K / Ctrl+K", description: "Opens the palette (wired by the app) with focus in the field." },
             { keys: "ArrowDown / ArrowUp", description: "Moves the highlight; the active option is announced." },
             { keys: "Enter", description: "Opens the highlighted result." },
+            { keys: "Tab", description: "Moves from the field to the toolbar (e.g. the area chips); arrows move between chips." },
             { keys: "Escape", description: "Closes the palette and returns focus to where it was." },
           ]}
         />

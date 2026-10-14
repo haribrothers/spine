@@ -1,6 +1,6 @@
 # EmptyState
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/empty-state.tsx` · **Doc page:** `apps/design-system-native/app/components/empty-state.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/empty-state.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/empty-state-demo.tsx`
 
 Used for every zero-results list and the first-run dashboard — Spine&apos;s onboarding principle is &quot;never a blank screen with no next action.&quot;
 

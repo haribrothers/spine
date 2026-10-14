@@ -1,16 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors, HttpCode } from "@nestjs/common";
 import { parseEmailOverride } from "../email/email-text";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { acceptQuoteInPersonSchema, createQuoteSchema, rejectQuoteInPersonSchema, updateQuoteSchema } from "@spine/shared";
 import type { Response } from "express";
-import { RequireCapability } from "../../auth/require-capability.decorator";
+import { RequireCapability, RequireSectionOpen } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { QuotesService } from "./quotes.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
-import { QueueService } from "../queue/queue.service";
-import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
+import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { AcceptQuoteInPersonDto, RejectQuoteInPersonDto } from "./quotes.dto";
 
 /**
@@ -33,33 +32,19 @@ import { AcceptQuoteInPersonDto, RejectQuoteInPersonDto } from "./quotes.dto";
  * an Owner may want to grant separately.
  */
 @Controller("quotes")
+@RequireSectionOpen("quotes.open")
 @OrgRoles(["owner", "staff"])
 export class QuotesController {
   constructor(
     private readonly quotesService: QuotesService,
     private readonly issuedPdf: IssuedPdfService,
-    private readonly queue: QueueService,
+    private readonly quotePdf: QuotePdfService,
   ) {}
 
   @Get()
-  async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string) {
+  async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string, @Query("leadId") leadId?: string) {
     const orgId = requireOrgId(session);
-    return this.quotesService.list(orgId, { status, contactId });
-  }
-
-  /**
-   * Item 7 (user feedback) — a cross-quote view of every not-yet-resolved
-   * `quote-send-email` job, for a "what's still sending?" screen. MUST come
-   * before `@Get(":id")` below — otherwise Nest would match the literal
-   * path segment "email-queue" as `:id` and route here into `getOne`
-   * instead, since route matching is declaration-order-sensitive for
-   * overlapping patterns on the same HTTP method.
-   */
-  @Get("email-queue")
-  async emailQueue(@Session() session: UserSession) {
-    const orgId = requireOrgId(session);
-    const jobs = await this.queue.listPendingJobs(QUOTE_SEND_EMAIL_QUEUE, orgId);
-    return this.quotesService.enrichEmailQueueJobs(orgId, jobs);
+    return this.quotesService.list(orgId, { status, contactId, leadId });
   }
 
   /** Field reads a quote to present on an assigned job (US-MOB-16), checked in the service. */
@@ -75,6 +60,41 @@ export class QuotesController {
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.quotesService.getHistory(orgId, id);
+  }
+
+  /** US-QUO-32 — the quote's activity: our actions, the customer's views and answers, the email, conversions. Owner and Staff (the controller's roles). */
+  @Get(":id/activity")
+  async activity(@Session() session: UserSession, @Param("id") id: string) {
+    return this.quotesService.activity(requireOrgId(session), id);
+  }
+
+  /** US-QUO-33 — the lead, versions, jobs and invoices a quote is connected to. Owner and Staff. */
+  @Get(":id/related")
+  async related(@Session() session: UserSession, @Param("id") id: string) {
+    return this.quotesService.related(requireOrgId(session), id);
+  }
+
+  /** US-QUO-35 — the builder's "Preview PDF": the unsaved quote as a PDF; nothing is saved. */
+  @Post("preview-pdf")
+  @HttpCode(200)
+  @RequireCapability("quotes.edit_own")
+  async previewPdf(@Session() session: UserSession, @Body() body: unknown, @Res() res: Response) {
+    const orgId = requireOrgId(session);
+    const { quoteId, ...fields } = (body ?? {}) as { quoteId?: unknown };
+    const input = createQuoteSchema.parse(fields);
+    const draft = await this.quotesService.previewDraft(orgId, session.user.id, input, typeof quoteId === "string" ? quoteId : undefined);
+    const buffer = await this.quotePdf.renderQuote(orgId, draft.quote, draft.lines, draft.contactName, draft.contactEmail);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${draft.quote.number ?? "quote-draft"}.pdf"`);
+    res.send(buffer);
+  }
+
+  /** US-QUO-31 — "Copy customer link": a fresh link, nothing emailed. */
+  @Post(":id/link")
+  @RequireCapability("quotes.send")
+  @UseInterceptors(IdempotencyInterceptor)
+  async link(@Session() session: UserSession, @Param("id") id: string) {
+    return this.quotesService.link(requireOrgId(session), id, session.user.id);
   }
 
   /**

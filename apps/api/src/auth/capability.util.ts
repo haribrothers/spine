@@ -54,6 +54,9 @@ export const FIELD_ALWAYS_CAPABILITIES: ReadonlySet<Capability> = new Set([
   "milestones.edit_own",
   "milestones.edit_others",
   "quotes.accept_in_person",
+  // US-TEAM-30 (D-235): Field's sections are fixed, never Team-closed.
+  "jobs.open",
+  "meetings.open",
 ] satisfies Capability[]);
 
 /**

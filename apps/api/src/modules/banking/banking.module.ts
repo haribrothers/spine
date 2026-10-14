@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
 import { LedgerModule } from "../ledger/ledger.module";
 import { TaxModule } from "../tax/tax.module";
+import { ReportsModule } from "../reports/reports.module";
 import { TaxPaymentsController, TaxRefundsController } from "../tax/tax-payments.controller";
 import { TaxPaymentsService } from "../tax/tax-payments.service";
 import { AccountRegisterService } from "./account-register.service";
@@ -13,6 +14,8 @@ import { MoneyAccountsController } from "./money-accounts.controller";
 import { MoneyAccountsService } from "./money-accounts.service";
 import { ReconciliationsController } from "./reconciliations.controller";
 import { ReconciliationsService } from "./reconciliations.service";
+import { ReconciliationReportService } from "./reconciliation-report.service";
+import { OrgModule } from "../org/org.module";
 import { StatementImportsController } from "./statement-imports.controller";
 import { StatementImportsService } from "./statement-imports.service";
 
@@ -23,9 +26,9 @@ import { StatementImportsService } from "./statement-imports.service";
  * accounts, and TaxModule is already imported by this one.
  */
 @Module({
-  imports: [AuditModule, LedgerModule, TaxModule],
+  imports: [AuditModule, LedgerModule, TaxModule, ReportsModule, OrgModule],
   controllers: [MoneyAccountsController, BankTransfersController, BankTransactionsController, TaxPaymentsController, TaxRefundsController, StatementImportsController, ReconciliationsController],
-  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService, BankTransactionsService, TaxPaymentsService, StatementImportsService, ReconciliationsService],
-  exports: [MoneyAccountsService],
+  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService, BankTransactionsService, TaxPaymentsService, StatementImportsService, ReconciliationsService, ReconciliationReportService],
+  exports: [MoneyAccountsService, AccountRegisterService, BankTransactionsService, BankTransfersService, StatementImportsService, ReconciliationsService],
 })
 export class BankingModule {}

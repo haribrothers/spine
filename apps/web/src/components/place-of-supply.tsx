@@ -70,7 +70,7 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
       .then(setProfile)
       .catch(() => setProfile({}));
     apiClient
-      .get<(ItemTaxes & { id: string })[]>("/catalog-items")
+      .get<(ItemTaxes & { id: string })[]>("/catalog-items?picker=1")
       .then(setItems)
       .catch(() => {});
   }, []);
@@ -111,7 +111,7 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
     if (!contactId || !active) return;
     let cancelled = false;
     apiClient
-      .get<ContactForPlaceOfSupply>(`/contacts/${contactId}`)
+      .get<ContactForPlaceOfSupply>(`/contacts/${contactId}?picker=1`)
       .then((c) => {
         if (cancelled) return;
         setContact(c);

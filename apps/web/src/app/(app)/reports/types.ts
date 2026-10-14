@@ -101,10 +101,9 @@ export const SOURCE_TYPE_ROUTES: Record<string, (sourceId: string) => string> = 
   // US-RPT-20/21
   manual_journal: (id) => `/journals/${id}`,
   manual_journal_reversal: (id) => `/journals/${id}`,
-  // credit_note deliberately omitted — sourceId is the credit note's own
-  // id, and there's no standalone /credit-notes/:id route (invoice-
-  // triggered only, per CHANGELOG's own known-gap note), so this falls
-  // back to the entry's narration text rather than linking to a 404.
+  // US-INV-38 (D-219): credit notes have their own page now.
+  credit_note: (id) => `/credit-notes/${id}`,
+  credit_note_credit_applied: (id) => `/credit-notes/${id}`,
 };
 
 /** US-RPT-13 — `GET /reports/trial-balance`. */

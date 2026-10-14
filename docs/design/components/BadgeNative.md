@@ -1,6 +1,6 @@
 # Badge
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/badge.tsx` · **Doc page:** `apps/design-system-native/app/components/badge.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/badge.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/badge-demo.tsx`
 
 A compact neutral-toned indicator for counts/tags/generic status. Never used for financial status — that stays a native StatusChip&apos;s reserved semantic whenever one is built.
 

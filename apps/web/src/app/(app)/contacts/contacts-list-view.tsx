@@ -28,15 +28,17 @@ export function ContactsListView({
   return (
     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
       {contacts.map((contact) => (
-        <li key={contact.id} className="flex items-center gap-3 px-4 py-2.5">
+        <li key={contact.id} className="flex min-w-0 items-center gap-3 px-4 py-2.5">
           <ContactLogo name={contact.name} fileId={contact.logoFileId} size="md" editable={false} onUploaded={() => {}} />
           <Link href={`/contacts/${contact.id}`} className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="truncate font-medium text-on-surface hover:text-primary hover:underline">{contact.name}</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="min-w-0 max-w-full truncate font-medium text-on-surface hover:text-primary hover:underline" title={contact.name}>
+                {contact.name}
+              </span>
               <Badge>{TYPE_LABELS[contact.type]}</Badge>
               {contact.archivedAt && <Badge>Archived</Badge>}
             </div>
-            <p className="truncate text-[12px] text-on-surface-muted">
+            <p className="truncate text-[12px] text-on-surface-muted" title={[contact.email, contact.phone].filter(Boolean).join(" · ") || undefined}>
               {contact.email ?? "No email"} {contact.phone ? `· ${contact.phone}` : ""}
             </p>
           </Link>

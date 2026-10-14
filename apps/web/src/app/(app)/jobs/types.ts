@@ -29,8 +29,19 @@ export interface Job {
   /** US-JOB-25 — `GET /jobs?include=costing`, only for members with `reports.view_job_profitability`. */
   budgetUsedPct?: number | null;
   budgetState?: BudgetState;
-  /** US-JOB-27 — same condition as `budgetState`. */
+  /** US-JOB-27 — same condition as `budgetState`; also from `include=billing` (US-JOB-33). */
   billedPct?: number | null;
+  /** US-JOB-31 — `include=billing`, Owners and Staff only. Minor units as strings. */
+  billedAmount?: string;
+  readyToBillCount?: number;
+  readyToBillAmount?: string;
+  retentionHeld?: string;
+  /** US-JOB-33 — `include=next_milestone`: the earliest pending milestone. */
+  nextMilestone?: { id: string; name: string; dueDate: string | null } | null;
+  /** `include=milestone_counts` */
+  milestoneCounts?: { total: number; completed: number };
+  /** US-JOB-34 — "From QUO-0031"; on `GET /jobs/:id`. */
+  sourceQuoteNumber?: string | null;
   notes: string | null;
   createdByUserId: string | null;
   isDemo: boolean;
@@ -67,6 +78,8 @@ export interface JobPhoto {
   fileId: string;
   caption: string | null;
   uploadedByUserId: string | null;
+  /** US-JOB-36 — who added it, for the viewer. */
+  uploadedByName?: string | null;
   createdByUserId: string | null;
   createdAt: string;
 }

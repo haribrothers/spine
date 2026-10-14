@@ -42,11 +42,16 @@ export const IT_SERVICES: IndustryPack = {
     overseas: { title: "Booking engine integration", value: 30000, stage: "won", source: "Upwork", activity: { type: "call", notes: "Weekly call with the client's CTO.", dueInDays: 5 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Phase 2 — mobile app for the customer portal.", terms: "Billed monthly for hours worked. Valid for 30 days.", lines: [["discovery", 1], ["dev", 320], ["design", 80]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Laptops and licences for the new store team — volume pricing.", lines: [["laptop", 15, 30], ["licence", 15, 30], ["dev", 16]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Support retainer for the booking app, 12 months.", terms: "Billed monthly in advance.", lines: [["support", 12], ["hosting", 12]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "Portfolio website — revised with a blog; see the latest version.", lines: [["design", 16], ["dev", 30], ["hosting", 12]], outcome: "revised" },
-    { slot: "overseas", validUntilInDays: 10, notes: "Channel manager integration — pending their API access.", lines: [["dev", 120], ["support", 3]], outcome: "draft" },
+    { slot: "anchor", title: "Customer portal — mobile app", validUntilInDays: 30, notes: "Phase 2 — mobile app for the customer portal.", terms: "Billed monthly for hours worked. Valid for 30 days.", lines: [["discovery", 1], ["dev", 320], ["design", 80]], outcome: "sent" },
+    { slot: "regional", title: "Store laptops and licences", validUntilInDays: 21, notes: "Laptops and licences for the new store team — volume pricing.", lines: [["laptop", 15, 30], ["licence", 15, 30], ["dev", 16]], outcome: "draft" },
+    { slot: "institution", title: "Booking app support retainer", validUntilInDays: 14, notes: "Support retainer for the booking app, 12 months.", terms: "Billed monthly in advance.", lines: [["support", 12], ["hosting", 12]], outcome: "sent" },
+    { slot: "consumer", title: "Portfolio website", validUntilInDays: 45, notes: "Portfolio website — revised with a blog; see the latest version.", lines: [["design", 16], ["dev", 30], ["hosting", 12]], outcome: "revised" },
+    { slot: "overseas", title: "Channel manager integration", validUntilInDays: 10, notes: "Channel manager integration — pending their API access.", lines: [["dev", 120], ["support", 3]], outcome: "draft" },
+  ],
+  lostLead: { title: "Loyalty app — pitch", value: 40000, lines: [["discovery", 1], ["design", 60], ["dev", 200]], note: "Went with an offshore team at a lower day rate." },
+  bundles: [
+    { name: "Website starter", description: "Design, a fixed-price site and a year of hosting.", items: [["design", 16], ["website", 1], ["hosting", 12]] },
+    { name: "New starter kit", description: "A laptop, its software licence and a month of support.", items: [["laptop", 1], ["licence", 1], ["support", 1]] },
   ],
   invoices: {
     inv01: { notes: "Customer portal — discovery workshop.", lines: [["discovery", 1]] },
@@ -85,7 +90,14 @@ export const IT_SERVICES: IndustryPack = {
     bill4: { ref: "CSH-7781", lines: [{ name: "Laptops for resale", quantity: 2, price: 880, in: { price: 56000, hsnSac: "8471", slab: 18 } }] },
     bill5: { ref: "CBH-INV-3402", lines: [{ name: "Managed database — portal", quantity: 1, price: 380, service: true, in: { price: 13500, hsnSac: "998315", slab: 18 } }] },
     bill6: { ref: "DHT-1003", lines: [{ name: "Contract QA engineer — 80 hours", quantity: 80, price: 45, service: true, in: { price: 1100, hsnSac: "998314", slab: 18 } }] },
+    bill7: { ref: "CSH-7835", lines: [{ name: "Docking stations", quantity: 6, price: 140, in: { price: 7800, hsnSac: "8471", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late on a job, and two paid together.
+    bill8: { ref: "CBH-INV-3288", lines: [{ name: "Backup storage — quarter", quantity: 1, price: 240, service: true, in: { price: 8500, hsnSac: "998315", slab: 18 } }] },
+    bill9: { ref: "CSH-7810", lines: [{ name: "Test devices — tablets", quantity: 3, price: 310, in: { price: 19500, hsnSac: "8471", slab: 18 } }] },
+    bill10: { ref: "DHT-0954", lines: [{ name: "Contract designer — 24 hours", quantity: 24, price: 50, service: true, in: { price: 1300, hsnSac: "998314", slab: 18 } }] },
+    bill11: { ref: "DHT-0968", lines: [{ name: "Contract tester — 16 hours", quantity: 16, price: 40, service: true, in: { price: 1000, hsnSac: "998314", slab: 18 } }] },
   },
+  recurringBill: { name: "Device leasing", line: { name: "Test devices — monthly lease", quantity: 5, price: 45, service: true, in: { price: 1600, hsnSac: "997315", slab: 18 } } },
   expenses: {
     exp1: { category: "Software subscriptions", amount: 240, inAmount: 7200, description: "Design tool seats — quarter", paidBy: "company" },
     exp2: { category: "Training & certification", amount: 450, inAmount: 15000, description: "Cloud certification exam", paidBy: "company" },

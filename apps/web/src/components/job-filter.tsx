@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Alert, AlertDescription, Combobox } from "@spine/ui";
 import { apiClient } from "../lib/api-client";
 
+import { SectionLink } from "./section-link";
 export const ALL_JOBS = "__all__";
 
 interface JobOption {
@@ -33,7 +34,7 @@ export function useJobFilter() {
 
   useEffect(() => {
     apiClient
-      .get<JobOption[]>("/jobs")
+      .get<JobOption[]>("/jobs?picker=1")
       .then(setJobs)
       .catch(() => {});
   }, []);
@@ -72,9 +73,9 @@ export function JobFilterNote({ kind, jobId, label, canViewCosting }: { kind: "e
         {canViewCosting && (
           <>
             {" · "}
-            <Link href={`/jobs/${jobId}?tab=costing`} className="text-primary hover:underline">
+            <SectionLink href={`/jobs/${jobId}?tab=costing`} className="text-primary hover:underline">
               Open the job&apos;s costing
-            </Link>
+            </SectionLink>
           </>
         )}
       </AlertDescription>

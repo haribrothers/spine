@@ -1,6 +1,6 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { LayoutDashboard, Receipt } from "lucide-react";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { AppShell, AppShellContent, AppShellHeader, AppShellSidebar, type AppShellNavSection } from "./app-shell";
 import { Avatar, AvatarFallback } from "./avatar";
@@ -73,6 +73,37 @@ describe("AppShell a11y", () => {
         </AppShellContent>
       </AppShell>,
     );
+    await expectNoA11yViolations(container);
+  });
+
+  it("US-OPS-48: shows the search slot under the logo, before the nav", async () => {
+    const { container } = render(
+      <AppShell className="h-[400px]">
+        <AppShellSidebar
+          logo={<span className="text-[14px] font-semibold text-on-surface">Spine</span>}
+          collapsed={false}
+          onCollapsedChange={() => {}}
+          sections={DEMO_SECTIONS}
+          isActive={() => false}
+          renderLink={(item, content) => (
+            <a href={item.href} aria-label={item.label}>
+              {content}
+            </a>
+          )}
+          search={
+            <button type="button" aria-label="Search" aria-keyshortcuts="Meta+K Control+K">
+              Search…
+            </button>
+          }
+        />
+        <AppShellContent>
+          <p>Content</p>
+        </AppShellContent>
+      </AppShell>,
+    );
+    const search = screen.getByRole("button", { name: "Search" });
+    const firstLink = screen.getByRole("link", { name: "Dashboard" });
+    expect(search.compareDocumentPosition(firstLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await expectNoA11yViolations(container);
   });
 });

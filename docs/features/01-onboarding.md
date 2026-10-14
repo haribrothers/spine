@@ -2,7 +2,7 @@
 
 A linear setup wizard that runs after the first owner signs up, configures the business in eight short steps, and can be skipped at any point. Every step stays editable later in Settings, demo data can replace manual setup, and a dashboard checklist guides the first real transaction.
 
-**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1), `OnbTaxCountry` (P1), `SettingsModules` (P1), `SetupSpine` (P1)
+**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1), `OnbTaxCountry` (P1), `SettingsModules` (P1), `SetupSpine` (P1), `OnbStart` (P2), `OnbStartDark` (P2), `OnbStageBusiness` (P2), `OnbStageMoney` (P2), `OnbStageDocuments` (P2), `OnbStageBooks` (P2), `OnbStageDark` (P2), `OnbNarrow` (P2), `OnbFinish` (P2), `OnbFinishDark` (P2)
 **Depends on:** 02 Sign-in & account (first owner exists), 16 Settings (same panes reused), 15 Team (invitations).
 
 ## Features
@@ -15,6 +15,8 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-04 | Load demo data, by country and industry | P1 | 11 (9 for US-ONB-17–US-ONB-19, US-ONB-21) | `OnbWelcome`, `SettingsDemoData` |
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
+| F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide, vendor payments and payables to pay from, banking with reconciliations, a team with Teams and invites | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -26,7 +28,7 @@ Legacy: S-12.1
 
 **Acceptance criteria**
 - **Given** I have just created the first account on a fresh instance, **when** sign-up completes, **then** I land on `/onboarding` showing "Welcome to Spine" with the buttons "Set up my business", "Just show me around (use defaults)" (loads demo data, US-ONB-09) and "Skip to dashboard".
-- **Given** I am on the welcome screen, **when** I choose "Set up my business", **then** the stepper shows eight steps in this order: Business, Template, Currency, Fiscal year, Tax, Numbering, Accounts, Team, with Business active.
+- **Given** I am on the welcome screen, **when** I choose "Set up my business", **then** the steps run in this order: Business, Template, Currency, Fiscal year, Tax, Numbering, Accounts, Team, with Business active. Since US-ONB-22 they're grouped into four stages (Business · Money · Documents · Books & team).
 - **Given** I am on any step, **when** I press "Continue" with valid input, **then** the step is saved and the stepper marks it done with a check.
 - **Given** onboarding is already finished or skipped, **when** I open `/onboarding` again, **then** I am taken to the dashboard.
 - **Given** a staff or field user signs in, **when** they reach the app, **then** they never see the wizard.
@@ -156,7 +158,7 @@ Legacy: S-12.7
 - **Given** I am on the Team step, **when** I view it, **then** I see "Email" (placeholder "teammate@example.com"), "Role" with "Staff" and "Field", and "Send invite".
 - **Given** I enter a valid email and press "Send invite", **when** the invite is created, **then** a line "Invited <email> as <role>" appears and an email is queued.
 - **Given** I have sent no invites, **when** I view the footer, **then** the button reads "Skip — finish setup"; after one invite it reads "Finish".
-- **Given** I press "Finish", **when** setup completes, **then** I land on the dashboard.
+- **Given** I press "Finish" (or "Skip — finish setup"), **when** setup completes, **then** I see the finish screen (US-ONB-23), and "Go to dashboard" takes me there.
 - **Given** the email address already has a pending invite, **when** I send again, **then** I see "Could not send invite." with the reason.
 
 **Implementation notes**
@@ -396,3 +398,247 @@ Decision: D-192
 
 **Implementation notes**
 - Content: each industry pack localised by the country pack (names, addresses, phone formats, price scale rounded to whole local units, tax roles mapped to preset rates).
+
+### US-ONB-22 · Set up my business in four short stages with a live preview
+**Feature:** F-ONB-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `OnbStart`, `OnbStartDark`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbStageDark`, `OnbNarrow`
+**As** a new owner, **I want** setup to feel short and show me what my answers do, **so that** I finish it instead of skipping it.
+
+Decision: D-208
+
+**Acceptance criteria**
+- **Given** I land on `/onboarding`, **when** it opens, **then** one side shows:
+  - "Welcome to Spine, <first name>";
+  - "Four short stages, about 6 minutes. Skip anything — it's all in Settings later.";
+  - the four stages, each with one line: **Business** "Your name, logo and kind of work", **Money** "Currency, financial year and tax", **Documents** "How your quotes and invoices are numbered", **Books & team** "Your accounts and the people you work with";
+  - "Set up my business", "Just show me around (use defaults)" and "Skip to dashboard" (US-ONB-01, US-ONB-02, US-ONB-18).
+
+  The other side shows Spine's own screens drawn small (dashboard, an invoice, the phone app) with placeholder lines instead of names and amounts, and the people from the signed-out pages (D-207).
+- **Given** I choose "Set up my business", **when** a step shows, **then** a rail lists the four stages with their steps (Business: Details, Template · Money: Currency, Financial year, Tax · Documents: Numbering · Books & team: Accounts, Team). Done steps are ticked, the current step is marked, and under it "About <n> min left" counts down as steps are done.
+- **Given** any step, **when** I look under the form, **then** a tip says why it matters and where to change it later, e.g. "Spine uses one currency for everything. The locale decides how dates and numbers look." · "Change it later in Settings › Currency & locale.".
+- **Given** the Business, Money or Documents stage, **when** I type or pick, **then** a preview beside the form shows the start of my first invoice and updates before I save: my logo, business name and address; the date and an example amount in my currency and locale; my tax name and rate on a line; and the invoice number my numbering will give (e.g. "INV-0001"). Until I've typed a name it says "Your business".
+- **Given** the Books & team stage, **when** it shows, **then** the preview turns to "Your books": the account groups with how many accounts each has, and "Your team" with everyone I've invited and their role.
+- **Given** any step after the first, **when** I press "Back" (above the step, beside where I am), **then** the previous step opens with what I saved.
+- **Given** a window narrower than 1280 px, **when** a step shows, **then** the preview is left out; below 1024 px the rail becomes a bar at the top ("Stage 2 of 4 · Money · About 4 min left") with a progress line.
+- **Given** a screen reader, **when** it reads a step, **then** it hears where it is ("Stage 2 of 4 · Money · Step 1 of 3"), the step's heading, the form and the tip; the rail is a "Setup steps" list with the current step marked and done steps read as "(done)"; it skips the preview and the drawn screens.
+- **Given** Reduce Motion, **when** steps change, **then** nothing slides; the preview changes without animating.
+
+**Implementation notes**
+- UI: `apps/web/src/app/onboarding/page.tsx` gets a new shell (`OnboardingShell`: rail, step area, tip, preview); the step components stay and keep their labels ("Continue", "Skip to dashboard"). Each step that feeds the preview (Business, Currency, Tax country, Default tax rate, Numbering) gains an optional `onChange(value)`, so the preview sees unsaved input. `OnboardingPreview` formats money with `formatMoney` and the number with `formatDocumentNumber` (both `@spine/shared`; the numbering service uses the same one), so those can't disagree with the real invoice; the date is shown in the chosen locale, as on the web's screens. A preset country's tax line is its usual rate (India's 18% as CGST 9% + SGST 9%, otherwise the highest standard rate).
+- Data: no new API. The preview reads the saved settings each step already loads (`business_profile`, `currency`, `/org/tax/profile`, `/org/numbering`, `/org/accounts`) plus invitations sent in this session.
+- Content: stages, steps, minutes and tips live in one list (`ONBOARDING_STAGES`) in the web app.
+- Edge: Tax's GST details (India) and "Default tax rate" (another country) are part of the Tax step, so they don't change the count of steps.
+
+### US-ONB-23 · Finish setup on a screen that shows what's next
+**Feature:** F-ONB-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `OnbFinish`, `OnbFinishDark`
+**As** a new owner, **I want** to see that setup is done and what to do first, **so that** I start working straight away.
+
+Decision: D-208
+
+**Acceptance criteria**
+- **Given** the Team step, **when** I press "Finish" or "Skip — finish setup", **then** onboarding is marked finished and a finish screen shows "You're set up" and "Spine is ready for <business name>." (or "Spine is ready." without a name).
+- **Given** the finish screen, **when** it shows, **then** it lists what I set, each with a "Change" link to its Settings pane: Business (name), Money (currency and tax), Documents (first invoice number), Team ("2 invites sent" or "Just you for now").
+- **Given** the finish screen, **when** I look for what's next, **then** three cards link to "Add your first customer", "Add something you sell" and "Send your first quote", and a line "See what's left to set up — <n> left" opens the Set up Spine page (US-ONB-15).
+- **Given** the finish screen, **when** I press "Go to dashboard", **then** I land on the dashboard; refreshing the finish screen also goes there, since onboarding is finished.
+- **Given** I skipped setup or loaded a demo business, **when** I leave onboarding, **then** I go straight to the dashboard, without the finish screen (US-ONB-02, US-ONB-18).
+- **Given** Reduce Motion, **when** the finish screen opens, **then** its tick and people show still.
+
+**Implementation notes**
+- UI: `/onboarding` checks `onboarding_status` when it opens and sends a finished or skipped onboarding to the dashboard (US-ONB-01). A `done` state (`FinishStep`) is shown after `PUT /org/settings/onboarding_status { completedAt }` succeeds. The "<n> left" comes from `GET /org/setup-status` with `setupProgress` (`@spine/shared`); if that call fails, the line reads "See what's left to set up".
+- Links: customer → `/contacts/new`, catalogue → `/catalog`, quote → `/quotes/new`; "Change" opens Settings at the matching pane.
+
+### US-ONB-24 · Explore a pipeline that's being worked
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`PipelineBoard`, `LeadDrawer` with demo data)
+**As** an evaluator, **I want** the demo's pipeline to look like one a team is working, **so that** the board's owners, ages, nudges and history show what they're for.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo (Riverstone Builders included), **when** it's loaded, **then** its open leads belong to the owner who loaded it and to Sarah Mendes (the demo Staff person), so cards show both and the Owner filter narrows to each; won and lost leads are the owner's.
+- **Given** the board, **when** it shows, **then** open leads have been in their stage for different lengths of time (from a few days to about three weeks), each has an expected close date in the next two months, and exactly one says "No activity for 14 days".
+- **Given** the lost lead, **when** I open it, **then** it says why it was lost ("Price") with a note.
+- **Given** any lead's drawer, **when** I look at its history, **then** it shows when it was created and each stage it moved through, with who and when, ending in its current stage.
+- **Given** the strip above the board, **when** it shows, **then** "Won this month" and "Win rate" count the demo's won and lost leads (the won lead closed within the last 30 days).
+
+**Implementation notes**
+- Shared: each plan lead gains `owner` ("owner" | "staff"), `daysInStage`, `expectedCloseInDays`, `lostReason` and `lostNote`; `cold` marks the one lead with no activity for 14 days.
+- API: `DemoSeederService` creates the demo people before the contacts; it writes `stage_changed_at`, `updated_at`, `expected_close_date`, `lost_reason` and `lost_note`, and the lead's audit trail (created, then one `stageId` change per stage, dated) as the app would have.
+
+### US-ONB-25 · Explore quotes at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`QuotesListRefined`, `QuoteDetailRefined`, `QuoteDetailAcceptedRefined` with demo data)
+**As** an evaluator, **I want** the demo's quotes to be at every stage, **so that** the cards, countdowns, views and panels have something to show.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** every quote has a title.
+- **Given** the quotes list, **when** it shows, **then** sent quotes were sent on different days over the last few weeks; one sent quote expires within 7 days and one has expired.
+- **Given** a sent quote, **when** the customer has looked at it, **then** the list shows "Viewed 2×" (or more) with the last view on a recent day; at least one sent quote hasn't been viewed.
+- **Given** the cards, **when** they show, **then** one quote was accepted this month (for the customer whose lead is won) and one declined with a comment (for the customer whose lead is lost), so "Won this month" and "Win rate" have figures.
+- **Given** the newest job, **when** I open it, **then** it says "From QUO-…": it was made from an accepted quote for its contract, whose Related panel lists the job and whose Activity says "Converted to a job".
+- **Given** a quote for a customer with a lead, **when** I open it, **then** its Related panel shows the lead.
+
+**Implementation notes**
+- Shared: each plan quote gains `title`, `sentInDays`, `views` (count and last view), `respondedInDays` and `comment`; `outcome` gains "accepted" and "declined"; a job's `fromQuote` adds its contract quote (one lump-sum line at the contract value, with the job's milestone tax).
+- API: sent through `QuotesService.send` and answered through the customer link (`PublicQuotesService.accept`/`reject`), then their send, view and answer dates and audit rows are set to the plan's days; views are `quote_events` rows. The job is created with the quote as its source (`JobsService.create`'s `sourceQuoteId`), so its contract value stays the plan's.
+
+### US-ONB-26 · Explore jobs that need something
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`JobsListRefined`, `JobDetailRefined`, `JobDetailCompleted` with demo data)
+**As** an evaluator, **I want** the demo's jobs to need billing, watching and closing, **so that** the Jobs cards, next steps and figures show what they do.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo with jobs, **when** it's loaded, **then** every job has an end date, the finished job's in the past.
+- **Given** the job in progress, **when** I look at it, **then** a completed milestone hasn't been invoiced yet: "Ready to bill" counts it and the job's next step is "Invoice <milestone>".
+- **Given** the jobs, **when** they show, **then** each has a cost budget and the newest is near it ("Over or near budget" shows 1 for people who can see job profitability), and one job has a % complete estimate.
+- **Given** the finished job, **when** I open it, **then** its status is Completed; where the demo releases retention it's released, and otherwise (India, Q-21) it's held and "Release retention" is the next step.
+- **Given** a customer with a job, **when** I start a new job for them, **then** the drawer fills in their site address.
+
+**Implementation notes**
+- Shared: each plan job gains `endInDays`, `budget` ("near" or a share of the contract), `percentComplete` and `status`; a milestone gains `completeInDays` (completed, not invoiced).
+- API: the near budget is set after the timeline from the job's journal-line cost, so it's near whatever the costs come to; customers with a job get a "site" address, the job's site.
+
+### US-ONB-27 · Explore a catalogue and calendar that look kept
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`CatalogueRefined`, `MeetingsCalendar` with demo data)
+**As** an evaluator, **I want** the demo's catalogue and calendar to look like a business's, **so that** bundles, income accounts and the calendar's lists aren't empty.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** goods (materials, fixtures, hardware) post to 4000 Sales — Goods, so "No income account" counts only the services, which post to 4100 (a professional practice sells only services).
+- **Given** the catalogue, **when** I open Bundles, **then** the demo has two bundles made from its items, offered in a quote's line picker.
+- **Given** the calendar, **when** it opens, **then** meetings start at different times of day, at least three fall in the next two weeks (one tomorrow), and the mini calendar and "Upcoming" show them.
+
+**Implementation notes**
+- Shared: items gain `income` ("goods" | "services"); a plan gains `bundles` (name, description, item keys and quantities); meetings gain `startTime` ("14:30").
+- API: bundles through `CatalogBundlesService.create` with `items`; meetings at the plan's local time.
+
+### US-ONB-28 · Explore invoices at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`InvoicesListRefined`, `InvoiceDetailRefined` with demo data)
+**As** an evaluator, **I want** the demo's invoices to be due, late, chased and paid, **so that** the invoice cards and Activity show what they do.
+
+Decision: D-216, D-217
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** every issued invoice has a due date (from its plan or the business's 30-day terms), at least one is due within 7 days and at least one is overdue.
+- **Given** the demo's invoices, **when** I open one that was emailed and one that was reminded, **then** their Activity shows "Emailed to …" and "Reminder sent" on their own days.
+
+**Implementation notes**
+- Shared: plan invoices gain `emailedInDays` and `remindedInDays`; Riverstone's deposit invoice is due in 5 days.
+
+### US-ONB-29 · Explore credit notes at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`CreditNotesListRefined`, `CreditNoteDetailRefined` with demo data)
+**As** an evaluator, **I want** the demo's credit notes to show where credit goes, **so that** the cards and "Where it went" show what they do.
+
+Decision: D-216, D-219
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** it has three credit notes, each crediting invoice lines with their tax and dated this month on their own days: one only off its invoice, one on a paid invoice whose spare credit was partly applied to the customer's overdue invoice (the rest still to use), and one whose spare credit was refunded.
+- **Given** Riverstone Builders, **when** it's loaded, **then** it has one credit note off its invoice and two on the paid kitchen invoice — one whose credit is kept to use and one refunded (its customers have no other open invoice to apply credit to).
+- **Given** a GST demo, **when** I open the Tax Summary or GSTR-1, **then** the credit notes' CGST/SGST (or IGST) reduce the tax owed.
+
+**Implementation notes**
+- Shared: plan credit notes gain `issuedInDays`, `applyInDays` and `refundInDays`; credit notes are seeded through `CreditNotesService` with `invoiceLineId` (issued and applied on the plan's day), refunds through `CustomerRefundsService`. A refund of a demo credit note's credit is demo money: its entry is flagged demo, and deleting the demo removes it and any applied credit with the credit note.
+
+### US-ONB-30 · Explore bills and vendor credits at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`VendorBillsListRefined`, `VendorBillPage`, `VendorCreditsListRefined`, `VendorCreditPage`, `RecurringBillsList` with demo data)
+**As** an evaluator, **I want** the demo's bills and vendor credits to be at every stage, **so that** the cards, states and Activity on Vendor bills and Vendor credits show what they do.
+
+Decision: D-216, D-225, D-226
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** its bills cover every state: one paid, one overdue, one partly paid and due within 7 days (on a job), one void with its reason, and two drafts — so every Vendor bills card has something in it and "Record (2)" shows.
+- **Given** an industry demo, **when** it's loaded, **then** it has four vendor credits, each on its own day with its Activity on those days: one raised against the overdue bill and partly applied to it (Partly used), one open and dated about 70 days ago (Unused 60+ days), one used up by a refund from the vendor (Refunds shows it), and one draft. The overdue bill shows "Apply credit" and its Credits applied.
+- **Given** Riverstone Builders, **when** it's loaded, **then** one bill is partly paid and due within 7 days, it has a second draft bill, and it has two vendor credits — one partly used against the overdue bill and one draft.
+- **Given** any demo, **when** it's loaded, **then** "Recurring bills" has one active monthly schedule for a vendor, with its next run date.
+- **Given** "Delete all demo data", **when** it runs, **then** the demo vendor credits, their applications and refunds, and the demo recurring bill go with the rest, and the bills a demo schedule created count as demo too.
+
+**Implementation notes**
+- Data: `vendor_credits.is_demo`, `vendor_refunds.is_demo` and `recurring_bills.is_demo` (`boolean default false`, migration `0115`), set by the demo for what it loads — a credit or schedule a person records for a demo vendor stays theirs and keeps that vendor (D-191 (5)); a refund takes its credit's flag; the ledger treats a demo credit's entries, and its refunds', as demo; a demo schedule is for a demo vendor, so its runs create demo bills.
+- Shared: plan bills gain partial `payments[].amount`; plans gain `vendorCredits` (`billKey?`, `dateInDays`, `outcome: draft | open`, `applyInDays?`, `applyAmount?`, `refundInDays?`) and `recurringBills`. Credits are seeded through `VendorCreditsService` (record, apply, refund) and the schedule through `RecurringBillsService`, with their audit entries on the plan's days.
+
+### US-ONB-31 · Explore expenses with their receipts
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`ExpensesListRefined`, `ExpensePage`, `ExpenseRejectedResubmit` with demo data)
+**As** an evaluator, **I want** the demo's expenses to come with their receipts and read on their own days, **so that** an expense's page shows the receipt beside what was claimed, and its Activity, the way it will for real ones.
+
+Decision: D-216, D-227
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** each of its five expenses (approved, waiting and rejected) has a receipt: a till-roll PDF from a shop that fits what it was for (a café for a lunch, a fuel station for fuel, a hire company for hire), in the business's town, with the date, what was bought, the tax inside the amount and the total, in the demo's currency and formats.
+- **Given** Riverstone Builders, **when** it's loaded, **then** four of its expenses have a receipt and "Fuel — no receipt attached" still has none.
+- **Given** a demo expense, **when** I open its page, **then** the receipt previews beside the details and opens full size; it's served only through the expense's own checks, like any upload.
+- **Given** a demo expense, **when** I look at its Activity, **then** it was submitted on its date and approved or rejected the day after (never later than today), not all at the moment the demo loaded.
+- **Given** "Delete all demo data", **when** it runs, **then** the demo's receipts go with its expenses.
+- **Given** no file storage is set up, **when** the demo loads, **then** the expenses load without receipts and nothing fails.
+
+**Implementation notes**
+- Shared: plan expenses gain `receipt?: { merchant, place }`; industry plans pick the merchant from the category and description (`receiptMerchant`) and the place from the country's business town.
+- API: the seeder prints each receipt with `@react-pdf` (`demo-receipt.tsx`, 80 mm wide, light) and stores it through `FilesService.upload` before creating the expense with `receiptFileId`; the created, approved and rejected audit entries and `approvedAt` / `rejectedAt` are set to the plan's days. Deleting the demo removes each deleted demo expense's receipt once nothing else points at it (`FilesService.deleteStored`).
+
+### US-ONB-32 · Explore expense categories that guide
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`ExpenseCategoriesRefined`, `ExpenseFormCategoryHint` with demo data)
+**As** an evaluator, **I want** the demo's categories to say what they're for and carry their usual tax, **so that** the Categories table and the expense form show what they do.
+
+Decision: D-129, D-216, D-228
+
+**Acceptance criteria**
+- **Given** an industry template, **when** it seeds its categories (US-ONB-13), **then** each comes with its "What it's for" line ("Diesel, petrol, tolls and parking for site vehicles"); a category the business already had keeps its own line.
+- **Given** an industry demo loaded into a business without records of its own, in a country whose demo expenses carry a single tax rate (the VAT and GST countries other than India), **when** it's loaded, **then** the template's goods categories default to that rate. India's GST splits by state and Riverstone's expenses carry no tax, so their categories keep no default. A business with records of its own keeps its categories as they are.
+- **Given** any demo, **when** Expenses › Categories opens, **then** the table shows counts and this month's approved amounts from the demo's expenses.
+- **Given** any demo, **when** it's loaded, **then** it adds one category no expense uses, archived ("Client entertainment"), so the Archived filter shows something.
+- **Given** "Delete all demo data", **when** it runs, **then** the category the demo added goes, and the defaults it set are cleared; the template's categories stay, as before.
+
+**Implementation notes**
+- Shared: template categories gain `description`; plans gain `categoryTaxDefault` (the country's expense rate, where there is one) and `archivedCategory`; template categories gain `goods`.
+- API: the seeder sets the defaults and adds the archived category through `ExpenseCategoriesService`, recording what it did in the demo setting (`createdCategoryIds`, `defaultedCategoryIds`) so deleting the demo undoes exactly that.
+
+### US-ONB-33 · Explore vendor payments and payables you can pay from
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`VendorPaymentsListRefined`, `VendorPaymentPage`, `PayablesByVendor`, `PayablesByBill`, `PayablesDueThisWeek` with demo data)
+**As** an evaluator, **I want** the demo's bills to owe at every age and its payments to look like real ones, **so that** Payables and Vendor payments show what they do.
+
+Decision: D-216, D-229, D-230
+
+**Acceptance criteria**
+- **Given** an industry demo, **when** it's loaded, **then** Payables has open bills in every age but one: Current and due within 7 days (the part-paid bill), 1–30 days (the overdue bill with credit applied), 31–60 days (on a job) and 90+ days. The 90+ bill is from the vendor who has the part-paid bill, so that vendor has two open bills to expand and to pay together with "Pay (2)"; 61–90 days stays empty, so pressing it says "Nothing 61–90 days late.".
+- **Given** an industry demo, **when** it's loaded, **then** one vendor payment pays two bills from the same vendor in full in one go, about five weeks ago — its row's "Bills paid" names both and its page lists both under "Paid to".
+- **Given** an industry demo, **when** it's loaded, **then** its payments read like real ones: by bank transfer with a reference, by cheque with the cheque number, and in cash to the sole trader; spread over the last four months, the newest a few days ago.
+- **Given** the payment that pays two bills, **when** its page opens, **then** its Activity reads "Remittance advice emailed to <the vendor's address>" on the day after it was recorded. Nothing is sent.
+- **Given** Riverstone Builders, **when** it's loaded, **then** Apex Timber (which has the part-paid bill) also has a bill 90+ days late, Granite State has a second bill 31–60 days late, and its payment has a method and a reference.
+- **Given** "Delete all demo data", **when** it runs, **then** the new bills and payments go with the rest, as before.
+
+**Implementation notes**
+- Shared: `BILL_TIMELINE` gains `bill8` (supplier, 90+ days, open), `bill9` (services, 31–60 days, open, on job b) and `bill10`/`bill11` (supplier_far, paid together); each industry pack gains their refs and lines. Plan bill payments gain `method` and `reference`; plans gain `vendorPayments` — one payment across several plan bills (`bills`, `inDays`, `method`, `reference`, `remittanceInDays?`).
+- API: the seeder records the shared payment through `VendorPaymentsService` once its bills are recorded, and writes its `remittance_sent` audit entry (the vendor's address) on its day — no email is queued, as with the demo's emailed invoices.
+
+### US-ONB-34 · Explore banking with accounts, transfers and reconciliations
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`BankingAccountsRefined`, `AccountRegisterRefined`, `ReconcileRefined`, `ReconciliationReport` with demo data)
+**As** an evaluator, **I want** the demo's banking to have a card, transfers, money in and out, an imported statement and reconciliations, **so that** Banking shows what it does.
+
+Decision: D-216, D-231
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** Banking has a credit card account ("Business card", ••4410) with spending on it (a software subscription as money out) and a payoff from the bank account as a transfer, and a transfer from the bank account to cash ("Petty cash top-up").
+- **Given** any demo, **when** it's loaded, **then** the bank account has money in (interest) and money out (bank charges) entries on their days.
+- **Given** any demo, **when** it's loaded, **then** the bank account has a statement imported for last month and this month, with a balance column: last month is reconciled (finished by the owner on the 3rd), and this month is in progress — some lines matched, some with a suggested match, and one bank charge line not yet in Spine to Create or exclude.
+- **Given** "Delete all demo data", **when** it runs, **then** the card account, the transfers, the money in and out, the statement and both reconciliations go with the rest.
+
+**Implementation notes**
+- Data: `is_demo` on `money_accounts`, `bank_transactions`, `bank_transfers`, `bank_statement_imports` and `bank_reconciliations` (migration), set by the demo; the ledger treats their entries as demo.
+- API: the seeder adds the card through `MoneyAccountsService`, records the entries through `BankTransactionsService` and `BankTransfersService`, imports the statement through `StatementImportsService` (lines made from the demo's own bank entries, plus a bank charge) and reconciles last month through `ReconciliationsService` — each on its day.
+
+### US-ONB-35 · Explore Users with a team that looks real
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`TeamUsersRefined`, `TeamInvites`, `UserAccessDrawer`, `TeamsList` with demo data)
+**As** an evaluator, **I want** the demo's people, Teams and invites to look like a real small team, **so that** Users and Teams show what they do.
+
+Decision: D-216, D-232
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** Users lists, besides the owner, Sarah Mendes (Staff), Marcus Webb (Field), Kavya Iyer (Staff, on no Team — so "Staff without a Team" reads 1 and her row warns) and Ravi Kumar (Field, on the crew of one demo job); Tom Becker (Field) is under Deactivated. All are marked "Demo"; Neha, Kavya and Ravi have "Never signed in" until someone uses their login.
+- **Given** any demo, **when** it's loaded, **then** Teams has a second Team, "Accounts" (billing, payments, receivables, banking and reports), and Neha is on General Staff and Accounts, so "What they can open" shows more for her than for Sarah, on General Staff alone. Sarah's access is unchanged.
+- **Given** any demo, **when** it's loaded, **then** the Invites tab has two invites from the owner: a Staff invite (sam.lee.demo@example.com, joining General Staff and Accounts, sent yesterday and expiring tomorrow) and a Field invite that has expired (dev.patel.demo@example.com, sent last month). No email is sent, and neither can be used: the link says it can't be used, sign-up stays closed to those addresses and accepting is refused.
+- **Given** the demo's people, **when** the audit log or a person's history opens, **then** it reads like the team grew: each joined on their day, Neha added to Accounts, Tom deactivated a few weeks ago — backdated, by the owner.
+- **Given** "Delete all demo data", **when** it runs, **then** the demo people lose their membership (their logins stay, as now), the Accounts Team and the demo invites go, and nothing a person set up themselves is touched — a Team or invite of their own stays.
+
+**Implementation notes**
+- Data: `is_demo` on `teams` and on Better Auth's `invitation` (migration), set only by the demo.
+- API: the seeder adds Neha, Kavya, Ravi and Tom the way it adds Sarah and Marcus (a login with the demo password; the membership is demo), creates "Accounts" through `TeamsService` with its grants, puts Neha on it, writes the two invites directly (an id, the owner as inviter, `expires_at` in two days and last week) with their Teams, deactivates Tom through `MembersService`, adds Ravi to the first demo job's crew and backdates the audit entries. Loading the demo again reuses the people and the Team by name.

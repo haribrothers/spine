@@ -11,8 +11,7 @@ const config = getDefaultConfig(projectRoot);
  * Monorepo wiring: Metro must also watch the workspace root (so changes to
  * @spine/ui-native/@spine/config trigger a rebuild) and resolve
  * node_modules from both this app's own folder and the hoisted workspace
- * root (pnpm's node_modules layout) — same setup as
- * apps/design-system-native/metro.config.js and apps/mobile/metro.config.js.
+ * root (pnpm's node_modules layout) — same setup as apps/mobile/metro.config.js.
  */
 config.watchFolders = [workspaceRoot];
 config.resolver.nodeModulesPaths = [path.resolve(projectRoot, "node_modules"), path.resolve(workspaceRoot, "node_modules")];

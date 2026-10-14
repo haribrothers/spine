@@ -28,6 +28,11 @@ import { CalendarView, RecurringMoveOrResizeRequest, Calendar } from "@spine/ui"
 | `nonDeletableEventIds` | Set<string> | — |
 | `canCreateEvents` | boolean | true |
 | `renderExtraFields` | (ctx: { isEdit: boolean; event: CalendarEvent \| null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode | — |
+| `toolbarAction` | ReactNode | — |
+| `views` | CalendarView[] | all four |
+| `createRequest` | { start: Date; end: Date } \| null | — |
+| `openRequest` | { eventId: string; occurrenceStart: Date } \| null | — |
+| `agendaDetails` | (instance) => ReactNode | — |
 | `className` | string | — |
 | `id` | string | — |
 | `title` | string | — |
@@ -59,6 +64,9 @@ import { CalendarView, RecurringMoveOrResizeRequest, Calendar } from "@spine/ui"
 - Fully controlled — the caller owns events, view, and date; drag/resize/create interaction state stays internal.
 - Optional contactOptions prop adds a Contact field to the event editor (a searchable Combobox) so an event can optionally link to an external record — first used by the /meetings page (S-01.9) to schedule meetings against a CRM contact.
 - Optional readOnlyEventIds + onReadOnlyEventClick let a caller overlay events from another source Calendar shouldn't let the user drag/resize/edit through its own dialog — a matching id skips move/resize entirely and routes clicks to the caller's own handler instead of the built-in editor. First used to overlay activities (calls/notes/tasks with a due date, no time range) alongside real scheduled meetings.
+- US-MTG-14 (D-212): Day and Week open scrolled to 8 AM, or the hour before now on today after 9 AM (`calendarScrollHour`); the week's day headers stay in view; a now line (overdue colour) marks the current time on today's column. `toolbarAction` adds a control before the view switch; `createRequest` opens the create dialog for a range; the quick view flips, shifts and scrolls to fit in the window.
+- US-MTG-15: `openRequest` opens an occurrence's quick view once its day is on screen.
+- US-MTG-17: `views` limits the views offered; Agenda rows show the time range, place and `agendaDetails`, stacking on narrow screens; the toolbar wraps.
 
 ## Exports
 

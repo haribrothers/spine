@@ -21,7 +21,8 @@ test.describe("US-JOB-27", () => {
     await expect(card.getByRole("progressbar", { name: `Billed ${billing.billedPct}% of the contract` })).toBeVisible();
 
     await page.goto("/jobs");
-    await expect(page.getByRole("columnheader", { name: /Billed/ })).toBeVisible();
-    await expect(page.getByRole("row").filter({ hasText: job.name }).first()).toContainText(`${job.billedPct ?? "—"}%`.replace("—%", "—"));
+    // US-JOB-33: billed % sits beside complete % in Progress.
+    const progress = page.getByRole("row").filter({ hasText: job.name }).first().getByTestId("job-progress");
+    await expect(progress).toContainText(`Billed${job.billedPct ?? "—"}%`.replace("—%", "—"));
   });
 });

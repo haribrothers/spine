@@ -29,6 +29,8 @@ export interface QuotePdfData {
   contactName: string | null;
   contactEmail: string | null;
   business: QuotePdfBusinessProfile | null;
+  /** US-QUO-35 — a quote that hasn't been sent prints "DRAFT" across every page, so a preview can't pass for the real thing. */
+  watermark?: boolean;
   /** Base64 data URI for the org logo, resolved by QuotePdfService before render (React-PDF's <Image> needs a URL or a resolvable source, and CLAUDE.md's "byte-identical across environments" requirement rules out a live network fetch inside the renderer itself). Undefined when there is no logo or it could not be fetched — the header degrades to text-only. */
   logoDataUri?: string;
 }
@@ -43,6 +45,7 @@ const styles = StyleSheet.create({
   docTitleBlock: { alignItems: "flex-end" },
   docTitle: { fontSize: 18, fontWeight: 700 },
   docNumber: { fontSize: 10, color: "#555555", marginTop: 2 },
+  docSubject: { fontSize: 10, color: "#1a1a1a", marginTop: 4, maxWidth: 220, textAlign: "right" },
   section: { marginBottom: 16 },
   sectionLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
   contactName: { fontSize: 11, fontWeight: 700 },
@@ -92,7 +95,7 @@ function formatDate(value: Date | string | null): string {
  * app uses the same formatter), never a hand-rolled division, so this template can never
  * silently misplace a decimal point.
  */
-export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: QuotePdfData) {
+export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout, watermark = false }: QuotePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "quote");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = quote.currency;
@@ -101,6 +104,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
   return (
     <Document title={quote.number ?? "Quote"} author={business?.name ?? "Spine"}>
       <Page size={layout.paperSize} style={[styles.page, pagePaddingFor(brand)]}>
+        {watermark && <DraftWatermark />}
         <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
@@ -113,6 +117,8 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           <View style={styles.docTitleBlock}>
             <Text style={[styles.docTitle, { color: brand.color }]}>{layout.title.toUpperCase()}</Text>
             <Text style={styles.docNumber}>{quote.number ?? "DRAFT"}</Text>
+            {/* US-QUO-30: the quote's title under its number. */}
+            {quote.title && <Text style={styles.docSubject}>{quote.title}</Text>}
           </View>
         </View>
 
@@ -189,3 +195,26 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
     </Document>
   );
 }
+
+/**
+ * US-QUO-35, US-INV-34 — "DRAFT" across the middle of every page of an unsent quote or a draft invoice,
+ * faint and behind the content: drawn first, and `fixed` so it repeats on
+ * each page.
+ */
+export function DraftWatermark({ document = "quote" }: { document?: "quote" | "invoice" }) {
+  return (
+    <View fixed style={watermarkStyles.layer}>
+      <View style={watermarkStyles.rotated}>
+        <Text style={watermarkStyles.big}>DRAFT</Text>
+        <Text style={watermarkStyles.small}>Preview only — not a valid {document}</Text>
+      </View>
+    </View>
+  );
+}
+
+const watermarkStyles = StyleSheet.create({
+  layer: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
+  rotated: { alignItems: "center", transform: "rotate(-35deg)" },
+  big: { fontSize: 120, fontWeight: 700, color: "#000000", opacity: 0.06, letterSpacing: 12 },
+  small: { fontSize: 18, fontWeight: 700, color: "#000000", opacity: 0.09, marginTop: 4, letterSpacing: 1 },
+});

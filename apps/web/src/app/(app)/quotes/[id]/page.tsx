@@ -1,4 +1,3 @@
-import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../../lib/get-session";
 import { QuoteDetail } from "../quote-detail";
 
@@ -7,9 +6,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const session = await getSession();
 
   return (
-    <>
-      <AppShellHeader breadcrumb={[{ label: "Sales" }, { label: "Quotes", href: "/quotes" }, { label: "Detail" }]} title="Quote" />
-      <QuoteDetail quoteId={id} currentUserId={session?.user?.id ?? null} />
-    </>
+    // US-QUO-31: the quote renders its own header, with its number as the page title.
+    <QuoteDetail quoteId={id} currentUserId={session?.user?.id ?? null} />
   );
 }

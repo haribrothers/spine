@@ -54,7 +54,7 @@ test.describe("Dashboard v2", () => {
     await expect(main.getByText("Receivables aging")).toBeVisible();
     await expect(main.getByText("Job profitability").first()).toBeVisible();
     // US-DASH-16: one "Today" card replaces the follow-ups, meetings and milestones cards.
-    await expect(main.getByTestId("today-card").getByText("Today", { exact: true })).toBeVisible();
+    await expect(main.getByTestId("today-card").getByRole("heading", { name: "Today" })).toBeVisible();
     await expect(main.getByText("Invoices due this week")).toBeVisible();
     await expect(main.getByText("Recent activity")).toBeVisible();
 
@@ -96,7 +96,11 @@ test.describe("Dashboard v2", () => {
     // container div (which also contains the widget's OWN "Money in
     // trend" heading, plus every other widget sharing the same ancestor
     // grid, so a loose `div` text filter matches far too broadly).
+    // The layout saves in the background; let this save land before the next one, or the
+    // older save can arrive last and hide the widget again.
+    const hidden = page.waitForResponse((res) => res.url().includes("/users/me/dashboard-layout") && res.request().method() === "PUT");
     await editModeHideToggle(page, "Money in and out").click();
+    await hidden;
 
     // Hidden state in edit mode is dimmed (opacity-40), not removed —
     // confirm the toggle flipped to "Show widget" rather than asserting
@@ -109,7 +113,10 @@ test.describe("Dashboard v2", () => {
     // Re-show it — persisted layout must survive a reload too, since
     // DashboardShell fetches it fresh via GET /users/me/dashboard-layout.
     await page.getByRole("button", { name: "Edit layout" }).click();
+    // The layout saves in the background: wait for it before reloading.
+    const saved = page.waitForResponse((res) => res.url().includes("/users/me/dashboard-layout") && res.request().method() === "PUT");
     await editModeHideToggle(page, "Money in and out").click();
+    await saved;
     await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByTestId("money-in-out")).toBeVisible();
 

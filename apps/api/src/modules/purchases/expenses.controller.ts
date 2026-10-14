@@ -46,10 +46,11 @@ export class ExpensesController {
     @Query("mine") mine?: string,
   ) {
     const orgId = requireOrgId(session);
-    // Field always sees only their own expenses, whatever `mine` says (US-OPS-20).
+    // Field always sees only their own expenses, whatever `mine` says (US-OPS-20);
+    // so do Staff without "See everyone's expenses" (US-TEAM-30).
     const scope = await this.expensesService.readScope(orgId, session.user.id);
     // US-PUR-22: Field can only filter by a job they're assigned to.
-    if (scope && jobId && !(await this.expensesService.isAssigned(orgId, session.user.id, jobId))) return [];
+    if (scope && jobId && (await this.expensesService.isField(orgId, session.user.id)) && !(await this.expensesService.isAssigned(orgId, session.user.id, jobId))) return [];
     return this.expensesService.list(orgId, { status, jobId, submittedByUserId: scope ?? (mine === "true" ? session.user.id : undefined) });
   }
 
@@ -59,6 +60,24 @@ export class ExpensesController {
   async labourTrades(@Session() session: UserSession, @Query("q") q?: string) {
     const orgId = requireOrgId(session);
     return this.expensesService.labourTrades(orgId, q, await this.expensesService.readScope(orgId, session.user.id));
+  }
+
+  /** US-PUR-44 — my own expenses with this amount on this day (not rejected). Declared before `:id`. */
+  @Get("possible-duplicates")
+  @OrgRoles(["owner", "staff", "field"])
+  async possibleDuplicates(@Session() session: UserSession, @Query("amount") amount?: string, @Query("date") date?: string, @Query("excludeId") excludeId?: string) {
+    const orgId = requireOrgId(session);
+    if (!amount || !/^\d+$/.test(amount) || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
+    const uuid = /^[0-9a-f-]{36}$/i;
+    return this.expensesService.possibleDuplicates(orgId, session.user.id, { amount: BigInt(amount), date, excludeId: excludeId && uuid.test(excludeId) ? excludeId : undefined });
+  }
+
+  /** US-PUR-43 — the expense's Activity; Field reads only their own. */
+  @Get(":id/activity")
+  @OrgRoles(["owner", "staff", "field"])
+  async activity(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expensesService.activity(orgId, id, await this.expensesService.readScope(orgId, session.user.id));
   }
 
   @Get(":id")

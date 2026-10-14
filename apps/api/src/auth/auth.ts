@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
+import { isCommonPassword, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
 import { assertSignupAllowed } from "./signup-policy";
 import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -20,6 +21,7 @@ import {
 import { EmailService } from "../modules/email/email.service";
 import { loadEmailBrand } from "../modules/email/email-brand";
 import { appUrl, renderEmail } from "../modules/email/email-layout";
+import { applyInvitationTeams } from "./invitation-teams";
 import { invitationEmail } from "../modules/email/email-templates";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { seedDefaultTeam } from "../db/seed/default-team";
@@ -70,10 +72,14 @@ export const auth = betterAuth({
         .where(eq(member.userId, user.id))
         .orderBy(desc(member.createdAt))
         .limit(1);
-      await sendResetPasswordEmail({ user, token }, membership ? await loadEmailBrand(db, membership.orgId) : undefined);
+      await sendResetPasswordEmail({ user, token }, membership ? await loadEmailBrand(db, membership.orgId) : undefined, { db, orgId: membership?.orgId ?? null });
     },
     resetPasswordTokenExpiresIn: RESET_TOKEN_TTL_SECONDS,
     revokeSessionsOnPasswordReset: true,
+    // US-TEAM-24 — a password chosen through a reset link is their own: no "choose your own" step after it.
+    onPasswordReset: async ({ user: resetUser }) => {
+      await db.update(userTable).set({ mustChangePassword: false }).where(eq(userTable.id, resetUser.id));
+    },
   },
   hooks: {
     /**
@@ -82,6 +88,11 @@ export const auth = betterAuth({
      * sign-in); the per-email limit lives in `sendResetPasswordEmail`.
      */
     before: createAuthMiddleware(async (ctx) => {
+      // US-AUTH-15 (D-207): the most common passwords are refused wherever one is chosen.
+      const chosen = ctx.path === "/sign-up/email" ? ctx.body?.password : ctx.path === "/reset-password" || ctx.path === "/change-password" ? ctx.body?.newPassword : undefined;
+      if (typeof chosen === "string" && isCommonPassword(chosen)) {
+        throw new APIError("BAD_REQUEST", { message: PASSWORD_TOO_COMMON_MESSAGE, code: "PASSWORD_TOO_COMMON" });
+      }
       if (ctx.path !== "/request-password-reset") return;
       const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";
       if (!resetIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: RESET_TOO_MANY_MESSAGE });
@@ -140,13 +151,18 @@ export const auth = betterAuth({
        * accept-invite page, which calls auth.api.acceptInvitation with it.
        */
       sendInvitationEmail: async (data) => {
-        const emailService = new EmailService();
-        if (!emailService.isConfigured()) return;
+        const emailService = new EmailService(db);
         const acceptUrl = appUrl(`/accept-invite/${data.id}`);
         // US-NTF-11: the business name from the business profile, not the
         // organisation row ("<Owner>'s Organisation" until US-TEAM-15).
         const brand = await loadEmailBrand(db, data.organization.id);
         const template = invitationEmail({ businessName: brand.name, inviterName: data.inviter.user.name, role: data.role, acceptUrl });
+        // US-SET-27 (D-220): recorded in the email log, sent or not.
+        const log = { orgId: data.organization.id, kind: "invitation" as const, userId: data.inviter.user.id };
+        if (!emailService.isConfigured()) {
+          await emailService.recordNotSent(log, data.email, template.subject);
+          return;
+        }
         const email = renderEmail(brand, template.content);
         await emailService.send({
           to: data.email,
@@ -155,7 +171,19 @@ export const auth = betterAuth({
           text: email.text,
           html: email.html,
           attachments: email.attachments,
+          log,
         });
+      },
+      organizationHooks: {
+        // US-ONB-35 — the demo's invites can't be accepted, whoever holds the link.
+        beforeAcceptInvitation: async ({ invitation }) => {
+          const [row] = await db.select({ isDemo: invitationTable.isDemo }).from(invitationTable).where(eq(invitationTable.id, invitation.id));
+          if (row?.isDemo) throw new APIError("FORBIDDEN", { message: "This invitation can't be used. Ask whoever invited you to send a new one." });
+        },
+        // US-TEAM-21 — a Staff invite joins its Teams the moment it's accepted.
+        afterAcceptInvitation: async ({ invitation, member: joined, organization }) => {
+          await applyInvitationTeams(db, { invitationId: invitation.id, memberId: joined.id, role: joined.role, orgId: organization.id });
+        },
       },
     }),
     jwt({
@@ -242,6 +270,7 @@ export const auth = betterAuth({
                 eq(invitationTable.email, user.email.toLowerCase()),
                 eq(invitationTable.status, "pending"),
                 gt(invitationTable.expiresAt, new Date()),
+                eq(invitationTable.isDemo, false),
               ),
             )
             .limit(1);

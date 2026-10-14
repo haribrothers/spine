@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
-import { pgTable, uuid, text, boolean, timestamp, unique, index } from "drizzle-orm/pg-core";
-import { organization, member } from "./auth";
+import { pgTable, uuid, text, boolean, timestamp, unique, index, primaryKey } from "drizzle-orm/pg-core";
+import { organization, member, invitation } from "./auth";
 
 /**
  * PRD §2.1/§7 — Teams subdivide the Staff tier with a configurable
@@ -15,10 +15,14 @@ export const teams = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    /** US-TEAM-26 — what the Team is for (up to 200 characters). */
+    description: text("description"),
     // Marks the auto-seeded "General Staff" team. Informational + used to
     // block deletion of the seeded default and to identify the fallback
     // team new Staff invites land in.
     isDefault: boolean("is_default").default(false).notNull(),
+    /** US-ONB-35 — the demo's "Accounts" Team; deleting the demo removes it. */
+    isDemo: boolean("is_demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
@@ -72,6 +76,24 @@ export const teamPrivileges = pgTable(
     index("team_privileges_team_id_idx").on(table.teamId),
     unique("team_privileges_team_capability_unique").on(table.teamId, table.capability),
   ],
+);
+
+/**
+ * US-TEAM-21 (D-232) — the Teams a Staff invite joins when it's accepted
+ * (Better Auth's `afterAcceptInvitation` hook, auth.ts). Both sides cascade:
+ * a deleted invitation or Team takes its rows with it.
+ */
+export const invitationTeams = pgTable(
+  "invitation_teams",
+  {
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => invitation.id, { onDelete: "cascade" }),
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.invitationId, table.teamId] }), index("invitation_teams_team_id_idx").on(table.teamId)],
 );
 
 export const teamsRelations = relations(teams, ({ many }) => ({

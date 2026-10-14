@@ -1,4 +1,5 @@
 import { Logger } from "@nestjs/common";
+import type { Database } from "../db/client";
 import { EmailService } from "../modules/email/email.service";
 import { EMAIL_COLORS, renderEmail, type EmailBrand } from "../modules/email/email-layout";
 import { passwordResetEmail } from "../modules/email/email-templates";
@@ -63,18 +64,25 @@ export function resetPasswordUrl(token: string, env: NodeJS.ProcessEnv = process
  * The token is never logged. The email carries the brand of the person's
  * organisation (US-NTF-11), or plain Spine when there isn't one.
  */
-export async function sendResetPasswordEmail(data: { user: { email: string; name: string }; token: string }, brand?: EmailBrand): Promise<void> {
+export async function sendResetPasswordEmail(
+  data: { user: { email: string; name: string }; token: string },
+  brand?: EmailBrand,
+  /** US-SET-27 (D-220): where to record it in the email log. */
+  log?: { db: Database; orgId: string | null },
+): Promise<void> {
   if (!resetEmailLimiter.hit(data.user.email.toLowerCase())) {
     logger.warn("Password reset email skipped: this address reached its hourly limit");
     return;
   }
-  const emailService = new EmailService();
-  if (!emailService.isConfigured()) {
-    logger.warn("Password reset requested, but email (SMTP) isn't configured, so no link was sent");
-    return;
-  }
+  const emailService = new EmailService(log?.db);
   const url = resetPasswordUrl(data.token);
   const template = passwordResetEmail({ name: data.user.name, url });
+  const logRef = log ? { orgId: log.orgId, kind: "password_reset" as const } : undefined;
+  if (!emailService.isConfigured()) {
+    logger.warn("Password reset requested, but email (SMTP) isn't configured, so no link was sent");
+    if (logRef) await emailService.recordNotSent(logRef, data.user.email, template.subject);
+    return;
+  }
   const email = renderEmail(brand ?? SPINE_BRAND, template.content);
   try {
     await emailService.send({
@@ -84,6 +92,7 @@ export async function sendResetPasswordEmail(data: { user: { email: string; name
       text: email.text,
       html: email.html,
       attachments: email.attachments,
+      log: logRef,
     });
   } catch (err) {
     // An SMTP outage must not turn into a different answer on the page.

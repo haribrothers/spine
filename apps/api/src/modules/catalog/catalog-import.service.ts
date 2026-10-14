@@ -92,6 +92,7 @@ export class CatalogImportService {
             name,
             description: r.description || null,
             unit: r.unit || "each",
+            category: r.category || null,
             defaultPriceAmount: price,
             defaultPriceCurrency: currency,
             defaultTaxRateId: taxRateId,

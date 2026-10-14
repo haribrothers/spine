@@ -73,7 +73,7 @@ describe("US-PUR-24 · record a credit from a vendor (requires local Postgres)",
     Object.assign(owner, await newUser("owner"));
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;
     Object.assign(drafter, await newUser("drafter"));
-    await join(drafter, "staff", ["vendor_credits.edit_own"]);
+    await join(drafter, "staff", ["vendor_credits.open", "vendor_credits.edit_own"]);
     Object.assign(field, await newUser("field"));
     await join(field, "field");
     const [vendor] = await db.insert(contacts).values({ orgId, type: "vendor", name: "Coastal Timber Supply", createdByUserId: owner.userId }).returning();

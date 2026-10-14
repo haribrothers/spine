@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
 import { member, teamMemberships, teamPrivileges, teams, user } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 import { TeamsService } from "./teams.service";
 
 /**
@@ -26,7 +27,7 @@ describe("TeamsService (requires local Postgres)", () => {
   beforeAll(async () => {
     const databaseUrl = process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine";
     db = createDb(databaseUrl);
-    teamsService = new TeamsService(db);
+    teamsService = new TeamsService(db, new AuditLogService(db));
   });
 
   afterAll(async () => {

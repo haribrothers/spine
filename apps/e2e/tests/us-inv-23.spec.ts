@@ -6,6 +6,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
 /** The demo seed's Staff user, in the default Team. */
 const DEMO_STAFF_USER = { email: "sarah.mendes.demo@example.com", password: "DemoPassword123!" };
 
+/** A bulk action's answer (D-097): the ids it did, and each one it skipped with why. */
+interface BulkResult {
+  done: string[];
+  skipped: { id: string; label: string | null; reason: string }[];
+}
+
 interface ListedInvoice {
   id: string;
   number: string | null;
@@ -33,7 +39,8 @@ async function setReminderGrant(page: Page, granted: boolean) {
 test.describe("US-INV-23", () => {
   test("ticking rows shows the bar; Send reminders counts only eligible invoices and reports the skipped ones", async ({ page, seededOrg: _ }) => {
     const invoices = (await (await page.request.get(`${API_URL}/invoices`)).json()) as ListedInvoice[];
-    const eligible = invoices.find((i) => i.status === "issued" && BigInt(i.balanceDue) > 0n && !i.remindedToday && i.number);
+    // One of the demo's own (its customers have emails): earlier specs add invoices for contacts without one.
+    const eligible = invoices.find((i) => i.status === "issued" && BigInt(i.balanceDue) > 0n && !i.remindedToday && i.number?.startsWith("DEMO-"));
     const paid = invoices.find((i) => i.status === "issued" && BigInt(i.balanceDue) === 0n && i.number);
     const voided = invoices.find((i) => i.status === "void" && i.number);
     expect(eligible && paid && voided, "the demo data has an unpaid, a paid and a void invoice").toBeTruthy();
@@ -48,6 +55,16 @@ test.describe("US-INV-23", () => {
     await expect(bar.getByRole("button", { name: "Clear" })).toBeVisible();
 
     await bar.getByRole("button", { name: "Send reminders (1)" }).click();
+    // Emailing customers asks first (D-217).
+    const confirm = page.getByRole("alertdialog", { name: "Send 1 payment reminder?" });
+    await expect(confirm.getByTestId("confirm-reminders")).toContainText("The customer gets the reminder email with the invoice attached, straight away. 2 of the selected invoices are skipped");
+    // The send's own answer says what was sent and what was skipped, and why.
+    const [sent] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes("/invoices/bulk/send-reminders") && res.request().method() === "POST"),
+      confirm.getByRole("button", { name: "Send reminder" }).click(),
+    ]);
+    const result = (await sent.json()) as BulkResult;
+    expect(result.done, `skipped: ${JSON.stringify(result.skipped)}`).toEqual([eligible!.id]);
     await expect(page.getByText("1 reminder sent").first()).toBeVisible();
     await expect(page.getByText(new RegExp(`${paid!.number}: Nothing is owed on it\\.`)).first()).toBeVisible();
     await expect(page.getByText(new RegExp(`${voided!.number}: It's void\\.`)).first()).toBeVisible();

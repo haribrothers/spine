@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
+import { Checkbox } from "./checkbox";
 import { Pagination } from "./pagination";
 import { PaginationBar } from "./pagination-bar";
 import { usePrintMode } from "../lib/print-mode";
@@ -41,9 +42,39 @@ export interface TableProps<T> {
   groupMemberLabel?: (row: T) => React.ReactNode;
   /** A totals row under every page, keyed by column (a report's "Total"); columns left out stay blank. */
   footer?: Partial<Record<string, React.ReactNode>>;
+  /**
+   * The page, when the parent keeps it (e.g. in the address, US-CRM-23).
+   * Controlled, it doesn't jump back to 1 when `data` changes (a refresh
+   * keeps your place); a page past the end shows the last page.
+   */
+  page?: number;
+  onPageChange?: (page: number) => void;
+  /**
+   * US-CAT-12 — selectable rows: a checkbox column (named by `selectLabel`)
+   * and a header box that selects or clears the rows on this page. The
+   * parent keeps the selection (row keys).
+   */
+  selected?: ReadonlySet<string>;
+  onSelectedChange?: (next: Set<string>) => void;
+  selectLabel?: (row: T) => string;
+  /** US-CAT-13 — the sort, when the parent keeps it (e.g. in the address). */
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort | null) => void;
+  /**
+   * US-PAY-27 — rows that open to show more under them (a customer's
+   * invoices): a chevron button (`aria-expanded`) in a first column, and a
+   * full-width row under an open one. Flat tables only (not with `groupBy`).
+   */
+  renderExpanded?: (row: T) => React.ReactNode;
+  /** The chevron's accessible name, e.g. "Show Halcyon's invoices"; defaults to "Show more" / "Show less". */
+  expandLabel?: (row: T, expanded: boolean) => string;
 }
 
-type SortDirection = "asc" | "desc";
+export type SortDirection = "asc" | "desc";
+export interface TableSort {
+  key: string;
+  direction: SortDirection;
+}
 
 /**
  * Zero-radius, dense row height, sticky header, sortable columns, and
@@ -70,9 +101,28 @@ export function Table<T>({
   groupPrimary,
   groupMemberLabel,
   footer,
+  page: pageProp,
+  onPageChange,
+  selected,
+  onSelectedChange,
+  selectLabel,
+  sort: sortProp,
+  onSortChange,
+  renderExpanded,
+  expandLabel,
 }: TableProps<T>) {
-  const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(null);
-  const [page, setPage] = useState(1);
+  const [sortState, setSortState] = useState<TableSort | null>(null);
+  const sortControlled = sortProp !== undefined;
+  const sort = sortControlled ? sortProp : sortState;
+  const setSort = (update: (current: TableSort | null) => TableSort | null) => {
+    const next = update(sort);
+    if (sortControlled) onSortChange?.(next);
+    else setSortState(next);
+  };
+  const selectable = Boolean(selected && onSelectedChange);
+  const expandable = Boolean(renderExpanded) && !groupBy;
+  const [pageState, setPageState] = useState(1);
+  const controlled = pageProp !== undefined;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // configurablePageSize's <select> only ever offers pageSizeOptions, so the
   // initial pageSize must be one of them too — otherwise the <select> falls
@@ -81,8 +131,8 @@ export function Table<T>({
   const [pageSize, setPageSize] = useState(pageSizeProp ?? (configurablePageSize ? pageSizeOptions[0]! : 20));
 
   useEffect(() => {
-    setPage(1);
-  }, [data, pageSize]);
+    if (!controlled) setPageState(1);
+  }, [data, pageSize, controlled]);
 
   // Grouped mode: cluster `data` by `groupBy(row)` into one Group per key
   // (a group of size 1 — no siblings — behaves exactly like a flat row,
@@ -115,7 +165,7 @@ export function Table<T>({
       if (av > bv) return 1 * factor;
       return 0;
     });
-  }, [data, sort]);
+  }, [data, sort, columns]);
 
   const sortedGroups = useMemo(() => {
     if (!groups) return null;
@@ -135,6 +185,12 @@ export function Table<T>({
   const pageCount = groupBy
     ? Math.max(1, Math.ceil((sortedGroups?.length ?? 0) / pageSize))
     : Math.max(1, Math.ceil(sorted.length / pageSize));
+  const page = Math.min(controlled ? Math.max(1, pageProp) : pageState, pageCount);
+  const setPage = (next: number) => (controlled ? onPageChange?.(next) : setPageState(next));
+  const changePageSize = (next: number) => {
+    setPageSize(next);
+    if (controlled) onPageChange?.(1);
+  };
   // US-RPT-34 — "Print" shows every row, not just this page.
   const printing = usePrintMode();
   const pageRows = printing ? sorted : sorted.slice((page - 1) * pageSize, page * pageSize);
@@ -147,6 +203,23 @@ export function Table<T>({
       if (current.direction === "asc") return { key, direction: "desc" };
       return null;
     });
+  }
+
+  const pageKeys = pageRows.map((row) => rowKey(row));
+  const pageSelected = selectable ? pageKeys.filter((k) => selected!.has(k)).length : 0;
+  function togglePage() {
+    if (!selectable) return;
+    const next = new Set(selected);
+    if (pageSelected === pageKeys.length) for (const k of pageKeys) next.delete(k);
+    else for (const k of pageKeys) next.add(k);
+    onSelectedChange!(next);
+  }
+  function toggleRow(key: string) {
+    if (!selectable) return;
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onSelectedChange!(next);
   }
 
   function toggleExpanded(key: string) {
@@ -164,6 +237,21 @@ export function Table<T>({
         <table className="w-full border-collapse text-[13px]">
           <thead className="sticky top-0 z-[var(--z-sticky-header)] border-b border-border bg-surface-sunken">
             <tr>
+              {expandable && (
+                <th className="w-10 px-2 py-2">
+                  <span className="sr-only">Open</span>
+                </th>
+              )}
+              {selectable && !groupBy && (
+                <th className="w-10 px-3 py-2">
+                  <Checkbox
+                    aria-label="Select every row on this page"
+                    checked={pageSelected === 0 ? false : pageSelected === pageKeys.length ? true : "indeterminate"}
+                    onCheckedChange={togglePage}
+                    disabled={pageKeys.length === 0}
+                  />
+                </th>
+              )}
               {columns.map((column) => (
                 <th
                   key={column.key}
@@ -268,8 +356,35 @@ export function Table<T>({
                     </Fragment>
                   );
                 })
-              : pageRows.map((row) => (
-                  <tr key={rowKey(row)} className="border-b border-border last:border-0 hover:bg-surface-sunken">
+              : pageRows.map((row) => {
+                  const key = rowKey(row);
+                  const isSelected = selectable && selected!.has(key);
+                  const isOpen = expandable && expanded.has(key);
+                  return (
+                  <Fragment key={key}>
+                  <tr
+                    aria-selected={selectable ? isSelected : undefined}
+                    className={cn("border-b border-border last:border-0 hover:bg-surface-sunken", isSelected && "bg-info-bg/70 hover:bg-info-bg", isOpen && "bg-surface-sunken/60")}
+                  >
+                    {expandable && (
+                      <td className="w-10 px-2 py-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(key)}
+                          aria-expanded={isOpen}
+                          aria-controls={`${key}-more`}
+                          aria-label={expandLabel ? expandLabel(row, isOpen) : isOpen ? "Show less" : "Show more"}
+                          className="flex h-7 w-7 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <ChevronRight size={16} aria-hidden className={cn("motion-safe:transition-transform", isOpen && "rotate-90")} />
+                        </button>
+                      </td>
+                    )}
+                    {selectable && (
+                      <td className="w-10 px-3 py-2">
+                        <Checkbox aria-label={selectLabel ? `Select ${selectLabel(row)}` : "Select row"} checked={isSelected} onCheckedChange={() => toggleRow(key)} />
+                      </td>
+                    )}
                     {columns.map((column) => (
                       <td
                         key={column.key}
@@ -282,11 +397,22 @@ export function Table<T>({
                       </td>
                     ))}
                   </tr>
-                ))}
+                  {isOpen && (
+                    <tr id={`${key}-more`} className="border-b border-border bg-surface-sunken/30 last:border-0">
+                      <td colSpan={columns.length + (selectable ? 1 : 0) + 1} className="p-0">
+                        {renderExpanded!(row)}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  );
+                })}
           </tbody>
           {footer && (
             <tfoot>
               <tr className="border-t border-border bg-surface-sunken font-semibold text-on-surface">
+                {expandable && <td />}
+                {selectable && !groupBy && <td />}
                 {columns.map((column) => (
                   <td key={column.key} className={cn("whitespace-nowrap px-3 py-2.5", column.align === "right" ? "text-right tabular-nums" : "text-left")}>
                     {footer[column.key]}
@@ -304,7 +430,7 @@ export function Table<T>({
           pageSizeOptions={pageSizeOptions}
           total={groupBy ? groupTotal : data.length}
           onPageChange={setPage}
-          onPageSizeChange={setPageSize}
+          onPageSizeChange={changePageSize}
         />
       ) : (
         pageCount > 1 && <Pagination page={page} pageCount={pageCount} onPageChange={setPage} className="self-end" />

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDb, type Database } from "../../db/client";
 import { files, member, notifications, session as sessionTable, user } from "../../db/schema";
@@ -141,11 +141,14 @@ describe("US-OPS-28 · stored files are proved intact (requires local Postgres)"
     expect((await row(damaged.id)).integrityProblem).toBe("damaged");
     expect((await row(damaged.id)).integrityCheckedAt).not.toBeNull();
 
+    // The run's own warning (the newest): how many it counts depends on the files already in this database.
     const [notification] = await db
       .select()
       .from(notifications)
-      .where(and(eq(notifications.orgId, orgId), eq(notifications.recipientUserId, ownerUserId), eq(notifications.type, "files_damaged")));
-    expect(notification?.message).toContain("stored files are damaged or missing — restore from your latest backup.");
+      .where(and(eq(notifications.orgId, orgId), eq(notifications.recipientUserId, ownerUserId), eq(notifications.type, "files_damaged")))
+      .orderBy(desc(notifications.createdAt))
+      .limit(1);
+    expect(notification?.message).toMatch(/^\d+ stored files? (is|are) damaged or missing — restore from your latest backup\./);
     expect(notification?.message).toContain("File “damaged.pdf”");
   });
 

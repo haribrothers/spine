@@ -128,7 +128,7 @@ export function BrandingPane() {
             </label>
           ))}
         </RadioGroup>
-        <p className="text-[13px] text-on-surface-muted">Each person still chooses light or dark mode in their own Profile &amp; Preferences.</p>
+        <p className="text-[13px] text-on-surface-muted">Each person still chooses light or dark mode from their user menu.</p>
       </fieldset>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

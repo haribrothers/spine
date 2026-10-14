@@ -1,6 +1,6 @@
 # FloatingTabBar
 
-**Package:** `@spine/ui-native/navigation` · **Platform:** Native · **Source:** `packages/ui-native/src/navigation/floating-tab-bar.tsx` · **Doc page:** `apps/design-system-native/app/components/floating-tab-bar.tsx`
+**Package:** `@spine/ui-native/navigation` · **Platform:** Native · **Source:** `packages/ui-native/src/navigation/floating-tab-bar.tsx` · **Doc page:** none — its page went with `apps/design-system-native` (D-240); no app uses it since the field app moved to native tabs (US-MOB-19)
 
 A fully custom bottom tab bar — a floating, rounded, inset pill with each tab&apos;s icon stacked above its label, and the active tab&apos;s highlight capsule sliding smoothly between tabs on selection, matching iOS&apos;s standard tab bar height/label sizing. Replaces React Navigation&apos;s default tab bar entirely rather than just theming it (see Bottom Tab Bar for that lighter option).
 

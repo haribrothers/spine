@@ -321,6 +321,45 @@ export function passwordResetEmail(d: { name: string; url: string }): EmailTempl
   };
 }
 
+/**
+ * US-TEAM-24 (D-233) — an Owner set this person's password. Never carries the
+ * password; says who did it, that they're signed out, and what happens next.
+ */
+export function passwordSetByOwnerEmail(d: { name: string; ownerName: string; businessName: string; signInUrl: string }): EmailTemplate {
+  return {
+    subject: `${d.ownerName} changed your ${d.businessName} password`,
+    content: {
+      heading: "Your password was changed",
+      greeting: `Hi ${firstName(d.name)},`,
+      paragraphs: [
+        `${d.ownerName} set a new password for your ${d.businessName} account on Spine, and you've been signed out on every device.`,
+        "They'll give you the new password themselves. When you next sign in with it, you'll choose one only you know.",
+      ],
+      button: { label: "Sign in", url: d.signInUrl },
+      note: `If you weren't expecting this, talk to ${d.ownerName} or another owner at ${d.businessName}.`,
+    },
+  };
+}
+
+/** US-AUTH-18 — to the old address when someone changes their sign-in email. Says who to contact if it wasn't them. */
+export function emailChangedEmail(d: { name: string; businessName: string; newEmail: string; when: string; device: string; ownerNames: string }): EmailTemplate {
+  return {
+    subject: "Your Spine sign-in email changed",
+    content: {
+      heading: "Your sign-in email changed",
+      greeting: `Hi ${firstName(d.name)},`,
+      paragraphs: [`The email you use to sign in to Spine for ${d.businessName} was changed.`],
+      facts: [
+        { label: "New sign-in email", value: d.newEmail },
+        { label: "When", value: d.when },
+        { label: "From", value: d.device },
+      ],
+      note: `If this was you, there's nothing to do. If it wasn't, contact an owner of ${d.businessName}${d.ownerNames ? ` — ${d.ownerNames} —` : ""} straight away so they can secure your account.`,
+      footerNote: "You get this email because your sign-in details changed.",
+    },
+  };
+}
+
 /** The button a notification gets, from where its in-app link points. */
 function recordButton(link: string): string {
   const section = link.split(/[/?]/)[1] ?? "";

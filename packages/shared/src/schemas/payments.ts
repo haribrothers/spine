@@ -33,6 +33,8 @@ export const createPaymentSchema = z.object({
   /** US-BANK-03 — the account the money went into; omitted means the organisation's default. */
   moneyAccountId: uuidSchema.optional().nullable(),
   allocations: z.array(paymentAllocationInputSchema).default([]),
+  /** US-PAY-23 — the "Email a receipt" switch; omitted: sent when the customer has an email address, as before. */
+  sendReceipt: z.boolean().optional(),
 });
 
 /**
@@ -46,6 +48,55 @@ export const createPaymentSchema = z.object({
 export const applyPaymentCreditSchema = z.object({
   allocations: z.array(paymentAllocationInputSchema).min(1),
 });
+
+/** US-PAY-26 (D-221) — `POST /payments/:id/allocations/:allocationId/unapply`: move a payment off an invoice. */
+export const unapplyPaymentSchema = z.object({
+  reason: z.string().trim().max(500).optional().nullable(),
+});
+
+/** US-PAY-19 — one invoice a payment was applied to, on `GET /payments/:id`. */
+export interface PaymentAppliedTo {
+  allocationId: string;
+  invoiceId: string;
+  invoiceNumber: string | null;
+  invoiceTotal: string;
+  /** What the invoice still owes now, minor units. */
+  invoiceBalance: string;
+  invoiceType: string;
+  invoiceStatus: string;
+  amount: string;
+  at: string;
+}
+
+export type PaymentActivityType = "recorded" | "applied" | "unapplied" | "emailed" | "refunded" | "refund_deleted";
+
+/** US-PAY-20 — `GET /payments/:id/activity`, newest first. */
+export interface PaymentActivityEntry {
+  at: string;
+  type: PaymentActivityType;
+  actorName: string | null;
+  /** Minor units: what was received, applied, moved off or refunded. */
+  amount?: string | null;
+  /** The invoice number (applied, unapplied), the email address (emailed) or the method (recorded, refunded). */
+  detail?: string | null;
+  /** The invoice (applied, unapplied) or the refund. */
+  linkId?: string | null;
+  /** Recorded: the money account's name. */
+  account?: string | null;
+  /** Unapplied: the reason given. */
+  reason?: string | null;
+}
+
+/** US-PAY-24 — `GET /payments/possible-duplicates`. */
+export interface PossibleDuplicatePayment {
+  id: string;
+  number: string | null;
+  date: string;
+  amount: string;
+  currency: string;
+  method: string;
+  reference: string | null;
+}
 
 /** `POST /customer-refunds` (US-PAY-17): pay a customer back out of one source of their credit. */
 export const createCustomerRefundSchema = z

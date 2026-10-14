@@ -34,8 +34,8 @@ test.describe("US-DASH-20", () => {
 
     const jobs = page.getByTestId("jobs-in-progress");
     await expect(jobs).toContainText("Jobs in progress");
-    await expect(jobs.locator("tbody tr").first()).toContainText(/\d+% billed/);
-    await expect(jobs.locator("tbody tr").first()).toContainText(/No budget|\d+%|Over|Nearing/);
+    await expect(jobs.locator("li[data-job]").first()).toContainText(/\d+% billed/);
+    await expect(jobs.locator("li[data-job]").first()).toContainText(/No budget|\d+%|Over|Nearing/);
     await jobs.getByRole("link", { name: "Job profitability" }).click();
     await expect(page).toHaveURL(/\/reports\/job-profitability$/);
   });

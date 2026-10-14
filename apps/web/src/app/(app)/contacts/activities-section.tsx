@@ -21,7 +21,7 @@ import {
   Spinner,
   Textarea,
 } from "@spine/ui";
-import { Pencil } from "lucide-react";
+import { CalendarPlus, NotebookPen, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { Activity, ActivityType } from "./types";
@@ -33,20 +33,31 @@ const TYPE_OPTIONS: ActivityType[] = ["call", "meeting", "note", "task"];
  * date." "Log activity"/"Edit activity" share the same Dialog (Issue 4
  * pattern) — `editingId` set means editing via `PUT /activities/:id`, null
  * means creating via `POST /activities`.
+ *
+ * US-CRM-27: the lead drawer uses it too — `leadId` links new activities to
+ * the lead, and `followUps` adds "Add follow-up" (the same dialog, with the
+ * date required).
  */
 export function ActivitiesSection({
   contactId,
+  leadId,
+  heading = "Activities",
+  followUps = false,
   activities,
   onChanged,
   onCreated,
 }: {
   contactId: string;
+  leadId?: string;
+  heading?: string;
+  followUps?: boolean;
   activities: Activity[] | null;
   onChanged: () => void;
   onCreated?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [asFollowUp, setAsFollowUp] = useState(false);
   const [type, setType] = useState<ActivityType>("call");
   const [notes, setNotes] = useState("");
   const [dueAt, setDueAt] = useState("");
@@ -54,8 +65,9 @@ export function ActivitiesSection({
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const canCreate = useCapability("activities.edit_own");
 
-  function openAddDialog() {
+  function openAddDialog(followUp = false) {
     setEditingId(null);
+    setAsFollowUp(followUp);
     setType("call");
     setNotes("");
     setDueAt("");
@@ -64,6 +76,7 @@ export function ActivitiesSection({
 
   function openEditDialog(activity: Activity) {
     setEditingId(activity.id);
+    setAsFollowUp(false);
     setType(activity.type);
     setNotes(activity.notes ?? "");
     setDueAt(activity.dueAt ? activity.dueAt.slice(0, 10) : "");
@@ -82,6 +95,7 @@ export function ActivitiesSection({
       } else {
         await apiClient.post("/activities", {
           contactId,
+          ...(leadId ? { leadId } : {}),
           type,
           notes: notes || undefined,
           dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
@@ -106,8 +120,22 @@ export function ActivitiesSection({
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-[14px] font-semibold text-on-surface">Activities</h3>
+    <section className="flex flex-col gap-3" aria-label={heading}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-[14px] font-semibold text-on-surface">{heading}</h3>
+        {followUps && canCreate && (
+          <div className="flex gap-1.5">
+            <Button size="sm" variant="secondary" onClick={() => openAddDialog()}>
+              <NotebookPen size={14} aria-hidden />
+              Log activity
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => openAddDialog(true)}>
+              <CalendarPlus size={14} aria-hidden />
+              Add follow-up
+            </Button>
+          </div>
+        )}
+      </div>
       {activities === null ? (
         <Spinner size="sm" />
       ) : activities.length > 0 ? (
@@ -123,18 +151,18 @@ export function ActivitiesSection({
           ))}
         </ul>
       ) : (
-        <p className="text-[13px] text-on-surface-muted">No activities logged.</p>
+        <p className="text-[13px] text-on-surface-muted">{followUps ? "No follow-ups or activities yet." : "No activities logged."}</p>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        {canCreate && (
-          <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
+        {canCreate && !followUps && (
+          <Button size="sm" variant="secondary" className="self-start" onClick={() => openAddDialog()}>
             Log activity
           </Button>
         )}
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit activity" : "Log activity"}</DialogTitle>
+            <DialogTitle>{editingId ? "Edit activity" : asFollowUp ? "Add follow-up" : "Log activity"}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-3">
             <FormField label="Type">
@@ -156,7 +184,7 @@ export function ActivitiesSection({
             <FormField label="Notes">
               {(field) => <Textarea {...field} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />}
             </FormField>
-            <FormField label="Follow-up date" helperText="Leave blank if there's nothing to follow up on.">
+            <FormField label="Follow-up date" helperText={asFollowUp ? "When to follow up." : "Leave blank if there's nothing to follow up on."}>
               {(field) => <Input {...field} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />}
             </FormField>
           </DialogBody>
@@ -164,8 +192,8 @@ export function ActivitiesSection({
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={saving} onClick={handleSave}>
-              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Log activity"}
+            <Button disabled={saving || (asFollowUp && !dueAt)} onClick={handleSave}>
+              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : asFollowUp ? "Add follow-up" : "Log activity"}
             </Button>
           </DialogFooter>
         </DialogContent>

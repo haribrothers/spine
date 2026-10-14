@@ -22,6 +22,30 @@ describe("Toast a11y", () => {
   });
 });
 
+describe("Toast stack (US-OPS-38)", () => {
+  it("has no violations with three open, and lays them out newest on top", async () => {
+    render(
+      <ToastProvider>
+        {["Lead deleted", "Receipt sent", "RCP-0032 recorded"].map((title) => (
+          <Toast key={title} open>
+            <div>
+              <ToastTitle>{title}</ToastTitle>
+              <ToastDescription>What changed, or what to do next.</ToastDescription>
+            </div>
+            <ToastClose />
+          </Toast>
+        ))}
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    await expectNoA11yViolations(document.body);
+    const { expect } = await import("vitest");
+    const viewport = document.body.querySelector("ol");
+    expect(viewport?.className).toContain("flex-col-reverse");
+    expect(viewport?.querySelectorAll("li")).toHaveLength(3);
+  });
+});
+
 describe("Toast Escape", () => {
   it("doesn't swallow Escape meant for an open dialog", async () => {
     const { Dialog, DialogContent, DialogTitle, DialogDescription } = await import("./dialog");

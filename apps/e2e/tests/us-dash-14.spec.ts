@@ -19,7 +19,7 @@ test.describe("US-DASH-14", () => {
 
     await row.locator('[data-kpi="overdue"]').click();
     await expect(page).toHaveURL(/\/receivables\?overdue=1/);
-    await expect(page.getByRole("combobox", { name: "Show" })).toHaveText("Overdue only");
+    await expect(page.getByRole("combobox", { name: "Show by age" })).toHaveText("Overdue");
 
     await page.goto("/dashboard");
     await page.getByTestId("kpi-row").locator('[data-kpi="cash"]').click();

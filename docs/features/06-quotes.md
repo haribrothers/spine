@@ -2,7 +2,7 @@
 
 Multi-line quotes with sections, discounts and per-line tax; a branded PDF; email with a secure public link the customer can read, accept or decline on any device; versions that supersede instead of edit; a discount approval gate; expiry; and one-click conversion to a job or invoice.
 
-**Screens:** `QuotesList` (P1), `QuotesEmpty` (P1), `QuoteBuilder` (P1), `QuoteBuilderDraft` (P1), `QuoteDetail` (P1), `QuoteDetailAccepted` (P1), `QuoteDetailRejected` (P2), `QuoteDetailApproval` (P2), `QuoteDeleteConfirm` (P2), `QuoteConvertWarning` (P2), `EmailQueueDialog` (P3), `QuotePdf` (P1), `EmailQuote` (P2), `PublicQuote` (P1), `PublicQuotePhone` (P1), `PublicQuoteResult` (P1), `PublicQuoteDeclined` (P1), `PublicQuoteUnavailable` (P1), `JobFromQuote` (P1), `SettingsQuoteConversion` (P2), `MobQuoteAccept` (P1), `QuoteActionsMenu` (P2), `CatalogBundleDialog` (P2), `QuoteLinePicker` (P2), `QuoteDetailInPerson` (P1)
+**Screens:** `QuotesList` (P1), `QuotesEmpty` (P1), `QuoteBuilder` (P1), `QuoteBuilderDraft` (P1), `QuoteDetail` (P1), `QuoteDetailAccepted` (P1), `QuoteDetailRejected` (P2), `QuoteDetailApproval` (P2), `QuoteDeleteConfirm` (P2), `QuoteConvertWarning` (P2), `EmailQueueDialog` (P3), `QuotePdf` (P1), `EmailQuote` (P2), `PublicQuote` (P1), `PublicQuotePhone` (P1), `PublicQuoteResult` (P1), `PublicQuoteDeclined` (P1), `PublicQuoteUnavailable` (P1), `JobFromQuote` (P1), `SettingsQuoteConversion` (P2), `MobQuoteAccept` (P1), `QuoteActionsMenu` (P2), `CatalogBundleDialog` (P2), `QuoteLinePicker` (P2), `QuoteDetailInPerson` (P1), `QuotesListRefined` (P2), `QuotesListRefinedDark` (P2), `QuoteDetailRefined` (P2), `QuoteDetailAcceptedRefined` (P2), `QuoteBuilderCompact` (P2), `QuoteBuilderCompactDark` (P2)
 **Depends on:** 03 Contacts, 05 Catalogue, 11 Tax, 14 Notifications, 07 Jobs and 08 Invoicing (conversion).
 
 ## Features
@@ -10,7 +10,7 @@ Multi-line quotes with sections, discounts and per-line tax; a branded PDF; emai
 | ID | Feature | Priority | Phase | Screens |
 |---|---|---|---|---|
 | F-QUO-01 | Build and manage quotes | P1 | 1 | `QuoteBuilder`, `QuoteBuilderDraft`, `QuotesList`, `QuotesEmpty`, `QuoteDeleteConfirm` |
-| F-QUO-02 | PDF and email | P1 | 1 | `QuotePdf`, `EmailQuote`, `QuoteDetail`, `EmailQueueDialog` |
+| F-QUO-02 | PDF and email | P1 | 1 | `QuotePdf`, `EmailQuote`, `QuoteDetail` (`EmailQueueDialog` retired by US-SET-27) |
 | F-QUO-03 | Customer response by link | P1 | 1 | `PublicQuote`, `PublicQuotePhone`, `PublicQuoteResult`, `PublicQuoteDeclined`, `QuoteDetailAccepted`, `QuoteDetailRejected` |
 | F-QUO-04 | Versions, discount approval and expiry | P1 | 1 | `QuoteDetail`, `QuoteDetailApproval`, `QuotesList` |
 | F-QUO-05 | Convert to invoice | P1 | 2 | `QuoteDetailAccepted` |
@@ -19,6 +19,9 @@ Multi-line quotes with sections, discounts and per-line tax; a branded PDF; emai
 | F-QUO-08 | Record on-site acceptance | P1 | 5 | `MobQuoteAccept`, `QuoteDetailAccepted` |
 | F-QUO-09 | Customer-facing fixes | P1 | 6 | `PublicQuoteUnavailable`, `PublicQuote`, `QuoteConvertWarning` |
 | F-QUO-10 | Quote speed-ups: duplicate and bundles | P2 | 7 | `QuoteActionsMenu`, `CatalogBundleDialog`, `QuoteLinePicker` |
+| F-QUO-11 | A quotes list you can work from: cards that filter, the list in the address, progress in each row, a title | P2 | Refinements | `QuotesListRefined`, `QuotesListRefinedDark` |
+| F-QUO-12 | A quote page that says what's next: one next step, a lines table, activity with customer views, related records | P2 | Refinements | `QuoteDetailRefined`, `QuoteDetailAcceptedRefined` |
+| F-QUO-13 | A faster builder: compact rows, a bar that stays in view, a default validity | P2 | Refinements | `QuoteBuilderCompact`, `QuoteBuilderCompactDark` |
 
 ## User stories
 
@@ -117,6 +120,8 @@ Legacy: S-03.4
 - Edge: numbering in-transaction (D-007).
 
 ### US-QUO-07 · See emails waiting to go out
+**Retired** by the email log (US-SET-27, D-220): the quotes list's "Email queue", its dialog and `GET /quotes/email-queue` are removed; a quote's "Email failed" message links to the email log filtered to the quote.
+
 **Feature:** F-QUO-02 · **Priority:** P3 · **Phase:** 1 · **Screens:** `EmailQueueDialog`
 **As** office staff, **I want** to see quote emails still queued or retrying, **so that** I know if a customer hasn't received one.
 
@@ -415,3 +420,160 @@ Decision: D-096
 
 **Implementation notes**
 - UI: `quote-line-editor.tsx` picker; the "Use … as a one-off line" footer with "Also save to catalogue" is US-CAT-06.
+
+### US-QUO-27 · See open, expiring and won quotes at a glance
+**Feature:** F-QUO-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuotesListRefined`
+**As** an owner, **I want** the cards to say what's in play and what needs chasing, **so that** I follow up before quotes go cold.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** Quotes, **when** it shows, **then** the cards read "Open" (sent, not expired or superseded, with their total value), "Expiring in 7 days" (open quotes whose validity ends within 7 days), "Won this month" (accepted this calendar month, with their value) and "Win rate" (accepted ÷ answered or expired in the last 90 days; "—" with "None closed in the last 90 days" when there are none).
+- **Given** the counts, **when** a quote has versions, **then** it counts once, as its newest version (the list shows one row per quote, so the numbers match what I see).
+- **Given** "Open", "Expiring in 7 days" or "Won this month", **when** I press it, **then** the table shows just those quotes, the card shows pressed ("Showing these · press again to clear") and the address keeps it; pressing it again clears it. With a keyboard or screen reader each is a button ("Show quotes expiring in 7 days, 2") with its pressed state.
+- **Given** values in more than one currency, **when** a card shows a value, **then** it sums the business's currency and says "+ other currencies" when some quotes are in another.
+
+**Implementation notes**
+- UI: `quotes-list-state.ts` (`quoteStats`, filters), `quotes-explorer.tsx`; from the quotes already loaded. Replaces `use-quote-stats.ts`. The dashboard's "Quotes won this month" link (`?status=accepted`) keeps working.
+
+### US-QUO-28 · Search, filter and come back to the same quotes list
+**Feature:** F-QUO-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuotesListRefined`
+**As** office staff, **I want** the quotes list to keep my search and filters and refresh on request, **so that** it works like Contacts, the pipeline and the catalogue.
+
+Decision: D-210, D-214
+
+**Acceptance criteria**
+- **Given** the toolbar, **when** it shows, **then** it has Status and Contact filters (Contact lists only contacts with a quote), "Updated … ago", Refresh and "New quote" ("Email queue" moved to the email log, US-SET-27), with search on its own row beside Columns.
+- **Given** a search, filter, card, sort or page, **when** I set it, **then** the address keeps it (for example `/quotes?status=sent&contact=<id>&q=villa`), so Back and bookmarks return to the same list; "Clear filters" clears them.
+- **Given** a search, **when** I type, **then** it matches the number, title, contact and line names.
+- **Given** no sort chosen, **when** the list shows, **then** the newest quote is first.
+- **Given** Refresh, **when** I press it or come back to the tab after 30 seconds, **then** the list reloads in place (US-CRM-22).
+
+**Implementation notes**
+- UI: the list-state pattern (`catalog-list-state.ts`), `replaceQuery`; `DataTable` with a controlled page, sort and search.
+
+### US-QUO-29 · Read a quote's progress in the list, and act on it from the row
+**Feature:** F-QUO-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuotesListRefined`
+**As** office staff, **I want** each row to say when the quote was sent, how long it has left and whether the customer has looked, **so that** I know whom to call.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** the table, **when** a row shows, **then** it reads Number (with the title under it, US-QUO-30), Contact, Status, Sent ("12 Oct"; "—" for a draft), Valid until (with "in 3 days", "today" or "Expired 2 days ago" under the date) and Total.
+- **Given** the customer opened the link, **when** the row shows, **then** the status has "Viewed 2×" beside it, with the last view on hover ("Last viewed 14 Oct, 3:20 PM").
+- **Given** a draft, **when** its number shows, **then** it reads "Draft" in muted italics, not "— (unsent draft)".
+- **Given** a row's "…" menu, **when** I open it, **then** it offers what I may do: View, Edit and Send (a draft), Copy customer link (a sent quote), Download PDF, Duplicate, Convert to invoice and Convert to job (accepted), and Delete (a draft).
+- **Given** dates, **when** they show, **then** they follow the business's locale, not the browser's default.
+
+**Implementation notes**
+- API: `GET /quotes` rows gain `viewCount` and `lastViewedAt` (from `quote_events`).
+- UI: `quotes-table.tsx`, `quote-row-actions.tsx`.
+
+### US-QUO-30 · Give a quote a title
+**Feature:** F-QUO-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteBuilderCompact`, `QuotesListRefined`, `QuoteDetailRefined`
+**As** office staff, **I want** to name a quote ("Bathroom refit — 2nd floor"), **so that** I can tell a customer's quotes apart without opening them.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** the builder, **when** it opens, **then** it has an optional "Title" field first, with "For example, Bathroom refit — 2nd floor"; over 120 characters says "Keep the title under 120 characters.".
+- **Given** a title, **when** the quote shows in the list, on its page, on the PDF and on the customer's page, **then** the title shows under the number; without one nothing extra shows.
+- **Given** a quote with a title, **when** I duplicate or revise it, **then** the copy keeps the title; a quote from a lead starts with the lead's title.
+- **Given** search, **when** I type part of a title, **then** the quote is found.
+
+**Implementation notes**
+- Data: `quotes.title text?` (≤ 120). API: `POST/PUT /quotes` accept `title`; `GET` returns it; duplicate and revise copy it. PDF and public page show it.
+
+### US-QUO-31 · See a quote at a glance, with one next step
+**Feature:** F-QUO-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteDetailRefined`, `QuoteDetailAcceptedRefined`
+**As** office staff, **I want** the quote page to show what the customer gets and what to do next, **so that** I don't hunt through buttons.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** a quote, **when** its page opens, **then** the page title is its number ("Draft quote" for a draft) with the status, the title, the contact as a link, "Sent 12 Oct" and "Valid until 9 Nov · in 30 days" (or "Expired 2 days ago"); there's no separate "Back to quotes" link (the breadcrumb has it).
+- **Given** its status, **when** the page shows, **then** one primary button offers the next step: Send quote (a draft), Copy customer link (sent), Convert to invoice (accepted), Revise (declined or expired); Edit, Preview or Download PDF, Email again, Convert to job, Duplicate, Save lines as a bundle, View history and Delete draft sit in a secondary row and under More, each only when I may do it.
+- **Given** "Copy customer link", **when** I press it, **then** the link to the customer's page is copied and a toast says "Link copied — it works for 30 days, or until you revise the quote."; earlier links keep working.
+- **Given** the lines, **when** they show, **then** they're a table: Item (with its description), Qty, Rate, Discount and Tax (only when any line has them), Amount; headings span the row in bold and text lines in muted text; totals sit under the table, with Discount only when there is one.
+- **Given** a GST quote, **when** the tax shows, **then** the totals list CGST and SGST (or IGST) by name, as on the PDF.
+
+**Implementation notes**
+- API: `POST /quotes/:id/link` → `{ url, expiresAt }` mints a fresh customer link without emailing (`quotes.send`; only a sent, current quote, else 400 "Only a sent quote has a customer link."); audited `link_copied`. `GET /quotes/:id` already returns `taxLines`.
+- UI: `quote-detail.tsx` split into header, lines and totals components.
+
+### US-QUO-32 · Follow what happened to a quote
+**Feature:** F-QUO-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteDetailRefined`
+**As** an owner, **I want** a quote's whole story in one place, including when the customer looked, **so that** I call at the right moment.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** a quote's page, **when** it shows, **then** an "Activity" panel lists, newest first: created, edited, discount approved, sent, emailed (or "Email failed: <reason>"), link copied, viewed by the customer, revised, accepted or declined (with the comment, online or in person), converted to an invoice or a job, with who did it and when.
+- **Given** several views in a row, **when** they show, **then** they're one entry: "Viewed by the customer 3 times · last 14 Oct, 3:20 PM".
+- **Given** a version 2, **when** its activity shows, **then** it starts with "Revised from v1" linking to v1.
+- **Given** no customer activity yet on a sent quote, **when** the panel shows, **then** it ends with "Not viewed yet".
+
+**Implementation notes**
+- API: `GET /quotes/:id/activity` → `[{ at, type, actorName?, detail? }]` merging the quote's audit entries, its `quote_events` and its email status (roles: owner, staff). "View history" stays for field-level changes.
+
+### US-QUO-33 · Get to a quote's lead, versions, job and invoices
+**Feature:** F-QUO-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteDetailAcceptedRefined`
+**As** office staff, **I want** what a quote is connected to beside it, **so that** I move between them without searching.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** a quote's page, **when** it shows, **then** a "Related" panel lists the lead it's for, every version ("v1 · Declined", "v2 · Sent · this one") and any job or invoice made from it with its number and status, each a link; with none it isn't shown.
+- **Given** a quote with versions, **when** I press another version, **then** its page opens; a superseded version says "Superseded by v2" with a link at the top.
+- **Given** Jobs & field is off, **when** the panel shows, **then** it lists no jobs.
+
+**Implementation notes**
+- API: `GET /quotes/:id/related` → `{ lead, versions, jobs, invoices }` (roles: owner, staff; the same lookup as the conversion guard).
+
+### US-QUO-34 · Build a quote in compact rows
+**Feature:** F-QUO-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteBuilderCompact`, `QuoteBuilderCompactDark`
+**As** office staff, **I want** each line on one row, **so that** I see the whole quote while I build it.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** the builder, **when** lines show, **then** each item is one row: a drag handle, Item (the catalogue picker), Qty, Rate, Discount %, Tax and Amount, with "Remove line"; the description (and HSN/SAC for a GST business) sits in a second, lighter row under it, shown when it has text or I press "Add description".
+- **Given** a heading or text line, **when** it shows, **then** it's one wide field across the row.
+- **Given** a row, **when** I drag its handle, or press "Move up"/"Move down" in its menu (or Alt + ↑/↓), **then** it moves; screen readers announce "Moved to position 3 of 8".
+- **Given** the last row, **when** I press Enter in its Amount or Tax field, or "Add item", **then** a new row starts with its Item field focused.
+- **Given** a window under 1024 px, **when** the builder shows, **then** each row wraps into two lines rather than scrolling sideways.
+
+**Implementation notes**
+- UI: `quote-line-editor.tsx` only; invoices, credit notes and variation orders keep their editors.
+
+### US-QUO-35 · Save, preview and send from a bar that stays in view
+**Feature:** F-QUO-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteBuilderCompact`
+**As** office staff, **I want** the totals and actions always in view, **so that** I don't scroll to save.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** the builder, **when** I scroll, **then** a bar stays at the bottom with Subtotal, Tax and Total, "Cancel", "Preview PDF", "Save draft" and "Save and send" (the last only with `quotes.send` and when no discount needs approval).
+- **Given** "Save and send", **when** I press it, **then** the draft saves and the send dialog opens on the quote's page.
+- **Given** "Preview PDF", **when** I press it, **then** the quote as it is on screen opens as a PDF in a new tab, and nothing is saved: the draft, its history and "Unsaved changes" stay as they were.
+- **Given** a quote that hasn't been sent, **when** its PDF opens (the builder's preview or a draft's "Preview PDF"), **then** every page has a faint diagonal "DRAFT — Preview only — not a valid quote" watermark behind the content; a sent quote's PDF has none.
+- **Given** unsaved changes, **when** I press Cancel, go Back or close the tab, **then** it asks "Leave without saving? Your changes to this quote will be lost." with "Keep editing" and "Leave".
+- **Given** Notes or Terms is empty, **when** it shows, **then** its placeholder sits inside the box (it showed at the bottom of the page in every empty rich-text editor).
+
+**Implementation notes**
+- UI: `quote-builder.tsx`; the placeholder fix is in `@spine/ui`'s `RichTextEditor` (every screen that uses it).
+- API: `POST /quotes/preview-pdf` renders the unsaved quote (`quotes.edit_own`); nothing is written.
+
+### US-QUO-36 · Start a quote valid for my usual number of days
+**Feature:** F-QUO-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteBuilderCompact`
+**As** an owner, **I want** new quotes to start with my usual validity, **so that** none goes out without an end date.
+
+Decision: D-214
+
+**Acceptance criteria**
+- **Given** Settings › Documents › Quote, **when** it shows, **then** it has "Quotes valid for" in days (1–365, 30 to start).
+- **Given** a new quote, **when** the builder opens, **then** "Valid until" is today plus that many days, with quick picks "+15 days", "+30 days" and "+60 days" beside it; I can still clear it.
+- **Given** a duplicated quote, **when** the original had no validity date, **then** the copy uses the setting.
+
+**Implementation notes**
+- Data: `document_layout.quote.validDays` (integer 1–365; `resolveDocumentLayout` fills 30). No new endpoint.

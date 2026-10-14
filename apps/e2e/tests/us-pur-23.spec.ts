@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
 
 test.describe("US-PUR-23", () => {
-  test("'Headcount × day rate' preselects Site labour, needs a job, totals the rows, and the drawer lists each row", async ({ page, seededOrg: _ }) => {
+  test("'Headcount × day rate' preselects Site labour, needs a job, totals the rows, and its page lists each row", async ({ page, seededOrg: _ }) => {
     const jobs = (await (await page.request.get(`${API_URL}/jobs`)).json()) as { id: string; name: string }[];
     await page.goto("/expenses");
     await page.getByRole("button", { name: "Submit expense" }).first().click();
@@ -31,25 +31,33 @@ test.describe("US-PUR-23", () => {
     await expect(dialog.getByText("$11,700.00")).toBeVisible();
 
     // Without a job it won't save.
-    await dialog.getByRole("button", { name: "Save expense" }).click();
+    await dialog.getByRole("button", { name: "Submit expense", exact: true }).click();
     await expect(dialog.getByText("Labour is always for a job — choose one.")).toBeVisible();
 
     await dialog.locator("div", { hasText: /^Job/ }).getByRole("combobox").first().click();
     await page.getByRole("option", { name: jobs[0]!.name }).click();
-    await dialog.getByRole("button", { name: "Save expense" }).click();
+    await dialog.getByRole("button", { name: "Submit expense", exact: true }).click();
     await expect(dialog).toHaveCount(0);
 
     const expenses = (await (await page.request.get(`${API_URL}/expenses?jobId=${jobs[0]!.id}`)).json()) as { id: string; amount: string; entryMode: string }[];
     const saved = expenses.find((e) => e.entryMode === "labour" && e.amount === "1170000");
     expect(saved).toBeTruthy();
-    await page.reload();
-    await page.getByRole("button", { name: new Date().toLocaleDateString() }).first().click();
-    await expect(page.getByText("4 Mason × $950.00 = $3,800.00")).toBeVisible();
+    // US-PUR-43: its page lists each trade with the day's total.
+    await page.goto(`/expenses/${saved!.id}`);
+    const labour = page.getByTestId("expense-labour");
+    await expect(labour).toContainText("Mason");
+    await expect(labour).toContainText("$950.00");
+    await expect(labour).toContainText("$3,800.00");
+    await expect(labour).toContainText("Total for the day · 15 workers");
+    await expect(labour).toContainText("$11,700.00");
   });
 
   test("a trade used before is suggested with its last day rate", async ({ page, seededOrg: _ }) => {
     await page.goto("/expenses");
+    // The form loads the trades used before as it opens; type once they're in.
+    const trades = page.waitForResponse((res) => res.url().includes("/expenses/labour-trades"));
     await page.getByRole("button", { name: "Submit expense" }).first().click();
+    await trades;
     const dialog = page.getByRole("dialog", { name: "Submit an expense" });
     await dialog.getByRole("radio", { name: "Headcount × day rate" }).click();
     await dialog.getByRole("combobox", { name: "Trade 1" }).fill("Mason");

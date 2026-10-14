@@ -18,6 +18,8 @@ import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { PeriodsService } from "../ledger/periods.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
@@ -73,12 +75,12 @@ describe("Jobs & Milestones ownership split (requires local Postgres)", () => {
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     const auditLog = new AuditLogService(db);
     const queue = new QueueService(db);
-    const notifications = new NotificationsService(db, queue, new PushService(db));
+    const notifications = new NotificationsService(db, new PushService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
     const numbering = new NumberingService(db);
     const ledger = new LedgerService(db, new PeriodsService(db));
     const taxResolver = new TaxResolverService(db);
     const conversionGuard = new QuoteConversionGuardService(db, new SettingsService(db));
-    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db));
+    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
 
     jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
     milestonesService = new MilestonesService(db, auditLog, invoices, notifications);

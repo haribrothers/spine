@@ -359,8 +359,8 @@ Finding: C24 · Decision: D-034
 
 **Acceptance criteria**
 - **Given** an `@expo/ui`-backed component in `packages/ui-native`, **when** I open `apps/showcase-native`, **then** it has a screen with live examples on iOS and Android.
-- **Given** a NativeWind component, **when** I open `apps/design-system-native`, **then** it has a doc screen.
-- **Given** the 15 components without a screen today (action-tile, bottom-sheet, context-menu, divider, floating-label-field, form-row, full-width-button, gauge-indicator, kpi-card, scroll-edge-mask, segmented-control, select-list-field, slider, stepper, switch), **when** this story is done, **then** each is documented in one of the two apps.
+- **Given** a NativeWind component, **when** I open `apps/showcase-native`, **then** it has a doc screen (it was `apps/design-system-native` until that app was removed, D-240).
+- **Given** the 15 components without a screen today (action-tile, bottom-sheet, context-menu, divider, floating-label-field, form-row, full-width-button, gauge-indicator, kpi-card, scroll-edge-mask, segmented-control, select-list-field, slider, stepper, switch), **when** this story is done, **then** each is documented in `apps/showcase-native`.
 
 **Implementation notes**
 - Add a coverage check like `check-a11y-coverage.mjs` that fails when a component has no doc screen.
@@ -470,8 +470,8 @@ Decision: [D-203](../prd/12-decisions.md)
 - **Given** `SpineLogo`, **when** a screen reader reaches it, **then** it's read as "Spine", unless the screen marks it decorative.
 - **Given** a size below the minimum (20 dp for the mark, 96 dp wide for a lockup), **when** asked for, **then** `SpineLogo` draws it at the minimum.
 - **Given** text, buttons and status, **when** they're drawn, **then** they keep the primary and status tokens; brand colours appear only in the logo, the app icon, the splash and illustrations.
-- **Given** `SpineLogo`, **when** this story is done, **then** it has a doc screen in `apps/design-system-native` and an accessibility test.
-- **Given** the web app, the docs site and the web design system, **when** this story is done, **then** they keep their current logo until their own rebrand ([Q-25](../prd/13-risks-open-questions.md)).
+- **Given** `SpineLogo`, **when** this story is done, **then** it has a doc screen in `apps/showcase-native` (moved from `apps/design-system-native` when that app was removed, D-240) and an accessibility test.
+- **Given** the web app and the web design system, **when** they draw the logo, **then** they use the same artwork through `@spine/ui`'s own `SpineLogo` (US-SET-26, [D-206](../prd/12-decisions.md)).
 
 **Implementation notes**
 - The logo SVGs are `docs/logos/spine-logo*.svg`; `SpineLogo` renders their paths with `react-native-svg` (no image files), so it stays sharp at every size and follows dark mode.

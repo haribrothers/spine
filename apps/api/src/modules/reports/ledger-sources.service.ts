@@ -121,7 +121,7 @@ export class LedgerSourcesService {
     const vendorPaymentIds = ids(...vendorPaymentTypes);
     if (vendorPaymentIds.length) {
       for (const r of await this.db.select({ id: vendorPayments.id, number: vendorPayments.number }).from(vendorPayments).where(and(eq(vendorPayments.orgId, orgId), inArray(vendorPayments.id, vendorPaymentIds))))
-        put(vendorPaymentTypes, r.id, { number: r.number, href: `/vendor-payments?id=${r.id}` });
+        put(vendorPaymentTypes, r.id, { number: r.number, href: `/vendor-payments/${r.id}` });
     }
     const expenseIds = ids("expense");
     if (expenseIds.length) {

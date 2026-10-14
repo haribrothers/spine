@@ -17,7 +17,7 @@ test.describe("US-SET-25", () => {
 
     expect((await put(true)).ok()).toBe(true);
     await page.goto(`/jobs/${job.id}`);
-    await expect(page.getByRole("heading", { name: "Kitchen refit" })).toBeVisible();
+    await expect(page.getByTestId("job-name")).toHaveText("Kitchen refit");
     await expect(page.locator('a[aria-label="Jobs"]')).toBeVisible();
   });
 });

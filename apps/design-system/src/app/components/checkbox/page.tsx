@@ -60,6 +60,15 @@ export default () => <Checkbox />;`} />
             <span className="text-[14px] text-on-surface">Mark as billable to customer</span>
           </label>
         </ComponentPreview>
+        <DocLead>Indeterminate</DocLead>
+        <ComponentPreview
+          code={`<Checkbox checked="indeterminate" aria-label="Select every row on this page" />`}
+        >
+          <label className="flex items-center gap-2">
+            <Checkbox checked="indeterminate" />
+            <span className="text-[14px] text-on-surface">Select every row on this page (some are)</span>
+          </label>
+        </ComponentPreview>
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">

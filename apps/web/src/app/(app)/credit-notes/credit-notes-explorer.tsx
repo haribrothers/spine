@@ -1,84 +1,127 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
-import { Undo2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import type { CustomerRefund } from "@spine/shared";
+import { Plus, RefreshCw, Search, Undo2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { CreditNoteDetailDrawer } from "../invoices/credit-note-detail-drawer";
+import { useCapability } from "../../../lib/capabilities-context";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { replaceQuery } from "../../../lib/replace-query";
+import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
+import { CreateCreditNoteDialog, creditNoteIssuedToast } from "../invoices/create-credit-note-dialog";
+import { useToast } from "../../../components/toast-host";
+import type { Invoice } from "../invoices/types";
 import { CreditNotesSkeleton } from "./credit-notes-skeleton";
 import { CreditNotesTable } from "./credit-notes-table";
-import { useCreditNoteStats } from "./use-credit-note-stats";
-import type { ContactOption, CreditNoteRow } from "./types";
-import { formatMoney } from "../../../lib/money";
+import { NewCreditNoteDialog } from "./new-credit-note-dialog";
+import {
+  WHERE_LABELS,
+  creditNoteContacts,
+  creditNoteStats,
+  creditNotesQuery,
+  filterCreditNotes,
+  hasCreditNoteFilters,
+  parseCreditNotesState,
+  refundedThisMonth,
+  type CreditNotesListState,
+  type MoneySum,
+  type WhereItWent,
+} from "./credit-notes-list-state";
+import type { CreditNoteRow } from "./types";
 
-const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "issued", label: "Issued" },
-];
-
+const WHERE_OPTIONS = (Object.keys(WHERE_LABELS) as WhereItWent[]).map((value) => ({ value, label: WHERE_LABELS[value] }));
 const ALL_CONTACTS = "__all__";
 
 /**
- * The org-wide `/credit-notes` list page's client body — previously credit
- * notes had no standalone list, only rows inside an invoice's own
- * `credit-notes-section.tsx` (`?invoiceId=` filtered). Mirrors
- * `payments/payments-explorer.tsx`'s structure (stat cards, a contact
- * filter, one table, click-to-drawer) plus a status filter like
- * `invoices/invoices-explorer.tsx` has, since `GET /credit-notes` already
- * returns drafts too (a draft is a real, if usually short-lived, state —
- * `create-credit-note-dialog.tsx` creates and issues in one atomic action,
- * so a lingering draft here would mean an abandoned/failed flow worth
- * being able to find).
- *
- * Deliberately has NO "New credit note" entry point (confirmed with the
- * user) — `POST /credit-notes` requires an already-issued, non-advance
- * invoiceId (see `CreditNotesService.create`'s own validation), so there's
- * no meaningful blank-slate creation flow to build here; creation stays
- * exactly where it already has full context: an invoice's own "Issue
- * credit note" button. This page is list-and-drill-down only.
+ * The Credit Notes list's client-side body (US-INV-37, US-INV-40, US-INV-41,
+ * D-219): cards for Credited this month, Credit to use (a filter) and
+ * Refunded this month; every credit note loaded once and filtered here;
+ * search, "Where it went", contact, card, sort and page in the address
+ * (D-210), with Refresh and a quiet refresh after 30 s away. "New credit
+ * note" picks an issued invoice, then opens the issue dialog; the new
+ * credit note's page opens once it's issued.
  */
 export function CreditNotesExplorer() {
-  const [creditNotes, setCreditNotes] = useState<CreditNoteRow[] | null>(null);
+  const canIssue = useCapability("credit_notes.issue");
+  const router = useRouter();
+  const showToast = useToast();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [state, setState] = useState<CreditNotesListState>(() => parseCreditNotesState(new URLSearchParams(searchParams.toString())));
+  const [notes, setNotes] = useState<CreditNoteRow[] | null>(null);
+  const [refunds, setRefunds] = useState<CustomerRefund[] | null>(null);
+  const [currency, setCurrency] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
-  const [contacts, setContacts] = useState<ContactOption[]>([]);
-  const [openCreditNoteId, setOpenCreditNoteId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [announcement, setAnnouncement] = useState("");
+  const [pickOpen, setPickOpen] = useState(false);
+  const [crediting, setCrediting] = useState<Invoice | null>(null);
+  const loading = useRef(false);
 
-  const stats = useCreditNoteStats(creditNotes);
+  function update(patch: Partial<CreditNotesListState>) {
+    const next = { ...state, page: 1, ...patch };
+    setState(next);
+    replaceQuery(pathname, creditNotesQuery(next));
+  }
 
-  const loadCreditNotes = useCallback(() => {
-    const query = contactFilter !== ALL_CONTACTS ? `?contactId=${contactFilter}` : "";
-    apiClient
-      .get<CreditNoteRow[]>(`/credit-notes${query}`)
-      .then(setCreditNotes)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load credit notes."));
-  }, [contactFilter]);
-
-  useEffect(() => {
-    loadCreditNotes();
-  }, [loadCreditNotes]);
-
-  useEffect(() => {
-    apiClient
-      .get<ContactOption[]>("/contacts")
-      .then(setContacts)
-      .catch(() => {});
+  const load = useCallback(async (mode: "first" | "refresh") => {
+    if (loading.current) return;
+    loading.current = true;
+    if (mode === "refresh") setRefreshing(true);
+    try {
+      setNotes(await apiClient.get<CreditNoteRow[]>("/credit-notes"));
+      apiClient
+        .get<CustomerRefund[]>("/customer-refunds")
+        .then(setRefunds)
+        .catch(() => setRefunds([]));
+      setRefreshFailed(false);
+      setUpdatedAt(Date.now());
+      setNow(Date.now());
+      if (mode === "refresh") setAnnouncement("Credit notes updated");
+    } catch (err) {
+      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load credit notes.");
+      else setRefreshFailed(true);
+    } finally {
+      loading.current = false;
+      setRefreshing(false);
+    }
   }, []);
 
-  const contactOptions = useMemo(
-    () => [
-      { value: ALL_CONTACTS, label: "All contacts" },
-      ...contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name })),
-    ],
-    [contacts],
-  );
+  useEffect(() => {
+    void load("first");
+    apiClient
+      .get<{ value: { code?: string } | null }>("/org/settings/currency")
+      .then((res) => setCurrency(res.value?.code ?? null))
+      .catch(() => {});
+  }, [load]);
 
-  const filteredCreditNotes = useMemo(() => {
-    if (!creditNotes) return null;
-    if (!statusFilter.length) return creditNotes;
-    return creditNotes.filter((cn) => statusFilter.includes(cn.status));
-  }, [creditNotes, statusFilter]);
+  // Back on the tab after 30 s or more, refresh quietly (D-210).
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    function onVisibility() {
+      if (document.visibilityState === "hidden") hiddenAt = Date.now();
+      else if (hiddenAt !== null && Date.now() - hiddenAt >= REFRESH_ON_RETURN_MS) void load("refresh");
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [load]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const today = useMemo(() => new Date(now), [now]);
+  const orgCurrency = currency ?? notes?.[0]?.currency ?? "USD";
+  const stats = useMemo(() => (notes ? creditNoteStats(notes, orgCurrency, today) : null), [notes, orgCurrency, today]);
+  const refunded = useMemo(() => (refunds ? refundedThisMonth(refunds, orgCurrency, today) : null), [refunds, orgCurrency, today]);
+  const rows = useMemo(() => (notes ? filterCreditNotes(notes, state) : null), [notes, state]);
+  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: "All contacts" }, ...creditNoteContacts(notes ?? [])], [notes]);
 
   if (error) {
     return (
@@ -88,58 +131,163 @@ export function CreditNotesExplorer() {
     );
   }
 
+  const money = (s: MoneySum) => `${formatMoney(s.amount, orgCurrency)}${s.otherCurrencies ? " + other currencies" : ""}`;
+  const countOf = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  // Shown once data has loaded (in the browser), so the server's HTML has no date to disagree with.
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" });
+  const pressed = state.card === "left";
+
+  const search = (
+    <div className="relative w-80">
+      <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
+      <Input type="search" placeholder="Search credit notes, invoices or reasons" aria-label="Search credit notes" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+    </div>
+  );
+  const filtersOn = hasCreditNoteFilters(state);
+  const clearAll = () => update({ q: "", where: [], contact: "", card: "" });
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard label="Total credit notes" value={stats.total === null ? "—" : String(stats.total)} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="credit-note-stats">
         <StatCard
-          label="Total credited (issued)"
-          value={
-            stats.issuedTotal === null
-              ? stats.hasMixedCurrencies
-                ? "Mixed currencies"
-                : "—"
-              : `${formatMoney(stats.issuedTotal, stats.currency ?? "USD")} ${stats.currency ?? ""}`
-          }
+          label="Credited this month"
+          value={stats ? money(stats.credited) : "—"}
+          detail={stats ? countOf(stats.credited.count, "credit note") : undefined}
+          trend={{ direction: "neutral", label: stats ? `Issued since ${monthStart}` : "Issued this month" }}
+          className="h-full"
         />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <MultiSelect
-          options={STATUS_OPTIONS}
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-          placeholder="Status"
-          aria-label="Filter by status"
-          className="w-40"
-        />
-        <Combobox options={contactOptions} value={contactFilter} onValueChange={setContactFilter} placeholder="All contacts" aria-label="Filter by contact" className="w-48" />
-      </div>
-
-      {!filteredCreditNotes ? (
-        <CreditNotesSkeleton />
-      ) : filteredCreditNotes.length === 0 ? (
-        <div className="rounded-lg border border-border bg-surface">
-          <EmptyState
-            icon={<Undo2 />}
-            title={statusFilter.length || contactFilter !== ALL_CONTACTS ? "No credit notes match these filters" : "No credit notes yet"}
-            description={
-              statusFilter.length || contactFilter !== ALL_CONTACTS
-                ? "Try adjusting or clearing the filters above."
-                : "Issue one from an invoice's own detail page when you need to correct or refund part of it."
-            }
+        <button
+          type="button"
+          aria-pressed={pressed}
+          aria-label={`Show credit notes with credit left, ${stats ? stats.toUse.count : 0} customers`}
+          onClick={() => update({ card: pressed ? "" : "left" })}
+          className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <StatCard
+            label="Credit to use"
+            value={stats ? money(stats.toUse) : "—"}
+            detail={stats ? countOf(stats.toUse.count, "customer") : undefined}
+            tone={stats && stats.toUse.amount > 0n ? "warning" : "default"}
+            trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : "Show these credit notes" }}
+            className={cn("h-full transition-colors hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
           />
+        </button>
+        <StatCard
+          label="Refunded this month"
+          value={refunded ? money(refunded) : "—"}
+          detail={refunded ? countOf(refunded.count, "refund") : undefined}
+          trend={{ direction: "neutral", label: refunded ? `Paid back since ${monthStart}` : "Paid back this month" }}
+          className="h-full"
+        />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <MultiSelect options={WHERE_OPTIONS} value={state.where} onValueChange={(where) => update({ where: where as WhereItWent[] })} placeholder="Where it went" aria-label="Filter by where it went" className="w-44" />
+            <Combobox
+              options={contactOptions}
+              value={state.contact || ALL_CONTACTS}
+              onValueChange={(v) => update({ contact: v === ALL_CONTACTS ? "" : v })}
+              placeholder="All contacts"
+              aria-label="Filter by contact"
+              className="w-56"
+            />
+            {filtersOn && (
+              <Button variant="ghost" size="sm" onClick={clearAll}>
+                Clear filters
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {updatedAt !== null && (
+              <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="credit-notes-updated">
+                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+              </span>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !notes} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh list</TooltipContent>
+            </Tooltip>
+            {canIssue && (
+              <Button onClick={() => setPickOpen(true)}>
+                <Plus size={14} aria-hidden />
+                New credit note
+              </Button>
+            )}
+          </div>
+        </div>
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
+        {refreshFailed && (
+          <Alert variant="critical">
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              Couldn&apos;t refresh the list. Check your connection and try again.
+              <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
+                Try again
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+
+      {!rows ? (
+        <CreditNotesSkeleton />
+      ) : rows.length === 0 ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex">{search}</div>
+          <div className="rounded-lg border border-border bg-surface">
+            {filtersOn ? (
+              <EmptyState
+                icon={<Undo2 />}
+                title="No credit notes match these filters"
+                description="Try adjusting or clearing the filters above."
+                action={
+                  <Button variant="secondary" onClick={clearAll}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<Undo2 />}
+                title="No credit notes yet"
+                description="A credit note corrects an issued invoice — what was returned, not delivered or over-billed — and takes the tax back with it."
+                action={canIssue ? <Button onClick={() => setPickOpen(true)}>New credit note</Button> : undefined}
+              />
+            )}
+          </div>
         </div>
       ) : (
-        <CreditNotesTable creditNotes={filteredCreditNotes} onOpen={(cn) => setOpenCreditNoteId(cn.id)} />
+        <CreditNotesTable creditNotes={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={search} />
       )}
 
-      <CreditNoteDetailDrawer
-        creditNoteId={openCreditNoteId}
-        onOpenChange={(open) => {
-          if (!open) setOpenCreditNoteId(null);
+      <NewCreditNoteDialog
+        open={pickOpen}
+        onOpenChange={setPickOpen}
+        onPicked={(invoice) => {
+          setPickOpen(false);
+          setCrediting(invoice);
         }}
       />
+      {crediting && (
+        <CreateCreditNoteDialog
+          open
+          onOpenChange={(open) => !open && setCrediting(null)}
+          invoiceId={crediting.id}
+          invoiceNumber={crediting.number}
+          customerName={crediting.contactName}
+          onIssued={(note) => {
+            showToast(...creditNoteIssuedToast(note, crediting.contactName));
+            router.push(`/credit-notes/${note.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }

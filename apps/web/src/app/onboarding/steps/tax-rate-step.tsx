@@ -14,6 +14,8 @@ export interface TaxRateStepProps {
   onSkip?: () => void;
   /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
   saveLabel?: string;
+  /** US-ONB-22 — the rate as typed so far, before it's saved, for the live preview. */
+  onChange?: (value: TaxRateValue) => void;
 }
 
 /**
@@ -23,7 +25,7 @@ export interface TaxRateStepProps {
  * Tax (`settings/panes/tax-pane.tsx`), not here; this step intentionally
  * stays a single-rate shortcut, editable/expandable later from Settings.
  */
-export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: TaxRateStepProps) {
+export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: TaxRateStepProps) {
   const [name, setName] = useState(initialValue.name || "Tax");
   const [percentage, setPercentage] = useState(String(initialValue.percentage ?? 0));
   const [saving, setSaving] = useState(false);
@@ -40,7 +42,16 @@ export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continu
   return (
     <div className="flex flex-col gap-4">
       <FormField label="Tax name" helperText="e.g. VAT, GST, Sales Tax">
-        {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} />}
+        {(field) => (
+          <Input
+            {...field}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              onChange?.({ name: e.target.value, percentage: Number(percentage) || 0 });
+            }}
+          />
+        )}
       </FormField>
 
       <FormField label="Rate (%)">
@@ -53,7 +64,10 @@ export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continu
             max={100}
             step="0.01"
             value={percentage}
-            onChange={(e) => setPercentage(e.target.value)}
+            onChange={(e) => {
+              setPercentage(e.target.value);
+              onChange?.({ name, percentage: Number(e.target.value) || 0 });
+            }}
             className="w-32"
           />
         )}

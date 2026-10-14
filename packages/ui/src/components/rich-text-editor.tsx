@@ -131,9 +131,10 @@ export function RichTextEditor({
       )}
     >
       <RichTextToolbar editor={editor} disabled={disabled} />
-      <div className="border-t border-border">
+      {/* US-QUO-35: "relative" keeps the placeholder inside the box (it used to land at the bottom of the page). */}
+      <div className="relative border-t border-border">
         {editor && !editor.getText() && placeholder && (
-          <p className="pointer-events-none absolute px-2.5 py-2 text-[14px] text-on-surface-muted">{placeholder}</p>
+          <p className="pointer-events-none absolute left-0 top-0 px-2.5 py-2 text-[14px] text-on-surface-muted" data-testid="rich-text-placeholder">{placeholder}</p>
         )}
         <EditorContent editor={editor} />
       </div>

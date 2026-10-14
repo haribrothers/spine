@@ -1,6 +1,6 @@
 # Spine design system
 
-The brand book for Spine's web app (`@spine/ui`), its native mobile app (`@spine/ui-native`), its documents (quote, invoice and receipt PDFs) and its emails. Values live in [tokens.json](tokens.json); motion in [motion.md](motion.md); one file per component in [components/](components/). The running references are `apps/design-system` (web) and `apps/design-system-native` / `apps/showcase-native` (native).
+The brand book for Spine's web app (`@spine/ui`), its native mobile app (`@spine/ui-native`), its documents (quote, invoice and receipt PDFs) and its emails. Values live in [tokens.json](tokens.json); motion in [motion.md](motion.md); one file per component in [components/](components/). The running references are `apps/design-system` (web) and `apps/showcase-native` (native).
 
 Source of truth: token values are authored in the front matter of `docs/DESIGN.md` and `packages/config/tailwind-preset.css` (web) and hand-synced into `packages/ui-native/src/tokens/` (native). `tokens.json` is generated from those files — change the source, then regenerate.
 
@@ -173,7 +173,7 @@ Android is designed, not ported: every mobile screen has a Material 3 artboard (
 
 ## Logo
 
-Files in [logo/](logo/): `spine-logo-horizontal.png` and `spine-logo-horizontal-light.png` (1024×301) and `spine-logo-vertical.png` (1024×1024). The app shell and sign-in screens use the horizontal mark; the square mark is the app icon source. Customer-facing pages, PDFs and emails show the **business's** logo and name (Settings › Business profile), with "Sent with Spine" in small type at most.
+The layered mark and the SPiNE wordmark ([D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)). The source SVGs are in [`docs/logos/`](../logos/): the mark, the horizontal and vertical lockups (with on-dark versions), one-colour silhouettes and the iOS and Android app-icon art. Screens never use image files of the logo: the web draws it with `SpineLogo` from `@spine/ui`, the phone with `SpineLogo` from `@spine/ui-native`, both from the same paths. The wordmark is a fixed brand colour (Spine blue in light mode, light text in dark) that no business theme changes. The minimum size is 20 px for the mark and 96 px wide for a lockup. The app icons, splash and favicons are exported from those SVGs (`apps/mobile/assets/brand/`, `apps/web/src/app/icon.svg`). Customer-facing pages, PDFs and emails show the **business's** logo and name (Settings › Business profile), with "Sent with Spine" in small type at most.
 
 ## Iconography
 

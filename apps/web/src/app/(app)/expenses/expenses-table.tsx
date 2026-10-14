@@ -1,48 +1,49 @@
 "use client";
 
-import { Badge, Checkbox, DataTable, type TableColumn } from "@spine/ui";
-import type { MemberRow } from "../../../lib/members";
-import { ExpenseRowActions } from "./expense-row-actions";
-import { EXPENSE_STATUS_LABELS, type Expense, type JobOption } from "./types";
-import { formatMoney } from "../../../lib/money";
+import Link from "next/link";
+import { Badge, Checkbox, DataTable, type TableColumn, type TableSort } from "@spine/ui";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { AttachmentCount } from "../../../components/attachments-section";
-
-const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
-  submitted: "bg-draft-bg text-draft",
-  approved: "bg-paid-bg text-paid",
-  rejected: "bg-overdue-bg text-overdue",
-};
+import { calendarDate } from "../quotes/quotes-list-state";
+import { ExpenseRowActions, type ExpenseRowHandlers } from "./expense-row-actions";
+import { EXPENSE_STATES, EXPENSE_STATE_CLASS, EXPENSE_STATE_LABELS, expenseState, readyToBill } from "./expense-state";
+import type { Expense } from "./types";
 
 /**
- * The list view for Expenses — a single amount per row, not a multi-line
- * document, so there's no "number" column the way invoices/vendor bills
- * have (an expense's `number` is null until approved — S-07.4's posting
- * trigger allocates it then). Clicking a row's date/category opens
- * `ExpenseDetailDrawer` rather than navigating to its own route, mirroring
- * payments-table.tsx's own drawer-not-page precedent (an expense is a
- * small record, no line items).
+ * US-PUR-42 (D-227) — the expenses list: the date (opening the expense),
+ * the number once approved, the description over its category, the job,
+ * who submitted it and who paid, the state in words (with Billable when
+ * it's ready to bill), and the amount, with a row menu. Approvers can tick
+ * rows to approve or reject together (US-PUR-21).
  */
 export function ExpensesTable({
   expenses,
-  jobs,
-  members,
-  onDeleted,
-  onOpen,
-  onEdit,
+  now,
+  me,
+  isOwner,
+  sort,
+  onSortChange,
+  page,
+  onPageChange,
+  toolbarStart,
   selection,
+  handlers,
 }: {
   expenses: Expense[];
-  /** US-PUR-21 — ticked rows for bulk approval; no tick boxes when absent. */
-  selection?: { selected: Set<string>; canSelect: (expense: Expense) => boolean; onToggle: (expense: Expense, on: boolean) => void };
-  jobs: JobOption[];
-  members: MemberRow[];
-  onDeleted: (expense: Expense) => void;
-  onOpen: (expense: Expense) => void;
-  onEdit: (expense: Expense) => void;
+  now: Date;
+  me: string | null;
+  isOwner: boolean;
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort | null) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  toolbarStart?: React.ReactNode;
+  /** US-PUR-21 — tick boxes for approvers; a box is disabled on an expense I can't review (my own, unless I'm an Owner, or already reviewed). */
+  selection?: { selected: ReadonlySet<string>; canSelect: (expense: Expense) => boolean; onToggle: (expense: Expense, on: boolean) => void };
+  handlers: ExpenseRowHandlers;
 }) {
-  const jobById = new Map(jobs.map((j) => [j.id, j]));
-  const memberByUserId = new Map(members.map((m) => [m.userId, m]));
-
+  const locale = orgLocaleTag();
+  const muted = <span className="text-on-surface-muted">—</span>;
   const columns: TableColumn<Expense>[] = [
     ...(selection
       ? [
@@ -64,79 +65,76 @@ export function ExpensesTable({
       key: "date",
       header: "Date",
       render: (row) => (
-        <button
-          type="button"
-          onClick={() => onOpen(row)}
-          className="text-left font-medium text-on-surface hover:text-primary hover:underline"
-        >
-          {new Date(row.date).toLocaleDateString()}
-        </button>
+        <Link href={`/expenses/${row.id}`} className="whitespace-nowrap font-medium text-on-surface hover:text-primary hover:underline">
+          {calendarDate(row.date.slice(0, 10), now, locale)}
+        </Link>
       ),
-      sortValue: (row) => row.date,
+      sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}`,
     },
+    { key: "number", header: "Number", render: (row) => (row.number ? <span className="font-semibold">{row.number}</span> : muted), sortValue: (row) => row.number ?? "" },
     {
-      key: "category",
-      header: "Category",
+      key: "description",
+      header: "Description",
       render: (row) => (
-        <span className="flex items-center gap-2">
-          {row.categoryName ?? "—"}
-          <AttachmentCount count={row.attachmentCount} />
-        </span>
+        <Link href={`/expenses/${row.id}`} className="flex min-w-0 max-w-72 flex-col hover:text-primary">
+          <span className="flex items-center gap-2 truncate font-medium text-on-surface">
+            <span className="truncate">{row.description || row.categoryName || "Expense"}</span>
+            <AttachmentCount count={row.attachmentCount} />
+          </span>
+          <span className="truncate text-[12px] text-on-surface-muted">{row.entryMode === "labour" ? `${row.categoryName ?? "Labour"} · headcount × day rate` : (row.categoryName ?? "")}</span>
+        </Link>
       ),
-      sortValue: (row) => row.categoryName ?? "",
+      sortValue: (row) => row.description ?? row.categoryName ?? "",
     },
     {
       key: "job",
       header: "Job",
-      render: (row) => (row.jobId ? (jobById.get(row.jobId)?.name ?? "—") : "—"),
-      sortValue: (row) => (row.jobId ? (jobById.get(row.jobId)?.name ?? "") : ""),
+      render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : muted),
+      sortValue: (row) => row.jobName ?? "",
     },
+    { key: "submittedBy", header: "Submitted by", render: (row) => (row.submittedByUserId === me ? "You" : (row.submittedByName ?? "—")), sortValue: (row) => row.submittedByName ?? "" },
+    { key: "paidBy", header: "Paid by", render: (row) => (row.paidBy === "employee" ? "Employee" : "Company"), sortValue: (row) => row.paidBy },
     {
-      key: "amount",
-      header: "Amount",
-      align: "right",
-      render: (row) => (
-        <span className="tabular-nums">
-          {formatMoney(BigInt(row.amount), row.currency)}
-        </span>
-      ),
-      sortValue: (row) => Number(row.amount),
+      key: "state",
+      header: "State",
+      render: (row) => {
+        const state = expenseState(row);
+        return (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Badge className={EXPENSE_STATE_CLASS[state]} data-testid="expense-row-state">
+              {EXPENSE_STATE_LABELS[state]}
+            </Badge>
+            {readyToBill(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">Billable</Badge>}
+          </span>
+        );
+      },
+      sortValue: (row) => EXPENSE_STATES.indexOf(expenseState(row)),
     },
-    {
-      key: "status",
-      header: "Status",
-      render: (row) => (
-        <div className="flex items-center gap-1.5">
-          <Badge className={STATUS_BADGE_CLASS[row.status]}>{EXPENSE_STATUS_LABELS[row.status]}</Badge>
-          {row.isBillable && <Badge className="bg-due-soon-bg text-due-soon">Billable</Badge>}
-        </div>
-      ),
-    },
-    {
-      key: "submittedBy",
-      header: "Submitted by",
-      render: (row) => (row.submittedByUserId ? (memberByUserId.get(row.submittedByUserId)?.name ?? "—") : "—"),
-      sortValue: (row) => (row.submittedByUserId ? (memberByUserId.get(row.submittedByUserId)?.name ?? "") : ""),
-    },
+    { key: "amount", header: "Amount", align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
     {
       key: "actions",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
-          <ExpenseRowActions expense={row} onDeleted={onDeleted} onOpen={onOpen} onEdit={onEdit} />
+          <ExpenseRowActions expense={row} me={me} isOwner={isOwner} handlers={handlers} />
         </div>
       ),
     },
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={expenses}
-      rowKey={(row) => row.id}
-      searchPlaceholder="Search expenses"
-      searchKey={(row) => `${row.categoryName ?? ""} ${row.description ?? ""}`}
-      configurablePageSize
-    />
+    <div data-testid="expenses-table">
+      <DataTable
+        columns={columns}
+        data={expenses}
+        rowKey={(row) => row.id}
+        configurablePageSize
+        toolbarStart={toolbarStart}
+        sort={sort}
+        onSortChange={onSortChange}
+        page={page}
+        onPageChange={onPageChange}
+      />
+    </div>
   );
 }

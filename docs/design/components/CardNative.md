@@ -1,6 +1,6 @@
 # Card
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/card.tsx` · **Doc page:** `apps/design-system-native/app/components/card.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/card.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/card-demo.tsx`
 
 The default container for grouped content — 8px radius, 1px border, no shadow.
 

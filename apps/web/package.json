@@ -9,7 +9,8 @@
     "start": "dotenv -e ../../.env -- next start",
     "start:e2e": "dotenv -e ../../.env.e2e -v NEXT_DIST_DIR=.next-e2e -- next start --port 3110",
     "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@spine/shared": "workspace:*",
@@ -28,13 +29,18 @@
   "devDependencies": {
     "@spine/config": "workspace:*",
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^22.10.0",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4",
     "dotenv-cli": "^7.4.0",
     "eslint": "^9.17.0",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
   }
 }

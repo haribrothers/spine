@@ -5,41 +5,41 @@ import { useEffect, useState } from "react";
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Spinner,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@spine/ui";
-import { ChevronDown, Laptop, ListChecks, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
+import { ChevronDown, Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { apiClient } from "../lib/api-client";
 import { authClient } from "../lib/auth-client";
-import { SettingsDialog } from "./settings-dialog";
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
-  return (first + last).toUpperCase() || "?";
-}
+import { useAccount, type Account } from "../lib/account-context";
+import { initials } from "../lib/initials";
+import { MENU_ICONS } from "../lib/menu-icons";
+import { useOpenSettings } from "./settings-route";
+import { useToast } from "./toast-host";
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Laptop },
+  { value: "system", label: "System", icon: Laptop, aria: "Follow system" },
 ] as const;
 
+/** The tab's "already applied the saved theme" mark (account-context), cleared on sign-out. */
+const THEME_APPLIED_KEY = "spine.theme.applied";
+
 /**
- * The AppShellSidebar footer's user menu: avatar + name + a chevron (no
- * email on the trigger — email only appears in the dropdown's identity
- * header), collapsing to just the avatar when the sidebar is an icon rail.
- * Opens a dropdown with an avatar/name/email identity block, Settings, a
- * three-way theme switcher, and sign-out. Theme control lives here since
- * the shell has real persistent chrome to put it in — /login and /signup
- * keep their own floating ThemeToggle since they render outside this shell.
+ * The AppShellSidebar footer's user menu: photo (or initials) + name + a
+ * chevron, collapsing to the photo alone when the sidebar is an icon rail.
+ * Opens with the identity block, Settings (every role, US-SET-30), Set up
+ * Spine (Owners), the theme switch — saved to the account so it follows
+ * the person to every device (US-AUTH-16) — and Sign out.
  */
 export function AppUserMenu({
   name,
@@ -50,122 +50,126 @@ export function AppUserMenu({
   name: string;
   email: string;
   collapsed: boolean;
-  /** CLAUDE.md — org Settings is Owner-only. Hides the "Settings" item entirely for Staff/Field, same UI-nicety-not-security-boundary framing as the Team nav section (the API independently rejects any non-Owner PUT regardless). */
+  /** Set up Spine is Owner-only (US-ONB-15); Settings shows Owners the business's groups too (US-SET-30). */
   isOwner: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const openSettings = useOpenSettings(isOwner);
+  const { account, setAccount } = useAccount();
   const { theme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  // US-SET-15: `?settings=<pane>` anywhere in the app opens Settings on that pane (the data-export email links here).
-  const [settingsPane, setSettingsPane] = useState<string | null>(null);
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const pane = url.searchParams.get("settings");
-    if (!pane) return;
-    setSettingsPane(pane);
-    setSettingsOpen(true);
-    url.searchParams.delete("settings");
-    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  }, []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const shownName = account?.name ?? name;
+  const shownEmail = account?.email ?? email;
+  const image = account?.image ?? null;
+
+  async function chooseTheme(value: string) {
+    setTheme(value);
+    try {
+      setAccount(await apiClient.put<Account>("/users/me/preferences", { themePreference: value }));
+    } catch {
+      toast("Couldn't save your theme.", "It's used on this device until you sign in again.");
+    }
+  }
 
   async function handleSignOut() {
     setSigningOut(true);
+    try {
+      window.sessionStorage.removeItem(THEME_APPLIED_KEY);
+    } catch {
+      // Nothing stored.
+    }
     await authClient.signOut();
     router.push("/login");
     router.refresh();
   }
 
+  const avatar = (
+    <Avatar size="sm">
+      {image && <AvatarImage src={image} alt="" />}
+      <AvatarFallback>{initials(shownName)}</AvatarFallback>
+    </Avatar>
+  );
+
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className={
-              collapsed
-                ? "flex h-9 w-9 items-center justify-center rounded-sm transition-colors hover:bg-surface-sunken"
-                : "flex w-full items-center gap-2 rounded-sm px-1.5 py-1.5 text-left transition-colors hover:bg-surface-sunken"
-            }
-          >
-            <Avatar size="sm">
-              <AvatarFallback>{initials(name)}</AvatarFallback>
-            </Avatar>
-            {!collapsed && (
-              <>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-on-surface">{name}</span>
-                <ChevronDown size={14} className="shrink-0 text-on-surface-muted" />
-              </>
-            )}
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-60">
-          <div className="flex items-center gap-2.5 px-2 py-2">
-            <Avatar size="sm">
-              <AvatarFallback>{initials(name)}</AvatarFallback>
-            </Avatar>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium text-on-surface">{name}</span>
-              <span className="block truncate text-[12px] text-on-surface-muted">{email}</span>
-            </span>
-          </div>
-          <DropdownMenuSeparator />
-          {/*
-            Settings opens the SettingsDialog with state owned by this
-            component rather than a nested DialogTrigger — Radix's
-            DropdownMenu unmounts its items (tearing down any DialogTrigger
-            inside one) as soon as onSelect fires, which would tear the
-            Dialog down before it ever opens. Flipping external state from
-            onSelect avoids that pitfall entirely.
-          */}
-          {/*
-            Profile & Preferences is a real route, not a dialog (PRD
-            S-10.17 — every role, unlike Settings which is Owner-only) — a
-            plain router.push is safe here, unlike Settings' onSelect above,
-            since navigation doesn't need the deferred-unmount workaround a
-            nested DialogTrigger would.
-          */}
-          <DropdownMenuItem onSelect={() => router.push("/profile")}>
-            <UserCircle size={14} className="mr-2" />
-            Profile &amp; Preferences
-          </DropdownMenuItem>
-          {isOwner && (
-            <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
-              <Settings size={14} className="mr-2" />
-              Settings
-            </DropdownMenuItem>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Your account: ${shownName}`}
+          className={
+            collapsed
+              ? "flex h-9 w-9 items-center justify-center rounded-sm transition-colors hover:bg-surface-sunken"
+              : "flex w-full items-center gap-2 rounded-sm px-1.5 py-1.5 text-left transition-colors hover:bg-surface-sunken"
+          }
+        >
+          {avatar}
+          {!collapsed && (
+            <>
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-on-surface">{shownName}</span>
+              <ChevronDown size={14} className="shrink-0 text-on-surface-muted" aria-hidden />
+            </>
           )}
-          {/* US-ONB-15 — Owners only, like Settings. */}
-          {isOwner && (
-            <DropdownMenuItem onSelect={() => router.push("/setup")}>
-              <ListChecks size={14} className="mr-2" />
-              Set up Spine
-            </DropdownMenuItem>
-          )}
-          <div className="px-2 py-1.5">
-            <ToggleGroup
-              type="single"
-              value={mounted ? theme : undefined}
-              onValueChange={(value) => value && setTheme(value)}
-              className="w-full rounded-sm bg-surface-sunken p-0.5"
-            >
-              {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-                <ToggleGroupItem key={value} value={value} aria-label={label} className="h-7 flex-1 px-0">
-                  <Icon size={14} />
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem destructive disabled={signingOut} onSelect={handleSignOut}>
-            {signingOut ? <Spinner size="sm" className="mr-2" /> : <LogOut size={14} className="mr-2" />}
-            Sign out
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" side="top" className="w-64">
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <Avatar size="md">
+            {image && <AvatarImage src={image} alt="" />}
+            <AvatarFallback>{initials(shownName)}</AvatarFallback>
+          </Avatar>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13px] font-medium text-on-surface">{shownName}</span>
+            <span className="block truncate text-[12px] text-on-surface-muted">{shownEmail}</span>
+          </span>
+        </div>
+        <DropdownMenuSeparator />
+        {/* US-SET-30: every role has Settings; it opens on their first pane. */}
+        <DropdownMenuItem onSelect={() => openSettings()}>
+          <MENU_ICONS.settings aria-hidden />
+          Settings
+        </DropdownMenuItem>
+        {/* US-ONB-15 — Owners only. */}
+        {isOwner && (
+          <DropdownMenuItem onSelect={() => router.push("/setup")}>
+            <MENU_ICONS.setUp aria-hidden />
+            Set up Spine
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} isOwner={isOwner} initialKey={settingsPane} />
-    </>
+        )}
+        {/* US-AUTH-16: menu radio items (a menu can't hold a radiogroup), shown as a three-way switch. */}
+        <DropdownMenuRadioGroup
+          value={mounted ? theme : undefined}
+          onValueChange={(value) => void chooseTheme(value)}
+          aria-label="Theme"
+          className="mx-1.5 my-1 flex gap-0.5 rounded-sm bg-surface-sunken p-0.5"
+          data-testid="theme-switch"
+        >
+          {THEME_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const name = "aria" in option ? option.aria : option.label;
+            return (
+              <DropdownMenuRadioItem
+                key={option.value}
+                value={option.value}
+                aria-label={name}
+                title={name}
+                onSelect={(e) => e.preventDefault()}
+                className="min-h-7 flex-1 justify-center gap-1 rounded-sm px-1 py-1 text-[12px] text-on-surface data-[state=checked]:bg-surface data-[state=checked]:shadow-raised [&>span:first-child]:hidden"
+              >
+                <Icon size={13} aria-hidden />
+                {option.label}
+              </DropdownMenuRadioItem>
+            );
+          })}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem destructive disabled={signingOut} onSelect={handleSignOut}>
+          {signingOut ? <Spinner size="sm" /> : <MENU_ICONS.signOut aria-hidden />}
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

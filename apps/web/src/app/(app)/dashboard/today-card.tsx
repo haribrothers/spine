@@ -3,9 +3,10 @@
 import { useModules } from "../../../lib/modules-context";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, Spinner, cn } from "@spine/ui";
+import { Card, cn } from "@spine/ui";
 import { buildToday, type TodayEntry, type TodayFollowup, type TodayKind, type TodayMeeting, type TodayMilestone } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { WidgetSkeleton } from "./dashboard-skeleton";
 
 /** The bar beside each entry; the kind is also written out, so colour is never the only cue. */
 const BAR: Record<TodayKind, string> = {
@@ -47,8 +48,8 @@ export function TodayCard({ className }: { className?: string }) {
         )}
       </div>
       {!entries ? (
-        <div className="flex justify-center py-6">
-          <Spinner size="sm" />
+        <div className="pt-2">
+          <WidgetSkeleton kind="rows" rows={2} />
         </div>
       ) : entries.length === 0 ? (
         <p className="py-4 text-center text-[13px] text-on-surface-muted">Nothing scheduled today.</p>

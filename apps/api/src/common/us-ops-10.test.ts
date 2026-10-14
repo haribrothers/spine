@@ -53,7 +53,10 @@ describe("US-OPS-10 · confirmations are styled by what they do", () => {
   it("'All events' is primary for edits and danger only when deleting the series; 'Create invoice' is primary", () => {
     const allEvents = all.find((a) => a.label.includes("All events"))!;
     expect(allEvents.tag).toContain('variant={action === "delete" ? "danger" : "primary"}');
-    const createInvoice = all.find((a) => a.label.includes("Create invoice"))!;
-    expect(createInvoice.tag).not.toContain("variant=");
+    // Billing an expense asks through useConfirm() on its page (US-PUR-43); it stays primary.
+    const page = readFileSync(path.join(webSrc, "app/(app)/expenses/expense-detail.tsx"), "utf8");
+    const createInvoice = page.slice(page.lastIndexOf("confirm({", page.indexOf('confirmLabel: "Create invoice"')), page.indexOf('confirmLabel: "Create invoice"'));
+    expect(createInvoice).toContain("Bill this expense to the customer?");
+    expect(createInvoice).not.toContain("variant");
   });
 });

@@ -31,6 +31,7 @@ import { RichTextEditor, RichTextContent } from "@spine/ui";
 - Bold, italic, bullet lists, numbered lists, and links — nothing more. Headings, tables, and images are deliberately out of scope.
 - Built on Tiptap (MIT-licensed) — a schema-constrained editor, not a raw contenteditable, so pasted or typed markup can never escape the allowed set of tags.
 - Stores and emits plain HTML (not Markdown or a JSON document), matching the plain `text` columns it fills (e.g. a quote's notes/termsAndConditions) and the PDF renderer that lays it out.
+- The placeholder sits inside the box, over the empty editor (its wrapper is positioned; US-QUO-35 fixed it landing at the bottom of the page).
 - An "Insert" menu outside the editor (e.g. email placeholders) uses `onReady`'s `insertText`; its buttons should `preventDefault` on mouse down so the editor keeps its cursor.
 - RichTextContent, a companion read-only component, renders that stored HTML back out for display — sanitized via DOMPurify at render time, since the source column has no server-side HTML validation and could in principle hold anything.
 

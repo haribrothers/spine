@@ -42,7 +42,7 @@ describe("US-JOB-20 · own a job's milestones through the job (requires local Po
     const [row] = await db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId: who.userId, role: "staff", createdAt: new Date() }).returning();
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, who.userId));
     const [team] = await db.insert(teams).values({ orgId, name: `${name} ${randomUUID()}` }).returning();
-    await db.insert(teamPrivileges).values({ teamId: team!.id, capability, granted: true });
+    await db.insert(teamPrivileges).values([{ teamId: team!.id, capability: "jobs.open", granted: true }, { teamId: team!.id, capability, granted: true }]);
     await db.insert(teamMemberships).values({ teamId: team!.id, memberId: row!.id });
   }
 

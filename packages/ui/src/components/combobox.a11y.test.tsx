@@ -44,6 +44,17 @@ describe("Combobox a11y", () => {
     await expectNoA11yViolations(container);
   });
 
+  it("has no violations open with a second line per option", async () => {
+    const described = [
+      { value: "fuel", label: "Fuel & freight", description: "Diesel, petrol, tolls and getting materials to site" },
+      { value: "materials", label: "Materials", description: "Cement, steel, sand — anything that goes into the build" },
+    ];
+    render(<Combobox options={described} onValueChange={() => {}} placeholder="Select a category…" aria-label="Category" />);
+    const user = userEvent.setup();
+    await user.click(document.querySelector('[role="combobox"]')!);
+    await expectNoA11yViolations(document.body);
+  });
+
   it("has no violations when disabled", async () => {
     const { container } = render(<Combobox options={options} onValueChange={() => {}} disabled aria-label="Contact" />);
     await expectNoA11yViolations(container);

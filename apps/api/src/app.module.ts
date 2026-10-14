@@ -1,5 +1,6 @@
 import { ModuleGuard } from "./auth/module.guard";
 import { ActiveMemberGuard } from "./auth/active-member.guard";
+import { PasswordChangeGuard } from "./auth/password-change.guard";
 import { ClientVersionGuard } from "./common/client-version.guard";
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
@@ -105,6 +106,8 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     { provide: APP_GUARD, useClass: ClientVersionGuard },
     // US-TEAM-04 / US-MOB-02: a deactivated member's session answers ACCESS_REMOVED.
     { provide: APP_GUARD, useClass: ActiveMemberGuard },
+    // US-TEAM-24: after an Owner set their password, PASSWORD_CHANGE_REQUIRED until they choose their own.
+    { provide: APP_GUARD, useClass: PasswordChangeGuard },
     { provide: APP_GUARD, useClass: ModuleGuard },
     { provide: APP_GUARD, useClass: CapabilityGuard },
     // A body that fails its schema is a 400 with a readable message, not a 500.

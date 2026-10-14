@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
 import { contacts, member, notifications, quoteEvents, quotes, user } from "../../db/schema";
@@ -12,6 +12,8 @@ import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 const PROVENANCE = { ipAddress: "127.0.0.1", userAgent: "vitest" };
@@ -58,9 +60,9 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     // writes (quote_events, notifications), not real email delivery.
     const fakeQueue = { send: async () => {} };
     const fakePush = { isConfigured: () => false };
-    const notificationsService = new NotificationsService(db, fakeQueue as never, fakePush as never);
+    const notificationsService = new NotificationsService(db, fakePush as never, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
 
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, new PlaceOfSupplyService(db), notificationsService);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, new PlaceOfSupplyService(db), notificationsService, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
     publicQuotesService = new PublicQuotesService(db, tokens, auditLog, notificationsService, settings);
 
     const ownerEmail = `qview-owner-${randomUUID()}@example.com`;
@@ -103,6 +105,13 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
+  /** Waits for the (unawaited) notifications to reach `count` — slow under a parallel run — then makes sure no more follow. */
+  async function expectViewedNotifications(count: number): Promise<void> {
+    await vi.waitFor(async () => expect(await countViewedNotifications()).toBe(count));
+    await flushNotify();
+    expect(await countViewedNotifications()).toBe(count);
+  }
+
   it("a second view within the throttle window logs a new quote_events row but does not send a second notification", async () => {
     const [quote] = await db.select().from(quotes).where(eq(quotes.orgId, orgId));
     const token = await issueTokenFor(quote!.id);
@@ -110,10 +119,9 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     await publicQuotesService.view(token, PROVENANCE);
     await publicQuotesService.view(token, PROVENANCE);
     await publicQuotesService.view(token, PROVENANCE);
-    await flushNotify();
+    await expectViewedNotifications(1);
 
     expect(await countViewedEvents(quote!.id)).toBe(3);
-    expect(await countViewedNotifications()).toBe(1);
   });
 
   it("a view after the throttle window has elapsed sends a new notification", async () => {
@@ -121,8 +129,7 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     const token = await issueTokenFor(quote!.id);
 
     await publicQuotesService.view(token, PROVENANCE);
-    await flushNotify();
-    expect(await countViewedNotifications()).toBe(1);
+    await expectViewedNotifications(1);
 
     // Backdate the one existing "viewed" event past the throttle window so
     // the next view is treated as the first one in a fresh window, without
@@ -139,10 +146,9 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
       .where(eq(quoteEvents.id, viewedEvent!.id));
 
     await publicQuotesService.view(token, PROVENANCE);
-    await flushNotify();
+    await expectViewedNotifications(2);
 
     expect(await countViewedEvents(quote!.id)).toBe(2);
-    expect(await countViewedNotifications()).toBe(2);
   });
 
   it("views on two different quotes are throttled independently", async () => {
@@ -160,11 +166,10 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     await publicQuotesService.view(tokenB, PROVENANCE);
     await publicQuotesService.view(tokenA, PROVENANCE);
     await publicQuotesService.view(tokenB, PROVENANCE);
-    await flushNotify();
+    // One notification per quote, not throttled across quotes.
+    await expectViewedNotifications(2);
 
     expect(await countViewedEvents(quoteARow.id)).toBe(2);
     expect(await countViewedEvents(quoteB.id)).toBe(2);
-    // One notification per quote, not throttled across quotes.
-    expect(await countViewedNotifications()).toBe(2);
   });
 });

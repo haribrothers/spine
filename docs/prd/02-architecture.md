@@ -147,9 +147,10 @@ Optional and off by default ([D-162](12-decisions.md)). `AiService` in the API c
 
 | Queue / event | Trigger | Effect |
 |---|---|---|
-| `quote-send-email` | Quote sent | Render PDF, email the customer with the public link; retried on SMTP failure; visible in the Email queue |
+| `quote-send-email` | Quote sent | Render PDF, email the customer with the public link; retried on SMTP failure; recorded in the email log (D-220) |
 | `invoice-send-email` | Invoice emailed / reminder | Render PDF, email with balance due |
 | `notify-email` | Any notification with an email channel | Email to the targeted users |
+| `email-log-cleanup` | Daily | Deletes email log rows older than 180 days (D-220); every email, queued or sent straight away, is recorded in `email_log` by `EmailService` |
 | `meeting-starting-soon-poll` | Every few minutes | Sends `meeting_starting_soon` to each attendee once per occurrence |
 | `recurring-bill-run` | Every 15 minutes, from 6:00 AM organisation time (Phase 8) | Creates due recurring bills, recorded or as drafts ([D-159](12-decisions.md)) |
 | Notification types | `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `expense_rejected`, `crew_assigned`, `crew_removed`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon` | In-app notification row + optional email + optional browser push |

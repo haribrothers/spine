@@ -201,8 +201,9 @@ before considering that work's QA "done."
    rather than mutating the sent one.
 9. On a quote past its `validUntil` date, confirm it's flagged
    "Expired" in the UI.
-10. Open the **email queue** dialog from the quotes page — confirm it
-    shows pending/sent/failed email jobs.
+10. Open **Settings › Emails › Email log** (the quotes page's email
+    queue was retired by US-SET-27, section 212) — confirm the quote's
+    email shows as queued, sent or failed.
 11. On an **accepted** quote, click **Convert to invoice**. Confirm you
     land on a new **draft** invoice whose lines, quantities, prices, and
     total exactly match the quote. Confirm the invoice is NOT
@@ -838,9 +839,10 @@ than building every case from scratch.
 
 ### 11.5 Payables (S-07.7)
 
-1. Go to **Purchases → Payables**. Confirm stat cards for Current/0-30/
-   31-60/61-90/90+ days overdue, plus a Total outstanding figure.
-2. Confirm the table lists every outstanding **recorded** vendor bill,
+1. Go to **Purchases → Payables**. Confirm the cards Total owed, Overdue,
+   Due in 7 days and 90+ days, and the age bar naming every bucket (the
+   layout is section 224's since D-230).
+2. Confirm "By bill" lists every outstanding **recorded** vendor bill,
    oldest-overdue first, tagged with the correct aging bucket.
 3. Confirm bills that are **draft**, **void**, or **fully paid** do NOT
    appear here.
@@ -1322,93 +1324,7 @@ Not a full audit — just confirm nothing obviously broke:
    app — confirm it persists across a reload and that a few screens
    (dashboard, an invoice detail page, a dialog) look correct in both
    modes.
-3. **`apps/design-system-native`** (`pnpm dev:ui-native`, then `--web`
-   or a simulator): browse Button, Text Field, Card, Badge, **Bottom
-   Tab Bar**, **Floating Tab Bar**. Confirm a wide browser window
-   shows the desktop shell (top bar + left sidebar at a fixed ~224px
-   width, not full-width) and narrowing it below ~768px switches to
-   the mobile list → push-detail stack. Click the Search button (or
-   ⌘K on web) and confirm it filters the component list and jumps to
-   the selected one. **On Bottom Tab Bar and Floating Tab Bar**,
-   confirm the "Live demo" section actually works — click between all
-   5 tabs (Home/Jobs/Expenses/Messages/Profile) and confirm the
-   content changes and the active tab's icon/color updates — check
-   this on BOTH the desktop layout and the mobile layout (a real
-   shipped bug had the live demo crash with "Couldn't register the
-   navigator" specifically on the desktop layout, fixed 2026-08-30).
-   **On Floating Tab Bar specifically**, confirm: the bar is a true
-   floating pill with visible margin on all sides (not flush with the
-   preview box's edges, not a rounded rectangle), the active tab's
-   highlight is a true rounded capsule matching the outer pill's
-   curvature (most visible on the rightmost tab, where a flatter
-   radius showed as a visible seam against the pill's own curve —
-   fixed 2026-08-30), every tab shows its icon stacked above its
-   label, and there's no white area visible behind the bar in either
-   light or dark mode (a real shipped bug had the demo's preview box
-   and its `NavigationContainer` both losing their theme — fixed
-   2026-08-30). **Also confirm**: tapping a different tab makes the
-   highlight capsule visibly SLIDE from the previously selected tab to
-   the newly selected one, rather than instantly jumping/disappearing
-   from one and reappearing on the other (tap a tab that's NOT
-   adjacent to the currently selected one, e.g. Home → Messages, to
-   make any snap-vs-slide difference obvious) — this was added
-   2026-08-30, replacing an earlier instant-swap. **Also confirm all 5
-   tab icons AND labels are level with each other** — same vertical
-   position and size for every tab, none sitting higher or lower than
-   the others; check this specifically at a NARROW/phone-width layout
-   (a real device or simulator, or a narrow browser window — not just
-   a wide desktop window) since two distinct bugs shipped here and
-   only showed up at real phone widths: (1) icons at inconsistent
-   heights due to icon-font glyph inconsistency, fixed 2026-08-30 by
-   migrating from `@expo/vector-icons` to `lucide-react-native`; (2)
-   "Messages"/"Expenses" (the longest labels) wrapping to two lines on
-   a narrow screen and shifting that tab's whole icon+label block,
-   fixed 2026-08-30 by forbidding label wrapping — confirm long labels
-   truncate with an ellipsis ("Expens…", "Messa…") rather than
-   wrapping or clipping abruptly. Check this on both Bottom Tab Bar
-   and Floating Tab Bar, in both light and dark mode. Click the
-   theme-toggle icon in
-   the top bar/header and cycle through all three states, confirming
-   at each step that BOTH the icon AND every background/text/border
-   color on screen (the sidebar, top bar, card borders, body text,
-   etc.) are consistent with the reported preference: **sun icon =
-   light mode**, **moon icon = dark mode**, **monitor icon = system**
-   (resolves to the device/browser's real light/dark preference). Two
-   real shipped bugs were found and fixed here 2026-08-30: (1) the
-   toggle changed internal state but no color on screen ever visibly
-   changed (a build-time CSS generation gap affecting web and native
-   equally), and (2) after fixing that, the icons themselves were
-   mapped to the wrong preference (moon shown for light, sun shown for
-   system, etc.), which made a now-correctly-working toggle look
-   broken because the icon didn't match the state a user would expect
-   from pressing it. Confirm both the icon-to-state mapping and the
-   actual color change on a device/simulator AND in a web browser
-   (`--web`). **Also confirm**: the top bar/header itself (not just
-   the page content below it) changes color with the theme — a real
-   shipped bug had the React Navigation header stay light in dark mode
-   while the rest of the screen correctly went dark, fixed 2026-08-30.
-   **Also confirm "system" actually tracks your real OS/browser
-   preference** — set your OS or browser to dark, reload the app fresh
-   (don't just click the toggle) and confirm it boots straight into
-   dark mode with no click needed; then explicitly cycle the toggle
-   back to the monitor icon and confirm it's still dark; then switch
-   your OS/browser preference to light while the app is on "system"
-   and confirm it live-updates to light without a reload. All three of
-   these were broken (system always resolved to light on web) and
-   fixed 2026-08-30. **Also confirm the preference survives a reload**
-   — pick light or dark explicitly, reload the page (web) or restart
-   the app (native), and confirm it comes back in the same mode
-   instead of resetting to system; this was a real shipped bug
-   (preference was in-memory only) fixed 2026-08-30.
-   **On the Button page specifically**, check every variant's
-   **Disabled** example in the States/Examples section — the label
-   text must be clearly visible (muted gray, not white-on-transparent)
-   in both light and dark mode; this was a real shipped bug (invisible
-   disabled-button text) fixed 2026-08-30. Also check the **Loading**
-   example (all variants) — the spinner must be clearly visible (muted
-   gray, not white-on-transparent) in both light and dark mode; this
-   was a second, related shipped bug (invisible loading spinner) fixed
-   the same day.
+3. *(`apps/design-system-native` was removed in D-240; every `@spine/ui-native` component is documented in `apps/showcase-native`, below.)*
 4. **`apps/showcase-native`** (native-only, `expo-router` — run via its
    own dev script, real device/simulator required, no web/Expo Go
    fallback). **Components tab (2026-09-14)**: browse to each of the 9
@@ -4464,15 +4380,771 @@ The phone carries the new Spine logo (D-203); the web keeps its own until its re
    - Tap Email: the illustration folds to the horizontal logo, and Server, Email, Password and "Sign in" stay above the keyboard on a small phone (iPhone SE, small Android). Dismiss the keyboard: the illustration returns.
    - A wrong password: "That email and password don't match. Check both, or reset your password." What you typed stays.
 8. **Logo and brand colours (US-MOB-27):**
-   - The design-system app (`apps/design-system-native`) has a "Spine logo" page (mark, horizontal, vertical, minimum sizes) and Brand swatches on Color.
+   - The showcase app (`apps/showcase-native`) has a "Spine Logo" demo (mark, horizontal, vertical, minimum sizes). *(Its Brand swatches page went with `apps/design-system-native`, D-240.)*
    - `pnpm --filter @spine/ui-native test` passes its doc-screen and a11y coverage checks.
 9. Regression:
    - The web app, the docs site and the web design system still show the "S" logo.
    - Section 191: sign in, errors under their fields, Forgot password, Profile, sign out.
    - Section 196: Android screens keep Material 3 (outlined fields, pill buttons).
 
+## 198. The Spine logo across the web app (US-SET-26, refinements before Phase 10)
+
+Run the web app (`pnpm dev`) in Chrome and Safari, light and dark (the theme toggle and the system setting). Compare against the canvas "01 Spine logo on the web" and the `Brand*` artboards.
+
+1. **Sign-in pages:** log out. Login, sign-up, forgot password, reset password, invite-only and an invitation link each show the horizontal logo (mark beside SPiNE) above the card. Switch to dark: the wordmark is light text straight away, with no flash of the blue one after the page loads.
+2. **Sidebar:** sign in. The sidebar header shows the horizontal logo. Collapse it: only the gradient mark shows, centred. Hover it: it turns into the expand icon and expands the sidebar on click. Tab to it with the keyboard: the expand icon shows and a screen reader says "Expand sidebar".
+3. **Theme:** as an Owner, pick Plum in Settings › Branding. The selected item and buttons turn plum; the SPiNE wordmark stays Spine blue (light) or light text (dark). Switch back to Spine Blue.
+4. **Browser tab:** the tab and a bookmark show the app-icon tile (white mark on the teal-to-blue square), readable at the tab's size, in light and dark browser chrome. `/favicon.ico` and `/icon.svg` open while signed out.
+5. **Home screen:** on an iPhone, Share › Add to Home Screen shows the iOS app-icon art. On Android Chrome, Add to Home screen shows the round icon (from the manifest's maskable icon). Opening it opens the normal website, with no install prompt. The browser bar is the page colour in light and dark mode.
+6. **Push:** turn on browser notifications and trigger one (for example accept a quote from its public link). The notification shows the square app icon; on Android, the status bar shows the one-colour badge.
+7. **Public quote page:** open a quote's public link. The footer shows the small mark before "Sent with Spine"; a screen reader says "Sent with Spine" once. The rest of the page is the business's own branding, unchanged.
+8. **Unchanged:** a quote or invoice email and PDF still carry the business's logo and name, not Spine's.
+9. **Design system:** `pnpm --filter @spine/design-system dev` has a SpineLogo page (horizontal, vertical, mark, minimum sizes), Brand swatches on Color, and the Sidebar, AppShell and Templates demos use the new logo.
+10. Regression: section 191 (field app sign-in) still shows the phone's own logo; Settings › Branding's theme swatches still change only the accent colour (US-SET-09).
+
+## 199. Welcome, login and passwords (US-AUTH-13 to US-AUTH-15, refinements before Phase 10)
+
+Use a 1280 px-wide window in Chrome and Safari, light and dark. Compare against the canvas "02 Welcome, login and sign-up" and the `Auth*` artboards.
+
+1. **Welcome (US-AUTH-13),** on a brand-new install with an empty database (`pnpm db:reset:dev`, no seed):
+   - `/` and `/login` open `/welcome`.
+   - It shows the logo, "Run your business on Spine", the three next steps and **Create your account**, which goes to `/signup`.
+   - The illustration plays: three people (a tradesperson pointing up, the owner and a customer; two men, one woman) rise onto the ground in soft mint, sky and periwinkle, then the cards come in: the quote turns Accepted, the invoice turns Paid, a payment shows Paid. After about 3 seconds it settles and the cards drift gently.
+   - The cards show only icons, grey placeholder lines and statuses — no names, document numbers or amounts.
+   - In dark mode the people keep their light colours (ink on paper) and the cards turn dark.
+   - At 1024, 1440 and 1920 px wide the people and cards stay together in the middle of the panel; nothing overlaps a face.
+   - With Reduce Motion on, everything shows already settled and nothing moves.
+   - A screen reader reads the heading, steps and button and skips the illustration.
+2. Welcome, continued:
+   - Create the first account. `/welcome` now goes to `/login` when signed out, and to the dashboard when signed in.
+   - Below 1024 px wide the illustration disappears and the content is centred.
+3. **Login (US-AUTH-14):**
+   - The illustration shows one man with a coffee beside today's jobs (placeholder rows) and a quote marked Accepted — no names or amounts.
+   - Email is focused. The eye shows and hides the password, and its label says "Show password" / "Hide password".
+   - With Caps Lock on, typing in Password shows "Caps Lock is on.".
+   - A wrong password: "That email and password don't match. Check both, or reset your password.", and Email keeps what you typed.
+   - Many wrong tries: "Too many sign-in attempts. Wait a minute, then try again.".
+   - While logging in the button reads "Logging in…".
+4. **The same frame everywhere:** forgot password, "Check your email", reset password (including an expired link), invite-only (`/signup` on an install with an owner), an invitation link (`/accept-invite/<id>`, signed out and signed in) and "This invitation can't be used". All look like login: logo, form, illustration.
+5. **Sign-up passwords (US-AUTH-15):**
+   - The fields are Name, Email, Password and Confirm password, with an eye on both password fields.
+   - Typing `riverstone8` shows Fair, with "At least 8 characters", "Not a common password" and "No repeats or sequences" ticked. `Deck&Pergola-2026` shows Strong with all five ticked.
+   - A screen reader hears "Password strength: …".
+6. Sign-up refusals:
+   - `short`: "Use at least 8 characters.", and nothing is sent.
+   - `Password123`: "That password is too common. Choose another one.".
+   - Confirm password different: "The passwords don't match." when you leave the field.
+   - A valid account goes to onboarding. While it works, the button reads "Creating your account…".
+7. **Invitation sign-up:** from an invitation link, "Create account". The heading reads "Join <Business> on Spine" and "You've been invited as <Role>.", and the email is locked.
+8. **Reset and Profile:** reset password and Profile › Password show the same meter and checklist. `qwerty123` is refused with "That password is too common. Choose another one." (the server refuses it too). Profile now asks to confirm the new password.
+9. Regression:
+   - Forgot-password emails, the 60-second resend wait and single-use reset links still work (sections on US-AUTH-09 and US-AUTH-10).
+   - Invitations still accept and decline.
+   - Session-expired login from the dialog still returns you to your page (US-AUTH-12).
+   - The field app's sign-in is unchanged.
+
+## 200. Onboarding in four stages (US-ONB-22, US-ONB-23, refinements before Phase 10)
+
+Sign up a new owner (an install with open sign-up, or a fresh one). Use a 1440 px-wide window, light and dark, and compare with the canvas "03 Onboarding" and the `Onb*` artboards.
+
+1. **Start (US-ONB-22):**
+   - `/onboarding` shows "Welcome to Spine, <first name>", "Four short stages, about 6 minutes…", the four stages with a line each, and the three buttons.
+   - Beside it: the dashboard, a paid invoice and the phone app drawn with grey lines (no names or amounts), and two people.
+   - "Just show me around (use defaults)" still opens the demo business dialog, and "Skip to dashboard" still skips.
+2. **The rail and tips:**
+   - "Set up my business" shows the rail: Business (Details, Template), Money (Currency, Financial year, Tax), Documents (Numbering) and Books & team (Accounts, Team), with "About 6 min left" and a progress line.
+   - Each Continue ticks the step and the minutes count down (5 at Currency, 1 at Team).
+   - Every step has "Stage n of 4 · <stage> · Step n of n" above it and a tip under it ending "Change it later in Settings › …".
+   - From the second step on, **Back** opens the previous step with what was saved.
+3. **The preview (1280 px and wider):**
+   - Typing the business name, address and logo shows them on the invoice before Continue; with no name it says "Your business".
+   - Currency INR and locale en-IN show "₹1,25,000.00" and the date in Indian format.
+   - Tax: India shows "CGST 9% + SGST 9%" and "₹22,500.00"; the UK shows "VAT 20%"; "Another country" shows the rate you type.
+   - Numbering: an invoice starting number of 1042 shows "INV-1042".
+   - Accounts and Team: the preview turns to "Your books" (accounts per group), "Your team" (you, then each invite as "Invited") and "Set so far".
+4. **Narrow and short windows:**
+   - At 1100 px the preview is gone; below 1024 px the rail becomes the bar at the top with the stage and minutes left.
+   - In a short window (a laptop, 700 px tall), the wheel or trackpad scrolls each step down to Continue while the rail and preview stay put. Sign-up, login and the finish screen scroll the same way.
+   - A long business name ("H2Z Facades and Interiors Factory Private Limited") wraps in the preview; the invoice number stays inside the card.
+5. **Screen reader and motion:**
+   - VoiceOver reads "Stage 2 of 4 · Money · Step 1 of 3", the heading, the form and the tip. The rail is "Setup steps", with the current step marked and "(done)" after done steps. The preview and the drawn screens are skipped.
+   - With Reduce Motion, nothing slides or rises.
+6. **Finish (US-ONB-23):**
+   - On Team, "Finish" (or "Skip — finish setup") shows "You're set up" and "Spine is ready for <business>.".
+   - The summary shows Business, Money ("INR · India (GST)"), Documents ("First invoice INV-1042") and Team ("1 invite sent" or "Just you for now").
+   - Change opens the matching Settings pane over the screen; Team's Change opens Team › Users.
+   - The three cards open New contact, the Catalogue and New quote; "See what's left to set up — <n> left" opens Set up Spine.
+   - "Go to dashboard" leaves. Refreshing the finish screen, or opening `/onboarding` again, goes to the dashboard.
+7. Regression:
+   - Skipping from any step, or loading a demo business, still goes straight to the dashboard (US-ONB-02, US-ONB-18).
+   - The template, tax (with GST details for India), numbering and accounts steps save as before (US-ONB-04 to US-ONB-07, US-ONB-14, US-ONB-20, US-TAX-09, US-TAX-12).
+   - Documents are numbered as before (`INV-0001`, demo `DEMO-INV-0001`).
+
+## 201. Dashboard polish (US-DASH-27 to US-DASH-29, refinements before Phase 10)
+
+Use an owner on a business with Indian figures (Settings › Demo data, India, Construction). Check 1440 px, 1280 px and 1024 px wide, light and dark, and compare with the canvas "04 Dashboard polish" and the `Dashboard*` artboards.
+
+1. **Loading (US-DASH-27):**
+   - With a slow connection (DevTools › Network › Slow 4G), the dashboard first shows its shape in grey: Needs your attention, Today, four KPI cards and grey cards. No spinners anywhere.
+   - Then each card shows its title and a grey outline of its content until its figures arrive. Nothing appears later and pushes cards down.
+   - Money is in rupees from the start; "$" never shows first.
+   - VoiceOver says "Loading dashboard" once. With Reduce Motion, the grey blocks don't pulse.
+2. **KPI cards and big figures (US-DASH-28):**
+   - Each KPI card has an icon in a coloured chip and a light tint: Cash position blue, Profit this month teal, Receivables purple, Overdue red. Text is easy to read on the tint, in light and dark.
+   - At 1280 px every figure ("₹90,87,504.00", "₹44,88,682.00") shows whole on one line, with the trend line underneath across the card.
+   - Payables and Tax this period show their three figures one above the other, each with its label; nothing overlaps.
+   - Receivables aging shows "₹44.9L" in the ring and "Total ₹44,88,682.00" under the title; in a narrow card the legend sits under the ring.
+   - Job profitability shows "−₹1,60,500.00" on one line; a long job name is cut short with "…" and shows in full on hover.
+3. **Layout (US-DASH-29):**
+   - At 1440 px and wider: Needs your attention, Today and Recent activity are in a column on the right. Scrolling the page keeps that column in view (on a short window where it doesn't fit, it scrolls with the page).
+   - Income and expenses sits right after the KPI cards, across the main area. Every other card sits directly under the card above it: no stretched cards and no empty gaps between cards; columns only end unevenly at the bottom.
+   - At 1280 px: Needs your attention and Today sit side by side at the top at the same height; the KPI cards are four across; the cards are in three columns, Recent activity among them.
+   - At 1024 px: attention and Today one above the other, KPI cards two by two, cards in two columns.
+   - Get started (a new owner) sits at the top of the cards at its own height.
+   - Tab from the header: Needs your attention, Today, the KPI cards, then the cards in layout order.
+4. **Edit layout:**
+   - At 1440 px, Edit layout shows Recent activity in the grid with Hide and the drag handle; hiding it removes it from the side column after Done.
+   - Dragging a card to a new place repacks the cards with no gaps.
+5. Regression:
+   - Staff and Field dashboards show only their cards (US-DASH-17, US-DASH-18), with the same loading and layout.
+   - Accrual / Cash still switches Profit this month and the money chart (US-DASH-26); KPI cards still open their reports (US-DASH-14).
+   - "Send reminder" and the other attention buttons still work (US-DASH-13); in the side column the button sits under its text.
+   - Jobs in progress shows "% billed · budget" on each job's second line (US-DASH-20).
+   - Job costing's "Cost by category" ring still shows at its size beside its table (US-JOB-26).
+
+## 202. Contacts list polish and toggles (US-OPS-36, US-CRM-21 to US-CRM-23, refinements before Phase 10)
+
+Use an owner on a business with demo data, plus a contact named "H2Z Facades and Interiors Factory Private Limited" with a long email. Check 1440 px and 1280 px, light and dark, and compare with the canvas "05 Contacts polish".
+
+1. **Toggles (US-OPS-36):**
+   - On Contacts, the view switcher sits in a grey track; the chosen view is a white chip with a blue outline and blue icon (in dark, a lifted grey chip with a light-blue outline). The other two are grey.
+   - Hover each option: after a moment its name shows ("Table view", "List view", "Card view"). Tab to the switcher: the tooltip shows on focus too, and Escape hides it. VoiceOver reads "Card view, radio button, checked".
+   - The same look on: Accrual / Cash on the dashboard and on Reports, 3M / 6M / 12M on Income and expenses, the theme switch on Profile › Appearance and in the user menu (icon-only there, with tooltips), and "Enter as" on a new expense.
+2. **Long names and emails (US-CRM-21):**
+   - Card view: the long name wraps to two lines, ends with "…" if longer, and never runs under the "⋯" button; the email is cut short with "…". Hovering shows the full text. Nothing crosses the card's edge.
+   - List view: the name and email are cut short on one line, full text on hover.
+   - Table view at 1280 px: no sideways scrolling; Status and the "⋯" column are visible; the long email ends with "…".
+3. **Refresh (US-CRM-22):**
+   - Beside the view switcher: "Updated just now" and the Refresh button (tooltip "Refresh list"). After a few minutes it reads "Updated 2 min ago".
+   - Add a contact in another browser, then press Refresh: the list stays on screen, the icon turns (not with Reduce Motion), "Updating…" shows, and the new contact appears. VoiceOver says "Contacts updated".
+   - Switch to another tab for over 30 seconds and come back: the list refreshes by itself.
+   - With the API stopped, Refresh shows "Couldn't refresh the list. Check your connection and try again." with "Try again", and the list stays.
+4. **Search, filters and stat cards (US-CRM-23):**
+   - Search is on its own row under the filters in all three views; in the Table view "Columns" is on the right of that row. Typing narrows the list by name, email or phone.
+   - The address follows: `?q=…`, `?type=vendor&type=both`, `?status=archived`, `?page=2`. Open a contact and press Back: the same search, filters and page. Paste the address into a new tab: the same list.
+   - Press "Vendors": the card shows pressed ("Showing these · press again to clear") and the list shows vendors and "Customer & vendor". The counts on the cards don't change. Press it again to clear. "Total contacts" clears the type filter; "Active leads" opens the pipeline.
+   - A search that matches nothing: "No contacts match "<text>"" with "Clear search". With a filter as well: "No contacts match these filters", and "Clear filters" clears the search too.
+   - Go to page 2 of the table and press Refresh: you stay on page 2.
+5. Regression:
+   - Add contact, Import CSV (the duplicate check still sees archived contacts), Archive, Restore and Delete still work and the list updates (US-CRM-01, US-CRM-03, US-CRM-04, US-CRM-14).
+   - Accrual / Cash still switches the dashboard and reports (US-DASH-26, US-RPT-35); the expense entry mode still switches (US-PUR-23).
+   - The job costing "Cost by category" ring and reports tables look as before.
+
+## 203. A pipeline that works (US-CRM-24 to US-CRM-28, refinements before Phase 10)
+
+Use an owner on a business with demo data and a second member (Staff). Check 1440 px, 1280 px and a phone, light and dark, and compare with the canvas "06 Pipeline".
+
+1. **The board (US-CRM-24):**
+   - The header reads "Your open leads by stage, and what you've won and lost lately." Above the toolbar: Open pipeline (total and how many), Won this month, Win rate ("4 of 6 closed in the last 90 days", or "None closed in the last 90 days") and Overdue follow-ups.
+   - The open stages share the width with no sideways scroll; Won and Lost are slim columns at the right showing a dot, the count, the name and "<total> · 30 days". Every column, slim ones included, reaches the bottom of the window, whatever its cards; a column with many cards scrolls on its own.
+   - In Settings › Pipeline stages, add three open stages: six open stages still fit at 1280 px. Make the window narrower: the board scrolls sideways and a soft shadow at the right edge shows there's more.
+   - Press Won: it opens beside the open stages as "Won · last 30 days", newest first, with "Older won leads: choose Won in the stage filter." Press the "><" button to close it. Choose Won in the stage filter: only the Won column shows, with every won lead.
+   - Press Overdue follow-ups: only leads with a past-due follow-up show, the card shows pressed and the address has `overdue=1`; press it again for all leads.
+   - An empty open stage says "No leads in this stage"; a business with no leads shows "No leads yet" with Add lead.
+2. **Cards (US-CRM-25):**
+   - Each card: title (or the contact's name once, when there's no title), contact, value, "N days in stage" and the owner's initials (hover for the name; a dashed "—" for Unassigned, hover says "Unassigned"). Won cards show "Won 2 Oct", lost cards "Lost …" and the reason.
+   - Add a follow-up for tomorrow on a lead: the card shows "Call · Tomorrow 10:00". A past-due one shows "Overdue · 6 Oct" in red.
+   - An open lead with no activity or change for 14 days carries an amber "No activity for 14 days" (not red).
+   - Press "⋯": Open, Move to… (each stage, the current one ticked and greyed), Delete (only if you may delete it). Move a lead to Proposal: the counts and totals update; VoiceOver says "Moved to Proposal". On a card near the right edge the Move to… list opens to the left.
+   - Tab to a card: a focus ring shows; Enter opens the drawer; Shift+F10 (or the menu key) opens its menu. Dragging a card with the mouse still moves it, including onto a slim Won or Lost column.
+   - Delete from the menu asks first ("Delete this lead?") and says the lead's follow-ups go with it.
+3. **Won and lost (US-CRM-26):**
+   - Move a lead to Lost (drag, menu or the drawer's Stage): "Why was it lost?" with Price, Timing, Went with a competitor, No response, Other and a note. Choose one and Save reason: the card shows it, and so does the drawer. Skip: it's lost with no reason.
+   - Move a lost lead back to an open stage, then to Lost again: no reason is chosen.
+   - Move a lead to Won: "Won — <title>" with its contact, value and owner, "Not now" and "Create quote". Create quote opens a new quote with the lead's contact and currency and "For lead <title>". Change the contact: the line goes and the quote isn't linked. Save it: the lead's drawer lists it under Quotes with its status and total, and it opens the quote. Revise the quote: the new version is listed too.
+   - As a Staff member without the right to create quotes, a move to Won shows no dialog, and the drawer has no Create quote.
+4. **The lead drawer (US-CRM-27):**
+   - Open a card: the title, stage chip, contact (opens the contact), "N days in stage" and "created by …". Fields: Title, Contact, Stage, Estimated value, Currency, Owner (Unassigned and every active member), Expected close, Source. Save changes updates the card; the creator doesn't change.
+   - Follow-ups: open ones first by date, then the rest. Log activity and Add follow-up (the date is required) add to this lead and its contact; tick one done.
+   - History: "Created in New" and each "Moved to Proposal from Qualified" with who and when, newest first. Leads made before this change show what's been recorded since.
+   - Add lead (toolbar, or a column's Add lead): the drawer opens at that column's stage with just the details.
+   - Without edit rights on a lead, the fields are read-only and there's no Save.
+5. **Filters and refresh (US-CRM-28):**
+   - Owner (All owners, My leads, each member, Unassigned) and Source (the sources in use) combine with search, stage and sort; the address follows (`/leads?owner=me&source=Referral`). Open a contact and press Back, or reload: the same board.
+   - "Updated just now" and Refresh (tooltip "Refresh pipeline"): a lead added in another browser appears on Refresh, in place; VoiceOver says "Pipeline updated". Away from the tab for over 30 seconds, the board refreshes on return.
+6. Regression:
+   - Settings › Pipeline stages: renaming, reordering, adding and deleting stages (with a move) still show on the board (US-CRM-19, US-CRM-20).
+   - The contact page's Leads tab and its Add/edit lead dialog, and its Activities tab, work as before (US-CRM-10, US-CRM-13).
+   - Contacts' "Active leads" opens the pipeline; the dashboard's "Pipeline by stage" still counts every stage (US-DASH-*).
+   - New quote from Quotes (no lead) still uses the organisation's currency (US-QUO-01).
+
+## 204. A calendar that's easy to use (US-MTG-13 to US-MTG-17, refinements before Phase 10)
+
+Use an owner on a business with demo data and a second member, with a few meetings this month (one recurring weekly, one linked to a contact) and one about four months ahead. Check 1440 px, 1280 px, 1024 px and a phone, light and dark, and compare with the canvas "07 Meetings".
+
+1. **Mini calendar (US-MTG-13):**
+   - Each day with a meeting you can see has one dot under its date (a recurring meeting on each day it occurs; a cancelled occurrence doesn't count). Hover a dotted day: "Wednesday, October 7 · 2 meetings". VoiceOver reads "Wednesday, October 7, 2026, 2 meetings".
+   - In Week the week on screen is one shaded band; in Day just that day; in Month and Agenda nothing is shaded. The chosen day stays filled and today stays blue.
+   - Press the main arrows into next month: the mini calendar moves with it. Page the mini calendar four months ahead: the far meeting's day gets its dot.
+   - Tick My Activities: days with your follow-ups get dots too ("2 meetings and follow-ups"). Untick a colleague in Calendars: their meetings' dots go.
+2. **New meeting and the working day (US-MTG-14):**
+   - "New meeting" sits before Day / Week / Month / Agenda. On today it opens "New event" at the next half hour for 30 minutes; on another day at 9:00 AM. A Staff member without the right to create meetings has no button.
+   - Week and Day open with 8 AM at the top, or, on today after 9 AM, the hour before now; the day headers stay in view as you scroll. A red line marks the current time on today's column and moves each minute; other weeks have none.
+   - Open a meeting low on the screen or near the right edge: its quick view opens above or beside it and never runs off the window; the attendees are always readable. It opens in its final place — it doesn't jump up when the attendees appear (a placeholder row shows while they load).
+3. **Sidebar lists (US-MTG-15):**
+   - Upcoming: "Next 60 days", up to 8 meetings with "Today · 1:00 PM", "Tomorrow · 9:00 AM", "Tue 13 Oct · 9:00 AM" or "All day". Press one: the calendar moves to its day and its quick view opens. The people button still opens Manage attendees. With none: "Nothing in the next 60 days."
+   - Meetings by contact counts the range in the heading ("This week", "Week of 11 Oct", "This month", "From 10 Oct"); each name opens the contact. With none: "No meetings linked to a contact in this range."
+4. **Coming back (US-MTG-16):**
+   - Change to Month and move ahead: the address shows `?view=month&date=…`. Reload, or open a contact and press Back: the same view and month. Open plain `/meetings`: the last view you used, on today.
+   - The dashboard's "Open calendar" still opens today's Day view; a notification link (`?id=`) still opens Manage attendees and keeps the view and date.
+5. **Every screen size (US-MTG-17):**
+   - At 1280 × 800 the calendar and sidebar reach the bottom of the window with no page scroll.
+   - At 1024 px a calendar button in the toolbar opens the mini calendar, Calendars, Upcoming and Meetings by contact in a sheet; picking a day closes it.
+   - On a phone (collapse the left navigation first): it opens in Agenda; Week isn't offered (`?view=week` shows Day); the toolbar wraps and nothing scrolls sideways. Agenda rows show the time range, place and contact (or "Internal") and open the quick view.
+6. Regression:
+   - Drag to create, move and resize meetings; recurring "This event / All events"; Duplicate; delete with confirm (US-MTG-01, US-MTG-09, US-MTG-10).
+   - Owners see private meetings; Staff don't see others' private ones; responses still work (US-MTG-05 to US-MTG-07, US-MTG-12).
+   - A date picker elsewhere (e.g. a quote's Valid until) looks and works as before.
+   - The pipeline board still reaches the bottom of the window (US-CRM-24).
+
+## 205. A catalogue that's easy to keep (US-CAT-10 to US-CAT-15, refinements before Phase 10)
+
+Use an owner on a business with demo data, a Staff member, and about a dozen catalogue items: a few in each of three categories, one taxable item with no tax, one exempt item, one archived, one used on a quote and an invoice. Check one Indian (GST) business and one elsewhere, at 1440 px and 1024 px, light and dark, and compare with the canvas "08 Catalogue".
+
+1. **Setup cards (US-CAT-10):**
+   - The cards read "Total items", "Categories" (with the first two named, "and N more"), "Missing tax rate" and "No income account" ("Posts to 4100 Sales — Services"), counting active items only, whatever the filters.
+   - Press "Missing tax rate": just the taxable items with no tax show, the card reads "Showing these · press again to clear" and the address has `setup=tax`; press again to clear. On the GST business a zero-rated item doesn't count; elsewhere an untaxed item does unless it's exempt or non-taxable.
+   - Press "No income account", then "Total items": every filter clears. With a screen reader each card is a button ("Show items missing a tax rate, 1") with its pressed state.
+2. **The table (US-CAT-11):**
+   - Tax names the tax ("GST 18%", "Sales tax 8%"), says "Exempt", "Non-taxable" or (GST) "Zero-rated", and shows "No tax" with a warning icon on a taxable item without one.
+   - The description sits under the name (cut short, full text on hover). HSN/SAC shows on the GST business only (it can be turned on from Columns elsewhere). Only archived rows say "Archived".
+3. **Many at once (US-CAT-12):**
+   - Tick two rows: a dark bar reads "2 selected". The header box is part-ticked; press it to tick the page, again to clear.
+   - Set tax › a rate: "Updated 2 items" and both rows show it. On the GST business pick "GST 18%": each item's inter-state tax becomes "IGST 18%" (open one to check); "No tax" clears both.
+   - Set category (type a new one or pick one), Set income account: every selected item changes. As Staff, select one of your items and one of the owner's and change the category: "You can't change 1 of these items. Unselect them and try again." and nothing changes.
+   - Archive two items: "Archived 2 items"; show Archived and restore them. Search or change a filter: the selection clears.
+   - A row's "…" › Duplicate: "Add item" opens with "<name> (copy)" and the same fields; save it.
+   - Export: `catalogue-<today>.csv` downloads with just the rows on screen (filters applied), columns Name, Description, Unit, Category, Price, Tax, HSN/SAC code, Income account, Expense account. Import that file into another business: it maps every column, Category included.
+4. **Coming back (US-CAT-13):**
+   - Search, Status, Category, Price (Min and Max in its popover; the button then reads "$40.00 – $100.00"), a setup card, a column sort and page 2 all show in the address. Reload, or open a quote and press Back: the same list. "Clear filters" clears them.
+   - "Updated just now" ticks on; Refresh reloads in place; switch tabs for a minute and come back: it refreshes by itself.
+5. **Bundles (US-CAT-14):**
+   - The tabs read "Items N" and "Bundles N" (active ones). With no bundles, Bundles shows an icon, "No bundles yet", the two ways to make one and "Choose items", which opens Items.
+   - Select three items › Make a bundle: each has quantity 1 and its amount; change quantities and the total before tax follows. Save: "Bundle saved", the Bundles count goes up and the bundle's total includes tax. Add it to a quote from the quote's bundle picker.
+   - Select an item in another currency too: "Choose items in one currency." and Save is off.
+6. **The drawer (US-CAT-15):**
+   - Open an item: fields sit under Details, Price and tax, and Accounts; Save stays in view as you scroll. A used item says "Used on 1 quote and 1 invoice · last quoted <date>"; an unused one "Not used on a quote or invoice yet."
+   - Delete the used item: the confirmation says it's on 2 documents and they keep their own copy of the line.
+7. Regression:
+   - Add, edit, archive, restore and delete a single item; Import (US-CAT-01 to US-CAT-09).
+   - Pick a catalogue item and a bundle on a quote and an invoice; the line takes the item's price and tax (US-QUO-25, US-TAX-13).
+   - Any other table with a Columns menu (Contacts, Invoices, Reports) sorts, pages and hides columns as before; no checkboxes appear on them.
+   - Field users still can't open Catalogue's usage counts.
+
+## 206. Quotes you can work from (US-QUO-27 to US-QUO-36, refinements before Phase 10)
+
+Use an owner on a business with demo data (India and elsewhere), a Staff member without `quotes.send`, and quotes in every state: drafts, sent (one expiring within a week, one expired), revised, accepted (one converted to a job and an invoice) and declined. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "09 Quotes".
+
+1. **Cards (US-QUO-27):**
+   - "Open" counts sent, current quotes with their total value beside it ("+ other currencies" when some are in another currency); "Expiring in 7 days" (amber when above 0); "Won this month" with its value; "Win rate" with "5 of 12 in the last 90 days" (or "—" and "None closed in the last 90 days").
+   - A revised quote counts once. Press each of the first three: the table shows just those quotes, the card says "Showing these · press again to clear", the address has `card=…`; press again to clear. Win rate isn't a button. The dashboard's "Quotes won this month" link still filters to accepted quotes.
+2. **The list (US-QUO-28, US-QUO-29):**
+   - Search by number, title, contact or a line's name; filter by status and by contact (only contacts with a quote are offered). Reload, or open a quote and press Back: the same list. "Clear filters" clears them. Refresh and "Updated just now"; switch tabs for a minute and come back: it refreshes.
+   - Rows: the title under the number; a draft says "Draft" in italics; "Viewed 2×" beside a viewed quote's status, with "Last viewed …" on hover and for screen readers; Sent ("12 Oct", in the business's locale); Valid until with "in 5 days" (amber within a week), "today" or "Expired 6 days ago", or when it was accepted or declined. Expand a revised quote to see its earlier versions.
+   - Row menu: a draft offers View, Edit, Send (opens the send dialog on its page), Preview PDF, Duplicate and Delete; a sent quote Copy customer link ("Link copied"), Download PDF, Duplicate and Revise; an accepted one Convert to invoice and Convert to job (each lands on the quote page and converts, with the repeat warning when it applies). As Staff without `quotes.send`, no Send or Copy customer link.
+3. **A title (US-QUO-30):** add "Bathroom refit — 2nd floor" in the builder; it shows in the list, as the quote page's subtitle, on the PDF under the number and on the customer's page. Duplicate and revise keep it. A quote started from a won lead starts with the lead's title. A title over 120 characters can't be typed.
+4. **The quote page (US-QUO-31):**
+   - The number is the page title (a draft says "Draft quote"), with the status, "Viewed 3×", the title, the contact (a link), "Sent 12 Oct", "Valid until 15 Oct · in 5 days" and the place of supply. There's no "Back to quotes" — the breadcrumb leads back.
+   - The primary button: Send quote (draft; hidden while a discount waits for approval), Copy customer link (sent, current), Convert to invoice (accepted), Revise (declined, expired or superseded). The rest sit beside it or under More (Duplicate as new draft, Save lines as a bundle…, Email again, View history, Delete draft).
+   - Copy customer link: "Link copied — it works for 30 days, or until you revise the quote." Open the copied link in a private window: the customer's page loads; an earlier emailed link still works.
+   - Lines are a table: Item with its description, Qty, Rate, Disc. and Tax only when a line has them, Amount; headings in bold across the row, text lines muted. Totals: Discount only when there is one; on a GST quote, CGST and SGST (or IGST) by name. A superseded version says "Superseded by v2" with a link.
+5. **Activity and Related (US-QUO-32, US-QUO-33):**
+   - Activity lists, newest first: Created, Edited, Sent, Emailed to … (or "Email failed: …"), Link copied, Viewed by the customer N times (views in a row grouped, "last …"), Revised from v1 (a link), Accepted or Declined online or in person with the comment, Converted to an invoice or a job (links), with who and when. A sent quote no one has opened ends with "Not viewed yet". "View history" opens the field-level history. More than six entries: "Show N earlier".
+   - Related lists the lead (opens it in the pipeline's drawer), every version ("this one" marked), and the jobs and invoices made from any version; with none it isn't shown. With Jobs & field off, no jobs. Field users never see Activity or Related.
+6. **The builder (US-QUO-34 to US-QUO-36):**
+   - Each item is one row: handle, Item, Qty, Rate, Disc. %, Tax, Amount and a menu; its description (and HSN/SAC for GST, supply type when untaxed) sits under it, or "Add description" on a taxed line with none. Headings and text lines span the row.
+   - Drag a row by its handle (text in the fields still selects normally); use the row's menu (Move up, Move down, Price includes tax, Remove line); or Alt + ↑/↓ — VoiceOver says "Moved to position 2 of 3". Enter in the last row's Tax adds a row with its Item field focused, as does "Add item".
+   - Under 1024 px each row wraps into two lines; nothing scrolls sideways.
+   - The bar stays at the bottom while you scroll: Subtotal, Tax, Total; Cancel, Preview PDF (opens the quote as it is on screen in a new tab, unsaved changes included; nothing is saved — "Unsaved changes" stays, and the quote's history has no new entry; every page has a faint diagonal "DRAFT — Preview only — not a valid quote" watermark, as does a draft's Preview PDF on its page, but not a sent quote's PDF), Save as draft / Save draft, Save and send (saves, then opens the send dialog; with a discount waiting for approval it opens the quote instead; hidden without `quotes.send`).
+   - Change anything: "Unsaved changes" shows. Press Cancel, click Contacts in the sidebar, or press the browser's Back: "Leave without saving?" with "Keep editing" and "Leave". Close the tab: the browser asks. Opening the builder alone never shows "Unsaved changes".
+   - Settings › Documents › Quotes: "Quotes valid for" (1–365, 30 to start). A new quote starts valid that many days ahead; "+15 days", "+30 days" and "+60 days" set it (the matching one shows pressed). Duplicate a quote with no validity: the copy uses the setting.
+   - The Notes and Terms boxes show their placeholders inside the box when empty (and so does every other rich-text box, e.g. Settings › Documents' default terms).
+7. Regression:
+   - Build, edit, send, revise, duplicate and delete quotes; bundles in the line picker and "Save lines as a bundle…"; one-off lines with "Also save to catalogue" (US-QUO-01 to US-QUO-26, US-CAT-06).
+   - GST quotes: place of supply switches lines between CGST + SGST and IGST, flagged lines warn; HSN/SAC carried (US-TAX-13, US-TAX-14).
+   - The customer's page: view, accept and decline; on-site acceptance on the phone and its card on the quote page (US-QUO-08, US-QUO-09, US-QUO-19, US-QUO-20).
+   - Convert to invoice and to job with the repeat warning (US-QUO-14 to US-QUO-16, US-QUO-23); discount approval (US-QUO-12).
+   - Invoices', credit notes' and variation orders' line editors look and work as before.
+   - A quote, invoice and credit note with a heading and a text line: on the PDF the heading is bold and larger, the text line plain and lighter; on the customer's quote page too (US-QUO-02).
+
+## 207. Jobs you can run from one place (US-JOB-30 to US-JOB-38, refinements before Phase 10)
+
+Use an owner on a business with demo data, a Staff member without `reports.view_job_profitability`, and the demo Field user (Marcus Webb) on one job. Have jobs that are active (one with a completed milestone not invoiced, one with a milestone overdue), on hold, and completed with retention held. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "10 Jobs".
+
+1. **New job (US-JOB-30):**
+   - "New job" in the toolbar opens the drawer. Create job with nothing filled says "Choose who the job is for." and "Give the job a name.". Pick a contact with a site address: Site address fills in, with "From <contact>'s address — change it if the work is elsewhere."; a contact with only a billing address fills that; typing your own address keeps it when you change the contact.
+   - Fill name, contract value, retention, dates (an end before the start says "End the job on or after its start date.") and notes; Create job opens the job on Milestones with "Job JOB-007 created", "Set up how this job is billed" and "Add milestones".
+   - "Choose a quote" lists accepted quotes with no job yet; pick one and Create job: the job is named after its first item, with its contact and value, and says "From QUO-…". With the repeat-conversion warning on and an invoice already made from the quote, the drawer says it's been converted before and offers "Create another job".
+   - With no jobs, the empty state has "New job" and "Go to quotes". As the Field user, neither shows.
+2. **Cards (US-JOB-31):** "Active" with its contract value ("+ other currencies" if some are in another); "Ready to bill" with the amount (amber above 0); "Over or near budget" only for people who can see job profitability; "Retention held" with "Across N jobs". Press each of the first three: the table shows just those jobs, the card says "Showing these · press again to clear", the address has `card=…`; press again to clear. The Field user sees no cards.
+3. **The list (US-JOB-32, US-JOB-33):**
+   - Search by number, name, contact or site; filter by status and contact (only contacts with a job). Reload, or open a job and press Back: the same list. "Clear filters"; Refresh and "Updated just now"; come back after a minute away and it refreshes.
+   - Rows: the number and site under the name; Next milestone with "Due 14 Oct", "Due in 3 days" (amber) or "Overdue 2 days" (red), "Ready to bill", "All billed" or "No milestones yet"; Progress with Complete and Billed bars; a job billed past its contract shows "118%" in red with a warning icon, and "Billed over the contract" on hover or focus. Columns has Retention and Budget used. The Field user's rows have no money or Billed.
+4. **The job page (US-JOB-34):**
+   - The number is the page title; the name under it; the contact (a link), the site (opens Google Maps in a new tab), "Started 22 Jul · Due 30 Nov", "From QUO-…" (a link). No "Back to jobs" — the breadcrumb leads back.
+   - The status chip opens Active, On hold, Completed, Cancelled (current one ticked); a change saves with a toast; Cancelled asks first ("Keep the job" / "Cancel the job"). Without the right to edit the job, the status is a plain badge.
+   - One primary button: "Invoice <milestone>" when one is completed and not invoiced (opens the new invoice), else "Complete <next milestone>" (the completion dialog), else "Release retention" on a completed job with retention held. Edit job, Raise variation (opens the Variation orders tab's dialog) and More (Add photos, View history, Release retention when it isn't the primary).
+   - Figures: Contract ("incl. 1 variation (+…)" once one is applied), Billed (with % and a bar), Cost (against the budget, amber near and red over; "No budget set") and Margin for people who can see job profitability, and Complete. The Field user sees only Complete, and no Activity.
+5. **Milestones (US-JOB-35):** tabs show counts (Milestones 3, Variation orders 1, Photos 6, Notes 2, Crew 2) and update when you add a note, a photo or crew. "Billed X of Y" with a bar and "Edit milestones"; each milestone has a step marker (tick for invoiced, flag for completed, circle for pending), its badge, "30% of contract", "Due 30 Oct · in 20 days" or "Overdue 3 days" in red, "not invoiced yet" on a completed one, its amount and View invoice, Raise invoice or Mark complete. A completed job with retention held ends with "Retention held … — release it now the job is complete." A job without milestones says "Set up how this job is billed" with "Add milestones".
+6. **Photos (US-JOB-36):** "Add photos" takes several files; each shows on its own tile while it uploads; one that fails (e.g. over the size limit) says why with Dismiss, and the rest still appear. Drag files onto the card: it highlights and they upload. Photos are grouped "Site photos · 2", then "Site preparation · completed 7 Aug · 2" and so on. Click one: it opens full size on a dark screen with "<group> · 2 of 3", the caption, "Added by … with “…” · 2 Oct, 4:38 PM"; ← and → (and the buttons) move within the group; Download saves the original; Close or Esc returns to the grid with focus back on the photo.
+7. **Activity (US-JOB-37):** beside the milestones, newest first: Created (from QUO-… as a link), Status changed to …, Job details edited, Milestones set · 3 milestones, Milestone completed · …, Milestone invoiced · … · INV-… (a link), Variation raised · QUO-…, Variation applied · +…, "3 photos added with …" for photos added together, Note added, Crew assigned · …, Removed from crew · …, Retention released · INV-…; with who and when. "Show N earlier" past eight; "View history" opens the field-level history.
+8. **Demo photos (US-JOB-38):** load demo data: each demo job's photos are real construction-site photos (the kick-off photo differs between jobs), not a blank square. Delete demo data: the jobs and their photos go.
+9. Regression:
+   - Create a job from a quote's page (Convert to job) with the repeat warning (US-QUO-14 to US-QUO-16, US-QUO-23).
+   - Edit job (budget, % complete, retention), variation orders (raise, apply), notes, crew and Costing work as before (US-JOB-01 to US-JOB-29); the dashboard's "Release" link opens the release dialog (US-DASH-20).
+   - The field app's jobs, milestones and photos are unchanged; a photo taken with a milestone on the phone shows under that milestone on the web (US-MOB-04 to US-MOB-07).
+   - Switching Jobs & field off and on keeps the job page (US-SET-25).
+
+## 208. Demo data that shows the refined screens (US-ONB-24 to US-ONB-27, refinements before Phase 10)
+
+Load Riverstone Builders (the default), then delete it and load India · Construction and United Kingdom · IT services & agency in turn (Settings › Data). Repeat the checks for each.
+
+1. **Pipeline (US-ONB-24):** cards carry two owners' initials (the owner's and Sarah Mendes's); the Owner filter narrows to each. Days in stage differ ("3 days in stage" … "24 days in stage"); exactly one open lead says "No activity for 1x days". Every open lead has an expected close date in its drawer. The strip shows "Won this month" (if the won lead closed this month), "Win rate" from the won and lost leads. Open the lost lead: "Price" with a note. Any lead's drawer lists Created and each stage it moved through, a week apart, ending in its stage.
+2. **Quotes (US-ONB-25):** every quote has a title under its number. Sent dates differ; one quote says "in 5 days" (amber, counted in "Expiring in 7 days") and one "Expired 5 days ago". Some show "Viewed 2×"/"Viewed 3×", the newest sent version shows none. One quote is Accepted ("Won this month" counts it) and one Rejected with the customer's comment in its Activity. Open the accepted contract quote: Related lists its job; Activity ends "Converted to a job". A quote for a customer with a lead shows the lead in Related.
+3. **Jobs (US-ONB-26):** every job has an end date. "Ready to bill" is 1 and that job's next step is "Invoice <milestone>"; "Over or near budget" is 1 (the newest job, amber "Nearing"); one job has "Complete 60%" as "Your estimate"; the finished job is Completed (India: retention held and "Release retention" its next step). The newest job says "From QUO-…". Milestones say "completed <date>" on their own days; the Activity panel reads in date order. Start a new job for a demo customer: the site address fills in.
+4. **Catalogue and calendar (US-ONB-27):** "No income account" counts only the services (Riverstone 12 of 15; a professional-services demo counts every item); materials open with "Posts to 4000 Sales — Goods". Bundles shows two, and a quote's line picker offers them. Meetings start at different times; Upcoming lists at least three in the next two weeks, one tomorrow.
+5. **Delete all demo data:** the bundles go with it; nothing of the demo is left in Pipeline, Quotes, Jobs, Catalogue or Meetings.
+6. Regression:
+   - Every demo still loads and deletes (US-ONB-17 to US-ONB-21); India's GSTR-1 and the Tax Summary agree; reports render; the Trial Balance balances.
+   - The field app: the demo Field user sees the demo's jobs on Today (US-MOB-03, US-MOB-04).
+   - The dashboard's Needs your attention, Jobs in progress and Recent activity show the demo's states (US-DASH-16 to US-DASH-29).
+
+## 209. Invoices you can work from (US-INV-27 to US-INV-35, US-ONB-28, refinements before Phase 10)
+
+Use an owner on a business with demo data, a Staff member without "Issue invoices" and "Send a payment reminder", and the demo Field user. Have invoices that are draft, due, part paid, paid, overdue, void, a deposit and a progress invoice with retention. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "11 Invoices".
+
+1. **Cards (US-INV-27):** Outstanding, Overdue (red above 0) and Due in 7 days (amber above 0) show balance totals and counts, leaving out drafts, voids and paid invoices; an invoice in another currency adds "+ other currencies". Paid this month shows what payments dated this month paid against invoices, and how many payments, with "Received since" the 1st of the month (in a browser set to British English too, with no error in the console). Press each of the first three: the list shows just those, the card says "Showing these · press again to clear" and the address has `card=…`; press again to clear.
+2. **The list (US-INV-28, US-INV-29):**
+   - Search by number, customer, a line's name ("canopy") or a job's number or name; filter by status (more than one) and contact. Reload, or open an invoice and press Back: the same list, page and sort. "Clear filters"; Refresh and "Updated just now"; come back after a minute away and it refreshes. The dashboard's overdue link opens the list filtered to Overdue.
+   - Rows: one status badge; "Progress claim 2 · JOB-002", "Deposit" or the job under the number; Issued; Due with "in 2 days" (amber within 7), "today", "Overdue 6 days" (red) or "Paid 2 Oct" (green); Total; Balance due with a green bar when part paid; a void invoice shows "—" for Due and Balance due.
+   - The row menu: View; Edit and Issue on a draft (Issue opens the invoice and asks "Issue this invoice?", or the HSN/SAC or credit question); Record payment while owed (not on a deposit); Email invoice and Send reminder (when overdue) open the invoice with the email to check and send — nothing is emailed from the menu; Download PDF; Duplicate; Void (opens the void dialog); Delete draft (asks first). Each needs its right; the Staff member sees no Issue or Send reminder.
+   - Tick rows and press "Send reminders (N)": "Send N payment reminders?" says how many customers get the email and how many ticked invoices are skipped; Go back sends nothing; Send reminders sends them (US-INV-23).
+3. **The invoice page (US-INV-30):**
+   - The number is the title ("Draft invoice" for a draft) with its status and, on a progress invoice, "Progress claim N"; the customer (a link), "Issued 4 Sept", "Due 4 Oct · Overdue 6 days" (a draft without a due date: "Not issued yet · due 30 days after issue"), the place of supply, the job and milestone, and "From QUO-…" (links). No "Back to invoices" — the breadcrumb leads back.
+   - One primary button: Issue invoice (draft, beside Edit and Preview PDF), Send reminder (overdue, beside Download PDF and Record payment), Record payment (owed), else Download PDF. More holds Email invoice, Apply credit (when the customer has credit), Issue credit note, Duplicate as new draft, View history, Void invoice and Delete draft, each only with the right. Delete draft asks first.
+   - Issued: the strip shows Total ("incl. IGST …"), Paid ("last on 2 Oct" with a bar, or "Nothing yet"), Retention held (or Credited) and Balance due with its due note (red when overdue).
+   - Press Issue invoice on a draft: "Issue this invoice?" says who will owe what, when it's due, that it gets its permanent number and is posted to the books, and that it can then only be voided or credited. Go back: still a draft. Issue invoice: issued, with a toast. A draft to a registered business with a line missing its HSN/SAC code asks that question instead (one question, not two); so does a customer with credit to apply.
+   - Open `/invoices/<id>?action=pay` (or `issue`, `email`, `remind`, `void`): that step's dialog opens (issuing still asks) and the address loses `?action=`.
+4. **Lines and totals (US-INV-31):** a table — Item with its description, Qty, Rate, Disc. and Tax only when a line has them, Amount; headings bold across the row, text lines muted. Under it: Subtotal, Discount (only when there is one), tax by name (CGST and SGST, or IGST, on a GST invoice), Total, Retention held, Paid, Credited, Balance due. Payments, credit notes and attachments follow. An opening-balance invoice says it has no lines.
+5. **Activity (US-INV-32):** newest first, with who and when: Created (or "Created from quote · QUO-…", "Created from milestone · …", "Duplicated from · INV-…", as links), Edited, Issued, "Emailed to …" (or "Email failed: …"), Reminder sent, Automatic reminder sent, "Payment recorded · ₹… · Bank transfer · RCP-…" (opens the payment), Credit applied, Credit note issued, "Voided: <reason>". "Show N earlier" past six; View history opens the field-level history. Record a payment: the entry appears without a reload.
+6. **Payment terms (US-INV-33):** Settings › Documents › Invoices: "Invoices due in" is 30; 0 and 365 save, 366 is refused. With 15: a new invoice's due date is 15 days on with "+15 days" pressed and "Your terms: due 15 days after issue (Settings › Documents)."; the picks change it, and change with the issue date. Issue a draft with no due date (from a quote, a milestone, or saved without one): it's due its issue date plus 15. Release retention on a job: the release invoice has a due date. A recurring schedule's invoices keep the schedule's due days.
+7. **The builder (US-INV-34):** compact rows as on quotes (Enter adds a row, Alt + ↑/↓ and the row's menu move it, drag the handle). The bar stays at the bottom while you scroll, with the totals and "Unsaved changes" once you've changed something. Cancel, a link or Back with changes asks "Leave without saving?"; closing the tab asks too. Preview PDF opens the invoice as on screen with "Preview only — not a valid invoice" on every page and saves nothing. "Save and issue" (with the right to issue) saves, then opens the invoice asking "Issue this invoice?" (Go back leaves the saved draft); without the right, only Save draft.
+8. **Duplicate (US-INV-35):** from a paid, a void and a progress invoice: a new draft opens in the builder with the same customer, currency, lines, notes and terms, today's issue date, the terms' due date and "Duplicated from INV-…"; a progress invoice's copy is Standard, a deposit's stays Deposit. Its Activity says "Duplicated from" the source.
+9. **Demo (US-ONB-28):** load Riverstone, then a localised demo. Overdue and Due in 7 days are both above 0 (Riverstone's deposit is due in 5 days). Open an overdue invoice: Activity shows "Emailed to …" and "Reminder sent" on their own days, and its payment on its day. No email goes out while loading.
+10. Regression:
+    - Issuing with missing HSN/SAC codes and with customer credit to apply (US-TAX-14, D-187); recording a payment, applying credit and issuing a credit note from the page (US-PAY-01, US-PAY-16); emailing and reminding with the editable email (US-SET-21); voiding with a reason (US-INV-08).
+    - The quote page and builder: lines table, bar, Preview PDF and leave guard as before (US-QUO-31 to US-QUO-35).
+    - Receivables, the dashboard's overdue count and reminders (US-INV-15 to US-INV-19, US-DASH-13) pick up invoices that now get a due date at issue.
+    - The field app is unchanged; the Field user still can't open invoices (US-JOB-19).
+    - Dashboard › Needs your attention with one overdue invoice: "Send reminder" opens that invoice with the reminder email to check and send; with several, the list opens filtered to overdue with them ticked (US-DASH-13).
+
+## 210. A major action asks first (D-218, refinements before Phase 10)
+
+For each action below: press it, check the question says what happens to the data (and whether it can be undone), press "Go back" and check nothing changed, then do it again and confirm. Deleting, voiding and removing have a red button; the rest a blue one. Check light and dark, and that Esc closes the question without acting.
+
+1. **Vendor bills:** Record on a draft bill's page and from a row's menu ("Record this bill?" — the vendor, number and amount); Delete draft on the bill's page.
+2. **Vendor credits:** Record ("Record this vendor credit?"); Remove from a bill (the bill owes that much again); Delete refund (reversed in the books, stays listed as deleted).
+3. **Expenses:** tick submitted expenses and press Approve (N): "Approve N expenses?" with the total. Reject still asks for its comment (no second question).
+4. **Quotes:** Revise (on the page and from a row's menu — the new version and that this one is superseded once it's sent); Convert to invoice and Convert to job (on the page, from a row's menu, and after the repeat-conversion warning, which is the only question then); Approve discount.
+5. **Jobs:** remove someone from the crew (they stop seeing the job on the web and in the field app); Apply to job on an accepted variation (the amount added to the contract, percentage milestones worked out again).
+6. **Opening balances:** Remove an opening invoice, bill, customer credit or vendor credit (its entry is reversed).
+7. **Tax:** delete a tax payment or refund from the tax report's list.
+8. **Customer refunds:** delete a refund on a credit note or payment.
+9. **Banking:** Finish reconciliation (entries marked reconciled; their documents can't be voided or deleted; only the newest can be undone).
+10. **Team:** Cancel a pending invitation ("Keep invitation" / "Cancel invitation").
+11. Regression: Save, Save draft, creating drafts, Archive and Restore a contact, and Resend an invitation don't ask; the actions that already asked (void with a reason, delete from row menus, deactivate a user, reverse a journal, release retention, cancel a job, delete demo data) ask once, as before.
+
+## 211. Credit notes you can work from (US-INV-36 to US-INV-41, US-ONB-29, refinements before Phase 10)
+
+Use an owner on a GST business (India demo) and a non-GST one, a Staff member without "Apply credit" and "Refund a customer", and the demo Field user. Have a taxed invoice with a balance, a paid one, one already partly credited, and credit notes off an invoice, with credit left, applied and refunded. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "12 Credit notes".
+
+1. **Issuing (US-INV-36):**
+   - On an issued invoice, More › Issue credit note: "Issue a credit note" says which invoice, the customer and what's still owed. "Credit lines" lists the item lines with "N of M left"; a line already credited in full is greyed with "Fully credited".
+   - Tick a line, set how many: the row's amount, Subtotal, the tax by name (CGST and SGST, or IGST, on a GST invoice; the rate's name elsewhere) and Total appear. A quantity above what's left says "Line 2 has 3 left to credit." and Issue stays off.
+   - "Credit an amount": enter an amount (tax included); it's spread over the lines by what's left on each, each part's before-tax, tax and part shown; the parts add up exactly. More than the invoice has left says "You can credit up to … on this invoice.".
+   - When the total is more than what's owed, "… reduces what's owed on INV-…; … becomes credit for …" shows beside the totals.
+   - Issue credit note: the toast says "CRN-0007 issued" (and how much became credit); the invoice's balance, Credited and credit notes update. Open Reports › Tax Summary and (India) GSTR-1 for the month: the credit note's tax reduces the tax owed, by component, and the two agree.
+   - An invoice with nothing left to credit has no "Issue credit note".
+2. **New credit note (US-INV-37):** Credit Notes › New credit note asks "Which invoice?"; search by number, customer or job; only issued invoices with something left to credit show, each with "Left to credit". Continue opens the issue dialog; issuing opens the new credit note's page. Without "Issue credit notes" there's no New credit note.
+3. **The credit note page (US-INV-38):**
+   - The number is the title with "Credit left" (amber) or "Credited" (green); the customer, "Against INV-…" (links), the date, place of supply and reason. No drawer any more.
+   - One primary button: Apply credit while credit is left (with the right), else Email credit note if it hasn't been emailed, else Download PDF; Refund and Download PDF beside it; Email and View history under More.
+   - The strip: Credited ("incl. CGST + SGST …"), Off INV-… (when any), Applied (to INV-… or "To 2 invoices"), Refunded (when any) and Credit left. The lines table shows tax by name, then Off INV-…, Applied to INV-…, Refunded and Credit left under Total.
+   - Apply credit lists the customer's open invoices in the credit note's currency, prefilled oldest first; applying updates the strip and toasts. Refund opens the refund dialog for this credit note; refunds and attachments follow the lines.
+   - Links: the invoice's credit notes rows and its Activity ("Credit note issued · CRN-…", "Credit applied · CRN-…") open the page; a ledger drill-down on a credit note entry opens it; search (⌘K) finds credit notes by number, customer, invoice and reason. As the Field user, `/credit-notes/<id>` says it isn't found.
+4. **Activity (US-INV-39):** newest first, with who and when: "Issued against INV-… · … off it, … as credit", "Emailed to …", "Credit applied · … to INV-…" (a link), "Refunded · … · UPI", "Refund deleted". "Show N earlier" past six; View history opens the field-level history.
+5. **The list (US-INV-40, US-INV-41):**
+   - Cards: Credited this month (total and count, "Issued since 1 Oct"), Credit to use (amber, customers count; press it to filter, "Showing these · press again to clear", `card=left` in the address) and Refunded this month.
+   - Rows: the reason under the number, the customer, the invoice (a link), the date in the business's format, the total, and "Where it went" — "Off INV-…", "Applied …", "Refunded …" (green), "… left" (amber), or a mix. A draft left unissued says "Draft — not issued".
+   - The row menu: View; Apply credit and Refund while credit is left; Email credit note; Download PDF — each needs its right (the Staff member sees no Apply credit or Refund). Apply, Refund and Email open the page with that dialog.
+   - Search by number, customer, invoice, reason or a line's name; filter by where it went and contact. Reload, or open one and press Back: the same list. "Clear filters"; Refresh and "Updated just now"; come back after a minute away and it refreshes.
+6. **Demo (US-ONB-29):** load an industry demo: three credit notes this month on their own days — one off its invoice, one applied to the customer's overdue invoice with credit left, one refunded. Riverstone: one off its invoice, one with credit left, one refunded. Delete demo data: the credit notes, their applied credit and refunds all go, and the Trial Balance balances.
+7. Regression:
+   - Apply credit on an invoice (US-PAY-16), refunds from a payment (US-PAY-17), the customer statement's credit lines, Receivables and the Credit notes and refunds report (US-RPT-31) read the same figures.
+   - Emailing a credit note from the invoice's credit notes section (US-SET-21) still works.
+   - The invoice page's Paid bar counts payments only; credit notes show under Credited.
+
+## 212. The email log (US-SET-27 to US-SET-29, US-DASH-30, refinements before Phase 10)
+
+Use an owner with email set up (MailDev locally), a Staff member and the demo Field user. Have a contact with an email address and one without. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "13 Email log".
+
+1. **Every email (US-SET-27):**
+   - Send a quote, email an invoice, send a reminder, record a payment with a receipt, email a credit note, send a statement, invite a member and send a test from Settings › Emails. Open Settings › Emails › "Email log": each one is there with the time ("Today"), the address and who it belongs to (a contact, or "<name> · team"), the kind beside the subject, the record (a link) and "Sent" with "1 of 4" (queued) or "1 of 1" (sent straight away).
+   - Email an invoice to the contact without an address: within seconds it's "Retrying" with "Retrying at … · … has no email address on file", then "Failed" with "4 of 4" after its tries.
+   - Cards: Waiting and Failed in the last 7 days filter the list ("Showing these · press again to clear", `card=` in the address); Failed is red above 0. Sent today counts what went out since midnight.
+   - Filter by status and kind; change the range; search by address, subject or record number. Reload, or open a record and press Back: the same list. "Clear filters"; Refresh and "Updated just now".
+   - As Staff or Field, `/emails` shows the no-access page and Settings has no Email log link.
+2. **Retry and cancel (US-SET-28):**
+   - On a failed or retrying invoice email, the menu has Retry now, Cancel (retrying only) and Open INV-…. Retry now asks "Retry this email?" with who it goes to and the last error; Go back does nothing; Retry email queues it ("Email queued again") with attempts from 0.
+   - Cancel asks "Cancel this email?"; Cancel email shows "Cancelled" and "Cancelled by <you>"; the invoice's page says "Email not sent — cancelled" with "See it in the email log", which opens the log showing "Emails for INV-…". Its Activity says "Email not sent — cancelled".
+   - A sent email has no Retry now or Cancel; a failed credit note, receipt, statement or invitation has only Open <record>.
+3. **Not set up (US-SET-29):** stop the API, unset `SMTP_HOST`, start it. Send a quote: the log and Settings › Emails warn "Email isn't set up — 1 email is waiting. …"; the email stays Queued with "Waiting for email to be set up" and "0 of 4". Emailing a credit note says email isn't set up. Set `SMTP_HOST` again and restart: the waiting email goes out and the warning goes. With a wrong SMTP password, after three queued emails fail, the warning reads "Emails are failing — the last error was: …".
+4. **Dashboard (US-DASH-30):** with a failed email in the last 7 days, the owner's Needs your attention shows "1 email failed" with "Invoice INV-… to …" and Review, which opens the log filtered to Failed. Staff and Field don't see it. The owner's daily digest lists "Emails that failed".
+5. Regression:
+   - The quotes list has no "Email queue" button; a quote's "Email delivery failed" message links to the email log (owners) instead.
+   - Sending a quote, emailing or reminding an invoice and automatic reminders still send, and the quote's and invoice's email status and Activity still update.
+   - Notifications by email, the daily digest, data export's "ready" email and password reset emails still arrive.
+
+## 213. Payments you can work from (US-PAY-19 to US-PAY-26, refinements before Phase 10)
+
+Use an owner on the India demo, a Staff member without "Apply credit" and "Refund customers", and the demo Field user. Have a customer with two open invoices (one overdue), a payment applied to two invoices with credit left, one fully applied, one refunded in part, and one reconciled. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "14 Payments".
+
+1. **The payment page (US-PAY-19):**
+   - Open a payment from the list: the receipt number is the title with "Credit left" (amber), "Fully applied" (green) or "Refunded"; under it the customer (a link), "Cheque · 7 Oct", "Paid into …" and the reference. No drawer any more.
+   - One primary button: Apply credit while credit is left, else Email receipt, else Download PDF; Refund (with credit) and Download PDF beside it; More has Email receipt, View history and Delete payment (only when nothing is applied or refunded).
+   - The strip: Received ("Cheque · 7 Oct"), Applied ("To INV-…" or "To 2 invoices"), Refunded (when any) and Credit left. "Applied to" lists each invoice's total, what this payment put on it, what it still owes ("Paid" at zero) and the date.
+   - Links: the "Payment received" notification, a ledger drill-down on a payment entry, a bank register row, an invoice's Payments row and Activity, the email log's receipt row and an old `/payments?id=…` link all open the page. As the Field user, `/payments/<id>` says it isn't found.
+2. **Activity (US-PAY-20):** newest first, with who and when: "Recorded · … by cheque into …", "Applied … to INV-…" (a link), "Receipt emailed to …", "Moved … off INV-… · “reason”", "Refunded · … · UPI", "Refund deleted". "Show N earlier" past six; View history opens the field-level history.
+3. **The list (US-PAY-21, US-PAY-22):**
+   - Cards: Received this month (total and count, "Received since 1 Oct"), Credit to use (amber, customers count; press it to filter, `card=credit` in the address) and Refunded this month.
+   - Rows: the reference under the number, the date in the business's format, the customer, the method with the account under it, the amount, "Applied to" (links, "3 invoices" or "Not applied") and the credit left. Newest first.
+   - The row menu: View; Apply credit and Refund while credit is left; Email receipt; Download PDF; Delete payment (nothing applied or refunded) — each needs its right. Apply, Refund, Email and Delete open the page with that dialog.
+   - Filter by contact, method and date range (All time, This month, Last month, Last 90 days, This financial year); search by receipt number, reference, customer or an invoice it paid. Reload, or open one and press Back: the same list. "Clear filters"; Refresh and "Updated just now".
+4. **Recording (US-PAY-23, US-PAY-24):**
+   - From the list, an invoice's "Record payment" and a bank statement line's Create › Payment: the same dialog. From an invoice the customer is fixed and the invoice is ticked with its balance; from a statement line the amount, date and account are fixed.
+   - Choose a customer: open invoices oldest due first, "12 days late" in red, "Deposit" for an advance invoice. Tick one: the amount fills; "Pay all" ticks all. Type an amount: it spreads oldest first and the rest is credit — "… goes on 2 invoices; … becomes credit for …". Lines above their balance are capped; more on the invoices than the amount is refused with what to do.
+   - "Email a receipt to …" is on for a customer with an email address; turned off, no receipt goes. Recording opens the new payment's page.
+   - Enter the same customer, amount and a date within 3 days of an existing payment (or its reference): "This looks like RCP-… — …" with "Open RCP-…"; recording still works.
+5. **Search (US-PAY-25):** ⌘K, type a receipt number, a reference or a customer: a Payments group lists "RCP-… · customer · amount · date"; Enter opens the page. The Field user gets no Payments group.
+6. **Move off (US-PAY-26):** on a payment's "Applied to" row (or an invoice's Payments row), "Move off INV-…" asks "Move … off INV-…?" with what the invoice will owe again and an optional reason; Go back does nothing. Confirm: "… is now credit", the row goes, Credit left rises, Activity shows "Moved … off …", the invoice owes it again and its Activity says so. Reports › account drill-down on 1100 and 2200 shows the P30 entry dated today. A deposit invoice's payment has no "Move off"; the Staff member without "Apply credit" sees no "Move off". A reconciled payment can still be moved off.
+7. Regression:
+   - Apply credit, refunds (US-PAY-17), deleting an unapplied payment (US-PAY-06) and a reconciled one refused (US-BANK-10) work from the page.
+   - The receipt PDF lists only what's still applied; Receivables, aging, the customer statement and job revenue agree after a move-off.
+   - The invoice page's Record payment, the demo payments and the bank statement's payment form still record correctly.
+
+## 214. Menus that read at a glance (US-OPS-37, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, and compare with the canvas "15 Menus".
+
+1. Open each row menu and page "More" menu in Contacts, Catalogue (items and bundles), the Pipeline (a lead card), Meetings (the quick view), Quotes (row, page, a line's menu), Jobs (page), Invoices (row, page, a Payments row), Credit notes (row, page), Payments (row, page, an "Applied to" row) and the Email log: every action has an icon, 14 px and grey, the same distance before its label in every menu; rows are the same height; the hover/keyboard highlight covers the whole row.
+2. The same action has the same icon everywhere: View an eye, Edit a pencil, Duplicate two sheets, Delete a bin, Email an envelope, Send reminder a bell, Record payment and Refund a banknote, Void and Cancel a ban sign, Download PDF a down arrow, View history a clock.
+3. Destructive actions (Delete, Void, Delete payment, Cancel an email, Remove line) are red — icon and text — and last, after a divider.
+4. Choice menus keep their markers: a lead's "Move to…" stages (the current one ticked), a job's status dots, the catalogue's tax picker.
+5. With a screen reader, an item is read by its label alone ("Record payment, menu item").
+6. Regression: banking, expenses, vendor bills and payments, team and settings menus still work; any icon they have is spaced the new way.
+
+## 215. Every action says when it's done (US-OPS-38, US-CAT-16, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, a phone-width window, and compare with the canvas "16 Toasts".
+
+1. Payments → Record payment, tick less than the amount: the payment's page opens with "RCP-… recorded" and "₹… is credit for … — apply it or refund it." Record one that pays an invoice exactly: "It paid INV-…".
+2. Pipeline: delete a lead (asks first) — "Lead deleted"; move a lead to Lost and Skip — "Lead marked lost … add why from the lead when you know"; move another and save a reason — the toast names the reason.
+3. Meetings: delete a meeting — "Meeting deleted"; on a repeating meeting delete "This event" — the toast names the day and says the rest of the series stays.
+4. Quotes: from a sent quote's page Revise, from a row Duplicate and Revise, from an accepted quote Convert to invoice and Convert to job, and delete a draft from its page: each asks where it did before, and the page that opens shows the toast.
+5. Invoices: delete a draft from its page — the list says "Invoice deleted". Credit notes: New credit note from the list — the credit note's page opens with "CN-… issued".
+6. Jobs: complete a milestone — "… completed"; Invoice it — the draft invoice opens with "… invoiced"; apply a variation — "Variation applied"; remove someone from the crew — "… removed". Create a job from the Jobs list — its Milestones tab opens with "Job … created" and the address has no `created=`.
+7. Contacts: create a contact and delete one from its page — each toast shows on the page that opens. A payment deleted from its page — the list says "Payment deleted" and the address has no `deleted=`.
+8. Delete a refund on a payment and remove an attachment anywhere — each has its toast.
+9. Do four quick actions (or record, email and delete in a row): toasts stack bottom-right, newest on top, three at most — the fourth closes the oldest at once. Each closes after about 5 seconds; hovering the stack pauses them; × or Escape closes one. At phone width they span the bottom, two at most. With Reduce Motion, they appear without sliding. A screen reader reads each without moving focus.
+10. Catalogue: tick items, Set tax → a rate: "Change the tax on N items?" with the new tax and "Quotes and invoices already issued keep their tax." Go back — nothing changes and the items stay ticked; Change tax — "Updated N items". Set category → "Move N items to “…”?" with Move items and Go back. Set income account → "Change the income account on N items?" with Change account and Go back. Archive and Restore don't ask.
+11. A failed action (e.g. stop the API, then delete a payment, retry an email, revise a quote from a row, or Set tax on items) shows a red message above the page or list saying what went wrong, with a × — no toast; a failed bulk change keeps the items ticked.
+12. Regression: an action you're not allowed to do still shows the permission toast; failed actions in dialogs still show their error in the dialog; Settings' "Saved" toast still shows; toasts don't cover a dialog's buttons.
+
+## 216. Receivables you can chase from (US-PAY-27 to US-PAY-31, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, and compare with the canvas "17 Receivables".
+
+1. Open Receivables: the header says "as of" today in the business's format; tabs "By customer" and "By invoice" with counts; the cards, the age bar, then the filter bar (age on the left; Updated, Refresh, Export on the right) and the search bar with Columns — laid out like Payments and Catalogue.
+2. By customer: one row per customer who owes, most overdue money first, with open invoices, oldest ("45 days late" / "Not due yet"), overdue, total owed, credit to use and last reminded; the totals row adds up. Open a customer — their invoices show under it, oldest due first, each opening the invoice.
+3. With retention held on a job, the note under the bar gives the amount and the number of jobs, with "See jobs"; the cards and bar don't include it.
+4. Press Overdue — the list narrows, the card is outlined, Current fades on the bar, the filter reads "Overdue" and the address has `?age=overdue`; press it again to clear. Press "31–60 days" on the bar — the same for that age. Choose "90+ days" with nothing in it — "Nothing 90+ days late." with Show all. The dashboard's Overdue card still opens Receivables on Overdue.
+5. By invoice: each row has the job (and Deposit), the customer as a link, the due date with "Last reminded …" or "Never reminded", and the coloured age with "12 days late" / "Due in 5 days"; Columns adds Issued, Invoice total and Paid so far.
+6. An invoice's menu: Record payment opens "Record a payment" with that invoice ticked; Apply credit shows only when the customer has credit; Send reminder opens the reminder email (asks before sending) — or is greyed with "Already reminded today." / "The customer has no email address."; Download PDF; Open invoice. Each finishes with a toast and the page refreshes in place.
+7. A customer's menu: Send statement opens the statement dialog; Record payment opens the dialog with the customer chosen; Open contact.
+8. Tick invoices — "Send reminders (n)" counts the ones that can go; it asks first, naming what it skips and why; the toast says how many were sent and the selection clears.
+9. Search, a tab, an age, a sort and a page survive opening an invoice and going Back; Refresh says "Updated just now"; after 30 seconds on another tab the page refreshes.
+10. Export with an age chosen — the CSV, Excel and PDF hold only that age's invoices.
+11. Regression: Payables still shows its "Show" filter and unpressable cards; the dashboard's Receivables and Overdue cards still open this page; a Staff member without "View receivables" sees the no-access page.
+
+## 217. Vendor bills you can work from (US-PUR-32 to US-PUR-36, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, and compare with the canvas "18 Vendor bills".
+
+1. Open a part-paid bill: the title is its number with "Partly paid"; under it the vendor (a link), bill date, due date with how late, job and place of supply, in the business's date format. One primary button (Pay bill); More holds View history, Make recurring, Duplicate and Void bill, each with its icon. The strip reads Total, Paid, Credits applied and Balance due.
+2. Activity lists created, recorded and each payment, newest first, with who and when — on the bill's own days for demo bills. A payment row opens that payment.
+3. With vendor credit open, "Apply credit" shows; it fills the credits oldest first up to the balance; applying shows a toast and the balance drops. Pay bill opens the vendor payment dialog with this bill ticked for its balance; recording it shows a toast and the bill reads "Paid".
+4. Void an unpaid bill: a dialog needs a reason; afterwards the state is "Void", the balance "—" and Activity says why. A draft offers Record bill (asks first) and Delete draft (asks first).
+5. The list: cards To pay, Overdue, Due in 7 days and Drafts to record with amounts; pressing Overdue, Due in 7 days or Drafts filters the list (in the address); press again to clear. Rows show bill date, due with how late, job, the state in words, and "—" for a void bill's balance; newest first. Filters, search (bill number, vendor or job), sort and page survive opening a bill and going Back; Refresh says "Updated just now".
+6. A row's menu has icons: View, Edit and Record (draft), Pay bill (owed), Duplicate, Void (recorded), Delete (draft) — destructive last.
+7. Tick drafts: "Record (n)" counts only the drafts, asks "Record n bills?" with their total, records them and toasts; any skipped are named.
+8. New vendor bill: it looks like the new invoice page — a header card, compact line rows with Account (no Disc. %), only "Add item" (no headings or text lines), the bar at the bottom with the totals, Cancel, Save draft and Save and record; due quick picks set the due date; leaving with changes asks "Leave without saving?". Choose a vendor with an earlier bill — the due date is suggested ("Suggested: 30 days, as on this vendor's last bill"). Type a number this vendor already used (any case, extra spaces) — a warning names it with a link; you can still save. "Save and record" asks first, then opens the recorded bill with its toast.
+9. From a bill's More, Duplicate opens a new bill with the same vendor, job, currency, place of supply and lines, today's date and an empty bill number.
+10. Regression: Recurring bills, the job filter's note and links, opening-balance bills (no lines, can't be voided), attachments on bills, and the dashboard's "Pay bill" all still work.
+
+## 218. Vendor credits you can work from (US-PUR-37 to US-PUR-41, refinements before Phase 10)
+
+Use an owner with a vendor who has two recorded bills. Check light and dark, and compare with the canvas "19 Vendor credits".
+
+1. From a recorded bill's More, choose "Record vendor credit": a new credit opens with the vendor, the bill under "Against bill", its currency, job and place of supply, and its lines copied. It looks like the new bill page — a header card, compact rows with Account, only "Add item", the bar at the bottom with Subtotal, tax and Total, "Unsaved changes", Cancel, Save draft and Save and record.
+2. Type a credit note number this vendor already used (any case, extra spaces): a warning names that credit with a link; you can still save. Leaving with changes asks "Leave without saving?".
+3. On a new credit, type a line, then choose a bill under "Against bill": it asks "Replace your lines with <bill>'s?"; "Keep my lines" keeps yours, "Replace lines" copies the bill's.
+4. "Save and record" asks "Record this vendor credit?", then opens the credit with "VCR-… recorded" in a toast.
+5. The credit's page: the title is its number with its state in words (Open, Partly used, Used, Void; "Draft vendor credit" before recording); under it the vendor (a link), "Their <number>", the date, "Against <bill>" (a link), job and place of supply, in the business's date format. One primary button (Apply to bills, or Record credit on a draft) with Record refund beside it; More holds View history and Void credit (and Delete draft on a draft), each with its icon. The strip reads Total, Applied to bills, Refunded and Left to use.
+6. Apply to bills: the bill it's against comes first, marked "Against this credit", and is filled first; each bill shows its due date with how late; "Applying … · … left" follows the amounts; ticking a bill fills it from what's left. Applying shows "Credit applied" with how much and how many bills.
+7. Record a refund, then remove the credit from a bill and delete the refund from their row menus: each removal asks first; every action shows a toast, and Activity lists applied, removed, refunded and refund deleted, newest first, with who and when. Void with a reason: the state reads "Void", Left to use "—", and Activity says why. Delete a draft: it asks first, then the list shows "Draft credit deleted".
+8. The list: title "Vendor credits"; cards Credit to use, Drafts to record, Partly used and Unused 60+ days with amounts; pressing the last three filters the list (in the address); press again to clear. Rows show the number ("—" on a draft), their number, vendor, date, the bill it's against, job, the state in words, total and Left to use ("—" when void); newest first. Filters (state, vendor, job), search, sort and page survive opening a credit and going Back; Refresh says "Updated just now".
+9. A row's menu has icons: View, Edit and Record (draft), Apply to bills and Record refund (credit left), Void (recorded), Delete (draft) — destructive last.
+10. Tick drafts: "Record (n)" counts only the drafts, asks "Record n vendor credits?" with their total, records them and toasts; any skipped are named.
+11. Regression: a bill's "Apply credit" and Credits applied, the vendor payment dialog's "Apply it first?" link to the credit, opening-balance vendor credits (Settings › Opening balances), and a Staff member without "Record" still seeing Edit but not Record credit.
+
+## 219. Demo bills and vendor credits at every stage (US-ONB-30, refinements before Phase 10)
+
+Load the India construction demo, then Riverstone Builders on another organisation; check light and dark.
+
+1. Vendor bills: every card has something in it — To pay, Overdue, Due in 7 days (the part-paid bill, on job A) and Drafts to record (2). The list shows Paid, Overdue, Partly paid, Void and two Drafts; "Record (2)" records both drafts after asking.
+2. The overdue bill shows "Apply credit" and, under Credits applied, the vendor credit raised against it; its Activity has "Credit applied" on the credit's day.
+3. Vendor credits: four credits (two in Riverstone) — Partly used (against the overdue bill, applied part), Open and dated about 70 days ago (counted in Unused 60+ days), Used (with a refund under Refunds), and a Draft. Each credit's Activity reads on its own days: created and recorded on its date, applied and refunded afterwards.
+4. Recurring bills: one active monthly schedule for the services vendor (Riverstone: Ridgeline, "Equipment yard rental"), with its next run date a few days ahead.
+5. Record a vendor credit of your own for a demo vendor, then "Delete all demo data": the demo's bills, credits (with their applications and refunds) and schedule go; yours stays with its vendor, and the deletion says it kept that vendor.
+6. Regression: Payables, Profit & Loss and the dashboard's bills to pay match the demo's bills; nothing of the demo is left in reports after deleting it.
+
+## 220. Expenses you can work from (US-PUR-42 to US-PUR-45, refinements before Phase 10)
+
+Use an owner and a Staff member who approves expenses, each with a few expenses of their own (one rejected, one billable on a job). Check light and dark, and compare with the canvases "20 Expenses" and "20b Expenses labour".
+
+1. The list: title "Expenses" with the Categories tab; cards Waiting for approval (a Staff approver's counts other people's only; an Owner's counts all), Approved this month, Ready to bill and Rejected, in money; pressing Waiting, Ready to bill or Rejected filters the list (in the address), press again to clear. Rows show the date (a link), the number once approved ("—" before), the description over its category ("headcount × day rate" for labour), job, who submitted it ("You" for yours), who paid, the state in words (Waiting for approval, Approved, Billed, Rejected) with "Billable" when it's ready to bill, and the amount; newest first. State, category, submitted by, job, search, sort and page survive opening an expense and going Back; Refresh says "Updated just now". The dashboard's links (waiting, my rejected, ready to bill) open the list filtered.
+2. A row's menu has icons: View, Edit (or "Fix and resubmit" on your rejected one), Approve, Reject, Bill to customer, Delete — destructive last. Approving or rejecting from it opens the same dialogs as the page; Delete asks first.
+3. Tick expenses: a box is disabled on one you can't review (your own as Staff, or one already reviewed); "Approve" and "Reject" for the ticked ones ask first and toast.
+4. An expense's page (`/expenses/<id>`; an old `?id=` link opens it): the number (or "Expense") with its state; under it category, date, "Submitted by …", job (a link) and who paid. An approver sees Reject, "Approve and next" and Approve; a ready-to-bill expense shows "Bill to customer"; More holds Edit, View history and Delete expense. The strip reads Amount, Tax, Paid from and Billable; the receipt previews beside the description and category account, and opens full size; Attachments and Activity follow (submitted, edited with what changed, approved with what posted, rejected with the reason, resubmitted, billed with a link to the invoice).
+5. "Approve and next": asks first, approves, and opens the oldest expense still waiting on you, with a toast; when none is left it stays on the page and says "That was the last one waiting for approval."
+6. Reject with no reason: "Say why it's rejected, so it can be fixed." With a reason, the page shows it at the top. As the submitter, "Fix and resubmit" opens the form with the reason; change it, add a receipt and "Resubmit": it's waiting again, with "Fixed and resubmitted" in Activity. An approved expense can't be edited ("…already posted to the ledger").
+7. The form: the currency is a picker on the business's currency; choosing a tax rate works out the tax as included in the amount ("Worked out from <rate>, included in the amount."), and typing over it keeps yours. The same amount on the same day as one of yours (not rejected) warns with "Open it"; you can still submit.
+8. Files: drop or choose several photos and PDFs at once ("Add files"): the first becomes the receipt with a preview, Replace and Remove; the rest are listed under it, each removable; "Add files" adds more at any time. With many files the files pane scrolls on its own while the form stays put (and the form scrolls on its own on a short window). After saving, the extra files are under Attachments on the expense's page.
+9. "Submit and add another": submits with a toast and leaves the form open, emptied, keeping the date, currency, paid by and job.
+10. Headcount × day rate: the labour category is preselected and the job required; rows of trade, workers and day rate add up; the page lists the trades with the day's total; editing a waiting one opens the rows filled in.
+11. Regression: Field users see only their own expenses and pages; the field app's My expenses and new expense still work; Bank › an account's register opens an expense's page; Profit & Loss and job costing match what was approved; billing an expense from its page or the menu adds it to the customer's invoice.
+
+## 221. Demo expenses with their receipts (US-ONB-31, refinements before Phase 10)
+
+Load the India construction demo, then Riverstone Builders on another organisation.
+
+1. Expenses: each of the five demo expenses (Riverstone: four, not "Fuel — no receipt attached") opens with a receipt previewed — a till-roll PDF from a fitting shop in the business's town, with the date, what was bought, any tax inside the amount and the total, in the demo's currency.
+2. Activity reads on the expense's own days: submitted on its date, approved or rejected the day after (never later than today).
+3. As the demo Field person, open another person's demo receipt by its file link: it's refused.
+4. "Delete all demo data": the expenses and their receipts go.
+5. With no file storage set up, the demo still loads, with expenses and without receipts.
+
+## 222. Expense categories that guide (US-PUR-46 to US-PUR-48, US-ONB-32, refinements before Phase 10)
+
+Use an owner with a few categories and expenses (one category unused), and a Field member. Check light and dark, and compare with the canvas "21 Expense categories".
+
+1. Expenses › Categories: the breadcrumb reads Purchases › Expenses › Categories. The table lists each category's name over what it's for, Posts to ("6900 Other Expenses · default" when none is set), Default tax ("—" when none), Expenses (a link) and Approved this month in the business's currency ("—" when nothing), with Active or Archived in words; Active first, then by name. The 5200 category is tagged "Headcount × day rate".
+2. The state filter (Active by default, Archived, All) and the search (name and what it's for) stay in the address; Clear filters resets them; Refresh says "Updated just now". With nothing matching, the empty state offers Clear filters.
+3. Pressing a category's expense count opens the expenses list filtered to it (an archived one too, labelled "(archived)" in the filter).
+4. A row's menu has icons: Edit, View history, Archive (or Restore), and Delete — a category in use shows Delete greyed out with "In use — archive it instead". Archive asks "Archive <name>?" saying its expenses keep it; Delete asks "Delete <name>?" with a red button; Restore, saves and adds each say what happened in a toast.
+5. Add category: Name, What it's for (counted to 120), Posts to, Default tax rate (active rates). Typing a name another category has — any case, extra spaces, archived included — says "<Name> is already a category." ("— it's archived." with Restore it, which restores it and closes the form).
+6. Edit a category and change Posts to: a note says expenses already approved stay in the old account and those approved from now on post to the new one. Approve an expense afterwards and check it posted to the new account; the earlier one didn't move.
+7. Submit an expense: the category picker shows each category's line under its name, and typing searches both. Choosing a category with a default rate fills in Tax rate with "<Category>'s usual rate — change it if this receipt differs." and works out the tax; choosing one without a default clears it; picking a rate yourself is never overwritten. Editing a saved expense keeps its own rate.
+8. As Field, submit an expense: the hints and default rates show; the Categories tab doesn't, and `/expense-categories/usage` is refused.
+9. Demo (US-ONB-32): load the UK IT services demo into a new business — every category has its line, Hosting & cloud, Software subscriptions, Hardware for resale and Training & certification default to VAT 20%, and "Client entertainment" is archived. Load India construction or Riverstone: lines, no defaults, the archived one. "Delete all demo data" removes the archived one and clears the defaults; the template's categories stay.
+10. Regression: the Construction and Professional services templates still list their categories with the setup note (sections on US-ONB-13 and US-ONB-20); headcount × day rate still preselects the 5200 category; the expenses-by-category report is unchanged.
+
+## 223. Vendor payments you can work from (US-PUR-49 to US-PUR-55, refinements before Phase 10)
+
+Use an owner with a vendor that has an email address and three recorded bills (one overdue), and a Field member. Check light and dark, and compare with the canvas "22 Vendor payments".
+
+1. The list: title "Vendor payments"; cards Paid this month and Paid last month (amount and how many) and To pay (overdue bills' balance and how many, in red), which opens Vendor bills filtered to overdue. Rows: number with the reference under it, date in the business's format, vendor, method with the account under it, amount and the bills paid (links; "3 bills" for more); newest first.
+2. Vendor (only vendors with a payment), Method and the date range filter it; search finds a number, a reference, a vendor or a bill number; all of it stays in the address and survives opening a payment and going Back; Clear filters clears it; Refresh says "Updated just now". An old `/vendor-payments?id=` link opens the payment's page.
+3. Record payment: choose the vendor — their bills with a balance are listed oldest due first, with the bill date, due date and "N days late"; their open credit is offered first. Ticking a bill takes its balance and sets the amount; "Pay all" ticks every bill; typing an amount spreads it oldest first. The line before the button says what it pays ("… pays RTE-3302 in full and … of RTE-3340."), or by how much it doesn't add up — then Record stays off.
+4. Record asks "Record this payment?" with the same line; Go back does nothing; Record posts it, the toast names it, and the payment's page opens. From a bill's Pay bill the bill is ticked for its balance and the bill refreshes; from Banking's statement line the amount, date and account stay fixed.
+5. The same vendor and amount within 3 days, or the same reference, shows "This looks like VPY-…" with a link; it can still be recorded.
+6. The payment's page: the number, the vendor (a link), date, method, "Paid from …" and the reference; Paid and Bills paid; "Paid to" with each bill's total, what this payment put on it, what it still owes ("Paid") and its due date; attachments; notes; Activity (recorded, paid on each bill, remittance advice emailed). A bill's Payments, the bank register, reports and search open this page.
+7. Download remittance advice saves `remittance-VPY-….pdf`: your business, the vendor, the payment's details, and each bill by the vendor's invoice number with its date, total, paid now and still owed; light, never stored.
+8. Email remittance advice (the next step when the vendor has an address and email is set up): To, Subject and a message naming the bills, with the PDF shown attached; Send toasts "Remittance advice sent", Activity and the email log (kind "Remittance advice", linking to the payment) record it. Without an address or email set up, it moves under More, greyed, saying why.
+9. Delete payment (More, or a row's menu): asks "Delete VPY-…?" naming the bills that will owe again; confirming posts the reversal, the list toasts "VPY-… deleted", the bills owe again and their Activity says "Payment VPY-… deleted · owes … again". A payment matched to a bank statement line says "Can't delete … yet" with "Open <account>" instead, and the API refuses.
+10. ⌘K: a vendor payment's number, reference or vendor finds it in a "Vendor payments" group, opening its page. As Field: no Vendor payments group, and the pages and routes are refused.
+11. Regression: Payables, the AP aging and Profit & Loss still match after recording and deleting; US-PUR-25's credit offer, US-PUR-33's Pay bill and US-DASH-13's "Pay bill" link still open the dialog on the right vendor; the bank register's vendor payment rows open the page.
+
+## 224. Payables you can pay from (US-PUR-56 to US-PUR-60, refinements before Phase 10)
+
+Use an owner with three vendors: one with an overdue bill and a bill due in 3 days, one with an overdue bill and an open vendor credit, one with a bill with no due date; a draft bill; and a Staff member without `vendor_credits.apply`. Check light and dark, and compare with the canvas "23 Payables".
+
+1. The page: "What you owe vendors, by how late it is · as of <today>" under the title; tabs "By vendor" and "By bill" with counts, then the cards, the age bar, the filter bar (the age on the left; "Updated just now", Refresh and Export on the right) and the search bar (search on the left, Columns on the right).
+2. Cards: Total owed (bills and vendors), Overdue (amount and bills, red), Due in 7 days (not yet overdue and due within a week — amount and bills) and 90+ days. Pressing Overdue, Due in 7 days or 90+ days outlines it, says "Showing these · press again to clear", filters both tabs and puts `?age=` in the address; pressing again shows all. A part of the age bar does the same, by mouse or Tab and Enter.
+3. The age filter offers All ages, Overdue, Due in 7 days, Current, 1–30, 31–60, 61–90 and 90+ days; an empty age says "Nothing 61–90 days late." (or "Nothing due in the next 7 days.") with "Show all". The dashboard's Payables "Overdue" link opens Payables on Overdue.
+4. By vendor: one row per vendor — open bills ("2 bills"), the oldest ("33 days late", "Due in 3 days" or "No due date"), overdue, total owed, credit to use ("—" when none) and last paid ("Never"); most overdue money first; a totals row. Expanding a vendor lists their bills oldest due first, each opening the bill. Search matches vendor names.
+5. By bill: the number with the job under it, the vendor (opening the contact), the due date in the business's format, the coloured age with how late in words, and the balance; Columns adds Bill date, Bill total and Paid so far. Search matches a bill number, a vendor or a job.
+6. A bill's menu: Pay bill (the vendor payment dialog with this bill ticked for its balance), Apply credit (only while the vendor has credit; "Apply credit to …") and Open bill, each with its icon. A vendor's menu: Pay vendor (the dialog on that vendor), Apply credit (only with credit; against their oldest bill) and Open contact. As the Staff member without the credit right, Apply credit isn't there.
+7. Tick two bills from one vendor: "2 selected", "Pay (2)" opens the dialog with both ticked for their balances; Record asks first; the toast names the payment, the page refreshes in place and the bills drop out. Tick bills from two vendors: "Pay (2)" is off and the bar says "Pick bills from one vendor — a payment is for one vendor."
+8. With a draft bill: under the age bar "1 draft bill (…) isn't counted here — record it to include it." with "See drafts", opening Vendor bills on Drafts to record.
+9. Export with an age chosen: the CSV, Excel and PDF hold only that age (and the search). Refresh updates in place; leave the tab for 30 seconds and come back — it refreshes. Tab, age, search, sort and page survive opening a bill and going Back.
+10. Regression: the totals match the AP aging report and the dashboard's Payables card; Receivables' cards, age bar and filter are unchanged; Vendor bills' Pay bill and Vendor payments' Record payment still open the dialog as before; Field can't reach Payables.
+
+## 225. Demo vendor payments and payables you can pay from (US-ONB-33, refinements before Phase 10)
+
+Load an industry demo (e.g. India › Construction) into a new business, and Riverstone Builders into another.
+
+1. Payables: the cards and age bar have money in Current, 1–30, 31–60 and 90+ days; 61–90 is empty and pressing it says "Nothing 61–90 days late."; "Due in 7 days" has the part-paid bill.
+2. By vendor: the part-paid bill's vendor has "2 bills", expanding to the 90+ bill and the one due this week; on By bill, tick both and "Pay (2)" opens the payment dialog with them ticked. The 31–60 bill shows its job (where the industry has jobs).
+3. Vendor payments: rows by Bank transfer (with a reference like "NEFT …"/"BACS …"/"ACH …"), Cheque ("Chq 00…") and Cash; the newest a few days ago, the oldest about four months ago; one row's "Bills paid" names two bills.
+4. Open that payment: "Paid to" lists both bills in full; Activity reads "Remittance advice emailed to <vendor's address>" the day after "Recorded". The email log has no remittance — nothing was sent.
+5. Riverstone: Apex Timber has 2 open bills (one 90+ days late), Granite State 2 (one 31–60 days late); its payment shows Bank transfer and "ACH 552190".
+6. Delete all demo data: the bills and payments go; Payables says "Nothing outstanding".
+7. Regression: Vendor bills' cards, the dashboard's Payables card and the AP aging report agree with Payables; the jobs' costs include the 31–60 bill.
+
+## 226. Banking you can work from (US-BANK-13 to US-BANK-17, refinements before Phase 10)
+
+Use an owner with two bank accounts, cash, a card, a few payments, money in and out and a transfer; a CSV statement for the default bank with a Balance column; and a Staff member with only `banking.view`. Check light and dark, and compare with the canvas "24 Banking".
+
+1. Banking: tabs "Active" and "Archived" with counts; the cards Bank and cash, Owed on cards, Not yet reconciled and Last reconciled; pressing Not yet reconciled outlines it, says "Showing these · press again to clear" and shows only accounts with entries to reconcile. The Type filter, Updated, Refresh, Transfer, Money in, Money out and Add account sit in the filter bar; search and Columns below. Tab, type, card and search survive opening an account and going Back.
+2. Rows: the type's icon and type in words, the name with "Default", the bank line, "Balance in Spine" ("owed" on a card), "Reconciled to <date>" or "Never reconciled", and "<n> unreconciled" opening the register on Unreconciled only.
+3. A row's menu: Open register; Reconcile and Import statement; Money in, Money out and Transfer (that account chosen); Set as default, Edit and Archive — each with its icon. Archive asks "Archive <name>?"; the default account says "Choose another default account first."; an account with money says to move it first. Set as default toasts which account it replaces. As the Staff member: no Money in/out, Transfer, Reconcile, Import, Set as default, Edit or Archive.
+4. The register: Reconcile is the primary button, with Record (Money in, Money out, Transfer — this account chosen) and More (Import statement, Reconciliations, Edit account). The range presets (This month, Last month, This quarter, Last 90 days, This year, Custom range with From and To), Type and Show filter it; search matches what, contact or reference; all of it is in the address and survives a reload. A reconciled row has a tick and "Reconciled"; an unreconciled row has nothing there. The Unreconciled card filters.
+5. A money in or out entry, or a transfer, opens a drawer (its name or "View entry"): date, who recorded it, amount, account (From and To), category and tax, contact, description or reference, reconciled or not, attachments (money in or out), and Delete entry/transfer, which asks first and isn't offered once reconciled. Other rows open their document.
+6. Export: CSV, Excel and PDF hold the rows on screen (range, type, search) between the opening and closing balance, named `<account>-<from>-<to>`.
+7. Money in and Money out ask "Record money in/out?" naming the amount, account, category, date and any tax; Go back changes nothing. A transfer asks "Move <amount> from <A> to <B>?"; the same account on both sides says "Choose two different accounts." and Move money stays off.
+8. Reconcile: with a statement imported after the last reconciliation, the end date and closing balance are filled in, with "From <file> · <date>"; once started, "Saved as you go — pick up where you left off." A bar says "<done> of <total> lines done". Tabs To do, Suggested, Matched and Excluded (with counts) and a search; a matched or excluded line moves to its tab. Selecting a line lists entries with the same amount first, marked "Same amount". "Match all suggested (n)" asks first, listing line → entry, and toasts "<n> lines matched".
+9. Reconciliations: the end date opens the reconciliation; the row menu has View, Download report and Undo (off, with why, except on the newest). The page: the summary "Statement closing balance + Deposits not yet on the statement − Payments not yet on the statement = Balance in Spine on <date>" (with excluded lines when there are any), the opening and cleared balances, what's outstanding, matched lines (Show all) and excluded lines with notes; Download report saves `reconciliation-<account>-<date>.pdf`, light; Undo asks first.
+10. Regression: balances match the Balance Sheet; payments, bills and expenses still choose their account; statement import and Create from a line work as before; Field can't reach Banking or any of these routes.
+
+## 227. Demo banking (US-ONB-34, refinements before Phase 10)
+
+Load an industry demo (e.g. India › Construction) and Riverstone Builders in two businesses.
+
+1. Banking lists a "Business card" (••4410) owing what's left of its spending, alongside the bank and cash accounts.
+2. The bank's register has a card payoff and a petty cash top-up (transfers), interest (money in) and bank charges (money out), each on its own day.
+3. Reconciliations: last month is reconciled (finished on the 3rd, or today early in the month), with a cheque outstanding at the end of the month; open it and download the report.
+4. Reconcile: this month is in progress — older lines matched, newer ones suggested, a cheque presented this month to match by hand, and "SMS ALERT CHGS" to Create or Exclude.
+5. Delete all demo data: the card, the transfers, the money in and out, the statement and both reconciliations go; the bank account itself stays.
+
+## 228. Users you can manage from (US-TEAM-19 to US-TEAM-23, refinements before Phase 10)
+
+Use an owner with the demo loaded (Sarah Mendes, Staff on General Staff; Marcus Webb, Field), a second Team ("Accounts"), and a Staff member on no Team. Check light and dark, and compare with the canvas "25 Users".
+
+1. Users: "Invite people" in the header; tabs "Active", "Deactivated" and "Invites" with counts; the cards People (owners · staff · field), Staff without a Team (pressing it outlines it, says "Showing these · press again to clear" and shows only them) and Pending invites (how many expired; opens Invites). The Role filter, Updated and Refresh sit in the filter bar; search (names or emails) and Columns below. Tab, role, card and search survive a reload.
+2. Rows: avatar, name and email with "You", "Primary Owner" and "Demo" where they apply; the role; Teams as chips opening the Team, "No Team — can't open anything" in amber for Staff on none, "Everything" for owners and "Field access" for Field; "Last active" ("Just now", "2 hours ago", "Yesterday", "3 days ago", a date, or "Never signed in"); "Joined" in the business's date format.
+3. A row's menu, each item with its icon: What they can open; Manage Teams (Staff); Change to Field / Change to Staff; Promote to Owner (Staff); Demote to Staff (another Owner, not the Primary Owner); Transfer primary ownership… (your own row, as Primary Owner); Deactivate (not on your own row or the Primary Owner's) or Reactivate (Deactivated tab).
+4. Manage Teams: every Team with a tick and its size; Save Teams changes them at once and toasts "<name> is on <Teams>"; with none ticked the row warns. The audit log shows the change (record type User, "teams").
+5. What they can open: role and Teams; each section as Can work here, View only or Can't open (with a key) (sign in as them to compare); permissions by group ("<n> of <total>"); "Edit on <Team> →" opens the Team; Manage Teams opens the dialog. Owners: "Owners can open everything…"; Field: "Field access is fixed…".
+6. Change to Staff asks "Change <name> to Staff?" with Teams to tick (General Staff ticked); Change to Field names the Teams they come off. Each toasts; the person's next page uses the new role; the audit log shows the role change. Owners have neither.
+7. Invite people: several emails (commas, spaces, new lines), up to 20; one that isn't an address shows in red and Send stays off; Role Staff or Field; for Staff, Teams they'll join (General Staff ticked). Sending toasts "<n> invites sent"; an address already a member or already invited stays in the dialog with why. Accept a Staff invite as the new person: they're on the Teams chosen.
+8. Invites tab: email, role, Teams on joining, "<inviter> · <date>", "Expires in <n> days" or "Expired" in red; the menu has Copy invite link (toast "Only <email> can use it, signed in with that address."), Resend (toast) and Cancel invite (asks first, toast).
+9. Deactivate asks first (for a demo person: "They're demo data, so they go when the demo data is deleted.") and toasts; Reactivate asks "Reactivate <name>?" (previous role and Teams back) and toasts. A failure says what to do next above the list. `PUT /org/members/<your id>/deactivate` answers 400 "You can't deactivate yourself."
+10. Regression: onboarding's invite step still sends one invite; promoting asks "Make <name> an owner?"; the Primary Owner's row offers only What they can open and the transfer; Staff and Field still can't open Team pages; `GET /org/members` as Staff has no Teams, last active or demo fields; Teams › a Team's members still edit as before.
+
+## 229. Setting a Staff or Field member's password (US-TEAM-24, refinements before Phase 10)
+
+Use the demo (Sarah Mendes, Staff; Marcus Webb, Field), a second Owner and SMTP set up (MailDev), then without SMTP. Check light and dark, and compare with the canvases "26 User passwords" and "26b Choose your own password".
+
+1. Users: Sarah's and Marcus's menus have "Change password" with its icon; your row, another Owner's and a deactivated person's don't. As the second Owner, the Primary Owner's menu says "Only <name> can change their own password, from Profile." `PUT /org/members/<Primary Owner>/password` answers 403 whoever asks; your own id answers 400.
+2. The dialog: a suggested password is shown (Copy copies it; Hide hides it; Generate another changes it), rated Strong; a typed one updates the meter; under 8 characters or a common one is refused under the field. "What happens" lists sign-out, the email and passing it on yourself.
+3. Change password: the toast says "<name>'s password changed"; their open web tab and the field app are signed out at once; MailDev has "<Owner> changed your <Business> password" with no password in it (without SMTP, the email log shows it Not sent); the audit log shows "Password set by an owner" on them, without the password.
+4. Sign in as them on the web with the password you set: "Choose your own password" opens, saying who set it and when; any other address comes back here. The same password is refused ("That's the password you were given…"); mismatched Confirm says so; their own password opens the dashboard (or where they were going), and signing in with it later goes straight in.
+5. On the field app: sign in with the password set → "Choose your own password" before Today; Sign out leaves; saving opens Today. An open app whose next request answers PASSWORD_CHANGE_REQUIRED moves to this screen.
+6. Forgot password while still owing a choice: resetting by the emailed link counts as choosing; no choose screen after.
+7. Regression: Profile › Password still asks for the current password; invites, Manage Teams, role changes and Deactivate work as before; Field can't reach Users; an Owner's own sign-in never shows the choose screen.
+
+## 230. Demo people, Teams and invites (US-ONB-35, refinements before Phase 10)
+
+Load an industry demo (e.g. India › Construction) and Riverstone Builders in two businesses; have a Team and an invite of your own first.
+
+1. Users › Active: Sarah Mendes (Staff, General Staff), Neha Kapoor (Staff, General Staff and Accounts), Marcus Webb (Field), Kavya Iyer (Staff, "No Team — can't open anything") and Ravi Kumar (Field), all "Demo", each with their own Joined date; "Staff without a Team" reads 1. Deactivated: Tom Becker. Neha, Kavya and Ravi read "Never signed in".
+2. Teams: "Accounts" (billing, payments, receivables, banking and reports). "What they can open" for Neha shows Banking and Reports; for Sarah it doesn't.
+3. Jobs: Marcus crews every demo job; Ravi the first one only; Tom none. The field app as Ravi (DemoPassword123!) shows that one job.
+4. Invites: sam.lee.demo@example.com (Staff, General Staff and Accounts, expires tomorrow) and dev.patel.demo@example.com (Field, Expired), invited by the owner; nothing in MailDev or the email log. Copy invite link and open it: "This invitation can't be used". Sign up as sam.lee.demo@example.com on a closed install: refused.
+5. Audit log: Neha's Teams set and Tom deactivated, on their days, by the owner.
+6. Delete all demo data: the demo people are gone from Users (their logins stay), "Accounts" and the two demo invites go; your own Team and invite stay. Load again: everything comes back.
+7. Regression: signing in as Sarah or Marcus works as before; Sarah's access is General Staff's only.
+
+## 231. Teams you can manage from (US-TEAM-25 to US-TEAM-29, refinements before Phase 10)
+
+Use an owner with the demo loaded (General Staff with Sarah and Neha; Accounts with Neha; Kavya on no Team) and one Team of your own. Check light and dark, and compare with the canvas "27 Teams".
+
+1. Teams: "Create Team" in the header; cards Teams (default · with no one yet), Staff on no Team (Kavya; opens Users filtered to Staff on no Team) and Staff on several Teams; search (name or description) in the address. Rows: name, "Default"/"Demo", description, member avatars and count, "Works in <n> of <total> sections" (a section counts when the Team allows an action there, or it's a report it opens), "<n> of <total>" permissions. With a module switched off, its permissions leave the totals.
+2. A row's menu, each item with its icon: Open, Rename, Duplicate, Delete (not on General Staff or the only Team). Delete asks "Delete <Team>?", names anyone left on no Team, and toasts.
+3. Create Team: name, description, Start from (Nothing allowed, or a Team with its permission count) — the new Team opens on Permissions with the copied permissions and no members; toast. Duplicate prefills "<Team> (copy)". A name in use (any case) says "There's already a Team called <name>." Rename changes name and description; General Staff's name can't change.
+4. A Team's page: name, description, badges, Add people, a menu (Rename, Duplicate, Delete); tabs Members, Permissions, History in the address. Members show "Also on" and Last active; What they can open opens the access drawer.
+5. Add people: only active Staff not on the Team, with their Teams ("No Team" in amber); tick several; toast names them. Remove asks first; on their only Team it warns they'll be on no Team; toast.
+6. Permissions: the side panel shows each section as Can work here, View only (open, nothing allowed there) or Can't open (e.g. Quotes for Accounts, US-TEAM-30), with a key; switching marks "Changed", updates the group's "<on> of <total> · was <n>", the side panel (Added/Lost) and the bar ("<n> changes · Discard · Save changes"); turning on Reconcile accounts turns on View bank balances with a notice. Search, Show changed only and Expand all work. Switching tabs or leaving asks "Discard <n> unsaved changes?" (Keep editing keeps them); refreshing the page warns. Save asks, listing what turns on and off and the sections gained or lost; confirming saves once and toasts.
+7. History: newest first — permission changes by label, members added or removed, name/description changes, created (from which Team). "Open in audit log →" shows only this Team ("One record · Show all"). The audit log lists record type "Team" with the Team's name linking to it.
+8. Regression: a Staff member's access follows the saved permissions only (not the draft); Users › Manage Teams still works; Field and Owners can't be added to Teams; Staff and Field can't open Team pages or `/org/teams` routes.
+
+## 232. Sections a Team can open (US-TEAM-30 to US-TEAM-32, refinements before Phase 10)
+
+Use an owner with the demo loaded, and Sarah Staff (General Staff only) in a second browser. Check light and dark, and compare with the canvas "28 Team sections". Put everything back at the end (General Staff › Permissions › every section on).
+
+1. General Staff › Permissions: a "Sections" card above the groups lists Contacts, Pipeline, Meetings, Catalogue, Quotes, Jobs, Invoices, Credit Notes, Payments, Vendor Bills, Vendor Credits and Vendor Payments (those of switched-on modules), each with Can work here / View only / Can't open and a switch. Each group starts with its Open permission (Expenses with "See everyone's expenses").
+2. Switch Quotes off in the card: it reads Can't open and "Changed"; Manage Quotes shows Open Quotes off and its actions dimmed with "Open Quotes first." (they can't be switched); the notice names the actions that turned off; the side panel marks Quotes "Lost". Switch an action back on from the group's switch: Open Quotes comes with it. Discard puts everything back.
+3. Close Quotes again and Save: the confirm lists the permissions turned off and "They'll no longer see Quotes"; toast. History shows the change.
+4. As Sarah (refresh): Quotes isn't in the sidebar; `/quotes` and a quote's address show "You don't have access to Quotes" naming the owners. On a job made from a quote, the quote's number is plain text with a lock; on an invoice from a quote, likewise; ⌘K for a quote number finds nothing in Quotes. The dashboard has no quote rows in Needs your attention.
+5. Close Contacts and Catalogue as well: Sarah's new invoice still picks a customer and catalogue items (names, prices, tax); a job's customer shows as text. A new expense and a vendor bill still pick a job. Recording a payment still lists the customer's invoices.
+6. Turn "See everyone's expenses" off: Sarah's Expenses lists only her own; another person's expense address says it can't be found; approve and reject are off in the Team (turned off with it).
+7. Users › Sarah › What they can open, Teams › Works in, and the side panel all show the closed sections as Can't open.
+8. Regression: owners see and link everything; Marcus (Field) still has Jobs, Meetings and his own Expenses on web and phone; Neha (General Staff and Accounts) keeps what either Team opens; reopening a section brings it back at Sarah's next request; Teams list, Users and the access drawer still load.
+
+## 233. Tabs that name their panel (refinements before Phase 10)
+
+1. Banking, Payables, Receivables and an account's Reconcile page: with a screen reader (or the browser's accessibility tree), each tab names the panel below it, and moving between tabs reads the new content. Run axe (or Lighthouse) on each in light and dark: no "aria-valid-attr-value" errors.
+2. Regression: tabs, counts, the tab kept in the address, cards, filters, search and Print look and behave as before; Tab moves from the tab list into the panel's controls.
+
+## 234. One Settings for everyone (US-AUTH-16 to US-AUTH-19, US-SET-30 to US-SET-34, refinements before Phase 10)
+
+Use an owner with the demo loaded and Sarah Mendes (Staff) in a second browser. Check light and dark, a 1920 × 1200 window and a phone width, and compare with the canvas "29 Settings for everyone".
+
+1. User menu (both): photo or initials, name and email; Settings; Set up Spine (Owner only); Light / Dark / System (named "Follow system"); Sign out — each with its icon, no "Profile & Preferences".
+2. Theme: pick Dark in one browser, then sign in as the same person in another (or a private window): it opens dark. Pick System and switch the computer to dark: Spine follows without a reload. With the API stopped, picking a theme still applies here and a toast says it couldn't be saved.
+3. Owner › Settings: opens on Business profile with `?settings=business` in the address; groups Your account, Business, Money & tax, Documents & emails, Sales & meetings, Data and Team (Users, Teams, Audit log, Email log open their pages and close Settings). With Leads & meetings off, Pipeline stages, Upcoming meetings and Meeting reminders are gone.
+4. Address: pick Numbering, refresh — still Numbering; Back goes back; close — the parameter goes. `?settings=nope` opens Business profile.
+5. Unsaved changes: change a prefix in Numbering — a dot shows by Numbering (a screen reader says "Numbering, edited"); pick Branding, close or press Escape — "Discard unsaved changes to Numbering?"; Keep editing keeps the change; Discard drops it. Save, then leave — no question. Notifications never asks (it saves as it changes).
+6. Search: "prefix" → Numbering ("Matches: invoice prefix, quote prefix"); Enter opens it; ↑/↓ move; "logo" → Branding; "GSTIN" → Business profile (and GST in India); "SMTP" → Emails; "zzzz" → "No matching settings." and Clear search.
+7. Size: on a 1920 × 1200 window the dialog is about 1152 × 960 and Documents shows its sample page beside the options (D-237: an HTML sample, not the PDF — it follows paper size, title, each column, tax summary, amount in words, signature, terms, notes and Branding's colour and footer as you change them, and stays light in dark mode); on a 1280 × 800 laptop it keeps a margin; on a phone it fills the screen with the list first, then the pane with "Back to settings".
+8. Sarah › Settings: opens on Profile; the list is Your account only; `/dashboard?settings=numbering` opens her Profile; `/profile` and `/profile?tab=password` open Profile and Password & security.
+9. Profile: upload, crop and remove a photo (Remove asks first); the sidebar and menu show it. Name's Save is off until the name changes; saving toasts "Profile updated.". Change email: a wrong password says "That password isn't right."; another account's address says "Another account uses that email."; with the right password the email changes, a toast says so, and the old address gets "Your Spine sign-in email changed" (or it shows in the email log as not sent without SMTP).
+10. Password & security: the devices list shows this browser ("This device", Active now) and others with their IP and last active; Sign out on another device asks first, toasts and signs that browser out; Sign out of other devices does it for all. Change password with "Sign out of my other devices" ticked signs the others out and keeps this one signed in; unticked keeps them.
+11. Notifications: "Business default · <n> min" uses the Owner's Meeting reminders setting; the digest names the business's time zone.
+12. Regression: onboarding's settings and Set up Spine's cards still open Settings panes and update when closed; Branding's note reads "Each person still chooses light or dark mode from their user menu."; every settings pane saves as before; Field and Staff can't save business settings (API 403).
+
+## 235. Search that finds more (US-OPS-39 to US-OPS-49, refinements before Phase 10)
+
+Use an owner with the demo loaded, Sarah Mendes (Staff) and Marcus Webb (Field) in other browsers. Check light and dark and a phone width, and compare with the canvas "30 Search".
+
+1. Sidebar: "Search…" with ⌘K (Ctrl K on Windows) sits under the logo and opens search; collapsed, it's an icon with the tooltip "Search (⌘K)"; the footer has no search icon any more. ⌘K / Ctrl+K still opens it anywhere.
+2. Before typing: the placeholder reads "Search records, pages and settings". With nothing opened yet: "Type a name, a number like INV-0010 or an amount like 2,389.50." and "You can search …" listing this person's areas (Marcus: "your meetings, jobs and expenses"). Open an invoice and a job, search "bluewater" and open a result, then reopen search: RECENT lists them newest first, RECENT SEARCHES has "bluewater"; choosing it fills the field. In another browser as the same owner, the same list shows. "Clear recent" empties both without asking.
+3. Results: "harborview" shows Contacts, Leads, Meetings, Quotes, Jobs, Invoices… in the sidebar's order, each row with its section's icon, "harbor" in bold and a coloured status; each group ends with "See all … matching “harborview”", which opens that list with the search box filled. Meetings has no See all.
+4. Contacts: a phone number's last digits ("555 0107"), part of a GSTIN or tax ID, or a contact person's name finds the contact, with "Phone …", "GSTIN …" or "Contact: …" on the second line. Marcus never sees contacts.
+5. Amounts: "4,542.50", "$4,542.50" and "4542.5" find DEMO-INV-0002 first in Invoices with the amount in bold; "4,542" finds nothing for $4,542.50. Marcus gets no amount matches.
+6. Actions, pages and settings: "new inv" → New invoice opens the invoice builder; "add lead", "new meeting", "record payment", "record vendor payment" and "add catalogue item" open their forms; "receivables", "trial balance" and "audit log" open their pages; "invoice prefix" opens Settings › Numbering. Sarah without invoice rights doesn't see New invoice and never sees business settings.
+7. New groups: "marina" finds the lead (with its stage) and the walkthrough meeting (Upcoming or Past); "drywall" finds the catalogue item and opens it on Catalogue; "VCR-" with a number finds that vendor credit first.
+8. Include archived: archive a contact; it doesn't show until "Include archived" is ticked (then "Archived"); the tick is remembered after a reload on this device.
+9. Chips: Tab from the field reaches them; arrows move; Billing shows only invoices, credit notes and payments, up to 20 each, with no actions, pages or settings; reopening search is back on All. Marcus sees Sales (meetings), Jobs and Purchases (expenses).
+10. Loading: with the network throttled (Slow 4G), choose a result — search stays open with a spinner on that row until the page shows, then closes; choosing another row meanwhile does nothing.
+11. Phone width: the palette fills the screen and the chips scroll sideways. Screen reader: the dialog is "Search", the field a combobox; icons aren't read.
+12. Regression: a document number ("INV-0010", "QUO-4") is still the first result; Settings' own search, the Reports page search and every list's search box work as before; Field still sees only their jobs, meetings and expenses.
+
 ## Known gaps — don't file these as bugs
 
+- A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
+- The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.

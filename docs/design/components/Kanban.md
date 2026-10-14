@@ -22,7 +22,16 @@ import { KanbanBoard, KanbanColumn, KanbanCard } from "@spine/ui";
 | `KanbanColumn width` | number | — |
 | `KanbanColumn minWidth` | number | 275 |
 | `KanbanCard id` | string | — |
+| `KanbanColumn accent` | ReactNode | — |
+| `KanbanColumn headerAction` | ReactNode | — |
+| `KanbanColumn collapsed` | boolean | false |
+| `KanbanColumn onExpand` | () => void | — |
+| `KanbanColumn expandLabel` | string | — |
 | `KanbanCard onClick` | () => void | — |
+| `KanbanCard onOpen` | () => void | — |
+| `KanbanCard label` | string | — |
+| `KanbanCard menu` | ReactNode | — |
+| `KanbanCard onMenuKey` | () => void | — |
 
 ## Rules and behaviour
 
@@ -32,6 +41,9 @@ import { KanbanBoard, KanbanColumn, KanbanCard } from "@spine/ui";
 - A column being dragged over highlights (border-primary + bg-info-bg) so the drop target is obvious; a column can also take its own className to signal a distinct state (e.g. a "Lost" stage tinted with the overdue tokens).
 - KanbanCard's onClick is untouched by drag handling (native drag/click are distinguished by the browser's own movement threshold), so cards can open an edit dialog on click while still being draggable.
 - Columns flex to fill the board's full width by default (floored at minWidth, 275px) — a handful of stages spread out to use all available space with no unnecessary scrolling; pass a fixed width to opt a column out of flexing instead.
+- US-CRM-24: `collapsed` makes a slim (56 px), full-height column that is one button, showing `accent`, `meta`, the title and `subtitle` running upwards; pressing it calls `onExpand`, and cards can still be dropped on it. `headerAction` puts a control (e.g. "Hide") at the right of an open column's header.
+- US-CRM-24: when the columns overflow sideways, a soft shadow (the `scrim` token) at the edge with more says so; the board carries `data-more-start` / `data-more-end`.
+- US-CRM-25: with `onOpen` the whole card is one focusable button (`role="button"`, named by `label`): click, Enter or Space opens it. `menu` sits beside that button at the top right, never inside it (keep the card's first line clear of it, e.g. `pr-7` on the title, so rules below run the full width); `onMenuKey` fires on the menu key or Shift+F10. Long unbroken text no longer widens a column.
 
 ## Exports
 

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { JobsExplorer } from "./jobs-explorer";
 
@@ -10,7 +11,10 @@ export default function JobsPage() {
         title="Jobs"
         description="Track work from an accepted quote through milestone billing, variation orders, and retention."
       />
-      <JobsExplorer />
+      {/* JobsExplorer keeps its state in the address (US-JOB-32) via useSearchParams, which needs a Suspense boundary. */}
+      <Suspense>
+        <JobsExplorer />
+      </Suspense>
     </>
   );
 }

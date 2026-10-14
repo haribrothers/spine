@@ -7,7 +7,8 @@ test.describe("US-RPT-23", () => {
     await signUpNewOrg(page, { name: "Reports Owner", email: `e2e-rpt-23-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
     await page.goto("/reports");
     await expect(page.getByText("Every report you can open, derived from the ledger.")).toBeVisible();
-    const groups = page.getByTestId("report-group");
+    // Within the page's main region: on a slow runner the outgoing page can still be in the document.
+    const groups = page.getByRole("main").getByTestId("report-group");
     await expect(groups.filter({ hasText: "Business overview" })).toContainText("Profit & Loss");
     await expect(groups.filter({ hasText: "Business overview" })).toContainText("Trial Balance");
     await expect(groups.filter({ hasText: "Accountant" })).toContainText("Journals");
@@ -20,8 +21,10 @@ test.describe("US-RPT-23", () => {
     await page.getByRole("textbox", { name: "Search reports" }).fill("");
 
     await expect(page.getByTestId("report-favourites")).toHaveCount(0);
-    await page.getByRole("button", { name: "Add Tax Summary to favourites" }).click();
-    await page.getByRole("button", { name: "Add Profit & Loss to favourites" }).click();
+    // Each star saves the whole list: let one save finish before the next, and before the reload.
+    const saved = () => page.waitForResponse((res) => res.request().method() === "PUT" && res.url().includes("/favourite"));
+    await Promise.all([saved(), page.getByRole("button", { name: "Add Tax Summary to favourites" }).click()]);
+    await Promise.all([saved(), page.getByRole("button", { name: "Add Profit & Loss to favourites" }).click()]);
     await expect(page.getByTestId("report-favourites")).toContainText("Tax Summary");
     await page.reload();
     await expect(page.getByTestId("report-favourites").getByRole("link")).toHaveText(["Tax Summary", "Profit & Loss"]);

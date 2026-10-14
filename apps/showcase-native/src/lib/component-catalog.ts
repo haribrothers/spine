@@ -2,8 +2,7 @@
  * The single static array driving the Components tab's list UI
  * (`app/(tabs)/components/index.tsx`, which maps over this to render nav
  * rows linking to `/components/[slug]`). Per the plan's decision 5, this
- * deliberately does NOT replicate `apps/design-system-native`'s two-file
- * `nav-sections.ts`+`component-screens.ts` pattern — `expo-router` already
+ * deliberately has no hand-written navigation table — `expo-router` already
  * derives real routes from the filesystem, so a parallel hand-maintained
  * slug→component map would be redundant with the router itself. This is a
  * lighter version of the same idea, sized to what file-based routing
@@ -36,6 +35,7 @@ export const COMPONENT_CATALOG: ComponentCatalogEntry[] = [
   { slug: "text-field", title: "Text Field", description: "A themed text input with an error state.", native: false },
   { slug: "native-text-field", title: "Native Text Field", description: "A real native SwiftUI text field (iOS-only pilot).", native: true },
   { slug: "floating-label-field", title: "Floating Label Field", description: "A Material-style floating-label text field.", native: false },
+  { slug: "outlined-text-field", title: "Outlined Text Field", description: "Material 3's outlined field, the Android form look in the field app.", native: false },
   { slug: "form-row", title: "Form Row / Form Section", description: "The grouped-card form layout — a captioned card of fixed-height rows.", native: false },
   { slug: "divider", title: "Divider", description: "A full-bleed 1px row separator for inside a form card.", native: false },
   { slug: "scroll-edge-mask", title: "Scroll Edge Mask", description: "A background fade over a scroll view's top or bottom edge (Android).", native: false },
@@ -51,4 +51,5 @@ export const COMPONENT_CATALOG: ComponentCatalogEntry[] = [
   { slug: "gauge-indicator", title: "Gauge Indicator", description: "A semi-circular animated progress gauge.", native: false },
   { slug: "kpi-card", title: "KPI Card", description: "A gradient-filled stat card with label, value, trend, and icon.", native: false },
   { slug: "action-tile", title: "Action Tile", description: "An icon + label tile for a wrapping quick-actions grid.", native: false },
+  { slug: "spine-logo", title: "Spine Logo", description: "The layered mark and the SPiNE wordmark, in three forms.", native: false },
 ];

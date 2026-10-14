@@ -19,9 +19,11 @@ export function openSignupForced(env: NodeJS.ProcessEnv = process.env): boolean 
  * joins by invitation. The business name is the only instance detail
  * shown to anonymous visitors.
  */
-export async function signupStatus(db: Database): Promise<{ open: boolean; businessName: string | null }> {
+export async function signupStatus(db: Database): Promise<{ open: boolean; businessName: string | null; newInstall: boolean }> {
   const [{ count } = { count: 0 }] = await db.select({ count: sql<number>`count(*)::int` }).from(user);
-  if (count === 0 || openSignupForced()) return { open: true, businessName: null };
+  // US-AUTH-13: no account at all yet, so `/` and `/login` open the welcome page (tests may force `open`, never this).
+  const newInstall = count === 0;
+  if (newInstall || openSignupForced()) return { open: true, businessName: null, newInstall };
 
   const [primary] = await db
     .select({ orgId: member.organizationId })
@@ -29,13 +31,13 @@ export async function signupStatus(db: Database): Promise<{ open: boolean; busin
     .where(eq(member.isPrimaryOwner, true))
     .orderBy(asc(member.createdAt))
     .limit(1);
-  if (!primary) return { open: false, businessName: null };
+  if (!primary) return { open: false, businessName: null, newInstall };
   const [profile] = await db
     .select({ value: settings.value })
     .from(settings)
     .where(and(eq(settings.orgId, primary.orgId), eq(settings.key, "business_profile")));
   const name = (profile?.value as { name?: string } | undefined)?.name?.trim();
-  return { open: false, businessName: name || null };
+  return { open: false, businessName: name || null, newInstall };
 }
 
 /**
@@ -51,7 +53,8 @@ export async function assertSignupAllowed(db: Database, email: string): Promise<
   const [pending] = await db
     .select({ id: invitation.id })
     .from(invitation)
-    .where(and(eq(invitation.email, email.toLowerCase()), eq(invitation.status, "pending"), gt(invitation.expiresAt, new Date())))
+    // US-ONB-35: the demo's invites are for show — they never open sign-up.
+    .where(and(eq(invitation.email, email.toLowerCase()), eq(invitation.status, "pending"), gt(invitation.expiresAt, new Date()), eq(invitation.isDemo, false)))
     .limit(1);
   if (!pending) throw new APIError("FORBIDDEN", { message: INVITE_ONLY_MESSAGE });
 }

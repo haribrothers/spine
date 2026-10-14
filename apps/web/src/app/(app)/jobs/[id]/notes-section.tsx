@@ -8,7 +8,8 @@ import { HistorySection } from "../../../../components/history-section";
 import type { Job, JobNote } from "../types";
 
 /** A free-text timeline note (site conditions, a call with the customer, etc.) — simple append-only list, field-reachable same as photos. */
-export function NotesSection({ job }: { job: Job }) {
+/** `onChanged` lets the job page refresh its tab count and Activity (US-JOB-35, US-JOB-37). */
+export function NotesSection({ job, onChanged }: { job: Job; onChanged?: () => void }) {
   const canAdd = useCapability("job_notes.edit_own");
   const [notes, setNotes] = useState<JobNote[] | null>(null);
   const [body, setBody] = useState("");
@@ -34,6 +35,7 @@ export function NotesSection({ job }: { job: Job }) {
       await apiClient.post(`/jobs/${job.id}/notes`, { body: body.trim() });
       setBody("");
       load();
+      onChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add this note.");
     } finally {

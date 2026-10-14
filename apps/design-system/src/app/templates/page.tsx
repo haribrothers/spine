@@ -13,13 +13,12 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarNavItem,
+  SpineLogo,
   StatCard,
   StatusChip,
   Table,
 } from "@spine/ui";
 import { FileText, Inbox, LayoutDashboard, Receipt, Users } from "lucide-react";
-import Image from "next/image";
-import { useTheme } from "next-themes";
 import { useState } from "react";
 import { DocLead, DocSection, DocTitle } from "@/components/doc-page";
 
@@ -37,13 +36,7 @@ const invoices: InvoiceRow[] = [
 ];
 
 function AdminSidebarLogo({ collapsed }: { collapsed: boolean }) {
-  const { resolvedTheme } = useTheme();
-  const horizontalSrc = resolvedTheme === "dark" ? "/spine-logo-horizontal-light.png" : "/spine-logo-horizontal.png";
-
-  if (collapsed) {
-    return <Image src="/spine-logo-vertical.png" alt="Spine" width={28} height={28} className="shrink-0" />;
-  }
-  return <Image src={horizontalSrc} alt="Spine" width={92} height={24} className="shrink-0" />;
+  return collapsed ? <SpineLogo variant="mark" size={28} /> : <SpineLogo variant="horizontal" size={96} />;
 }
 
 function AdminDashboardTemplate() {

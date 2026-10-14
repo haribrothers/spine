@@ -1,6 +1,6 @@
 # TabBar
 
-**Package:** `@spine/ui-native/navigation` · **Platform:** Native · **Source:** `packages/ui-native/src/navigation/tab-bar.tsx` · **Doc page:** `apps/design-system-native/app/components/tab-bar.tsx`
+**Package:** `@spine/ui-native/navigation` · **Platform:** Native · **Source:** `packages/ui-native/src/navigation/tab-bar.tsx` · **Doc page:** none — its page went with `apps/design-system-native` (D-240); no app uses it since the field app moved to native tabs (US-MOB-19)
 
 Themed `screenOptions` and a matching icon helper for `createBottomTabNavigator` — React Navigation&apos;s own tab bar isn&apos;t a NativeWind-styled component, so it needs real color values resolved from the current theme rather than `dark:` classes.
 

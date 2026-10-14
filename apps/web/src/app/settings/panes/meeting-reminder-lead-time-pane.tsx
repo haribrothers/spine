@@ -11,8 +11,8 @@ const LEAD_TIME_OPTIONS = [5, 15, 30, 60] as const;
 /**
  * S-10.22 — org-wide default lead time for the S-10.21 "starting soon"
  * meeting reminder. Any user can override this for themselves from their
- * own Profile & Preferences page (a personal preference, not an org
- * setting — see CLAUDE.md's "Profile & Preferences is not the same
+ * own Settings › Your account › Notifications (a personal preference, not an org
+ * setting — see D-236 and the former "Profile & Preferences is not the same
  * surface as org Settings" rule); this pane only sets the org default that
  * applies to anyone who hasn't set their own override.
  */
@@ -72,7 +72,7 @@ function MeetingReminderLeadTimeForm({ initialMinutes }: { initialMinutes: numbe
       </RadioGroup>
 
       <p className="text-[12px] text-on-surface-muted">
-        Any user can override this for themselves from their Profile &amp; Preferences page.
+        Anyone can choose their own in Settings › Your account › Notifications.
       </p>
 
       <Button onClick={handleSave} disabled={saving} className="ml-auto">

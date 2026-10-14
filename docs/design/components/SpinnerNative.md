@@ -1,6 +1,6 @@
 # Spinner
 
-**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/spinner.tsx` · **Doc page:** `apps/design-system-native/app/components/spinner.tsx`
+**Package:** `@spine/ui-native` · **Platform:** Native · **Source:** `packages/ui-native/src/components/spinner.tsx` · **Doc page:** `apps/showcase-native/src/components/demos/spinner-demo.tsx`
 
 An indeterminate loading indicator for actions with no known duration — e.g. &quot;sending invoice…&quot;. Prefer a skeleton-shaped placeholder for content that has a known shape, once this package has one.
 

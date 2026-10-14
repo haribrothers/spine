@@ -37,10 +37,6 @@ describe("US-INV-17 · keep the exact PDF that was issued (requires local Postgr
     return Buffer.from(await res.arrayBuffer());
   }
 
-  async function orgFileCount(): Promise<number> {
-    return (await db.select({ id: files.id }).from(files).where(eq(files.orgId, orgId))).length;
-  }
-
   async function draftInvoice(): Promise<string> {
     const [contact] = await db.select().from(contacts).where(eq(contacts.orgId, orgId)).limit(1);
     const created = await testApp.app.get(InvoicesService).create(
@@ -86,11 +82,15 @@ describe("US-INV-17 · keep the exact PDF that was issued (requires local Postgr
 
   it("renders a draft live and stores nothing", async () => {
     const id = await draftInvoice();
-    const before = await orgFileCount();
+    // Nothing is stored for a draft: no file under the name a numberless document gets. (Counting
+    // every file of the organisation let an earlier test's queued "store the issued PDF" job land
+    // mid-test on a slow runner; those only store numbered, issued documents.)
+    const draftPdfs = async () => (await db.select({ id: files.id }).from(files).where(and(eq(files.orgId, orgId), eq(files.originalFilename, "invoice.pdf")))).length;
+    const before = await draftPdfs();
     const first = await pdf(`/invoices/${id}/pdf`);
     await pdf(`/invoices/${id}/pdf`);
     expect(first.subarray(0, 5).toString()).toBe("%PDF-");
-    expect(await orgFileCount()).toBe(before);
+    expect(await draftPdfs()).toBe(before);
     const [row] = await db.select().from(invoices).where(eq(invoices.id, id));
     expect(row?.issuedPdfFileId).toBeNull();
   });
@@ -154,14 +154,16 @@ describe("US-INV-17 · keep the exact PDF that was issued (requires local Postgr
   it("stores exactly one PDF when two requests race for a document's first download", async () => {
     const id = await draftInvoice();
     await testApp.app.get(InvoicesService).issue(orgId, id, userId);
-    const before = await orgFileCount();
 
     const service = testApp.app.get(IssuedPdfService);
     const [a, b] = await Promise.all([service.getOrStore(orgId, "invoice", id), service.getOrStore(orgId, "invoice", id)]);
 
     expect(a!.buffer.equals(b!.buffer)).toBe(true);
-    // The queued job may also have stored it; whichever won, one file remains.
-    expect(await orgFileCount()).toBe(before + 1);
+    // The queued job may also have stored it; whichever won, one file is this invoice's PDF.
+    // (Counting the whole organisation's files let other invoices' queued jobs move the number.)
+    const [issued] = await db.select({ number: invoices.number }).from(invoices).where(eq(invoices.id, id));
+    const pdfs = await db.select({ id: files.id }).from(files).where(and(eq(files.orgId, orgId), eq(files.originalFilename, `${issued!.number}.pdf`)));
+    expect(pdfs).toHaveLength(1);
   });
 
   it("issuing still succeeds when the PDF can't be stored, and the store job is retried", async () => {

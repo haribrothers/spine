@@ -1,22 +1,13 @@
 import { redirect } from "next/navigation";
-import { AppShellHeader } from "@spine/ui";
 import { getMyMembership } from "../../../../lib/get-my-membership";
 import { TeamsExplorer } from "./teams-explorer";
 
+/** Owner-only, re-checked here as on every team/* page; the header is the explorer's own (US-TEAM-25). */
 export default async function TeamsListPage() {
   const membership = await getMyMembership();
   if (membership?.role !== "owner") {
     redirect("/dashboard");
   }
 
-  return (
-    <>
-      <AppShellHeader
-        breadcrumb={[{ label: "Team" }, { label: "Teams" }]}
-        title="Teams"
-        description="Group Staff members and configure what each group can do."
-      />
-      <TeamsExplorer />
-    </>
-  );
+  return <TeamsExplorer />;
 }

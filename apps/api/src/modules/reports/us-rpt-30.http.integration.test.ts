@@ -91,7 +91,7 @@ describe("US-RPT-30 · see payments received and made in a period (requires loca
   it("payments made: the same for vendors and bills", async () => {
     const report = await json<PaymentRegisterReport>(await call(owner, "GET", `/reports/payments-made?${range}`));
     expect(report.rows.map((r) => [r.date, r.contact.name, r.amount, r.allocations.map((a) => [a.number, a.amount])])).toEqual([["2026-09-20", "Coastal Timber Supply", "216000", [["88213", "216000"]]]]);
-    expect(report.rows[0]!.href).toBe(`/vendor-payments?id=${report.rows[0]!.id}`);
+    expect(report.rows[0]!.href).toBe(`/vendor-payments/${report.rows[0]!.id}`);
   });
 
   it("the account filter shows only that money account's payments", async () => {

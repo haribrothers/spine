@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
 import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/place-of-supply";
@@ -22,7 +23,9 @@ import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobVariationOrder } from "../types";
 import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLine } from "./variation-order-line-editor";
 import { formatMoney } from "../../../../lib/money";
+import { useToast } from "../../../../components/toast-host";
 
+import { SectionLink } from "../../../../components/section-link";
 const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], string> = {
   draft: "bg-draft-bg text-draft",
   sent: "bg-due-soon-bg text-due-soon",
@@ -40,9 +43,11 @@ const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], str
  * its total into the job's contract value (S-04.9's own explicit-action
  * design, see VariationOrdersService.apply's doc comment).
  */
-export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobChanged: () => void }) {
+/** `raiseRequest` — the job page's "Raise variation" (US-JOB-34) opens the create dialog when it changes. */
+export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: { job: Job; onJobChanged: () => void; raiseRequest?: number }) {
   const canCreate = useCapability("variation_orders.edit_own");
   const canApply = useCapability("variation_orders.apply");
+  const showToast = useToast();
   const [variations, setVariations] = useState<JobVariationOrder[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -52,6 +57,7 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const load = useCallback(() => {
     apiClient
@@ -69,6 +75,10 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
     setCreateError(null);
     setCreateOpen(true);
   }
+
+  useEffect(() => {
+    if (raiseRequest > 0) openCreate();
+  }, [raiseRequest]);
 
   async function handleCreate() {
     setCreateError(null);
@@ -97,6 +107,7 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
       });
       setCreateOpen(false);
       load();
+      onJobChanged();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Could not create this variation order.");
     } finally {
@@ -105,10 +116,23 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
   }
 
   async function handleApply(variationOrderId: string) {
+    const v = variations?.find((o) => o.id === variationOrderId);
+    const ok = await confirm({
+      title: "Apply this variation to the job?",
+      description: v
+        ? `${formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)} from ${v.quote.number ?? "the variation quote"} is added to ${job.name}'s contract value, and its percentage milestones are worked out again. This can't be undone.`
+        : "Its amount is added to the job's contract value, and its percentage milestones are worked out again. This can't be undone.",
+      confirmLabel: "Apply to job",
+    });
+    if (!ok) return;
     setError(null);
     setApplyingId(variationOrderId);
     try {
       await apiClient.post(`/jobs/${job.id}/variation-orders/${variationOrderId}/apply`);
+      showToast(
+        "Variation applied",
+        v ? `${formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)} from ${v.quote.number ?? "the variation quote"} is now part of ${job.name}'s contract value.` : `${job.name}'s contract value has been updated.`,
+      );
       load();
       onJobChanged();
     } catch (err) {
@@ -149,9 +173,9 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
             <div key={v.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <a href={`/quotes/${v.quoteId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
+                  <SectionLink href={`/quotes/${v.quoteId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
                     {v.quote.number ?? "Draft variation quote"}
-                  </a>
+                  </SectionLink>
                   <Badge className={QUOTE_STATUS_BADGE_CLASS[v.quote.status]}>
                     {v.quote.status.charAt(0).toUpperCase() + v.quote.status.slice(1)}
                   </Badge>
@@ -205,6 +229,7 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </Card>
   );
 }

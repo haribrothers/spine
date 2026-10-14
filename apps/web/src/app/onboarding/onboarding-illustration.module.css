@@ -1,0 +1,249 @@
+/* US-ONB-22, US-ONB-23 (D-208) — onboarding's start and finish illustrations: Spine's own screens drawn
+   small with placeholder lines (no names or amounts), the D-207 people and, on the finish screen,
+   brand confetti. Sizes follow the stage (container units); colours come from tokens. */
+.window,
+.invoice,
+.phone {
+  position: absolute;
+  z-index: 3;
+  box-shadow: var(--shadow-overlay);
+}
+.window {
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+:global([data-theme="dark"]) .window,
+:global([data-theme="dark"]) .invoice {
+  border: 1px solid var(--color-border);
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+.bar i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+}
+.body {
+  display: grid;
+  grid-template-columns: 15% 1fr;
+  height: calc(100% - 26px);
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--color-border);
+}
+.line {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+}
+.lineStrong {
+  background: var(--color-border-strong);
+}
+.lineActive {
+  background: color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.trend {
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 1px;
+  background: var(--color-paid);
+  transform: rotate(-4deg);
+}
+.chart {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.chart i {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-primary);
+  opacity: 0.75;
+}
+.chart i:nth-child(even) {
+  background: var(--color-border-strong);
+  opacity: 1;
+}
+.invoice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--color-surface);
+  transform: rotate(-4deg);
+}
+.invoiceHead {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--color-brand-layer-top-from), var(--color-brand-deep));
+}
+.paid {
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 9px;
+  background: var(--color-paid-bg);
+  color: var(--color-paid);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 18px;
+}
+.phone {
+  padding: 8px;
+  border-radius: 26px;
+  background: var(--color-illustration-ink);
+  transform: rotate(5deg);
+}
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 22px 10px 10px;
+  border-radius: 19px;
+  background: var(--color-surface);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.dot {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 5px;
+  background: var(--color-info-bg);
+}
+.dotPaid {
+  background: var(--color-paid-bg);
+}
+.dotDue {
+  background: var(--color-due-soon-bg);
+}
+.rowLines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+.phoneButton {
+  height: 26px;
+  margin-top: auto;
+  border-radius: 7px;
+  background: var(--color-primary);
+}
+.people {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 18px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+}
+.team {
+  left: 5%;
+  right: 6%;
+  justify-content: space-between;
+}
+.confetti {
+  position: absolute;
+  z-index: 2;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .window,
+  .invoice,
+  .phone {
+    animation: enter 0.6s var(--d, 0s) cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
+  }
+  .confetti {
+    animation: fall 1.4s var(--d, 0s) ease-out both;
+  }
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+@keyframes fall {
+  from {
+    opacity: 0;
+    translate: 0 -40px;
+  }
+}
+
+/* The wizard's preview sits on the same soft brand panel as the illustrations. */
+.previewPanel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-brand-teal) 9%, var(--color-background)) 0%,
+    color-mix(in srgb, var(--color-brand-sky) 11%, var(--color-background)) 58%,
+    var(--color-surface-sunken) 100%
+  );
+  min-height: calc(100vh - 32px);
+  box-sizing: border-box;
+}
+.previewPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(color-mix(in srgb, var(--color-brand-deep) 11%, transparent) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+.previewPanel > * {
+  position: relative;
+}

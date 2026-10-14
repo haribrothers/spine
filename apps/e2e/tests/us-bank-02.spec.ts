@@ -23,7 +23,7 @@ test.describe("US-BANK-02", () => {
     const bankRow = table.getByRole("row", { name: /Bank Account/ });
     await expect(bankRow).toContainText("$4,542.50");
     await expect(bankRow).toContainText("Never reconciled");
-    await expect(bankRow).toContainText("1 entry");
+    await expect(bankRow).toContainText("1 unreconciled");
     await expect(page.getByText("Not yet reconciled")).toBeVisible();
 
     await bankRow.getByRole("link", { name: "Bank Account" }).click();
@@ -43,8 +43,8 @@ test.describe("US-BANK-02", () => {
     await expect(register.getByRole("row", { name: /Payment RCP-/ })).toBeVisible();
 
     await entry.getByRole("link", { name: /Payment RCP-/ }).click();
-    await page.waitForURL(/\/payments\?id=/);
-    await expect(page.getByRole("dialog")).toContainText("Maple Ridge Developments");
+    await page.waitForURL(/\/payments\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("payment-meta")).toContainText("Maple Ridge Developments");
 
     // An empty account, and a card's own column names.
     await page.goto("/banking");

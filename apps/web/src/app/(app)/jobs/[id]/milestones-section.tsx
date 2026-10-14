@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner } from "@spine/ui";
-import { Plus, Trash2 } from "lucide-react";
-import { authClient } from "../../../../lib/auth-client";
+import { useMemo, useState } from "react";
+import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner, cn } from "@spine/ui";
+import { Check, Circle, Flag, Lock, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
-import { useCanEditOwnership, useCapabilities, useCapability } from "../../../../lib/capabilities-context";
+import { useCanEditOwnership } from "../../../../lib/capabilities-context";
 import { HistorySection } from "../../../../components/history-section";
-import { CompleteMilestoneDialog } from "./complete-milestone-dialog";
 import { MILESTONE_STATUS_LABELS, type EditableMilestone, type Job, type Milestone, type MilestoneAmountType } from "../types";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../../lib/money";
+import { calendarDate } from "../../quotes/quotes-list-state";
+import { billedByMilestones, inOrder, milestoneDueText } from "../job-page-state";
 
+import { useCanOpen } from "../../../../components/section-link";
 const STATUS_BADGE_CLASS: Record<Milestone["status"], string> = {
   pending: "bg-draft-bg text-draft",
   completed: "bg-due-soon-bg text-due-soon",
@@ -45,54 +46,51 @@ function blankMilestone(sequence: number): EditableMilestone {
  * exactly 100%, fixed-type milestones have no such constraint) — this UI
  * doesn't duplicate that logic client-side beyond a live running-total
  * hint, and always surfaces the API's own `BadRequestException` message
- * verbatim on save failure (e.g. "Milestone percentages must total 100%
- * (currently 80%)") rather than inventing its own copy, since the server
- * message already includes the actual current total.
+ * verbatim on save failure.
  *
- * Once ANY milestone reaches `invoiced`, the whole set is read-only in
- * this editor except for adding brand-new rows — MilestonesService.setAll
- * rejects removing an invoiced milestone outright, and editing one's
- * amount/type after it's already been billed would silently misrepresent
- * history, so this UI disables those fields rather than letting a save
- * round-trip fail.
+ * Once ANY milestone reaches `invoiced`, its billing details are locked in
+ * this editor; only new rows can be added alongside it.
+ *
+ * US-JOB-35 (D-215) — read as progress: "Billed X of Y" with a bar, then
+ * each milestone in order with a step marker, its amount and share, its
+ * due state (overdue in the overdue colour) and its action. A job without
+ * milestones asks to set up how it's billed (US-JOB-30). The job page owns
+ * the milestones and the complete/invoice actions, so its header's next
+ * step and these rows stay in step.
  */
-export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChanged: () => void }) {
-  const [milestones, setMilestones] = useState<Milestone[] | null>(null);
+export function MilestonesSection({
+  job,
+  milestones,
+  onChanged,
+  canComplete,
+  canInvoice,
+  onComplete,
+  onInvoice,
+  invoicingId,
+}: {
+  job: Job;
+  milestones: Milestone[] | null;
+  /** Reloads the job and its milestones after a change. */
+  onChanged: () => void;
+  canComplete: (m: Milestone) => boolean;
+  canInvoice: boolean;
+  onComplete: (m: Milestone) => void;
+  onInvoice: (m: Milestone) => void;
+  invoicingId: string | null;
+}) {
+  const canOpen = useCanOpen();
   const [editing, setEditing] = useState(false);
   const [rows, setRows] = useState<EditableMilestone[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [completingMilestone, setCompletingMilestone] = useState<Milestone | null>(null);
-  const [invoicingId, setInvoicingId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const now = useMemo(() => new Date(), []);
+  const locale = orgLocaleTag();
 
   // US-JOB-20: milestones are owned through the job, by whoever created it.
   const canManage = useCanEditOwnership(job.createdByUserId ?? null, {
     own: "milestones.edit_own",
     others: "milestones.edit_others",
   });
-  const canInvoice = useCapability("milestones.invoice");
-  const { capabilities } = useCapabilities();
-  const { data: session } = authClient.useSession();
-
-  /** Per-milestone "mark complete" gate — can't use useCanEditOwnership inline per row in a .map() (Rules of Hooks: the row count isn't fixed across renders), so this re-derives the same own/others branch manually from the raw capabilities map, same workaround as meetings-calendar.tsx. */
-  function canCompleteMilestone(m: Milestone): boolean {
-    if (!capabilities || !session?.user?.id) return false;
-    const isOwn = m.createdByUserId !== null && m.createdByUserId === session.user.id;
-    return capabilities[isOwn ? "milestones.edit_own" : "milestones.edit_others"] ?? false;
-  }
-
-  const load = useCallback(() => {
-    apiClient
-      .get<Milestone[]>(`/jobs/${job.id}/milestones`)
-      .then(setMilestones)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load milestones."));
-  }, [job.id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   function startEditing() {
     setRows(milestones && milestones.length ? toEditable(milestones) : [blankMilestone(0)]);
@@ -132,7 +130,7 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
     }
     setSaving(true);
     try {
-      const updated = await apiClient.put<Milestone[]>(`/jobs/${job.id}/milestones`, {
+      await apiClient.put<Milestone[]>(`/jobs/${job.id}/milestones`, {
         milestones: rows.map((r, index) => ({
           id: r.id,
           name: r.name.trim(),
@@ -142,8 +140,8 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
           dueDate: r.dueDate,
         })),
       });
-      setMilestones(updated);
       setEditing(false);
+      onChanged();
     } catch (err) {
       // Surface the API's own BadRequestException message verbatim (e.g.
       // "Milestone percentages must total 100% (currently 80%)") — see
@@ -153,26 +151,6 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
     } finally {
       setSaving(false);
     }
-  }
-
-  async function handleInvoice(milestoneId: string) {
-    setActionError(null);
-    setInvoicingId(milestoneId);
-    try {
-      const invoice = await apiClient.post<{ id: string }>(`/jobs/${job.id}/milestones/${milestoneId}/invoice`);
-      window.location.href = `/invoices/${invoice.id}`;
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Could not raise an invoice for this milestone.");
-      setInvoicingId(null);
-    }
-  }
-
-  if (error) {
-    return (
-      <Alert variant="critical">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
   }
 
   if (!milestones) {
@@ -292,84 +270,128 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
     );
   }
 
-  return (
-    <Card className="flex flex-col gap-4">
-      {actionError && (
-        <Alert variant="critical">
-          <AlertDescription>{actionError}</AlertDescription>
-        </Alert>
-      )}
+  const ordered = inOrder(milestones);
+  const withMoney = job.contractValueAmount !== undefined;
+  const contract = BigInt(job.contractValueAmount ?? "0");
+  const billed = billedByMilestones(milestones);
+  const billedPct = contract > 0n ? Math.min(100, Math.round(Number((billed * 1000n) / contract) / 10)) : 0;
+  const done = milestones.filter((m) => m.status !== "pending").length;
+  const held = BigInt(job.retentionHeld ?? "0");
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-[14px] font-semibold text-on-surface">Billing milestones</h3>
+  if (ordered.length === 0) {
+    return (
+      <Card className="flex flex-col items-start gap-2" data-testid="milestones-empty">
+        <h3 className="text-[14px] font-semibold text-on-surface">Set up how this job is billed</h3>
+        <p className="text-[13px] text-on-surface-muted">
+          Split the contract into milestones — a share or an amount each, with a due date — and invoice each one as it&apos;s done. Without milestones, bill the job however you like.
+        </p>
+        {canManage && (
+          <Button className="mt-1" onClick={startEditing}>
+            <Plus size={14} aria-hidden />
+            Add milestones
+          </Button>
+        )}
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="flex flex-col p-0" data-testid="milestones">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+        {withMoney ? (
+          <>
+            <span className="text-[13px] text-on-surface-muted" data-testid="milestones-billed">
+              Billed <b className="font-semibold text-on-surface">{formatMoney(billed, job.currency)}</b> of <b className="font-semibold text-on-surface">{formatMoney(contract, job.currency)}</b>
+            </span>
+            <span className="h-2 min-w-24 flex-1 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
+              <span className="block h-full rounded-full bg-primary" style={{ width: `${billedPct}%` }} />
+            </span>
+            <span className="text-[12.5px] tabular-nums text-on-surface-muted">{billedPct}%</span>
+          </>
+        ) : (
+          <span className="flex-1 text-[13px] text-on-surface-muted">
+            {done} of {ordered.length} milestones done
+          </span>
+        )}
         {canManage && (
           <Button variant="secondary" size="sm" onClick={startEditing}>
-            {milestones.length ? "Edit milestones" : "Define milestones"}
+            Edit milestones
           </Button>
         )}
       </div>
 
-      {milestones.length === 0 ? (
-        <p className="text-[13px] text-on-surface-muted">
-          No milestones defined yet — this job will bill on its own schedule (e.g. a single final invoice) until milestones are set up.
-        </p>
-      ) : (
-        <div className="flex flex-col divide-y divide-border">
-          {milestones
-            .slice()
-            .sort((a, b) => a.sequence - b.sequence)
-            .map((m) => (
-              <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-on-surface">{m.name}</span>
-                    <Badge className={STATUS_BADGE_CLASS[m.status]}>{MILESTONE_STATUS_LABELS[m.status]}</Badge>
-                  </div>
-                  <p className="text-[12px] text-on-surface-muted">
-                    {m.amount === undefined ? null : m.amountType === "percent" ? `${m.amount}% of contract` : "Fixed amount"}
-                    {m.dueDate && <>{m.amount === undefined ? "" : " · "}Due {new Date(m.dueDate).toLocaleDateString()}</>}
-                  </p>
-                  {m.completionNotes && <p className="mt-1 text-[12px] text-on-surface-muted">"{m.completionNotes}"</p>}
+      <ol className="flex flex-col divide-y divide-border">
+        {ordered.map((m) => {
+          const due = milestoneDueText(m.dueDate, now, locale);
+          const share = m.amount === undefined ? null : m.amountType === "percent" ? `${m.amount}% of contract` : "Fixed amount";
+          return (
+            <li key={m.id} className="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[28px_minmax(0,1fr)_auto_auto]" data-testid="milestone-row">
+              <span
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-full border",
+                  m.status === "invoiced" ? "border-transparent bg-paid text-on-primary" : m.status === "completed" ? "border-primary bg-info-bg text-primary" : "border-border-strong bg-surface text-on-surface-muted",
+                )}
+                aria-hidden
+              >
+                {m.status === "invoiced" ? <Check size={14} /> : m.status === "completed" ? <Flag size={13} /> : <Circle size={12} />}
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-on-surface">{m.name}</span>
+                  <Badge className={STATUS_BADGE_CLASS[m.status]}>{MILESTONE_STATUS_LABELS[m.status]}</Badge>
                 </div>
-                <div className="flex items-center gap-3">
-                  {m.resolvedAmount !== undefined && (
-                    <span className="text-[13px] tabular-nums text-on-surface">
-                      {formatMoney(BigInt(m.resolvedAmount), job.currency)}
-                    </span>
+                <p className="text-[12.5px] text-on-surface-muted">
+                  {[
+                    share,
+                    m.status === "pending" ? null : m.completedAt ? `completed ${calendarDate(m.completedAt, now, locale)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  {m.status === "pending" && (
+                    <>
+                      {share ? " · " : ""}
+                      <span className={due.tone === "over" ? "font-medium text-overdue" : due.tone === "soon" ? "font-medium text-due-soon" : ""}>{due.text}</span>
+                    </>
                   )}
-                  <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel="this milestone" />
-                  {m.status === "pending" && canCompleteMilestone(m) && (
-                    <Button size="sm" variant="secondary" onClick={() => setCompletingMilestone(m)}>
-                      Mark complete
-                    </Button>
-                  )}
-                  {m.status === "completed" && canInvoice && (
-                    <Button size="sm" onClick={() => handleInvoice(m.id)} disabled={invoicingId === m.id}>
-                      {invoicingId === m.id ? <Spinner size="sm" /> : "Raise invoice"}
-                    </Button>
-                  )}
-                  {m.status === "invoiced" && m.invoicedInvoiceId && (
-                    <Button size="sm" variant="ghost" asChild>
-                      <a href={`/invoices/${m.invoicedInvoiceId}`}>View invoice</a>
-                    </Button>
-                  )}
-                </div>
+                  {m.status === "completed" && <span className="font-medium text-overdue"> · not invoiced yet</span>}
+                </p>
+                {m.completionNotes && <p className="mt-1 text-[12px] text-on-surface-muted">“{m.completionNotes}”</p>}
               </div>
-            ))}
-        </div>
-      )}
+              <span className="col-start-2 text-[13.5px] font-semibold tabular-nums text-on-surface sm:col-start-auto sm:text-right">
+                {m.resolvedAmount !== undefined ? formatMoney(BigInt(m.resolvedAmount), job.currency) : ""}
+              </span>
+              <div className="col-start-2 flex items-center gap-1 sm:col-start-auto sm:justify-end">
+                {m.status === "pending" && canComplete(m) && (
+                  <Button size="sm" variant="secondary" onClick={() => onComplete(m)}>
+                    Mark complete
+                  </Button>
+                )}
+                {m.status === "completed" && canInvoice && (
+                  <Button size="sm" variant="secondary" onClick={() => onInvoice(m)} disabled={invoicingId === m.id}>
+                    {invoicingId === m.id ? <Spinner size="sm" /> : "Raise invoice"}
+                  </Button>
+                )}
+                {m.status === "invoiced" && m.invoicedInvoiceId && canOpen("/invoices") && (
+                  <Button size="sm" variant="secondary" asChild>
+                    <a href={`/invoices/${m.invoicedInvoiceId}`}>View invoice</a>
+                  </Button>
+                )}
+                <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel="this milestone" />
+              </div>
+            </li>
+          );
+        })}
+      </ol>
 
-      <CompleteMilestoneDialog
-        job={job}
-        milestone={completingMilestone}
-        onOpenChange={(open) => !open && setCompletingMilestone(null)}
-        onCompleted={() => {
-          setCompletingMilestone(null);
-          load();
-          onJobChanged();
-        }}
-      />
+      {withMoney && job.status === "completed" && held > 0n && (
+        <p className="flex items-center gap-2 border-t border-border px-4 py-3 text-[13px] text-on-surface-muted" data-testid="retention-held">
+          <Lock size={14} aria-hidden />
+          <span>
+            Retention held <b className="font-semibold text-on-surface">{formatMoney(held, job.currency)}</b>
+            {(job.retentionPct ?? 0) > 0 ? ` (${job.retentionPct}%)` : ""} — release it now the job is complete.
+          </span>
+        </p>
+      )}
     </Card>
   );
 }
-

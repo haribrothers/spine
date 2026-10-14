@@ -20,7 +20,7 @@ test.describe("US-SET-18", () => {
     await expect(pane.getByText("Keep terms under 2,000 characters.").first()).toBeVisible();
     await pane.getByLabel("Default terms").fill("Valid for 30 days.");
     await pane.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Saved").first()).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     // A new quote starts with the defaults; they can be changed on the quote.

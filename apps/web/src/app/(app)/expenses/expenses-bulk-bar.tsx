@@ -13,6 +13,7 @@ import {
   FormField,
   Spinner,
   Textarea,
+  useConfirm,
 } from "@spine/ui";
 import type { BulkResult } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -44,6 +45,7 @@ export function ExpensesBulkBar({
   const canApprove = useCapability("expenses.approve");
   const canReject = useCapability("expenses.reject");
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [commentError, setCommentError] = useState<string | undefined>();
@@ -59,6 +61,13 @@ export function ExpensesBulkBar({
   }
 
   async function approve() {
+    const n = selected.length;
+    const ok = await confirm({
+      title: `Approve ${n} ${n === 1 ? "expense" : "expenses"}?`,
+      description: `${formatMoney(total, currency)} is posted to your books, each expense as it would be on its own. An approved expense can't be edited.`,
+      confirmLabel: n === 1 ? "Approve expense" : "Approve expenses",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       report(await apiClient.post<BulkResult>("/expenses/bulk/approve", { ids: selected.map((e) => e.id) }), "approved");
@@ -139,6 +148,7 @@ export function ExpensesBulkBar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </div>
   );
 }

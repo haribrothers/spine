@@ -1,11 +1,14 @@
-import type { DemoPlan, DemoPlanContact, DemoPlanItem, DemoPlanLine } from "./types.ts";
+import type { DemoPlan, DemoPlanContact, DemoPlanItem, DemoPlanLead, DemoPlanLine } from "./types.ts";
+import { DEMO_ARCHIVED_CATEGORY, demoBanking } from "./scenario.ts";
 
 /**
  * US-ONB-09 — Riverstone Builders, the default demo (United States,
  * Construction / Contracting), exactly as it was before demos came in
  * countries and industries (D-192): the same contacts, catalogue,
  * documents and order, so everything built and tested against it keeps
- * working. Its invoices are issued and paid today; quotes stop at sent.
+ * working. Its invoices are issued and paid today. D-216 adds what the
+ * refined screens show: worked leads, quote titles, sent dates and views,
+ * an accepted and a declined quote, job end dates and budgets, bundles.
  */
 
 const contact = (
@@ -95,8 +98,31 @@ const CONTACTS: DemoPlanContact[] = [
     { type: "meeting", notes: "Reviewed glazing subcontract scope and pricing.", dueInDays: 4 }),
 ];
 
+/**
+ * US-ONB-24 (D-216) — how each lead is being worked: open leads shared
+ * between the owner and the demo Staff person, at different ages, with
+ * expected close dates; one gone cold; the lost one with its reason.
+ */
+const WORKED: Record<string, Partial<DemoPlanLead>> = {
+  harborview: { owner: "staff", daysInStage: 18, expectedCloseInDays: 12 },
+  mapleRidge: { owner: "owner", daysInStage: 10, expectedCloseInDays: 30 },
+  priya: { owner: "owner", daysInStage: 6 },
+  sunstone: { owner: "staff", daysInStage: 3, expectedCloseInDays: 50 },
+  davidChen: { owner: "owner", daysInStage: 21, lostReason: "price", lostNote: "Went with another contractor — budget mismatch." },
+  ironclad: { owner: "owner", daysInStage: 24, expectedCloseInDays: 20 },
+  bluewater: { owner: "staff", daysInStage: 12, expectedCloseInDays: 25 },
+  apexTimber: { owner: "owner", daysInStage: 120 },
+  graniteState: { owner: "owner", daysInStage: 200 },
+  northline: { owner: "owner", daysInStage: 8, expectedCloseInDays: 40 },
+  coastalSteel: { owner: "staff", daysInStage: 5, expectedCloseInDays: 55 },
+  marcusWebb: { owner: "owner", daysInStage: 45 },
+  ridgeline: { owner: "owner", daysInStage: 14, expectedCloseInDays: 21 },
+  summitGlass: { owner: "staff", daysInStage: 19, expectedCloseInDays: 9, cold: true },
+};
+
 const SALES_TAX = { intra: { rate: "Sales Tax" } };
-const item = (key: string, name: string, description: string, unit: string, category: string, price: bigint): DemoPlanItem => ({ key, name, description, unit, category, price, tax: SALES_TAX });
+// US-ONB-27: materials post to 4000 Sales — Goods.
+const item = (key: string, name: string, description: string, unit: string, category: string, price: bigint): DemoPlanItem => ({ key, name, description, unit, category, price, tax: SALES_TAX, income: category === "Materials" ? "goods" : "services" });
 
 const ITEMS: DemoPlanItem[] = [
   item("survey", "Site survey & assessment", "Initial site visit, measurements, and feasibility notes.", "each", "Consulting", 25000n),
@@ -133,20 +159,25 @@ export function riverstonePlan(): DemoPlan {
     ],
     ownTaxGroups: [{ name: "Sales Tax + Surcharge", rates: ["Sales Tax", "State Surcharge"] }],
     ordering: "declared",
-    contacts: CONTACTS,
+    // US-ONB-34: a card, transfers, money in and out, a statement and reconciliations.
+    banking: demoBanking("US"),
+    contacts: CONTACTS.map((c) => (c.lead ? { ...c, lead: { ...c.lead, ...WORKED[c.key] } } : c)),
     items: ITEMS,
     quotes: [
-      { contact: "harborview", validUntilInDays: 30, notes: "Marina office fit-out — phase 1 scope as discussed on site.", terms: "50% deposit on acceptance, balance on completion. Prices valid for 30 days.", lines: [l("survey", 1), l("labour", 80), l("drywall", 600), l("painting", 600)], outcome: "sent" },
+      { contact: "harborview", title: "Marina office fit-out — phase 1", outcome: "sent", sentInDays: -40, views: { count: 2, lastInDays: -31 }, validUntilInDays: -5, notes: "Marina office fit-out — phase 1 scope as discussed on site.", terms: "50% deposit on acceptance, balance on completion. Prices valid for 30 days.", lines: [l("survey", 1), l("labour", 80), l("drywall", 600), l("painting", 600)] },
       // Discounted on both material lines so the blended discount clears the 20% approval threshold: left unapproved, unsent.
-      { contact: "mapleRidge", validUntilInDays: 21, notes: "Phase 2 townhome foundations — bulk materials pricing applied.", lines: [l("concrete", 40, 32), l("steel", 200, 32), l("labour", 120)], outcome: "draft" },
-      { contact: "sunstone", validUntilInDays: 14, notes: "Storefront remodel — location 1 of 3, remaining locations to follow as separate quotes.", terms: "Prices valid for 14 days. Scheduling subject to permit approval.", lines: [l("survey", 1), l("pm", 24), l("windows", 6), l("flooring", 900)], outcome: "sent" },
-      { contact: "bluewater", validUntilInDays: 45, notes: "Hotel lobby renovation — revised scope after design review, see v2 for current pricing.", terms: "50% deposit on acceptance. Prices valid for 45 days.", lines: [l("pm", 60), l("painting", 1400), l("flooring", 1200)], outcome: "revised" },
-      { contact: "summitGlass", validUntilInDays: 10, notes: "Curtain wall glazing subcontract — draft pending final measurements.", lines: [l("electrical", 3), l("labour", 40)], outcome: "draft" },
+      { contact: "mapleRidge", title: "Phase 2 townhomes — foundations", validUntilInDays: 21, notes: "Phase 2 townhome foundations — bulk materials pricing applied.", lines: [l("concrete", 40, 32), l("steel", 200, 32), l("labour", 120)], outcome: "draft" },
+      { contact: "sunstone", title: "Storefront remodel — location 1", sentInDays: -18, views: { count: 3, lastInDays: -2 }, validUntilInDays: 5, notes: "Storefront remodel — location 1 of 3, remaining locations to follow as separate quotes.", terms: "Prices valid for 14 days. Scheduling subject to permit approval.", lines: [l("survey", 1), l("pm", 24), l("windows", 6), l("flooring", 900)], outcome: "sent" },
+      { contact: "bluewater", title: "Hotel lobby renovation", sentInDays: -30, revisedInDays: -9, views: { count: 1, lastInDays: -26 }, validUntilInDays: 45, notes: "Hotel lobby renovation — revised scope after design review, see v2 for current pricing.", terms: "50% deposit on acceptance. Prices valid for 45 days.", lines: [l("pm", 60), l("painting", 1400), l("flooring", 1200)], outcome: "revised" },
+      { contact: "summitGlass", title: "Curtain wall glazing", validUntilInDays: 10, notes: "Curtain wall glazing subcontract — draft pending final measurements.", lines: [l("electrical", 3), l("labour", 40)], outcome: "draft" },
+      // US-ONB-25: accepted this month (the won lead) and declined (the lost lead).
+      { contact: "priya", title: "Kitchen renovation", validUntilInDays: 20, notes: "Kitchen renovation — labour, flooring and paint.", lines: [l("labour", 60), l("flooring", 220), l("painting", 350)], outcome: "accepted", sentInDays: -20, views: { count: 2, lastInDays: -18 }, respondedInDays: -1, thisMonth: true, comment: "Looks great — go ahead." },
+      { contact: "davidChen", title: "Deck rebuild", validUntilInDays: -5, notes: "Deck rebuild — framing, labour and cleanup.", lines: [l("lumber", 120), l("labour", 24), l("cleanup", 1)], outcome: "declined", sentInDays: -35, views: { count: 2, lastInDays: -28 }, respondedInDays: -21, comment: "Thanks, but we've gone with a cheaper quote." },
     ],
     invoices: [
       { key: "kitchen", contact: "priya", issueInDays: null, dueInDays: -12, notes: "Kitchen renovation — final invoice.", lines: [l("labour", 60), l("flooring", 220), l("painting", 350)], outcome: "issued", payments: [{ inDays: null, amount: "full" }] },
-      { key: "marinaProgress", contact: "harborview", issueInDays: null, dueInDays: -5, notes: "Marina office fit-out — progress bill 1 of 3.", lines: [l("labour", 100), l("drywall", 400)], outcome: "issued", payments: [{ inDays: null, amount: 0.5 }] },
-      { key: "lobbyDeposit", contact: "bluewater", issueInDays: null, dueInDays: 21, notes: "Hotel lobby renovation — deposit invoice.", lines: [l("pm", 20)], outcome: "issued" },
+      { key: "marinaProgress", contact: "harborview", issueInDays: null, dueInDays: -5, notes: "Marina office fit-out — progress bill 1 of 3.", lines: [l("labour", 100), l("drywall", 400)], outcome: "issued", payments: [{ inDays: null, amount: 0.5 }], emailedInDays: null, remindedInDays: null },
+      { key: "lobbyDeposit", contact: "bluewater", issueInDays: null, dueInDays: 5, notes: "Hotel lobby renovation — deposit invoice.", lines: [l("pm", 20)], outcome: "issued", emailedInDays: null },
       { key: "storefront", contact: "sunstone", issueInDays: null, dueInDays: 30, notes: "Storefront remodel — location 1, draft pending final measurements.", lines: [l("windows", 4), l("cleanup", 1)], outcome: "draft" },
       { key: "duplicate", contact: "ridgeline", issueInDays: null, dueInDays: 15, notes: "Duplicate billing — voided, corrected invoice raised separately.", lines: [l("excavator", 5)], outcome: "voided", voidReason: "Duplicate billing — corrected invoice raised separately." },
     ],
@@ -157,13 +188,16 @@ export function riverstonePlan(): DemoPlan {
           { name: "Framing & rough-in complete", amountType: "percent", amount: 40, dueInDays: 30 },
           { name: "Final fit-out & handover", amountType: "percent", amount: 40, dueInDays: 60 },
         ],
+        endInDays: 75, budget: "near", fromQuote: { title: "Marina office fit-out", sentInDays: -18, viewedInDays: -17, respondedInDays: -16 },
         note: "Site kicked off — 48 Harbor Way, Portland, ME 04101. Crew scheduled per the milestone plan below.", photoCaption: "Site condition at kickoff." },
       { key: "townhomes", contact: "mapleRidge", name: "Phase 2 townhomes — foundations", siteAddress: "220 Ridge Rd, Burlington, VT 05401", contractValue: 1250000n, retentionPct: 10, startInDays: -45,
         milestones: [
           { name: "Excavation & footings", amountType: "percent", amount: 35, dueInDays: -20, invoiceInDays: null },
-          { name: "Foundation walls poured", amountType: "percent", amount: 35, dueInDays: 10, invoiceInDays: null },
+          // US-ONB-26: done today and waiting to be invoiced.
+          { name: "Foundation walls poured", amountType: "percent", amount: 35, dueInDays: 10, completeInDays: null },
           { name: "Backfill & inspection sign-off", amountType: "percent", amount: 30, dueInDays: 25 },
         ],
+        endInDays: 40, budget: 0.75, percentComplete: 60,
         note: "Site kicked off — 220 Ridge Rd, Burlington, VT 05401. Crew scheduled per the milestone plan below.", photoCaption: "Site condition at kickoff." },
       { key: "lobby", contact: "bluewater", name: "Hotel lobby renovation", siteAddress: "5 Waterfront Plz, Providence, RI 02903", contractValue: 2100000n, retentionPct: 8, startInDays: -120,
         milestones: [
@@ -172,28 +206,52 @@ export function riverstonePlan(): DemoPlan {
           { name: "Final walkthrough & sign-off", amountType: "percent", amount: 25, dueInDays: -30, invoiceInDays: null },
         ],
         releaseRetention: true,
+        endInDays: -25, budget: 0.7, completed: true,
         note: "Site kicked off — 5 Waterfront Plz, Providence, RI 02903. Crew scheduled per the milestone plan below.", photoCaption: "Site condition at kickoff." },
     ],
     variationOrder: { job: "marina", notes: "Additional scope requested on site — see attached line items.", lines: [{ name: "Additional electrical outlets (site-requested)", quantity: 6, price: 8500n, tax: null }] },
     bills: [
-      { contact: "apexTimber", billNumber: "AT-20441", dateInDays: -10, dueInDays: 20, lines: [{ name: "Framing lumber delivery", quantity: 500, price: 850n, tax: null }], outcome: "recorded", job: "marina", payments: [{ inDays: null }] },
+      // US-ONB-30: part-paid and due this week.
+      { contact: "apexTimber", billNumber: "AT-20441", dateInDays: -10, dueInDays: 4, lines: [{ name: "Framing lumber delivery", quantity: 500, price: 850n, tax: null }], outcome: "recorded", job: "marina", payments: [{ inDays: null, amount: 0.4, method: "bank_transfer", reference: "ACH 552190" }] },
       { contact: "graniteState", billNumber: "GSC-8834", dateInDays: -35, dueInDays: -5, lines: [{ name: "Ready-mix concrete pour", quantity: 12, price: 18000n, tax: null }], outcome: "recorded" },
+      // US-ONB-33: Apex Timber's second open bill, 90+ days late, and Granite State's second, 31–60 days late.
+      { contact: "apexTimber", billNumber: "AT-20388", dateInDays: -125, dueInDays: -95, lines: [{ name: "Sheathing plywood", quantity: 60, price: 2400n, tax: null }], outcome: "recorded" },
+      { contact: "graniteState", billNumber: "GSC-8790", dateInDays: -70, dueInDays: -40, lines: [{ name: "Gravel base — 8 tons", quantity: 8, price: 6500n, tax: null }], outcome: "recorded" },
       { contact: "coastalSteel", billNumber: "CSM-5502", dateInDays: -3, dueInDays: 27, lines: [{ name: "Structural steel beams", quantity: 80, price: 4200n, tax: null }], outcome: "draft" },
       { contact: "northline", billNumber: "NEW-1190", dateInDays: -50, dueInDays: -20, lines: [{ name: "Electrical rough-in materials", quantity: 3, price: 45000n, tax: null }], outcome: "voided", voidReason: "Duplicate bill entered in error" },
+      { contact: "apexTimber", billNumber: "AT-20502", dateInDays: -1, dueInDays: 29, lines: [{ name: "Treated decking boards", quantity: 120, price: 1150n, tax: null }], outcome: "draft" },
     ],
+    // US-ONB-30: one credit partly used against the overdue concrete bill, and one draft.
+    vendorCredits: [
+      { contact: "graniteState", vendorReference: "GSC-CR-112", dateInDays: -12, againstBill: "GSC-8834", lines: [{ name: "Returned: ready-mix concrete — 2 yd³ unused", quantity: 2, price: 18000n, tax: null }], outcome: "recorded", apply: { inDays: -10, fraction: 0.5 } },
+      { contact: "coastalSteel", vendorReference: "CSM-CR-0410", dateInDays: -1, lines: [{ name: "Short delivery: structural steel beams", quantity: 4, price: 4200n, tax: null }], outcome: "draft" },
+    ],
+    archivedCategory: DEMO_ARCHIVED_CATEGORY,
+    recurringBills: [{ contact: "ridgeline", name: "Equipment yard rental", startsInDays: 5, dueDays: 14, lines: [{ name: "Equipment yard — monthly rental", quantity: 1, price: 95000n, tax: null }] }],
     expenses: [
-      { category: "Fuel & freight", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved", job: "marina" },
-      { category: "Site overheads & permits", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved" },
-      { category: "Plant & equipment hire", amount: 15000n, paidBy: "company", description: "Replacement power tools", dateInDays: -20, outcome: "approved" },
+      // US-ONB-31: receipts, except the fuel that says it has none.
+      { category: "Fuel & freight", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved", job: "marina", receipt: { merchant: "Highway Fuel Centre", place: "Portland" } },
+      { category: "Site overheads & permits", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved", receipt: { merchant: "Corner Café", place: "Portland" } },
+      { category: "Plant & equipment hire", amount: 15000n, paidBy: "company", description: "Replacement power tools", dateInDays: -20, outcome: "approved", receipt: { merchant: "Trade Supplies Co.", place: "Portland" } },
       { category: "Fuel & freight", amount: 6000n, paidBy: "employee", description: "Fuel — no receipt attached", dateInDays: -2, outcome: "submitted" },
-      { category: "Site overheads & permits", amount: 12000n, paidBy: "employee", description: "Client lunch (over policy limit)", dateInDays: -8, outcome: "rejected", rejectReason: "Over the org's per-meal policy limit — please resubmit with an itemised receipt." },
+      { category: "Site overheads & permits", amount: 12000n, paidBy: "employee", description: "Client lunch (over policy limit)", dateInDays: -8, outcome: "rejected", rejectReason: "Over the org's per-meal policy limit — please resubmit with an itemised receipt.", receipt: { merchant: "Harbourside Grill", place: "Portland" } },
     ],
-    creditNotes: [{ invoice: "lobbyDeposit", reason: "Overbilled hours — corrected per client review.", lines: [{ line: 0, quantity: 4 }] }],
+    // US-ONB-29: off its invoice; on the paid kitchen invoice, credit kept for the customer; and credit refunded.
+    creditNotes: [
+      { invoice: "lobbyDeposit", reason: "Overbilled hours — corrected per client review.", lines: [{ line: 0, quantity: 4 }] },
+      { invoice: "kitchen", reason: "Six labour hours not worked — credit kept for the next job.", lines: [{ line: 0, quantity: 6 }] },
+      { invoice: "kitchen", reason: "Paint touch-up not needed — refunded.", lines: [{ line: 2, quantity: 20 }], refundInDays: null },
+    ],
     meetings: [
-      { title: "Site walkthrough — Marina office fit-out", contact: "harborview", startInDays: -3, durationHours: 1, location: "48 Harbor Way, Portland, ME 04101", description: "Walk the space with the client before framing sign-off." },
-      { title: "Kickoff call — kitchen renovation scope", contact: "priya", startInDays: -10, durationHours: 1, location: null, description: "Confirm final material selections and schedule." },
-      { title: "Progress review — Phase 2 townhomes", contact: "mapleRidge", startInDays: 3, durationHours: 2, location: "220 Ridge Rd, Burlington, VT 05401", description: null },
-      { title: "Weekly crew scheduling", contact: null, startInDays: 1, durationHours: 1, location: null, description: "Internal — assign crews to next week's jobs." },
+      { title: "Site walkthrough — Marina office fit-out", contact: "harborview", startInDays: -3, startTime: "10:00", durationHours: 1, location: "48 Harbor Way, Portland, ME 04101", description: "Walk the space with the client before framing sign-off." },
+      { title: "Kickoff call — kitchen renovation scope", contact: "priya", startInDays: -10, startTime: "15:30", durationHours: 1, location: null, description: "Confirm final material selections and schedule." },
+      { title: "Progress review — Phase 2 townhomes", contact: "mapleRidge", startInDays: 3, startTime: "11:00", durationHours: 2, location: "220 Ridge Rd, Burlington, VT 05401", description: null },
+      { title: "Weekly crew scheduling", contact: null, startInDays: 1, startTime: "08:30", durationHours: 1, location: null, description: "Internal — assign crews to next week's jobs." },
+      { title: "Glazing scope review — Summit Glass", contact: "summitGlass", startInDays: 8, startTime: "14:00", durationHours: 1, location: null, description: "Agree the curtain wall scope before we finalise the quote." },
+    ],
+    bundles: [
+      { name: "Room refresh", description: "Drywall, two-coat paint and labour for one room.", items: [["drywall", 400], ["painting", 400], ["labour", 16]] },
+      { name: "Kitchen fit-out", description: "Two fixtures, an electrical rough-in and LVP flooring for a standard kitchen.", items: [["plumbing", 2], ["electrical", 1], ["flooring", 220]] },
     ],
   };
 }

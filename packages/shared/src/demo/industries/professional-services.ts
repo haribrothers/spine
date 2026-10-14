@@ -43,11 +43,16 @@ export const PROFESSIONAL_SERVICES: IndustryPack = {
     overseas: { title: "Market-entry advisory", value: 20000, stage: "won", source: "Referral", activity: { type: "call", notes: "Monthly update to the client's board.", dueInDays: 5 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Advisory retainer — next 12 months.", terms: "Billed monthly in advance. Valid for 30 days.", lines: [["retainer", 12]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Payroll for three more branches — volume pricing.", lines: [["payroll", 36, 30], ["bookkeeping", 12, 30], ["advisory", 6]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Finance training for the board and managers.", terms: "Two workshops, dates to agree.", lines: [["training", 2], ["advisory", 4]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "Personal tax — revised to add the rental property; see the latest version.", lines: [["taxreturn", 1], ["advisory", 3]], outcome: "revised" },
-    { slot: "overseas", validUntilInDays: 10, notes: "Entity set-up advice — pending the client's structure chart.", lines: [["advisory", 24], ["secretarial", 1]], outcome: "draft" },
+    { slot: "anchor", title: "Advisory retainer — 12 months", validUntilInDays: 30, notes: "Advisory retainer — next 12 months.", terms: "Billed monthly in advance. Valid for 30 days.", lines: [["retainer", 12]], outcome: "sent" },
+    { slot: "regional", title: "Payroll for three branches", validUntilInDays: 21, notes: "Payroll for three more branches — volume pricing.", lines: [["payroll", 36, 30], ["bookkeeping", 12, 30], ["advisory", 6]], outcome: "draft" },
+    { slot: "institution", title: "Board finance training", validUntilInDays: 14, notes: "Finance training for the board and managers.", terms: "Two workshops, dates to agree.", lines: [["training", 2], ["advisory", 4]], outcome: "sent" },
+    { slot: "consumer", title: "Personal tax return", validUntilInDays: 45, notes: "Personal tax — revised to add the rental property; see the latest version.", lines: [["taxreturn", 1], ["advisory", 3]], outcome: "revised" },
+    { slot: "overseas", title: "Entity set-up advice", validUntilInDays: 10, notes: "Entity set-up advice — pending the client's structure chart.", lines: [["advisory", 24], ["secretarial", 1]], outcome: "draft" },
+  ],
+  lostLead: { title: "Group audit — tender", value: 22000, lines: [["audit", 1], ["advisory", 20]], note: "Our fee came in above their budget." },
+  bundles: [
+    { name: "Small business compliance", description: "A year of bookkeeping, the tax return and company secretarial work.", items: [["bookkeeping", 12], ["taxreturn", 1], ["secretarial", 1]] },
+    { name: "Payroll set-up", description: "A year of payroll with set-up advice.", items: [["payroll", 12], ["advisory", 4]] },
   ],
   invoices: {
     inv01: { notes: "Statutory audit — last financial year.", lines: [["audit", 1]] },
@@ -79,7 +84,14 @@ export const PROFESSIONAL_SERVICES: IndustryPack = {
     bill4: { ref: "MCS-3019", lines: [{ name: "Meeting room hire", quantity: 4, price: 120, service: true, in: { price: 3500, hsnSac: "997212", slab: 18 } }] },
     bill5: { ref: "LLS-5611", lines: [{ name: "Document management add-on", quantity: 8, price: 40, service: true, in: { price: 1400, hsnSac: "997331", slab: 18 } }] },
     bill6: { ref: "JRS-0533", lines: [{ name: "Company filings search pack", quantity: 1, price: 450, service: true, in: { price: 14000, hsnSac: "9983", slab: 18 } }] },
+    bill7: { ref: "MCS-3088", lines: [{ name: "Training room hire — full day", quantity: 1, price: 380, service: true, in: { price: 9500, hsnSac: "997212", slab: 18 } }] },
+    // US-ONB-33: 90+ days late, 31–60 days late, and two paid together.
+    bill8: { ref: "LLS-5488", lines: [{ name: "Payroll module — quarter", quantity: 1, price: 360, service: true, in: { price: 11000, hsnSac: "997331", slab: 18 } }] },
+    bill9: { ref: "MCS-3051", lines: [{ name: "Hot desks — 10 days", quantity: 10, price: 35, service: true, in: { price: 900, hsnSac: "997212", slab: 18 } }] },
+    bill10: { ref: "JRS-0468", lines: [{ name: "Case law search pack", quantity: 1, price: 320, service: true, in: { price: 9500, hsnSac: "9983", slab: 18 } }] },
+    bill11: { ref: "JRS-0481", lines: [{ name: "Land registry searches", quantity: 4, price: 45, service: true, in: { price: 1200, hsnSac: "9983", slab: 18 } }] },
   },
+  recurringBill: { name: "Co-working desks", line: { name: "Dedicated desks — monthly", quantity: 3, price: 290, service: true, in: { price: 8500, hsnSac: "997212", slab: 18 } } },
   expenses: {
     exp1: { category: "Subscriptions & research", amount: 280, inAmount: 8500, description: "Professional journal subscriptions", paidBy: "company" },
     exp2: { category: "Insurance", amount: 1400, inAmount: 42000, description: "Professional indemnity premium — instalment", paidBy: "company" },

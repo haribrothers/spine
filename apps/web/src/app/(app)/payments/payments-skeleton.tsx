@@ -4,10 +4,11 @@ import { Skeleton, TableSkeleton } from "@spine/ui";
 const TABLE_COLUMNS = [
   { key: "number", header: "Number", width: "w-24" },
   { key: "date", header: "Date", width: "w-24" },
-  { key: "contact", header: "Contact", width: "w-40" },
+  { key: "contact", header: "Customer", width: "w-40" },
   { key: "method", header: "Method", width: "w-28" },
   { key: "amount", header: "Amount", width: "w-24" },
-  { key: "unallocated", header: "Unallocated", width: "w-28" },
+  { key: "applied", header: "Applied to", width: "w-28" },
+  { key: "credit", header: "Credit left", width: "w-24" },
 ];
 
 /** Loading placeholder shaped like PaymentsTable's actual columns. */

@@ -7,9 +7,10 @@ import { Repeat } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { formatMoney } from "../../../../lib/money";
-import { useEntityToast } from "../entity-toast";
+import { useToast } from "../../../../components/toast-host";
 import { RecurringInvoiceDialog } from "./recurring-invoice-dialog";
 import { RecurringRowActions } from "./recurring-row-actions";
+import { ActionError } from "../../../../components/action-error";
 
 const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
   active: "bg-paid-bg text-paid",
@@ -36,9 +37,10 @@ export function RecurringInvoicesView() {
   const canManage = useCapability("invoices.manage_recurring");
   const [schedules, setSchedules] = useState<RecurringInvoice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<RecurringInvoice | null>(null);
-  const { show: showToast, toast } = useEntityToast();
+  const showToast = useToast();
 
   const load = useCallback(() => {
     apiClient
@@ -125,6 +127,7 @@ export function RecurringInvoicesView() {
             schedule={row}
             onEdit={setEditing}
             onChanged={(saved, action) => {
+              setActionError(null);
               load();
               showToast(
                 action === "paused" ? "Schedule paused" : "Schedule resumed",
@@ -132,10 +135,11 @@ export function RecurringInvoicesView() {
               );
             }}
             onDeleted={(deleted) => {
+              setActionError(null);
               load();
               showToast("Schedule deleted", `${deleted.name} is deleted. Invoices it already created are kept.`);
             }}
-            onError={(message) => showToast("Couldn't change the schedule", message)}
+            onError={(message) => setActionError({ title: "Couldn't change the schedule.", message })}
           />
         </div>
       ),
@@ -146,6 +150,7 @@ export function RecurringInvoicesView() {
     <>
       {header}
       <div className="flex flex-col gap-4">
+        {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
         {!schedules ? (
           <TableSkeleton columns={columns} rows={3} />
         ) : schedules.length === 0 ? (
@@ -184,7 +189,6 @@ export function RecurringInvoicesView() {
             );
           }}
         />
-        {toast}
       </div>
     </>
   );
