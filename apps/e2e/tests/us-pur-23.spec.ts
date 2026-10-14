@@ -54,7 +54,10 @@ test.describe("US-PUR-23", () => {
 
   test("a trade used before is suggested with its last day rate", async ({ page, seededOrg: _ }) => {
     await page.goto("/expenses");
+    // The form loads the trades used before as it opens; type once they're in.
+    const trades = page.waitForResponse((res) => res.url().includes("/expenses/labour-trades"));
     await page.getByRole("button", { name: "Submit expense" }).first().click();
+    await trades;
     const dialog = page.getByRole("dialog", { name: "Submit an expense" });
     await dialog.getByRole("radio", { name: "Headcount × day rate" }).click();
     await dialog.getByRole("combobox", { name: "Trade 1" }).fill("Mason");

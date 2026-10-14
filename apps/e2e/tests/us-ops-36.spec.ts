@@ -47,8 +47,12 @@ test.describe("US-OPS-36", () => {
     test.setTimeout(120_000);
     await page.goto("/contacts");
 
-    await page.getByRole("radio", { name: "List view" }).hover();
-    await expect(page.getByRole("tooltip", { name: "List view" })).toBeVisible();
+    // A hover before the page is interactive goes unseen, so move away and hover again until it shows.
+    await expect(async () => {
+      await page.mouse.move(400, 600);
+      await page.getByRole("radio", { name: "List view" }).hover();
+      await expect(page.getByRole("tooltip", { name: "List view" })).toBeVisible({ timeout: 1_500 });
+    }).toPass({ timeout: 20_000 });
     // Moving away (a real pointer keeps moving, which closes it past the tooltip's grace area).
     await page.mouse.move(400, 600);
     await page.mouse.move(420, 620);
@@ -61,7 +65,10 @@ test.describe("US-OPS-36", () => {
     // The tooltip doesn't replace the accessible name.
     await expect(page.getByRole("radio", { name: "Table view" })).toBeFocused();
 
-    await page.getByRole("button", { name: "Refresh list" }).hover();
-    await expect(page.getByRole("tooltip", { name: "Refresh list" })).toBeVisible();
+    await expect(async () => {
+      await page.mouse.move(400, 600);
+      await page.getByRole("button", { name: "Refresh list" }).hover();
+      await expect(page.getByRole("tooltip", { name: "Refresh list" })).toBeVisible({ timeout: 1_500 });
+    }).toPass({ timeout: 20_000 });
   });
 });

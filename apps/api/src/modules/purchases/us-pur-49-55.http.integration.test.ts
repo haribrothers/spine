@@ -169,8 +169,11 @@ describe("US-PUR-49 to US-PUR-55 · vendor payments you can work from (requires 
     vi.spyOn(emailService, "isConfigured").mockReturnValue(true);
     const sent = vi.spyOn(emailService, "send").mockResolvedValue();
     await json(await call(owner, "POST", `/vendor-payments/${payment!.id}/remittance/send`, { to: draft.to, subject: draft.subject, body: draft.body }));
-    expect(sent).toHaveBeenCalledTimes(1);
-    const args = sent.mock.calls[0]![0];
+    // Only the remittance counts: the app's own queue may send another email (e.g. a receipt queued
+    // earlier in this file) while the spy is on.
+    const remittances = sent.mock.calls.filter(([email]) => email.log?.kind === "remittance");
+    expect(remittances).toHaveLength(1);
+    const args = remittances[0]![0];
     expect(args.to).toBe("accounts@ridgeline.example");
     expect(args.attachments?.some((a) => a.filename === `remittance-${payment!.number}.pdf`)).toBe(true);
     expect(args.log).toMatchObject({ kind: "remittance", entityType: "vendor_payment", entityId: payment!.id });
