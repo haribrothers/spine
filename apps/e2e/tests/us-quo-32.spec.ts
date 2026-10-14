@@ -13,6 +13,11 @@ test.describe("US-QUO-32", () => {
     await page.goto(`/quotes/${q.id}`);
     const activity = page.getByTestId("quote-activity");
     await expect(activity.getByTestId("quote-not-viewed")).toHaveText("Not viewed yet");
+    // The email goes out from the job queue; wait for it, so the customer's acceptance comes after it.
+    await expect(async () => {
+      await page.reload();
+      await expect(activity).toContainText("Emailed to", { timeout: 1_000 });
+    }).toPass({ timeout: 30_000 });
 
     const token = await linkToken(page, q.id);
     await view(page, token);

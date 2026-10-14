@@ -249,12 +249,17 @@ export class ExpensesService {
    */
   async labourTrades(orgId: string, query?: string, onlySubmittedBy?: string): Promise<{ trade: string; lastDayRateAmount: string }[]> {
     const q = query?.trim().toLowerCase();
+    // Each trade once, with its latest day rate; then the 20 used most recently (not the first 20
+    // alphabetically, which hid every later trade once a business had used more than 20).
     const rows = await this.db.execute<{ trade: string; day_rate_amount: string }>(sql`
-      select distinct on (lower(${expenseLabourLines.trade})) ${expenseLabourLines.trade} as trade, ${expenseLabourLines.dayRateAmount}::text as day_rate_amount
-      from ${expenseLabourLines}
-      where ${expenseLabourLines.orgId} = ${orgId} ${q ? sql`and lower(${expenseLabourLines.trade}) like ${`%${q}%`}` : sql``}
-      ${onlySubmittedBy ? sql`and ${expenseLabourLines.expenseId} in (select ${expenses.id} from ${expenses} where ${expenses.submittedByUserId} = ${onlySubmittedBy})` : sql``}
-      order by lower(${expenseLabourLines.trade}), ${expenseLabourLines.createdAt} desc
+      select trade, day_rate_amount from (
+        select distinct on (lower(${expenseLabourLines.trade})) ${expenseLabourLines.trade} as trade, ${expenseLabourLines.dayRateAmount}::text as day_rate_amount, ${expenseLabourLines.createdAt} as last_used
+        from ${expenseLabourLines}
+        where ${expenseLabourLines.orgId} = ${orgId} ${q ? sql`and lower(${expenseLabourLines.trade}) like ${`%${q}%`}` : sql``}
+        ${onlySubmittedBy ? sql`and ${expenseLabourLines.expenseId} in (select ${expenses.id} from ${expenses} where ${expenses.submittedByUserId} = ${onlySubmittedBy})` : sql``}
+        order by lower(${expenseLabourLines.trade}), ${expenseLabourLines.createdAt} desc
+      ) as trades
+      order by last_used desc
       limit 20`);
     return (rows as unknown as { trade: string; day_rate_amount: string }[]).map((r) => ({ trade: r.trade, lastDayRateAmount: r.day_rate_amount }));
   }

@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { test as base, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { signUpNewOrg } from "./helpers";
+import { openSettledDashboard, signUpNewOrg } from "./helpers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
+const APP_URL = process.env.APP_URL ?? "http://localhost:3110";
 
 /**
  * The demo-data seed's own Field-role user (`demo-data.service.ts`'s
@@ -92,11 +93,13 @@ export const test = base.extend<SeededOrgFixture, { seededOrgWorker: SeededOrgFi
 
 export { expect };
 
-/** Logs the given page into an already-existing account — used to switch to the seeded Field user within a seeded org's own test. */
+/**
+ * Signs the page into an existing account and opens the dashboard — through
+ * the API, not the login page (D-241: the login page has its own specs). The
+ * session cookie lands in the page's browser context, replacing any other.
+ */
 export async function logIn(page: Page, { email, password }: { email: string; password: string }): Promise<void> {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel(/^Password/).fill(password);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL("**/dashboard");
+  const res = await page.request.post(`${API_URL}/api/auth/sign-in/email`, { data: { email, password }, headers: { Origin: APP_URL } });
+  if (!res.ok()) throw new Error(`Sign-in failed for ${email}: ${res.status()} ${await res.text()}`);
+  await openSettledDashboard(page);
 }

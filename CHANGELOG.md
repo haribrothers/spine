@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-13 — Cheaper, steadier E2E setup (D-241)
+
+- **Sign-in through the API:** `signUpNewOrg` and `logIn` sign up and sign in through the API instead of the sign-up, onboarding and login pages (which keep their own specs), then open the dashboard once the person's permissions have loaded.
+- **MailDev:** `clearInbox` no longer empties the inbox; it remembers what's there and `waitForEmail` ignores those.
+- **Faster queue in E2E:** the E2E API's job queue polls every 0.5 s (`QUEUE_POLLING_SECONDS` in `.env.e2e`; unset in production) — the slowest email test went from 23 s to 2 s.
+- **CI:** the E2E job keeps the web app's Next.js build cache between runs.
+- **Steadier tests:** US-QUO-32 waits for the quote's email before the customer accepts; US-JOB-32 waits for the contact filter to load; US-MTG-14 answers its permissions request from a copy taken first; US-AUTH-14 leaves the dashboard before clearing cookies. US-RPT-23 lets each favourite save finish before the next (each saves the whole list). US-INV-23 reminds one of the demo's own invoices (an earlier spec's invoice had a customer with no email) and checks the send's answer, not only its toast; US-RPT-15 counts the table's first page (10 jobs), since earlier specs add jobs.
+- **The four flaky tests (R-24) fixed:** dashboard "Edit layout" lets each layout save land; US-INV-18 switches automatic reminders back off (their 15-minute job was reminding US-INV-23's invoice first); US-OPS-26 searches the jobs list for the demo job; and US-PUR-23's missing suggestion was a real bug — `GET /expenses/labour-trades` returned the first 20 trades alphabetically, so a business past 20 trades never saw later ones suggested. It now returns the 20 used most recently, newest first (integration test added).
+- **Tried and not kept:** parallel workers (2 were ~30% faster on a sample, 4 slower, with new failures) — reasons in D-241.
+
 ### 2026-10-13 — One native doc app (D-240)
 
 - **Removed `apps/design-system-native`**, the unused first doc app for `@spine/ui-native`, and its `dev:ui-native` script. `apps/showcase-native` is now the one native doc app (supersedes D-034).

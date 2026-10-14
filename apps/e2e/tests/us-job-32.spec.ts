@@ -34,6 +34,8 @@ test.describe("US-JOB-32", () => {
     // Only contacts with a job are offered.
     await page.goto("/jobs");
     await page.getByRole("combobox", { name: "Filter by contact" }).click();
+    // The contacts load after the list opens.
+    await expect.poll(() => page.getByRole("listbox").getByRole("option").count()).toBeGreaterThan(1);
     const options = await page.getByRole("listbox").getByRole("option").allTextContents();
     expect(options[0]).toBe("All contacts");
     expect(options.length).toBeGreaterThan(1);

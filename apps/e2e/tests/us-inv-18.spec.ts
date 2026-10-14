@@ -1,5 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
 
 async function openReminders(page: Page) {
   await page.getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
@@ -10,6 +13,15 @@ async function openReminders(page: Page) {
 }
 
 test.describe("US-INV-18", () => {
+  // The seeded organisation is shared by the whole run: put automatic reminders back off, or their
+  // 15-minute job reminds invoices other specs are about to remind by hand (US-INV-23).
+  test.afterEach(async ({ page }) => {
+    const current = (await (await page.request.get(`${API_URL}/org/settings/invoice_reminders`)).json()) as { value: Record<string, unknown> | null };
+    if (current.value?.enabled) {
+      await page.request.put(`${API_URL}/org/settings/invoice_reminders`, { data: { value: { ...current.value, enabled: false } }, headers: { "Idempotency-Key": randomUUID() } });
+    }
+  });
+
   test("reminders are off by default with the schedule, need at least one day when on, save, and preview the email", async ({ page, seededOrg: _ }) => {
     const pane = await openReminders(page);
     await expect(pane.getByRole("switch", { name: "Send reminders automatically" })).not.toBeChecked();

@@ -66,11 +66,15 @@ test.describe("US-MTG-14", () => {
   test("without the right to create meetings there's no New meeting button", async ({ page }) => {
     test.setTimeout(120_000);
     await meetingsOrg(page);
-    await page.route("**/org/members/me/capabilities", async (route) => {
-      const res = await route.fetch();
-      const caps = (await res.json()) as Record<string, boolean>;
-      await route.fulfill({ response: res, json: { ...caps, "meetings.edit_own": false } });
-    });
+    // The person's real permissions, once, then every request for them answered without the right
+    // to create meetings — nothing fetched mid-navigation, so nothing to be dropped.
+    const caps = (await (await page.request.get(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110"}/org/members/me/capabilities`)).json()) as Record<string, boolean>;
+    await page.route("**/org/members/me/capabilities", (route) =>
+      route.fulfill({
+        json: { ...caps, "meetings.edit_own": false },
+        headers: { "access-control-allow-origin": process.env.APP_URL ?? "http://localhost:3110", "access-control-allow-credentials": "true" },
+      }),
+    );
     await page.goto("/meetings");
     await expect(page.getByRole("radio", { name: "Week view" })).toBeVisible();
     await expect(page.getByRole("button", { name: "New meeting" })).toHaveCount(0);

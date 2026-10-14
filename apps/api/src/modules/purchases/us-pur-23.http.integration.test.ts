@@ -99,6 +99,16 @@ describe("US-PUR-23 · enter site labour as headcount × day rate (requires loca
     expect(trades).toEqual([{ trade: "Mason", lastDayRateAmount: "100000" }]);
   });
 
+  it("offers the 20 trades used most recently, so one used just now is there however many came before", async () => {
+    for (let i = 0; i < 22; i++) {
+      await call("POST", "/expenses", labour({ amount: "100000", labourLines: [{ trade: `Apprentice ${String(i).padStart(2, "0")}`, headcount: 1, dayRateAmount: "100000" }] }));
+    }
+    await call("POST", "/expenses", labour({ amount: "570000", labourLines: [{ trade: "Welder", headcount: 3, dayRateAmount: "190000" }] }));
+    const trades = (await call("GET", "/expenses/labour-trades")).json as unknown as { trade: string; lastDayRateAmount: string }[];
+    expect(trades).toHaveLength(20);
+    expect(trades[0]).toEqual({ trade: "Welder", lastDayRateAmount: "190000" });
+  });
+
   it("approved, it posts like any expense to the category's account, tagged to the job", async () => {
     const created = (await call("POST", "/expenses", labour())).json;
     expect((await call("POST", `/expenses/${created.id}/approve`, { comment: null })).status).toBeLessThan(300);

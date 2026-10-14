@@ -308,6 +308,16 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @spine/e2e exec playwright install-deps chromium
 
+      # D-241: Next.js keeps its build cache between runs, so the E2E build only redoes what changed.
+      - name: Cache the web app's build
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next-e2e/cache
+          key: next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/web/src/**', 'apps/web/public/**', 'apps/web/next.config.*', 'packages/ui/src/**', 'packages/shared/src/**', 'packages/config/**') }}
+          restore-keys: |
+            next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            next-e2e-${{ runner.os }}-
+
       # Stops after five failing specs (maxFailures in playwright.config.ts).
       - name: Run E2E suite
         run: pnpm --filter @spine/e2e test

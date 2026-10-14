@@ -6,6 +6,8 @@ test.describe("US-AUTH-14", () => {
   test("login sits in the Spine frame: logo, illustration beside it, show/hide password, Caps Lock and a wrong-password message that says what to do", async ({ page }) => {
     const email = `us-auth-14-${randomUUID()}@example.com`;
     await signUpNewOrg(page, { name: "Owner", email, password: "TestPassword123!" });
+    // Leave the dashboard before its session goes, so its own requests don't race the next page.
+    await page.goto("about:blank");
     await page.context().clearCookies();
 
     await page.setViewportSize({ width: 1280, height: 800 });

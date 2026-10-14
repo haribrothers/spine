@@ -110,7 +110,8 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
   {
     name: "job-costing",
     open: async (page) => {
-      await page.goto("/jobs");
+      // Earlier specs add jobs to the shared organisation, so find the demo's job rather than expect it on page one.
+      await page.goto("/jobs?q=Hotel%20lobby%20renovation");
       await page.getByRole("link", { name: /Hotel lobby renovation/ }).first().click();
       await page.getByRole("tab", { name: /Costing/ }).click();
       await expect(page.getByRole("tabpanel")).toBeVisible();

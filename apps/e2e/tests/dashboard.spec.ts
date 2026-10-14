@@ -96,7 +96,11 @@ test.describe("Dashboard v2", () => {
     // container div (which also contains the widget's OWN "Money in
     // trend" heading, plus every other widget sharing the same ancestor
     // grid, so a loose `div` text filter matches far too broadly).
+    // The layout saves in the background; let this save land before the next one, or the
+    // older save can arrive last and hide the widget again.
+    const hidden = page.waitForResponse((res) => res.url().includes("/users/me/dashboard-layout") && res.request().method() === "PUT");
     await editModeHideToggle(page, "Money in and out").click();
+    await hidden;
 
     // Hidden state in edit mode is dimmed (opacity-40), not removed —
     // confirm the toggle flipped to "Show widget" rather than asserting
