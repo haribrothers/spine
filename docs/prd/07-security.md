@@ -56,7 +56,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 | | `ledger.view` (account drill-down) | ✗ | — |
 | | `reports.view_financial_statements` (P&L, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, sales and purchase analysis, GSTR-1 and Tally exports; Phase 8, D-136). Added with US-RPT-23, off for every Team (migration `0097`); US-RPT-36 moved P&L, Balance Sheet, Trial Balance, Tax Summary and revenue trend onto it | ✗ | — |
 | Banking | `banking.view`, `banking.record`, `banking.reconcile` (Phase 8, US-BANK-12) | ✗ | — |
-| AI assistant | `ai.use` (Phase 9, US-AI-05; hidden while AI is off) | ✗ | ✓F `ai.read_own_receipt` only (own expense on the phone) |
+| AI assistant | `ai.use` (Phase 10, US-AI-05; hidden while AI is off) | ✗ | ✓F `ai.read_own_receipt` only (own expense on the phone) |
 | Contacts | `contacts.edit_own`, `contacts.edit_others`, `contacts.delete_own`, `contacts.delete_others` | ✓ | — |
 | | `contacts.manage_persons`, `contacts.manage_addresses` (checked in addition to the contact's own/others check) | ✓ | — |
 | Catalogue | `catalog.edit_own`, `catalog.edit_others`, `catalog.delete_own`, `catalog.delete_others` | ✓ | — |
@@ -205,12 +205,12 @@ No new capabilities: every new figure reuses an existing grant, in both the API 
 - **UPI**: the UPI ID is shown on PDFs by design; no gateway keys are stored. Email templates are rendered with HTML escaping of every placeholder value; only Spine's own placeholders are accepted ([D-153](12-decisions.md)).
 - **Statement files** are parsed in memory, limited to 2 MB and 5,000 rows, and only the parsed lines are stored — the uploaded CSV itself is not kept.
 
-## Added with the AI assistant (Phase 9, D-162–D-173)
+## Added with the AI assistant (Phase 10, D-162–D-173, D-242)
 
 - **Off means off.** With the AI module off, every `/ai/*` route answers 403 `MODULE_OFF` before any other check, no AI control renders, no AI job is queued and no request reaches a provider (network test, NFR-REL-12). With a feature switched off, its route answers 403 `AI_FEATURE_OFF`.
 - **Owner-only configuration**: `GET/PUT /org/ai`, `POST /org/ai/test`, `GET /org/ai/usage`. Turning AI on with a non-local provider requires an acknowledgement that's audited (D-164).
 - **Provider secrets**: the API key is encrypted at rest with a key derived from `AUTH_SECRET`, returned only as a masked hint, never logged (including request logs and error traces), never sent to the browser in full, excluded from data exports and backups' readable form. Rotating `AUTH_SECRET` requires re-entering the key.
-- **Permission scope**: AI routes run as the caller. Anything the AI is given (the document, candidate catalogue items, recent categorised entries) is read through the module's own services with the caller's capabilities and ownership rules. `ai.use` is required for Staff; Field passes only `ai.read_own_receipt` on an expense they submitted. Bank suggestions also require `banking.reconcile`; email drafts require the right to send that document.
+- **Permission scope**: AI routes run as the caller. Anything the AI is given (the document, candidate catalogue items, recent categorised entries) is read through the module's own services with the caller's capabilities and ownership rules. `ai.use` is required for Staff; Field passes only `ai.read_own_receipt` on an expense they submitted. Bank suggestions also require `banking.reconcile`; email drafts require the right to send that document. `ai.use` is a permission, not a section ([D-242](12-decisions.md)): reading a bill also needs `vendor_bills.open` and `vendor_bills.edit_own`, drafting quote lines `quotes.open` and `quotes.edit_own`, and reading a receipt the right to submit that expense.
 - **No writes by AI**: AI routes are read-only — they return suggestions and never call a mutating service (route-introspection test). Saving goes through the normal routes and checks ([D-166](12-decisions.md)).
 - **Data minimisation**: the redaction step removes account numbers, IFSC/routing numbers, IBANs, card numbers, tax IDs/GSTINs, PAN, UPI IDs, passwords, keys and tokens from text before it leaves the server ([D-165](12-decisions.md)); documents a person explicitly asks AI to read are sent as they are, as the feature's note says.
 - **Prompt injection**: text inside documents, enquiries and statements is data. The model only fills a fixed JSON schema; Spine validates every field (types, lengths, known ids) and ignores anything else, so instructions inside a document can't change what Spine does.

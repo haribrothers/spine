@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-16 — Phase 10 stories fitted to the refined web app (D-242)
+
+- **Branch `phase-10-ai-assistant`.** Before building the AI assistant, its 14 stories (`docs/features/21-ai.md`) were rewritten against the screens the refinements rebuilt — same scope and ids, US-AI-11 renamed "Draft a customer email with AI".
+- **Where AI now sits:** Settings › AI assistant in the Business group (Modules shows it as the fifth module, linking to the pane); `ai.use` in the Team permissions draft, not a section; the bill page's header card and compact rows, with the duplicate-bill check on what AI read; the expense form's first file, filling Description with the merchant and using the receipt's tax before the category's default; the shared send dialog, so every customer email can be drafted; compact quote rows; the reconcile Suggested tab, where "Suggest with AI" runs on request and "Match all suggested" stays rules only; and "filled in with AI by <name>" in each record's activity.
+- **Shared rules** (marked until changed, empty fields only, hidden when not allowed, the form's own confirms and toasts) are stated once in the feature file.
+- **Contracts:** `POST /org/ai/test` returns the provider's model list; AI routes name the section and record rights they also need; bank suggestions run only on request; bill, expense and quote activity entries gain `aiAssisted`. 07-security's AI section now says Phase 10.
+- **Screens:** 17 AI screens listed in `docs/design/screens.md` to draw in the Claude Design project "Spine web — Phase 10 AI assistant" (`ExpenseDialogAi` → `ExpenseFormAi`, `EmailDraftAi` → `SendEmailDialogAi`). No code changed.
+
 ### 2026-10-13 — Cheaper, steadier E2E setup (D-241)
 
 - **Sign-in through the API:** `signUpNewOrg` and `logIn` sign up and sign in through the API instead of the sign-up, onboarding and login pages (which keep their own specs), then open the dashboard.
