@@ -2,7 +2,42 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlarmClock, ArrowUpRight, Bell, BellRing, Bot, Building2, Calendar, CalendarClock, ChevronLeft, ChevronRight, Coins, Columns3, Database, Download, Files, FileText, History, KeyRound, Landmark, ListOrdered, Mail, Mails, Palette, Percent, Scale, Search, Shield, ShieldAlert, Sparkles, ToggleRight, type LucideIcon, UserCog, UserRound, Wallet } from "lucide-react";
+import {
+  AlarmClock,
+  ArrowUpRight,
+  Bell,
+  BellRing,
+  Bot,
+  Building2,
+  Calendar,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Coins,
+  Columns3,
+  Database,
+  Download,
+  Files,
+  FileText,
+  History,
+  KeyRound,
+  Landmark,
+  ListOrdered,
+  Mail,
+  Mails,
+  Palette,
+  Percent,
+  Scale,
+  Search,
+  Shield,
+  ShieldAlert,
+  Sparkles,
+  ToggleRight,
+  UserCog,
+  UserRound,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { Button, Dialog, DialogContent, DialogTitle, Input, cn, useConfirm } from "@spine/ui";
 import { ownedByOffModule, type TaxProfile } from "@spine/shared";
 import { useModules } from "../lib/modules-context";
