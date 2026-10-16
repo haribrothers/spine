@@ -602,8 +602,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 Stories and screens reworked for the refined web app before building (D-242), on `phase-10-ai-assistant`.
 
-- [ ] US-AI-01 · Switch the AI assistant on or off
-- [ ] US-AI-02 · Connect a local or cloud AI provider
+- [x] US-AI-01 · Switch the AI assistant on or off
+- [x] US-AI-02 · Connect a local or cloud AI provider
 - [ ] US-AI-03 · Choose which AI features are on
 - [ ] US-AI-04 · Set a monthly AI budget and see usage
 - [ ] US-AI-05 · Let a Team use AI

@@ -5141,6 +5141,21 @@ Use an owner with the demo loaded, Sarah Mendes (Staff) and Marcus Webb (Field) 
 11. Phone width: the palette fills the screen and the chips scroll sideways. Screen reader: the dialog is "Search", the field a combobox; icons aren't read.
 12. Regression: a document number ("INV-0010", "QUO-4") is still the first result; Settings' own search, the Reports page search and every list's search box work as before; Field still sees only their jobs, meetings and expenses.
 
+## 236. Settings › AI assistant: the switch and the provider (US-AI-01, US-AI-02, Phase 10)
+
+Use a new owner (no demo needed) and Sarah Mendes (Staff) in a second browser. For a local model, run Ollama on this machine or another on the network (`ollama serve`, then `ollama pull llama3.2-vision` and `ollama pull qwen2.5:7b`); for the cloud path, an Anthropic API key with a little credit. Check light and dark and a phone width, and compare with the canvas "01 Settings" of the Claude Design project "Spine web — Phase 10 AI assistant".
+
+1. Owner › Settings: "AI assistant" (Bot icon) sits in Business after Modules; searching settings for "AI", "provider", "model", "budget" or "receipts" finds it. Sarah doesn't see it, and `/dashboard?settings=ai` opens her Profile.
+2. A new install: the switch reads Off and the pane says "AI helps fill in forms — reading bills and receipts, drafting emails and quote lines, suggesting bank matches. It never saves, sends or posts anything by itself." Switching on says "Connect a provider first." and stays off.
+3. Local model: choose "Local or OpenAI-compatible", enter `http://<ollama-host>:11434/v1`, open Model — it lists the server's models; you can also type one. Test connection with llama3.2-vision: "Connected · llama3.2-vision · reads images: yes"; with qwen2.5:7b: "reads images: no". A wrong address: "Couldn't reach <address>: the connection was refused. Check the address and key, then try again." Save toasts "AI provider saved".
+4. Switch on with the local model: no question; toast "AI assistant is on". Settings › Modules shows "AI assistant" as the fifth module, "On · <ollama-host>:11434", and "Set up in AI assistant" opens this pane.
+5. Anthropic: choose "Anthropic Claude", paste the key, pick or type a model (e.g. claude-sonnet-5-5), Test connection: "Connected · <model> · reads images: yes". Save while AI is on: "Send AI requests here?" names api.anthropic.com and lists what each feature sends and "Never sent: …"; Use this provider saves it. Reopen the pane: the key shows only as "••••" and its last four characters, with Replace key.
+6. Switch off: "Turn off AI?" says "AI buttons disappear for everyone. Nothing already saved changes."; toast "AI assistant is off". Switch on again: no second question for the same provider.
+7. Audit log (Team › Audit log, record type AI assistant): each switch, provider change and the acknowledgement ("Sends business data to api.anthropic.com"); the key appears only as "••••" and four characters.
+8. Unsaved changes: edit the server address and pick another pane — "Discard unsaved changes to AI assistant?". Discard drops the edit.
+9. Security: in Sarah's browser, `GET /org/ai` and `PUT /org/ai` answer 403; `GET /org/settings` doesn't include `ai` or `ai_provider_key`; `GET /org/settings/ai` answers 403. A data export's settings.csv has no `ai_provider_key` row. With AI off, `GET /ai/status` answers 403 "The AI assistant is off. An owner can switch it on in Settings › AI assistant."; the provider gets no request unless an Owner presses Test connection (watch Ollama's log).
+10. Regression: Settings › Modules still switches its four modules as before and their Save is unchanged; every other Business pane opens and saves; Set up Spine and onboarding's settings still open their panes.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
@@ -5148,7 +5163,7 @@ Use an owner with the demo loaded, Sarah Mendes (Staff) and Marcus Webb (Field) 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
-- Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
+- Settings › AI assistant has no Features or Monthly budget cards yet; they arrive with US-AI-03 and US-AI-04, and no AI control shows in a form until US-AI-08 onwards. The Model picker offers to "Create" a typed model name. Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

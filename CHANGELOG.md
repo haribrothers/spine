@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-17 — Settings › AI assistant: the switch and the provider (US-AI-01, US-AI-02, D-243)
+
+- **One switch for all AI:** Settings › AI assistant (Business group, after Modules; Owner-only) starts off. It won't switch on without a provider ("Connect a provider first."); with a provider outside the local network it asks "Turn on AI?", names the host and lists what each feature sends and what's never sent; the acknowledgement is audited and remembered for that host. Switching off asks too. Toasts say what happened.
+- **The fifth module:** AI owns `/ai/*`, which answers 403 `MODULE_OFF` while it's off; Settings › Modules lists it with its state and "Set up in AI assistant". `GET /org/modules` adds `ai: true` only while it's on, so the four Modules switches and their Save are unchanged.
+- **Your own provider:** "Local or OpenAI-compatible" (server address, model, optional key — Ollama, vLLM, LM Studio or a cloud service) or "Anthropic Claude" (key and model). The Model picker lists what the provider reports and takes a typed name; Test connection says "Connected · <model> · reads images: yes/no" or "Couldn't reach <address>: <reason>. Check the address and key, then try again." Drivers call each API with `fetch` through one client with a 30-second timeout — no provider SDK.
+- **The key:** sealed with AES-256-GCM under a key derived from `AUTH_SECRET`, in its own `ai_provider_key` setting; shown only as "••••" and its last four characters with Replace key; never returned, logged, audited in full or exported. The generic `/org/settings` routes no longer read or write the `ai` key or any secret key.
+- **Tests:** `us-ai-01`/`us-ai-02` integration tests against a stand-in local provider (and a spy for Anthropic) prove nothing reaches a provider while AI is off; web tests for the pane; an E2E run through the whole flow with a stand-in server. US-SET-31's Business group now ends with AI assistant. QA script section 236.
+- **Steadier test:** US-INV-20 looks for the "Recurring invoices" heading exactly — with no schedules yet, "No recurring invoices yet" matched too.
+
 ### 2026-10-16 — Phase 10 stories fitted to the refined web app (D-242)
 
 - **Branch `phase-10-ai-assistant`.** Before building the AI assistant, its 14 stories (`docs/features/21-ai.md`) were rewritten against the screens the refinements rebuilt — same scope and ids, US-AI-11 renamed "Draft a customer email with AI".

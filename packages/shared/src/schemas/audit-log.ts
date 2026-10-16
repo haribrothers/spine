@@ -49,6 +49,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   tally_export: "Tally export",
   modules: "Modules",
   email: "Email",
+  ai_settings: "AI assistant",
 };
 
 function sentenceCase(key: string): string {
