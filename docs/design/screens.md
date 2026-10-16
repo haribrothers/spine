@@ -5680,103 +5680,159 @@ Shows: "Reconciliations — Spine" · "Money" · "Banking" · "First Coastal —
 
 ## AI assistant
 
-Optional AI help, off by default (D-162–D-173, [features/21-ai.md](../features/21-ai.md)). AI only fills in forms: every suggested value carries a "Suggested by AI" marker until someone changes it, and nothing is saved, sent or posted until a person does it with the form's own button.
+Optional AI help, off by default (D-162–D-173, [features/21-ai.md](../features/21-ai.md)). AI only fills in forms: every value it fills is tinted and tagged "Suggested by AI" (Sparkles icon and words, never colour alone) until someone changes it, and nothing is saved, sent or posted until a person does it with the form's own button.
 
-Reworked for Phase 10 ([D-242](../prd/12-decisions.md)): the screens below are drawn on the refined web app in Claude Design, project "Spine web — Phase 10 AI assistant". Until then, the four marked Redraw still show the first design from the "AI assistant" groups of [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY), and the new ones have no image yet. `ExpenseDialogAi` and `EmailDraftAi` are replaced by `ExpenseFormAi` and `SendEmailDialogAi`.
+Drawn in Claude Design for US-AI-01 to US-AI-14 (D-242): project "Spine web — Phase 10 AI assistant", canvases "01 Settings" to "08 Phone", on the refined web app and the Field app. Shared marks live in its `ai.css`, built only from existing tokens. `ExpenseDialogAi` and `EmailDraftAi` from the first design are replaced by `ExpenseFormAi` and `SendEmailDialogAi`.
 
-### SettingsAi — Settings › AI assistant — switch, provider, features, budget, in the Business group
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01, US-AI-02, US-AI-03, US-AI-04 · **Source:** To draw (Redraw)
+### SettingsAi — Settings › AI assistant — switch, provider, features, budget
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01, US-AI-02, US-AI-03, US-AI-04 · **Source:** Claude Design
 
 ![SettingsAi](screens/SettingsAi.webp)
 
 Links to: `SettingsModulesAi`, `TeamPagePermissionsAi`, `AuditLogAi`
 
-### SettingsAiDark — Settings › AI assistant in dark mode
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01 · **Source:** To draw (New)
+Shows: "AI assistant" in the Business group after Modules (Bot icon) · the On switch · "AI helps fill in forms — … It never saves, sends or posts anything by itself." · Provider beside Features in the large dialog: "Local or OpenAI-compatible" / "Anthropic Claude", "API key" "••••1a2b" "Replace key", "Model" picker, "Test connection" "Connected · claude-sonnet-5-5 · reads images: yes" · Features with a switch each, where they show and "What's sent" · "Monthly budget" across the bottom: tokens a month, "1,240,560 · 62%" with a bar, "318 requests", top features and top people · Save
 
-Links to: —
+### SettingsAiDark — Settings › AI assistant in dark mode — a local model
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01, US-AI-02, US-AI-03 · **Source:** Claude Design
+
+![SettingsAiDark](screens/SettingsAiDark.webp)
+
+Links to: `SettingsAi`
+
+Shows: A local server "http://192.168.1.20:11434/v1", "qwen2.5:14b", "reads images: no" · "Needs a model that can read images. PDFs with text still work." on Read bills and receipts, its "What's sent" open with "Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys." · budget "No limit" · "Unsaved changes" "Discard" "Save"
 
 ### SettingsAiTurnOnConfirm — "Turn on AI?" — what's sent to a cloud provider
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01 · **Source:** To draw (New)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01 · **Source:** Claude Design
+
+![SettingsAiTurnOnConfirm](screens/SettingsAiTurnOnConfirm.webp)
 
 Links to: `SettingsAi`
+
+Shows: The pane off with Anthropic connected · "Turn on AI?" "Business data will be sent to api.anthropic.com when people use AI features. What each feature sends is listed below." with each feature's data and the never-sent line · "Cancel" "Turn on AI"
 
 ### SettingsModulesAi — Settings › Modules with AI assistant as the fifth module
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01 · **Source:** To draw (New)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01 · **Source:** Claude Design
+
+![SettingsModulesAi](screens/SettingsModulesAi.webp)
 
 Links to: `SettingsAi`
 
+Shows: The four modules with their switches · "AI assistant" highlighted: "Reads bills and receipts, drafts customer emails and quote lines, suggests bank matches — with your own provider. Turning it on needs a provider first." "Off" "Set up in AI assistant →"
+
 ### TeamPagePermissionsAi — Team › Permissions draft with the "AI assistant" group changed
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-05 · **Source:** To draw (New (replaces `TeamPrivilegesBooks` for AI))
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-05 · **Source:** Claude Design
+
+![TeamPagePermissionsAi](screens/TeamPagePermissionsAi.webp)
 
 Links to: `SavePermissionsConfirm`
 
+Shows: General Staff's Permissions: groups collapsed, "AI assistant" "1 of 1 · was 0" open with "Use AI features" marked Changed · "What members will open" unchanged, with "AI isn't a section. With Use AI features, members see AI on the bills, expenses, quotes, emails and reconciliations they can already work on." · the bar "1 change" "Discard" "Save changes"
+
 ### AuditLogAi — Team › Audit log filtered to AI requests
-**Priority:** P2 · **Phase:** 10 · **Stories:** US-AI-06 · **Source:** To draw (New (replaces `OrgAuditLog` for AI))
+**Priority:** P2 · **Phase:** 10 · **Stories:** US-AI-06 · **Source:** Claude Design
 
-Links to: —
+![AuditLogAi](screens/AuditLogAi.webp)
 
-### BillActivityAi — A vendor bill's Activity — "filled in with AI by <name>"
-**Priority:** P2 · **Phase:** 10 · **Stories:** US-AI-06 · **Source:** To draw (New)
+Links to: the records it names
 
-Links to: —
+Shows: Filters with record type "AI request" · rows: When, Who, Action ("Read a document", "Drafted an email", "Drafted quote lines", "Suggested bank matches"), Record (opens it), Details (provider and model, tokens, "Worked" or "Didn't answer in 30 seconds") · "What was sent to AI and what came back aren't stored — only who, what, the record and the tokens."
 
-### VendorBillBuilderAi — Bill page — header card and compact rows read from the vendor's PDF, with the duplicate warning
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-08 · **Source:** To draw (Redraw)
+### BillActivityAi — A vendor bill's Activity — "filled in with AI"
+**Priority:** P2 · **Phase:** 10 · **Stories:** US-AI-06 · **Source:** Claude Design
+
+![BillActivityAi](screens/BillActivityAi.webp)
+
+Links to: `VendorBillPage`
+
+Shows: ABM-20611, Unpaid · Attachments "ABM-20611.pdf · added by Kavya Iyer · read by AI" · Activity: "Recorded · posted ₹3,06,916.00 to Accounts Payable", "Created as a draft · filled in with AI" (Kavya Iyer · 16 Oct, 11:44 AM), "Attached ABM-20611.pdf"
+
+### VendorBillBuilderAi — Bill page read from the vendor's PDF — vendor matched, already entered
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-08 · **Source:** Claude Design
 
 ![VendorBillBuilderAi](screens/VendorBillBuilderAi.webp)
 
-Links to: —
+Links to: `VendorBillPage`, `VendorBillBuilderAiError`
 
-### VendorBillBuilderAiDark — Bill page read by AI, in dark mode
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-08 · **Source:** To draw (New)
+Shows: The read strip in the header card "ABM-20611.pdf · Read by AI in 4 seconds · attached to this bill" "Read another document" · Vendor, Bill number, Currency, Bill date, Due date ("From the document") and Place of supply tagged "Suggested by AI" · the duplicate warning on the number read · two compact rows tinted, with "Suggested by AI" in their description rows · "Accounts come from this vendor's last bill · rates matched to yours by percentage" · "Not saved yet" "Save as draft" "Save and record"
 
-Links to: —
+### VendorBillBuilderAiDark — Bill page read from a photo, in dark mode — new vendor, totals differ
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-08 · **Source:** Claude Design
+
+![VendorBillBuilderAiDark](screens/VendorBillBuilderAiDark.webp)
+
+Links to: `VendorBillBuilderAi`
+
+Shows: A photo read · "+ New vendor: Shree Ganesh Hardware — added only if you choose it." · "The document says ₹18,290.00; the lines add up to ₹18,172.00. Check the lines before saving." · "The document has no due date — choose one." · a line not in the catalogue and one with no account yet
 
 ### VendorBillBuilderAiError — Bill page — "AI didn't answer" with the form kept
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-07 · **Source:** To draw (New)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-07 · **Source:** Claude Design
 
-Links to: —
+![VendorBillBuilderAiError](screens/VendorBillBuilderAiError.webp)
 
-### ExpenseFormAi — Expense form — receipt read by AI, category and tax filled
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-09 · **Source:** To draw (New (replaces `ExpenseDialogAi`))
+Links to: `VendorBillBuilderAi`
 
-Links to: —
+Shows: "AI didn't answer. Fill this in by hand or try again. RTE-3318.pdf is attached either way." "Try again" · what was typed kept · the vendor's usual due date suggested · saves by hand as normal
+
+### ExpenseFormAi — Expense form — receipt read, category and tax filled
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-09 · **Source:** Claude Design
+
+![ExpenseFormAi](screens/ExpenseFormAi.webp)
+
+Links to: `ExpensePageWaiting`
+
+Shows: "Read again" under the receipt preview, "read by AI" · "Filled in from the receipt. Check the fields marked Suggested by AI before you submit." · Category "As on your last 3 expenses from HP Fuel Centre.", Date, Currency, Amount, Tax rate, Tax amount "From the receipt: CGST ₹369.92 + SGST ₹369.91." and Description "HP Fuel Centre — HSD diesel, 52.4 L" tagged · Job and Paid by untouched · the same-amount warning
 
 ### MobExpenseNewAi — Phone: expense filled in by AI from a receipt (iOS)
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-10 · **Source:** To draw (Check against the Field app; no tax fields)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-10 · **Source:** Claude Design
 
 ![MobExpenseNewAi](screens/MobExpenseNewAi.webp)
 
-Links to: —
+Links to: `MobExpensesList`
+
+Shows: Form sheet · "Filled in from your receipt. Check the amount, date and category before you submit." · Amount, Category, Date and Description tagged "Suggested by AI" · Job and Paid by untouched · receipt with "Read again" and "Retake" · no tax fields
 
 ### MobExpenseNewAiAndroid — Phone: expense filled in by AI from a receipt (Android)
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-10 · **Source:** To draw (Check against the Field app; no tax fields)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-10 · **Source:** Claude Design
 
 ![MobExpenseNewAiAndroid](screens/MobExpenseNewAiAndroid.webp)
 
-Links to: —
+Links to: `MobExpensesListAndroid`
 
-### SendEmailDialogAi — The send dialog — a reminder drafted by AI with Friendly / Formal / Firm
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11, US-AI-12 · **Source:** To draw (New (replaces `EmailDraftAi`))
+Shows: Full-screen dialog, outlined fields · the same note, tags and fields as iOS · tonal "Read again", outlined "Retake"
 
-Links to: —
+### SendEmailDialogAi — The send dialog — a reminder drafted by AI in a firm tone
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11, US-AI-12 · **Source:** Claude Design
+
+![SendEmailDialogAi](screens/SendEmailDialogAi.webp)
+
+Links to: `EmailLog`
+
+Shows: "Send a payment reminder" for INV-0031 · "Draft with AI" with Tone "Friendly" "Formal" "Firm" · "Drafted by AI — check it before sending. Amounts, dates and numbers stay as placeholders and Spine fills them when it sends." "Try again" "Undo" · Subject and Message tagged "Drafted by AI" with {document_number}, {due_status}, {balance_due} and the other placeholders highlighted · "Sent as: …" · "Attach INV-0031.pdf" · "Send reminder"
 
 ### QuoteBuilderAi — Compact quote builder — "Draft lines with AI" panel and the review list
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-13 · **Source:** To draw (Redraw)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-13 · **Source:** Claude Design
 
 ![QuoteBuilderAi](screens/QuoteBuilderAi.webp)
 
-Links to: —
+Links to: `QuoteBuilderAiDark`
+
+Shows: "Draft lines with AI" beside Add item · side panel: the pasted enquiry, "Draft again", "Proposed lines" tagged "Suggested by AI": catalogue items and a bundle with prices, "Glass shower screen" "Not in your catalogue" "Add a price", one unticked · "5 of 6 ticked" "Close" "Add to quote (5)"
 
 ### QuoteBuilderAiDark — Compact quote builder with AI lines, in dark mode
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-13 · **Source:** To draw (New)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-13 · **Source:** Claude Design
 
-Links to: —
+![QuoteBuilderAiDark](screens/QuoteBuilderAiDark.webp)
+
+Links to: `QuoteBuilderAi`
+
+Shows: The ticked lines added as compact rows, the bundle as its three lines, tinted and tagged · "Add a price — not in your catalogue." on the screen line · totals worked out by Spine · "Unsaved changes"
 
 ### ReconcileAiSuggestions — Reconcile — the Suggested tab with "AI suggests" and Match all for the rules only
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-14 · **Source:** To draw (Redraw)
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-14 · **Source:** Claude Design
 
 ![ReconcileAiSuggestions](screens/ReconcileAiSuggestions.webp)
 
-Links to: —
+Links to: `ReconcileRefined`, `ReconcileMatchAllConfirm`
+
+Shows: "Suggest again" beside "Match all suggested (4)" · Suggested tab 7 · "AI looked at the 5 lines the rules couldn't settle · 3 suggestions. AI suggestions aren't in Match all — check and match each one." · rule suggestions in amber, AI ones "AI suggests: PAY-0040 · Ananya Rao" with the reason · "AI suggests creating: Bank charges · HDFC Bank" with Create · entries panel with the AI suggestion first ("AI suggests"), then "Same amount"
