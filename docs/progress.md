@@ -609,7 +609,7 @@ Stories and screens reworked for the refined web app before building (D-242), on
 - [x] US-AI-05 · Let a Team use AI
 - [x] US-AI-06 · See every AI request in the audit log
 - [x] US-AI-07 · Keep working when AI is unavailable
-- [ ] US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo
+- [x] US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo
 - [ ] US-AI-09 · Fill in an expense from a receipt
 - [ ] US-AI-10 · Fill in my expense from a receipt on the phone
 - [ ] US-AI-11 · Draft a customer email with AI

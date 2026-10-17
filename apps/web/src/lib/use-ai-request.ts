@@ -8,11 +8,12 @@ export type AiRequestState = { status: "idle" } | { status: "working" } | { stat
 
 /**
  * US-AI-07 — what an AI control shows after a request that didn't work:
- * a paused budget, too many requests or a feature switched off say so in
- * their own words; anything else is "AI didn't answer…", with "Try again".
+ * a paused budget, too many requests, a feature switched off, or a file AI
+ * can't read (US-AI-08) say so in their own words; anything else is "AI
+ * didn't answer…", with "Try again".
  */
 export function aiFailure(err: unknown): { message: string; canRetry: boolean } {
-  if (err instanceof ApiError && (err.status === 403 || err.status === 409 || err.status === 429)) return { message: err.message, canRetry: false };
+  if (err instanceof ApiError && [400, 403, 404, 409, 413, 415, 422, 429].includes(err.status)) return { message: err.message, canRetry: false };
   return { message: AI_UNAVAILABLE_MESSAGE, canRetry: true };
 }
 

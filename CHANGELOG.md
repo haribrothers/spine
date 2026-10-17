@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-17 — Fill in a vendor bill from the vendor's PDF or photo (US-AI-08, D-247)
+
+- **"Read from document" on the bill page:** choose or drop the vendor's PDF or photo at the top of the header card. It's attached to the bill, and Vendor, Bill number, Currency, Bill date, Due date, Place of supply and the lines fill in, each marked "Suggested by AI" until changed. "Read" is offered on a PDF or photo already in Attachments too.
+- **Spine does the matching, not the model:** the vendor and catalogue items by name; each line's account from the vendor's last bill or the item; tax rates by percentage for the supply type; the place of supply from the vendor; a due date from the document or its payment terms, else the vendor's usual terms. Totals are Spine's own, with a warning when the document's total differs. A vendor it can't match is offered — added only when you confirm.
+- **What's sent:** a PDF's text; a scanned PDF's first pages or a photo as images (rendered with `@napi-rs/canvas`, added to the API). A model that can't read images says so before anything is sent.
+- **Your entries stay:** AI fills only what you haven't entered and offers the rest with "Replace my entries (<n>)". The bill saves through the normal buttons and says "filled in with AI" in its Activity.
+- **Tests:** API unit (matching, document preparation) and integration (`us-ai-08`, against a stand-in provider), web (`us-ai-08`), and E2E (`us-ai-07-08`: reading a PDF into the bill, and the "AI didn't answer" state with Try again and saving by hand). QA section 240.
+
 ### 2026-10-17 — Keep working when AI is unavailable (US-AI-07, D-246)
 
 - **AI never blocks work:** a provider that fails or can't be reached answers "AI didn't answer. Fill this in by hand or try again." at once (503), one that doesn't answer in 30 seconds the same (504); neither is retried, and forms save by hand as normal.

@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { aiProviderCheckSchema, aiSettingsUpdateSchema } from "@spine/shared";
+import { aiProviderCheckSchema, aiSettingsUpdateSchema, readDocumentSchema } from "@spine/shared";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
 import { AiRequestService } from "./ai-request.service";
+import { ReadDocumentService } from "./read-document/read-document.service";
 
 const firstIssue = (issues: { message: string }[], fallback: string) => issues[0]?.message ?? fallback;
 
@@ -67,10 +68,22 @@ export class AiSettingsController {
  */
 @Controller("ai")
 export class AiController {
-  constructor(private readonly requests: AiRequestService) {}
+  constructor(
+    private readonly requests: AiRequestService,
+    private readonly readDocument: ReadDocumentService,
+  ) {}
 
   @Get("status")
   async status(@Session() session: UserSession) {
     return this.requests.status(requireOrgId(session), session.user.id);
+  }
+
+  /** US-AI-08 — reads a vendor's bill into a suggestion for the bill page. Saves nothing, so no Idempotency-Key (05-api). */
+  @Post("read-document")
+  @HttpCode(200)
+  async read(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = readDocumentSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Choose a file to read."));
+    return this.readDocument.readVendorBill(requireOrgId(session), session.user.id, parsed.data.fileId);
   }
 }

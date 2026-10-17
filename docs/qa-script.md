@@ -5190,6 +5190,25 @@ Use the owner from section 236, with AI on and the provider pointing at a local 
 5. Once US-AI-08 is in: press "Read from document" with Ollama stopped — the red message by the header card reads "AI didn't answer. Fill this in by hand or try again. <file> is attached either way." with "Try again"; what you typed stays. Start Ollama and press "Try again": empty fields fill, typed ones don't. Press "Cancel" while it reads: nothing fills.
 6. Regression: Settings › AI assistant, bills and expenses save, and "Test connection" behave as before.
 
+## 240. Fill in a vendor bill from the vendor's PDF or photo (US-AI-08, Phase 10)
+
+Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b` (reads images; Test connection says "reads images: yes"). Have a vendor's bill as a PDF with text (most emailed invoices), a scanned PDF, and a phone photo (JPEG). For a GST business, set the tax profile to India. Compare with the canvas "VendorBillBuilderAi" and "VendorBillBuilderAiDark".
+
+1. Purchases › Vendor bills › New vendor bill: the top of the header card reads "Read the vendor's bill with AI" with "Read from document". With AI off, the feature off or a Staff member without "Use AI features", the strip isn't there.
+2. Press "Read from document" and choose the PDF: "Reading <file>…" with "Cancel" while it works, and the form stays usable. Then "<file> · Read by AI in <n> seconds · attached to this bill · check what it filled in before you save" with "Read another document".
+3. Vendor, Bill number, Currency, Bill date, Due date and (GST) Place of supply show "Suggested by AI"; the vendor reads "Matched to your vendor." when it's one of yours. Lines arrive as compact rows, tinted, each with "Suggested by AI"; below them "Accounts come from this vendor's last bill · rates matched to yours by percentage" (or only the rates part for a new vendor). Totals in the bar are Spine's.
+4. Change any marked field or line: its mark goes, the others stay.
+5. A due date written as terms reads `From the document: "Payment due within 30 days".` A bill with no due date: the vendor's usual terms as by hand ("Suggested: 20 days, as on this vendor's last bill"), else "The document has no due date — choose one."
+6. A bill number this vendor already has shows the duplicate warning before saving (US-PUR-35).
+7. A document whose printed total differs from the lines: "The document says ₹18,290.00; the lines add up to ₹18,172.00. Check the lines before saving." — it goes once the lines match.
+8. A vendor that isn't in your contacts: "+ New vendor: <name> — added only if you choose it." Nothing is added until you press it and confirm "Add <name> as a vendor?"; then they're chosen and a toast says so. Staff without the right to add contacts see "Not one of your vendors: <name>".
+9. "Save as draft" (or "Save and record", which asks "Record this bill?"): the bill saves as normal, the file is in its Attachments, and its Activity reads "Created as a draft · filled in with AI".
+10. Open a draft bill's edit page and read another document: only empty fields fill; "Replace my entries (<n>)" offers AI's values for the rest and its lines for yours.
+11. In Attachments on a draft, a PDF or photo offers "Read"; an HEIC photo doesn't.
+12. The scanned PDF and the photo read too (sent as images). Switch to a text-only model (`qwen3:4b`, Test connection "reads images: no"): the photo says "Your AI model can't read images. Choose a model that can, or enter the bill by hand." and stays attached; a PDF with text still reads.
+13. Dark mode: the strip, the marks, the tinted rows and the warnings read clearly.
+14. Regression: a bill entered by hand, Duplicate, the due-date suggestion, the duplicate warning, place of supply and Attachments work as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

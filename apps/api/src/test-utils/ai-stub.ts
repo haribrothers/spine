@@ -14,6 +14,8 @@ export interface AiStub {
   requests: AiStubRequest[];
   /** US-AI-07 — `down` answers 500, `hang` never answers; `ok` (the default) answers normally. */
   setMode: (mode: AiStubMode) => void;
+  /** US-AI-08 — what chat completions answer from now on ("OK" until set). */
+  setReply: (content: string) => void;
   close: () => Promise<void>;
 }
 
@@ -28,6 +30,7 @@ export async function startAiStub(options: { models?: string[]; acceptsImages?: 
   const models = options.models ?? ["llama3.2-vision", "qwen2.5:14b"];
   const requests: AiStubRequest[] = [];
   let mode: AiStubMode = "ok";
+  let reply = "OK";
   const server = createServer((req, res) => {
     let raw = "";
     req.on("data", (chunk) => (raw += chunk));
@@ -43,10 +46,11 @@ export async function startAiStub(options: { models?: string[]; acceptsImages?: 
       if (options.key && req.headers.authorization !== `Bearer ${options.key}`) return send(401, { error: { message: "Invalid API key" } });
       if (req.method === "GET" && req.url === "/v1/models") return send(200, { object: "list", data: models.map((id) => ({ id, object: "model" })) });
       if (req.method === "POST" && req.url === "/v1/chat/completions") {
-        const content = (body as { messages?: { content?: unknown }[] })?.messages?.[0]?.content;
+        const messages = (body as { messages?: { role?: string; content?: unknown }[] })?.messages ?? [];
+        const content = (messages.find((m) => m.role === "user") ?? messages[0])?.content;
         const hasImage = Array.isArray(content) && content.some((c: { type?: string }) => c.type === "image_url");
         if (hasImage && options.acceptsImages === false) return send(400, { error: { message: "This model does not support image input" } });
-        return send(200, { choices: [{ message: { role: "assistant", content: "OK" } }], usage: { prompt_tokens: 9, completion_tokens: 1 } });
+        return send(200, { choices: [{ message: { role: "assistant", content: reply } }], usage: { prompt_tokens: 9, completion_tokens: 1 } });
       }
       send(404, { error: { message: "Not found" } });
     });
@@ -57,6 +61,7 @@ export async function startAiStub(options: { models?: string[]; acceptsImages?: 
     url: `http://127.0.0.1:${port}/v1`,
     requests,
     setMode: (next) => (mode = next),
+    setReply: (content) => (reply = content),
     close: () =>
       new Promise((resolve) => {
         server.closeAllConnections();

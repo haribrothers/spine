@@ -20,8 +20,10 @@ export interface FittedReply<T> {
 export function parseAiJson(raw: unknown): Record<string, unknown> | null {
   if (raw !== null && typeof raw === "object" && !Array.isArray(raw)) return raw as Record<string, unknown>;
   if (typeof raw !== "string") return null;
-  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(raw);
-  const text = (fenced ? fenced[1]! : raw).trim();
+  // A reasoning model may think out loud first; only its answer counts.
+  const answer = raw.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(answer);
+  const text = (fenced ? fenced[1]! : answer).trim();
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start < 0 || end <= start) return null;

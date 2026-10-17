@@ -19,6 +19,21 @@ export interface AiDriver {
   listModels(): Promise<string[]>;
   /** A one-token reply from `model`; with a tiny image when `withImage`, to learn whether it reads images. */
   ping(model: string, withImage: boolean): Promise<void>;
+  /** US-AI-08 — one answer from `model` to `prompt`, with any images, and the tokens it used. */
+  complete(model: string, prompt: AiPrompt): Promise<AiCompletion>;
+}
+
+export interface AiPrompt {
+  system: string;
+  text: string;
+  /** Base64 images, in order (a photo, or a scanned PDF's pages). */
+  images?: { mimeType: string; base64: string }[];
+  maxTokens: number;
+}
+
+export interface AiCompletion {
+  text: string;
+  usage: { input: number; output: number };
 }
 
 /** Why a provider request failed, in words for "Couldn't reach <address>: <reason>." */

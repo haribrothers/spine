@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, Paperclip, Plus } from "lucide-react";
+import { FileText, Paperclip, Plus, Sparkles } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -87,18 +87,27 @@ const when = (iso: string) => new Date(iso).toLocaleDateString(undefined, { mont
  * JPEG, PNG, WebP or HEIC. With `entityId` null (a record not saved yet)
  * files are uploaded and held in `pending` until the parent saves.
  */
+/** US-AI-08 — the files AI can read: PDFs and the photo types every provider takes (not HEIC). */
+const AI_READABLE = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+
 export function AttachmentsSection({
   entityType,
   entityId,
   pending,
   onPendingChange,
   onCountChange,
+  onRead,
+  readBusy = false,
 }: {
   entityType: AttachmentEntityType;
   entityId: string | null;
   pending?: PendingAttachment[];
   onPendingChange?: (files: PendingAttachment[]) => void;
   onCountChange?: (count: number) => void;
+  /** US-AI-08 — "Read" on a PDF or photo, to fill the record in from it with AI. */
+  onRead?: (file: { fileId: string; name: string }) => void;
+  /** An AI read is running: "Read" waits for it. */
+  readBusy?: boolean;
 }) {
   const [data, setData] = useState<AttachmentList | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -240,6 +249,18 @@ export function AttachmentsSection({
                 )}
                 <p className="text-[12px] text-on-surface-muted">{row.meta}</p>
               </div>
+              {onRead && AI_READABLE.has(row.contentType) && (
+                <button
+                  type="button"
+                  disabled={readBusy}
+                  onClick={() => onRead({ fileId: row.fileId, name: row.name })}
+                  className="inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 sm:min-h-0"
+                  aria-label={`Read ${row.name} with AI`}
+                >
+                  <Sparkles size={13} aria-hidden="true" />
+                  Read
+                </button>
+              )}
               {!isPending && (
                 <a href={fileUrl(row.fileId, true)} className="inline-flex min-h-11 items-center px-2 text-[13px] font-medium text-primary hover:underline sm:min-h-0" aria-label={`Download ${row.name}`}>
                   Download

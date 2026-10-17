@@ -149,6 +149,65 @@ export const aiPauseDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocal
 export const aiPausedMessage = (until: string) => `AI is paused until ${aiPauseDate(until)} — this month's budget is used up.`;
 export const aiFeatureOffMessage = (key: AiFeatureKey) => `${AI_FEATURES.find((f) => f.key === key)!.label} is switched off in Settings › AI assistant.`;
 
+/** US-AI-08 (D-170) — an image (or a scanned PDF) and a model that can't read images. */
+export const AI_NO_IMAGES_ERROR = "AI_NO_IMAGES";
+export const AI_NO_IMAGES_MESSAGE = "Your AI model can't read images. Choose a model that can, or enter the bill by hand.";
+/** US-AI-08 — a file AI can't read (an HEIC photo, a spreadsheet). */
+export const AI_UNREADABLE_FILE_MESSAGE = "AI can read PDFs and JPEG, PNG or WebP photos. Save it as one of those, or enter the bill by hand.";
+
+/** US-AI-08 — `POST /ai/read-document`; US-AI-09 adds `expense`. */
+export const AI_DOCUMENT_TARGETS = ["vendor_bill"] as const;
+export type AiDocumentTarget = (typeof AI_DOCUMENT_TARGETS)[number];
+export const readDocumentSchema = z.object({
+  fileId: z.uuid("Choose a file to read."),
+  target: z.enum(AI_DOCUMENT_TARGETS),
+});
+export type ReadDocumentInput = z.infer<typeof readDocumentSchema>;
+
+/** A line read from a document, matched to the business's items, taxes and accounts by Spine (D-170). */
+export interface DocumentSuggestionLine {
+  name: string;
+  description: string | null;
+  hsnSac: string | null;
+  quantity: number;
+  /** Minor units, before tax. */
+  unitPriceAmount: string;
+  /** The tax the document shows, as a percentage. */
+  taxPercent: number | null;
+  /** The document's prices include tax. */
+  isTaxInclusive: boolean;
+  /** One of these when a rate or group matches `taxPercent`; neither for no tax or no match. */
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  catalogItemId: string | null;
+  accountId: string | null;
+  /** Where the account came from: this vendor's last bill or the matched item. */
+  accountFrom: "last_bill" | "item" | null;
+}
+
+/** US-AI-08 — what AI read from a vendor's bill, after Spine matched and checked it. Nothing is saved. */
+export interface DocumentSuggestion {
+  /** The vendor as read; `contactId` when it matches one of your vendors. */
+  vendor: { contactId: string | null; name: string } | null;
+  number: string | null;
+  date: string | null;
+  dueDate: string | null;
+  /** The words the due date came from ("Payment due within 30 days"), when it wasn't printed as a date. */
+  dueNote: string | null;
+  currency: string | null;
+  /** The GST place of supply: the matched vendor's, else the document's. */
+  placeOfSupply: string | null;
+  lines: DocumentSuggestionLine[];
+  /** The total printed on the document, in minor units. */
+  documentTotal: string | null;
+  /** The lines' total as Spine computes it, in minor units. */
+  computedTotal: string;
+  /** How long the provider took. */
+  readMs: number;
+  /** True when the document was sent as images (a photo or a scanned PDF). */
+  readAsImages: boolean;
+}
+
 export const AI_CONNECT_PROVIDER_FIRST = "Connect a provider first.";
 export const aiAcknowledgeFirst = (host: string) => `Confirm what will be sent to ${host} first.`;
 export const AI_ON_TOAST = "AI assistant is on";
