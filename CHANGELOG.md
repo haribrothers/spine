@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-17 — Spine runs on Node 22 (D-248)
+
+- **Why:** reading a vendor's PDF (US-AI-08) failed in the Docker image — its Node 20 lacks what the PDF library needs — though it passed locally and in CI, which run newer Node. Node 20 is past end of life.
+- **What changed:** the API and web images are built on `node:22-alpine`; `package.json` asks for Node 22 or later, and the README says so. Both images build, and a text PDF and a scanned PDF read inside the API image.
+- **For self-hosters:** nothing to do with Docker Compose — the new images carry Node 22. Running from source needs Node 22.
+
 ### 2026-10-17 — Fill in a vendor bill from the vendor's PDF or photo (US-AI-08, D-247)
 
 - **"Read from document" on the bill page:** choose or drop the vendor's PDF or photo at the top of the header card. It's attached to the bill, and Vendor, Bill number, Currency, Bill date, Due date, Place of supply and the lines fill in, each marked "Suggested by AI" until changed. "Read" is offered on a PDF or photo already in Attachments too.

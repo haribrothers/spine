@@ -1,9 +1,9 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 # better-auth/drizzle-orm declare better-sqlite3 as a peer dep (one of
 # several drivers Drizzle supports) even though this app only ever uses
 # the Postgres driver — pnpm still attempts to build its native addon
 # during install, which needs a C toolchain + Python that bare
-# node:20-alpine doesn't ship.
+# node:22-alpine doesn't ship.
 RUN apk add --no-cache python3 make g++
 RUN corepack enable
 
