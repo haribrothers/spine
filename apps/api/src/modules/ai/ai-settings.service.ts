@@ -1,6 +1,9 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import {
   AI_CONNECT_PROVIDER_FIRST,
+  AI_FEATURES,
+  AI_FEATURE_KEYS,
+  DEFAULT_AI_FEATURES,
   DEFAULT_AI_SETTINGS,
   aiAcknowledgeFirst,
   aiCouldntReach,
@@ -9,6 +12,7 @@ import {
   isLocalAddress,
   maskedKey,
   type AiDriverKind,
+  type AiFeatures,
   type AiProviderCheck,
   type AiSettings,
   type AiSettingsUpdate,
@@ -37,7 +41,13 @@ interface StoredAi {
   supportsImages: boolean | null;
   /** The provider host an Owner acknowledged data goes to (D-164). */
   acknowledgedHost: string | null;
+  /** US-AI-03 */
+  features: AiFeatures;
+  /** US-AI-04 — tokens a month; null for no limit. */
+  monthlyTokenBudget: number | null;
 }
+
+const tokens = (n: number | null) => (n === null ? "No limit" : `${n.toLocaleString("en-US")} tokens`);
 
 const PROVIDER_LABEL: Record<AiDriverKind, string> = { none: "None", "openai-compatible": "Local or OpenAI-compatible", anthropic: "Anthropic Claude" };
 
@@ -90,6 +100,8 @@ export class AiSettingsService {
     const providerChanged = driverChanged || next.baseUrl !== current.baseUrl || next.model !== current.model || keyChange !== null;
     if (providerChanged) next.supportsImages = null;
     if (input.enabled !== undefined) next.enabled = input.enabled;
+    if (input.features) next.features = { ...current.features, ...Object.fromEntries(Object.entries(input.features).filter(([, v]) => typeof v === "boolean")) };
+    if (input.monthlyTokenBudget !== undefined) next.monthlyTokenBudget = input.monthlyTokenBudget;
 
     const host = aiProviderHost(next.driver, next.baseUrl);
     if (next.enabled) {
@@ -114,6 +126,8 @@ export class AiSettingsService {
         // Never the key — only that it changed, as its last four characters show it.
         ...(keyChange ? [{ field: "API key", from: maskedKey(current.apiKeyHint), to: keyChange === "removed" ? "Removed" : maskedKey(next.apiKeyHint) }] : []),
         ...(next.acknowledgedHost !== current.acknowledgedHost && next.acknowledgedHost ? [{ field: "Sends business data to", from: current.acknowledgedHost ?? "", to: next.acknowledgedHost }] : []),
+        ...AI_FEATURE_KEYS.filter((k) => current.features[k] !== next.features[k]).map((k) => ({ field: AI_FEATURES.find((f) => f.key === k)!.label, from: current.features[k] ? "On" : "Off", to: next.features[k] ? "On" : "Off" })),
+        ...(current.monthlyTokenBudget !== next.monthlyTokenBudget ? [{ field: "Monthly budget", from: tokens(current.monthlyTokenBudget), to: tokens(next.monthlyTokenBudget) }] : []),
       ];
       if (changes.length) {
         await this.audit.record(tx, { orgId, actorUserId, action: "updated", entityType: "ai_settings", entityId: orgId, contactId: null, changes });
@@ -196,6 +210,8 @@ export class AiSettingsService {
       apiKeyHint: raw?.apiKeyHint ?? null,
       supportsImages: raw?.supportsImages ?? null,
       acknowledgedHost: raw?.acknowledgedHost ?? null,
+      features: { ...DEFAULT_AI_FEATURES, ...(raw?.features ?? {}) },
+      monthlyTokenBudget: typeof raw?.monthlyTokenBudget === "number" ? raw.monthlyTokenBudget : null,
     };
   }
 }
@@ -210,7 +226,7 @@ async function put(tx: Transaction, orgId: string, key: string, value: object) {
 const isLocal = (s: Pick<StoredAi, "driver" | "baseUrl">) => s.driver === "openai-compatible" && isLocalAddress(s.baseUrl);
 
 function present(s: StoredAi): AiSettings {
-  if (s.driver === "none") return { ...DEFAULT_AI_SETTINGS };
+  if (s.driver === "none") return { ...DEFAULT_AI_SETTINGS, features: s.features, monthlyTokenBudget: s.monthlyTokenBudget };
   return {
     enabled: s.enabled,
     driver: s.driver,
@@ -220,6 +236,8 @@ function present(s: StoredAi): AiSettings {
     supportsImages: s.supportsImages,
     providerHost: aiProviderHost(s.driver, s.baseUrl),
     local: isLocal(s),
+    features: s.features,
+    monthlyTokenBudget: s.monthlyTokenBudget,
   };
 }
 

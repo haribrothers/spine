@@ -15,6 +15,17 @@ export const AI_TIMEOUT_MS = 30_000;
 
 export const ANTHROPIC_HOST = "api.anthropic.com";
 
+/** US-AI-03 (D-162, D-165) — each AI feature has its own switch, on by default once AI is on. */
+export const AI_FEATURE_KEYS = ["readDocuments", "draftEmails", "draftQuoteLines", "bankSuggestions"] as const;
+export type AiFeatureKey = (typeof AI_FEATURE_KEYS)[number];
+export type AiFeatures = Record<AiFeatureKey, boolean>;
+export const DEFAULT_AI_FEATURES: AiFeatures = { readDocuments: true, draftEmails: true, draftQuoteLines: true, bankSuggestions: true };
+/** How `ai_requests.feature` names each one. */
+export const AI_REQUEST_FEATURE: Record<AiFeatureKey, string> = { readDocuments: "read_document", draftEmails: "draft_email", draftQuoteLines: "draft_quote_lines", bankSuggestions: "bank_suggestions" };
+
+/** US-AI-04 (D-168) — per person, at most 30 AI requests in 10 minutes. */
+export const AI_RATE_LIMIT = { requests: 30, minutes: 10 } as const;
+
 /** `GET /org/ai` — never the key itself. */
 export interface AiSettings {
   enabled: boolean;
@@ -30,6 +41,10 @@ export interface AiSettings {
   providerHost: string | null;
   /** True when the provider is on the business's own network, so nothing leaves it. */
   local: boolean;
+  /** US-AI-03 */
+  features: AiFeatures;
+  /** US-AI-04 — tokens a month; null for no limit. */
+  monthlyTokenBudget: number | null;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -41,6 +56,8 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   supportsImages: null,
   providerHost: null,
   local: true,
+  features: { ...DEFAULT_AI_FEATURES },
+  monthlyTokenBudget: null,
 };
 
 const baseUrl = z
@@ -62,6 +79,10 @@ export const aiSettingsUpdateSchema = z
     clearApiKey: z.boolean().optional(),
     /** Turning on with a provider outside the local network needs this (D-164). */
     acknowledged: z.boolean().optional(),
+    /** US-AI-03 — any of the switches; the rest stay as saved. */
+    features: z.object(Object.fromEntries(AI_FEATURE_KEYS.map((k) => [k, z.boolean().optional()])) as Record<AiFeatureKey, z.ZodOptional<z.ZodBoolean>>).strict().optional(),
+    /** US-AI-04 — whole tokens a month, or null for no limit. */
+    monthlyTokenBudget: z.number().int("Enter a whole number of tokens.").min(1_000, "Enter at least 1,000 tokens, or leave it empty for no limit.").max(1_000_000_000_000).nullable().optional(),
   })
   .strict();
 export type AiSettingsUpdate = z.infer<typeof aiSettingsUpdateSchema>;
@@ -84,6 +105,44 @@ export interface AiTestResult {
   models: string[];
   error?: string;
 }
+
+/** US-AI-04 — `GET /org/ai/usage?month=YYYY-MM`. */
+export interface AiUsage {
+  month: string;
+  budget: number | null;
+  /** Tokens in and out this month. */
+  used: number;
+  requests: number;
+  /** 0–100+, or null with no budget. */
+  percent: number | null;
+  /** Most tokens first. */
+  byFeature: { feature: AiFeatureKey; tokens: number; percent: number }[];
+  byUser: { userId: string; name: string; tokens: number; percent: number }[];
+  /** "2026-11-01" while this month's budget is used up. */
+  pausedUntil: string | null;
+}
+
+/** `GET /ai/status` — what a member's screens need to show or hide AI controls. */
+export interface AiStatus {
+  supportsImages: boolean | null;
+  features: AiFeatures;
+  /** "2026-11-01" while this month's budget is used up; controls show disabled with `aiPausedMessage`. */
+  pausedUntil: string | null;
+}
+
+export const AI_FEATURE_OFF_ERROR = "AI_FEATURE_OFF";
+export const AI_RATE_LIMIT_ERROR = "AI_RATE_LIMIT";
+export const AI_BUDGET_USED_ERROR = "AI_BUDGET_USED";
+export const AI_RATE_LIMIT_MESSAGE = "Too many AI requests. Try again in a few minutes.";
+export const AI_UNAVAILABLE_ERROR = "AI_UNAVAILABLE";
+export const AI_TIMEOUT_ERROR = "AI_TIMEOUT";
+/** US-AI-07 — the provider didn't answer, or answered with an error. */
+export const AI_UNAVAILABLE_MESSAGE = "AI didn't answer. Fill this in by hand or try again.";
+export const AI_BUDGET_WARNING_MESSAGE = "AI has used 80% of this month's budget.";
+/** "1 November" from "2026-11-01". */
+export const aiPauseDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+export const aiPausedMessage = (until: string) => `AI is paused until ${aiPauseDate(until)} — this month's budget is used up.`;
+export const aiFeatureOffMessage = (key: AiFeatureKey) => `${AI_FEATURES.find((f) => f.key === key)!.label} is switched off in Settings › AI assistant.`;
 
 export const AI_CONNECT_PROVIDER_FIRST = "Connect a provider first.";
 export const aiAcknowledgeFirst = (host: string) => `Confirm what will be sent to ${host} first.`;
@@ -171,5 +230,4 @@ export const AI_FEATURES = [
     where: "Reconcile — only when someone presses Suggest with AI",
     sends: "statement lines' dates, amounts and descriptions, with account numbers and IDs removed.",
   },
-] as const;
-export type AiFeatureKey = (typeof AI_FEATURES)[number]["key"];
+] as const satisfies readonly { key: AiFeatureKey; label: string; where: string; sends: string }[];

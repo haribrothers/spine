@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_AI_SETTINGS, type AiSettings } from "@spine/shared";
+import { DEFAULT_AI_FEATURES, DEFAULT_AI_SETTINGS, type AiSettings, type AiUsage } from "@spine/shared";
 
 const state = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn(), post: vi.fn(), toast: vi.fn(), refresh: vi.fn(), markSaved: vi.fn() }));
 vi.mock("../lib/api-client", () => ({ apiClient: { get: state.get, put: state.put, post: state.post } }));
@@ -11,13 +11,15 @@ vi.mock("../lib/settings-dirty", () => ({ useSettingsSaved: () => state.markSave
 import { AiPane } from "../app/settings/panes/ai-pane";
 import { SETTINGS_SECTIONS } from "../components/settings-dialog";
 
-const local: AiSettings = { enabled: false, driver: "openai-compatible", baseUrl: "http://192.168.1.20:11434/v1", model: "llama3.2-vision", apiKeyHint: null, supportsImages: null, providerHost: "192.168.1.20:11434", local: true };
-const cloud: AiSettings = { enabled: false, driver: "anthropic", baseUrl: null, model: "claude-sonnet-5-5", apiKeyHint: "1a2b", supportsImages: true, providerHost: "api.anthropic.com", local: false };
+const local: AiSettings = { enabled: false, driver: "openai-compatible", baseUrl: "http://192.168.1.20:11434/v1", model: "llama3.2-vision", apiKeyHint: null, supportsImages: null, providerHost: "192.168.1.20:11434", local: true, features: { ...DEFAULT_AI_FEATURES }, monthlyTokenBudget: null };
+const cloud: AiSettings = { enabled: false, driver: "anthropic", baseUrl: null, model: "claude-sonnet-5-5", apiKeyHint: "1a2b", supportsImages: true, providerHost: "api.anthropic.com", local: false, features: { ...DEFAULT_AI_FEATURES }, monthlyTokenBudget: null };
 
 const theSwitch = () => screen.getByRole("switch", { name: "AI assistant" });
 
-function show(saved: AiSettings) {
-  state.get.mockResolvedValue(saved);
+const noUsage: AiUsage = { month: "2026-10", budget: null, used: 0, requests: 0, percent: null, byFeature: [], byUser: [], pausedUntil: null };
+
+function show(saved: AiSettings, usage: AiUsage = noUsage) {
+  state.get.mockImplementation(async (path: string) => (path === "/org/ai/usage" ? usage : saved));
   render(<AiPane />);
   return screen.findByTestId("ai-pane");
 }
@@ -121,5 +123,80 @@ describe("US-AI-02", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Use this provider" }));
     await waitFor(() => expect(state.put).toHaveBeenLastCalledWith("/org/ai", { driver: "openai-compatible", baseUrl: "https://llm.example.com/v1", model: "llama3.2-vision", acknowledged: true }));
     expect(state.toast).toHaveBeenCalledWith("AI provider saved", expect.any(String));
+  });
+});
+
+describe("US-AI-03", () => {
+  const on = { ...local, enabled: true, supportsImages: false };
+
+  it("with AI on, lists the four features with a switch each, where they show and what they send", async () => {
+    await show(on);
+    const list = screen.getByTestId("ai-features");
+    for (const label of ["Read bills and receipts", "Draft customer emails", "Draft quote lines", "Suggest bank matches"]) {
+      expect(within(list).getByRole("switch", { name: label }).getAttribute("aria-checked")).toBe("true");
+    }
+    expect(list.textContent).toContain("Needs a model that can read images. PDFs with text still work.");
+    fireEvent.click(within(list).getAllByRole("button", { name: "What's sent" })[1]!);
+    expect(list.textContent).toContain("Sent: the email template, the document's number, amounts and dates, and the customer's name.");
+    expect(list.textContent).toContain("Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys.");
+  });
+
+  it("switches a feature off as it changes, and says so", async () => {
+    await show(on);
+    state.put.mockResolvedValue({ ...on, features: { ...on.features, draftEmails: false } });
+    fireEvent.click(screen.getByRole("switch", { name: "Draft customer emails" }));
+    await waitFor(() => expect(state.put).toHaveBeenCalledWith("/org/ai", { features: { draftEmails: false } }));
+    expect(state.toast).toHaveBeenCalledWith("Draft customer emails is off", expect.any(String));
+  });
+
+  it("shows no features or budget while AI is off", async () => {
+    await show(local);
+    expect(screen.queryByTestId("ai-features")).toBeNull();
+    expect(screen.queryByTestId("ai-budget")).toBeNull();
+  });
+});
+
+describe("US-AI-04", () => {
+  const on = { ...local, enabled: true, supportsImages: true, monthlyTokenBudget: 2_000_000 };
+  const usage: AiUsage = {
+    month: "2026-10",
+    budget: 2_000_000,
+    used: 1_240_560,
+    requests: 318,
+    percent: 62,
+    byFeature: [{ feature: "readDocuments", tokens: 880_000, percent: 71 }, { feature: "draftEmails", tokens: 220_000, percent: 18 }],
+    byUser: [{ userId: "u1", name: "Kavya Iyer", tokens: 600_000, percent: 48 }],
+    pausedUntil: null,
+  };
+
+  it("shows this month's usage against the budget, with the top features and people", async () => {
+    await show(on, usage);
+    const budget = await screen.findByTestId("ai-budget");
+    expect(within(budget).getByTestId("ai-usage").textContent).toBe(`${(1_240_560).toLocaleString()} of ${(2_000_000).toLocaleString()} tokens · 62%318 requests`);
+    expect(within(budget).getByRole("progressbar")).toBeTruthy();
+    expect(budget.textContent).toContain("Read bills and receipts71%");
+    expect(budget.textContent).toContain("Kavya Iyer48%");
+  });
+
+  it("says when AI is paused, and until when", async () => {
+    await show(on, { ...usage, used: 2_010_000, percent: 101, pausedUntil: "2026-11-01" });
+    expect((await screen.findByTestId("ai-budget")).textContent).toContain("AI is paused until 1 November — this month's budget is used up.");
+  });
+
+  it("saves a budget, and an empty one means no limit", async () => {
+    await show(on, usage);
+    fireEvent.change(screen.getByLabelText("Tokens a month"), { target: { value: "" } });
+    state.put.mockResolvedValue({ ...on, monthlyTokenBudget: null });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(state.put).toHaveBeenCalledWith("/org/ai", { monthlyTokenBudget: null }));
+    expect(state.toast).toHaveBeenCalledWith("Monthly budget saved", "AI has no monthly limit.");
+  });
+
+  it("refuses a budget that isn't a number", async () => {
+    await show(on, usage);
+    fireEvent.change(screen.getByLabelText("Tokens a month"), { target: { value: "lots" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Enter the budget as a whole number of tokens, or leave it empty for no limit.");
+    expect(state.put).not.toHaveBeenCalled();
   });
 });

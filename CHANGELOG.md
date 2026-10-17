@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-17 — AI features and the monthly budget (US-AI-03, US-AI-04, D-244)
+
+- **A switch per feature:** with AI on, Settings › AI assistant shows Features beside Provider — "Read bills and receipts", "Draft customer emails", "Draft quote lines" and "Suggest bank matches", each with where it shows, a switch (on by default, saved as it changes, audited) and "What's sent", which lists exactly what that feature sends and what's never sent. A model that can't read images is noted on the first.
+- **Monthly budget:** tokens a month (empty for no limit), with this month's usage — tokens against the budget with the percentage and a bar, requests, the top three features and people — and "AI is paused until 1 <month> — this month's budget is used up." once it's reached. Owners hear once at 80% and once at 100%.
+- **One gateway:** `AiRequestService.run` is the only way a feature reaches the provider: it refuses a switched-off feature (403 `AI_FEATURE_OFF`), more than 30 requests in 10 minutes from one person (429) and a used-up budget (409), and turns a failure or a 30-second wait into "AI didn't answer. Fill this in by hand or try again." Every request, refusals included, is a row in the new `ai_requests` table (migration 0126) — never its text. `GET /ai/status` now says which features are on and whether AI is paused; `GET /org/ai/usage` gives the month's usage.
+- **Redaction (D-165):** `redact()` replaces GSTINs, PANs, IFSC codes, IBANs, card numbers, tax IDs, UPI IDs, keys, tokens, passwords and long account numbers with placeholders before any text is sent; amounts, dates, document numbers and email addresses stay (20 unit tests).
+- **QA:** section 237; section 236 now uses qwen3-vl:8b and qwen3:4b — `llama3.2-vision` doesn't load on current Ollama.
+
 ### 2026-10-17 — Settings › AI assistant: the switch and the provider (US-AI-01, US-AI-02, D-243)
 
 - **One switch for all AI:** Settings › AI assistant (Business group, after Modules; Owner-only) starts off. It won't switch on without a provider ("Connect a provider first."); with a provider outside the local network it asks "Turn on AI?", names the host and lists what each feature sends and what's never sent; the acknowledgement is audited and remembered for that host. Switching off asks too. Toasts say what happened.

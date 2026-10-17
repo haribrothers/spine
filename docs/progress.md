@@ -604,8 +604,8 @@ Stories and screens reworked for the refined web app before building (D-242), on
 
 - [x] US-AI-01 · Switch the AI assistant on or off
 - [x] US-AI-02 · Connect a local or cloud AI provider
-- [ ] US-AI-03 · Choose which AI features are on
-- [ ] US-AI-04 · Set a monthly AI budget and see usage
+- [x] US-AI-03 · Choose which AI features are on
+- [x] US-AI-04 · Set a monthly AI budget and see usage
 - [ ] US-AI-05 · Let a Team use AI
 - [ ] US-AI-06 · See every AI request in the audit log
 - [ ] US-AI-07 · Keep working when AI is unavailable

@@ -1,16 +1,28 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Post, Put, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, HttpCode, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { aiProviderCheckSchema, aiSettingsUpdateSchema } from "@spine/shared";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
+import { AiRequestService } from "./ai-request.service";
 
 const firstIssue = (issues: { message: string }[], fallback: string) => issues[0]?.message ?? fallback;
 
-/** US-AI-01, US-AI-02 (D-162–D-164) — Settings › AI assistant. Owner-only, always reachable: it's where AI is switched on. */
+/** US-AI-01–US-AI-04 (D-162–D-168) — Settings › AI assistant. Owner-only, always reachable: it's where AI is switched on. */
 @Controller("org/ai")
 export class AiSettingsController {
-  constructor(private readonly ai: AiSettingsService) {}
+  constructor(
+    private readonly ai: AiSettingsService,
+    private readonly requests: AiRequestService,
+  ) {}
+
+  /** US-AI-04 — this month's usage (or `?month=YYYY-MM`). */
+  @Get("usage")
+  @OrgRoles(["owner"])
+  async usage(@Session() session: UserSession, @Query("month") month?: string) {
+    if (month !== undefined && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new BadRequestException("Give the month as YYYY-MM.");
+    return this.requests.usage(requireOrgId(session), month);
+  }
 
   @Get()
   @OrgRoles(["owner"])
@@ -50,15 +62,15 @@ export class AiSettingsController {
 /**
  * The AI features' own routes live under `/ai/*`, which the module guard
  * refuses with 403 `MODULE_OFF` while AI is off (US-AI-01). `GET /ai/status`
- * tells a signed-in member's screens what the provider can do.
+ * tells a signed-in member's screens which features are on, what the
+ * provider can do and whether AI is paused for the month (US-AI-03, US-AI-04).
  */
 @Controller("ai")
 export class AiController {
-  constructor(private readonly ai: AiSettingsService) {}
+  constructor(private readonly requests: AiRequestService) {}
 
   @Get("status")
   async status(@Session() session: UserSession) {
-    const s = await this.ai.get(requireOrgId(session));
-    return { supportsImages: s.supportsImages };
+    return this.requests.status(requireOrgId(session));
   }
 }
