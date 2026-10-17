@@ -606,8 +606,8 @@ Stories and screens reworked for the refined web app before building (D-242), on
 - [x] US-AI-02 · Connect a local or cloud AI provider
 - [x] US-AI-03 · Choose which AI features are on
 - [x] US-AI-04 · Set a monthly AI budget and see usage
-- [ ] US-AI-05 · Let a Team use AI
-- [ ] US-AI-06 · See every AI request in the audit log
+- [x] US-AI-05 · Let a Team use AI
+- [x] US-AI-06 · See every AI request in the audit log
 - [ ] US-AI-07 · Keep working when AI is unavailable
 - [ ] US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo
 - [ ] US-AI-09 · Fill in an expense from a receipt

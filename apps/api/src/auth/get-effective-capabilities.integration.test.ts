@@ -31,7 +31,8 @@ describe("getEffectiveCapabilities (requires local Postgres)", () => {
 
     const result = await getEffectiveCapabilities(db, { orgId, userId: owner.user.id });
     for (const capability of CAPABILITIES) {
-      expect(result[capability]).toBe(true);
+      // US-AI-05: the AI assistant starts off, so its right reads false until it's switched on (US-SET-24).
+      expect(result[capability], capability).toBe(capability !== "ai.use");
     }
 
     await db.delete(user).where(eq(user.id, owner.user.id));

@@ -1,9 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AUDIT_PAGE_SIZE, type AuditLogEntry, type AuditLogPage } from "@spine/shared";
+import { AUDIT_PAGE_SIZE, auditEntityLabel, type AuditLogEntry, type AuditLogPage } from "@spine/shared";
 import { and, count, desc, eq, gte, inArray, lt, or, type SQL } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
+  aiRequests,
   activities,
   addresses,
   auditLog,
@@ -144,6 +145,21 @@ const RESOLVERS: Record<string, Resolver> = {
     byId(await db.select({ id: teams.id, name: teams.name }).from(teams).where(and(eq(teams.orgId, orgId), inArray(teams.id, ids.filter((id) => UUID.test(id))))), (r) => r.name, (r) => `/team/teams/${r.id}`),
   user: async (db, orgId, ids) => byId(await db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, ids)), (r) => r.name, () => "/team/users"),
   data_export: async () => new Map(),
+  // US-AI-06 (D-169): an AI request names and opens the record it was for ("Vendor bill · ABM-20611").
+  ai_request: async (db, orgId, ids) => {
+    const rows = await db.select({ id: aiRequests.id, entityType: aiRequests.entityType, entityId: aiRequests.entityId }).from(aiRequests).where(and(eq(aiRequests.orgId, orgId), inArray(aiRequests.id, ids)));
+    const records = new Map<string, Resolved>();
+    for (const type of new Set(rows.map((r) => r.entityType).filter((t): t is string => Boolean(t && t !== "ai_request" && RESOLVERS[t])))) {
+      const recordIds = rows.filter((r) => r.entityType === type && r.entityId && UUID.test(r.entityId)).map((r) => r.entityId!);
+      if (recordIds.length) records.set(type, await RESOLVERS[type]!(db, orgId, recordIds));
+    }
+    return new Map(
+      rows.map((r) => {
+        const record = r.entityType && r.entityId ? records.get(r.entityType)?.get(r.entityId) : undefined;
+        return [r.id, { label: r.entityType ? `${auditEntityLabel(r.entityType)}${record?.label ? ` · ${record.label}` : ""}` : null, link: record?.link ?? null }];
+      }),
+    );
+  },
 };
 
 /**

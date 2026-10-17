@@ -8,7 +8,7 @@ import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { quotes, quoteLines, quoteEvents, contacts, files, invoices, jobs, jobAssignments, jobVariationOrders, leads, user } from "../../db/schema";
-import { AuditLogService } from "../audit/audit-log.service";
+import { AuditLogService, aiMark } from "../audit/audit-log.service";
 import { getMemberRole, hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
 import { RateBook } from "../tax/line-tax-components";
 import { NumberingService } from "../numbering/numbering.service";
@@ -476,6 +476,7 @@ export class QuotesService {
           ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           ...(input.termsAndConditions !== undefined ? { termsAndConditions: input.termsAndConditions } : {}),
+          ...(input.aiAssisted ? { aiAssisted: true } : {}),
           ...(totals
             ? {
                 subtotalAmount: totals.subtotalAmount,
@@ -512,8 +513,8 @@ export class QuotesService {
       // fail to JSON-serialize into audit_log.changes (a jsonb column),
       // exactly like Contacts' own update() excludes contactPersons/
       // addresses from its scalar-field diff for the same two reasons.
-      const { lines: _lines, ...scalarInput } = input;
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>);
+      const { lines: _lines, aiAssisted: _ai, ...scalarInput } = input;
+      const changes = [...AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>), ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])];
       if (changes.length) {
         await this.auditLog.record(tx, {
           orgId,
@@ -924,6 +925,7 @@ export class QuotesService {
       emailError: null,
       emailSentAt: null,
       isDemo: false,
+      aiAssisted: false,
       placeOfSupply: supply.placeOfSupply,
       supplyType: supply.supplyType,
       leadId: input.leadId ?? null,
@@ -967,10 +969,10 @@ export class QuotesService {
       const changes = (row.changes ?? []) as { field: string; from: unknown; to: unknown }[];
       switch (row.action) {
         case "created":
-          entries.push({ at: iso(row.createdAt), type: "created", actorName, detail: null });
+          entries.push({ at: iso(row.createdAt), type: "created", actorName, detail: null, ...aiMark(row.changes) });
           break;
         case "updated":
-          entries.push({ at: iso(row.createdAt), type: "edited", actorName, detail: null });
+          entries.push({ at: iso(row.createdAt), type: "edited", actorName, detail: null, ...aiMark(row.changes) });
           break;
         case "sent":
           entries.push({ at: iso(row.createdAt), type: "sent", actorName, detail: null });
@@ -1393,6 +1395,8 @@ export class QuotesService {
           isDemo,
           placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           leadId: input.leadId ?? null,
+          // US-AI-06 (D-166)
+          aiAssisted: input.aiAssisted === true,
         })
         .returning();
 
@@ -1405,7 +1409,7 @@ export class QuotesService {
         entityType: "quote",
         entityId: quote!.id,
         contactId: input.contactId,
-        changes: [{ field: "status", from: null, to: "draft" }],
+        changes: [{ field: "status", from: null, to: "draft" }, ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])],
       });
 
       return quote;

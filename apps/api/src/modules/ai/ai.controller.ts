@@ -71,6 +71,6 @@ export class AiController {
 
   @Get("status")
   async status(@Session() session: UserSession) {
-    return this.requests.status(requireOrgId(session));
+    return this.requests.status(requireOrgId(session), session.user.id);
   }
 }

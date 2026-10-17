@@ -6,7 +6,7 @@ import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { vendorBills, vendorBillLines, vendorCreditAllocations, vendorCredits, contacts, accounts, auditLog, user, vendorPayments, vendorPaymentAllocations, jobs } from "../../db/schema";
-import { AuditLogService } from "../audit/audit-log.service";
+import { AuditLogService, aiMark } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
@@ -273,7 +273,7 @@ export class VendorBillsService {
       .leftJoin(user, eq(auditLog.actorUserId, user.id))
       .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "vendor_bill"), eq(auditLog.entityId, id)));
     for (const row of audit) {
-      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: row.actorName ?? null });
+      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: row.actorName ?? null, ...aiMark(row.changes) });
       else if (row.action === "recorded") entries.push({ type: "recorded", at: iso(row.at), actorName: row.actorName ?? null, amount: bill.totalAmount.toString() });
       else if (row.action === "voided") {
         const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; to: unknown }[];
@@ -402,6 +402,8 @@ export class VendorBillsService {
           notes: input.notes ?? null,
           createdByUserId: actorUserId,
           isDemo,
+          // US-AI-06 (D-166)
+          aiAssisted: input.aiAssisted === true,
           recurringBillId: recurring?.recurringBillId ?? null,
           recurringRunOn: recurring?.recurringRunOn ?? null,
           placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
@@ -417,7 +419,7 @@ export class VendorBillsService {
         entityType: "vendor_bill",
         entityId: bill!.id,
         contactId: input.contactId,
-        changes: [{ field: "status", from: null, to: "draft" }],
+        changes: [{ field: "status", from: null, to: "draft" }, ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])],
       });
 
       return bill;
@@ -462,6 +464,7 @@ export class VendorBillsService {
           ...(input.dueDate !== undefined ? { dueDate: input.dueDate } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.aiAssisted ? { aiAssisted: true } : {}),
           ...(totals
             ? { subtotalAmount: totals.subtotalAmount, taxAmount: totals.taxAmount, totalAmount: totals.totalAmount }
             : {}),
@@ -475,8 +478,8 @@ export class VendorBillsService {
         await insertLines(tx, id, totals.lines);
       }
 
-      const { lines: _lines, ...scalarInput } = input;
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>);
+      const { lines: _lines, aiAssisted: _ai, ...scalarInput } = input;
+      const changes = [...AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>), ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])];
       if (changes.length) {
         await this.auditLog.record(tx, {
           orgId,

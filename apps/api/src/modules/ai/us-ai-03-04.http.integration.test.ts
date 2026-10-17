@@ -51,6 +51,12 @@ describe("US-AI-03 · US-AI-04 (requires local Postgres)", () => {
     await db.delete(member).where(eq(member.userId, staff.userId));
     await db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId: staff.userId, role: "staff", createdAt: new Date() });
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, staff.userId));
+    // US-AI-05: Kavya's Team may use AI.
+    const teams = await json<{ id: string; isDefault: boolean }[]>(await call(owner, "GET", "/org/teams"));
+    const teamId = teams.find((t) => t.isDefault)!.id;
+    const staffMember = (await db.select().from(member).where(eq(member.userId, staff.userId)))[0]!;
+    await json(await call(owner, "PUT", `/org/teams/${teamId}/members`, { memberIds: [staffMember.id] }));
+    await json(await call(owner, "PUT", `/org/teams/${teamId}/privileges`, { privileges: [{ capability: "ai.use", granted: true }] }));
     stub = await startAiStub();
     requests = testApp.app.get(AiRequestService);
     await json(await call(owner, "PUT", "/org/ai", { driver: "openai-compatible", baseUrl: stub.url, model: "llama3.2-vision", enabled: true }));

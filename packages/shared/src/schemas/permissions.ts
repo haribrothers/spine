@@ -142,6 +142,8 @@ export const CAPABILITIES = [
   "meetings.edit_others",
   "meetings.delete_own",
   "meetings.delete_others",
+  // US-AI-05 (D-167): the AI assistant, hidden while it's off (US-SET-24).
+  "ai.use",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -757,6 +759,12 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Delete a meeting that a different user organizes.",
     group: "Manage Meetings",
   },
+  "ai.use": {
+    label: "Use AI features",
+    description:
+      "Read bills and receipts, draft customer emails and quote lines, and get bank match suggestions — only where they can already work, and only the features switched on in Settings › AI assistant.",
+    group: "AI assistant",
+  },
 };
 
 /** Every fresh org seeds one team with this name and these grants. */
@@ -880,6 +888,8 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "meetings.edit_others": true,
   "meetings.delete_own": true,
   "meetings.delete_others": true,
+  // US-AI-05 (D-167): an Owner chooses who uses AI.
+  "ai.use": false,
 };
 
 /**

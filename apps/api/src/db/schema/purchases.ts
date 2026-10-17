@@ -64,6 +64,8 @@ export const vendorBills = pgTable(
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     voidJournalEntryId: uuid("void_journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-AI-06 (D-166) — saved from fields AI filled in. */
+    aiAssisted: boolean("ai_assisted").notNull().default(false),
     /** US-RPT-18 (D-137) — an unpaid bill brought in from the old system: no lines, posts P20. */
     isOpening: boolean("is_opening").notNull().default(false),
     /** US-PUR-30 (D-159) — the recurring bill and run date that created this bill; unique together, so a date is created once. */
@@ -318,6 +320,8 @@ export const expenses = pgTable(
     billedOnInvoiceLineId: uuid("billed_on_invoice_line_id").references(() => invoiceLines.id, { onDelete: "set null" }),
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-AI-06 (D-166) — saved from fields AI filled in. */
+    aiAssisted: boolean("ai_assisted").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

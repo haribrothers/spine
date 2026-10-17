@@ -59,7 +59,9 @@ describe("US-SET-24", () => {
     expect(ownedByOffModule(modules, "dashboardWidgets", "jobs-in-progress")).toBe(true);
     expect(ownedByOffModule(modules, "dashboardWidgets", "ar-aging")).toBe(false);
     expect(ownedByOffModule(modules, "search", "jobs")).toBe(true);
-    expect(capabilitiesOff(DEFAULT_MODULES).size).toBe(0);
+    // US-AI-05: the AI assistant starts off, so only its right reads as off by default.
+    expect([...capabilitiesOff(DEFAULT_MODULES)]).toEqual(["ai.use"]);
+    expect(capabilitiesOff({ ...DEFAULT_MODULES, ai: true }).size).toBe(0);
   });
 
   it("says what to do when a module is off", () => {

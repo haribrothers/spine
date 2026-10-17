@@ -5,6 +5,7 @@ import {
   AI_BUDGET_WARNING_MESSAGE,
   AI_FEATURE_KEYS,
   AI_FEATURE_OFF_ERROR,
+  AI_NOT_ALLOWED_MESSAGE,
   AI_RATE_LIMIT,
   AI_RATE_LIMIT_ERROR,
   AI_RATE_LIMIT_MESSAGE,
@@ -23,6 +24,8 @@ import {
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { aiRequests, user } from "../../db/schema";
+import { getMemberRole, hasCapability } from "../../auth/capability.util";
+import { AuditLogService } from "../audit/audit-log.service";
 import { orgClock, orgTimeZone } from "../../common/org-clock";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
@@ -42,7 +45,11 @@ export interface AiCall {
   /** The record the request is for, when there is one (US-AI-06). */
   entityType?: string;
   entityId?: string;
+  /** US-AI-05 (D-167) — set by "Read receipt" once it has checked the expense is the caller's own; Field may use AI for nothing else. */
+  fieldOwnReceipt?: boolean;
 }
+
+const OUTCOME_TEXT: Record<Outcome, string> = { ok: "Worked", error: "Didn't work", timeout: "Didn't answer in 30 seconds", budget: "Paused — this month's budget is used up", rate_limited: "Too many requests" };
 
 /** What a feature's call returns: its answer, and the tokens the provider counted. */
 export interface AiAnswer<T> {
@@ -72,11 +79,23 @@ export class AiRequestService {
     private readonly settings: SettingsService,
     private readonly notifications: NotificationsService,
     private readonly http: AiHttp,
+    private readonly audit: AuditLogService,
   ) {}
+
+  /** US-AI-05 (D-167) — Owners always; Staff with "Use AI features"; Field only to read their own receipt. */
+  private async allowed(orgId: string, userId: string): Promise<{ canUse: boolean; canReadOwnReceipt: boolean }> {
+    const role = await getMemberRole(this.db, orgId, userId);
+    if (role === "owner") return { canUse: true, canReadOwnReceipt: true };
+    if (role === "field") return { canUse: false, canReadOwnReceipt: true };
+    const canUse = role === "staff" && (await hasCapability(this.db, { orgId, userId }, "ai.use"));
+    return { canUse, canReadOwnReceipt: canUse };
+  }
 
   async run<T>(call: AiCall, ask: (driver: AiDriver, model: string) => Promise<AiAnswer<T>>): Promise<T> {
     const saved = await this.aiSettings.get(call.orgId);
     if (!saved.enabled) throw new ForbiddenException({ statusCode: 403, error: MODULE_OFF_ERROR, message: moduleOffMessage("ai") });
+    const may = await this.allowed(call.orgId, call.userId);
+    if (!may.canUse && !(may.canReadOwnReceipt && call.feature === "readDocuments" && call.fieldOwnReceipt)) throw new ForbiddenException(AI_NOT_ALLOWED_MESSAGE);
     if (!saved.features[call.feature]) throw new ForbiddenException({ statusCode: 403, error: AI_FEATURE_OFF_ERROR, message: aiFeatureOffMessage(call.feature) });
     const provider = (await this.aiSettings.provider(call.orgId))!;
     const base = { orgId: call.orgId, userId: call.userId, feature: AI_REQUEST_FEATURE[call.feature] as Feature, entityType: call.entityType ?? null, entityId: call.entityId ?? null, provider: saved.providerHost ?? saved.driver, model: provider.model ?? "" };
@@ -119,12 +138,12 @@ export class AiRequestService {
     return answer.value;
   }
 
-  /** `GET /ai/status` — what a member's screens show: the features that are on, and whether AI is paused. */
-  async status(orgId: string): Promise<AiStatus> {
+  /** `GET /ai/status` — what a member's screens show: whether they may use AI, the features that are on, and whether AI is paused. */
+  async status(orgId: string, userId: string): Promise<AiStatus> {
     const saved = await this.aiSettings.get(orgId);
     const month = orgClock().date.slice(0, 7);
     const paused = saved.monthlyTokenBudget !== null && (await this.usedThisMonth(orgId, month)) >= saved.monthlyTokenBudget;
-    return { supportsImages: saved.supportsImages, features: saved.features, pausedUntil: paused ? firstOfNextMonth(month) : null };
+    return { ...(await this.allowed(orgId, userId)), supportsImages: saved.supportsImages, features: saved.features, pausedUntil: paused ? firstOfNextMonth(month) : null };
   }
 
   /** US-AI-04 — `GET /org/ai/usage?month=` (Owner): tokens, requests, the top features and people. */
@@ -177,7 +196,23 @@ export class AiRequestService {
     outcome: Outcome,
     extra: { durationMs?: number; inputTokens?: number; outputTokens?: number; errorCode?: string } = {},
   ) {
-    await this.db.insert(aiRequests).values({ ...base, outcome, durationMs: extra.durationMs ?? 0, inputTokens: extra.inputTokens ?? 0, outputTokens: extra.outputTokens ?? 0, errorCode: extra.errorCode ?? null });
+    const inputTokens = extra.inputTokens ?? 0;
+    const outputTokens = extra.outputTokens ?? 0;
+    const [row] = await this.db
+      .insert(aiRequests)
+      .values({ ...base, outcome, durationMs: extra.durationMs ?? 0, inputTokens, outputTokens, errorCode: extra.errorCode ?? null })
+      .returning({ id: aiRequests.id });
+    // US-AI-06 (D-169): in the organisation audit log too — who, what, the record, provider, model, tokens, how it ended; never the text.
+    const summary = [base.provider, base.model, `${(inputTokens + outputTokens).toLocaleString("en-US")} tokens`, OUTCOME_TEXT[outcome]].filter(Boolean).join(" · ");
+    await this.audit.record(this.db, {
+      orgId: base.orgId,
+      actorUserId: base.userId,
+      action: base.feature,
+      entityType: "ai_request",
+      entityId: row!.id,
+      contactId: null,
+      changes: { summary, provider: base.provider, model: base.model, inputTokens, outputTokens, outcome },
+    });
   }
 
   /** D-168 — Owners hear once a month when usage crosses 80%, and once when it reaches 100%. */

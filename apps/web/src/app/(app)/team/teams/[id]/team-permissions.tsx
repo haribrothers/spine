@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, CircleCheck, CircleMinus, Eye, LayoutGrid, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, CircleCheck, CircleMinus, Eye, LayoutGrid, Search, Sparkles } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -245,6 +245,12 @@ export function TeamPermissions({
             <span className="flex items-center gap-1"><Eye size={13} />View only</span>
             <span className="flex items-center gap-1"><CircleMinus size={13} />Can&apos;t open</span>
           </p>
+          {modules?.ai && (
+            <p className="mt-3 flex items-start gap-2 rounded-md bg-info-bg p-2.5 text-[12.5px] text-on-surface" data-testid="ai-not-a-section">
+              <Sparkles size={14} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+              AI isn&apos;t a section. With Use AI features, members see AI on the bills, expenses, quotes, emails and reconciliations they can already work on.
+            </p>
+          )}
           <p className="mt-2 text-[12.5px] text-on-surface-muted">{members.length ? `Applies to ${members.length === 1 ? "1 person" : `${members.length} people`} at their next request.` : "No one is on this Team yet."}</p>
         </aside>
       </div>

@@ -124,6 +124,10 @@ export interface AiUsage {
 
 /** `GET /ai/status` — what a member's screens need to show or hide AI controls. */
 export interface AiStatus {
+  /** US-AI-05 — Owners, and Staff on a Team with "Use AI features". */
+  canUse: boolean;
+  /** US-AI-05 — Field: only "Read receipt" on their own expense, on the phone. */
+  canReadOwnReceipt: boolean;
   supportsImages: boolean | null;
   features: AiFeatures;
   /** "2026-11-01" while this month's budget is used up; controls show disabled with `aiPausedMessage`. */
@@ -131,6 +135,7 @@ export interface AiStatus {
 }
 
 export const AI_FEATURE_OFF_ERROR = "AI_FEATURE_OFF";
+export const AI_NOT_ALLOWED_MESSAGE = "You don't have the right to use AI. An owner can give it to your Team.";
 export const AI_RATE_LIMIT_ERROR = "AI_RATE_LIMIT";
 export const AI_BUDGET_USED_ERROR = "AI_BUDGET_USED";
 export const AI_RATE_LIMIT_MESSAGE = "Too many AI requests. Try again in a few minutes.";

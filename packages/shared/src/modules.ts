@@ -145,7 +145,7 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     includes: "AI reading, drafting and suggestions",
     // Settings › AI assistant (`/org/ai`) stays reachable while it's off: it's where an Owner switches it on.
     routes: [/^\/ai(\/|$)/],
-    capabilities: [],
+    capabilities: ["ai.use"],
     pages: [],
     dashboardWidgets: [],
     attention: [],

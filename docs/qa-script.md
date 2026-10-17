@@ -5168,6 +5168,17 @@ Use the owner from section 236 with AI on against Ollama (qwen3-vl:8b), and Sara
 6. Security: Sarah's `GET /org/ai/usage` answers 403; `GET /org/ai/usage?month=2026-13` answers 400 "Give the month as YYYY-MM."
 7. Regression: everything in section 236 still works; switching AI off and on keeps the feature switches and the budget.
 
+## 238. Who may use AI, and the record of its use (US-AI-05, US-AI-06, Phase 10)
+
+Use the owner from section 236 with AI on, Sarah Mendes (Staff, General Staff) and Marcus Webb (Field) in other browsers. Compare with the canvas "02 Team and audit".
+
+1. Team › Teams › General Staff › Permissions: an "AI assistant" group lists "Use AI features", off. Switch it on: marked Changed, the bar says "1 change", and "What members will open" doesn't list AI but says "AI isn't a section. With Use AI features, members see AI on the bills, expenses, quotes, emails and reconciliations they can already work on." Save changes asks first and names it; History records it.
+2. Sarah: before the save `GET /ai/status` says `canUse: false`; after it `canUse: true`. Marcus: `canUse: false`, `canReadOwnReceipt: true`.
+3. Switch AI off in Settings: the "AI assistant" group disappears from Permissions; switch it back on — the grant is still there.
+4. Audit log (record type "AI request"): once US-AI-08 onwards exist, each AI request shows the action ("Read a document" …), the record it was for (opens it) and "<provider> · <model> · <n> tokens · Worked" (or why it didn't). Until then, check through the API: `GET /org/audit-log?entityType=ai_request`.
+5. Activity: `POST /vendor-bills` with `"aiAssisted": true` — the bill's Activity reads "Created as a draft · filled in with AI" (Sparkles icon), with who and when underneath; its History reads "… created this bill and filled it in with AI". Same for an expense ("Submitted for approval · filled in with AI") and a quote edited with `aiAssisted` ("Edited · filled in with AI").
+6. Regression: Teams' other permissions, Sections, History and the Save confirm work as before; a Staff member's sidebar is unchanged; bills, expenses and quotes save and show their Activity as before when `aiAssisted` isn't sent.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

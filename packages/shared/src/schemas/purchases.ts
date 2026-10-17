@@ -37,6 +37,8 @@ export const createVendorBillSchema = z.object({
   lines: z.array(vendorBillLineInputSchema).default([]),
   /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
   placeOfSupply: placeOfSupplySchema.optional().nullable(),
+  /** US-AI-06 (D-166) — saved from fields AI filled in; marks the record and this save in its Activity. */
+  aiAssisted: z.boolean().optional(),
 });
 
 /** A draft-only update — see VendorBillsService.update's own guard against editing a recorded bill. */
@@ -104,6 +106,8 @@ export const createExpenseSchema = z.object({
   /** US-PUR-23 — "amount" (the default when absent) or "labour", where `amount` must equal the labour rows' total. */
   entryMode: z.enum(["amount", "labour"]).optional(),
   labourLines: z.array(labourLineSchema).max(LABOUR_MAX_ROWS, `Enter up to ${LABOUR_MAX_ROWS} trades.`).optional(),
+  /** US-AI-06 (D-166) — saved from fields AI filled in; marks the record and this save in its Activity. */
+  aiAssisted: z.boolean().optional(),
 });
 
 /** A submitted-only update — see ExpensesService.update's own guard against editing a reviewed expense. */
@@ -199,6 +203,8 @@ export interface VendorBillActivityEntry {
   detail?: string | null;
   /** The vendor payment or vendor credit it links to. */
   linkId?: string | null;
+  /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
+  aiAssisted?: true;
 }
 
 /** US-PUR-35 — a bill this vendor already has with the same number: `GET /vendor-bills/possible-duplicates`. */
@@ -222,6 +228,8 @@ export interface ExpenseActivityEntry {
   detail?: string | null;
   /** The invoice it was billed on. */
   linkId?: string | null;
+  /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
+  aiAssisted?: true;
 }
 
 /** US-PUR-44 — an expense of mine with the same amount on the same day: `GET /expenses/possible-duplicates`. */

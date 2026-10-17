@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-17 — Who may use AI, and the record of its use (US-AI-05, US-AI-06, D-245)
+
+- **"Use AI features" for a Team:** a new `ai.use` capability in its own "AI assistant" group in each Team's permissions, off for General Staff and every existing Team (migration 0127), changed through the draft and Save confirm like any other, hidden while AI is off and kept for when it's back. The panel says AI isn't a section. Owners always may; Field may only read the receipt on their own expense — a fixed rule, not a capability. `GET /ai/status` now says `canUse` and `canReadOwnReceipt`, and the AI gateway refuses anyone else ("You don't have the right to use AI. An owner can give it to your Team.").
+- **Every AI request in the audit log:** record type "AI request", with the feature as its action ("Read a document", "Drafted an email", …), the record it was for (opens it) and one line of details — provider, model, tokens and whether it worked. Never the text.
+- **"Filled in with AI":** bills, expenses and quotes take `aiAssisted` on create and update; it sets the new `ai_assisted` column and marks that save, so Activity reads "Created as a draft · filled in with AI" (and "Submitted for approval", "Edited") and History "… and filled it in with AI".
+- **Tests:** integration (`us-ai-05-06`), web and E2E; the shared and capability tests now expect `ai.use` to read off while AI is off. QA section 238.
+- **Local note:** on this Mac `localhost` now resolves to IPv6 first while MailDev listens on IPv4 only, so local tests that send email (US-AUTH-09/10, US-TEAM-21/24, US-SET-15, signup) wait 10 s and time out; they fail the same way without these changes, and CI isn't affected.
+
 ### 2026-10-17 — AI features and the monthly budget (US-AI-03, US-AI-04, D-244)
 
 - **A switch per feature:** with AI on, Settings › AI assistant shows Features beside Provider — "Read bills and receipts", "Draft customer emails", "Draft quote lines" and "Suggest bank matches", each with where it shows, a switch (on by default, saved as it changes, audited) and "What's sent", which lists exactly what that feature sends and what's never sent. A model that can't read images is noted on the first.

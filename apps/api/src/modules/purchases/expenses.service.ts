@@ -10,7 +10,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { expenses, expenseCategories, expenseLabourLines, accounts, auditLog, invoiceLines, invoices, jobs, jobAssignments, user } from "../../db/schema";
 import type { Transaction } from "../../db/client";
-import { AuditLogService } from "../audit/audit-log.service";
+import { AuditLogService, aiMark } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -175,11 +175,11 @@ export class ExpensesService {
       const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown; to: unknown }[];
       const comment = changes.find((c) => c.field === "reviewComment")?.to;
       const base = { at: new Date(row.at).toISOString(), actorName: row.actorName ?? null };
-      if (row.action === "created") entries.push({ ...base, type: "submitted" });
-      else if (row.action === "resubmitted") entries.push({ ...base, type: "resubmitted" });
+      if (row.action === "created") entries.push({ ...base, type: "submitted", ...aiMark(row.changes) });
+      else if (row.action === "resubmitted") entries.push({ ...base, type: "resubmitted", ...aiMark(row.changes) });
       else if (row.action === "updated") {
         const what = [...new Set(changes.map((c) => labels[c.field]).filter(Boolean))];
-        entries.push({ ...base, type: "edited", detail: what.length ? what.join(", ") : null });
+        entries.push({ ...base, type: "edited", detail: what.length ? what.join(", ") : null, ...aiMark(row.changes) });
       } else if (row.action === "rejected") entries.push({ ...base, type: "rejected", detail: typeof comment === "string" ? comment : expense.status === "rejected" ? expense.reviewComment : null });
       else if (row.action === "approved") entries.push({ ...base, type: "approved", amount: expense.amount.toString(), detail: typeof comment === "string" ? comment : expense.reviewComment });
       else if (row.action === "billed") entries.push({ ...base, type: "billed", detail: expense.billedInvoiceNumber, linkId: expense.billedInvoiceId });
@@ -306,6 +306,8 @@ export class ExpensesService {
           submittedByUserId: actorUserId,
           isBillable: input.isBillable,
           entryMode: labour ? "labour" : "amount",
+          // US-AI-06 (D-166)
+          aiAssisted: input.aiAssisted === true,
           isDemo,
         })
         .returning();
@@ -318,7 +320,7 @@ export class ExpensesService {
         entityType: "expense",
         entityId: expense!.id,
         contactId: null,
-        changes: [{ field: "status", from: null, to: "submitted" }],
+        changes: [{ field: "status", from: null, to: "submitted" }, ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])],
       });
 
       return expense;
@@ -386,6 +388,7 @@ export class ExpensesService {
           ...(input.receiptFileId !== undefined ? { receiptFileId: input.receiptFileId } : {}),
           ...(input.isBillable !== undefined ? { isBillable: input.isBillable } : {}),
           ...(input.entryMode !== undefined ? { entryMode: input.entryMode } : {}),
+          ...(input.aiAssisted ? { aiAssisted: true } : {}),
           ...(resubmitting ? { status: "submitted" as const, rejectedByUserId: null, rejectedAt: null, reviewComment: null } : {}),
           updatedAt: new Date(),
         })
@@ -395,8 +398,8 @@ export class ExpensesService {
       if (mode === "amount" && existing.entryMode === "labour") await this.writeLabourLines(tx, orgId, id, []);
 
       // Labour rows aren't a field; the amount change already says what moved.
-      const { labourLines: _rows, ...fields } = input;
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>);
+      const { labourLines: _rows, aiAssisted: _ai, ...fields } = input;
+      const changes = [...AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>), ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])];
       if (resubmitting) {
         await this.auditLog.record(tx, { orgId, actorUserId, action: "resubmitted", entityType: "expense", entityId: id, contactId: null, changes: [{ field: "status", from: "rejected", to: "submitted" }, ...changes] });
       } else if (changes.length) {
