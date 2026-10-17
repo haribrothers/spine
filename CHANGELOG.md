@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-17 — Keep working when AI is unavailable (US-AI-07, D-246)
+
+- **AI never blocks work:** a provider that fails or can't be reached answers "AI didn't answer. Fill this in by hand or try again." at once (503), one that doesn't answer in 30 seconds the same (504); neither is retried, and forms save by hand as normal.
+- **Replies are checked field by field:** each AI reply is fitted to the feature's fixed shape before it reaches a form — a field that fails its check stays empty while the rest fill, fields the shape doesn't name are dropped, and a reply that isn't JSON fills nothing (R-23).
+- **The pieces every AI control uses:** the "Read from document"-style button with "Reading…" and "Cancel" (no spinner with reduced motion), the inline "AI didn't answer" message with "Try again", and the rules that a cancelled request fills nothing and AI fills only fields still empty when it answers. The API client can now cancel a request, and a feature switched off shows its own message rather than "You don't have permission".
+- **Tests:** API unit (`us-ai-07.fit-reply`) and integration (`us-ai-07`, with the test provider hanging, failing and gone), and web (`us-ai-07`). The bill page's end-to-end check comes with US-AI-08. QA section 239.
+
 ### 2026-10-17 — Who may use AI, and the record of its use (US-AI-05, US-AI-06, D-245)
 
 - **"Use AI features" for a Team:** a new `ai.use` capability in its own "AI assistant" group in each Team's permissions, off for General Staff and every existing Team (migration 0127), changed through the draft and Save confirm like any other, hidden while AI is off and kept for when it's back. The panel says AI isn't a section. Owners always may; Field may only read the receipt on their own expense — a fixed rule, not a capability. `GET /ai/status` now says `canUse` and `canReadOwnReceipt`, and the AI gateway refuses anyone else ("You don't have the right to use AI. An owner can give it to your Team.").

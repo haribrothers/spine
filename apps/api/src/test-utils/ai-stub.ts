@@ -12,8 +12,12 @@ export interface AiStub {
   /** `http://127.0.0.1:<port>/v1` — a local address, so no acknowledgement is needed. */
   url: string;
   requests: AiStubRequest[];
+  /** US-AI-07 — `down` answers 500, `hang` never answers; `ok` (the default) answers normally. */
+  setMode: (mode: AiStubMode) => void;
   close: () => Promise<void>;
 }
+
+export type AiStubMode = "ok" | "down" | "hang";
 
 /**
  * A stand-in OpenAI-compatible provider for tests (US-AI-02): lists `models`,
@@ -23,6 +27,7 @@ export interface AiStub {
 export async function startAiStub(options: { models?: string[]; acceptsImages?: boolean; key?: string } = {}): Promise<AiStub> {
   const models = options.models ?? ["llama3.2-vision", "qwen2.5:14b"];
   const requests: AiStubRequest[] = [];
+  let mode: AiStubMode = "ok";
   const server = createServer((req, res) => {
     let raw = "";
     req.on("data", (chunk) => (raw += chunk));
@@ -33,6 +38,8 @@ export async function startAiStub(options: { models?: string[]; acceptsImages?: 
         res.writeHead(status, { "Content-Type": "application/json" });
         res.end(JSON.stringify(payload));
       };
+      if (mode === "hang") return;
+      if (mode === "down") return send(500, { error: { message: "model failed to load" } });
       if (options.key && req.headers.authorization !== `Bearer ${options.key}`) return send(401, { error: { message: "Invalid API key" } });
       if (req.method === "GET" && req.url === "/v1/models") return send(200, { object: "list", data: models.map((id) => ({ id, object: "model" })) });
       if (req.method === "POST" && req.url === "/v1/chat/completions") {
@@ -46,5 +53,14 @@ export async function startAiStub(options: { models?: string[]; acceptsImages?: 
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
-  return { url: `http://127.0.0.1:${port}/v1`, requests, close: () => new Promise((resolve) => server.close(() => resolve())) };
+  return {
+    url: `http://127.0.0.1:${port}/v1`,
+    requests,
+    setMode: (next) => (mode = next),
+    close: () =>
+      new Promise((resolve) => {
+        server.closeAllConnections();
+        server.close(() => resolve());
+      }),
+  };
 }

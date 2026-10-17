@@ -1,6 +1,6 @@
 "use client";
 
-import { PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared";
+import { AI_FEATURE_OFF_ERROR, MODULE_OFF_ERROR, PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared";
 
 /**
  * Thin browser-side fetch wrapper for `/org/*` endpoints — first of its
@@ -60,6 +60,8 @@ async function request<T>(
   method: "GET" | "PUT" | "POST" | "DELETE",
   path: string,
   body?: unknown,
+  /** US-AI-07 — an AI request's "Cancel" aborts it; the caller gets the `AbortError`. */
+  signal?: AbortSignal,
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (method !== "GET") {
@@ -71,6 +73,7 @@ async function request<T>(
     credentials: "include",
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal,
   });
 
   if (!res.ok) {
@@ -88,8 +91,9 @@ async function request<T>(
       sendToChoosePassword();
       throw new ApiError(message, res.status, data);
     }
-    // US-SET-24: a switched-off module isn't a permission problem — its own message says what to do.
-    const moduleOff = res.status === 403 && (data as { error?: string } | undefined)?.error === "MODULE_OFF";
+    // US-SET-24, US-AI-03: a switched-off module or AI feature isn't a permission problem — its own message says what to do.
+    const refusal = (data as { error?: string } | undefined)?.error;
+    const moduleOff = res.status === 403 && (refusal === MODULE_OFF_ERROR || refusal === AI_FEATURE_OFF_ERROR);
     if (res.status === 403 && !moduleOff) {
       // US-OPS-12: a refusal is explained, never shown as a raw error.
       message = FORBIDDEN_MESSAGE;
@@ -184,7 +188,7 @@ async function download(path: string, body?: unknown): Promise<{ blob: Blob; hea
 export const apiClient = {
   get: <T>(path: string) => request<T>("GET", path),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
-  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  post: <T>(path: string, body?: unknown, options?: { signal?: AbortSignal }) => request<T>("POST", path, body, options?.signal),
   delete: <T>(path: string, body?: unknown) => request<T>("DELETE", path, body),
   upload: <T>(path: string, file: File, fields?: Record<string, string>) => upload<T>(path, file, fields),
   download: (path: string, body?: unknown) => download(path, body),

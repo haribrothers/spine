@@ -5179,6 +5179,17 @@ Use the owner from section 236 with AI on, Sarah Mendes (Staff, General Staff) a
 5. Activity: `POST /vendor-bills` with `"aiAssisted": true` — the bill's Activity reads "Created as a draft · filled in with AI" (Sparkles icon), with who and when underneath; its History reads "… created this bill and filled it in with AI". Same for an expense ("Submitted for approval · filled in with AI") and a quote edited with `aiAssisted` ("Edited · filled in with AI").
 6. Regression: Teams' other permissions, Sections, History and the Save confirm work as before; a Staff member's sidebar is unchanged; bills, expenses and quotes save and show their Activity as before when `aiAssisted` isn't sent.
 
+## 239. Keep working when AI is unavailable (US-AI-07, Phase 10)
+
+Use the owner from section 236, with AI on and the provider pointing at a local Ollama. Compare with the canvas "VendorBillBuilderAiError". The AI controls themselves arrive with US-AI-08 onwards; until then, check steps 1–3 through the API and step 4 on the bill page.
+
+1. Stop Ollama (`ollama stop` or quit the app). Any AI request answers 503 `AI_UNAVAILABLE` "AI didn't answer. Fill this in by hand or try again." at once — not after a wait — and Settings › AI assistant › Monthly budget doesn't count it as tokens.
+2. Point the provider at an address that accepts connections but never answers (for example `nc -l 9999` and `http://127.0.0.1:9999/v1`): the request gives up after 30 seconds with 504 `AI_TIMEOUT` and the same words. The audit log's AI request entry says "Didn't answer in 30 seconds".
+3. Neither is retried: the provider (or `nc`) sees one request each time.
+4. With the provider still down, Purchases › Vendor bills › New vendor bill: fill it in by hand and press "Save as draft" — it saves as normal, with no "filled in with AI" in its Activity. Same for New expense.
+5. Once US-AI-08 is in: press "Read from document" with Ollama stopped — the red message by the header card reads "AI didn't answer. Fill this in by hand or try again. <file> is attached either way." with "Try again"; what you typed stays. Start Ollama and press "Try again": empty fields fill, typed ones don't. Press "Cancel" while it reads: nothing fills.
+6. Regression: Settings › AI assistant, bills and expenses save, and "Test connection" behave as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
