@@ -5209,6 +5209,23 @@ Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b` (read
 13. Dark mode: the strip, the marks, the tinted rows and the warnings read clearly.
 14. Regression: a bill entered by hand, Duplicate, the due-date suggestion, the duplicate warning, place of supply and Attachments work as before.
 
+## 241. Fill in an expense from a receipt (US-AI-09, Phase 10)
+
+Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b`. Have a fuel receipt photo showing CGST + SGST, and a receipt with no tax. Make a category "Fuel & freight" ("Diesel, petrol and transport") and submit three expenses described "HP Fuel Centre — diesel" in it. Compare with the canvas "ExpenseFormAi".
+
+1. Expenses › Submit expense, drop the fuel receipt: under the preview, "Read receipt". With AI off, the feature off or Staff without "Use AI features", it isn't there. Switch to "Headcount × day rate": it goes; back to Amount: it's back.
+2. Press it: "Reading…" with "Cancel"; the form stays usable. Then "Filled in from the receipt. Check the fields marked Suggested by AI before you submit." above the form, and Category, Date, Currency, Amount, Tax rate, Tax amount and Description marked "Suggested by AI". Job and Paid by are untouched. The button reads "Read again" and the caption "<file> · the receipt · read by AI".
+3. Category reads "As on your last 3 expenses from HP Fuel Centre."; Tax amount "From the receipt: CGST ₹369.92 + SGST ₹369.91."; Description "HP Fuel Centre — HSD diesel, 52.4 L". For a GST business the rate is the IGST rate of the same percentage (an expense takes one rate).
+4. A receipt from a new shop: the category is the one whose name and "What it's for" fit, or empty if none does.
+5. A receipt with no tax: the category's usual rate fills in and the tax amount reads "Worked out from <rate>, included in the amount."
+6. Already submitted the same amount on the same day: the duplicate warning shows once Amount and Date fill.
+7. Change a marked field: its mark goes. "Submit expense": it's waiting for approval as normal and its Activity reads "Submitted for approval · filled in with AI". "Submit and add another": the fresh form has no marks and no banner.
+8. Reject an expense, then "Fix and resubmit" and read its receipt: only empty fields fill, with "Replace my entries (<n>)" for the rest.
+9. Marcus (Field, no Team right): on his own new expense "Read receipt" works; he can't read anyone else's.
+10. Stop Ollama and press "Read receipt": "AI didn't answer. Fill this in by hand or try again. The receipt stays on the expense." with "Try again"; the expense submits by hand.
+11. Dark mode: the banner, marks and notes read clearly.
+12. Regression: submitting by hand, the category's usual rate, tax worked out, more files, the duplicate warning, labour entries and Fix and resubmit work as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

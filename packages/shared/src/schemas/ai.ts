@@ -152,11 +152,13 @@ export const aiFeatureOffMessage = (key: AiFeatureKey) => `${AI_FEATURES.find((f
 /** US-AI-08 (D-170) — an image (or a scanned PDF) and a model that can't read images. */
 export const AI_NO_IMAGES_ERROR = "AI_NO_IMAGES";
 export const AI_NO_IMAGES_MESSAGE = "Your AI model can't read images. Choose a model that can, or enter the bill by hand.";
+/** US-AI-09 — the same, on the expense form. */
+export const AI_NO_IMAGES_RECEIPT_MESSAGE = "Your AI model can't read images. Choose a model that can, or enter the expense by hand.";
 /** US-AI-08 — a file AI can't read (an HEIC photo, a spreadsheet). */
-export const AI_UNREADABLE_FILE_MESSAGE = "AI can read PDFs and JPEG, PNG or WebP photos. Save it as one of those, or enter the bill by hand.";
+export const AI_UNREADABLE_FILE_MESSAGE = "AI can read PDFs and JPEG, PNG or WebP photos. Save it as one of those, or enter it by hand.";
 
-/** US-AI-08 — `POST /ai/read-document`; US-AI-09 adds `expense`. */
-export const AI_DOCUMENT_TARGETS = ["vendor_bill"] as const;
+/** US-AI-08, US-AI-09 — `POST /ai/read-document`: a vendor's bill, or a receipt for an expense. */
+export const AI_DOCUMENT_TARGETS = ["vendor_bill", "expense"] as const;
 export type AiDocumentTarget = (typeof AI_DOCUMENT_TARGETS)[number];
 export const readDocumentSchema = z.object({
   fileId: z.uuid("Choose a file to read."),
@@ -207,6 +209,34 @@ export interface DocumentSuggestion {
   /** True when the document was sent as images (a photo or a scanned PDF). */
   readAsImages: boolean;
 }
+
+/** US-AI-09 — what AI read from a receipt for the expense form, after Spine matched and checked it. Nothing is saved. */
+export interface ReceiptSuggestion {
+  merchant: string | null;
+  /** "<merchant> — <what was bought>", for Description (expenses have no vendor field). */
+  description: string | null;
+  date: string | null;
+  currency: string | null;
+  /** The total paid, tax included, in minor units. */
+  amount: string | null;
+  /** The tax the receipt shows, in minor units; null when it shows none (the category's rate then applies). */
+  taxAmount: string | null;
+  taxPercent: number | null;
+  /** A rate with the receipt's percentage, when one matches. */
+  taxRateId: string | null;
+  /** The receipt's own tax lines ("CGST 9%", minor units), for "From the receipt: …". */
+  taxLines: { name: string; amount: string }[];
+  categoryId: string | null;
+  /** Where the category came from: this merchant's past expenses, or the categories' names and what they're for. */
+  categoryFrom: "merchant" | "category" | null;
+  /** How many of the merchant's recent expenses had that category ("As on your last 3 expenses from …"). */
+  merchantExpenses: number;
+  readMs: number;
+  readAsImages: boolean;
+}
+
+/** "As on your last 3 expenses from HP Fuel Centre." */
+export const aiCategoryFromMerchant = (count: number, merchant: string) => `As on your last ${count === 1 ? "expense" : `${count} expenses`} from ${merchant}.`;
 
 export const AI_CONNECT_PROVIDER_FIRST = "Connect a provider first.";
 export const aiAcknowledgeFirst = (host: string) => `Confirm what will be sent to ${host} first.`;

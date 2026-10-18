@@ -33,7 +33,7 @@ async function pdfInput(bytes: Buffer): Promise<DocumentInput> {
   try {
     pdf = await getDocumentProxy(new Uint8Array(bytes));
   } catch {
-    throw new UnprocessableEntityException("This PDF couldn't be opened. Check it isn't damaged or password-protected, or enter the bill by hand.");
+    throw new UnprocessableEntityException("This PDF couldn't be opened. Check it isn't damaged or password-protected, or enter it by hand.");
   }
   const { text } = await extractText(pdf, { mergePages: true });
   const clean = text.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();

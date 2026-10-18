@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-18 — Fill in an expense from a receipt (US-AI-09, D-249)
+
+- **"Read receipt" on the expense form:** under the receipt preview (not in labour mode). Date, Amount, Currency, Tax rate and Tax amount, Category and Description fill in, marked "Suggested by AI", with "Filled in from the receipt. Check the fields marked Suggested by AI before you submit." above the form.
+- **Category and tax, matched by Spine:** the category this merchant's last expenses used ("As on your last 3 expenses from HP Fuel Centre."), else the one whose name and "What it's for" fit. The receipt's tax as printed, with the rate of that percentage ("From the receipt: CGST ₹369.92 + SGST ₹369.91."); with no tax shown, the category's usual rate works it out as included.
+- **As before:** the same-amount warning shows once the read amount and date fill; the expense submits and is approved as normal and says "filled in with AI"; "Submit and add another" starts clean; fixing a rejected expense fills only empty fields and offers "Replace my entries".
+- **Field** can read the receipt on their own expense without the Team right (D-245). The unreadable-file and damaged-PDF messages now fit bills and expenses alike.
+- **Tests:** API integration (`us-ai-09`), web (`us-ai-09`) and E2E (`us-ai-09`). QA section 241.
+
 ### 2026-10-17 — Spine runs on Node 22 (D-248)
 
 - **Why:** reading a vendor's PDF (US-AI-08) failed in the Docker image — its Node 20 lacks what the PDF library needs — though it passed locally and in CI, which run newer Node. Node 20 is past end of life.

@@ -6,6 +6,7 @@ import { requireOrgId } from "../org/settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
 import { AiRequestService } from "./ai-request.service";
 import { ReadDocumentService } from "./read-document/read-document.service";
+import { ReadReceiptService } from "./read-document/read-receipt.service";
 
 const firstIssue = (issues: { message: string }[], fallback: string) => issues[0]?.message ?? fallback;
 
@@ -71,6 +72,7 @@ export class AiController {
   constructor(
     private readonly requests: AiRequestService,
     private readonly readDocument: ReadDocumentService,
+    private readonly readReceipt: ReadReceiptService,
   ) {}
 
   @Get("status")
@@ -78,12 +80,13 @@ export class AiController {
     return this.requests.status(requireOrgId(session), session.user.id);
   }
 
-  /** US-AI-08 — reads a vendor's bill into a suggestion for the bill page. Saves nothing, so no Idempotency-Key (05-api). */
+  /** US-AI-08, US-AI-09 — reads a vendor's bill for the bill page, or a receipt for the expense form. Saves nothing, so no Idempotency-Key (05-api). */
   @Post("read-document")
   @HttpCode(200)
   async read(@Session() session: UserSession, @Body() body: unknown) {
     const parsed = readDocumentSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Choose a file to read."));
-    return this.readDocument.readVendorBill(requireOrgId(session), session.user.id, parsed.data.fileId);
+    const orgId = requireOrgId(session);
+    return parsed.data.target === "expense" ? this.readReceipt.read(orgId, session.user.id, parsed.data.fileId) : this.readDocument.readVendorBill(orgId, session.user.id, parsed.data.fileId);
   }
 }

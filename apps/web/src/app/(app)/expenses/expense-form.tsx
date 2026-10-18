@@ -28,9 +28,9 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@spine/ui";
-import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, computeLineTax, money, type PossibleDuplicateExpense } from "@spine/shared";
+import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, aiCategoryFromMerchant, aiPausedMessage, computeLineTax, money, type PossibleDuplicateExpense, type ReceiptSuggestion } from "@spine/shared";
 import Link from "next/link";
-import { ImagePlus, Plus, RefreshCw, Send, Trash2 } from "lucide-react";
+import { ImagePlus, Plus, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { ReceiptPreview } from "./receipt-preview";
@@ -43,6 +43,12 @@ import { apiClient } from "../../../lib/api-client";
 import { EXPENSE_PAID_BY_LABELS, type Expense, type ExpenseCategory, type ExpensePaidBy, type JobOption, type SpineFile, type TaxRateOption } from "./types";
 import { expensesDescription, useCanManageExpenseCategories } from "./expenses-header";
 import { PHOTO_OR_PDF_ACCEPT } from "../../../lib/upload-types";
+import { AiActionButton } from "../../../components/ai-action-button";
+import { AiField } from "../../../components/ai-suggested-tag";
+import { AiUnavailableNotice } from "../../../components/ai-unavailable-notice";
+import { useAiRequest } from "../../../lib/use-ai-request";
+import { useAiStatus } from "../../../lib/use-ai-status";
+import { planExpenseFill, receiptTaxNote, type ExpenseField, type ExpenseValues } from "./expense-ai-fill";
 
 const NO_JOB = "__none__";
 const NO_TAX = "";
@@ -129,6 +135,34 @@ export function ExpenseForm({
   const [entryMode, setEntryMode] = useState<"amount" | "labour">("amount");
   const [labourRows, setLabourRows] = useState<LabourRow[]>([blankLabourRow()]);
   const [trades, setTrades] = useState<{ trade: string; lastDayRateAmount: string }[]>([]);
+  // US-AI-09 — "Read receipt": AI fills what the person hasn't entered, each field marked until they change it.
+  const aiStatus = useAiStatus();
+  // Field may read only their own receipt (D-245); everyone else needs "Use AI features".
+  const aiReceipt = Boolean(aiStatus?.features.readDocuments && (aiStatus.canUse || aiStatus.canReadOwnReceipt));
+  const ai = useAiRequest<ReceiptSuggestion>();
+  const [aiFields, setAiFields] = useState<Set<ExpenseField>>(new Set());
+  const [aiAssisted, setAiAssisted] = useState(false);
+  const [readFileId, setReadFileId] = useState<string | null>(null);
+  const [categoryNote, setCategoryNote] = useState<string | null>(null);
+  const [taxNote, setTaxNote] = useState<string | null>(null);
+  const [replaceOffer, setReplaceOffer] = useState<{ values: Partial<ExpenseValues>; count: number } | null>(null);
+  const entered = useRef<Set<ExpenseField>>(new Set());
+  /** A field the person sets: it's theirs now, so its AI mark (and the note under it) goes. */
+  function markMine(field: ExpenseField) {
+    entered.current.add(field);
+    setAiFields((prev) => (prev.has(field) ? new Set([...prev].filter((f) => f !== field)) : prev));
+    if (field === "category") setCategoryNote(null);
+    if (field === "taxAmount" || field === "taxRate") setTaxNote(null);
+  }
+  function resetAi() {
+    ai.cancel();
+    setAiFields(new Set());
+    setAiAssisted(false);
+    setReadFileId(null);
+    setCategoryNote(null);
+    setTaxNote(null);
+    setReplaceOffer(null);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -157,6 +191,25 @@ export function ExpenseForm({
         : [blankLabourRow()],
     );
     setError(null);
+    resetAi();
+    // A rejected expense's values are the person's entries (US-PUR-45); a new one has none yet.
+    entered.current = new Set(
+      expense
+        ? (
+            [
+              ["category", expense.categoryId],
+              ["date", expense.date],
+              ["currency", expense.currency],
+              ["amount", expense.amount !== "0"],
+              ["taxRate", expense.taxRateId],
+              ["taxAmount", expense.taxAmount !== "0"],
+              ["description", expense.description],
+            ] as const
+          )
+            .filter(([, v]) => Boolean(v))
+            .map(([k]) => k)
+        : [],
+    );
   }, [open, expense]);
 
   useEffect(() => {
@@ -287,6 +340,64 @@ export function ExpenseForm({
     }
   }
 
+  /** US-AI-09 — puts what AI read into the fields still empty, marks them, and offers the rest. */
+  function applyReceipt(suggestion: ReceiptSuggestion) {
+    const current: ExpenseValues = { categoryId, date, currency, amount, taxRateId: taxRateSelection, taxAmount, description };
+    const plan = planExpenseFill(current, entered.current, suggestion);
+    putValues(plan.values, suggestion);
+    setAiFields(new Set(plan.filled));
+    if (plan.values.categoryId && suggestion.categoryFrom === "merchant" && suggestion.merchant) setCategoryNote(aiCategoryFromMerchant(suggestion.merchantExpenses, suggestion.merchant));
+    const keptCount = Object.keys(plan.kept).length;
+    setReplaceOffer(keptCount ? { values: plan.kept, count: keptCount } : null);
+    setAiAssisted(true);
+  }
+
+  function putValues(values: Partial<ExpenseValues>, suggestion: ReceiptSuggestion) {
+    if (values.currency !== undefined) setCurrency(values.currency);
+    if (values.date !== undefined) setDate(values.date);
+    if (values.amount !== undefined) setAmount(values.amount);
+    if (values.description !== undefined) setDescription(values.description);
+    // The category brings its usual rate (US-PUR-48) — unless the receipt shows its own tax, set next.
+    if (values.categoryId !== undefined) chooseCategory(values.categoryId);
+    if (values.taxRateId !== undefined) {
+      setTaxRateSelection(values.taxRateId);
+      setRateChosen(true);
+      setRateFromCategory(null);
+    }
+    if (values.taxAmount !== undefined) {
+      setTaxTouched(true);
+      setTaxAmount(values.taxAmount);
+      setTaxNote(receiptTaxNote(suggestion, (a) => formatMoney(a, values.currency ?? currency)));
+    }
+  }
+
+  /** "Replace my entries (<n>)": AI's values for the fields the person had filled. */
+  const lastSuggestion = useRef<ReceiptSuggestion | null>(null);
+  function replaceMine() {
+    if (!replaceOffer || !lastSuggestion.current) return;
+    putValues(replaceOffer.values, lastSuggestion.current);
+    const fields = Object.keys(replaceOffer.values).map((k) => ({ categoryId: "category", taxRateId: "taxRate" })[k as "categoryId" | "taxRateId"] ?? k) as ExpenseField[];
+    for (const f of fields) entered.current.delete(f);
+    setAiFields((prev) => new Set([...prev, ...fields]));
+    setReplaceOffer(null);
+  }
+
+  // The answer arrives later: it's applied with the form as it is then (US-AI-07).
+  const applyRef = useRef(applyReceipt);
+  applyRef.current = applyReceipt;
+  function readReceipt() {
+    if (!receiptFileId) return;
+    const fileId = receiptFileId;
+    void ai.run(
+      (signal) => apiClient.post<ReceiptSuggestion>("/ai/read-document", { fileId, target: "expense" }, { signal }),
+      (suggestion) => {
+        lastSuggestion.current = suggestion;
+        setReadFileId(fileId);
+        applyRef.current(suggestion);
+      },
+    );
+  }
+
   async function handleSubmit(addAnother = false) {
     setError(null);
     if (!categoryId) {
@@ -324,6 +435,8 @@ export function ExpenseForm({
         ...(choosesAccount && moneyAccountId ? { moneyAccountId } : {}),
         receiptFileId,
         isBillable,
+        // US-AI-06 — the expense says it was filled in with AI.
+        ...(aiAssisted ? { aiAssisted: true } : {}),
       };
       const saved = expense
         ? await apiClient.put<Expense>(`/expenses/${expense.id}`, payload)
@@ -342,6 +455,9 @@ export function ExpenseForm({
         setExtraFiles([]);
         setLabourRows([blankLabourRow()]);
         setDuplicates([]);
+        // The fresh form starts with nothing from AI.
+        resetAi();
+        entered.current = new Set();
       } else {
         onOpenChange(false);
       }
@@ -413,6 +529,19 @@ export function ExpenseForm({
             {receiptFileId ? (
               <div className="flex flex-col items-center gap-2">
                 <ReceiptPreview key={receiptFileId} fileId={receiptFileId} mimeType={receiptMime} className="h-56 w-full shrink-0" />
+                {aiReceipt && entryMode === "amount" && (
+                  <div className="flex w-full flex-col items-center gap-1" data-testid="expense-ai-read">
+                    <AiActionButton
+                      label={readFileId === receiptFileId ? "Read again" : "Read receipt"}
+                      workingLabel="Reading…"
+                      working={ai.working}
+                      disabled={Boolean(aiStatus?.pausedUntil)}
+                      onClick={readReceipt}
+                      onCancel={ai.cancel}
+                    />
+                    {aiStatus?.pausedUntil && <p className="text-center text-[11.5px] text-on-surface-muted">{aiPausedMessage(aiStatus.pausedUntil)}</p>}
+                  </div>
+                )}
                 <div className="flex gap-1.5">
                   <Button
                     type="button"
@@ -443,7 +572,9 @@ export function ExpenseForm({
                     Remove
                   </Button>
                 </div>
-                <p className="text-center text-[11.5px] text-on-surface-muted">{receiptFilename ? `${receiptFilename} · ` : ""}the receipt</p>
+                <p className="text-center text-[11.5px] text-on-surface-muted">
+                  {receiptFilename ? `${receiptFilename} · ` : ""}the receipt{readFileId === receiptFileId ? " · read by AI" : ""}
+                </p>
               </div>
             ) : (
               <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-center">
@@ -486,6 +617,24 @@ export function ExpenseForm({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          {ai.state.status === "failed" && <AiUnavailableNotice message={ai.state.message} detail="The receipt stays on the expense." onRetry={ai.state.canRetry ? ai.retry : undefined} />}
+          {aiFields.size > 0 && (
+            <Alert variant="info" icon={<Sparkles className="text-primary" />} data-testid="expense-ai-filled">
+              <AlertDescription>
+                Filled in from the receipt. Check the fields marked <span className="font-semibold">Suggested by AI</span> before you submit.
+              </AlertDescription>
+            </Alert>
+          )}
+          {replaceOffer && (
+            <Alert variant="info" data-testid="ai-replace-offer">
+              <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="flex-1">AI read something different for what you&apos;d already entered. Your entries are kept.</span>
+                <Button type="button" variant="secondary" size="sm" onClick={replaceMine}>
+                  Replace my entries ({replaceOffer.count})
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <span id="entry-mode-label" className="text-[13px] font-medium text-on-surface">
@@ -502,58 +651,115 @@ export function ExpenseForm({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              label="Category"
-              required
-              helperText={entryMode === "labour" && labourCategory && categoryId === labourCategory.id ? `Preselected: posts to ${labourCategory.accountCode} ${labourCategory.accountName}.` : (chosenCategory?.description ?? undefined)}
-            >
-              {() => <Combobox options={categoryOptions} value={categoryId} onValueChange={chooseCategory} placeholder="Select a category…" />}
-            </FormField>
+            <AiField suggested={aiFields.has("category")}>
+              <FormField
+                label="Category"
+                required
+                helperText={
+                  entryMode === "labour" && labourCategory && categoryId === labourCategory.id
+                    ? `Preselected: posts to ${labourCategory.accountCode} ${labourCategory.accountName}.`
+                    : (categoryNote ?? chosenCategory?.description ?? undefined)
+                }
+              >
+                {() => (
+                  <Combobox
+                    options={categoryOptions}
+                    value={categoryId}
+                    onValueChange={(id) => {
+                      markMine("category");
+                      chooseCategory(id);
+                    }}
+                    placeholder="Select a category…"
+                  />
+                )}
+              </FormField>
+            </AiField>
             {/* US-SET-24: no jobs while Jobs & field is switched off. */}
             {jobsOn && (
               <FormField label="Job" required={entryMode === "labour"} helperText={entryMode === "labour" ? "Labour is always for a job." : "Optional — flows into job costing once approved."}>
                 {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
               </FormField>
             )}
-            <FormField label="Date" required>
-              {() => <DatePicker value={date} onChange={setDate} />}
-            </FormField>
-            <FormField label="Currency" required>
-              {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} aria-label="Currency" />}
-            </FormField>
-            {entryMode === "amount" && (
-              <FormField label="Amount" required>
-                {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={amount} onValueChange={setAmount} currency={currency} />}
+            <AiField suggested={aiFields.has("date")}>
+              <FormField label="Date" required>
+                {() => (
+                  <DatePicker
+                    value={date}
+                    onChange={(v) => {
+                      markMine("date");
+                      setDate(v);
+                    }}
+                  />
+                )}
               </FormField>
+            </AiField>
+            <AiField suggested={aiFields.has("currency")}>
+              <FormField label="Currency" required>
+                {() => (
+                  <Combobox
+                    options={currencyOptions}
+                    value={currency}
+                    onValueChange={(v) => {
+                      markMine("currency");
+                      setCurrency(v);
+                    }}
+                    aria-label="Currency"
+                  />
+                )}
+              </FormField>
+            </AiField>
+            {entryMode === "amount" && (
+              <AiField suggested={aiFields.has("amount")}>
+                <FormField label="Amount" required>
+                  {(field) => (
+                    <MoneyInput
+                      id={field.id}
+                      aria-describedby={field["aria-describedby"]}
+                      value={amount}
+                      onValueChange={(v) => {
+                        markMine("amount");
+                        setAmount(v);
+                      }}
+                      currency={currency}
+                    />
+                  )}
+                </FormField>
+              </AiField>
             )}
-            <FormField label="Tax rate" helperText={rateFromCategory && taxRateSelection ? `${possessive(rateFromCategory)} usual rate — change it if this receipt differs.` : undefined}>
-              {() => (
-                <Combobox
-                  options={taxOptions}
-                  value={taxRateSelection}
-                  onValueChange={(v) => {
-                    setTaxRateSelection(v);
-                    setRateChosen(true);
-                    setRateFromCategory(null);
-                  }}
-                  placeholder="No tax"
-                />
-              )}
-            </FormField>
-            <FormField label="Tax amount" helperText={!taxTouched && chosenRate ? `Worked out from ${chosenRate.name}, included in the amount.` : "Included in the amount above, not added on top."}>
-              {(field) => (
-                <MoneyInput
-                  id={field.id}
-                  aria-describedby={field["aria-describedby"]}
-                  value={taxAmount}
-                  onValueChange={(v) => {
-                    setTaxTouched(true);
-                    setTaxAmount(v);
-                  }}
-                  currency={currency}
-                />
-              )}
-            </FormField>
+            <AiField suggested={aiFields.has("taxRate")}>
+              <FormField label="Tax rate" helperText={rateFromCategory && taxRateSelection ? `${possessive(rateFromCategory)} usual rate — change it if this receipt differs.` : undefined}>
+                {() => (
+                  <Combobox
+                    options={taxOptions}
+                    value={taxRateSelection}
+                    onValueChange={(v) => {
+                      markMine("taxRate");
+                      setTaxRateSelection(v);
+                      setRateChosen(true);
+                      setRateFromCategory(null);
+                    }}
+                    placeholder="No tax"
+                  />
+                )}
+              </FormField>
+            </AiField>
+            <AiField suggested={aiFields.has("taxAmount")}>
+              <FormField label="Tax amount" helperText={taxNote ?? (!taxTouched && chosenRate ? `Worked out from ${chosenRate.name}, included in the amount.` : "Included in the amount above, not added on top.")}>
+                {(field) => (
+                  <MoneyInput
+                    id={field.id}
+                    aria-describedby={field["aria-describedby"]}
+                    value={taxAmount}
+                    onValueChange={(v) => {
+                      markMine("taxAmount");
+                      setTaxTouched(true);
+                      setTaxAmount(v);
+                    }}
+                    currency={currency}
+                  />
+                )}
+              </FormField>
+            </AiField>
             <FormField label="Paid by" required>
               {() => (
                 <Select value={paidBy} onValueChange={(v) => setPaidBy(v as ExpensePaidBy)}>
@@ -596,9 +802,21 @@ export function ExpenseForm({
             </Alert>
           )}
 
-          <FormField label="Description">
-            {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was this for?" />}
-          </FormField>
+          <AiField suggested={aiFields.has("description")}>
+            <FormField label="Description">
+              {(field) => (
+                <Input
+                  {...field}
+                  value={description}
+                  onChange={(e) => {
+                    markMine("description");
+                    setDescription(e.target.value);
+                  }}
+                  placeholder="What was this for?"
+                />
+              )}
+            </FormField>
+          </AiField>
 
           <label className="flex w-fit cursor-pointer items-center gap-2">
             <Checkbox checked={isBillable} onCheckedChange={(v) => setIsBillable(v === true)} />
