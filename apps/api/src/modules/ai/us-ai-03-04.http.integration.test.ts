@@ -103,16 +103,18 @@ describe("US-AI-03 · US-AI-04 (requires local Postgres)", () => {
       await db.delete(aiRequests).where(eq(aiRequests.orgId, orgId));
       await json(await call(owner, "PUT", "/org/ai", { monthlyTokenBudget: 1_000 }));
       const notify = vi.spyOn(testApp.app.get(NotificationsService), "notify").mockResolvedValue();
+      // Only the budget's own notices: other notifications (a Team change earlier) may land meanwhile under load.
+      const budget = () => notify.mock.calls.map((c) => c[1]).filter((n) => /^ai_budget_/.test(String((n as { inApp?: { type?: string } }).inApp?.type)));
 
       await ask("readDocuments", { input: 700, output: 150 }); // 85%
-      expect(notify).toHaveBeenCalledTimes(1);
-      expect(notify.mock.calls[0]![1]).toMatchObject({ subject: "AI has used 80% of this month's budget.", recipientRoles: ["owner"], inApp: { type: "ai_budget_warning" } });
+      expect(budget()).toHaveLength(1);
+      expect(budget()[0]).toMatchObject({ subject: "AI has used 80% of this month's budget.", recipientRoles: ["owner"], inApp: { type: "ai_budget_warning" } });
       await ask("draftQuoteLines", { input: 50, output: 20 }, staff.userId); // 92%: no second warning
-      expect(notify).toHaveBeenCalledTimes(1);
+      expect(budget()).toHaveLength(1);
 
       await ask("readDocuments", { input: 90, output: 10 }); // 102%: paused
-      expect(notify).toHaveBeenCalledTimes(2);
-      expect(notify.mock.calls[1]![1]).toMatchObject({ inApp: { type: "ai_budget_reached" } });
+      expect(budget()).toHaveLength(2);
+      expect(budget()[1]).toMatchObject({ inApp: { type: "ai_budget_reached" } });
 
       const month = orgClock().date.slice(0, 7);
       const [y, m] = month.split("-").map(Number) as [number, number];
@@ -120,7 +122,7 @@ describe("US-AI-03 · US-AI-04 (requires local Postgres)", () => {
       const paused = await failure(ask("readDocuments", { input: 1, output: 1 }));
       expect(paused).toMatchObject({ status: 409, error: "AI_BUDGET_USED", message: aiPausedMessage(firstOfNext) });
       expect((await json<AiStatus>(await call(staff, "GET", "/ai/status"))).pausedUntil).toBe(firstOfNext);
-      expect(notify).toHaveBeenCalledTimes(2);
+      expect(budget()).toHaveLength(2);
 
       const usage = await json<AiUsage>(await call(owner, "GET", "/org/ai/usage"));
       expect(usage).toMatchObject({ month, budget: 1_000, used: 1_020, requests: 3, percent: 102, pausedUntil: firstOfNext });

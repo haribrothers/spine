@@ -88,9 +88,12 @@ export function labourTotal(lines: readonly { headcount: number; dayRateAmount: 
   return lines.reduce((sum, line) => sum + labourLineAmount(line), 0n);
 }
 
+/** D-250 — a file is linked to a record only by the person who uploaded it, while nothing else uses it. */
+export const linkUploadFirst = (thing: string) => `Upload the ${thing} first.`;
+export const linkInUse = (thing: string) => `This file is already used elsewhere. Upload the ${thing} again to use it here.`;
 /** D-250 — an expense's receipt is a file its submitter just uploaded, as an attachment is (US-OPS-33). */
-export const RECEIPT_UPLOAD_FIRST = "Upload the receipt first.";
-export const RECEIPT_IN_USE = "This file is already used elsewhere. Upload the receipt again to use it here.";
+export const RECEIPT_UPLOAD_FIRST = linkUploadFirst("receipt");
+export const RECEIPT_IN_USE = linkInUse("receipt");
 
 /** PRD F7 (S-07.2/S-07.3) — a field/staff-submitted expense. No total/tax computation trusted from the client beyond the raw amount/taxAmount themselves (there's no multi-line breakdown to sum here, unlike quotes/invoices — an expense is a single amount). */
 export const createExpenseSchema = z.object({

@@ -87,10 +87,10 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/contacts` | Any member | — |
-| POST | `/contacts` | roles: owner, staff; `contacts.edit_own` | Yes |
+| POST | `/contacts` | roles: owner, staff; `contacts.edit_own`. A `logoFileId` (the contact's or a person's) must be the caller's own upload that no other record uses (D-250; 400 "Upload the photo first." / "This file is already used elsewhere…") | Yes |
 | DELETE | `/contacts/:id` | roles: owner, staff | Yes |
 | GET | `/contacts/:id` | Any member | — |
-| PUT | `/contacts/:id` | roles: owner, staff | Yes |
+| PUT | `/contacts/:id` | roles: owner, staff. A new `logoFileId` follows POST's rule; logos and photos the contact already has are kept whoever uploaded them (D-250) | Yes |
 | POST | `/contacts/:id/archive` | roles: owner, staff | Yes |
 | GET | `/contacts/:id/history` | Any member | — |
 | POST | `/contacts/:id/restore` | roles: owner, staff | Yes |
@@ -200,14 +200,14 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/jobs/:id/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | GET | `/jobs/:id/milestones` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | PUT | `/jobs/:id/milestones` | roles: owner, staff | No |
-| POST | `/jobs/:id/milestones/:milestoneId/complete` | roles: owner, staff, field | Yes |
+| POST | `/jobs/:id/milestones/:milestoneId/complete` | roles: owner, staff, field. Each of `photoFileIds` must be the caller's own upload that no other record uses (D-250; 400 "Upload the photo first." / "This file is already used elsewhere…"); a photo already on this job is fine | Yes |
 | GET | `/jobs/:id/milestones/:milestoneId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/milestones/:milestoneId/invoice` | roles: owner, staff; `milestones.invoice` | Yes |
 | GET | `/jobs/:id/notes` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/notes` | roles: owner, staff, field; `job_notes.edit_own` | No |
 | GET | `/jobs/:id/notes/:noteId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | GET | `/jobs/:id/photos` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
-| POST | `/jobs/:id/photos` | roles: owner, staff, field; `job_photos.edit_own` | Yes |
+| POST | `/jobs/:id/photos` | roles: owner, staff, field; `job_photos.edit_own`. `fileId` must be the caller's own upload that no other record uses (D-250; 400 "Upload the photo first." / "This file is already used elsewhere…"); a photo already on this job is fine | Yes |
 | GET | `/jobs/:id/photos/:photoId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/release-retention` | roles: owner, staff; `jobs.release_retention` | Yes |
 | GET | `/jobs/:id/variation-orders` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
@@ -328,7 +328,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | DELETE | `/quotes/:id` | roles: owner, staff | Yes |
 | GET | `/quotes/:id` | roles: owner, staff, field (Field: a quote to present on an assigned job, service-scoped) | — |
 | PUT | `/quotes/:id` | roles: owner, staff | Yes |
-| POST | `/quotes/:id/accept-in-person` | roles: owner, staff, field; `quotes.accept_in_person` | Yes |
+| POST | `/quotes/:id/accept-in-person` | roles: owner, staff, field; `quotes.accept_in_person`. The signature is the caller's own upload that no other record uses (D-250) | Yes |
 | POST | `/quotes/:id/reject-in-person` | roles: owner, staff, field; `quotes.accept_in_person` | Yes |
 | POST | `/quotes/:id/approve-discount` | roles: owner, staff; `quotes.approve_discount` | Yes |
 | GET | `/quotes/:id/history` | roles: owner, staff | — |
@@ -385,7 +385,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/users/me` | Any member | — |
-| PUT | `/users/me` | Any member | No |
+| PUT | `/users/me` | Any member. An `image` pointing at a Spine file (`/files/<id>`) must be the caller's own upload that nothing else uses — here and on Better Auth's `/update-user` (D-250) | No |
 | GET | `/users/me/dashboard-layout` | Any member | — |
 | PUT | `/users/me/dashboard-layout` | Any member | No |
 | GET/PUT | `/users/me/favourite-reports` → `{ slugs }` (US-RPT-23; PUT `{ slugs }` keeps known reports once each, in order) | Any member | No |
@@ -666,7 +666,7 @@ Routes the stories add. Each is created by the story named.
 | SET | GET/PUT | `/org/settings` and `/org/settings/:key` never read or write the `ai` key or secret keys (`ai_provider_key`, SMTP, tokens): GET leaves them out, `/:key` answers 403 "This setting can't be read here." / "… changed here." | GET any member; PUT roles: owner | US-AI-01, US-AI-02 |
 | AI | GET | `/org/ai/usage?month=YYYY-MM` (default this month, organisation time) → `AiUsage` `{ month, budget, used, requests, percent, byFeature: [{ feature, tokens, percent }], byUser: [{ userId, name, tokens, percent }], pausedUntil }` — tokens in and out of answered requests (refusals aren't counted), the top three features and people; a malformed month → 400 "Give the month as YYYY-MM." | roles: owner | US-AI-04 |
 | AI | POST | `/ai/read-document { fileId, target: "vendor_bill" }` → `DocumentSuggestion` `{ vendor: { contactId \| null, name } \| null, number, date, dueDate, dueNote, currency, placeOfSupply, lines: [{ name, description, hsnSac, quantity, unitPriceAmount, taxPercent, isTaxInclusive, taxRateId, taxGroupId, catalogItemId, accountId, accountFrom: "last_bill" \| "item" \| null }], documentTotal, computedTotal, readMs, readAsImages }` — money in minor units as strings; `computedTotal` from the shared tax engine. The file must be the caller's own upload not yet attached to anything, or attached to a draft bill they may change. Saves nothing, so no `Idempotency-Key`. Errors: 404 (file not found or not theirs), 409 (the bill is recorded), 422 `AI_NO_IMAGES` ("Your AI model can't read images. Choose a model that can, or enter the bill by hand.") or an unreadable file ("AI can read PDFs and JPEG, PNG or WebP photos…"), plus the gateway's errors below | `ai.use` (or Owner), `vendor_bills.open`, `vendor_bills.edit_own` (and `edit_others` for a colleague's draft) | US-AI-08 |
-| AI | POST | `/ai/read-document { fileId, target: "expense" }` → `ReceiptSuggestion` `{ merchant, description, date, currency, amount, taxAmount, taxPercent, taxRateId, taxLines: [{ name, amount }], categoryId, categoryFrom: "merchant" \| "category" \| null, merchantExpenses, readMs, readAsImages }` — money in minor units as strings; `taxAmount` null when the receipt shows no tax (the category's rate then applies). The file must be the caller's own upload not yet attached to anything, or the receipt or a file of an expense waiting or rejected that they may edit. Errors as for a bill; 409 for an approved expense; 422 `AI_NO_IMAGES` says "…or enter the expense by hand." | `ai.use` (or Owner) and `expenses.edit_own` (`edit_others` for a colleague's); Field: their own receipt only, by the fixed rule (D-245) | US-AI-09 |
+| AI | POST | `/ai/read-document { fileId, target: "expense" }` → `ReceiptSuggestion` `{ merchant, description, date, currency, amount, taxAmount, taxPercent, taxRateId, taxLines: [{ name, amount }], categoryId, categoryFrom: "merchant" \| "category" \| null, merchantExpenses, readMs, readAsImages }` — money in minor units as strings; `taxAmount` null when the receipt shows no tax (the category's rate then applies). The file must be the caller's own upload not yet attached to anything, or the receipt or a file of an expense waiting or rejected that they may edit. Errors as for a bill; 409 for an approved expense; 422 `AI_NO_IMAGES` says "…or enter the expense by hand." The phone (US-AI-10) uploads its photo with `POST /files` first and later sends that id as the expense's `receiptFileId` with `aiAssisted: true` | `ai.use` (or Owner) and `expenses.edit_own` (`edit_others` for a colleague's); Field: their own receipt only, by the fixed rule (D-245) | US-AI-09 |
 | AI | POST | `/ai/draft-email { type, documentId, tone?: friendly\|formal\|firm }` → `{ subject, body }` (placeholders kept) | `ai.use` + the document's send capability | US-AI-11, US-AI-12 |
 | AI | POST | `/ai/draft-quote-lines { text (≤ 4,000 chars), currency }` → `{ lines: [{ catalogItemId?, bundleId?, name, description, quantity }] }` | `ai.use` + `quotes.open` + `quotes.edit_own` | US-AI-13 |
 | AI | POST | `/ai/bank-suggestions { reconciliationId }` → `[{ statementLineId, rankedJournalLineIds, reason, create?: { kind, accountId?, contactId?, reason } }]` — only for lines the matcher (D-158) left unsettled, and only when the person asks ("Suggest with AI", D-242); "Match all suggested" never includes them | `ai.use` + `banking.reconcile` | US-AI-14 |

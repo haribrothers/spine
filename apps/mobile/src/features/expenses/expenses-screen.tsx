@@ -15,6 +15,7 @@ import { ExpenseStatusChip, expenseStatusLabel, expenseStatusTextClass } from ".
 import { categoryIcon } from "../../components/category-icon";
 import { WaitingChip } from "../../components/waiting-chip";
 import { Fab } from "../../components/fab";
+import { useAiStatus } from "../../lib/data/ai";
 
 export const EXPENSES_EMPTY_TITLE = "No expenses yet";
 export const EXPENSES_EMPTY_MESSAGE = "Log fuel, materials or meals here with a photo of the receipt. Your office approves them before you're paid back.";
@@ -64,6 +65,8 @@ export function ExpensesScreen() {
   const colors = useNativeColors();
   const format = useBusinessFormat();
   const android = Platform.OS === "android";
+  // US-AI-10: kept for New expense, so "Read receipt" can show disabled when the phone is offline later.
+  useAiStatus();
   const list = useCachedQuery<(MyExpense & { reviewerName?: string | null })[]>(MY_EXPENSES_KEY, MY_EXPENSES_PATH, { refreshOnForeground: true, refreshOnSent: (item) => item.kind === "expense" });
   const jobs = useAssignedJobs(false).data ?? [];
   const jobName = (id: string | null) => (id ? (jobs.find((j) => j.id === id)?.name ?? null) : null);

@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
-import { isCommonPassword, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
+import { APIError, createAuthMiddleware, getIp, getSessionFromCtx } from "better-auth/api";
+import { isCommonPassword, linkInUse, linkUploadFirst, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
+import { assertLinkable } from "../modules/files/files.service";
 import { assertSignupAllowed } from "./signup-policy";
 import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -92,6 +93,23 @@ export const auth = betterAuth({
       const chosen = ctx.path === "/sign-up/email" ? ctx.body?.password : ctx.path === "/reset-password" || ctx.path === "/change-password" ? ctx.body?.newPassword : undefined;
       if (typeof chosen === "string" && isCommonPassword(chosen)) {
         throw new APIError("BAD_REQUEST", { message: PASSWORD_TOO_COMMON_MESSAGE, code: "PASSWORD_TOO_COMMON" });
+      }
+      // D-250: a profile photo that's a Spine file must be the person's own upload that nothing else uses —
+      // avatars are read by everyone in the organisation, so it can't be a way to read someone else's file.
+      if (ctx.path === "/update-user" && typeof ctx.body?.image === "string") {
+        const fileId = /\/files\/([0-9a-f-]{36})/i.exec(ctx.body.image)?.[1];
+        if (fileId) {
+          const current = await getSessionFromCtx(ctx);
+          if (current && current.user.image !== ctx.body.image) {
+            const orgId = (current.session as { activeOrganizationId?: string | null }).activeOrganizationId;
+            if (!orgId) throw new APIError("BAD_REQUEST", { message: linkUploadFirst("photo") });
+            try {
+              await assertLinkable(db, orgId, current.user.id, fileId, { uploadFirst: linkUploadFirst("photo"), inUse: linkInUse("photo") });
+            } catch (err) {
+              throw new APIError("BAD_REQUEST", { message: err instanceof Error ? err.message : linkUploadFirst("photo") });
+            }
+          }
+        }
       }
       if (ctx.path !== "/request-password-reset") return;
       const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";

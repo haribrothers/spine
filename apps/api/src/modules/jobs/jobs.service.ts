@@ -1,5 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, JobActivityEntry, updateJobSchema } from "@spine/shared";
+import { linkInUse, linkUploadFirst } from "@spine/shared";
+import { assertLinkable } from "../files/files.service";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
@@ -370,6 +372,8 @@ export class JobsService {
    */
   async addPhoto(orgId: string, jobId: string, actorUserId: string, input: AddJobPhotoInput) {
     const job = await this.getOne(orgId, jobId);
+    // D-250: the person's own upload, not a file another record uses (a photo already on this job is fine).
+    await assertLinkable(this.db, orgId, actorUserId, input.fileId, { uploadFirst: linkUploadFirst("photo"), inUse: linkInUse("photo"), keep: (o) => o.type === "job_photo" && o.id === jobId });
     if (input.milestoneId) {
       const [milestone] = await this.db.select({ id: milestones.id }).from(milestones).where(and(eq(milestones.id, input.milestoneId), eq(milestones.jobId, jobId)));
       if (!milestone) throw new BadRequestException("Choose one of this job's milestones.");

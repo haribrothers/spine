@@ -2,7 +2,8 @@ import { moduleOn } from "../../common/modules";
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { EmailJobOverride } from "../email/email-text";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, rejectQuoteInPersonSchema, updateQuoteSchema } from "@spine/shared";
-import { computeDocumentLine, lineSupplyClass, resolveDocumentLayout, supplyClassTaxError, QUOTE_NO_LINK, type DocumentLayout, type QuoteActivityEntry, type QuoteCustomerLink, type QuoteRelated, type SupplyClass } from "@spine/shared";
+import { assertLinkable } from "../files/files.service";
+import { computeDocumentLine, linkInUse, lineSupplyClass, resolveDocumentLayout, supplyClassTaxError, QUOTE_NO_LINK, type DocumentLayout, type QuoteActivityEntry, type QuoteCustomerLink, type QuoteRelated, type SupplyClass } from "@spine/shared";
 import { and, count, desc, eq, inArray, max } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -1207,6 +1208,9 @@ export class QuotesService {
     if (!signatureFile.mimeType.startsWith("image/")) {
       throw new BadRequestException("The signature must be an image.");
     }
+    // D-250: a file already used by another record (a receipt, a job photo) can't become the signature.
+    // Its own signature again is left to the "already accepted" check below.
+    await assertLinkable(this.db, orgId, actorUserId, signatureFile.id, { uploadFirst: "Signature file not found", inUse: linkInUse("signature"), keep: (o) => o.type === "quote_signature" && o.id === id });
 
     const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
     if (!preCheck) {

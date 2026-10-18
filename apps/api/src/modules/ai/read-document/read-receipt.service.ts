@@ -116,7 +116,8 @@ export class ReadReceiptService {
       .where(and(eq(attachments.orgId, orgId), eq(attachments.fileId, fileId), isNull(attachments.removedAt)));
     const expenseId = asReceipt?.id ?? live.find((a) => a.entityType === "expense")?.entityId ?? null;
     if (!expenseId) {
-      if (live.length || file.uploadedByUserId !== userId) throw notFound();
+      // D-250: a fresh upload means one nothing uses yet — not a job photo or a signature it became.
+      if (live.length || file.uploadedByUserId !== userId || (await this.files.owningRecords(orgId, fileId)).length) throw notFound();
       return { expenseId: null, fieldOwnReceipt: role === "field" };
     }
     const [expense] = await this.db.select({ status: expenses.status, submittedByUserId: expenses.submittedByUserId }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, expenseId)));

@@ -26,6 +26,10 @@ const EXEMPT = new Set([
   // US-INV-34: the same for an invoice.
   "POST /invoices/preview-pdf",
   "POST /credit-notes/preview",
+  // US-AI-02, US-AI-08: AI routes save nothing — a connection test, a model list, a document read (05-api).
+  "POST /org/ai/test",
+  "POST /org/ai/models",
+  "POST /ai/read-document",
 ]);
 
 function controllerFiles(dir: string): string[] {

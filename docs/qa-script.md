@@ -5232,7 +5232,27 @@ Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b`. Have
 2. Edit a waiting expense without changing its receipt, then swap in a new photo: both save.
 3. Through the API as a Field user, `POST /expenses` with `receiptFileId` set to a file someone else uploaded (for example an Owner's upload): 400 "Upload the receipt first.", and `GET /files/<id>` stays 404 for them.
 4. Through the API, reuse a receipt already on another expense, or a file attached to a bill: 400 "This file is already used elsewhere. Upload the receipt again to use it here."
-5. Regression: Load demo data — its expenses have their receipts; attachments on bills and expenses work as before.
+5. The same rule everywhere (API as a Field user): `POST /jobs/<id>/photos` or a milestone completion with someone else's file → 400 "Upload the photo first."; your own job photo reused as a receipt or an attachment → 400; `PUT /users/me` (and `POST /api/auth/update-user`) with `image` set to another record's file → 400, and the file stays 404 for you.
+6. Contacts: a new logo must be your own upload; saving a contact whose logo or people's photos someone else added still works.
+7. Regression: Load demo data — its expenses have their receipts; attachments on bills and expenses, job photos from the phone (including a retried send), milestone completion with photos, accepting a quote in person, contact logos and changing your profile photo all work as before.
+
+## 243. Fill in my expense from a receipt on the phone (US-AI-10, Phase 10)
+
+On an iPhone and an Android phone, signed in as Marcus (Field). The owner has AI on with Ollama running `qwen3-vl:8b` (reads images), and a category "Fuel & Vehicle". Have a fuel receipt to photograph. Compare with the canvas "MobExpenseNewAi" and "MobExpenseNewAiAndroid".
+
+1. Expenses › + (or Today › Scan receipt), take the receipt photo. Under it: "Read receipt" (tinted, sparkles), "Retake" (grey on iOS, outlined on Android) and "Remove". With AI off, the feature off, Staff without "Use AI features", or a text-only model (`qwen3:4b`), only "Retake receipt" and "Remove" show.
+2. Tap "Read receipt": "Reading…" with "Cancel"; the form stays usable. Then the note "Filled in from your receipt. Check the amount, date and category before you submit." at the top; Amount, Category, Date and Description each "Suggested by AI" (iOS: under the amount, on the category row, beside the date, on the description; Android: under each field). Job and Paid by are untouched; there are no tax fields. The receipt line reads "receipt.jpg · read by AI" and the button "Read again".
+3. Change the amount: its tag goes, the rest stay. Submit: it joins "Waiting to sync" and then "Submitted by you"; on the web its Activity reads "Submitted for approval · filled in with AI", and its receipt is the photo AI read (the server has it once — no second upload).
+4. Type an amount before reading: it's kept, and the note offers "Replace my entries (1)"; tapping it fills AI's amount with its tag.
+5. Turn on Airplane mode after taking the photo: "Read receipt" shows dimmed with "Needs a connection — fill it in, or read it later."; fill it in by hand and Submit — it queues and sends when back online exactly as before, with no "filled in with AI".
+6. Switch to "Headcount × day rate": "Read receipt" goes.
+7. Tap Cancel while it reads: nothing fills. Retake while it reads: nothing fills, and the new photo is unread.
+8. Stop Ollama and tap "Read receipt": "AI didn't answer. Fill this in by hand or try again." with "Try again".
+9. A receipt in another currency (e.g. EUR on a USD business): the amount stays empty and the note says "The receipt is in EUR, so the amount wasn't filled in — enter it in USD."
+10. Owner sets the monthly budget below what's used: "Read receipt" is dimmed with "AI is paused until 1 November — this month's budget is used up." (check the date reads correctly on both phones).
+11. VoiceOver / TalkBack: "Read receipt" (or the reason it's dimmed), "Reading…" as busy, "Cancel reading the receipt", each "Suggested by AI", "Try reading the receipt again"; when the read ends it's announced ("Filled in from your receipt…" or "AI didn't answer…"). Switching to Labour while reading stops it.
+12. Dark mode and Reduce Motion (no spinner while reading).
+13. Regression: New expense without AI, Scan receipt, retake/choose/remove, Fix → edit of a refused expense, labour entries and syncing work as before.
 
 ## Known gaps — don't file these as bugs
 

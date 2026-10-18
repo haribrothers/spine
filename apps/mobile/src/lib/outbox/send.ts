@@ -39,8 +39,32 @@ export function rejectionMessage(item: OutboxItem, error: unknown): string {
   return `Didn't send: ${sentence(lowerFirst(message))}`;
 }
 
+/**
+ * A photo's own part of its request keys: its kept file's name, which
+ * `keepPhoto` makes unique. Keys are per photo, not per position, because
+ * the server answers a used key with its first result (D-009): after a
+ * retake, or a removed photo shifting the others along, a key per position
+ * would bring back the earlier photo's file (US-AI-10 review, D-251).
+ */
+export const photoKeyPart = (photo: LocalPhoto) => photo.uri.slice(photo.uri.lastIndexOf("/") + 1);
+
 /** Long uploads on a weak signal need longer than an ordinary request. */
 const UPLOAD_TIMEOUT_MS = 120_000;
+
+/**
+ * US-AI-10 (D-251) — uploads a receipt now, outside the queue, so AI can
+ * read it while the person waits. The id goes on the photo, so when the
+ * expense is sent its receipt is that file, not a second upload (the
+ * `!receipt.fileId` check below). Online only: the screen offers it only
+ * with a connection. A photo that already has an id is returned as it is.
+ */
+export async function uploadReceipt(transport: Transport, photo: LocalPhoto, key: string, signal?: AbortSignal): Promise<LocalPhoto> {
+  if (photo.fileId) return photo;
+  if (photo.size > MAX_UPLOAD_BYTES) throw new RejectedError("This photo is over 10 MB. Retake it closer, or choose a smaller one.");
+  if (!outbox.hasFile(photo)) throw new RejectedError("The receipt photo is no longer on this phone. Take it again.");
+  const file = await transport<{ id: string }>("POST", "/files", { formData: outbox.formData(photo), idempotencyKey: key, timeoutMs: UPLOAD_TIMEOUT_MS, signal });
+  return { ...photo, fileId: file.id };
+}
 
 async function upload(transport: Transport, item: OutboxItem, photo: LocalPhoto, key: string): Promise<string> {
   if (photo.size > MAX_UPLOAD_BYTES) throw new RejectedError(rejectionMessage(item, new ApiError("too large", 413)));
@@ -63,11 +87,11 @@ export async function sendItem(item: OutboxItem, transport: Transport, save: (it
       const photos = [...item.payload.photos];
       for (let i = 0; i < photos.length; i++) {
         if (!photos[i]!.fileId) {
-          photos[i] = { ...photos[i]!, fileId: await upload(transport, item, photos[i]!, `${item.id}:file:${i}`) };
+          photos[i] = { ...photos[i]!, fileId: await upload(transport, item, photos[i]!, `${item.id}:file:${photoKeyPart(photos[i]!)}`) };
           await save({ ...item, payload: { ...item.payload, photos } });
         }
         if (!photos[i]!.attached) {
-          await transport("POST", `/jobs/${item.payload.jobId}/photos`, { body: { fileId: photos[i]!.fileId, caption: photos[i]!.caption ?? null }, idempotencyKey: `${item.id}:photo:${i}` });
+          await transport("POST", `/jobs/${item.payload.jobId}/photos`, { body: { fileId: photos[i]!.fileId, caption: photos[i]!.caption ?? null }, idempotencyKey: `${item.id}:photo:${photoKeyPart(photos[i]!)}` });
           photos[i] = { ...photos[i]!, attached: true };
           await save({ ...item, payload: { ...item.payload, photos } });
         }
@@ -78,7 +102,7 @@ export async function sendItem(item: OutboxItem, transport: Transport, save: (it
     if (item.kind === "expense") {
       let receipt = item.payload.receipt;
       if (receipt && !receipt.fileId) {
-        receipt = { ...receipt, fileId: await upload(transport, item, receipt, `${item.id}:file`) };
+        receipt = { ...receipt, fileId: await upload(transport, item, receipt, `${item.id}:file:${photoKeyPart(receipt)}`) };
         await save({ ...item, payload: { ...item.payload, receipt } });
       }
       const p = item.payload;
@@ -94,6 +118,8 @@ export async function sendItem(item: OutboxItem, transport: Transport, save: (it
           receiptFileId: receipt?.fileId ?? null,
           ...(p.entryMode ? { entryMode: p.entryMode } : {}),
           ...(p.labourLines ? { labourLines: p.labourLines } : {}),
+          // US-AI-10: only when AI filled it in on the phone; sending never asks AI anything.
+          ...(p.aiAssisted ? { aiAssisted: true } : {}),
         },
         idempotencyKey: item.id,
       });
@@ -103,7 +129,7 @@ export async function sendItem(item: OutboxItem, transport: Transport, save: (it
     const photos = [...item.payload.photos];
     for (let i = 0; i < photos.length; i++) {
       if (!photos[i]!.fileId) {
-        photos[i] = { ...photos[i]!, fileId: await upload(transport, item, photos[i]!, `${item.id}:file:${i}`) };
+        photos[i] = { ...photos[i]!, fileId: await upload(transport, item, photos[i]!, `${item.id}:file:${photoKeyPart(photos[i]!)}`) };
         await save({ ...item, payload: { ...item.payload, photos } });
       }
     }

@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { gstinError, gstinRequired, gstinStateCode, normaliseGstin, type GstTreatment, type addressInputSchema, type contactPersonInputSchema, type createContactSchema, type updateContactSchema } from "@spine/shared";
+import { assertLinkable } from "../files/files.service";
+import { gstinError, gstinRequired, linkInUse, linkUploadFirst, gstinStateCode, normaliseGstin, type GstTreatment, type addressInputSchema, type contactPersonInputSchema, type createContactSchema, type updateContactSchema } from "@spine/shared";
 import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -93,7 +94,20 @@ export class ContactsService {
    * than rejecting the request — the web layer decides whether to show a
    * confirmation before treating the create as final.
    */
+  /**
+   * D-250 — logos and people's photos new to this contact are the person's
+   * own uploads that nothing else uses; ones it already has stay, whoever
+   * uploaded them.
+   */
+  private async checkLogos(orgId: string, actorUserId: string, fileIds: (string | null | undefined)[], already: ReadonlySet<string>) {
+    for (const fileId of new Set(fileIds.filter((id): id is string => Boolean(id)))) {
+      if (already.has(fileId)) continue;
+      await assertLinkable(this.db, orgId, actorUserId, fileId, { uploadFirst: linkUploadFirst("photo"), inUse: linkInUse("photo") });
+    }
+  }
+
   async create(orgId: string, actorUserId: string, input: CreateContactInput) {
+    await this.checkLogos(orgId, actorUserId, [input.logoFileId, ...(input.contactPersons ?? []).map((p: ContactPersonInput) => p.logoFileId)], new Set());
     const duplicates = await this.findDuplicates(orgId, input.email ?? null, input.phone ?? null);
     const gst = contactGst(input.gstTreatment, input.taxId, input.stateCode);
 
@@ -258,6 +272,9 @@ export class ContactsService {
         : Promise.resolve([]),
       input.addresses !== undefined ? this.db.select().from(addresses).where(eq(addresses.contactId, id)) : Promise.resolve([]),
     ]);
+
+    const keptLogos = new Set([existing.logoFileId, ...existingPersons.map((p) => p.logoFileId)].filter((id): id is string => Boolean(id)));
+    await this.checkLogos(orgId, actorUserId, [input.logoFileId, ...(input.contactPersons ?? []).map((p: ContactPersonInput) => p.logoFileId)], keptLogos);
 
     const gstTouched = input.gstTreatment !== undefined || input.taxId !== undefined || input.stateCode !== undefined;
     const gst = gstTouched

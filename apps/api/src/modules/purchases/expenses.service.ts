@@ -62,10 +62,7 @@ export class ExpensesService {
    * expense and read it through it.
    */
   private async checkReceipt(orgId: string, actorUserId: string, fileId: string, expenseId?: string) {
-    const file = await this.files.getMetadata(orgId, fileId).catch(() => null);
-    if (!file || file.uploadedByUserId !== actorUserId) throw new BadRequestException(RECEIPT_UPLOAD_FIRST);
-    const owners = await this.files.owningRecords(orgId, fileId);
-    if (owners.some((o) => !(o.type === "expense_receipt" && o.id === expenseId))) throw new BadRequestException(RECEIPT_IN_USE);
+    await this.files.assertLinkable(orgId, actorUserId, fileId, { uploadFirst: RECEIPT_UPLOAD_FIRST, inUse: RECEIPT_IN_USE, keep: (o) => o.type === "expense_receipt" && o.id === expenseId });
   }
 
   /** US-PUR-22 — whether a member is on a job's crew. */

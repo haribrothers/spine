@@ -145,7 +145,7 @@ export class ReadDocumentService {
       .from(attachments)
       .where(and(eq(attachments.orgId, orgId), eq(attachments.fileId, fileId), isNull(attachments.removedAt)));
     if (!live.length) {
-      if (file.uploadedByUserId !== userId) throw notFound();
+      if (file.uploadedByUserId !== userId || (await this.files.owningRecords(orgId, fileId)).length) throw notFound();
       return { billId: null };
     }
     const onBill = live.find((a) => a.entityType === "vendor_bill");

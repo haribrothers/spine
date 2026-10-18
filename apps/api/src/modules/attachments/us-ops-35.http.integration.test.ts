@@ -126,8 +126,9 @@ describe("US-OPS-35 · remove an attachment added by mistake (requires local Pos
     const file = await upload(owner, "receipt.pdf");
     // The same upload is also an expense's receipt.
     await db.insert(expenses).values({ orgId, categoryId, date: new Date(), currency: "USD", amount: 100n, submittedByUserId: owner.userId, receiptFileId: file.id });
-    const added = await attach(owner, "vendor_bill", draft, file.id);
-    expect((await call(owner, "DELETE", `/attachments/${added.id}`)).status).toBe(200);
+    // Linked directly: the API no longer lets one file serve two records (D-250), but older data can.
+    const [added] = await db.insert(attachments).values({ orgId, entityType: "vendor_bill", entityId: draft, fileId: file.id, createdByUserId: owner.userId }).returning();
+    expect((await call(owner, "DELETE", `/attachments/${added!.id}`)).status).toBe(200);
     expect(await db.select().from(files).where(eq(files.id, file.id))).toHaveLength(1);
     expect((await call(owner, "GET", `/files/${file.id}`)).status).toBe(200);
   });

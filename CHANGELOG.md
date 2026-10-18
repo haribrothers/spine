@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-18 — Every file link checks who uploaded it (D-250, widened; security)
+
+- **Why:** a review of the receipt fix found the same hole on other routes: any member could link a file they may not read to a record they can — through their profile photo, a job or milestone photo, a contact's logo, or an attachment (which checked the uploader but not whether a customer's signature or a job photo already used the file).
+- **Now:** one check on every link a non-Owner can make — attachments, expense receipts, job and milestone-completion photos, contact logos and people's photos, the on-site quote signature, and profile photos (both `PUT /users/me` and Better Auth's `/update-user`): the person's own upload, used by nothing else. A record keeping its own file always passes, and so does a photo already on the same job (a retried send). AI won't read a "fresh upload" that has become a job photo or a signature.
+- **Along with it:** demo data uploads its own copy of a sample site photo for each job and milestone (it used to share six files between them); the AI routes that save nothing are on US-OPS-08's list of routes without an Idempotency-Key, which that check had been missing since US-AI-02.
+- **Tests:** `d-250` covers each route; the whole API integration suite was run.
+
+### 2026-10-18 — Fill in my expense from a receipt on the phone (US-AI-10, D-251)
+
+- **"Read receipt" on New expense (iOS and Android):** under the receipt photo, in Amount mode. It uploads the photo and has AI read it; Amount, Date, Category and Description fill in, each "Suggested by AI" until changed, with "Filled in from your receipt. Check the amount, date and category before you submit." at the top. Job, Paid by and tax are left alone. "Read again" and "Retake" under the photo.
+- **Offline:** "Read receipt" shows dimmed with "Needs a connection — fill it in, or read it later.", and the expense queues exactly as before. Hidden in Labour mode, with AI or the feature off, without the right to use AI, or with a model that can't read images; dimmed with the date while the budget is used up.
+- **Your entries stay:** AI fills only what you haven't entered and offers "Replace my entries". It won't fill an amount in another currency (it says so), a future date, or a category that isn't yours. "Cancel", a retake or leaving drops the read; "AI didn't answer…" offers Try again.
+- **One upload:** the photo AI read is the expense's receipt — the queued expense sends its id instead of uploading it again — and the expense says "filled in with AI". Nothing in the outbox ever calls AI, so hand-filled expenses sync as before.
+- **Under the hood:** requests can be cancelled; AI's own 503/504 keep their message on the phone; the AI status is kept for offline use. The "Suggested by AI" tag is an app-level component, no change to the shared native components.
+- **After review:** switching to Labour stops a read in progress; a category deleted since the expense was queued counts as empty; offline says so once and clears when the connection is back; VoiceOver and TalkBack hear the result; iOS "Retake" is a visible grey; the date's tag sits under its caption. The outbox now keys each upload and attach by photo, not position — a retake after a refusal, or a removed photo, used to bring back the earlier photo's file.
+- **Tests:** phone (`us-ai-10`: 30 tests on iOS and Android, including the outbox and request layer; `us-mob-09` keys updated) and API (`us-ai-10`, a Field user with a bearer token). QA section 243 covers the device checks.
+
 ### 2026-10-18 — An expense's receipt must be your own upload (D-250, security)
 
 - **The gap:** an expense stored any file id it was given as its receipt. File reads follow the record a file belongs to, so someone who knew a file's id could attach it to their own expense and read it — a Field user the customer signature they captured on site, a Staff member a file attached to a record they can't open.
