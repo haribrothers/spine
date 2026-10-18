@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — The field app opens on iOS 27, back works on Android 13–15, and Maestro flows for US-AI-10 (D-252, D-253)
+
+- **iOS 27:** the app stopped at launch on the iOS 27 simulator (iOS now requires the scene lifecycle). It moves to Expo SDK 57.0.30 and turns on Expo's own scene support (`expo-build-properties` `ios.enableSceneSupport`); the `expo-modules-core` override and the `expo-modules-jsi` patch go, as 57.1.2 fixes that build error upstream. A stopgap until SDK 58, which is tracked as R-25 before Phase 11. `@expo/ui` 57.0.25 changed how a sheet's and a border's colours are passed; the text field and two tests follow.
+- **Android back (D-253):** on Android 13–15 the back gesture or button closed the app from any screen — the app opted in to predictive back, which React Native 0.86 handles only on Android 16+. It no longer opts in; Android 16+ still gets predictive back.
+- **Maestro:** `us-ai-10-receipt` (iOS and Android) chooses a receipt from the library, reads it and submits; `us-ai-10-offline` (Android) checks "Needs a connection" and the queued send. `us-mob-23-search` finds the Search field where iOS 27 puts it (under the title, not in the tab bar). Android flows run on an Android 15 emulator with 4 GB: on Android 16/17 images Maestro types one key every ~5 s (Maestro #2718). How to run them is in `docs/design/native-notes.md`.
+- **Tests:** iOS 27 — `us-ai-10-receipt`, `us-mob-01`, `03`, `04`, `13`, `23` pass. Android 15 — `us-ai-10-receipt`, `us-ai-10-offline`, `us-mob-07`, `11`, `13` pass, and back from a job, Sync and New expense returns a screen. US-MOB-20's test now checks the app doesn't opt in to predictive back. QA section 243 lists the flows and an Android 13–15 back check.
+
 ### 2026-10-18 — Every file link checks who uploaded it (D-250, widened; security)
 
 - **Why:** a review of the receipt fix found the same hole on other routes: any member could link a file they may not read to a record they can — through their profile photo, a job or milestone photo, a contact's logo, or an attachment (which checked the uploader but not whether a customer's signature or a job photo already used the file).

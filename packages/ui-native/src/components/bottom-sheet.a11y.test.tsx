@@ -51,7 +51,8 @@ describe("BottomSheet a11y", () => {
   it("themes its own chrome background from the design system's surface token", () => {
     const root = render(<BottomSheet isPresented onDismiss={() => {}} />);
     const modifiers = findContentModifiers(root);
-    expect(modifiers).toContainEqual({ $type: "presentationBackground", color: "#FFFFFF" });
+    // @expo/ui 57.0.25 paints the sheet with any ShapeStyle: the color arrives as `style`.
+    expect(modifiers).toContainEqual({ $type: "presentationBackground", style: { type: "color", color: "#FFFFFF" } });
   });
 
   it("shows the drag indicator by default", () => {

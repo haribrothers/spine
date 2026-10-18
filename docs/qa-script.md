@@ -5253,6 +5253,8 @@ On an iPhone and an Android phone, signed in as Marcus (Field). The owner has AI
 11. VoiceOver / TalkBack: "Read receipt" (or the reason it's dimmed), "Reading…" as busy, "Cancel reading the receipt", each "Suggested by AI", "Try reading the receipt again"; when the read ends it's announced ("Filled in from your receipt…" or "AI didn't answer…"). Switching to Labour while reading stops it.
 12. Dark mode and Reduce Motion (no spinner while reading).
 13. Regression: New expense without AI, Scan receipt, retake/choose/remove, Fix → edit of a refused expense, labour entries and syncing work as before.
+14. Automated on a simulator: `e2e/us-ai-10-receipt.yaml` (iOS and Android) does steps 1–3 with a photo from the library; `e2e/us-ai-10-offline.yaml` (Android) does step 5.
+15. Android 13–15 (D-253): on an Android 15 phone or emulator, the back gesture and button go back a screen — from a job to Jobs, from Sync to Today, from New expense to Expenses — and close the app only from a tab's first screen. Same on Android 16+.
 
 ## Known gaps — don't file these as bugs
 

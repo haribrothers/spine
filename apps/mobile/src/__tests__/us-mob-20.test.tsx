@@ -40,9 +40,10 @@ describe("US-MOB-20 · give Android users a designed Material 3 app", () => {
     expect(typeof (options as { headerRight?: unknown }).headerRight).toBe("function");
   });
 
-  it("supports Android's predictive back gesture", () => {
+  it("keeps the back gesture working on every Android version: no predictive-back opt-in (D-253)", () => {
+    // React Native only handles an opted-in back on Android 16+; on 13–15 back would close the app.
     const app = JSON.parse(readFileSync(join(__dirname, "../../app.json"), "utf8")) as { expo: { android: { predictiveBackGestureEnabled: boolean } } };
-    expect(app.expo.android.predictiveBackGestureEnabled).toBe(true);
+    expect(app.expo.android.predictiveBackGestureEnabled).toBe(false);
   });
 
   it("gives icon-only controls a spoken label for TalkBack", () => {

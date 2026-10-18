@@ -16,7 +16,28 @@ appId: com.spine.app
       platform: iOS
     commands:
       - tapOn: "Search"
-      # The field in the tab bar (the empty state above repeats its placeholder).
+# iOS 27 puts the field under the large title, in the navigation bar ("Search").
+- runFlow:
+    when:
+      platform: iOS
+      visible:
+        text: "Search jobs and expenses"
+        childOf:
+          id: "Search"
+    commands:
+      - tapOn:
+          text: "Search jobs and expenses"
+          childOf:
+            id: "Search"
+# iOS 26 puts it in the tab bar (the empty state above repeats its placeholder).
+- runFlow:
+    when:
+      platform: iOS
+      notVisible:
+        text: "Search jobs and expenses"
+        childOf:
+          id: "Search"
+    commands:
       - tapOn:
           text: "Search jobs and expenses"
           index: 1

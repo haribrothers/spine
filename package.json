@@ -33,12 +33,5 @@
     "turbo": "^2.3.0",
     "typescript": "^5.7.0"
   },
-  "pnpm": {
-    "overrides": {
-      "expo-modules-core": "57.0.16"
-    },
-    "patchedDependencies": {
-      "expo-modules-jsi@57.0.8": "patches/expo-modules-jsi@57.0.8.patch"
-    }
-  }
+  "pnpm": {}
 }

@@ -34,7 +34,7 @@ describe("NativeTextField a11y", () => {
     const root = render(<NativeTextField value="" onChangeText={() => {}} error />);
     const node = findFieldNode(root);
     const borderModifier = node.props.modifiers.find((m: { $type: string }) => m.$type === "strokeBorder");
-    expect(borderModifier.color).toBe("#B3261E");
+    expect(borderModifier.content).toEqual({ type: "color", color: "#B3261E" });
   });
 
   it("reflects disabled via a modifier", () => {
