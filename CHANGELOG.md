@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-18 — An expense's receipt must be your own upload (D-250, security)
+
+- **The gap:** an expense stored any file id it was given as its receipt. File reads follow the record a file belongs to, so someone who knew a file's id could attach it to their own expense and read it — a Field user the customer signature they captured on site, a Staff member a file attached to a record they can't open.
+- **The fix:** `POST` and `PUT /expenses` take a receipt only if the person uploaded it and nothing else uses it — the rule attachments already follow. Otherwise "Upload the receipt first." or "This file is already used elsewhere. Upload the receipt again to use it here." Keeping an expense's own receipt on edit still works. The web form, the phone and demo data already send the person's own fresh upload.
+- **Tests:** API integration (`d-250`); every purchases, files, mobile, AI, attachments, banking and demo-data suite passes. Found while building US-AI-10.
+
 ### 2026-10-18 — Fill in an expense from a receipt (US-AI-09, D-249)
 
 - **"Read receipt" on the expense form:** under the receipt preview (not in labour mode). Date, Amount, Currency, Tax rate and Tax amount, Category and Description fill in, marked "Suggested by AI", with "Filled in from the receipt. Check the fields marked Suggested by AI before you submit." above the form.

@@ -6,6 +6,7 @@ import { LedgerModule } from "../ledger/ledger.module";
 import { TaxModule } from "../tax/tax.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { InvoicesModule } from "../invoices/invoices.module";
+import { FilesModule } from "../files/files.module";
 import { VendorBillsController } from "./vendor-bills.controller";
 import { VendorBillsService } from "./vendor-bills.service";
 import { ExpenseCategoriesController } from "./expense-categories.controller";
@@ -44,7 +45,7 @@ import { EmailModule } from "../email/email.module";
 import { OrgModule } from "../org/org.module";
 import { VendorRemittanceService } from "./vendor-remittance.service";
 @Module({
-  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule, EmailModule, OrgModule],
+  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule, EmailModule, OrgModule, FilesModule],
   controllers: [RecurringBillsController, VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
   providers: [RecurringBillsService, RecurringBillRunService, RecurringBillRunWorker, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorRemittanceService, VendorCreditsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService, RecurringBillsService],

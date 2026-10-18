@@ -144,10 +144,10 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/expenses` | roles: owner, staff, field — Field gets only their own (US-OPS-20) | — |
-| POST | `/expenses` | roles: owner, staff, field; `expenses.edit_own` | Yes |
+| POST | `/expenses` | roles: owner, staff, field; `expenses.edit_own`. `receiptFileId` must be a file the caller uploaded that nothing else uses (400 "Upload the receipt first." / "This file is already used elsewhere. Upload the receipt again to use it here.", D-250) | Yes |
 | DELETE | `/expenses/:id` | roles: owner, staff, field | Yes |
 | GET | `/expenses/:id` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
-| PUT | `/expenses/:id` | roles: owner, staff, field | Yes |
+| PUT | `/expenses/:id` | roles: owner, staff, field. A changed `receiptFileId` follows POST's rule; keeping the expense's own receipt is always allowed (D-250) | Yes |
 | POST | `/expenses/:id/approve` | roles: owner, staff; `expenses.approve`; never your own unless Owner (US-PUR-20) | Yes |
 | POST | `/expenses/:id/bill-to-customer` | roles: owner, staff; `expenses.bill_to_customer` | Yes |
 | GET | `/expenses/:id/history` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |

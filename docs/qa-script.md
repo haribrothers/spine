@@ -5226,6 +5226,14 @@ Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b`. Have
 11. Dark mode: the banner, marks and notes read clearly.
 12. Regression: submitting by hand, the category's usual rate, tax worked out, more files, the duplicate warning, labour entries and Fix and resubmit work as before.
 
+## 242. An expense's receipt is your own upload (D-250, security)
+
+1. Submit an expense with a receipt on the web and on the phone: both save with the receipt as before.
+2. Edit a waiting expense without changing its receipt, then swap in a new photo: both save.
+3. Through the API as a Field user, `POST /expenses` with `receiptFileId` set to a file someone else uploaded (for example an Owner's upload): 400 "Upload the receipt first.", and `GET /files/<id>` stays 404 for them.
+4. Through the API, reuse a receipt already on another expense, or a file attached to a bill: 400 "This file is already used elsewhere. Upload the receipt again to use it here."
+5. Regression: Load demo data — its expenses have their receipts; attachments on bills and expenses work as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

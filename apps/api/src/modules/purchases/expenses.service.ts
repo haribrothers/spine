@@ -2,7 +2,7 @@ import { moduleOn } from "../../common/modules";
 import { getMemberRole, hasCapability } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { BulkResult, createExpenseSchema, ExpenseActivityEntry, PossibleDuplicateExpense, updateExpenseSchema } from "@spine/shared";
-import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
+import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, RECEIPT_IN_USE, RECEIPT_UPLOAD_FIRST, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
 import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
@@ -16,6 +16,7 @@ import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { InvoicesService } from "../invoices/invoices.service";
+import { FilesService } from "../files/files.service";
 import { orgLocale } from "../../common/money-format";
 import { formatMoney } from "@spine/shared";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
@@ -49,7 +50,23 @@ export class ExpensesService {
     private readonly notifications: NotificationsService,
     private readonly invoices: InvoicesService,
     private readonly moneyAccounts: MoneyAccountsService,
+    private readonly files: FilesService,
   ) {}
+
+  /**
+   * D-250 — a receipt must be a file this person uploaded that nothing else
+   * uses yet (an expense keeps its own), the rule attachments follow
+   * (US-OPS-33). Files are read by whoever can read the record they belong
+   * to, so otherwise anyone could put a file they may not read — a
+   * customer's signature, another record's attachment — onto their own
+   * expense and read it through it.
+   */
+  private async checkReceipt(orgId: string, actorUserId: string, fileId: string, expenseId?: string) {
+    const file = await this.files.getMetadata(orgId, fileId).catch(() => null);
+    if (!file || file.uploadedByUserId !== actorUserId) throw new BadRequestException(RECEIPT_UPLOAD_FIRST);
+    const owners = await this.files.owningRecords(orgId, fileId);
+    if (owners.some((o) => !(o.type === "expense_receipt" && o.id === expenseId))) throw new BadRequestException(RECEIPT_IN_USE);
+  }
 
   /** US-PUR-22 — whether a member is on a job's crew. */
   async isAssigned(orgId: string, userId: string, jobId: string): Promise<boolean> {
@@ -281,6 +298,8 @@ export class ExpensesService {
     const labour = input.entryMode === "labour";
     if (labour) this.checkLabour({ labourLines: input.labourLines, amount: input.amount, jobId: input.jobId ?? null, currency: input.currency });
 
+    if (input.receiptFileId) await this.checkReceipt(orgId, actorUserId, input.receiptFileId);
+
     // US-BANK-03: Field never chooses an account (they can't see them); theirs starts on the default and the approver can change it.
     const chosenAccountId = (await getMemberRole(this.db, orgId, actorUserId)) === "field" ? null : input.moneyAccountId;
 
@@ -350,6 +369,8 @@ export class ExpensesService {
       throw new BadRequestException("Only a waiting or rejected expense can be edited — an approved expense has already posted to the ledger.");
     }
     const resubmitting = existing.status === "rejected";
+    // D-250: a new receipt follows the same rule as on create; keeping the current one is always fine.
+    if (input.receiptFileId && input.receiptFileId !== existing.receiptFileId) await this.checkReceipt(orgId, actorUserId, input.receiptFileId, id);
     // US-PUR-23: switching mode or changing labour rows re-checks the whole labour entry.
     const mode = input.entryMode ?? existing.entryMode;
     const labourChanged = input.entryMode !== undefined || input.labourLines !== undefined;
