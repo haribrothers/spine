@@ -37,6 +37,7 @@ import {
   type MoneyAccount,
 } from "@spine/shared";
 import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
+import { AiField } from "../../../components/ai-suggested-tag";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
@@ -104,10 +105,10 @@ export function MoneyInOutDialog({
     if (!open) return;
     setMoneyAccountId(prefill?.moneyAccountId ?? (initialAccountId && accounts.some((a) => a.id === initialAccountId) ? initialAccountId : undefined) ?? accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
     setDate(prefill ? prefillDate(prefill) : new Date());
-    setCategoryId("");
+    setCategoryId(prefill?.ai?.categoryAccountId ?? "");
     setAmount(prefill?.amount ?? 0n);
     setTaxRateId(NO_TAX);
-    setContactId(NO_CONTACT);
+    setContactId(prefill?.ai?.contactId ?? NO_CONTACT);
     setDescription(prefill?.description ?? "");
     setError(null);
     apiClient
@@ -207,6 +208,7 @@ export function MoneyInOutDialog({
             </FormField>
           </div>
 
+          <AiField suggested={Boolean(prefill?.ai?.categoryAccountId) && categoryId === prefill?.ai?.categoryAccountId}>
           <FormField label="Category" required helperText={`Or pick any account. Receivables, payables, tax and customer advances aren't offered — ${CONTROL_ACCOUNT_HINT.toLowerCase()}`}>
             {(field) => (
               <div className="flex flex-col gap-2">
@@ -240,6 +242,7 @@ export function MoneyInOutDialog({
               </div>
             )}
           </FormField>
+          </AiField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Amount" required helperText={!isIn && taxAmount > 0n ? `Includes ${formatMoney(taxAmount, currency)} tax, which goes to Input Tax Receivable.` : undefined}>
@@ -266,6 +269,7 @@ export function MoneyInOutDialog({
                 )}
               </FormField>
             )}
+            <AiField suggested={Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
             <FormField label="Contact">
               {(field) => (
                 <Select value={contactId} onValueChange={setContactId}>
@@ -285,6 +289,7 @@ export function MoneyInOutDialog({
                 </Select>
               )}
             </FormField>
+            </AiField>
             <FormField label="Description">
               {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" maxLength={500} />}
             </FormField>

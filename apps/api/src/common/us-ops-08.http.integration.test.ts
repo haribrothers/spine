@@ -32,6 +32,8 @@ const EXEMPT = new Set([
   "POST /ai/read-document",
   "POST /ai/draft-email",
   "POST /ai/draft-quote-lines",
+  // US-AI-14: asking again replaces the kept suggestions, so a retry is harmless.
+  "POST /ai/bank-suggestions",
 ]);
 
 function controllerFiles(dir: string): string[] {

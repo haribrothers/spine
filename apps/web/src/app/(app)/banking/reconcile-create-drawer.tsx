@@ -25,13 +25,16 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
-import type { MoneyAccount, StatementLine } from "@spine/shared";
+import type { AiBankSuggestion, MoneyAccount, StatementLine } from "@spine/shared";
+import { Sparkles } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { formatMoney } from "../../../lib/money";
 import type { StatementPrefill } from "../../../components/statement-prefill";
 import { RecordPaymentDialog } from "../../../components/record-payment-dialog";
+import { AiSuggestedTag } from "../../../components/ai-suggested-tag";
+import { aiCreateLabel } from "./reconcile-state";
 import { RecordVendorPaymentDialog } from "../vendor-payments/record-vendor-payment-dialog";
 import { TaxPaymentDialog } from "../reports/tax-payment-dialog";
 import type { ExpenseCategory, JobOption } from "../expenses/types";
@@ -68,7 +71,10 @@ export function ReconcileCreateDrawer({
   accounts,
   currency,
   onCreated,
+  aiCreate,
 }: {
+  /** US-AI-14 — what AI suggested creating for the line: the kind is chosen and its form prefilled, all changeable. */
+  aiCreate?: AiBankSuggestion["create"];
   line: StatementLine | null;
   onOpenChange: (open: boolean) => void;
   account: { id: string; name: string };
@@ -120,7 +126,7 @@ export function ReconcileCreateDrawer({
 
   useEffect(() => {
     if (!line) return;
-    setKind(options[0]?.kind ?? null);
+    setKind(aiCreate && options.some((o) => o.kind === aiCreate.kind) ? aiCreate.kind : (options[0]?.kind ?? null));
     setOpenForm(null);
     setCategoryId("");
     setJobId(NO_JOB);
@@ -138,9 +144,17 @@ export function ReconcileCreateDrawer({
   const prefill: StatementPrefill | undefined = useMemo(
     () =>
       line
-        ? { amount: amount < 0n ? -amount : amount, date: line.date, moneyAccountId: account.id, moneyAccountName: account.name, reference: line.reference ?? line.description.slice(0, 120), description: line.description }
+        ? {
+            amount: amount < 0n ? -amount : amount,
+            date: line.date,
+            moneyAccountId: account.id,
+            moneyAccountName: account.name,
+            reference: line.reference ?? line.description.slice(0, 120),
+            description: line.description,
+            ...(aiCreate && kind === aiCreate.kind ? { ai: { categoryAccountId: aiCreate.accountId, contactId: aiCreate.contactId } } : {}),
+          }
         : undefined,
-    [line, amount, account.id, account.name],
+    [line, amount, account.id, account.name, aiCreate, kind],
   );
   const transferPrefill = useMemo(() => (prefill ? { ...prefill, direction: (isIn ? "in" : "out") as "in" | "out" } : undefined), [prefill, isIn]);
 
@@ -196,6 +210,14 @@ export function ReconcileCreateDrawer({
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {aiCreate && (
+              <p className="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2 text-[13px] text-on-surface" data-testid="ai-create-reason">
+                <Sparkles size={15} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+                <span>
+                  <strong className="font-semibold">AI suggests creating: {aiCreateLabel(aiCreate)}</strong> — {aiCreate.reason}. Check it before you save.
+                </span>
+              </p>
+            )}
             {options.length === 0 ? (
               <p className="text-[14px] text-on-surface-muted">You can&apos;t record any of these entries. Ask an owner, or exclude the line.</p>
             ) : (
@@ -208,6 +230,7 @@ export function ReconcileCreateDrawer({
                     <div key={o.kind} className="flex items-center gap-2">
                       <RadioGroupItem value={o.kind} id={`create-${o.kind}`} />
                       <Label htmlFor={`create-${o.kind}`}>{o.label}</Label>
+                      {aiCreate?.kind === o.kind && <AiSuggestedTag />}
                     </div>
                   ))}
                 </RadioGroup>

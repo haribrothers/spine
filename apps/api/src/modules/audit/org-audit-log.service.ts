@@ -5,6 +5,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
   aiRequests,
+  bankReconciliations,
   activities,
   addresses,
   auditLog,
@@ -23,6 +24,7 @@ import {
   leads,
   meetings,
   milestones,
+  moneyAccounts,
   payments,
   quotes,
   recurringInvoices,
@@ -145,6 +147,17 @@ const RESOLVERS: Record<string, Resolver> = {
     byId(await db.select({ id: teams.id, name: teams.name }).from(teams).where(and(eq(teams.orgId, orgId), inArray(teams.id, ids.filter((id) => UUID.test(id))))), (r) => r.name, (r) => `/team/teams/${r.id}`),
   user: async (db, orgId, ids) => byId(await db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, ids)), (r) => r.name, () => "/team/users"),
   data_export: async () => new Map(),
+  // US-AI-14: "Bank reconciliation · Bank Account to 2026-10-12", opening the reconcile page.
+  bank_reconciliation: async (db, orgId, ids) =>
+    byId(
+      await db
+        .select({ id: bankReconciliations.id, accountId: bankReconciliations.moneyAccountId, name: moneyAccounts.name, endDate: bankReconciliations.statementEndDate })
+        .from(bankReconciliations)
+        .innerJoin(moneyAccounts, eq(moneyAccounts.id, bankReconciliations.moneyAccountId))
+        .where(and(eq(bankReconciliations.orgId, orgId), inArray(bankReconciliations.id, ids))),
+      (r) => `${r.name} to ${r.endDate}`,
+      (r) => `/banking/${r.accountId}/reconcile`,
+    ),
   // US-AI-06 (D-169): an AI request names and opens the record it was for ("Vendor bill · ABM-20611").
   ai_request: async (db, orgId, ids) => {
     const rows = await db.select({ id: aiRequests.id, entityType: aiRequests.entityType, entityId: aiRequests.entityId }).from(aiRequests).where(and(eq(aiRequests.orgId, orgId), inArray(aiRequests.id, ids)));

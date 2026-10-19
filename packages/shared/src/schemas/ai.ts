@@ -218,6 +218,39 @@ export interface AiQuoteLines {
   candidates: number;
 }
 
+/** US-AI-14 (D-173) — `POST /ai/bank-suggestions`: AI's suggestions for the lines the rules couldn't settle. */
+export const bankSuggestionsSchema = z.object({ reconciliationId: z.uuid("Choose the reconciliation.") });
+/** What AI may suggest creating for a line nothing in Spine fits: Other money in/out, a customer payment, or a vendor payment. */
+export const AI_BANK_CREATE_KINDS = ["money", "payment", "vendor_payment"] as const;
+export type AiBankCreateKind = (typeof AI_BANK_CREATE_KINDS)[number];
+/** At most this many unsettled lines go in one request. */
+export const AI_BANK_MAX_LINES = 30;
+
+export interface AiBankSuggestion {
+  statementLineId: string;
+  /** Candidate entries, best first; the first has the line's amount. Empty when AI suggests creating instead. */
+  rankedJournalLineIds: string[];
+  /** "Same amount; the description mentions Maple Ridge." */
+  reason: string;
+  create: {
+    kind: AiBankCreateKind;
+    /** The category (ledger account) for Other money in/out. */
+    accountId: string | null;
+    accountName: string | null;
+    contactId: string | null;
+    contactName: string | null;
+    reason: string;
+  } | null;
+}
+export interface AiBankSuggestions {
+  /** When AI was asked. */
+  at: string;
+  /** How many lines AI looked at — "AI looked at the 5 lines the rules couldn't settle". */
+  looked: number;
+  suggestions: AiBankSuggestion[];
+}
+export const AI_NOT_IN_MATCH_ALL = "AI suggestions aren't in Match all — check and match each one.";
+
 /** What "Draft with AI" gets back: the email with this document's details filled in by Spine — never the model's — and those details, for the highlight (D-254). */
 export interface AiEmailDraft {
   subject: string;

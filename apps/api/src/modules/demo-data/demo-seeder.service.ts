@@ -1156,7 +1156,7 @@ export class DemoSeederService {
     const reconcile = async (endDate: string, closing: bigint, match: typeof withIds, finishOn: number | null) => {
       try {
         const rec = await this.reconciliationsService.start(orgId, actorUserId, { moneyAccountId: bank.id, statementEndDate: endDate, statementClosingBalance: closing });
-        const matches = match.filter((l) => l.statementLineId && l.journalLineId).map((l) => ({ statementLineId: l.statementLineId!, journalLineIds: [l.journalLineId!] }));
+        const matches = match.filter((l) => l.statementLineId && l.journalLineId).map((l) => ({ statementLineId: l.statementLineId!, journalLineIds: [l.journalLineId!], suggestedBy: "person" as const }));
         if (matches.length) await this.reconciliationsService.saveMatches(orgId, rec.id, { matches, exclusions: [] });
         if (finishOn !== null) await this.reconciliationsService.finish(orgId, actorUserId, rec.id);
         await this.db

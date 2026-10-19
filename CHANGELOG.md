@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — AI suggestions while reconciling (US-AI-14)
+
+- **"Suggest with AI (<n> lines)"** beside "Match all suggested" looks at the lines the rules couldn't settle (D-158), only when pressed. AI's suggestions join the Suggested tab: "AI suggests: <entry> · <contact>" with the reason, or "AI suggests creating: <category> · <contact>". The tab says "AI suggestions aren't in Match all — check and match each one." — Match all still takes only the rules'.
+- **Selecting a line** puts AI's entry first in "Unreconciled in Spine", marked "AI suggests", before "Same amount" and the nearest dates. **Create** opens with AI's kind (Other money in/out, a customer payment or a vendor payment), category and contact, each "Suggested by AI".
+- **Nothing is matched or created by AI:** Match, or saving the create form, does that. A match made from AI's suggestion is saved as suggested by AI (`bank_statement_line_matches.suggested_by`, migration 0128) and reads "Matched · suggested by AI". AI's suggestions are kept on the reconciliation, so coming back doesn't ask (or spend) again; "Suggest again" replaces them.
+- **What's sent:** dates, signed amounts and redacted descriptions, each line's 8 likeliest entries, recent categorised money in/out, and the categories and contacts AI may pick. A match only stands when its first entry has the line's amount — AI only ranks.
+- **Tests:** API (`us-ai-14` unit and integration), web (`us-ai-14`), e2e `us-ai-14.spec.ts`. Tried live on `qwen3.5:4b`: 13–24 seconds for 4 lines, three correct matches (R-26). QA section 247.
+
 ### 2026-10-19 — Draft quote lines from an enquiry (US-AI-13)
 
 - **"Draft lines with AI"** beside "Add item" on a new or draft quote opens a side panel: paste the enquiry, press "Draft lines", and AI proposes lines matched to the catalogue — items with their price, bundles with their total, and work that isn't in the catalogue with "Add a price". Tick the ones you want and "Add to quote".

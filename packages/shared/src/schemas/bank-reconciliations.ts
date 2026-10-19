@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { MoneyAccountKind } from "./banking.ts";
 import type { StatementLine } from "./bank-statements.ts";
+import type { AiBankSuggestions } from "./ai.ts";
 
 /**
  * US-BANK-08–US-BANK-11 (D-158, D-176) — reconciling a money account to a
@@ -19,10 +20,20 @@ export const startReconciliationSchema = z.object({
 });
 export type StartReconciliationInput = z.infer<typeof startReconciliationSchema>;
 
+/** US-AI-14 — who suggested a match: the rules ("Match all suggested"), AI, or the person by hand. */
+export const MATCH_SUGGESTED_BY = ["rules", "ai", "person"] as const;
+export type MatchSuggestedBy = (typeof MATCH_SUGGESTED_BY)[number];
+
 /** `PUT /bank-reconciliations/:id/matches` — the whole set of matches and exclusions, saved as the person goes. */
 export const saveReconciliationMatchesSchema = z.object({
   matches: z
-    .array(z.object({ statementLineId: z.string().uuid(), journalLineIds: z.array(z.string().uuid()).min(1, "Tick the entries that make up this line.") }))
+    .array(
+      z.object({
+        statementLineId: z.string().uuid(),
+        journalLineIds: z.array(z.string().uuid()).min(1, "Tick the entries that make up this line."),
+        suggestedBy: z.enum(MATCH_SUGGESTED_BY).default("person"),
+      }),
+    )
     .default([]),
   exclusions: z
     .array(
@@ -89,9 +100,11 @@ export interface ReconciliationView extends ReconciliationSummary {
   statementLines: StatementLine[];
   /** Unreconciled entries up to the end date, including those matched here. */
   entries: ReconciliationEntry[];
-  matches: { statementLineId: string; journalLineIds: string[] }[];
+  matches: { statementLineId: string; journalLineIds: string[]; suggestedBy: MatchSuggestedBy }[];
   /** One entry of the same amount within 3 days of an unmatched line (D-158). */
   suggestions: { statementLineId: string; journalLineId: string }[];
+  /** US-AI-14 — AI's last suggestions, for lines still unmatched; null until someone asks. */
+  aiSuggestions: AiBankSuggestions | null;
   matchedCount: number;
   clearedBalance: string;
   difference: string;

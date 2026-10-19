@@ -33,6 +33,7 @@ import { ContactPicker } from "../app/(app)/payments/contact-picker";
 import { PAYMENT_METHOD_LABELS, type Payment, type PaymentMethod } from "../app/(app)/payments/types";
 import { MoneyAccountPicker } from "./money-account-picker";
 import { localIsoDate, prefillDate, type StatementPrefill } from "./statement-prefill";
+import { AiField } from "./ai-suggested-tag";
 
 import { SectionLink } from "./section-link";
 const METHOD_OPTIONS = (Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([value, label]) => ({ value, label }));
@@ -156,7 +157,7 @@ export function RecordPaymentDialog({
 
   useEffect(() => {
     if (!open) return;
-    setContactId(presetContactId ?? "");
+    setContactId(presetContactId ?? prefill?.ai?.contactId ?? "");
     setContactName(presetContactName ?? null);
     setAmount(prefill?.amount ?? 0n);
     setTyped(Boolean(prefill));
@@ -340,6 +341,7 @@ export function RecordPaymentDialog({
           )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <AiField suggested={!presetContactId && Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
             <FormField label="Customer" required>
               {() =>
                 presetContactId ? (
@@ -351,6 +353,7 @@ export function RecordPaymentDialog({
                 )
               }
             </FormField>
+            </AiField>
             <FormField label="Amount" required>
               {() => <MoneyInput aria-label="Amount" value={amount} onValueChange={typeAmount} currency={currency} disabled={!contactId || Boolean(prefill)} />}
             </FormField>

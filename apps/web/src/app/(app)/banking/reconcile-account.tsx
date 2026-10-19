@@ -27,14 +27,18 @@ import {
   TabsTrigger,
   useConfirm,
 } from "@spine/ui";
-import { MATCH_SUM_MISMATCH, parseStatementAmount, type MoneyAccount, type ReconciliationView, type StatementLine } from "@spine/shared";
+import { AI_BANK_MAX_LINES, AI_NOT_IN_MATCH_ALL, MATCH_SUM_MISMATCH, aiPausedMessage, parseStatementAmount, type AiBankSuggestions, type MoneyAccount, type ReconciliationView, type StatementLine } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { useToast } from "../../../components/toast-host";
-import { CircleCheck, FileText, Search } from "lucide-react";
+import { CircleCheck, FileText, Search, Sparkles } from "lucide-react";
+import { AiActionButton } from "../../../components/ai-action-button";
+import { AiUnavailableNotice } from "../../../components/ai-unavailable-notice";
+import { aiFeatureShown, useAiStatus } from "../../../lib/use-ai-status";
+import { useAiRequest } from "../../../lib/use-ai-request";
 import { MENU_ICONS } from "../../../lib/menu-icons";
-import { lineTab, orderEntries, searchLines, type LineTab } from "./reconcile-state";
+import { aiCreateLabel, lineTab, orderEntries, searchLines, type LineTab } from "./reconcile-state";
 import { NoAccess } from "../../../components/no-access";
 import { formatDay, fromIsoDate, toIsoDate } from "./dates";
 import { StatementImportDialog } from "./statement-import-dialog";
@@ -48,7 +52,9 @@ const shortDay = (iso: string) => fromIsoDate(iso).toLocaleDateString(undefined,
 /**
  * US-BANK-08 (D-158, D-176) — `ReconcileAccount`: statement lines on the
  * left, unreconciled Spine entries on the right, matched one line to one or
- * more entries. Every match and exclusion is saved as it's made.
+ * more entries. Every match and exclusion is saved as it's made. US-AI-14
+ * (D-173) — "Suggest with AI" for the lines the rules couldn't settle; its
+ * suggestions are kept, never in "Match all", and matched one at a time.
  */
 export function ReconcileAccount({ accountId }: { accountId: string }) {
   const canReconcile = useCapability("banking.reconcile");
@@ -70,6 +76,11 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [ticked, setTicked] = useState<Set<string>>(new Set());
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  // US-AI-14
+  const [aiDismissed, setAiDismissed] = useState<Set<string>>(new Set());
+  const aiStatus = useAiStatus();
+  const aiShown = aiFeatureShown(aiStatus, "bankSuggestions");
+  const aiRequest = useAiRequest<AiBankSuggestions>();
   const [excluding, setExcluding] = useState<StatementLine | null>(null);
   const [excludeNote, setExcludeNote] = useState("");
   const [importOpen, setImportOpen] = useState(false);
@@ -196,7 +207,9 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
         setNotice(`Recorded. Spine couldn't find its entry on this account up to ${formatDay(view.statementEndDate)}, so match it by hand.`);
         return;
       }
-      await save([...view.matches, { statementLineId: line.id, journalLineIds: [entry.journalLineId] }], exclusionsOf(view));
+      // An entry created as AI suggested is matched as suggested by AI.
+      const fromAi = Boolean(view.aiSuggestions?.suggestions.some((s) => s.statementLineId === line.id && s.create));
+      await save([...view.matches, { statementLineId: line.id, journalLineIds: [entry.journalLineId], suggestedBy: fromAi ? "ai" : "person" }], exclusionsOf(view));
       setNotice(`Recorded and matched to ${line.description}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Recorded, but the match didn't save. Match it by hand.");
@@ -205,14 +218,20 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
 
   const entryById = useMemo(() => new Map((rec?.entries ?? []).map((e) => [e.journalLineId, e])), [rec]);
   const suggestionFor = useMemo(() => new Map((rec?.suggestions ?? []).filter((s) => !dismissed.has(s.statementLineId)).map((s) => [s.statementLineId, s.journalLineId])), [rec, dismissed]);
+  // US-AI-14: AI's kept suggestions, less the ones dismissed here.
+  const aiFor = useMemo(() => new Map((rec?.aiSuggestions?.suggestions ?? []).filter((s) => !aiDismissed.has(s.statementLineId)).map((s) => [s.statementLineId, s])), [rec, aiDismissed]);
   const openEntries = (rec?.entries ?? []).filter((e) => !e.statementLineId);
   const selected = rec?.statementLines.find((l) => l.id === selectedLine) ?? null;
   const tickedSum = [...ticked].reduce((sum, id) => sum + BigInt(entryById.get(id)?.amount ?? "0"), 0n);
   const canMatch = selected !== null && ticked.size > 0 && tickedSum === BigInt(selected.amount);
 
   // US-BANK-16: progress, tabs and search over the statement lines; same-amount entries first.
-  const suggestedIds = new Set(suggestionFor.keys());
+  const suggestedIds = new Set([...suggestionFor.keys(), ...aiFor.keys()]);
   const lines = rec?.statementLines ?? [];
+  // US-AI-14: the lines the rules couldn't settle, which AI looks at (at most 30 a time).
+  const ruleLineIds = new Set((rec?.suggestions ?? []).map((s) => s.statementLineId));
+  const unsettled = Math.min(lines.filter((l) => l.status === "unmatched" && !ruleLineIds.has(l.id)).length, AI_BANK_MAX_LINES);
+  const selectedAi = selected ? aiFor.get(selected.id) : undefined;
   const counts = {
     todo: lines.filter((l) => l.status === "unmatched").length,
     suggested: lines.filter((l) => l.status === "unmatched" && suggestedIds.has(l.id)).length,
@@ -224,7 +243,20 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
     lines.filter((l) => lineTab(l, suggestedIds.has(l.id)).includes(tab)),
     lineQuery,
   );
-  const shownEntries = orderEntries(openEntries, selected, entryQuery);
+  const shownEntries = orderEntries(openEntries, selected, entryQuery, selectedAi?.rankedJournalLineIds ?? []);
+
+  function askAi() {
+    if (!rec) return;
+    const id = rec.id;
+    void aiRequest.run(
+      (signal) => apiClient.post<AiBankSuggestions>("/ai/bank-suggestions", { reconciliationId: id }, { signal }),
+      (answer) => {
+        setAiDismissed(new Set());
+        setRec((current) => (current && current.id === id ? { ...current, aiSuggestions: answer } : current));
+        setTab("suggested");
+      },
+    );
+  }
   const pendingSuggestions = (rec?.suggestions ?? []).filter((x) => !dismissed.has(x.statementLineId) && lines.some((l) => l.id === x.statementLineId && l.status === "unmatched"));
 
   /** US-BANK-16 — every suggestion at once, after asking; one save. */
@@ -256,7 +288,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
       cancelLabel: "Go back",
     });
     if (!ok) return;
-    await save([...rec.matches, ...pendingSuggestions.map((x) => ({ statementLineId: x.statementLineId, journalLineIds: [x.journalLineId] }))], exclusionsOf(rec));
+    await save([...rec.matches, ...pendingSuggestions.map((x) => ({ statementLineId: x.statementLineId, journalLineIds: [x.journalLineId], suggestedBy: "rules" as const }))], exclusionsOf(rec));
     showToast(`${n} ${n === 1 ? "line" : "lines"} matched`, "Unmatch any of them before you finish if it's wrong.");
   }
 
@@ -401,13 +433,31 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                         {rec.statementLines.length} lines to {shortDay(rec.statementEndDate)}
                       </p>
                     </div>
-                    {pendingSuggestions.length > 0 && (
-                      <Button size="sm" disabled={busy} onClick={() => void matchAllSuggested()}>
-                        <MENU_ICONS.reconcile size={14} aria-hidden />
-                        Match all suggested ({pendingSuggestions.length})
-                      </Button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {aiShown && (unsettled > 0 || rec.aiSuggestions) && (
+                        <AiActionButton
+                          label={rec.aiSuggestions ? "Suggest again" : `Suggest with AI (${unsettled} ${unsettled === 1 ? "line" : "lines"})`}
+                          workingLabel="Suggesting…"
+                          working={aiRequest.working}
+                          disabled={unsettled === 0 || Boolean(aiStatus?.pausedUntil)}
+                          onClick={askAi}
+                          onCancel={aiRequest.cancel}
+                        />
+                      )}
+                      {pendingSuggestions.length > 0 && (
+                        <Button size="sm" disabled={busy} onClick={() => void matchAllSuggested()}>
+                          <MENU_ICONS.reconcile size={14} aria-hidden />
+                          Match all suggested ({pendingSuggestions.length})
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                  {aiShown && aiStatus?.pausedUntil && <p className="px-4 pt-2 text-[12.5px] text-on-surface-muted">{aiPausedMessage(aiStatus.pausedUntil)}</p>}
+                  {aiRequest.state.status === "failed" && (
+                    <div className="px-4 pt-3">
+                      <AiUnavailableNotice message={aiRequest.state.message} detail="Nothing was matched." onRetry={aiRequest.state.canRetry ? aiRequest.retry : undefined} />
+                    </div>
+                  )}
                   <Tabs value={tab} onValueChange={(v) => setTab(v as LineTab)}>
                     <TabsList className="mx-4 mt-2">
                       {(
@@ -429,6 +479,14 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                         <Search size={15} className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
                         <Input type="search" aria-label="Search statement lines" placeholder="Search description, reference or amount" value={lineQuery} onChange={(e) => setLineQuery(e.target.value)} className="pl-9" />
                       </div>
+                      {tab === "suggested" && rec.aiSuggestions && (
+                        <p className="flex items-start gap-2 border-b border-border bg-info-bg/40 px-4 py-2.5 text-[12.5px] text-on-surface" data-testid="ai-suggestions-note">
+                          <Sparkles size={14} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+                          <span>
+                            AI looked at the {rec.aiSuggestions.looked} {rec.aiSuggestions.looked === 1 ? "line" : "lines"} the rules couldn&apos;t settle · {aiFor.size} {aiFor.size === 1 ? "suggestion" : "suggestions"}. {AI_NOT_IN_MATCH_ALL}
+                          </span>
+                        </p>
+                      )}
                       {rec.statementLines.length === 0 ? (
                         <div className="flex flex-col items-start gap-3 p-4">
                           <p className="text-[13px] text-on-surface-muted">No statement lines up to {formatDay(rec.statementEndDate)}. Import the statement to start matching.</p>
@@ -440,11 +498,16 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                         <ul data-testid="statement-lines">
                           {shownLines.length === 0 && <li className="p-4 text-[13px] text-on-surface-muted">{lineQuery.trim() ? "No lines match your search." : tab === "todo" ? "Every line is matched or excluded." : "None here."}</li>}
                           {shownLines.map((line) => {
-                            const suggestion = line.status === "unmatched" ? suggestionFor.get(line.id) : undefined;
+                            const ruled = line.status === "unmatched" ? suggestionFor.get(line.id) : undefined;
+                            // US-AI-14: AI's suggestion for a line the rules couldn't settle — an entry to match, or something to create.
+                            const ai = line.status === "unmatched" && !ruled ? aiFor.get(line.id) : undefined;
+                            const aiEntry = ai?.rankedJournalLineIds[0] ? entryById.get(ai.rankedJournalLineIds[0]) : undefined;
+                            const suggestion = ruled ?? aiEntry?.journalLineId;
                             const isSelected = selectedLine === line.id;
+                            const fromAi = line.status === "matched" && rec.matches.some((m) => m.statementLineId === line.id && m.suggestedBy === "ai");
                             const status =
                               line.status === "matched"
-                                ? { text: "Matched", tone: "text-paid" }
+                                ? { text: fromAi ? "Matched · suggested by AI" : "Matched", tone: "text-paid" }
                                 : line.status === "excluded"
                                   ? { text: `Excluded${line.excludeNote ? ` — ${line.excludeNote}` : ""}`, tone: "text-on-surface-muted" }
                                   : suggestion
@@ -477,16 +540,31 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                                       {line.reference ? ` · ${line.reference}` : ""}
                                     </p>
                                   )}
-                                  <p className={`text-[12px] font-medium ${status.tone}`}>{status.text}</p>
+                                  {ai && (aiEntry || ai.create) ? (
+                                    <>
+                                      <p className="flex items-center gap-1 text-[12px] font-medium text-primary" data-testid="ai-line-suggestion">
+                                        <Sparkles size={12} aria-hidden />
+                                        {aiEntry ? `AI suggests: ${aiEntry.what}${aiEntry.contact ? ` · ${aiEntry.contact.name}` : ""}` : `AI suggests creating: ${aiCreateLabel(ai.create!)}`}
+                                      </p>
+                                      <p className="text-[12px] text-on-surface-muted">{aiEntry ? ai.reason : ai.create!.reason}</p>
+                                    </>
+                                  ) : (
+                                    <p className={`text-[12px] font-medium ${status.tone}`}>{status.text}</p>
+                                  )}
                                 </div>
                                 <span className="text-[14px] tabular-nums text-on-surface">{signed(line.amount)}</span>
                                 <div className="flex items-center gap-1">
                                   {suggestion && (
                                     <>
-                                      <Button size="sm" variant="secondary" disabled={busy} onClick={() => save([...rec.matches, { statementLineId: line.id, journalLineIds: [suggestion] }], exclusionsOf(rec))}>
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        disabled={busy}
+                                        onClick={() => save([...rec.matches, { statementLineId: line.id, journalLineIds: [suggestion], suggestedBy: ruled ? "rules" : "ai" }], exclusionsOf(rec))}
+                                      >
                                         Match
                                       </Button>
-                                      <Button size="sm" variant="ghost" className="text-primary" onClick={() => setDismissed((d) => new Set(d).add(line.id))}>
+                                      <Button size="sm" variant="ghost" className="text-primary" onClick={() => (ruled ? setDismissed : setAiDismissed)((d) => new Set(d).add(line.id))}>
                                         Not this one
                                       </Button>
                                     </>
@@ -543,7 +621,15 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                             ? `${ticked.size} ${ticked.size === 1 ? "entry adds" : "entries add"} up to the line.`
                             : MATCH_SUM_MISMATCH(money(tickedSum), money(selected.amount))}
                       </p>
-                      <Button disabled={!canMatch || busy} onClick={() => save([...rec.matches, { statementLineId: selected.id, journalLineIds: [...ticked] }], exclusionsOf(rec))}>
+                      <Button
+                        disabled={!canMatch || busy}
+                        onClick={() =>
+                          save(
+                            [...rec.matches, { statementLineId: selected.id, journalLineIds: [...ticked], suggestedBy: ticked.size === 1 && selectedAi?.rankedJournalLineIds[0] && ticked.has(selectedAi.rankedJournalLineIds[0]) ? "ai" : "person" }],
+                            exclusionsOf(rec),
+                          )
+                        }
+                      >
                         Match
                       </Button>
                     </div>
@@ -554,7 +640,9 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                   <div className="border-b border-border p-4">
                     <h2 className="text-[15px] font-semibold text-on-surface">Unreconciled in Spine</h2>
                     <p className="text-[13px] text-on-surface-muted">
-                      {selected ? "Same amount first, then the nearest dates. Tick the entries that make up the line." : `Entries on this account up to ${shortDay(rec.statementEndDate)}`}
+                      {selected
+                        ? `${selectedAi?.rankedJournalLineIds.length ? "AI's suggestion first, then the same amount" : "Same amount first"}, then the nearest dates. Tick the entries that make up the line.`
+                        : `Entries on this account up to ${shortDay(rec.statementEndDate)}`}
                     </p>
                   </div>
                   <div className="relative border-b border-border p-3">
@@ -565,10 +653,10 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                     <p className="p-4 text-[13px] text-on-surface-muted">Every entry up to {formatDay(rec.statementEndDate)} is matched.</p>
                   ) : (
                     <ul data-testid="spine-entries">
-                      {shownEntries.map(({ entry, sameAmount }) => {
+                      {shownEntries.map(({ entry, sameAmount, ai }) => {
                         const label = `${entry.what}${entry.contact ? ` · ${entry.contact.name}` : ""}`;
                         return (
-                          <li key={entry.journalLineId} data-testid="spine-entry" className={`flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 ${sameAmount ? "bg-paid-bg/40" : ""}`}>
+                          <li key={entry.journalLineId} data-testid="spine-entry" className={`flex items-center gap-3 border-b border-border px-4 py-3 last:border-0 ${ai ? "bg-info-bg/50" : sameAmount ? "bg-paid-bg/40" : ""}`}>
                             <Checkbox
                               aria-label={`${label}, ${signed(entry.amount)}`}
                               disabled={!selected}
@@ -586,7 +674,13 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                             <span className="min-w-0 flex-1 text-[14px] text-on-surface">
                               {label}
                               {entry.reference ? <span className="text-on-surface-muted"> · {entry.reference}</span> : null}
-                              {sameAmount && <span className="ml-2 rounded-full bg-paid-bg px-2 py-0.5 text-[11px] font-semibold text-paid">Same amount</span>}
+                              {ai && (
+                                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-info-bg px-2 py-0.5 text-[11px] font-semibold text-primary" data-testid="ai-entry">
+                                  <Sparkles size={11} aria-hidden />
+                                  AI suggests
+                                </span>
+                              )}
+                              {sameAmount && !ai && <span className="ml-2 rounded-full bg-paid-bg px-2 py-0.5 text-[11px] font-semibold text-paid">Same amount</span>}
                             </span>
                             <span className="text-[14px] tabular-nums text-on-surface">{signed(entry.amount)}</span>
                           </li>
@@ -648,6 +742,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
           account={{ id: accountId, name }}
           accounts={accounts}
           currency={currency}
+          aiCreate={creating ? (aiFor.get(creating.id)?.create ?? undefined) : undefined}
           onCreated={(line, sourceId) => void matchCreated(line, sourceId)}
         />
       )}

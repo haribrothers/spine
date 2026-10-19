@@ -5298,6 +5298,21 @@ As an Owner with AI on and "Draft quote lines" on, and a catalogue with a few it
 8. Keyboard: Tab through the panel; Space ticks a line; "Tick all lines" ticks or clears them all; Escape closes it. Dark mode: the panel, the tints and the amber note use the dark tokens.
 9. Regression: Add item, picking an item or a bundle by hand, Add heading and Add text line, moving rows, Preview PDF and Save behave as before.
 
+## 247. AI suggestions while reconciling (US-AI-14, Phase 10)
+
+As an Owner with AI on and "Suggest bank matches" on. Import a statement where one line has two same-amount payments near it (the rules can't pick), one has nothing in Spine but looks like something filed before (e.g. bank charges), and one the rules settle. Compare with `ReconcileAiSuggestions`.
+
+1. Start reconciling: the rules' line shows "Suggested match". Beside "Match all suggested (1)" is "Suggest with AI (2 lines)" (tinted, sparkles) — the lines the rules couldn't settle. Nothing runs until you press it.
+2. Press it: "Suggesting…" with Cancel; the page stays usable. Then the Suggested tab opens and counts AI's lines too; its note reads "AI looked at the 2 lines the rules couldn't settle · <n> suggestions. AI suggestions aren't in Match all — check and match each one." "Match all suggested" still counts only the rules' line, and the button now reads "Suggest again".
+3. The ambiguous line reads "AI suggests: Payment <number> · <customer>" with a reason ("same amount; the description mentions …"), Match and "Not this one". Select the line: in "Unreconciled in Spine" AI's entry comes first, marked "AI suggests", then the other same-amount payment ("Same amount"), then the nearest dates; the subtitle says so.
+4. Press Match on it: it moves to Matched and reads "Matched · suggested by AI". "Not this one" on another removes AI's suggestion and nothing is matched.
+5. The fee line reads "AI suggests creating: <category> · <contact>" with Create and Exclude. Create: the drawer has the suggested kind chosen (tagged "Suggested by AI") and "AI suggests creating: … — <reason>. Check it before you save."; Continue: the form starts with the category and contact, each "Suggested by AI" until changed. Record it: the line matches, as suggested by AI.
+6. Leave the page and come back: the suggestions are still there — no second request (check Settings › AI assistant usage). "Suggest again" replaces them.
+7. Hidden without "Use AI features" or with the feature off; dimmed with the date while the budget is used up. Stop the model: "AI didn't answer. Fill this in by hand or try again. Nothing was matched." with "Try again". A finished reconciliation shows none.
+8. The audit log has "Suggested bank matches" for "Bank reconciliation · <account> to <end date>", linking to the reconcile page.
+9. Keyboard and screen reader: the button and each Match / Not this one / Create are reachable and named; AI's text is read with the line. Dark mode: the tints and marks use the dark tokens.
+10. Regression: matching by hand, several entries to one line, "Not this one" on a rule suggestion, Exclude / Include, Unmatch, "Match all suggested" (its confirm lists only the rules' pairs), Create without AI, Finish and Undo behave as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

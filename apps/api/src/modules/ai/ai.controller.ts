@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { aiProviderCheckSchema, aiSettingsUpdateSchema, draftEmailSchema, draftQuoteLinesSchema, readDocumentSchema } from "@spine/shared";
+import { aiProviderCheckSchema, aiSettingsUpdateSchema, bankSuggestionsSchema, draftEmailSchema, draftQuoteLinesSchema, readDocumentSchema } from "@spine/shared";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
 import { AiRequestService } from "./ai-request.service";
+import { BankSuggestionsService } from "./bank-suggestions/bank-suggestions.service";
 import { DraftEmailService } from "./draft-email/draft-email.service";
 import { DraftQuoteLinesService } from "./draft-quote-lines/draft-quote-lines.service";
 import { ReadDocumentService } from "./read-document/read-document.service";
@@ -77,6 +78,7 @@ export class AiController {
     private readonly readReceipt: ReadReceiptService,
     private readonly draftEmail: DraftEmailService,
     private readonly draftQuoteLines: DraftQuoteLinesService,
+    private readonly bankSuggestions: BankSuggestionsService,
   ) {}
 
   @Get("status")
@@ -110,5 +112,14 @@ export class AiController {
     const parsed = draftQuoteLinesSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Paste the enquiry or describe the work."));
     return this.draftQuoteLines.draft(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  /** US-AI-14 — suggestions for the reconciliation's lines the rules couldn't settle. Matches nothing and creates nothing; it keeps the suggestions on the reconciliation, so no Idempotency-Key (05-api). */
+  @Post("bank-suggestions")
+  @HttpCode(200)
+  async bank(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bankSuggestionsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Choose the reconciliation."));
+    return this.bankSuggestions.suggest(requireOrgId(session), session.user.id, parsed.data.reconciliationId);
   }
 }

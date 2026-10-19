@@ -897,6 +897,13 @@
       "when": 1792255081651,
       "tag": "0127_ai_use_and_assisted",
       "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1792422109554,
+      "tag": "0128_ai_bank_suggestions",
+      "breakpoints": true
     }
   ]
 }

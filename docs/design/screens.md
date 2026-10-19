@@ -5853,6 +5853,8 @@ Shows: The ticked lines added as compact rows, the bundle as its three lines, ti
 
 ![ReconcileAiSuggestions](screens/ReconcileAiSuggestions.webp)
 
+As built (US-AI-14): today's reconcile page keeps its balance cards and a rule's line still reads "Suggested match" with Match and "Not this one"; AI's lines add Match and "Not this one" (or Create and Exclude) as the canvas shows, and the button reads "Suggest with AI (<n> lines)" until the first run.
+
 Links to: `ReconcileRefined`, `ReconcileMatchAllConfirm`
 
 Shows: "Suggest again" beside "Match all suggested (4)" · Suggested tab 7 · "AI looked at the 5 lines the rules couldn't settle · 3 suggestions. AI suggestions aren't in Match all — check and match each one." · rule suggestions in amber, AI ones "AI suggests: PAY-0040 · Ananya Rao" with the reason · "AI suggests creating: Bank charges · HDFC Bank" with Create · entries panel with the AI suggestion first ("AI suggests"), then "Same amount"

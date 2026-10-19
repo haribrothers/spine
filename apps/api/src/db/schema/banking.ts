@@ -199,6 +199,8 @@ export const bankStatementLines = pgTable(
 );
 
 export const reconciliationStatusEnum = pgEnum("reconciliation_status", ["in_progress", "finished", "undone"]);
+/** US-AI-14 (D-173) — who suggested a match: the rules (D-158, "Match all suggested"), AI, or the person by hand. */
+export const matchSuggestedByEnum = pgEnum("match_suggested_by", ["rules", "ai", "person"]);
 
 /**
  * US-BANK-08–US-BANK-11 (D-158, D-176) — one reconciliation of a money
@@ -229,6 +231,8 @@ export const bankReconciliations = pgTable(
     undoneAt: timestamp("undone_at", { withTimezone: true }),
     /** US-ONB-34 — the demo's reconciliations. */
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-AI-14 — AI's last suggestions for the lines the rules couldn't settle (`AiBankSuggestions`), kept so coming back doesn't ask again. */
+    aiSuggestions: jsonb("ai_suggestions"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -252,6 +256,8 @@ export const bankStatementLineMatches = pgTable(
     reconciliationId: uuid("reconciliation_id")
       .notNull()
       .references(() => bankReconciliations.id, { onDelete: "cascade" }),
+    /** US-AI-14 — a match made from AI's suggestion is saved as suggested by AI. */
+    suggestedBy: matchSuggestedByEnum("suggested_by").notNull().default("person"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("bank_statement_line_matches_journal_line_uidx").on(table.journalLineId), index("bank_statement_line_matches_line_idx").on(table.statementLineId)],
