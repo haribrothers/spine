@@ -99,7 +99,8 @@ describe("US-AI-11 · draft a customer email with AI (requires local Postgres)",
 
     const [request] = await db.select().from(aiRequests).where(and(eq(aiRequests.orgId, orgId), eq(aiRequests.feature, "draft_email"))).orderBy(desc(aiRequests.createdAt)).limit(1);
     expect(request).toMatchObject({ outcome: "ok", entityType: "invoice", entityId: invoice.id, userId: owner.userId });
-    expect(send).not.toHaveBeenCalled();
+    // Nothing went to the customer. (The shared queue may deliver other test files' notifications through this app.)
+    expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ to: "alan@example.com" }));
   });
 
   it("a draft that strays from the invoice's details is refused as no answer, and recorded so", async () => {
