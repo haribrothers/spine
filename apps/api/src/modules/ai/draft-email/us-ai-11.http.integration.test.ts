@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { AI_NOT_ALLOWED_MESSAGE, AI_UNAVAILABLE_MESSAGE, type AiEmailDraft, type EmailDraft } from "@spine/shared";
+import { AI_NOT_ALLOWED_MESSAGE, AI_TONE_ONLY_MESSAGE, AI_UNAVAILABLE_MESSAGE, type AiEmailDraft, type EmailDraft } from "@spine/shared";
 import { createDb, type Database } from "../../../db/client";
 import { aiRequests, member, session as sessionTable } from "../../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../../test-utils/test-app";
@@ -137,6 +137,19 @@ describe("US-AI-11 · draft a customer email with AI (requires local Postgres)",
 
     expect((await draft({ type: "reminder", documentId: invoice.id }, fieldUser)).status).toBe(403);
     expect((await draft({ type: "invoice", documentId: randomUUID() })).status).toBe(404);
+  });
+
+  describe("US-AI-12 · a reminder or statement in a chosen tone", () => {
+    it("the chosen tone reaches the model and the details are still Spine's; other emails have no tone", async () => {
+      stub.setReply(JSON.stringify({ subject: "Invoice {document_number} {due_status}", message: "Hi {customer_name},\n\n{balance_due} on invoice {document_number} is overdue and needs paying now.\n\n{business_name}" }));
+      const firm = await json<AiEmailDraft>(await draft({ type: "reminder", documentId: invoice.id, tone: "firm" }));
+      expect(firm.message).toContain("$1,000.00 on invoice");
+      expect(lastChat().messages.find((m) => m.role === "user")!.content).toContain("Tone: Firm — direct and serious");
+      stub.setReply(JSON.stringify({ subject: "Statement for {document_number}", message: "Dear {customer_name},\n\nPlease find your statement for {document_number}. The balance due is {balance_due}." }));
+      expect((await draft({ type: "statement", documentId: contactId, from: "2026-01-01", to: "2026-12-31", mode: "all", tone: "formal" })).status).toBe(200);
+      expect(lastChat().messages.find((m) => m.role === "user")!.content).toContain("Tone: Formal");
+      expect(await refusal(await draft({ type: "invoice", documentId: invoice.id, tone: "firm" }))).toEqual({ status: 400, message: AI_TONE_ONLY_MESSAGE });
+    });
   });
 
   it("with the feature off, or AI off, there's no draft", async () => {

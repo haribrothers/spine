@@ -9,6 +9,7 @@ import {
   filledValues,
   plainTextToHtml,
   type AiEmailDraft,
+  type AiEmailTone,
   type DraftEmailInput,
   type EmailPlaceholder,
   type EmailTemplateText,
@@ -52,6 +53,13 @@ const KEPT_MEANING: Partial<Record<EmailPlaceholder, string>> = {
   document_number: "the quote's number (given when it's sent)",
 };
 
+/** US-AI-12 — how each tone should sound. Firm is never a threat: nothing the template doesn't already say. */
+const TONE: Record<AiEmailTone, string> = {
+  friendly: "Friendly — warm and relaxed, as to a good customer; assume the payment slipped their mind.",
+  formal: "Formal — courteous and businesslike, with no casual phrases.",
+  firm: "Firm — direct and serious: the payment is overdue and needs their attention now. Never rude or threatening, and no legal action, fees, interest or deadlines unless the template says so.",
+};
+
 /** The record an AI request is for (US-AI-06). */
 const ENTITY: Record<EmailTemplateType, string> = { quote: "quote", invoice: "invoice", reminder: "invoice", receipt: "payment", credit_note: "credit_note", statement: "contact" };
 
@@ -62,7 +70,7 @@ const KEPT = /^\{[^{}\s]*\}$/;
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** The model's own copy of the template and details. Redacted (D-165); payment instructions are never part of it. */
-export function draftPrompt(type: EmailTemplateType, text: EmailTemplateText, values: Values): string {
+export function draftPrompt(type: EmailTemplateType, text: EmailTemplateText, values: Values, tone?: AiEmailTone): string {
   const details = EMAIL_PLACEHOLDERS_BY_TYPE[type]
     .map((name) => {
       const value = values[name] ?? "";
@@ -73,6 +81,7 @@ export function draftPrompt(type: EmailTemplateType, text: EmailTemplateText, va
   return redact(
     [
       `The email: the ${EMAIL_TEMPLATE_LABELS[type].toLowerCase()} email.`,
+      ...(tone ? [`Tone: ${TONE[tone]}`] : []),
       `Template subject: ${text.subject}`,
       `Template message:\n${emailBodyText(emailBodyHtml(text.body))}`,
       `The placeholders this email can use, and what each stands for here:\n${details.join("\n")}`,
@@ -116,7 +125,8 @@ export function finishDraft(type: EmailTemplateType, text: EmailTemplateText, va
 }
 
 /**
- * US-AI-11 (D-171, D-254) — "Draft with AI" in the send dialogs. Only for
+ * US-AI-11, US-AI-12 (D-171, D-254) — "Draft with AI" in the send dialogs,
+ * reminders and statements in a chosen tone. Only for
  * someone who may send that email; the draft is the template rewritten,
  * with this document's details filled in by Spine. Nothing is saved or
  * sent — the person uses the draft, or not, and sends through the normal
@@ -135,7 +145,7 @@ export class DraftEmailService {
     if (!(await hasCapability(this.db, { orgId, userId }, SEND_CAPABILITY[input.type]))) throw new ForbiddenException("You don't have permission to send this email.");
     const { text, values } = await this.email(orgId, input);
     return this.requests.run({ orgId, userId, feature: "draftEmails", entityType: ENTITY[input.type], entityId: input.documentId }, async (driver, model) => {
-      const answer = await driver.complete(model, { system: SYSTEM, text: draftPrompt(input.type, text, values), maxTokens: 1500, temperature: 0.7 });
+      const answer = await driver.complete(model, { system: SYSTEM, text: draftPrompt(input.type, text, values, input.tone), maxTokens: 1500, temperature: 0.7 });
       const draft = finishDraft(input.type, text, values, answer.text);
       // A reply that strays from the document's details counts as no answer (US-AI-07).
       if (!draft) throw new AiProviderError("The draft didn't keep to the document's details.", "rejected");

@@ -80,3 +80,16 @@ describe("US-AI-11 · the draft keeps the document's own details (D-254)", () =>
     expect(text).not.toContain("{due_date} =");
   });
 });
+
+describe("US-AI-12 · a reminder or statement in a chosen tone", () => {
+  it("the prompt says the tone; firm never threatens", () => {
+    expect(draftPrompt("reminder", template, REMINDER, "firm")).toContain("Tone: Firm — direct and serious: the payment is overdue and needs their attention now. Never rude or threatening, and no legal action, fees, interest or deadlines unless the template says so.");
+    expect(draftPrompt("statement", DEFAULT_EMAIL_TEMPLATES.statement, REMINDER, "friendly")).toContain("Tone: Friendly");
+    expect(draftPrompt("reminder", template, REMINDER)).not.toContain("Tone:");
+  });
+
+  it("whatever the tone, the amount is Spine's balance, filled in after drafting", () => {
+    const draft = finishDraft("reminder", template, REMINDER, reply("Invoice {document_number} — payment needed now", "{balance_due} on invoice {document_number} {due_status}. Please pay it now."));
+    expect(draft?.message).toBe("<p>$800.00 on invoice INV-0042 is 35 days overdue. Please pay it now.</p>");
+  });
+});

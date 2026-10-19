@@ -5,13 +5,21 @@ import type { AddressInfo } from "node:net";
  * A stand-in OpenAI-compatible provider for the AI end-to-end tests
  * (US-AI-07, US-AI-08): the API under test calls it on 127.0.0.1. `down`
  * answers 500; otherwise chat completions answer the reply set last.
+ * `lastPrompt()` is what the last chat completion asked (US-AI-12).
  */
 export async function startAiStub() {
   let reply = "{}";
   let down = false;
+  let lastPrompt = "";
   const server = createServer((req, res) => {
-    req.resume();
+    let raw = "";
+    req.on("data", (chunk) => (raw += chunk));
     req.on("end", () => {
+      if (req.url === "/v1/chat/completions" && raw) {
+        const messages = (JSON.parse(raw) as { messages?: { role?: string; content?: unknown }[] }).messages ?? [];
+        const user = messages.find((m) => m.role === "user")?.content;
+        lastPrompt = typeof user === "string" ? user : JSON.stringify(user ?? "");
+      }
       const send = (status: number, payload: unknown) => {
         res.writeHead(status, { "Content-Type": "application/json" });
         res.end(JSON.stringify(payload));
@@ -27,6 +35,7 @@ export async function startAiStub() {
     url: `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1`,
     setReply: (value: unknown) => (reply = JSON.stringify(value)),
     setDown: (value: boolean) => (down = value),
+    lastPrompt: () => lastPrompt,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }

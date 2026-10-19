@@ -5273,6 +5273,17 @@ As an Owner, with AI on against a model on your network (or the stub) and "Draft
 11. Keyboard and screen reader: the suggestion is a region named "AI's draft"; its buttons are reachable by Tab; the tags read "Drafted by AI". Dark mode: the panel, highlights and tags use the dark tokens.
 12. Regression: the send dialogs without AI send as before; Settings › Emails' editor and the quote notes editor show no highlights; the email template preview is unchanged.
 
+## 245. A reminder or statement in a chosen tone (US-AI-12, Phase 10)
+
+Same setup as section 244. Compare with `SendEmailDialogAi` and `SendEmailDialogAiSuggestion`.
+
+1. An overdue invoice › Send reminder: "Tone" with Friendly, Formal and Firm sits beside "Draft with AI", Friendly chosen. Choose Firm, then "Draft with AI": the draft is direct about the payment being overdue, with no threats, fees, interest, legal action or new deadlines; the balance, number, due date and days overdue are the invoice's own, highlighted.
+2. On the suggestion, choose Formal: it drafts again in that tone ("Drafting…" with Cancel while it does). "Try again" keeps Formal.
+3. Receivables › an invoice's Actions › Send reminder: the same tone choice and drafts. A contact's Send a statement: the same.
+4. Email invoice, Send quote, Email receipt and Email credit note: no tone.
+5. Close the dialog and open it again: Friendly is chosen again.
+6. Keyboard: Tab reaches the tone; arrow keys move between Friendly, Formal and Firm; a screen reader names the group "Tone" and says which is chosen.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

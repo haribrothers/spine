@@ -62,7 +62,7 @@ describe("US-AI-11", () => {
     fireEvent.click(screen.getByRole("button", { name: "Draft with AI" }));
 
     const suggestion = await screen.findByRole("region", { name: "AI's draft" });
-    expect(state.post).toHaveBeenCalledWith("/ai/draft-email", { type: "reminder", documentId: "inv-1" }, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(state.post).toHaveBeenCalledWith("/ai/draft-email", { type: "reminder", documentId: "inv-1", tone: "friendly" }, expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(within(suggestion).getByText(/please arrange payment/)).toBeTruthy();
     expect(highlighted(suggestion)).toContain("₹9,68,780.00");
     // The email itself hasn't changed.

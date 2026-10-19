@@ -169,6 +169,14 @@ export type ReadDocumentInput = z.infer<typeof readDocumentSchema>;
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the statement's period.");
 
+/** US-AI-12 (D-171) — the tone of a payment reminder or a statement drafted by AI. */
+export const AI_EMAIL_TONES = ["friendly", "formal", "firm"] as const;
+export type AiEmailTone = (typeof AI_EMAIL_TONES)[number];
+export const AI_EMAIL_TONE_LABELS: Record<AiEmailTone, string> = { friendly: "Friendly", formal: "Formal", firm: "Firm" };
+/** The emails that offer a tone. */
+export const AI_TONED_EMAILS = ["reminder", "statement"] as const;
+export const AI_TONE_ONLY_MESSAGE = "A tone is only for payment reminders and statements.";
+
 /**
  * US-AI-11 (D-171, D-254) — `POST /ai/draft-email`: a draft of the send
  * dialog's email for one document. A statement's document is the contact,
@@ -181,8 +189,10 @@ export const draftEmailSchema = z
     from: day.optional(),
     to: day.optional(),
     mode: z.enum(["open", "all"]).optional(),
+    tone: z.enum(AI_EMAIL_TONES).optional(),
   })
-  .refine((d) => d.type !== "statement" || (d.from !== undefined && d.to !== undefined && d.from <= d.to), { message: "Pick the statement's period.", path: ["from"] });
+  .refine((d) => d.type !== "statement" || (d.from !== undefined && d.to !== undefined && d.from <= d.to), { message: "Pick the statement's period.", path: ["from"] })
+  .refine((d) => d.tone === undefined || (AI_TONED_EMAILS as readonly string[]).includes(d.type), { message: AI_TONE_ONLY_MESSAGE, path: ["tone"] });
 export type DraftEmailInput = z.infer<typeof draftEmailSchema>;
 
 /** What "Draft with AI" gets back: the email with this document's details filled in by Spine — never the model's — and those details, for the highlight (D-254). */

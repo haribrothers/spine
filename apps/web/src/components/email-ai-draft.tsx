@@ -2,8 +2,8 @@
 
 import { useCallback, useState } from "react";
 import { Check, Loader2, RotateCw, Sparkles, Undo2 } from "lucide-react";
-import { Alert, AlertDescription, Button, RichTextContent } from "@spine/ui";
-import { aiPausedMessage, emailBodyText, plainTextToHtml, type AiEmailDraft, type DraftEmailInput, type EmailTemplateType } from "@spine/shared";
+import { Alert, AlertDescription, Button, RichTextContent, ToggleGroup, ToggleGroupItem } from "@spine/ui";
+import { AI_EMAIL_TONES, AI_EMAIL_TONE_LABELS, AI_TONED_EMAILS, aiPausedMessage, emailBodyText, plainTextToHtml, type AiEmailDraft, type AiEmailTone, type DraftEmailInput, type EmailTemplateType } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 import { aiFeatureShown, useAiStatus } from "../lib/use-ai-status";
 import { useAiRequest } from "../lib/use-ai-request";
@@ -33,7 +33,8 @@ type Fields = { subject: string; message: string };
  * arrives as a suggestion and the dialog's fields don't change until
  * "Use this draft"; then each is tagged until it's changed, and "Undo"
  * puts back what they held. The details in a draft are the document's own,
- * filled in by Spine.
+ * filled in by Spine. US-AI-12 — reminders and statements are drafted in
+ * the chosen tone (Friendly until changed).
  */
 export function useEmailAiDraft({ input, fields, apply }: { input: DraftEmailInput | null; fields: Fields; apply: (next: Fields) => void }) {
   const status = useAiStatus();
@@ -42,11 +43,18 @@ export function useEmailAiDraft({ input, fields, apply }: { input: DraftEmailInp
   const { run, cancel } = ai;
   const [suggestion, setSuggestion] = useState<AiEmailDraft | null>(null);
   const [used, setUsed] = useState<{ before: Fields; draft: AiEmailDraft } | null>(null);
+  const [tone, setTone] = useState<AiEmailTone>("friendly");
+  const toned = Boolean(input && (AI_TONED_EMAILS as readonly string[]).includes(input.type));
 
-  const draft = useCallback(() => {
-    if (!input) return;
-    void run((signal) => apiClient.post<AiEmailDraft>("/ai/draft-email", input, { signal }), setSuggestion);
-  }, [run, input]);
+  /** Asks for a draft — in `nextTone` when it's given (choosing a tone on a suggestion redrafts in it). */
+  const draft = useCallback(
+    (nextTone?: AiEmailTone) => {
+      if (!input) return;
+      const body = toned ? { ...input, tone: nextTone ?? tone } : input;
+      void run((signal) => apiClient.post<AiEmailDraft>("/ai/draft-email", body, { signal }), setSuggestion);
+    },
+    [run, input, toned, tone],
+  );
 
   const useDraft = () => {
     if (!suggestion) return;
@@ -66,6 +74,7 @@ export function useEmailAiDraft({ input, fields, apply }: { input: DraftEmailInp
     cancel();
     setSuggestion(null);
     setUsed(null);
+    setTone("friendly");
   }, [cancel]);
 
   return {
@@ -75,6 +84,9 @@ export function useEmailAiDraft({ input, fields, apply }: { input: DraftEmailInp
     suggestion,
     used,
     draft,
+    toned,
+    tone,
+    setTone,
     useDraft,
     discard: () => setSuggestion(null),
     undo,
@@ -87,6 +99,35 @@ export function useEmailAiDraft({ input, fields, apply }: { input: DraftEmailInp
 
 export type EmailAiDraft = ReturnType<typeof useEmailAiDraft>;
 
+/** US-AI-12 — Friendly, Formal or Firm, for reminders and statements. */
+function TonePicker({ state, redraft }: { state: EmailAiDraft; redraft?: boolean }) {
+  if (!state.toned) return null;
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="text-[12.5px] font-medium text-on-surface-muted" aria-hidden>
+        Tone
+      </span>
+      <ToggleGroup
+        type="single"
+        aria-label="Tone"
+        value={state.tone}
+        disabled={state.ai.working}
+        onValueChange={(value: string) => {
+          if (!value) return;
+          state.setTone(value as AiEmailTone);
+          if (redraft) state.draft(value as AiEmailTone);
+        }}
+      >
+        {AI_EMAIL_TONES.map((t) => (
+          <ToggleGroupItem key={t} value={t} size="sm">
+            {AI_EMAIL_TONE_LABELS[t]}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </span>
+  );
+}
+
 /** Between To and Subject: the button, AI's draft as a suggestion, or — once used — the note with Undo. Nothing when AI can't be used here. */
 export function EmailAiDraftBar({ state, type }: { state: EmailAiDraft; type: EmailTemplateType }) {
   if (!state.shown) return null;
@@ -97,12 +138,13 @@ export function EmailAiDraftBar({ state, type }: { state: EmailAiDraft; type: Em
     <div className="flex flex-col gap-3">
       {suggestion ? (
         <section aria-label="AI's draft" data-testid="ai-email-suggestion" className="flex flex-col rounded-md border border-primary/30 bg-info-bg/50">
-          <p className="flex items-start gap-2.5 border-b border-primary/20 px-3.5 py-2.5 text-[13px] text-on-surface-muted">
-            <Sparkles size={16} aria-hidden className="mt-0.5 shrink-0 text-primary" />
-            <span>
+          <div className="flex flex-wrap items-center gap-2.5 border-b border-primary/20 px-3.5 py-2.5 text-[13px] text-on-surface-muted">
+            <Sparkles size={16} aria-hidden className="shrink-0 text-primary" />
+            <span className="flex-1">
               <strong className="font-semibold text-on-surface">AI&apos;s draft</strong> — check it, then use it. Your email below doesn&apos;t change until you do.
             </span>
-          </p>
+            <TonePicker state={state} redraft />
+          </div>
           <div className="flex max-h-80 flex-col gap-2.5 overflow-auto px-3.5 py-3">
             <span className="text-[11.5px] font-semibold uppercase tracking-wide text-on-surface-muted">Subject</span>
             <RichTextContent className="font-medium [&_p]:my-0" html={plainTextToHtml(suggestion.subject)} highlights={suggestion.values} />
@@ -114,7 +156,7 @@ export function EmailAiDraftBar({ state, type }: { state: EmailAiDraft; type: Em
               <Check size={14} aria-hidden />
               Use this draft
             </Button>
-            <Button type="button" size="sm" variant="secondary" onClick={state.draft} disabled={ai.working} aria-busy={ai.working || undefined}>
+            <Button type="button" size="sm" variant="secondary" onClick={() => state.draft()} disabled={ai.working} aria-busy={ai.working || undefined}>
               {ai.working ? <Loader2 size={14} aria-hidden className="animate-spin motion-reduce:hidden" /> : <RotateCw size={14} aria-hidden />}
               {ai.working ? "Drafting…" : "Try again"}
             </Button>
@@ -144,7 +186,8 @@ export function EmailAiDraftBar({ state, type }: { state: EmailAiDraft; type: Em
         </Alert>
       ) : (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <AiActionButton label="Draft with AI" workingLabel="Drafting…" working={ai.working} disabled={Boolean(state.pausedUntil)} onClick={state.draft} onCancel={ai.cancel} />
+          <AiActionButton label="Draft with AI" workingLabel="Drafting…" working={ai.working} disabled={Boolean(state.pausedUntil)} onClick={() => state.draft()} onCancel={ai.cancel} />
+          <TonePicker state={state} />
           <span className="text-[12.5px] text-on-surface-muted">{state.pausedUntil ? aiPausedMessage(state.pausedUntil) : "Shows AI's draft first — your email stays as it is."}</span>
         </div>
       )}

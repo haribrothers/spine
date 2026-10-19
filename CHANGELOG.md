@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — A reminder or statement in a chosen tone (US-AI-12)
+
+- **Tone:** reminders and statements — from an invoice, Receivables or a contact — offer Friendly, Formal and Firm beside "Draft with AI" (Friendly until changed) and in the suggestion's header, where choosing another tone drafts again in it. Other emails have no tone; the API refuses one with 400.
+- **The details stay Spine's in every tone** (D-254): the balance, number, dates and days overdue are filled in by Spine after drafting. Firm is told never to threaten or add fees, interest, legal action or deadlines the template doesn't say.
+- **Tests:** API (US-AI-12 prompt and filling; a reminder and a statement in a tone; 400 for an invoice email), web (`us-ai-12`), e2e `us-ai-12.spec.ts` from Receivables (the e2e AI stub now keeps the last prompt). Tried live on `qwen3.5:4b` on Ollama: every tone passed in 7–14 seconds. QA section 245.
+
 ### 2026-10-19 — Draft a customer email with AI (US-AI-11, D-254)
 
 - **"Draft with AI" in every send dialog** — quotes, invoices, reminders, receipts, credit notes, Receivables and the statement dialog — for people who may send the email and use AI. AI's draft shows as a suggestion above the email ("Use this draft", "Try again", "Discard"); Subject and Message change only when it's used, tagged "Drafted by AI" until edited, with "Undo".
