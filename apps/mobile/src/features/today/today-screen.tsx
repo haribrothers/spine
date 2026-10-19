@@ -16,6 +16,7 @@ import type { GradientTone } from "@spine/ui-native/tokens";
 import { useSignedInSession } from "../../lib/session/session-provider";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { useModules } from "../../lib/data/modules";
+import { useAiStatus } from "../../lib/data/ai";
 import { useBusinessFormat } from "../../lib/data/business";
 import { todaysJobs, useAssignedJobs } from "../../lib/data/jobs";
 import { NEXT_MEETINGS_KEY, NEXT_MEETINGS_PATH, nextMeeting, type Meeting } from "../../lib/data/meetings";
@@ -163,6 +164,8 @@ export function TodayScreen() {
   const colors = useNativeColors();
   const format = useBusinessFormat();
   const modules = useModules();
+  // US-AI-10: kept for Scan receipt, so "Read receipt" can show disabled when the phone is offline later.
+  useAiStatus();
   const pending = usePendingSummary();
   const queued = useOutboxItems();
   const online = useOnline();

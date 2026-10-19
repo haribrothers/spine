@@ -18,9 +18,12 @@ import type { ContactOption } from "./types";
 export function ContactPicker({
   value,
   onValueChange,
+  refreshKey = 0,
 }: {
   value: string;
   onValueChange: (contactId: string) => void;
+  /** US-AI-08 — bump to read the vendors again (one was just added). */
+  refreshKey?: number;
 }) {
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
@@ -29,7 +32,7 @@ export function ContactPicker({
       .get<ContactOption[]>("/contacts?picker=1&type=vendor&type=both")
       .then(setContacts)
       .catch(() => {});
-  }, []);
+  }, [refreshKey]);
 
   const options = useMemo(
     () => contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name })),

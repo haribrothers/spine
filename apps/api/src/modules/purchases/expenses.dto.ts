@@ -39,7 +39,7 @@ export class CreateExpenseDto {
   @ApiPropertyOptional({ enum: ["company", "employee"], default: "company" })
   paidBy?: "company" | "employee";
 
-  @ApiPropertyOptional({ type: "string", nullable: true, description: "File id already uploaded via POST /files." })
+  @ApiPropertyOptional({ type: "string", nullable: true, description: "A file this person uploaded via POST /files that nothing else uses yet (D-250)." })
   receiptFileId?: string | null;
 
   @ApiPropertyOptional({ default: false })

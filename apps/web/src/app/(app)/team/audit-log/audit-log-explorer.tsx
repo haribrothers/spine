@@ -148,7 +148,8 @@ export function AuditLogExplorer() {
                   </tr>
                 ) : (
                   data.entries.map((e) => {
-                    const record = `${auditEntityLabel(e.entityType)}${e.recordLabel ? ` · ${e.recordLabel}` : ""}`;
+                    // US-AI-06: an AI request names the record it was for ("Vendor bill · ABM-20611").
+                    const record = e.entityType === "ai_request" && e.recordLabel ? e.recordLabel : `${auditEntityLabel(e.entityType)}${e.recordLabel ? ` · ${e.recordLabel}` : ""}`;
                     return (
                       <tr key={e.id} data-entry={e.id} data-type={e.entityType}>
                         <td className="whitespace-nowrap px-4 py-3 text-on-surface">{when(e.createdAt)}</td>

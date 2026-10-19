@@ -1,0 +1,30 @@
+# US-AI-10 — offline, "Read receipt" is dimmed with why, and the expense
+# still queues by hand. Android only: Maestro can switch airplane mode there.
+# Same setup as us-ai-10-receipt.yaml; run like us-mob-07-offline.yaml.
+appId: com.spine.app
+---
+- runFlow: _sign-in.yaml
+- tapOn: "Expenses"
+- tapOn:
+    id: "expenses-log"
+- extendedWaitUntil:
+    visible: "Amount \\(.*\\)"
+    timeout: 15000
+- runFlow: _choose-receipt.yaml
+- setAirplaneMode: enabled
+- extendedWaitUntil:
+    visible: "Needs a connection — fill it in, or read it later\\."
+    timeout: 20000
+- tapOn:
+    id: "expense-amount"
+- inputText: "48"
+- tapOn: "Category.*"
+- tapOn: "Fuel & freight"
+- tapOn: "Submit"
+- extendedWaitUntil:
+    visible: "(WAITING TO SYNC|Waiting to sync)"
+    timeout: 15000
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    visible: "(SUBMITTED BY YOU|Submitted by you)"
+    timeout: 60000

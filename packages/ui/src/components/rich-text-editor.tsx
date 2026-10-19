@@ -1,11 +1,14 @@
 "use client";
 
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import { Extension, useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import DOMPurify from "dompurify";
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { cn } from "../lib/cn";
 import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
 
@@ -28,6 +31,56 @@ export interface RichTextEditorProps {
   onReady?: (handle: RichTextEditorHandle) => void;
   /** Called when the editable region gets focus. */
   onFocus?: () => void;
+  /**
+   * Strings to mark wherever they appear, on screen only — e.g. the details
+   * Spine filled into an email (US-AI-11). The HTML the editor emits is
+   * unchanged, and a marked string someone edits loses its mark.
+   */
+  highlights?: readonly string[];
+}
+
+/** The look of a highlighted string: a tint with an underline, so it isn't colour alone against the text around it. */
+const HIGHLIGHT_CLASS = "rounded-[3px] bg-info-bg px-0.5 text-inherit shadow-[inset_0_-1.5px_0_var(--color-primary)]";
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Matches any of the strings as a whole word or phrase, the longest first; null when there's nothing to match. */
+function highlightPattern(highlights: readonly string[] | undefined): RegExp | null {
+  const words = [...new Set((highlights ?? []).map((h) => h.trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
+  return words.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escapeRegExp).join("|")})(?![\\p{L}\\p{N}])`, "gu") : null;
+}
+
+const highlightKey = new PluginKey<DecorationSet>("spineHighlights");
+
+function highlightDecorations(doc: ProseMirrorNode, pattern: RegExp | null): DecorationSet {
+  if (!pattern) return DecorationSet.empty;
+  const decorations: Decoration[] = [];
+  doc.descendants((node, pos) => {
+    if (!node.isText || !node.text) return;
+    for (const match of node.text.matchAll(pattern)) {
+      decorations.push(Decoration.inline(pos + match.index, pos + match.index + match[0].length, { class: HIGHLIGHT_CLASS, "data-highlight": "" }));
+    }
+  });
+  return DecorationSet.create(doc, decorations);
+}
+
+/** `highlights` as ProseMirror decorations, recomputed when the text or the list changes. */
+function highlightsExtension(pattern: { current: RegExp | null }) {
+  return Extension.create({
+    name: "spineHighlights",
+    addProseMirrorPlugins() {
+      return [
+        new Plugin<DecorationSet>({
+          key: highlightKey,
+          state: {
+            init: (_, state) => highlightDecorations(state.doc, pattern.current),
+            apply: (tr, old, _, state) => (tr.docChanged || tr.getMeta(highlightKey) ? highlightDecorations(state.doc, pattern.current) : old),
+          },
+          props: { decorations: (state) => highlightKey.getState(state) },
+        }),
+      ];
+    },
+  });
 }
 
 /** What `onReady` hands the parent. */
@@ -63,13 +116,17 @@ export function RichTextEditor({
   "aria-label": ariaLabel,
   onReady,
   onFocus,
+  highlights,
 }: RichTextEditorProps) {
+  const pattern = useRef<RegExp | null>(highlightPattern(highlights));
+  const highlightKeyText = (highlights ?? []).join("\u0000");
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: false, // headings are out of scope for "basic formatting" per this component's own doc comment
       }),
       Link.configure({ openOnClick: false, autolink: true }),
+      highlightsExtension(pattern),
     ],
     content: value || "",
     editable: !disabled,
@@ -111,6 +168,12 @@ export function RichTextEditor({
   useEffect(() => {
     editor?.setEditable(!disabled);
   }, [disabled, editor]);
+
+  // A new list of highlights redraws them without touching the text.
+  useEffect(() => {
+    pattern.current = highlightPattern(highlightKeyText ? highlightKeyText.split("\u0000") : []);
+    if (editor && !editor.isDestroyed) editor.view.dispatch(editor.state.tr.setMeta(highlightKey, true).setMeta("preventUpdate", true).setMeta("addToHistory", false));
+  }, [highlightKeyText, editor]);
 
   useEffect(() => {
     if (!editor || !onReady) return;
@@ -225,11 +288,42 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
 const ALLOWED_TAGS = ["p", "strong", "em", "ul", "ol", "li", "a", "br"];
 const ALLOWED_ATTR = ["href", "target", "rel"];
 
-export function RichTextContent({ html, className }: { html: string; className?: string }) {
+/** Wraps each match of `pattern` in the sanitized HTML's text in a `<mark>`, leaving tags and attributes alone. */
+function markHighlights(safeHtml: string, pattern: RegExp | null): string {
+  if (!pattern) return safeHtml;
+  const root = document.createElement("div");
+  root.innerHTML = safeHtml;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const texts: Text[] = [];
+  while (walker.nextNode()) texts.push(walker.currentNode as Text);
+  for (const text of texts) {
+    const value = text.data;
+    const matches = [...value.matchAll(pattern)];
+    if (!matches.length) continue;
+    const parts = document.createDocumentFragment();
+    let at = 0;
+    for (const match of matches) {
+      parts.append(value.slice(at, match.index));
+      const mark = document.createElement("mark");
+      mark.className = HIGHLIGHT_CLASS;
+      mark.dataset.highlight = "";
+      mark.textContent = match[0];
+      parts.append(mark);
+      at = match.index + match[0].length;
+    }
+    parts.append(value.slice(at));
+    text.replaceWith(parts);
+  }
+  return root.innerHTML;
+}
+
+export function RichTextContent({ html, className, highlights }: { html: string; className?: string; highlights?: readonly string[] }) {
+  const highlightKeyText = (highlights ?? []).join("\u0000");
   const safeHtml = useMemo(() => {
     if (typeof window === "undefined") return ""; // DOMPurify needs a DOM; server-render renders nothing rather than unsanitized markup
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });
-  }, [html]);
+    const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });
+    return markHighlights(clean, highlightPattern(highlightKeyText ? highlightKeyText.split("\u0000") : []));
+  }, [html, highlightKeyText]);
 
   return (
     <div

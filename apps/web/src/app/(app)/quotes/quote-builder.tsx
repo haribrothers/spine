@@ -141,6 +141,19 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   // US-SET-18 — a new quote starts with the default terms and notes.
   useDocumentDefaults("quote", !quote, setNotes, setTerms);
   const [lines, setLines] = useState<EditableQuoteLine[]>(quote ? toEditableLines(quote) : [blankLine()]);
+  // US-AI-13: rows "Draft lines with AI" added, until each is changed; the quote then saves as filled in with AI (D-166).
+  const [aiLineKeys, setAiLineKeys] = useState<Set<string>>(new Set());
+  const [aiAssisted, setAiAssisted] = useState(false);
+  /** A row keeps its AI mark while it's the very row AI added — any edit (a new object) or removal drops it; moving keeps it. */
+  function changeLines(next: EditableQuoteLine[]) {
+    const before = new Map(lines.map((l) => [l.key, l]));
+    setAiLineKeys((keys) => (keys.size ? new Set([...keys].filter((key) => next.some((l) => l.key === key && l === before.get(key)))) : keys));
+    setLines(next);
+  }
+  function addedAiLines(keys: string[]) {
+    setAiLineKeys((prev) => new Set([...prev, ...keys]));
+    setAiAssisted(true);
+  }
   // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
   const pos = usePlaceOfSupply({ contactId, initial: quote ? quote.placeOfSupply : undefined, lines, setLines });
   const [saving, setSaving] = useState(false);
@@ -221,6 +234,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       validUntil: validUntil ? validUntil.toISOString().slice(0, 10) : null,
       notes: notes || null,
       termsAndConditions: terms || null,
+      ...(aiAssisted ? { aiAssisted: true } : {}),
       lines: lines.map((line, index) => ({
         type: line.type,
         catalogItemId: line.catalogItemId,
@@ -361,7 +375,17 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
             Notes and terms ↓
           </a>
         </div>
-        <QuoteLineEditor lines={lines} onChange={touch(setLines)} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
+        <QuoteLineEditor
+          lines={lines}
+          onChange={touch(changeLines)}
+          currency={currency}
+          supplyType={pos.supplyType}
+          exportUnderLut={pos.exportUnderLut}
+          flaggedKeys={pos.flagged}
+          showHsn={pos.active}
+          aiKeys={aiLineKeys}
+          aiDraft={{ quoteId: quote?.id, onAdded: addedAiLines }}
+        />
       </Card>
 
       <Card id="quote-notes" className="flex flex-col gap-4">

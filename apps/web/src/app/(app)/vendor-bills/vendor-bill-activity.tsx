@@ -7,6 +7,7 @@ import type { VendorBillActivityEntry } from "@spine/shared";
 import { Ban, Banknote, FileCheck, FilePlus, ArrowRightLeft, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { AiFilledMark } from "../../../components/ai-filled-mark";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -106,6 +107,7 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
                     </>
                   )}
                   {after && <> · “{after}”</>}
+                  {item.aiAssisted && <AiFilledMark />}
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{[item.actorName, when(item.at)].filter(Boolean).join(" · ")}</p>
               </div>

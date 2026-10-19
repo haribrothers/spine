@@ -12,6 +12,7 @@ import {
   type SaveReconciliationMatchesInput,
   type StartReconciliationInput,
 } from "@spine/shared";
+import type { AiBankSuggestions } from "@spine/shared";
 import { orgMoneySettings } from "../../common/money-format";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
@@ -130,10 +131,10 @@ export class ReconciliationsService {
       };
     });
 
-    const matches = [...new Set(matchRows.map((m) => m.statementLineId))].map((statementLineId) => ({
-      statementLineId,
-      journalLineIds: matchRows.filter((m) => m.statementLineId === statementLineId).map((m) => m.journalLineId),
-    }));
+    const matches = [...new Set(matchRows.map((m) => m.statementLineId))].map((statementLineId) => {
+      const rows = matchRows.filter((m) => m.statementLineId === statementLineId);
+      return { statementLineId, journalLineIds: rows.map((m) => m.journalLineId), suggestedBy: rows[0]!.suggestedBy };
+    });
     const entryAmount = new Map(entries.map((e) => [e.journalLineId, BigInt(e.amount)]));
     const matchedSum = matchRows.reduce((sum, m) => sum + (entryAmount.get(m.journalLineId) ?? 0n), 0n);
     const excludedSum = lineRows.filter((r) => r.line.status === "excluded").reduce((sum, r) => sum + r.line.amount, 0n);
@@ -157,6 +158,7 @@ export class ReconciliationsService {
       entries,
       matches,
       suggestions: rec.status === "in_progress" ? suggest(lineRows.map((r) => r.line).filter((l) => l.status === "unmatched"), entries.filter((e) => !e.statementLineId)) : [],
+      aiSuggestions: rec.status === "in_progress" ? liveAiSuggestions(rec.aiSuggestions as AiBankSuggestions | null, lineRows.map((r) => r.line), entries) : null,
       matchedCount: matches.length + lineRows.filter((r) => r.line.status === "excluded").length,
       clearedBalance: cleared.toString(),
       difference: (rec.statementClosingBalance - cleared).toString(),
@@ -256,7 +258,9 @@ export class ReconciliationsService {
         .where(eq(bankStatementLines.reconciliationId, rec.id));
       for (const match of input.matches) {
         await tx.update(bankStatementLines).set({ status: "matched", reconciliationId: rec.id }).where(eq(bankStatementLines.id, match.statementLineId));
-        await tx.insert(bankStatementLineMatches).values(match.journalLineIds.map((journalLineId) => ({ statementLineId: match.statementLineId, journalLineId, reconciliationId: rec.id })));
+        await tx
+          .insert(bankStatementLineMatches)
+          .values(match.journalLineIds.map((journalLineId) => ({ statementLineId: match.statementLineId, journalLineId, reconciliationId: rec.id, suggestedBy: match.suggestedBy })));
       }
       for (const exclusion of input.exclusions) {
         await tx.update(bankStatementLines).set({ status: "excluded", excludeNote: exclusion.note || null, reconciliationId: rec.id }).where(eq(bankStatementLines.id, exclusion.statementLineId));
@@ -491,4 +495,28 @@ export function suggest(
     out.push({ statementLineId: line.id, journalLineId: candidates[0]!.journalLineId });
   }
   return out;
+}
+
+/**
+ * US-AI-14 — AI's saved suggestions as they still apply: only for lines
+ * still unmatched, ranking only entries still unmatched, a match only while
+ * its first entry has the line's amount. A line left with nothing to
+ * suggest drops out.
+ */
+export function liveAiSuggestions(
+  saved: AiBankSuggestions | null,
+  lines: { id: string; status: string; amount: bigint }[],
+  entries: { journalLineId: string; amount: string; statementLineId: string | null }[],
+): AiBankSuggestions | null {
+  if (!saved) return null;
+  const open = new Map(lines.filter((l) => l.status === "unmatched").map((l) => [l.id, l]));
+  const free = new Map(entries.filter((e) => !e.statementLineId).map((e) => [e.journalLineId, BigInt(e.amount)]));
+  const suggestions = saved.suggestions.flatMap((s) => {
+    const line = open.get(s.statementLineId);
+    if (!line) return [];
+    const ranked = s.rankedJournalLineIds.filter((id) => free.has(id));
+    const rankedJournalLineIds = ranked.length && free.get(ranked[0]!) === line.amount ? ranked : [];
+    return rankedJournalLineIds.length || s.create ? [{ ...s, rankedJournalLineIds }] : [];
+  });
+  return { ...saved, suggestions };
 }

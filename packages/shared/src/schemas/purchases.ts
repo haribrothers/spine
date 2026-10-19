@@ -37,6 +37,8 @@ export const createVendorBillSchema = z.object({
   lines: z.array(vendorBillLineInputSchema).default([]),
   /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
   placeOfSupply: placeOfSupplySchema.optional().nullable(),
+  /** US-AI-06 (D-166) — saved from fields AI filled in; marks the record and this save in its Activity. */
+  aiAssisted: z.boolean().optional(),
 });
 
 /** A draft-only update — see VendorBillsService.update's own guard against editing a recorded bill. */
@@ -86,6 +88,13 @@ export function labourTotal(lines: readonly { headcount: number; dayRateAmount: 
   return lines.reduce((sum, line) => sum + labourLineAmount(line), 0n);
 }
 
+/** D-250 — a file is linked to a record only by the person who uploaded it, while nothing else uses it. */
+export const linkUploadFirst = (thing: string) => `Upload the ${thing} first.`;
+export const linkInUse = (thing: string) => `This file is already used elsewhere. Upload the ${thing} again to use it here.`;
+/** D-250 — an expense's receipt is a file its submitter just uploaded, as an attachment is (US-OPS-33). */
+export const RECEIPT_UPLOAD_FIRST = linkUploadFirst("receipt");
+export const RECEIPT_IN_USE = linkInUse("receipt");
+
 /** PRD F7 (S-07.2/S-07.3) — a field/staff-submitted expense. No total/tax computation trusted from the client beyond the raw amount/taxAmount themselves (there's no multi-line breakdown to sum here, unlike quotes/invoices — an expense is a single amount). */
 export const createExpenseSchema = z.object({
   categoryId: uuidSchema,
@@ -104,6 +113,8 @@ export const createExpenseSchema = z.object({
   /** US-PUR-23 — "amount" (the default when absent) or "labour", where `amount` must equal the labour rows' total. */
   entryMode: z.enum(["amount", "labour"]).optional(),
   labourLines: z.array(labourLineSchema).max(LABOUR_MAX_ROWS, `Enter up to ${LABOUR_MAX_ROWS} trades.`).optional(),
+  /** US-AI-06 (D-166) — saved from fields AI filled in; marks the record and this save in its Activity. */
+  aiAssisted: z.boolean().optional(),
 });
 
 /** A submitted-only update — see ExpensesService.update's own guard against editing a reviewed expense. */
@@ -199,6 +210,8 @@ export interface VendorBillActivityEntry {
   detail?: string | null;
   /** The vendor payment or vendor credit it links to. */
   linkId?: string | null;
+  /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
+  aiAssisted?: true;
 }
 
 /** US-PUR-35 — a bill this vendor already has with the same number: `GET /vendor-bills/possible-duplicates`. */
@@ -222,6 +235,8 @@ export interface ExpenseActivityEntry {
   detail?: string | null;
   /** The invoice it was billed on. */
   linkId?: string | null;
+  /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
+  aiAssisted?: true;
 }
 
 /** US-PUR-44 — an expense of mine with the same amount on the same day: `GET /expenses/possible-duplicates`. */

@@ -139,6 +139,18 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
     notice,
     flagged,
     setPlaceOfSupply: (next: string) => change(next, null, supplyType, typeOf(next)),
+    /**
+     * US-AI-08 — takes a place of supply whose lines already carry the right
+     * tax (AI's, matched by the API), for `forContactId`: no lines switch and
+     * loading that contact doesn't replace it.
+     */
+    adopt: (next: string | null, forContactId: string | null) => {
+      if (forContactId) loadedContact.current = forContactId;
+      setPlaceOfSupply(next);
+      setSource(null);
+      setNotice(null);
+      setFlagged(new Set());
+    },
   };
 }
 

@@ -19,7 +19,7 @@ test.describe("US-INV-20", () => {
   test("the dialog asks for the schedule, refuses a past start date, and saves an Active schedule with its next date", async ({ page, seededOrg: _ }) => {
     await page.goto("/invoices");
     await page.getByRole("link", { name: "Recurring invoices" }).click();
-    await expect(page.getByRole("heading", { name: "Recurring invoices" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recurring invoices", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "+ New recurring invoice" }).first().click();
 
     const dialog = page.getByRole("dialog", { name: "New recurring invoice" });

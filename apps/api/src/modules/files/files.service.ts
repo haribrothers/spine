@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   HttpStatus,
@@ -303,44 +304,12 @@ export class FilesService {
 
   /** Every record that points at this file. */
   async owningRecords(orgId: string, fileId: string): Promise<FileOwner[]> {
-    const ids = [fileId];
-    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows, attachmentRows, signedQuoteRows] = await Promise.all([
-      this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
-      this.db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
-      this.db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.issuedPdfFileId, ids))),
-      this.db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.issuedPdfFileId, ids))),
-      this.db.select({ id: expenses.id, submittedBy: expenses.submittedByUserId }).from(expenses).where(and(eq(expenses.orgId, orgId), inArray(expenses.receiptFileId, ids))),
-      this.db.select({ jobId: jobPhotos.jobId }).from(jobPhotos).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
-      this.db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
-      this.db.select({ id: contactPersons.id }).from(contactPersons).innerJoin(contacts, eq(contactPersons.contactId, contacts.id)).where(and(eq(contacts.orgId, orgId), inArray(contactPersons.logoFileId, ids))),
-      this.db.select({ key: settings.key, value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), inArray(settings.key, ["business_profile", "document_layout"]))),
-      this.db.select({ id: user.id }).from(user).innerJoin(member, eq(member.userId, user.id)).where(and(eq(member.organizationId, orgId), like(user.image, `%/files/${fileId}%`))),
-      this.db
-        .select({ entityType: attachments.entityType, entityId: attachments.entityId })
-        .from(attachments)
-        .where(and(eq(attachments.orgId, orgId), inArray(attachments.fileId, ids), isNull(attachments.removedAt))),
-      this.db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.signatureFileId, ids))),
-    ]);
-    const owners: FileOwner[] = [
-      ...invoiceRows.map((r) => ({ type: "invoice_pdf" as const, id: r.id })),
-      ...creditNoteRows.map((r) => ({ type: "credit_note_pdf" as const, id: r.id })),
-      ...paymentRows.map((r) => ({ type: "receipt_pdf" as const, id: r.id })),
-      ...quoteRows.map((r) => ({ type: "quote_pdf" as const, id: r.id })),
-      ...expenseRows.map((r) => ({ type: "expense_receipt" as const, id: r.id, submittedBy: r.submittedBy })),
-      ...photoRows.map((r) => ({ type: "job_photo" as const, id: r.jobId })),
-      ...contactRows.map((r) => ({ type: "contact_logo" as const, id: r.id })),
-      ...personRows.map((r) => ({ type: "contact_person_photo" as const, id: r.id })),
-      ...avatarRows.map((r) => ({ type: "user_avatar" as const, id: r.id })),
-      ...attachmentRows.map((r) => ({ type: "attachment" as const, id: r.entityId, entityType: r.entityType })),
-      // US-QUO-19: the customer's on-site signature — Owners and Staff read it with the quote; Field doesn't (the default below).
-      ...signedQuoteRows.map((r) => ({ type: "quote_signature" as const, id: r.id })),
-    ];
-    const logoUrl = (profile.find((p) => p.key === "business_profile")?.value as { logoUrl?: string } | undefined)?.logoUrl;
-    if (logoUrl?.includes(`/files/${fileId}`)) owners.push({ type: "business_logo", id: orgId });
-    // US-SET-19: the signature Settings › Documents prints (Owner and Staff read it; Field never prints documents).
-    const signatureFileId = (profile.find((p) => p.key === "document_layout")?.value as { signatureFileId?: string | null } | undefined)?.signatureFileId;
-    if (signatureFileId === fileId) owners.push({ type: "document_signature", id: orgId });
-    return owners;
+    return owningRecordsOf(this.db, orgId, fileId);
+  }
+
+  /** D-250 — see `assertLinkable`. */
+  async assertLinkable(orgId: string, userId: string, fileId: string, options: LinkOptions): Promise<void> {
+    return assertLinkable(this.db, orgId, userId, fileId, options);
   }
 
   /** US-OPS-34 — readers of the record read its attachments (Field: only their own expenses'). */
@@ -583,4 +552,72 @@ export class FilesService {
       throw new ServiceUnavailableException("The file couldn't be opened. Try again; if it keeps failing, ask the owner to check the server's storage.");
     }
   }
+}
+
+/** Every record that points at this file (US-OPS-20): who may read it follows from these. */
+export async function owningRecordsOf(db: Database, orgId: string, fileId: string): Promise<FileOwner[]> {
+    const ids = [fileId];
+    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows, attachmentRows, signedQuoteRows] = await Promise.all([
+      db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
+      db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
+      db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.issuedPdfFileId, ids))),
+      db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.issuedPdfFileId, ids))),
+      db.select({ id: expenses.id, submittedBy: expenses.submittedByUserId }).from(expenses).where(and(eq(expenses.orgId, orgId), inArray(expenses.receiptFileId, ids))),
+      db.select({ jobId: jobPhotos.jobId }).from(jobPhotos).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
+      db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
+      db.select({ id: contactPersons.id }).from(contactPersons).innerJoin(contacts, eq(contactPersons.contactId, contacts.id)).where(and(eq(contacts.orgId, orgId), inArray(contactPersons.logoFileId, ids))),
+      db.select({ key: settings.key, value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), inArray(settings.key, ["business_profile", "document_layout"]))),
+      db.select({ id: user.id }).from(user).innerJoin(member, eq(member.userId, user.id)).where(and(eq(member.organizationId, orgId), like(user.image, `%/files/${fileId}%`))),
+      db
+        .select({ entityType: attachments.entityType, entityId: attachments.entityId })
+        .from(attachments)
+        .where(and(eq(attachments.orgId, orgId), inArray(attachments.fileId, ids), isNull(attachments.removedAt))),
+      db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.signatureFileId, ids))),
+    ]);
+    const owners: FileOwner[] = [
+      ...invoiceRows.map((r) => ({ type: "invoice_pdf" as const, id: r.id })),
+      ...creditNoteRows.map((r) => ({ type: "credit_note_pdf" as const, id: r.id })),
+      ...paymentRows.map((r) => ({ type: "receipt_pdf" as const, id: r.id })),
+      ...quoteRows.map((r) => ({ type: "quote_pdf" as const, id: r.id })),
+      ...expenseRows.map((r) => ({ type: "expense_receipt" as const, id: r.id, submittedBy: r.submittedBy })),
+      ...photoRows.map((r) => ({ type: "job_photo" as const, id: r.jobId })),
+      ...contactRows.map((r) => ({ type: "contact_logo" as const, id: r.id })),
+      ...personRows.map((r) => ({ type: "contact_person_photo" as const, id: r.id })),
+      ...avatarRows.map((r) => ({ type: "user_avatar" as const, id: r.id })),
+      ...attachmentRows.map((r) => ({ type: "attachment" as const, id: r.entityId, entityType: r.entityType })),
+      // US-QUO-19: the customer's on-site signature — Owners and Staff read it with the quote; Field doesn't (the default below).
+      ...signedQuoteRows.map((r) => ({ type: "quote_signature" as const, id: r.id })),
+    ];
+    const logoUrl = (profile.find((p) => p.key === "business_profile")?.value as { logoUrl?: string } | undefined)?.logoUrl;
+    if (logoUrl?.includes(`/files/${fileId}`)) owners.push({ type: "business_logo", id: orgId });
+    // US-SET-19: the signature Settings › Documents prints (Owner and Staff read it; Field never prints documents).
+    const signatureFileId = (profile.find((p) => p.key === "document_layout")?.value as { signatureFileId?: string | null } | undefined)?.signatureFileId;
+    if (signatureFileId === fileId) owners.push({ type: "document_signature", id: orgId });
+    return owners;
+  }
+
+export interface LinkOptions {
+  /** "Upload the photo first." — the file isn't this person's own upload in this organisation. */
+  uploadFirst: string;
+  /** "This file is already used elsewhere…" — another record already uses it. */
+  inUse: string;
+  /** Owners this link may share the file with: the record being saved keeping its own file. */
+  keep?: (owner: FileOwner) => boolean;
+}
+
+/**
+ * D-250 — the one rule for linking a file to a record (a receipt, an
+ * attachment, a job or milestone photo, a contact's logo, a signature, an
+ * avatar). Whoever can read a record reads its files (US-OPS-20), so a file
+ * may be linked only by the person who uploaded it, and only while no other
+ * record uses it: otherwise anyone who knew a file's id could link it to a
+ * record they can read and read it through that — a customer's signature,
+ * an attachment on a record they can't open.
+ */
+export async function assertLinkable(db: Database, orgId: string, userId: string, fileId: string, options: LinkOptions): Promise<void> {
+  if (!UUID.test(fileId)) throw new BadRequestException(options.uploadFirst);
+  const [file] = await db.select({ uploadedByUserId: files.uploadedByUserId }).from(files).where(and(eq(files.orgId, orgId), eq(files.id, fileId)));
+  if (!file || file.uploadedByUserId !== userId) throw new BadRequestException(options.uploadFirst);
+  const owners = await owningRecordsOf(db, orgId, fileId);
+  if (owners.some((owner) => !options.keep?.(owner))) throw new BadRequestException(options.inUse);
 }

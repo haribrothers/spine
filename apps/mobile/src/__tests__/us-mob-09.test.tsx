@@ -50,10 +50,10 @@ describe("US-MOB-09 · send each item exactly once and fix failures", () => {
     const api = fakeApi(({ path }) => (path === "/files" ? { id: `file-${api.calls.length}` } : { id: "photo" }));
     await engineWith(api.transport).run();
     expect(api.calls.map((c) => `${c.method} ${c.path} ${c.key}`)).toEqual([
-      `POST /files ${item.id}:file:0`,
-      `POST /jobs/job-marina/photos ${item.id}:photo:0`,
-      `POST /files ${item.id}:file:1`,
-      `POST /jobs/job-marina/photos ${item.id}:photo:1`,
+      `POST /files ${item.id}:file:photo-0.jpg`,
+      `POST /jobs/job-marina/photos ${item.id}:photo:photo-0.jpg`,
+      `POST /files ${item.id}:file:photo-1.jpg`,
+      `POST /jobs/job-marina/photos ${item.id}:photo:photo-1.jpg`,
     ]);
     expect(outbox.get(item.id)).toMatchObject({ status: "sent", sentAt: NOW });
     expect(discardedFiles).toEqual([photo(0).uri, photo(1).uri]);
@@ -67,7 +67,7 @@ describe("US-MOB-09 · send each item exactly once and fix failures", () => {
     await engine.run();
     expect(outbox.get(item.id)).toMatchObject({ status: "waiting", attempts: 1 });
     await engine.run({ force: true });
-    expect(api.calls.map((c) => c.key)).toEqual([`${item.id}:file:0`, `${item.id}:photo:0`, `${item.id}:photo:0`]);
+    expect(api.calls.map((c) => c.key)).toEqual([`${item.id}:file:photo-0.jpg`, `${item.id}:photo:photo-0.jpg`, `${item.id}:photo:photo-0.jpg`]);
     expect(outbox.get(item.id)?.status).toBe("sent");
   });
 
@@ -75,7 +75,7 @@ describe("US-MOB-09 · send each item exactly once and fix failures", () => {
     const item = await queueExpense();
     const api = fakeApi(({ path }) => (path === "/files" ? { id: "file-r" } : { id: "exp-1" }));
     await engineWith(api.transport).run();
-    expect(api.calls[0]).toMatchObject({ path: "/files", key: `${item.id}:file` });
+    expect(api.calls[0]).toMatchObject({ path: "/files", key: `${item.id}:file:receipt.jpg` });
     expect(api.calls[1]).toMatchObject({ path: "/expenses", key: item.id, body: expect.objectContaining({ categoryId: "cat-fuel", amount: "6420", receiptFileId: "file-r", paidBy: "employee" }) });
     expect(outbox.get(item.id)).toMatchObject({ status: "sent", result: { expenseId: "exp-1" } });
   });

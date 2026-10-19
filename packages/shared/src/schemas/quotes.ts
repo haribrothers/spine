@@ -73,6 +73,8 @@ export const createQuoteSchema = z.object({
   placeOfSupply: placeOfSupplySchema.optional().nullable(),
   /** US-CRM-26 — the lead this quote is for (same organisation and contact). */
   leadId: uuidSchema.optional().nullable(),
+  /** US-AI-06 (D-166) — saved from fields AI filled in; marks the record and this save in its Activity. */
+  aiAssisted: z.boolean().optional(),
 });
 
 /** A draft-only update — see QuotesService.update's own guard against editing a sent quote. */
@@ -126,6 +128,8 @@ export interface QuoteActivityEntry {
   linkId?: string | null;
   /** "in_person" or "public_link" for an answer. */
   method?: "in_person" | "public_link" | null;
+  /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
+  aiAssisted?: true;
 }
 
 /** US-QUO-33 — what a quote is connected to (`GET /quotes/:id/related`). */

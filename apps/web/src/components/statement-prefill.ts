@@ -11,6 +11,8 @@ export interface StatementPrefill {
   moneyAccountName: string;
   reference: string | null;
   description: string;
+  /** US-AI-14 — what AI suggested for the new entry: changeable, and marked "Suggested by AI". */
+  ai?: { categoryAccountId: string | null; contactId: string | null };
 }
 
 /** The line's date as a local-midnight Date for a DatePicker. */

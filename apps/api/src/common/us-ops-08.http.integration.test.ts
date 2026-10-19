@@ -26,6 +26,14 @@ const EXEMPT = new Set([
   // US-INV-34: the same for an invoice.
   "POST /invoices/preview-pdf",
   "POST /credit-notes/preview",
+  // US-AI-02, US-AI-08, US-AI-11, US-AI-13: AI routes save nothing — a connection test, a model list, a document read, an email draft, quote lines (05-api).
+  "POST /org/ai/test",
+  "POST /org/ai/models",
+  "POST /ai/read-document",
+  "POST /ai/draft-email",
+  "POST /ai/draft-quote-lines",
+  // US-AI-14: asking again replaces the kept suggestions, so a retry is harmless.
+  "POST /ai/bank-suggestions",
 ]);
 
 function controllerFiles(dir: string): string[] {

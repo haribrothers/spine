@@ -25,7 +25,7 @@ Phase 5 is done when the app works end to end in airplane mode and syncs with no
 | Flows on a simulator | Maestro (`apps/mobile/e2e/*.yaml`), iOS Simulator and Android emulator, against the local API with the seeded e2e org | Sign in, Today, a job, expense with a receipt, photos, mark complete, present and accept a quote. Offline replay: go offline, add 2 photos, an expense and a completion, check the waiting count, come back online, then check through the API (`runScript` with `http`) that each exists exactly once |
 | Real phone | `docs/qa-script.md` | One iPhone and one Android phone in real airplane mode, plus a flaky-signal walk, before the Phase 5 PR |
 
-Going offline on a simulator: on Android, Maestro toggles airplane mode on the emulator. The iOS Simulator can't, so the E2E build (`EXPO_PUBLIC_E2E=1`, never in a store build) has a hidden network override. It makes the transport fail the way no network does and makes NetInfo report offline. Maestro flows run locally (`pnpm --filter @spine/mobile test:e2e`) before the Phase 5 PR. CI runs the Jest and integration layers, since macOS runners for simulators aren't part of CI.
+Going offline on a simulator: on Android, Maestro toggles airplane mode on the emulator. The iOS Simulator can't, so the E2E build (`EXPO_PUBLIC_E2E=1`, never in a store build) has a hidden network override. It makes the transport fail the way no network does and makes NetInfo report offline. Maestro flows run locally (`pnpm --filter @spine/mobile test:e2e`, and `test:e2e:android` on an Android 15 emulator — see `docs/design/native-notes.md`) before the Phase 5 PR. CI runs the Jest and integration layers, since macOS runners for simulators aren't part of CI.
 
 ## CI
 

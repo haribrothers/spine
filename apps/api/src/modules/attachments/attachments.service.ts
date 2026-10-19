@@ -57,6 +57,8 @@ export class AttachmentsService {
     const file = await this.files.getMetadata(orgId, input.fileId);
     // Only a file this person just uploaded, so nobody can pull someone else's file onto a record.
     if (file.uploadedByUserId !== userId) throw new BadRequestException("Upload the file first.");
+    // D-250: nor one another record already uses (a customer's signature, a receipt), to read it through this one.
+    await this.files.assertLinkable(orgId, userId, file.id, { uploadFirst: "Upload the file first.", inUse: "This file is already attached. Upload it again to attach it somewhere else." });
 
     return this.db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`attachments:${input.entityType}:${input.entityId}`}))`);

@@ -481,7 +481,7 @@ Decision: [D-236](../prd/12-decisions.md)
 **Acceptance criteria**
 - **Given** an Owner opens Settings, **when** the list shows, **then** it's grouped, in this order:
   - **Your account:** Profile, Password & security, Notifications;
-  - **Business:** Business profile, Branding, Industry template, Currency & locale, Modules;
+  - **Business:** Business profile, Branding, Industry template, Currency & locale, Modules, AI assistant (from US-AI-01);
   - **Money & tax:** Financial year, Tax, GST (India), Chart of accounts, Opening balances, Payment instructions;
   - **Documents & emails:** Numbering, Documents, Emails, Automatic reminders;
   - **Sales & meetings:** Pipeline stages, Repeat quote conversion, Upcoming meetings, Meeting reminders;

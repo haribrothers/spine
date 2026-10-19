@@ -42,6 +42,8 @@ export interface ExpensePayload {
   entryMode?: "amount" | "labour";
   labourLines?: { trade: string; headcount: number; dayRateAmount: string }[];
   receipt: LocalPhoto | null;
+  /** US-AI-10 — filled in from the receipt by AI, so the expense says so (US-AI-06). Absent on items queued before. */
+  aiAssisted?: boolean;
 }
 
 export interface CompletionPayload {

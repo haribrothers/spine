@@ -4,6 +4,14 @@ import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-aut
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
 import { IndustryTemplateService } from "./industry-template.service";
+import { SECRET_SETTING } from "../data-export/data-export.tables";
+
+/**
+ * Keys these generic routes never read or write: secrets (D-094), and the AI
+ * assistant's settings, which only an Owner reaches, through `/org/ai`
+ * (US-AI-01, US-AI-02).
+ */
+const isPrivateSetting = (key: string) => SECRET_SETTING.test(key) || key === "ai";
 
 /**
  * Org-scoped settings read/write, backing every onboarding-wizard step that
@@ -23,12 +31,14 @@ export class SettingsController {
   @Get()
   async getAll(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
-    return this.settingsService.getAll(orgId);
+    const all = await this.settingsService.getAll(orgId);
+    return Object.fromEntries(Object.entries(all).filter(([key]) => !isPrivateSetting(key)));
   }
 
   @Get(":key")
   async getOne(@Session() session: UserSession, @Param("key") key: string) {
     const orgId = requireOrgId(session);
+    if (isPrivateSetting(key)) throw new ForbiddenException("This setting can't be read here.");
     const value = await this.settingsService.get(orgId, key);
     return { key, value };
   }
@@ -43,6 +53,7 @@ export class SettingsController {
   @UseInterceptors(IdempotencyInterceptor)
   async setOne(@Session() session: UserSession, @Param("key") key: string, @Body("value") value: unknown) {
     const orgId = requireOrgId(session);
+    if (isPrivateSetting(key)) throw new ForbiddenException("This setting can't be changed here.");
     // US-ONB-13: Construction sets up its cost accounts and categories in the same transaction.
     if (key === "industry_template") return this.industryTemplate.set(orgId, session.user.id, value);
     if (key === "business_profile") {

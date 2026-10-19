@@ -80,6 +80,130 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — AI suggestions while reconciling (US-AI-14)
+
+- **"Suggest with AI (<n> lines)"** beside "Match all suggested" looks at the lines the rules couldn't settle (D-158), only when pressed. AI's suggestions join the Suggested tab: "AI suggests: <entry> · <contact>" with the reason, or "AI suggests creating: <category> · <contact>". The tab says "AI suggestions aren't in Match all — check and match each one." — Match all still takes only the rules'.
+- **Selecting a line** puts AI's entry first in "Unreconciled in Spine", marked "AI suggests", before "Same amount" and the nearest dates. **Create** opens with AI's kind (Other money in/out, a customer payment or a vendor payment), category and contact, each "Suggested by AI".
+- **Nothing is matched or created by AI:** Match, or saving the create form, does that. A match made from AI's suggestion is saved as suggested by AI (`bank_statement_line_matches.suggested_by`, migration 0128) and reads "Matched · suggested by AI". AI's suggestions are kept on the reconciliation, so coming back doesn't ask (or spend) again; "Suggest again" replaces them.
+- **What's sent:** dates, signed amounts and redacted descriptions, each line's 8 likeliest entries, recent categorised money in/out, and the categories and contacts AI may pick. A match only stands when its first entry has the line's amount — AI only ranks.
+- **Tests:** API (`us-ai-14` unit and integration), web (`us-ai-14`), e2e `us-ai-14.spec.ts`. Tried live on `qwen3.5:4b`: 13–24 seconds for 4 lines, three correct matches (R-26). QA section 247.
+
+### 2026-10-19 — Draft quote lines from an enquiry (US-AI-13)
+
+- **"Draft lines with AI"** beside "Add item" on a new or draft quote opens a side panel: paste the enquiry, press "Draft lines", and AI proposes lines matched to the catalogue — items with their price, bundles with their total, and work that isn't in the catalogue with "Add a price". Tick the ones you want and "Add to quote".
+- **Lines arrive as if picked by hand:** the item's price, its tax for the place of supply and its HSN/SAC, a bundle as its lines; each row reads "Suggested by AI" until changed, and a line without a price says so until it has one. AI never sets a price (D-172) — an item priced in another currency comes in without one. The saved quote says "filled in with AI".
+- **The catalogue sent:** the 50 active items and bundles (in the quote's currency) that best match the enquiry by trigram similarity, as refs, names, units and contents — never prices; the enquiry is redacted.
+- **API:** `POST /ai/draft-quote-lines` (no Idempotency-Key). Tried live on `qwen3.5:4b`: lines in 20–23 seconds — close to the 30-second limit on a bigger catalogue (R-26).
+- **Tests:** API (`us-ai-13` unit and integration), web (`us-ai-13`), e2e `us-ai-13.spec.ts`. QA section 246.
+
+### 2026-10-19 — A reminder or statement in a chosen tone (US-AI-12)
+
+- **Tone:** reminders and statements — from an invoice, Receivables or a contact — offer Friendly, Formal and Firm beside "Draft with AI" (Friendly until changed) and in the suggestion's header, where choosing another tone drafts again in it. Other emails have no tone; the API refuses one with 400.
+- **The details stay Spine's in every tone** (D-254): the balance, number, dates and days overdue are filled in by Spine after drafting. Firm is told never to threaten or add fees, interest, legal action or deadlines the template doesn't say.
+- **Tests:** API (US-AI-12 prompt and filling; a reminder and a statement in a tone; 400 for an invoice email), web (`us-ai-12`), e2e `us-ai-12.spec.ts` from Receivables (the e2e AI stub now keeps the last prompt). Tried live on `qwen3.5:4b` on Ollama: every tone passed in 7–14 seconds. QA section 245.
+
+### 2026-10-19 — Draft a customer email with AI (US-AI-11, D-254)
+
+- **"Draft with AI" in every send dialog** — quotes, invoices, reminders, receipts, credit notes, Receivables and the statement dialog — for people who may send the email and use AI. AI's draft shows as a suggestion above the email ("Use this draft", "Try again", "Discard"); Subject and Message change only when it's used, tagged "Drafted by AI" until edited, with "Undo".
+- **The document's own details, never the model's:** the model writes placeholders and Spine fills them, the same values as the template; a detail it wrote out goes back to Spine's value, and a draft with a made-up placeholder or number is refused as "AI didn't answer…". The text sent to the model is redacted (D-165); payment instructions aren't sent.
+- **Highlights:** the details Spine filled in are highlighted in the Message — the template draft too — on screen only. `RichTextEditor` and `RichTextContent` take `highlights` (documented in the design system). The statement dialog now catches a placeholder Spine doesn't know, like the other send dialogs.
+- **Design:** the dialog was redrawn from the app's real rich-text dialog ("05 Emails v2"): `SendEmailDialogAi`, `SendEmailDialogAiSuggestion`, `SendEmailDialogAiUsed`. D-171 amended.
+- **API:** `POST /ai/draft-email` (no Idempotency-Key — it saves nothing); `/email-drafts` and the statement draft return `values`. Drafting runs at temperature 0.7 so "Try again" differs.
+- **Tests:** API (`us-ai-11` unit and integration; US-OPS-08, US-SET-21 and statements suites), web (`us-ai-11`), `@spine/ui` highlights a11y, e2e `us-ai-11.spec.ts`. QA section 244.
+- **After trying it on a local model (D-255):** a "thinking" model (`qwen3.5:4b` on Ollama) spent 90 seconds reasoning and every draft timed out (504). The OpenAI-compatible driver now asks models not to think (`reasoning_effort: "none"`, dropped for a server that refuses it), so drafts — and bill and receipt reads — come back in seconds. The number check compares whole numbers, so "is currently 35 days overdue" passes while a made-up figure still doesn't. Tested live: 5 of 5 drafts in 6–8 seconds.
+
+### 2026-10-19 — The field app opens on iOS 27, back works on Android 13–15, and Maestro flows for US-AI-10 (D-252, D-253)
+
+- **iOS 27:** the app stopped at launch on the iOS 27 simulator (iOS now requires the scene lifecycle). It moves to Expo SDK 57.0.30 and turns on Expo's own scene support (`expo-build-properties` `ios.enableSceneSupport`); the `expo-modules-core` override and the `expo-modules-jsi` patch go, as 57.1.2 fixes that build error upstream. A stopgap until SDK 58, which is tracked as R-25 before Phase 11. `@expo/ui` 57.0.25 changed how a sheet's and a border's colours are passed; the text field and two tests follow.
+- **Android back (D-253):** on Android 13–15 the back gesture or button closed the app from any screen — the app opted in to predictive back, which React Native 0.86 handles only on Android 16+. It no longer opts in; Android 16+ still gets predictive back.
+- **Maestro:** `us-ai-10-receipt` (iOS and Android) chooses a receipt from the library, reads it and submits; `us-ai-10-offline` (Android) checks "Needs a connection" and the queued send. `us-mob-23-search` finds the Search field where iOS 27 puts it (under the title, not in the tab bar). Android flows run on an Android 15 emulator with 4 GB: on Android 16/17 images Maestro types one key every ~5 s (Maestro #2718). How to run them is in `docs/design/native-notes.md`.
+- **Tests:** iOS 27 — `us-ai-10-receipt`, `us-mob-01`, `03`, `04`, `13`, `23` pass. Android 15 — `us-ai-10-receipt`, `us-ai-10-offline`, `us-mob-07`, `11`, `13` pass, and back from a job, Sync and New expense returns a screen. US-MOB-20's test now checks the app doesn't opt in to predictive back. QA section 243 lists the flows and an Android 13–15 back check.
+
+### 2026-10-18 — Every file link checks who uploaded it (D-250, widened; security)
+
+- **Why:** a review of the receipt fix found the same hole on other routes: any member could link a file they may not read to a record they can — through their profile photo, a job or milestone photo, a contact's logo, or an attachment (which checked the uploader but not whether a customer's signature or a job photo already used the file).
+- **Now:** one check on every link a non-Owner can make — attachments, expense receipts, job and milestone-completion photos, contact logos and people's photos, the on-site quote signature, and profile photos (both `PUT /users/me` and Better Auth's `/update-user`): the person's own upload, used by nothing else. A record keeping its own file always passes, and so does a photo already on the same job (a retried send). AI won't read a "fresh upload" that has become a job photo or a signature.
+- **Along with it:** demo data uploads its own copy of a sample site photo for each job and milestone (it used to share six files between them); the AI routes that save nothing are on US-OPS-08's list of routes without an Idempotency-Key, which that check had been missing since US-AI-02.
+- **Tests:** `d-250` covers each route; the whole API integration suite was run.
+
+### 2026-10-18 — Fill in my expense from a receipt on the phone (US-AI-10, D-251)
+
+- **"Read receipt" on New expense (iOS and Android):** under the receipt photo, in Amount mode. It uploads the photo and has AI read it; Amount, Date, Category and Description fill in, each "Suggested by AI" until changed, with "Filled in from your receipt. Check the amount, date and category before you submit." at the top. Job, Paid by and tax are left alone. "Read again" and "Retake" under the photo.
+- **Offline:** "Read receipt" shows dimmed with "Needs a connection — fill it in, or read it later.", and the expense queues exactly as before. Hidden in Labour mode, with AI or the feature off, without the right to use AI, or with a model that can't read images; dimmed with the date while the budget is used up.
+- **Your entries stay:** AI fills only what you haven't entered and offers "Replace my entries". It won't fill an amount in another currency (it says so), a future date, or a category that isn't yours. "Cancel", a retake or leaving drops the read; "AI didn't answer…" offers Try again.
+- **One upload:** the photo AI read is the expense's receipt — the queued expense sends its id instead of uploading it again — and the expense says "filled in with AI". Nothing in the outbox ever calls AI, so hand-filled expenses sync as before.
+- **Under the hood:** requests can be cancelled; AI's own 503/504 keep their message on the phone; the AI status is kept for offline use. The "Suggested by AI" tag is an app-level component, no change to the shared native components.
+- **After review:** switching to Labour stops a read in progress; a category deleted since the expense was queued counts as empty; offline says so once and clears when the connection is back; VoiceOver and TalkBack hear the result; iOS "Retake" is a visible grey; the date's tag sits under its caption. The outbox now keys each upload and attach by photo, not position — a retake after a refusal, or a removed photo, used to bring back the earlier photo's file.
+- **Tests:** phone (`us-ai-10`: 30 tests on iOS and Android, including the outbox and request layer; `us-mob-09` keys updated) and API (`us-ai-10`, a Field user with a bearer token). QA section 243 covers the device checks.
+
+### 2026-10-18 — An expense's receipt must be your own upload (D-250, security)
+
+- **The gap:** an expense stored any file id it was given as its receipt. File reads follow the record a file belongs to, so someone who knew a file's id could attach it to their own expense and read it — a Field user the customer signature they captured on site, a Staff member a file attached to a record they can't open.
+- **The fix:** `POST` and `PUT /expenses` take a receipt only if the person uploaded it and nothing else uses it — the rule attachments already follow. Otherwise "Upload the receipt first." or "This file is already used elsewhere. Upload the receipt again to use it here." Keeping an expense's own receipt on edit still works. The web form, the phone and demo data already send the person's own fresh upload.
+- **Tests:** API integration (`d-250`); every purchases, files, mobile, AI, attachments, banking and demo-data suite passes. Found while building US-AI-10.
+
+### 2026-10-18 — Fill in an expense from a receipt (US-AI-09, D-249)
+
+- **"Read receipt" on the expense form:** under the receipt preview (not in labour mode). Date, Amount, Currency, Tax rate and Tax amount, Category and Description fill in, marked "Suggested by AI", with "Filled in from the receipt. Check the fields marked Suggested by AI before you submit." above the form.
+- **Category and tax, matched by Spine:** the category this merchant's last expenses used ("As on your last 3 expenses from HP Fuel Centre."), else the one whose name and "What it's for" fit. The receipt's tax as printed, with the rate of that percentage ("From the receipt: CGST ₹369.92 + SGST ₹369.91."); with no tax shown, the category's usual rate works it out as included.
+- **As before:** the same-amount warning shows once the read amount and date fill; the expense submits and is approved as normal and says "filled in with AI"; "Submit and add another" starts clean; fixing a rejected expense fills only empty fields and offers "Replace my entries".
+- **Field** can read the receipt on their own expense without the Team right (D-245). The unreadable-file and damaged-PDF messages now fit bills and expenses alike.
+- **Tests:** API integration (`us-ai-09`), web (`us-ai-09`) and E2E (`us-ai-09`). QA section 241.
+
+### 2026-10-17 — Spine runs on Node 22 (D-248)
+
+- **Why:** reading a vendor's PDF (US-AI-08) failed in the Docker image — its Node 20 lacks what the PDF library needs — though it passed locally and in CI, which run newer Node. Node 20 is past end of life.
+- **What changed:** the API and web images are built on `node:22-alpine`; `package.json` asks for Node 22 or later, and the README says so. Both images build, and a text PDF and a scanned PDF read inside the API image.
+- **For self-hosters:** nothing to do with Docker Compose — the new images carry Node 22. Running from source needs Node 22.
+
+### 2026-10-17 — Fill in a vendor bill from the vendor's PDF or photo (US-AI-08, D-247)
+
+- **"Read from document" on the bill page:** choose or drop the vendor's PDF or photo at the top of the header card. It's attached to the bill, and Vendor, Bill number, Currency, Bill date, Due date, Place of supply and the lines fill in, each marked "Suggested by AI" until changed. "Read" is offered on a PDF or photo already in Attachments too.
+- **Spine does the matching, not the model:** the vendor and catalogue items by name; each line's account from the vendor's last bill or the item; tax rates by percentage for the supply type; the place of supply from the vendor; a due date from the document or its payment terms, else the vendor's usual terms. Totals are Spine's own, with a warning when the document's total differs. A vendor it can't match is offered — added only when you confirm.
+- **What's sent:** a PDF's text; a scanned PDF's first pages or a photo as images (rendered with `@napi-rs/canvas`, added to the API). A model that can't read images says so before anything is sent.
+- **Your entries stay:** AI fills only what you haven't entered and offers the rest with "Replace my entries (<n>)". The bill saves through the normal buttons and says "filled in with AI" in its Activity.
+- **Tests:** API unit (matching, document preparation) and integration (`us-ai-08`, against a stand-in provider), web (`us-ai-08`), and E2E (`us-ai-07-08`: reading a PDF into the bill, and the "AI didn't answer" state with Try again and saving by hand). QA section 240.
+
+### 2026-10-17 — Keep working when AI is unavailable (US-AI-07, D-246)
+
+- **AI never blocks work:** a provider that fails or can't be reached answers "AI didn't answer. Fill this in by hand or try again." at once (503), one that doesn't answer in 30 seconds the same (504); neither is retried, and forms save by hand as normal.
+- **Replies are checked field by field:** each AI reply is fitted to the feature's fixed shape before it reaches a form — a field that fails its check stays empty while the rest fill, fields the shape doesn't name are dropped, and a reply that isn't JSON fills nothing (R-23).
+- **The pieces every AI control uses:** the "Read from document"-style button with "Reading…" and "Cancel" (no spinner with reduced motion), the inline "AI didn't answer" message with "Try again", and the rules that a cancelled request fills nothing and AI fills only fields still empty when it answers. The API client can now cancel a request, and a feature switched off shows its own message rather than "You don't have permission".
+- **Tests:** API unit (`us-ai-07.fit-reply`) and integration (`us-ai-07`, with the test provider hanging, failing and gone), and web (`us-ai-07`). The bill page's end-to-end check comes with US-AI-08. QA section 239.
+
+### 2026-10-17 — Who may use AI, and the record of its use (US-AI-05, US-AI-06, D-245)
+
+- **"Use AI features" for a Team:** a new `ai.use` capability in its own "AI assistant" group in each Team's permissions, off for General Staff and every existing Team (migration 0127), changed through the draft and Save confirm like any other, hidden while AI is off and kept for when it's back. The panel says AI isn't a section. Owners always may; Field may only read the receipt on their own expense — a fixed rule, not a capability. `GET /ai/status` now says `canUse` and `canReadOwnReceipt`, and the AI gateway refuses anyone else ("You don't have the right to use AI. An owner can give it to your Team.").
+- **Every AI request in the audit log:** record type "AI request", with the feature as its action ("Read a document", "Drafted an email", …), the record it was for (opens it) and one line of details — provider, model, tokens and whether it worked. Never the text.
+- **"Filled in with AI":** bills, expenses and quotes take `aiAssisted` on create and update; it sets the new `ai_assisted` column and marks that save, so Activity reads "Created as a draft · filled in with AI" (and "Submitted for approval", "Edited") and History "… and filled it in with AI".
+- **Tests:** integration (`us-ai-05-06`), web and E2E; the shared and capability tests now expect `ai.use` to read off while AI is off. QA section 238.
+- **Local note:** on this Mac `localhost` now resolves to IPv6 first while MailDev listens on IPv4 only, so local tests that send email (US-AUTH-09/10, US-TEAM-21/24, US-SET-15, signup) wait 10 s and time out; they fail the same way without these changes, and CI isn't affected.
+
+### 2026-10-17 — AI features and the monthly budget (US-AI-03, US-AI-04, D-244)
+
+- **A switch per feature:** with AI on, Settings › AI assistant shows Features beside Provider — "Read bills and receipts", "Draft customer emails", "Draft quote lines" and "Suggest bank matches", each with where it shows, a switch (on by default, saved as it changes, audited) and "What's sent", which lists exactly what that feature sends and what's never sent. A model that can't read images is noted on the first.
+- **Monthly budget:** tokens a month (empty for no limit), with this month's usage — tokens against the budget with the percentage and a bar, requests, the top three features and people — and "AI is paused until 1 <month> — this month's budget is used up." once it's reached. Owners hear once at 80% and once at 100%.
+- **One gateway:** `AiRequestService.run` is the only way a feature reaches the provider: it refuses a switched-off feature (403 `AI_FEATURE_OFF`), more than 30 requests in 10 minutes from one person (429) and a used-up budget (409), and turns a failure or a 30-second wait into "AI didn't answer. Fill this in by hand or try again." Every request, refusals included, is a row in the new `ai_requests` table (migration 0126) — never its text. `GET /ai/status` now says which features are on and whether AI is paused; `GET /org/ai/usage` gives the month's usage.
+- **Redaction (D-165):** `redact()` replaces GSTINs, PANs, IFSC codes, IBANs, card numbers, tax IDs, UPI IDs, keys, tokens, passwords and long account numbers with placeholders before any text is sent; amounts, dates, document numbers and email addresses stay (20 unit tests).
+- **QA:** section 237; section 236 now uses qwen3-vl:8b and qwen3:4b — `llama3.2-vision` doesn't load on current Ollama.
+
+### 2026-10-17 — Settings › AI assistant: the switch and the provider (US-AI-01, US-AI-02, D-243)
+
+- **One switch for all AI:** Settings › AI assistant (Business group, after Modules; Owner-only) starts off. It won't switch on without a provider ("Connect a provider first."); with a provider outside the local network it asks "Turn on AI?", names the host and lists what each feature sends and what's never sent; the acknowledgement is audited and remembered for that host. Switching off asks too. Toasts say what happened.
+- **The fifth module:** AI owns `/ai/*`, which answers 403 `MODULE_OFF` while it's off; Settings › Modules lists it with its state and "Set up in AI assistant". `GET /org/modules` adds `ai: true` only while it's on, so the four Modules switches and their Save are unchanged.
+- **Your own provider:** "Local or OpenAI-compatible" (server address, model, optional key — Ollama, vLLM, LM Studio or a cloud service) or "Anthropic Claude" (key and model). The Model picker lists what the provider reports and takes a typed name; Test connection says "Connected · <model> · reads images: yes/no" or "Couldn't reach <address>: <reason>. Check the address and key, then try again." Drivers call each API with `fetch` through one client with a 30-second timeout — no provider SDK.
+- **The key:** sealed with AES-256-GCM under a key derived from `AUTH_SECRET`, in its own `ai_provider_key` setting; shown only as "••••" and its last four characters with Replace key; never returned, logged, audited in full or exported. The generic `/org/settings` routes no longer read or write the `ai` key or any secret key.
+- **Tests:** `us-ai-01`/`us-ai-02` integration tests against a stand-in local provider (and a spy for Anthropic) prove nothing reaches a provider while AI is off; web tests for the pane; an E2E run through the whole flow with a stand-in server. US-SET-31's Business group now ends with AI assistant. QA script section 236.
+- **Steadier test:** US-INV-20 looks for the "Recurring invoices" heading exactly — with no schedules yet, "No recurring invoices yet" matched too.
+
+### 2026-10-16 — Phase 10 stories fitted to the refined web app (D-242)
+
+- **Branch `phase-10-ai-assistant`.** Before building the AI assistant, its 14 stories (`docs/features/21-ai.md`) were rewritten against the screens the refinements rebuilt — same scope and ids, US-AI-11 renamed "Draft a customer email with AI".
+- **Where AI now sits:** Settings › AI assistant in the Business group (Modules shows it as the fifth module, linking to the pane); `ai.use` in the Team permissions draft, not a section; the bill page's header card and compact rows, with the duplicate-bill check on what AI read; the expense form's first file, filling Description with the merchant and using the receipt's tax before the category's default; the shared send dialog, so every customer email can be drafted; compact quote rows; the reconcile Suggested tab, where "Suggest with AI" runs on request and "Match all suggested" stays rules only; and "filled in with AI by <name>" in each record's activity.
+- **Shared rules** (marked until changed, empty fields only, hidden when not allowed, the form's own confirms and toasts) are stated once in the feature file.
+- **Contracts:** `POST /org/ai/test` returns the provider's model list; AI routes name the section and record rights they also need; bank suggestions run only on request; bill, expense and quote activity entries gain `aiAssisted`. 07-security's AI section now says Phase 10.
+- **Screens:** the 17 AI screens are drawn in the Claude Design project "Spine web — Phase 10 AI assistant" (canvases 01 Settings to 08 Phone) on the refined layouts, with light and dark versions of the main ones, and exported to `docs/design/screens/` (`ExpenseDialogAi` → `ExpenseFormAi`, `EmailDraftAi` → `SendEmailDialogAi`). Every AI-filled field is tinted and tagged "Suggested by AI" (icon and words); the Settings pane uses the Bot icon, since Industry template already uses Sparkles. No code changed.
+
 ### 2026-10-13 — Cheaper, steadier E2E setup (D-241)
 
 - **Sign-in through the API:** `signUpNewOrg` and `logIn` sign up and sign in through the API instead of the sign-up, onboarding and login pages (which keep their own specs), then open the dashboard.

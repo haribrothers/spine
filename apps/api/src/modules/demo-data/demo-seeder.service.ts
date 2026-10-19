@@ -483,17 +483,17 @@ export class DemoSeederService {
     }
 
     // 5. Jobs, before the timeline that invoices their milestones.
-    const photoFileIds: string[] = [];
-    if (this.filesService.isStorageConfigured()) {
-      for (const name of DEMO_SITE_PHOTOS) {
-        const file = await this.filesService.upload(orgId, { originalFilename: name, mimeType: "image/jpeg", buffer: readFileSync(path.join(DEMO_PHOTOS_DIR, name)), uploadedByUserId: actorUserId });
-        if (file) photoFileIds.push(file.id);
-      }
-    }
-    const photoFor = (n: number): string | null => (photoFileIds.length ? photoFileIds[n % photoFileIds.length]! : null);
+    // D-250: a file belongs to one record, so each job and milestone gets its own upload of a sample photo.
+    const sitePhotos = this.filesService.isStorageConfigured() ? DEMO_SITE_PHOTOS.map((name) => ({ name, buffer: readFileSync(path.join(DEMO_PHOTOS_DIR, name)) })) : [];
+    const photoFor = async (n: number): Promise<string | null> => {
+      const photo = sitePhotos[n % (sitePhotos.length || 1)];
+      if (!photo) return null;
+      const file = await this.filesService.upload(orgId, { originalFilename: photo.name, mimeType: "image/jpeg", buffer: photo.buffer, uploadedByUserId: actorUserId });
+      return file?.id ?? null;
+    };
     const jobRows = new Map<string, { id: string; name: string; contact: string; milestoneIds: string[]; index: number }>();
     for (const [jobIndex, seed] of plan.jobs.entries()) {
-      const photoFileId = photoFor(jobIndex);
+      const photoFileId = await photoFor(jobIndex);
       // US-ONB-25: made from its accepted contract quote — one lump-sum line at the contract value, with the job's milestone tax.
       let sourceQuoteId: string | undefined;
       if (seed.fromQuote) {
@@ -637,7 +637,7 @@ export class DemoSeederService {
       const job = jobRows.get(seed.key)!;
       /** Completes a milestone on its day: its completion, its photo and their history dated then. */
       const complete = async (milestoneId: string, i: number, onDay: number | null) => {
-        await this.milestonesService.completeMilestone(orgId, job.id, milestoneId, actorUserId, { completionNotes: `${seed.milestones[i]!.name} — completed on schedule.`, photoFileIds: photoFor(job.index + i + 1) ? [photoFor(job.index + i + 1)!] : [] } as never);
+        await this.milestonesService.completeMilestone(orgId, job.id, milestoneId, actorUserId, { completionNotes: `${seed.milestones[i]!.name} — completed on schedule.`, photoFileIds: await photoFor(job.index + i + 1).then((id) => (id ? [id] : [])) } as never);
         if (onDay === null) return;
         const done = when(onDay);
         await this.db.update(milestonesTable).set({ completedAt: done }).where(eq(milestonesTable.id, milestoneId));
@@ -1156,7 +1156,7 @@ export class DemoSeederService {
     const reconcile = async (endDate: string, closing: bigint, match: typeof withIds, finishOn: number | null) => {
       try {
         const rec = await this.reconciliationsService.start(orgId, actorUserId, { moneyAccountId: bank.id, statementEndDate: endDate, statementClosingBalance: closing });
-        const matches = match.filter((l) => l.statementLineId && l.journalLineId).map((l) => ({ statementLineId: l.statementLineId!, journalLineIds: [l.journalLineId!] }));
+        const matches = match.filter((l) => l.statementLineId && l.journalLineId).map((l) => ({ statementLineId: l.statementLineId!, journalLineIds: [l.journalLineId!], suggestedBy: "person" as const }));
         if (matches.length) await this.reconciliationsService.saveMatches(orgId, rec.id, { matches, exclusions: [] });
         if (finishOn !== null) await this.reconciliationsService.finish(orgId, actorUserId, rec.id);
         await this.db

@@ -1,4 +1,4 @@
-import type { ReconciliationEntry, StatementLine } from "@spine/shared";
+import type { AiBankSuggestion, ReconciliationEntry, StatementLine } from "@spine/shared";
 
 /** US-BANK-16 (D-231) — the statement panel's tabs. */
 export type LineTab = "todo" | "suggested" | "matched" | "excluded";
@@ -23,17 +23,30 @@ export function searchLines<T extends Pick<StatementLine, "description" | "refer
 const day = (iso: string) => Date.parse(`${iso}T00:00:00Z`) / 86_400_000;
 
 /**
- * The entries panel's order while a line is selected: the same amount first
- * (marked), then the nearest dates. Without a selection, as they come. The
- * search matches what, contact or reference.
+ * The entries panel's order while a line is selected: AI's suggestion first
+ * (US-AI-14, marked), then the same amount (marked), then the nearest dates.
+ * Without a selection, as they come. The search matches what, contact or
+ * reference.
  */
-export function orderEntries(entries: ReconciliationEntry[], selected: Pick<StatementLine, "amount" | "date"> | null, query: string): { entry: ReconciliationEntry; sameAmount: boolean }[] {
+export function orderEntries(
+  entries: ReconciliationEntry[],
+  selected: Pick<StatementLine, "amount" | "date"> | null,
+  query: string,
+  aiFirst: readonly string[] = [],
+): { entry: ReconciliationEntry; sameAmount: boolean; ai: boolean }[] {
   const q = query.trim().toLowerCase();
   const kept = entries.filter((e) => !q || `${e.what} ${e.contact?.name ?? ""} ${e.reference ?? ""}`.toLowerCase().includes(q));
-  if (!selected) return kept.map((entry) => ({ entry, sameAmount: false }));
+  if (!selected) return kept.map((entry) => ({ entry, sameAmount: false, ai: false }));
   const target = BigInt(selected.amount);
+  const aiRank = (id: string) => (aiFirst.includes(id) ? aiFirst.indexOf(id) : Infinity);
   return kept
-    .map((entry) => ({ entry, sameAmount: BigInt(entry.amount) === target, gap: Math.abs(day(entry.date) - day(selected.date)) }))
-    .sort((a, b) => Number(b.sameAmount) - Number(a.sameAmount) || a.gap - b.gap)
-    .map(({ entry, sameAmount }) => ({ entry, sameAmount }));
+    .map((entry) => ({ entry, sameAmount: BigInt(entry.amount) === target, gap: Math.abs(day(entry.date) - day(selected.date)), rank: aiRank(entry.journalLineId) }))
+    .sort((a, b) => (a.rank === b.rank ? 0 : a.rank - b.rank) || Number(b.sameAmount) - Number(a.sameAmount) || a.gap - b.gap)
+    .map(({ entry, sameAmount, rank }) => ({ entry, sameAmount, ai: rank === 0 }));
+}
+
+/** US-AI-14 — what AI suggests creating: "Bank charges · HDFC Bank", "Customer payment · Maple Ridge". */
+export function aiCreateLabel(create: NonNullable<AiBankSuggestion["create"]>): string {
+  const what = create.kind === "money" ? create.accountName : create.kind === "payment" ? "Customer payment" : "Vendor payment";
+  return [what, create.contactName].filter(Boolean).join(" · ");
 }

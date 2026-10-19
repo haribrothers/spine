@@ -5141,6 +5141,178 @@ Use an owner with the demo loaded, Sarah Mendes (Staff) and Marcus Webb (Field) 
 11. Phone width: the palette fills the screen and the chips scroll sideways. Screen reader: the dialog is "Search", the field a combobox; icons aren't read.
 12. Regression: a document number ("INV-0010", "QUO-4") is still the first result; Settings' own search, the Reports page search and every list's search box work as before; Field still sees only their jobs, meetings and expenses.
 
+## 236. Settings › AI assistant: the switch and the provider (US-AI-01, US-AI-02, Phase 10)
+
+Use a new owner (no demo needed) and Sarah Mendes (Staff) in a second browser. For a local model, run Ollama on this machine or another on the network (`ollama serve`, then `ollama pull qwen3-vl:8b` (reads images) and `ollama pull qwen3:4b` (text only); `llama3.2-vision` doesn't load on current Ollama); for the cloud path, an Anthropic API key with a little credit. Check light and dark and a phone width, and compare with the canvas "01 Settings" of the Claude Design project "Spine web — Phase 10 AI assistant".
+
+1. Owner › Settings: "AI assistant" (Bot icon) sits in Business after Modules; searching settings for "AI", "provider", "model", "budget" or "receipts" finds it. Sarah doesn't see it, and `/dashboard?settings=ai` opens her Profile.
+2. A new install: the switch reads Off and the pane says "AI helps fill in forms — reading bills and receipts, drafting emails and quote lines, suggesting bank matches. It never saves, sends or posts anything by itself." Switching on says "Connect a provider first." and stays off.
+3. Local model: choose "Local or OpenAI-compatible", enter `http://<ollama-host>:11434/v1`, open Model — it lists the server's models; you can also type one. Test connection with qwen3-vl:8b: "Connected · qwen3-vl:8b · reads images: yes"; with qwen3:4b: "reads images: no". A wrong address: "Couldn't reach <address>: the connection was refused. Check the address and key, then try again." Save toasts "AI provider saved".
+4. Switch on with the local model: no question; toast "AI assistant is on". Settings › Modules shows "AI assistant" as the fifth module, "On · <ollama-host>:11434", and "Set up in AI assistant" opens this pane.
+5. Anthropic: choose "Anthropic Claude", paste the key, pick or type a model (e.g. claude-sonnet-5-5), Test connection: "Connected · <model> · reads images: yes". Save while AI is on: "Send AI requests here?" names api.anthropic.com and lists what each feature sends and "Never sent: …"; Use this provider saves it. Reopen the pane: the key shows only as "••••" and its last four characters, with Replace key.
+6. Switch off: "Turn off AI?" says "AI buttons disappear for everyone. Nothing already saved changes."; toast "AI assistant is off". Switch on again: no second question for the same provider.
+7. Audit log (Team › Audit log, record type AI assistant): each switch, provider change and the acknowledgement ("Sends business data to api.anthropic.com"); the key appears only as "••••" and four characters.
+8. Unsaved changes: edit the server address and pick another pane — "Discard unsaved changes to AI assistant?". Discard drops the edit.
+9. Security: in Sarah's browser, `GET /org/ai` and `PUT /org/ai` answer 403; `GET /org/settings` doesn't include `ai` or `ai_provider_key`; `GET /org/settings/ai` answers 403. A data export's settings.csv has no `ai_provider_key` row. With AI off, `GET /ai/status` answers 403 "The AI assistant is off. An owner can switch it on in Settings › AI assistant."; the provider gets no request unless an Owner presses Test connection (watch Ollama's log).
+10. Regression: Settings › Modules still switches its four modules as before and their Save is unchanged; every other Business pane opens and saves; Set up Spine and onboarding's settings still open their panes.
+
+## 237. AI features and the monthly budget (US-AI-03, US-AI-04, Phase 10)
+
+Use the owner from section 236 with AI on against Ollama (qwen3-vl:8b), and Sarah Mendes (Staff) in a second browser. Compare with the canvas "01 Settings".
+
+1. Settings › AI assistant with AI on: Provider sits beside a Features card listing "Read bills and receipts", "Draft customer emails", "Draft quote lines" and "Suggest bank matches", each with where it shows, a switch (all on at first) and "What's sent". With AI off, neither Features nor Monthly budget shows.
+2. What's sent: open each — it says exactly what that feature sends and "Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys." Pick qwen3:4b and Test connection, save: "Read bills and receipts" notes "Needs a model that can read images. PDFs with text still work."
+3. Switch "Suggest bank matches" off: it saves at once, toasts "Suggest bank matches is off", and the audit log shows it. In Sarah's browser, `GET /ai/status` shows `bankSuggestions: false`.
+4. Monthly budget: type "lots" and Save — "Enter the budget as a whole number of tokens, or leave it empty for no limit."; type 500 — the API says "Enter at least 1,000 tokens, or leave it empty for no limit."; type 2,000,000 and Save — toast "Monthly budget saved"; "This month" shows tokens used of 2,000,000 with the percentage in words and a bar, the request count, and Top features and Top people (or "None yet"). Empty and Save — "AI has no monthly limit."
+5. Paused: with no AI feature built yet, check through the API — set the budget to 1,000, then insert `ai_requests` rows for this month totalling over 1,000 tokens (or wait for US-AI-08). The pane says "AI is paused until 1 <next month> — this month's budget is used up."; `GET /ai/status` has `pausedUntil`. Raise the budget and the pause lifts at once. Owners get "AI has used 80% of this month's budget." once and the paused message once (bell and email).
+6. Security: Sarah's `GET /org/ai/usage` answers 403; `GET /org/ai/usage?month=2026-13` answers 400 "Give the month as YYYY-MM."
+7. Regression: everything in section 236 still works; switching AI off and on keeps the feature switches and the budget.
+
+## 238. Who may use AI, and the record of its use (US-AI-05, US-AI-06, Phase 10)
+
+Use the owner from section 236 with AI on, Sarah Mendes (Staff, General Staff) and Marcus Webb (Field) in other browsers. Compare with the canvas "02 Team and audit".
+
+1. Team › Teams › General Staff › Permissions: an "AI assistant" group lists "Use AI features", off. Switch it on: marked Changed, the bar says "1 change", and "What members will open" doesn't list AI but says "AI isn't a section. With Use AI features, members see AI on the bills, expenses, quotes, emails and reconciliations they can already work on." Save changes asks first and names it; History records it.
+2. Sarah: before the save `GET /ai/status` says `canUse: false`; after it `canUse: true`. Marcus: `canUse: false`, `canReadOwnReceipt: true`.
+3. Switch AI off in Settings: the "AI assistant" group disappears from Permissions; switch it back on — the grant is still there.
+4. Audit log (record type "AI request"): once US-AI-08 onwards exist, each AI request shows the action ("Read a document" …), the record it was for (opens it) and "<provider> · <model> · <n> tokens · Worked" (or why it didn't). Until then, check through the API: `GET /org/audit-log?entityType=ai_request`.
+5. Activity: `POST /vendor-bills` with `"aiAssisted": true` — the bill's Activity reads "Created as a draft · filled in with AI" (Sparkles icon), with who and when underneath; its History reads "… created this bill and filled it in with AI". Same for an expense ("Submitted for approval · filled in with AI") and a quote edited with `aiAssisted` ("Edited · filled in with AI").
+6. Regression: Teams' other permissions, Sections, History and the Save confirm work as before; a Staff member's sidebar is unchanged; bills, expenses and quotes save and show their Activity as before when `aiAssisted` isn't sent.
+
+## 239. Keep working when AI is unavailable (US-AI-07, Phase 10)
+
+Use the owner from section 236, with AI on and the provider pointing at a local Ollama. Compare with the canvas "VendorBillBuilderAiError". The AI controls themselves arrive with US-AI-08 onwards; until then, check steps 1–3 through the API and step 4 on the bill page.
+
+1. Stop Ollama (`ollama stop` or quit the app). Any AI request answers 503 `AI_UNAVAILABLE` "AI didn't answer. Fill this in by hand or try again." at once — not after a wait — and Settings › AI assistant › Monthly budget doesn't count it as tokens.
+2. Point the provider at an address that accepts connections but never answers (for example `nc -l 9999` and `http://127.0.0.1:9999/v1`): the request gives up after 30 seconds with 504 `AI_TIMEOUT` and the same words. The audit log's AI request entry says "Didn't answer in 30 seconds".
+3. Neither is retried: the provider (or `nc`) sees one request each time.
+4. With the provider still down, Purchases › Vendor bills › New vendor bill: fill it in by hand and press "Save as draft" — it saves as normal, with no "filled in with AI" in its Activity. Same for New expense.
+5. Once US-AI-08 is in: press "Read from document" with Ollama stopped — the red message by the header card reads "AI didn't answer. Fill this in by hand or try again. <file> is attached either way." with "Try again"; what you typed stays. Start Ollama and press "Try again": empty fields fill, typed ones don't. Press "Cancel" while it reads: nothing fills.
+6. Regression: Settings › AI assistant, bills and expenses save, and "Test connection" behave as before.
+
+## 240. Fill in a vendor bill from the vendor's PDF or photo (US-AI-08, Phase 10)
+
+Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b` (reads images; Test connection says "reads images: yes"). Have a vendor's bill as a PDF with text (most emailed invoices), a scanned PDF, and a phone photo (JPEG). For a GST business, set the tax profile to India. Compare with the canvas "VendorBillBuilderAi" and "VendorBillBuilderAiDark".
+
+1. Purchases › Vendor bills › New vendor bill: the top of the header card reads "Read the vendor's bill with AI" with "Read from document". With AI off, the feature off or a Staff member without "Use AI features", the strip isn't there.
+2. Press "Read from document" and choose the PDF: "Reading <file>…" with "Cancel" while it works, and the form stays usable. Then "<file> · Read by AI in <n> seconds · attached to this bill · check what it filled in before you save" with "Read another document".
+3. Vendor, Bill number, Currency, Bill date, Due date and (GST) Place of supply show "Suggested by AI"; the vendor reads "Matched to your vendor." when it's one of yours. Lines arrive as compact rows, tinted, each with "Suggested by AI"; below them "Accounts come from this vendor's last bill · rates matched to yours by percentage" (or only the rates part for a new vendor). Totals in the bar are Spine's.
+4. Change any marked field or line: its mark goes, the others stay.
+5. A due date written as terms reads `From the document: "Payment due within 30 days".` A bill with no due date: the vendor's usual terms as by hand ("Suggested: 20 days, as on this vendor's last bill"), else "The document has no due date — choose one."
+6. A bill number this vendor already has shows the duplicate warning before saving (US-PUR-35).
+7. A document whose printed total differs from the lines: "The document says ₹18,290.00; the lines add up to ₹18,172.00. Check the lines before saving." — it goes once the lines match.
+8. A vendor that isn't in your contacts: "+ New vendor: <name> — added only if you choose it." Nothing is added until you press it and confirm "Add <name> as a vendor?"; then they're chosen and a toast says so. Staff without the right to add contacts see "Not one of your vendors: <name>".
+9. "Save as draft" (or "Save and record", which asks "Record this bill?"): the bill saves as normal, the file is in its Attachments, and its Activity reads "Created as a draft · filled in with AI".
+10. Open a draft bill's edit page and read another document: only empty fields fill; "Replace my entries (<n>)" offers AI's values for the rest and its lines for yours.
+11. In Attachments on a draft, a PDF or photo offers "Read"; an HEIC photo doesn't.
+12. The scanned PDF and the photo read too (sent as images). Switch to a text-only model (`qwen3:4b`, Test connection "reads images: no"): the photo says "Your AI model can't read images. Choose a model that can, or enter the bill by hand." and stays attached; a PDF with text still reads.
+13. Dark mode: the strip, the marks, the tinted rows and the warnings read clearly.
+14. Regression: a bill entered by hand, Duplicate, the due-date suggestion, the duplicate warning, place of supply and Attachments work as before.
+
+## 241. Fill in an expense from a receipt (US-AI-09, Phase 10)
+
+Use the owner from section 236 with AI on and Ollama running `qwen3-vl:8b`. Have a fuel receipt photo showing CGST + SGST, and a receipt with no tax. Make a category "Fuel & freight" ("Diesel, petrol and transport") and submit three expenses described "HP Fuel Centre — diesel" in it. Compare with the canvas "ExpenseFormAi".
+
+1. Expenses › Submit expense, drop the fuel receipt: under the preview, "Read receipt". With AI off, the feature off or Staff without "Use AI features", it isn't there. Switch to "Headcount × day rate": it goes; back to Amount: it's back.
+2. Press it: "Reading…" with "Cancel"; the form stays usable. Then "Filled in from the receipt. Check the fields marked Suggested by AI before you submit." above the form, and Category, Date, Currency, Amount, Tax rate, Tax amount and Description marked "Suggested by AI". Job and Paid by are untouched. The button reads "Read again" and the caption "<file> · the receipt · read by AI".
+3. Category reads "As on your last 3 expenses from HP Fuel Centre."; Tax amount "From the receipt: CGST ₹369.92 + SGST ₹369.91."; Description "HP Fuel Centre — HSD diesel, 52.4 L". For a GST business the rate is the IGST rate of the same percentage (an expense takes one rate).
+4. A receipt from a new shop: the category is the one whose name and "What it's for" fit, or empty if none does.
+5. A receipt with no tax: the category's usual rate fills in and the tax amount reads "Worked out from <rate>, included in the amount."
+6. Already submitted the same amount on the same day: the duplicate warning shows once Amount and Date fill.
+7. Change a marked field: its mark goes. "Submit expense": it's waiting for approval as normal and its Activity reads "Submitted for approval · filled in with AI". "Submit and add another": the fresh form has no marks and no banner.
+8. Reject an expense, then "Fix and resubmit" and read its receipt: only empty fields fill, with "Replace my entries (<n>)" for the rest.
+9. Marcus (Field, no Team right): on his own new expense "Read receipt" works; he can't read anyone else's.
+10. Stop Ollama and press "Read receipt": "AI didn't answer. Fill this in by hand or try again. The receipt stays on the expense." with "Try again"; the expense submits by hand.
+11. Dark mode: the banner, marks and notes read clearly.
+12. Regression: submitting by hand, the category's usual rate, tax worked out, more files, the duplicate warning, labour entries and Fix and resubmit work as before.
+
+## 242. An expense's receipt is your own upload (D-250, security)
+
+1. Submit an expense with a receipt on the web and on the phone: both save with the receipt as before.
+2. Edit a waiting expense without changing its receipt, then swap in a new photo: both save.
+3. Through the API as a Field user, `POST /expenses` with `receiptFileId` set to a file someone else uploaded (for example an Owner's upload): 400 "Upload the receipt first.", and `GET /files/<id>` stays 404 for them.
+4. Through the API, reuse a receipt already on another expense, or a file attached to a bill: 400 "This file is already used elsewhere. Upload the receipt again to use it here."
+5. The same rule everywhere (API as a Field user): `POST /jobs/<id>/photos` or a milestone completion with someone else's file → 400 "Upload the photo first."; your own job photo reused as a receipt or an attachment → 400; `PUT /users/me` (and `POST /api/auth/update-user`) with `image` set to another record's file → 400, and the file stays 404 for you.
+6. Contacts: a new logo must be your own upload; saving a contact whose logo or people's photos someone else added still works.
+7. Regression: Load demo data — its expenses have their receipts; attachments on bills and expenses, job photos from the phone (including a retried send), milestone completion with photos, accepting a quote in person, contact logos and changing your profile photo all work as before.
+
+## 243. Fill in my expense from a receipt on the phone (US-AI-10, Phase 10)
+
+On an iPhone and an Android phone, signed in as Marcus (Field). The owner has AI on with Ollama running `qwen3-vl:8b` (reads images), and a category "Fuel & Vehicle". Have a fuel receipt to photograph. Compare with the canvas "MobExpenseNewAi" and "MobExpenseNewAiAndroid".
+
+1. Expenses › + (or Today › Scan receipt), take the receipt photo. Under it: "Read receipt" (tinted, sparkles), "Retake" (grey on iOS, outlined on Android) and "Remove". With AI off, the feature off, Staff without "Use AI features", or a text-only model (`qwen3:4b`), only "Retake receipt" and "Remove" show.
+2. Tap "Read receipt": "Reading…" with "Cancel"; the form stays usable. Then the note "Filled in from your receipt. Check the amount, date and category before you submit." at the top; Amount, Category, Date and Description each "Suggested by AI" (iOS: under the amount, on the category row, beside the date, on the description; Android: under each field). Job and Paid by are untouched; there are no tax fields. The receipt line reads "receipt.jpg · read by AI" and the button "Read again".
+3. Change the amount: its tag goes, the rest stay. Submit: it joins "Waiting to sync" and then "Submitted by you"; on the web its Activity reads "Submitted for approval · filled in with AI", and its receipt is the photo AI read (the server has it once — no second upload).
+4. Type an amount before reading: it's kept, and the note offers "Replace my entries (1)"; tapping it fills AI's amount with its tag.
+5. Turn on Airplane mode after taking the photo: "Read receipt" shows dimmed with "Needs a connection — fill it in, or read it later."; fill it in by hand and Submit — it queues and sends when back online exactly as before, with no "filled in with AI".
+6. Switch to "Headcount × day rate": "Read receipt" goes.
+7. Tap Cancel while it reads: nothing fills. Retake while it reads: nothing fills, and the new photo is unread.
+8. Stop Ollama and tap "Read receipt": "AI didn't answer. Fill this in by hand or try again." with "Try again".
+9. A receipt in another currency (e.g. EUR on a USD business): the amount stays empty and the note says "The receipt is in EUR, so the amount wasn't filled in — enter it in USD."
+10. Owner sets the monthly budget below what's used: "Read receipt" is dimmed with "AI is paused until 1 November — this month's budget is used up." (check the date reads correctly on both phones).
+11. VoiceOver / TalkBack: "Read receipt" (or the reason it's dimmed), "Reading…" as busy, "Cancel reading the receipt", each "Suggested by AI", "Try reading the receipt again"; when the read ends it's announced ("Filled in from your receipt…" or "AI didn't answer…"). Switching to Labour while reading stops it.
+12. Dark mode and Reduce Motion (no spinner while reading).
+13. Regression: New expense without AI, Scan receipt, retake/choose/remove, Fix → edit of a refused expense, labour entries and syncing work as before.
+14. Automated on a simulator: `e2e/us-ai-10-receipt.yaml` (iOS and Android) does steps 1–3 with a photo from the library; `e2e/us-ai-10-offline.yaml` (Android) does step 5.
+15. Android 13–15 (D-253): on an Android 15 phone or emulator, the back gesture and button go back a screen — from a job to Jobs, from Sync to Today, from New expense to Expenses — and close the app only from a tab's first screen. Same on Android 16+.
+
+## 244. Draft a customer email with AI (US-AI-11, Phase 10)
+
+As an Owner, with AI on against a model on your network (or the stub) and "Draft customer emails" on. Compare with `SendEmailDialogAi`, `SendEmailDialogAiSuggestion` and `SendEmailDialogAiUsed`. Use an overdue invoice with a balance (the demo data has one).
+
+1. The invoice › Send reminder: the dialog opens with the reminder template filled in as before. In the Message, the customer's name, the invoice number and "is <n> days overdue" are highlighted (a tint with an underline); the helper text reads "Starts from your template in Settings › Emails. Highlighted words are this invoice's details — Spine fills them in. Changes here apply to this email only." Subject isn't highlighted.
+2. "Draft with AI" sits between To and Subject with "Shows AI's draft first — your email stays as it is.". Press it: "Drafting…" with Cancel; the fields stay editable. Then a panel "AI's draft — check it, then use it. Your email below doesn't change until you do." shows a subject and message with the invoice's details highlighted; Subject and Message below are unchanged.
+3. Every highlighted detail in the draft matches the invoice exactly (number, amounts, due date, days overdue, business name). "Try again" gives another draft; "Discard" closes the panel and nothing changed.
+4. "Use this draft": Subject and Message take the draft, each tagged "Drafted by AI"; "Using AI's draft — check it before sending." with "Undo". Type in the Subject: its tag goes. "Undo": both fields are back as they were, with no tags.
+5. Use a draft and press "Send reminder": "Reminder sent"; the email log shows it with the drafted subject, and the email received reads as the dialog did, with no highlights.
+6. The same "Draft with AI" in: Email invoice, Send quote (a draft quote keeps `{document_number}` and `{link}` for the send), Email receipt (a payment), Email credit note, Receivables › Send reminder, and a contact's Send a statement (the draft follows the period shown; changing the period after using a draft doesn't overwrite it).
+7. Hidden: AI off, "Draft customer emails" off, or a Staff member without "Use AI features". Staff with the right but without "Send a payment reminder" don't get the reminder dialog at all. With the monthly budget used up: the button is dimmed with "AI is paused until 1 <month> — this month's budget is used up."
+8. With a "thinking" model (e.g. `qwen3.5:4b` on Ollama) the draft still arrives within a few seconds — Spine asks it not to think (D-255). Stop the model and press "Draft with AI": "AI didn't answer. Fill this in by hand or try again. Your email is as it was." with "Try again".
+9. A model that makes up a number ("pay within 7 days", a different amount) gets the same "AI didn't answer…" — check with the stub's reply, or note it if your model never does it.
+10. Type `{invoice_no}` in the statement dialog's Subject: "{invoice_no} isn't a placeholder Spine knows. Use one from the list." and "Send statement" is disabled.
+11. Keyboard and screen reader: the suggestion is a region named "AI's draft"; its buttons are reachable by Tab; the tags read "Drafted by AI". Dark mode: the panel, highlights and tags use the dark tokens.
+12. Regression: the send dialogs without AI send as before; Settings › Emails' editor and the quote notes editor show no highlights; the email template preview is unchanged.
+
+## 245. A reminder or statement in a chosen tone (US-AI-12, Phase 10)
+
+Same setup as section 244. Compare with `SendEmailDialogAi` and `SendEmailDialogAiSuggestion`.
+
+1. An overdue invoice › Send reminder: "Tone" with Friendly, Formal and Firm sits beside "Draft with AI", Friendly chosen. Choose Firm, then "Draft with AI": the draft is direct about the payment being overdue, with no threats, fees, interest, legal action or new deadlines; the balance, number, due date and days overdue are the invoice's own, highlighted.
+2. On the suggestion, choose Formal: it drafts again in that tone ("Drafting…" with Cancel while it does). "Try again" keeps Formal.
+3. Receivables › an invoice's Actions › Send reminder: the same tone choice and drafts. A contact's Send a statement: the same.
+4. Email invoice, Send quote, Email receipt and Email credit note: no tone.
+5. Close the dialog and open it again: Friendly is chosen again.
+6. Keyboard: Tab reaches the tone; arrow keys move between Friendly, Formal and Firm; a screen reader names the group "Tone" and says which is chosen.
+
+## 246. Draft quote lines from an enquiry (US-AI-13, Phase 10)
+
+As an Owner with AI on and "Draft quote lines" on, and a catalogue with a few items (one priced in another currency) and a bundle. Compare with `QuoteBuilderAi` and `QuoteBuilderAiDark`.
+
+1. New quote: "Draft lines with AI" sits beside "Add item" (tinted, sparkles). Press it: a side panel "Draft lines with AI" — "Paste the enquiry or describe the work. Lines are matched to your catalogue; nothing changes until you add them." — with an Enquiry box. "Draft lines" is dimmed until there's text.
+2. Paste an enquiry and press "Draft lines": "Drafting…" with Cancel; then "Proposed lines" (tagged "Suggested by AI"), every line ticked: catalogue items read "Catalogue item · per <unit>" with their price, a bundle "Bundle · <its items> · <n> lines" with its total, work not in the catalogue "Not in your catalogue" with "Add a price" in amber. "Draft again" and "Drafted from the enquiry and <n> catalogue items" show; the footer reads "<n> of <n> ticked".
+3. Untick one: the count follows and "Add to quote (<n>)" with it. Press it: the panel closes and the ticked lines are rows after the last line (a new quote's empty first row is replaced). Each reads "Suggested by AI" on its tinted row; an item has its catalogue price and its tax for the place of supply (inter-state for another state), a bundle is its lines, and a line with no price says "Add a price — not in your catalogue." (or "…the catalogue price is in USD.").
+4. Change a row's quantity: its tag and tint go. Give the unpriced row a price: its note goes. Totals follow as usual.
+5. Close the panel without adding: the quote is unchanged; reopening shows the enquiry and proposal again.
+6. Save as draft: the quote's activity says "Created … · filled in with AI". Edit a draft quote and draft lines there too.
+7. Hidden for a Staff member without "Use AI features", and with "Draft quote lines" off. A sent quote has no builder. Stop the model: "AI didn't answer. Fill this in by hand or try again. The quote is as it was." with "Try again".
+8. Keyboard: Tab through the panel; Space ticks a line; "Tick all lines" ticks or clears them all; Escape closes it. Dark mode: the panel, the tints and the amber note use the dark tokens.
+9. Regression: Add item, picking an item or a bundle by hand, Add heading and Add text line, moving rows, Preview PDF and Save behave as before.
+
+## 247. AI suggestions while reconciling (US-AI-14, Phase 10)
+
+As an Owner with AI on and "Suggest bank matches" on. Import a statement where one line has two same-amount payments near it (the rules can't pick), one has nothing in Spine but looks like something filed before (e.g. bank charges), and one the rules settle. Compare with `ReconcileAiSuggestions`.
+
+1. Start reconciling: the rules' line shows "Suggested match". Beside "Match all suggested (1)" is "Suggest with AI (2 lines)" (tinted, sparkles) — the lines the rules couldn't settle. Nothing runs until you press it.
+2. Press it: "Suggesting…" with Cancel; the page stays usable. Then the Suggested tab opens and counts AI's lines too; its note reads "AI looked at the 2 lines the rules couldn't settle · <n> suggestions. AI suggestions aren't in Match all — check and match each one." "Match all suggested" still counts only the rules' line, and the button now reads "Suggest again".
+3. The ambiguous line reads "AI suggests: Payment <number> · <customer>" with a reason ("same amount; the description mentions …"), Match and "Not this one". Select the line: in "Unreconciled in Spine" AI's entry comes first, marked "AI suggests", then the other same-amount payment ("Same amount"), then the nearest dates; the subtitle says so.
+4. Press Match on it: it moves to Matched and reads "Matched · suggested by AI". "Not this one" on another removes AI's suggestion and nothing is matched.
+5. The fee line reads "AI suggests creating: <category> · <contact>" with Create and Exclude. Create: the drawer has the suggested kind chosen (tagged "Suggested by AI") and "AI suggests creating: … — <reason>. Check it before you save."; Continue: the form starts with the category and contact, each "Suggested by AI" until changed. Record it: the line matches, as suggested by AI.
+6. Leave the page and come back: the suggestions are still there — no second request (check Settings › AI assistant usage). "Suggest again" replaces them.
+7. Hidden without "Use AI features" or with the feature off; dimmed with the date while the budget is used up. Stop the model: "AI didn't answer. Fill this in by hand or try again. Nothing was matched." with "Try again". A finished reconciliation shows none.
+8. The audit log has "Suggested bank matches" for "Bank reconciliation · <account> to <end date>", linking to the reconcile page.
+9. Keyboard and screen reader: the button and each Match / Not this one / Create are reachable and named; AI's text is read with the line. Dark mode: the tints and marks use the dark tokens.
+10. Regression: matching by hand, several entries to one line, "Not this one" on a rule suggestion, Exclude / Include, Unmatch, "Match all suggested" (its confirm lists only the rules' pairs), Create without AI, Finish and Undo behave as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
@@ -5148,7 +5320,7 @@ Use an owner with the demo loaded, Sarah Mendes (Staff) and Marcus Webb (Field) 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
-- Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
+- No AI control shows in a form until US-AI-08 onwards, so the budget, the 30-requests-in-10-minutes limit and "AI didn't answer" are checked through the API until then. The Model picker offers to "Create" a typed model name. Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

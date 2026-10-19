@@ -2,7 +2,7 @@ import { moduleOn } from "../../common/modules";
 import { getMemberRole, hasCapability } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { BulkResult, createExpenseSchema, ExpenseActivityEntry, PossibleDuplicateExpense, updateExpenseSchema } from "@spine/shared";
-import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
+import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, RECEIPT_IN_USE, RECEIPT_UPLOAD_FIRST, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
 import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
@@ -10,12 +10,13 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { expenses, expenseCategories, expenseLabourLines, accounts, auditLog, invoiceLines, invoices, jobs, jobAssignments, user } from "../../db/schema";
 import type { Transaction } from "../../db/client";
-import { AuditLogService } from "../audit/audit-log.service";
+import { AuditLogService, aiMark } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { InvoicesService } from "../invoices/invoices.service";
+import { FilesService } from "../files/files.service";
 import { orgLocale } from "../../common/money-format";
 import { formatMoney } from "@spine/shared";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
@@ -49,7 +50,20 @@ export class ExpensesService {
     private readonly notifications: NotificationsService,
     private readonly invoices: InvoicesService,
     private readonly moneyAccounts: MoneyAccountsService,
+    private readonly files: FilesService,
   ) {}
+
+  /**
+   * D-250 — a receipt must be a file this person uploaded that nothing else
+   * uses yet (an expense keeps its own), the rule attachments follow
+   * (US-OPS-33). Files are read by whoever can read the record they belong
+   * to, so otherwise anyone could put a file they may not read — a
+   * customer's signature, another record's attachment — onto their own
+   * expense and read it through it.
+   */
+  private async checkReceipt(orgId: string, actorUserId: string, fileId: string, expenseId?: string) {
+    await this.files.assertLinkable(orgId, actorUserId, fileId, { uploadFirst: RECEIPT_UPLOAD_FIRST, inUse: RECEIPT_IN_USE, keep: (o) => o.type === "expense_receipt" && o.id === expenseId });
+  }
 
   /** US-PUR-22 — whether a member is on a job's crew. */
   async isAssigned(orgId: string, userId: string, jobId: string): Promise<boolean> {
@@ -175,11 +189,11 @@ export class ExpensesService {
       const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown; to: unknown }[];
       const comment = changes.find((c) => c.field === "reviewComment")?.to;
       const base = { at: new Date(row.at).toISOString(), actorName: row.actorName ?? null };
-      if (row.action === "created") entries.push({ ...base, type: "submitted" });
-      else if (row.action === "resubmitted") entries.push({ ...base, type: "resubmitted" });
+      if (row.action === "created") entries.push({ ...base, type: "submitted", ...aiMark(row.changes) });
+      else if (row.action === "resubmitted") entries.push({ ...base, type: "resubmitted", ...aiMark(row.changes) });
       else if (row.action === "updated") {
         const what = [...new Set(changes.map((c) => labels[c.field]).filter(Boolean))];
-        entries.push({ ...base, type: "edited", detail: what.length ? what.join(", ") : null });
+        entries.push({ ...base, type: "edited", detail: what.length ? what.join(", ") : null, ...aiMark(row.changes) });
       } else if (row.action === "rejected") entries.push({ ...base, type: "rejected", detail: typeof comment === "string" ? comment : expense.status === "rejected" ? expense.reviewComment : null });
       else if (row.action === "approved") entries.push({ ...base, type: "approved", amount: expense.amount.toString(), detail: typeof comment === "string" ? comment : expense.reviewComment });
       else if (row.action === "billed") entries.push({ ...base, type: "billed", detail: expense.billedInvoiceNumber, linkId: expense.billedInvoiceId });
@@ -281,6 +295,8 @@ export class ExpensesService {
     const labour = input.entryMode === "labour";
     if (labour) this.checkLabour({ labourLines: input.labourLines, amount: input.amount, jobId: input.jobId ?? null, currency: input.currency });
 
+    if (input.receiptFileId) await this.checkReceipt(orgId, actorUserId, input.receiptFileId);
+
     // US-BANK-03: Field never chooses an account (they can't see them); theirs starts on the default and the approver can change it.
     const chosenAccountId = (await getMemberRole(this.db, orgId, actorUserId)) === "field" ? null : input.moneyAccountId;
 
@@ -306,6 +322,8 @@ export class ExpensesService {
           submittedByUserId: actorUserId,
           isBillable: input.isBillable,
           entryMode: labour ? "labour" : "amount",
+          // US-AI-06 (D-166)
+          aiAssisted: input.aiAssisted === true,
           isDemo,
         })
         .returning();
@@ -318,7 +336,7 @@ export class ExpensesService {
         entityType: "expense",
         entityId: expense!.id,
         contactId: null,
-        changes: [{ field: "status", from: null, to: "submitted" }],
+        changes: [{ field: "status", from: null, to: "submitted" }, ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])],
       });
 
       return expense;
@@ -348,6 +366,8 @@ export class ExpensesService {
       throw new BadRequestException("Only a waiting or rejected expense can be edited — an approved expense has already posted to the ledger.");
     }
     const resubmitting = existing.status === "rejected";
+    // D-250: a new receipt follows the same rule as on create; keeping the current one is always fine.
+    if (input.receiptFileId && input.receiptFileId !== existing.receiptFileId) await this.checkReceipt(orgId, actorUserId, input.receiptFileId, id);
     // US-PUR-23: switching mode or changing labour rows re-checks the whole labour entry.
     const mode = input.entryMode ?? existing.entryMode;
     const labourChanged = input.entryMode !== undefined || input.labourLines !== undefined;
@@ -386,6 +406,7 @@ export class ExpensesService {
           ...(input.receiptFileId !== undefined ? { receiptFileId: input.receiptFileId } : {}),
           ...(input.isBillable !== undefined ? { isBillable: input.isBillable } : {}),
           ...(input.entryMode !== undefined ? { entryMode: input.entryMode } : {}),
+          ...(input.aiAssisted ? { aiAssisted: true } : {}),
           ...(resubmitting ? { status: "submitted" as const, rejectedByUserId: null, rejectedAt: null, reviewComment: null } : {}),
           updatedAt: new Date(),
         })
@@ -395,8 +416,8 @@ export class ExpensesService {
       if (mode === "amount" && existing.entryMode === "labour") await this.writeLabourLines(tx, orgId, id, []);
 
       // Labour rows aren't a field; the amount change already says what moved.
-      const { labourLines: _rows, ...fields } = input;
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>);
+      const { labourLines: _rows, aiAssisted: _ai, ...fields } = input;
+      const changes = [...AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>), ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])];
       if (resubmitting) {
         await this.auditLog.record(tx, { orgId, actorUserId, action: "resubmitted", entityType: "expense", entityId: id, contactId: null, changes: [{ field: "status", from: "rejected", to: "submitted" }, ...changes] });
       } else if (changes.length) {

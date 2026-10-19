@@ -13,8 +13,19 @@ import type { SearchGroupType } from "./schemas/search.ts";
  * from build-time phase flags (D-068).
  */
 export const MODULE_KEYS = ["leadsMeetings", "jobsField", "approvals", "recurring"] as const;
-export type ModuleKey = (typeof MODULE_KEYS)[number];
-export type ModuleSettings = Record<ModuleKey, boolean>;
+/** The four Settings › Modules switches. */
+export type SwitchableModuleKey = (typeof MODULE_KEYS)[number];
+/**
+ * US-AI-01 (D-162, D-242) — the AI assistant is the fifth module. It owns
+ * routes like the others, but it's switched in Settings › AI assistant (it
+ * needs a provider first), so it isn't one of the Modules switches; it's on
+ * only when `settings.ai.enabled` is.
+ */
+export const AI_MODULE = "ai" as const;
+export const ALL_MODULE_KEYS = [...MODULE_KEYS, AI_MODULE] as const;
+export type ModuleKey = (typeof ALL_MODULE_KEYS)[number];
+/** The switches, and `ai: true` while the AI assistant is on (absent means off). */
+export type ModuleSettings = Record<SwitchableModuleKey, boolean> & { ai?: boolean };
 
 /** `GET /org/modules`: the switches, and since when each switched-off module has been off (YYYY-MM-DD). */
 export type ModulesResponse = ModuleSettings & { offSince?: Partial<Record<ModuleKey, string>> };
@@ -128,6 +139,21 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     settingsPanes: [],
     reports: [],
   },
+  ai: {
+    label: "AI assistant",
+    description: "Reads bills and receipts, drafts customer emails and quote lines, suggests bank matches — with your own provider. Turning it on needs a provider first.",
+    includes: "AI reading, drafting and suggestions",
+    // Settings › AI assistant (`/org/ai`) stays reachable while it's off: it's where an Owner switches it on.
+    routes: [/^\/ai(\/|$)/],
+    capabilities: ["ai.use"],
+    pages: [],
+    dashboardWidgets: [],
+    attention: [],
+    search: [],
+    notifications: [],
+    settingsPanes: [],
+    reports: [],
+  },
 };
 
 export const ALWAYS_ON_NOTE = "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on.";
@@ -135,6 +161,7 @@ export const MODULE_OFF_ERROR = "MODULE_OFF";
 
 /** "<Module> is switched off. An owner can switch it on in Settings › Modules." */
 export function moduleOffMessage(key: ModuleKey): string {
+  if (key === AI_MODULE) return "The AI assistant is off. An owner can switch it on in Settings › AI assistant.";
   return `${MODULES[key].label} is switched off. An owner can switch it on in Settings › Modules.`;
 }
 
@@ -144,34 +171,34 @@ export const SWITCH_OFF_REASSURANCE = "Nothing is deleted. Switch it back on any
 export const fieldUsersMessage = (n: number) => `${n} ${n === 1 ? "person uses" : "people use"} the field app. Change their role or deactivate them first.`;
 
 /** The saved switches, with every module on unless it was switched off. */
-export function resolveModules(saved: Partial<ModuleSettings> | null | undefined): ModuleSettings {
+export function resolveModules(saved: Partial<Record<SwitchableModuleKey, boolean>> | null | undefined): ModuleSettings {
   return { ...DEFAULT_MODULES, ...Object.fromEntries(MODULE_KEYS.filter((k) => typeof saved?.[k] === "boolean").map((k) => [k, saved![k]])) };
 }
 
-export const moduleSettingsSchema = z.object(Object.fromEntries(MODULE_KEYS.map((k) => [k, z.boolean()])) as Record<ModuleKey, z.ZodBoolean>).strict();
+export const moduleSettingsSchema = z.object(Object.fromEntries(MODULE_KEYS.map((k) => [k, z.boolean()])) as Record<SwitchableModuleKey, z.ZodBoolean>).strict();
 
 /** The module that owns an API path, if any (the path without its query string). */
 export function moduleForRoute(path: string): ModuleKey | null {
   const clean = path.split("?")[0]!.replace(/\/+$/, "") || "/";
-  return MODULE_KEYS.find((k) => MODULES[k].routes.some((r) => r.test(clean))) ?? null;
+  return ALL_MODULE_KEYS.find((k) => MODULES[k].routes.some((r) => r.test(clean))) ?? null;
 }
 
 /** The module that owns a web page, if any. */
 export function moduleForPage(pathname: string): ModuleKey | null {
-  return MODULE_KEYS.find((k) => MODULES[k].pages.some((p) => pathname === p || pathname.startsWith(`${p}/`))) ?? null;
+  return ALL_MODULE_KEYS.find((k) => MODULES[k].pages.some((p) => pathname === p || pathname.startsWith(`${p}/`))) ?? null;
 }
 
 /** Whether something owned by a module is usable now. */
-export const isOn = (modules: ModuleSettings | null | undefined, key: ModuleKey) => (modules ?? DEFAULT_MODULES)[key];
+export const isOn = (modules: ModuleSettings | null | undefined, key: ModuleKey): boolean => (modules ?? DEFAULT_MODULES)[key] === true;
 
 /** The capabilities of switched-off modules — kept in Teams, but not shown or usable. */
 export function capabilitiesOff(modules: ModuleSettings | null | undefined): Set<Capability> {
-  return new Set(MODULE_KEYS.filter((k) => !isOn(modules, k)).flatMap((k) => MODULES[k].capabilities));
+  return new Set(ALL_MODULE_KEYS.filter((k) => !isOn(modules, k)).flatMap((k) => MODULES[k].capabilities));
 }
 
 /** Whether a dashboard widget, attention row, search group, notification type, settings pane or report belongs to a switched-off module. */
 export function ownedByOffModule(modules: ModuleSettings | null | undefined, kind: "dashboardWidgets" | "attention" | "search" | "notifications" | "settingsPanes" | "reports", key: string): boolean {
-  return MODULE_KEYS.some((k) => !isOn(modules, k) && (MODULES[k][kind] as readonly string[]).includes(key));
+  return ALL_MODULE_KEYS.some((k) => !isOn(modules, k) && (MODULES[k][kind] as readonly string[]).includes(key));
 }
 
 /** Templates that start without Jobs & field (US-ONB-14, US-ONB-20). */

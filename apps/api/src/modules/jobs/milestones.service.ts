@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { completeMilestoneSchema, setMilestonesSchema } from "@spine/shared";
-import { ZERO, decimal, multiplyMinor, percentOfMinor, plus } from "@spine/shared";
+import { ZERO, decimal, linkInUse, linkUploadFirst, multiplyMinor, percentOfMinor, plus } from "@spine/shared";
+import { assertLinkable } from "../files/files.service";
 import { and, eq, inArray, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -246,6 +247,11 @@ export class MilestonesService {
       { own: "milestones.edit_own", others: "milestones.edit_others" },
       "always",
     );
+
+    // D-250: each photo is the person's own upload and used by nothing else (already on this job is fine: a retried completion).
+    for (const fileId of input.photoFileIds) {
+      await assertLinkable(this.db, orgId, actorUserId, fileId, { uploadFirst: linkUploadFirst("photo"), inUse: linkInUse("photo"), keep: (o) => o.type === "job_photo" && o.id === jobId });
+    }
 
     /**
      * US-MOB-15 (02-architecture §Offline: first write wins) — a completion

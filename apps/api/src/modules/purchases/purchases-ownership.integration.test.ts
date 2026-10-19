@@ -17,6 +17,7 @@ import {
   vendorPayments,
 } from "../../db/schema";
 import { ExpensesService } from "./expenses.service";
+import { FilesService } from "../files/files.service";
 import { ExpenseCategoriesService } from "./expense-categories.service";
 import { VendorBillsService } from "./vendor-bills.service";
 import { VendorPaymentsService } from "./vendor-payments.service";
@@ -105,7 +106,7 @@ describe("Purchases ownership split (requires local Postgres)", () => {
     const notifications = new NotificationsService(db, new PushService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, new QuoteConversionGuardService(db, new SettingsService(db)), taxResolver, new PlaceOfSupplyService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
 
-    expensesService = new ExpensesService(db, auditLog, numbering, ledger, notifications, invoices, new MoneyAccountsService(db, auditLog));
+    expensesService = new ExpensesService(db, auditLog, numbering, ledger, notifications, invoices, new MoneyAccountsService(db, auditLog), new FilesService(db));
     expenseCategoriesService = new ExpenseCategoriesService(db, auditLog);
     vendorBillsService = new VendorBillsService(db, auditLog, ledger, taxResolver, new PlaceOfSupplyService(db));
     vendorPaymentsService = new VendorPaymentsService(db, auditLog, numbering, ledger, new MoneyAccountsService(db, auditLog));

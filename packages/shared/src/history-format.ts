@@ -124,6 +124,8 @@ function valueText(field: string, value: unknown): string {
 }
 
 function changePhrase(change: HistoryFieldChange): string {
+  // US-AI-06 (D-166): saved from AI suggestions.
+  if (change.field === "aiAssisted") return "filled it in with AI";
   const label = fieldLabel(change.field);
   if (change.from === null || change.from === undefined || change.from === "") return `set the ${label} to ${valueText(change.field, change.to)}`;
   if (change.to === null || change.to === undefined || change.to === "") return `cleared the ${label}`;
@@ -196,9 +198,11 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
   }
 
   const verb = ACTION_VERBS[entry.action] ?? entry.action.replace(/_/g, " ");
-  const base = `${actor} ${verb} ${subject}`;
+  // US-AI-06: "Kavya Iyer created this bill and filled it in with AI".
+  const ai = changes.some((c) => c.field === "aiAssisted" && c.to === true) ? " and filled it in with AI" : "";
+  const base = `${actor} ${verb} ${subject}${ai}`;
   const statusChange = changes.find((c) => c.field === "status");
-  const others = changes.filter((c) => c !== statusChange);
+  const others = changes.filter((c) => c !== statusChange && c.field !== "aiAssisted");
   // A transition's status change is already said by its verb ("issued").
   if (!others.length || entry.action === "created" || entry.action === "deleted") return base;
   const shown = others.slice(0, MAX_CHANGES_LISTED).map(changePhrase);

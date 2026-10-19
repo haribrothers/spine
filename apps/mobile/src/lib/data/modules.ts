@@ -5,6 +5,8 @@ export interface ModuleSwitches {
   jobsField: boolean;
   approvals: boolean;
   recurring: boolean;
+  /** The AI assistant (US-AI-01): present, and true, only while it's on — never assumed until the server says so. */
+  ai?: boolean;
 }
 
 const ALL_ON: ModuleSwitches = { leadsMeetings: true, jobsField: true, approvals: true, recurring: true };

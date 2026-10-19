@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Bell,
   BellRing,
+  Bot,
   Building2,
   Calendar,
   CalendarClock,
@@ -56,6 +57,7 @@ import { GstPane } from "../app/settings/panes/gst-pane";
 import { DocumentsPane } from "../app/settings/panes/documents-pane";
 import { EmailsPane } from "../app/settings/panes/emails-pane";
 import { ModulesPane } from "../app/settings/panes/modules-pane";
+import { AiPane } from "../app/settings/panes/ai-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { OpeningBalancesPane } from "../app/settings/panes/opening-balances-pane";
@@ -109,6 +111,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { key: "currency", label: "Currency & locale", icon: Coins, group: "business", render: () => <CurrencyPane />, keywords: ["currency", "locale", "number format", "date format"] },
   // US-SET-23
   { key: "modules", label: "Modules", icon: ToggleRight, group: "business", render: () => <ModulesPane />, keywords: ["modules", "leads and meetings", "jobs and field", "approvals", "recurring documents"] },
+  // US-AI-01, US-AI-02 (D-242): after Modules; the Bot icon, since Industry template has Sparkles.
+  { key: "ai", label: "AI assistant", icon: Bot, group: "business", render: () => <AiPane />, keywords: ["AI", "artificial intelligence", "provider", "model", "API key", "Anthropic", "Claude", "OpenAI", "Ollama", "budget", "receipts"] },
   // Money & tax
   { key: "fiscal-year", label: "Financial year", icon: Calendar, group: "money", render: () => <FiscalYearPane />, keywords: ["financial year", "year end", "fiscal year"] },
   { key: "tax", label: "Tax", icon: Percent, group: "money", render: () => <TaxPane />, keywords: ["tax rates", "tax groups", "VAT", "sales tax", "country"] },

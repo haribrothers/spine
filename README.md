@@ -70,7 +70,7 @@ below instead — that path never requires Node or pnpm on the host.)
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - [pnpm](https://pnpm.io/installation) (`corepack enable` is the easiest way to get the pinned version)
 - Docker (for Postgres and MailDev — you do not need either installed locally)
 

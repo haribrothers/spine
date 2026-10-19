@@ -1,0 +1,36 @@
+# Shared by the US-AI-10 flows: New expense › "Choose a photo" › the receipt
+# added to the phone's library before the run (QA §243 / us-ai-10-receipt.yaml).
+appId: com.spine.app
+---
+- tapOn:
+    id: "receipt-choose"
+- runFlow:
+    when:
+      visible: "Allow Full Access"
+    commands:
+      - tapOn: "Allow Full Access"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Photo.*"
+          timeout: 15000
+      - waitForAnimationToEnd
+      # The newest photo — the receipt just added — is the first tile.
+      - tapOn:
+          point: "16%,25%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Photo taken on.*"
+          timeout: 15000
+      - tapOn:
+          text: "Photo taken on.*"
+          index: 0
+- extendedWaitUntil:
+    visible:
+      id: "receipt-read"
+    timeout: 20000

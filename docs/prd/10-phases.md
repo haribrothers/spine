@@ -1004,7 +1004,7 @@ Total: 534 stories.
 
 **Goal:** An owner switches on an AI assistant, with their own local or cloud provider, that fills in bills and expenses, drafts emails and quote lines and suggests bank matches — and nothing is saved until a person saves.
 
-**Deliverables:** The optional AI assistant module ([D-162](12-decisions.md)): Settings › AI with a local or cloud provider (`AiDriver`: none, OpenAI-compatible, Anthropic), an encrypted key, per-feature switches, a monthly budget and usage, the `ai.use` Team right, every request in the audit log, and graceful behaviour when the provider is unavailable; four features — reading bills and receipts (web and phone), drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173). A phase of its own since [D-195](12-decisions.md): it is the only feature that sends data off the server, and it reaches bills, expenses, emails, quotes, reconciliation and the phone app.
+**Deliverables:** The optional AI assistant module ([D-162](12-decisions.md)): Settings › AI with a local or cloud provider (`AiDriver`: none, OpenAI-compatible, Anthropic), an encrypted key, per-feature switches, a monthly budget and usage, the `ai.use` Team right, every request in the audit log, and graceful behaviour when the provider is unavailable; four features — reading bills and receipts (web and phone), drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173). A phase of its own since [D-195](12-decisions.md): it is the only feature that sends data off the server, and it reaches bills, expenses, emails, quotes, reconciliation and the phone app. Reworked before it started ([D-242](12-decisions.md)): the stories and screens fit the refined Settings, Team permissions, bill page, expense form, send dialog, quote builder, reconcile tabs and activity timelines; the branch is `phase-10-ai-assistant`.
 
 **Done when:**
 - With AI off, a network test sees no AI request and no AI control renders on any screen; with AI on against a local model and a cloud model, a sample bill fills the bill form with totals matching Spine's computation, and nothing is saved until a person saves.
@@ -1025,7 +1025,7 @@ Total: 534 stories.
 - US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo (P1)
 - US-AI-09 · Fill in an expense from a receipt (P1)
 - US-AI-10 · Fill in my expense from a receipt on the phone (P1)
-- US-AI-11 · Draft a quote or invoice email with AI (P1)
+- US-AI-11 · Draft a customer email with AI (P1)
 - US-AI-12 · Draft a payment reminder or statement email in a chosen tone (P2)
 - US-AI-13 · Draft quote lines from an enquiry (P1)
 - US-AI-14 · Get AI suggestions while reconciling (P1)

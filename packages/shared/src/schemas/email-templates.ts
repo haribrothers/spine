@@ -168,4 +168,20 @@ export interface EmailDraft {
   message: string;
   /** Whether the email can carry the document's PDF. */
   hasPdf: boolean;
+  /** US-AI-11 (D-254) — the details Spine filled in, longest first, for the editor to highlight. */
+  values: string[];
+}
+
+const KEPT_PLACEHOLDER = /^\{[^{}\s]*\}$/;
+
+/**
+ * US-AI-11 (D-254) — the details Spine filled into an email, longest first
+ * so a longer one wins where they overlap. One still waiting for the send
+ * (`{link}`, an unsent quote's `{document_number}`) isn't one.
+ */
+export function filledValues(values: Partial<Record<EmailPlaceholder, string>>): string[] {
+  const filled = Object.values(values)
+    .map((v) => (v ?? "").trim())
+    .filter((v) => v.length > 1 && !KEPT_PLACEHOLDER.test(v));
+  return [...new Set(filled)].sort((a, b) => b.length - a.length);
 }

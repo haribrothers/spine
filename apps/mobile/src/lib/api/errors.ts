@@ -33,6 +33,14 @@ export class ServerUnreachableError extends Error {
   }
 }
 
+/** The person stopped the request ("Cancel" while AI reads a receipt, US-AI-10). Nothing to show. */
+export class CancelledError extends Error {
+  constructor() {
+    super("Cancelled.");
+    this.name = "CancelledError";
+  }
+}
+
 /** 426 CLIENT_TOO_OLD — the server needs a newer app (D-071). */
 export class UpdateRequiredError extends Error {
   constructor(readonly minimumVersion?: string) {

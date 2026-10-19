@@ -600,20 +600,22 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 10 · AI assistant
 
-- [ ] US-AI-01 · Switch the AI assistant on or off
-- [ ] US-AI-02 · Connect a local or cloud AI provider
-- [ ] US-AI-03 · Choose which AI features are on
-- [ ] US-AI-04 · Set a monthly AI budget and see usage
-- [ ] US-AI-05 · Let a Team use AI
-- [ ] US-AI-06 · See every AI request in the audit log
-- [ ] US-AI-07 · Keep working when AI is unavailable
-- [ ] US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo
-- [ ] US-AI-09 · Fill in an expense from a receipt
-- [ ] US-AI-10 · Fill in my expense from a receipt on the phone
-- [ ] US-AI-11 · Draft a quote or invoice email with AI
-- [ ] US-AI-12 · Draft a payment reminder or statement email in a chosen tone
-- [ ] US-AI-13 · Draft quote lines from an enquiry
-- [ ] US-AI-14 · Get AI suggestions while reconciling
+Stories and screens reworked for the refined web app before building (D-242), on `phase-10-ai-assistant`.
+
+- [x] US-AI-01 · Switch the AI assistant on or off
+- [x] US-AI-02 · Connect a local or cloud AI provider
+- [x] US-AI-03 · Choose which AI features are on
+- [x] US-AI-04 · Set a monthly AI budget and see usage
+- [x] US-AI-05 · Let a Team use AI
+- [x] US-AI-06 · See every AI request in the audit log
+- [x] US-AI-07 · Keep working when AI is unavailable
+- [x] US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo
+- [x] US-AI-09 · Fill in an expense from a receipt
+- [x] US-AI-10 · Fill in my expense from a receipt on the phone
+- [x] US-AI-11 · Draft a customer email with AI
+- [x] US-AI-12 · Draft a payment reminder or statement email in a chosen tone
+- [x] US-AI-13 · Draft quote lines from an enquiry
+- [x] US-AI-14 · Get AI suggestions while reconciling
 
 ## Phase 11 · Packaging & 1.0
 

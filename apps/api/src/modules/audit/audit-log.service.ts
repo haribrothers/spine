@@ -61,7 +61,11 @@ export type AuditEntityType =
   // US-TEAM-29 (D-234): Teams created, renamed, deleted, and their members and permissions changed.
   | "team"
   // US-SET-28 (D-220): an email retried or cancelled from the email log.
-  | "email";
+  | "email"
+  // US-AI-01, US-AI-02 (D-164): the AI assistant switched, its provider changed, or what's sent acknowledged (entity id is the organisation's).
+  | "ai_settings"
+  // US-AI-06 (D-169): one entry per AI request (entity id is the `ai_requests` row's).
+  | "ai_request";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see
@@ -207,3 +211,7 @@ export class AuditLogService {
     return rows;
   }
 }
+
+/** US-AI-06 — an audit entry saved from fields AI filled in reads "· filled in with AI" in Activity. */
+export const aiMark = (changes: unknown): { aiAssisted?: true } =>
+  Array.isArray(changes) && changes.some((c: { field?: unknown; to?: unknown } | null) => c?.field === "aiAssisted" && c?.to === true) ? { aiAssisted: true } : {};

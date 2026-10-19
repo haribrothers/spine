@@ -49,6 +49,8 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   tally_export: "Tally export",
   modules: "Modules",
   email: "Email",
+  ai_settings: "AI assistant",
+  ai_request: "AI request",
 };
 
 function sentenceCase(key: string): string {
@@ -62,7 +64,7 @@ export function auditEntityLabel(entityType: string): string {
 
 /** "accepted_in_person" → "Accepted in person"; "approve" → "Approved". */
 export function auditActionLabel(action: string): string {
-  const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred", password_set: "Password set by an owner", members_changed: "Members changed", privileges_changed: "Permissions changed" };
+  const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred", password_set: "Password set by an owner", members_changed: "Members changed", privileges_changed: "Permissions changed", read_document: "Read a document", draft_email: "Drafted an email", draft_quote_lines: "Drafted quote lines", bank_suggestions: "Suggested bank matches" };
   return special[action] ?? sentenceCase(action);
 }
 
@@ -127,6 +129,8 @@ export function auditDetails(entry: Pick<AuditLogEntry, "action" | "changes">, m
     if (fields.length > max) parts.push(`and ${fields.length - max} more`);
     return parts.join(" · ");
   }
+  // US-AI-06: an AI request says it in one line ("api.anthropic.com · claude-sonnet-5-5 · 3,412 tokens · Worked").
+  if (changes && typeof changes === "object" && typeof (changes as { summary?: unknown }).summary === "string") return (changes as { summary: string }).summary;
   if (changes && typeof changes === "object") {
     return Object.entries(changes as Record<string, unknown>)
       .filter(([, v]) => v !== null && v !== undefined && typeof v !== "object")

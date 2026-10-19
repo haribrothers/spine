@@ -13,6 +13,7 @@ import { CapabilityGuard } from "./auth/capability.guard";
 import { DbModule } from "./db/db.module";
 import { HealthModule } from "./health/health.module";
 import { OrgModule } from "./modules/org/org.module";
+import { AiModule } from "./modules/ai/ai.module";
 import { TeamsModule } from "./modules/teams/teams.module";
 import { UsersModule } from "./modules/users/users.module";
 import { ContactsModule } from "./modules/contacts/contacts.module";
@@ -65,6 +66,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     PdfModule,
     HealthModule,
     OrgModule,
+    AiModule,
     TeamsModule,
     UsersModule,
     ContactsModule,

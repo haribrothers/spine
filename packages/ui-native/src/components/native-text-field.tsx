@@ -207,7 +207,7 @@ export function NativeTextField({
             : [
                 padding({ horizontal: 12, vertical: 10 }),
                 background(colors.surface),
-                strokeBorder({ color: borderColor, shape: "roundedRectangle", cornerRadius: 10 }),
+                strokeBorder({ content: borderColor, shape: "roundedRectangle", cornerRadius: 10 }),
               ]),
           iosDisabled(disabled),
         ]}

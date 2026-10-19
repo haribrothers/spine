@@ -31,6 +31,7 @@ import type { PossibleDuplicateVendorPayment } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { localIsoDate, prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
+import { AiField } from "../../../components/ai-suggested-tag";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { ContactPicker } from "./contact-picker";
@@ -102,7 +103,7 @@ export function RecordVendorPaymentDialog({
 
   useEffect(() => {
     if (!open) return;
-    setContactId(initialContactId ?? "");
+    setContactId(initialContactId ?? prefill?.ai?.contactId ?? "");
     setAmount(prefill?.amount ?? 0n);
     setAmountTyped(Boolean(prefill));
     setDate(prefill ? prefillDate(prefill) : new Date());
@@ -289,9 +290,11 @@ export function RecordVendorPaymentDialog({
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <FormField label="Vendor" required>
-                {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
-              </FormField>
+              <AiField suggested={Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
+                <FormField label="Vendor" required>
+                  {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+                </FormField>
+              </AiField>
               <FormField label="Amount" required>
                 {() => <MoneyInput value={amount} onValueChange={changeAmount} currency={currency} disabled={!contactId || Boolean(prefill)} aria-label="Amount" />}
               </FormField>

@@ -24,6 +24,7 @@ import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } fro
 import { apiClient } from "../../../lib/api-client";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney } from "../../../lib/money";
+import { AiSuggestedTag } from "../../../components/ai-suggested-tag";
 import { blankLine, computeLinePreview, resolveLineTaxRates, type EditableVendorBillLine } from "./vendor-bill-line-editor";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
 
@@ -48,6 +49,8 @@ export function VendorBillLines({
   exportUnderLut = false,
   flaggedKeys,
   showHsn = false,
+  aiKeys,
+  footerNote,
 }: {
   lines: EditableVendorBillLine[];
   onChange: (lines: EditableVendorBillLine[]) => void;
@@ -60,6 +63,10 @@ export function VendorBillLines({
   flaggedKeys?: Set<string>;
   /** US-TAX-14 — show HSN/SAC on item lines (GST is on). */
   showHsn?: boolean;
+  /** US-AI-08 — rows AI filled in and nobody has changed yet: tinted, "Suggested by AI". */
+  aiKeys?: Set<string>;
+  /** US-AI-08 — where AI's accounts and rates came from, in place of the keyboard hint. */
+  footerNote?: string;
 }) {
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -191,6 +198,7 @@ export function VendorBillLines({
             }}
             className={cn(
               "relative border-b border-border px-3 py-2",
+              aiKeys?.has(line.key) && "bg-info-bg/40",
               dragKey === line.key && "opacity-40",
               over?.key === line.key && (over.before ? "shadow-[inset_0_2px_0_var(--color-primary)]" : "shadow-[inset_0_-2px_0_var(--color-primary)]"),
             )}
@@ -206,6 +214,7 @@ export function VendorBillLines({
               taxRates={taxRates}
               taxGroups={taxGroups}
               showHsn={showHsn}
+              suggested={aiKeys?.has(line.key) ?? false}
               onChange={(patch) => updateLine(index, patch)}
               onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
               onMove={(to) => moveTo(index, to)}
@@ -229,9 +238,15 @@ export function VendorBillLines({
         <Button type="button" variant="secondary" size="sm" onClick={addAndFocus}>
           <Plus size={14} /> Add item
         </Button>
-        <span className="ml-auto hidden text-[12px] text-on-surface-muted lg:inline">
-          Enter adds a row · <Kbd>Alt</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd> moves it
-        </span>
+        {footerNote ? (
+          <span className="ml-auto text-[12px] text-on-surface-muted" data-testid="bill-lines-note">
+            {footerNote}
+          </span>
+        ) : (
+          <span className="ml-auto hidden text-[12px] text-on-surface-muted lg:inline">
+            Enter adds a row · <Kbd>Alt</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd> moves it
+          </span>
+        )}
       </div>
     </div>
   );
@@ -248,6 +263,7 @@ function BillLineRow({
   taxRates,
   taxGroups,
   showHsn,
+  suggested,
   onChange,
   onApplyCatalogItem,
   onMove,
@@ -266,6 +282,7 @@ function BillLineRow({
   taxRates: TaxRateOption[];
   taxGroups: TaxGroupOption[];
   showHsn: boolean;
+  suggested: boolean;
   onChange: (patch: Partial<EditableVendorBillLine>) => void;
   onApplyCatalogItem: (id: string) => void;
   onMove: (to: number) => void;
@@ -280,7 +297,7 @@ function BillLineRow({
   const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
   const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
   const showSupply = showsSupplyType(line.supplyClass, taxPercent);
-  const showDetails = details || Boolean(line.description) || showHsn || showSupply || line.isTaxInclusive;
+  const showDetails = details || suggested || Boolean(line.description) || showHsn || showSupply || line.isTaxInclusive;
 
   function applyTaxSelection(value: string) {
     if (value.startsWith("rate:")) onChange({ taxRateId: value.slice(5), taxGroupId: null, taxRatePercentage: 0 });
@@ -392,6 +409,11 @@ function BillLineRow({
             <div className={showHsn ? "col-[4/span_2] lg:col-[6/span_2]" : "col-[2/span_2] lg:col-[5/span_1]"}>
               <SupplyTypeField compact value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
             </div>
+          )}
+          {suggested && (
+            <span className="col-[2/span_5] flex h-8 min-w-0 items-center lg:col-[7/span_1] lg:justify-end">
+              <AiSuggestedTag />
+            </span>
           )}
         </div>
       ) : (

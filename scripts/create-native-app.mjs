@@ -97,8 +97,8 @@ const basePackageJson = {
   },
   dependencies: {
     "@spine/ui-native": "workspace:*",
-    expo: "~57.0.18",
-    "expo-secure-store": "~57.0.2",
+    expo: "~57.0.30",
+    "expo-secure-store": "~57.0.4",
     "expo-status-bar": statusBarVersion,
     "lucide-react-native": "^1.37.0",
     nativewind: "^4.2.6",
@@ -121,9 +121,9 @@ const basePackageJson = {
   },
 };
 if (router === "expo-router") {
-  basePackageJson.dependencies["expo-constants"] = "^57.0.17";
-  basePackageJson.dependencies["expo-linking"] = "^57.0.9";
-  basePackageJson.dependencies["expo-router"] = "57.0.19";
+  basePackageJson.dependencies["expo-constants"] = "^57.0.22";
+  basePackageJson.dependencies["expo-linking"] = "^57.0.13";
+  basePackageJson.dependencies["expo-router"] = "57.0.28";
 } else {
   basePackageJson.dependencies["@react-navigation/bottom-tabs"] = "^7.18.18";
   basePackageJson.dependencies["@react-navigation/native"] = "^7.3.18";

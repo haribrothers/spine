@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowRight, Bot } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,9 +15,10 @@ import {
   Spinner,
   Switch,
 } from "@spine/ui";
-import { ALWAYS_ON_NOTE, MODULES, MODULE_KEYS, SWITCH_OFF_REASSURANCE, type ModuleKey, type ModuleSettings, type ModulesResponse } from "@spine/shared";
+import { ALWAYS_ON_NOTE, MODULES, MODULE_KEYS, SWITCH_OFF_REASSURANCE, type AiSettings, type ModuleKey, type ModuleSettings, type ModulesResponse } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useModules } from "../../../lib/modules-context";
+import { useOpenSettings } from "../../../components/settings-route";
 import { SavedToast } from "../saved-toast";
 
 const shortDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -35,6 +37,16 @@ export function ModulesPane() {
   const [toast, setToast] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // US-AI-01 (D-242): the fifth module, switched in its own pane.
+  const [ai, setAi] = useState<AiSettings | null>(null);
+  const openSettings = useOpenSettings(true);
+
+  useEffect(() => {
+    apiClient
+      .get<AiSettings>("/org/ai")
+      .then(setAi)
+      .catch(() => setAi(null));
+  }, []);
 
   useEffect(() => {
     apiClient
@@ -110,6 +122,22 @@ export function ModulesPane() {
             </li>
           );
         })}
+        <li className="flex items-center justify-between gap-4 rounded-md border border-border-strong bg-info-bg/50 p-4" data-testid="module-ai">
+          <div className="min-w-0">
+            <p id="module-ai-label" className="flex items-center gap-2 text-[14px] font-medium text-on-surface">
+              <Bot size={16} aria-hidden className="text-primary" />
+              {MODULES.ai.label}
+            </p>
+            <p className="text-[13px] text-on-surface-muted">{MODULES.ai.description}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-[12.5px] font-medium text-on-surface-muted">{ai?.enabled ? `On · ${ai.providerHost}` : "Off"}</span>
+            <Button variant="secondary" size="sm" aria-describedby="module-ai-label" onClick={() => openSettings("ai")}>
+              Set up in AI assistant
+              <ArrowRight size={14} aria-hidden />
+            </Button>
+          </div>
+        </li>
       </ul>
       <p className="text-[13px] text-on-surface-muted">{ALWAYS_ON_NOTE}</p>
 

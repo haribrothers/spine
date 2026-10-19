@@ -79,6 +79,8 @@ export const EXPORT_TABLES: ExportTable[] = [
   t(schema.files, "Stored files' names, types and sizes (the files themselves are in files/ when included)."),
   t(schema.attachments, "Which files are attached to which records, who added them and any removals."),
   t(schema.auditLog, "Every recorded change: who, what and when."),
+  // US-AI-04, US-AI-06 (D-169): never the prompt or the reply — there is none to export.
+  t(schema.aiRequests, "Every AI request: who, which feature, the record, provider, model, tokens and how it ended — never what was sent."),
 ];
 
 /** Column names that carry secrets; never exported from any table. */
