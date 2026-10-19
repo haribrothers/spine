@@ -36,10 +36,16 @@ describe("US-AI-11 · the draft keeps the document's own details (D-254)", () =>
     expect(draft?.message).toBe("<p>Hi Al,</p><p>Also: $800.00 is still due on INV-0042.</p>");
   });
 
-  it("refuses a draft with a number that isn't the document's — a wrong amount, a made-up deadline", () => {
+  it("refuses a draft with a number that isn't the document's — a wrong amount, a made-up deadline, digits stitched into a new amount", () => {
     expect(finishDraft("reminder", template, REMINDER, reply("Invoice {document_number}", "Please pay $8,000.00 now."))).toBeNull();
     expect(finishDraft("reminder", template, REMINDER, reply("Invoice {document_number}", "Please pay {balance_due} within 7 days."))).toBeNull();
     expect(finishDraft("reminder", template, REMINDER, reply("Invoice {document_number}", "It is 36 days late."))).toBeNull();
+    expect(finishDraft("reminder", template, REMINDER, reply("Invoice {document_number}", "Please pay $1,800.00."))).toBeNull();
+  });
+
+  it("the document's own numbers in the model's own words are fine", () => {
+    const draft = finishDraft("reminder", template, REMINDER, reply("Invoice {document_number}", "Invoice INV-0042 is currently 35 days overdue; $800.00 is outstanding."));
+    expect(draft?.message).toBe("<p>Invoice INV-0042 is currently 35 days overdue; $800.00 is outstanding.</p>");
   });
 
   it("a number the business's own template has is fine", () => {

@@ -56,6 +56,8 @@ const KEPT_MEANING: Partial<Record<EmailPlaceholder, string>> = {
 const ENTITY: Record<EmailTemplateType, string> = { quote: "quote", invoice: "invoice", reminder: "invoice", receipt: "payment", credit_note: "credit_note", statement: "contact" };
 
 const PLACEHOLDER = /\{([^{}\s]*)\}/g;
+/** A whole number as written: "35", "2026", "4,84,148.10". */
+const NUMBER = /\d(?:[\d,.]*\d)?/g;
 const KEPT = /^\{[^{}\s]*\}$/;
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -84,8 +86,10 @@ export function draftPrompt(type: EmailTemplateType, text: EmailTemplateText, va
  * placeholder, then Spine fills every placeholder with this document's own
  * value — the same values as the template draft — so the details can't
  * differ from Spine's. A placeholder the email doesn't have, or a number
- * that's neither the document's nor the template's, means the model made
- * something up: the draft is refused.
+ * that isn't exactly one of the document's or the template's ("is
+ * currently 35 days overdue" is fine; "within 7 days" or an amount
+ * stitched from other digits isn't), means the model made something up:
+ * the draft is refused.
  */
 export function finishDraft(type: EmailTemplateType, text: EmailTemplateText, values: Values, reply: string): AiEmailDraft | null {
   const fitted = fitAiReply<{ subject: string; message: string }>(reply, REPLY_SHAPE).value;
@@ -102,8 +106,8 @@ export function finishDraft(type: EmailTemplateType, text: EmailTemplateText, va
   const allowed = EMAIL_PLACEHOLDERS_BY_TYPE[type] as readonly string[];
   const both = `${subject}\n${message}`;
   for (const match of both.matchAll(PLACEHOLDER)) if (!allowed.includes(match[1]!)) return null;
-  const templateNumbers = new Set(`${text.subject} ${emailBodyText(emailBodyHtml(text.body))}`.replace(PLACEHOLDER, " ").match(/\d+/g) ?? []);
-  if ((both.replace(PLACEHOLDER, " ").match(/\d+/g) ?? []).some((n) => !templateNumbers.has(n))) return null;
+  const known = new Set([`${text.subject} ${emailBodyText(emailBodyHtml(text.body))}`.replace(PLACEHOLDER, " "), ...Object.values(values)].flatMap((s) => (s ?? "").match(NUMBER) ?? []));
+  if ((both.replace(PLACEHOLDER, " ").match(NUMBER) ?? []).some((n) => !known.has(n))) return null;
 
   const filledSubject = fillPlaceholders(subject, values).replace(/\s+/g, " ").trim();
   if (filledSubject.length > 200) return null;

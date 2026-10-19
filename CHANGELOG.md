@@ -88,6 +88,7 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - **Design:** the dialog was redrawn from the app's real rich-text dialog ("05 Emails v2"): `SendEmailDialogAi`, `SendEmailDialogAiSuggestion`, `SendEmailDialogAiUsed`. D-171 amended.
 - **API:** `POST /ai/draft-email` (no Idempotency-Key — it saves nothing); `/email-drafts` and the statement draft return `values`. Drafting runs at temperature 0.7 so "Try again" differs.
 - **Tests:** API (`us-ai-11` unit and integration; US-OPS-08, US-SET-21 and statements suites), web (`us-ai-11`), `@spine/ui` highlights a11y, e2e `us-ai-11.spec.ts`. QA section 244.
+- **After trying it on a local model (D-255):** a "thinking" model (`qwen3.5:4b` on Ollama) spent 90 seconds reasoning and every draft timed out (504). The OpenAI-compatible driver now asks models not to think (`reasoning_effort: "none"`, dropped for a server that refuses it), so drafts — and bill and receipt reads — come back in seconds. The number check compares whole numbers, so "is currently 35 days overdue" passes while a made-up figure still doesn't. Tested live: 5 of 5 drafts in 6–8 seconds.
 
 ### 2026-10-19 — The field app opens on iOS 27, back works on Android 13–15, and Maestro flows for US-AI-10 (D-252, D-253)
 

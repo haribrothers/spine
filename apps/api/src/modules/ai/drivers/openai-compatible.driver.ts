@@ -1,9 +1,17 @@
 import { AiProviderError, PROBE_PNG, PROBE_PROMPT, type AiCompletion, type AiDriver, type AiHttp, type AiPrompt, type AiProviderConfig } from "./ai-driver";
 
+/** Servers (address and model) that refused `reasoning_effort`: asked without it from then on (D-255). */
+const NO_REASONING_EFFORT = new Set<string>();
+
 /**
  * D-163 — any server that speaks the OpenAI chat API: Ollama, vLLM and LM
  * Studio on the business's own network, or a cloud service. The key is
  * optional (a local server usually has none).
+ *
+ * D-255 — a "thinking" model (Qwen 3.5, DeepSeek-R1, gpt-oss…) can spend
+ * the whole 30 seconds, and every token, reasoning before it answers, so
+ * Spine asks it not to (`reasoning_effort: "none"`). A server that refuses
+ * the parameter is asked again without it, once, and remembered.
  */
 export class OpenAiCompatibleDriver implements AiDriver {
   private readonly base: string;
@@ -40,11 +48,28 @@ export class OpenAiCompatibleDriver implements AiDriver {
     const content = images.length
       ? [{ type: "text", text: prompt.text }, ...images.map((image) => ({ type: "image_url", image_url: { url: `data:${image.mimeType};base64,${image.base64}` } }))]
       : prompt.text;
-    const body = await this.http.json<{ choices?: { message?: { content?: unknown } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } }>(`${this.base}/chat/completions`, {
-      method: "POST",
-      headers: this.headers,
-      body: { model, max_tokens: prompt.maxTokens, temperature: prompt.temperature ?? 0, messages: [{ role: "system", content: prompt.system }, { role: "user", content }] },
-    });
+    const server = `${this.base} ${model}`;
+    const ask = (withoutThinking: boolean) =>
+      this.http.json<{ choices?: { message?: { content?: unknown } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } }>(`${this.base}/chat/completions`, {
+        method: "POST",
+        headers: this.headers,
+        body: {
+          model,
+          max_tokens: prompt.maxTokens,
+          temperature: prompt.temperature ?? 0,
+          ...(withoutThinking ? { reasoning_effort: "none" } : {}),
+          messages: [{ role: "system", content: prompt.system }, { role: "user", content }],
+        },
+      });
+    let body: Awaited<ReturnType<typeof ask>>;
+    try {
+      body = await ask(!NO_REASONING_EFFORT.has(server));
+    } catch (err) {
+      const refusedParameter = err instanceof AiProviderError && err.kind === "rejected" && /reasoning/i.test(err.reason);
+      if (!refusedParameter || NO_REASONING_EFFORT.has(server)) throw err;
+      NO_REASONING_EFFORT.add(server);
+      body = await ask(false);
+    }
     const answer = body.choices?.[0]?.message?.content;
     // Some servers answer with content parts instead of a string.
     const text = typeof answer === "string" ? answer : Array.isArray(answer) ? answer.map((part: { text?: string }) => part.text ?? "").join("") : "";
