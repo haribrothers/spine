@@ -1,6 +1,6 @@
 # Screens
 
-Every screen in the product: 611 in total (60 added for Phases 8–9 on 2026-10-06, D-133; the refinements before Phase 10; and 17 for the AI assistant, reworked for Phase 10, D-162, D-242). **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
+Every screen in the product: 621 in total (60 added for Phases 8–9 on 2026-10-06, D-133; the refinements before Phase 10; 17 for the AI assistant, reworked for Phase 10, D-162, D-242; and 10 for connected agents in Phase 11, D-256). **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
 
 The design canvas with every drawn screen: [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY). Phase 8–9 screens are on its pages "Phase 8 · Books completeness" and "Phase 9 · Tax, documents and setup" (the AI assistant screens are in its "AI assistant" groups); they share one sidebar component (`V1Sidebar`) that adds Banking, Vendor Credits and Journals to the navigation.
 
@@ -5858,3 +5858,99 @@ As built (US-AI-14): today's reconcile page keeps its balance cards and a rule's
 Links to: `ReconcileRefined`, `ReconcileMatchAllConfirm`
 
 Shows: "Suggest again" beside "Match all suggested (4)" · Suggested tab 7 · "AI looked at the 5 lines the rules couldn't settle · 3 suggestions. AI suggestions aren't in Match all — check and match each one." · rule suggestions in amber, AI ones "AI suggests: PAY-0040 · Ananya Rao" with the reason · "AI suggests creating: Bank charges · HDFC Bank" with Create · entries panel with the AI suggestion first ("AI suggests"), then "Same amount"
+
+## Connected agents (MCP)
+
+Outside AI agents — Claude, ChatGPT, Claude Code — used as the person who connected them, read and drafts only (D-256–D-259, [features/22-mcp.md](../features/22-mcp.md)). Off until an Owner switches it on; each person connects their own agent on Spine's consent page and can disconnect it.
+
+Drawn in Claude Design for US-MCP-02 to US-MCP-08: project "Spine web — Phase 11 connected agents", canvases "01 Settings", "02 Connect" and "03 Connections and audit", on the refined web app. Shared parts live in its `agents.css`, built only from existing tokens.
+
+### SettingsConnectedAgents — Settings › Connected agents — switch, address, drafts, every connection
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-02, US-MCP-04 · **Source:** Claude Design
+
+![SettingsConnectedAgents](screens/SettingsConnectedAgents.webp)
+
+Links to: `SettingsConnectedAgentsTurnOnConfirm`, `AuditLogAgent`
+
+Shows: "Connected agents" in the Business group after AI assistant (Plug icon), and under Your account · the On switch · "Let people use Spine from AI agents like Claude and ChatGPT. … they never issue, send, record or delete anything." · "Connector address" "https://spine.meridianbuilders.in/api/mcp" with "Copy", and how to add it in Claude, ChatGPT and Claude Code · "Agents can create drafts" switch · "Connections": agent and host (verified, or "Unverified name"), person and role, "Read" / "Read and create drafts" / "Read and add job notes", last used, "Disconnect"
+
+### SettingsConnectedAgentsDark — Settings › Connected agents in dark mode — an http address, nobody connected
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-02 · **Source:** Claude Design
+
+![SettingsConnectedAgentsDark](screens/SettingsConnectedAgentsDark.webp)
+
+Links to: `SettingsConnectedAgents`
+
+Shows: "http://192.168.1.10/api/mcp" · "Claude and ChatGPT on the web can only connect to an https address they can reach from the internet. Agents on this network, like Claude Code, can still connect." with "How to give Spine an https address" · drafts off · "No agents connected yet"
+
+### SettingsConnectedAgentsTurnOnConfirm — "Turn on connected agents?"
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-02 · **Source:** Claude Design
+
+![SettingsConnectedAgentsTurnOnConfirm](screens/SettingsConnectedAgentsTurnOnConfirm.webp)
+
+Links to: `SettingsConnectedAgents`
+
+Shows: The pane off · "Turn on connected agents?" "People will be able to connect AI agents to Spine. An agent sees what the person who connected it can see, and sends it to that agent's AI provider." · can read and create drafts / can't issue, send, record payments, approve, void, delete or change settings / never more than their person · "Cancel" "Turn on connected agents"
+
+### AgentConsentSignIn — Log in to connect an agent
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-03 · **Source:** Claude Design
+
+![AgentConsentSignIn](screens/AgentConsentSignIn.webp)
+
+Links to: `AgentConsent`
+
+Shows: The signed-out frame · "Claude (claude.ai) is asking to connect to Spine. Log in to choose what it can do." · the usual "Log in" form · "Your password stays with Spine. Claude never sees it." · the agent and the business joined through the Spine mark
+
+### AgentConsent — "Claude wants to use Spine as you"
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-03 · **Source:** Claude Design
+
+![AgentConsent](screens/AgentConsent.webp)
+
+Links to: `MyConnectedAgents`
+
+Shows: "claude.ai" "Verified address" · "Signed in as Priya Raman · Meridian Builders · Owner" with "Not you?" · "Read what you can see in Spine — contacts, quotes, jobs, invoices, bills and the reports you can open" · checkbox "Create drafts for you to check" · "It can't issue, send, record payments, delete or change settings." · "What it reads is sent to Claude's AI provider. You can disconnect it any time in Settings › Your account › Connected agents." · "Cancel" "Allow"
+
+### AgentConsentDark — Consent in dark mode — a Field user and an unverified agent
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-03 · **Source:** Claude Design
+
+![AgentConsentDark](screens/AgentConsentDark.webp)
+
+Links to: `AgentConsent`
+
+Shows: "agent.example.net wants to use Spine as you" · "Calls itself "Site Notes Helper"" "Unverified name" · Marcus Webb · Field · "Read your assigned jobs, contacts and the catalogue" · "Add notes to your jobs" · "It can't see money or reports, and can't issue, send, record or delete anything." · "Only allow it if you added agent.example.net yourself."
+
+### MyConnectedAgents — Settings › Your account › Connected agents
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-04 · **Source:** Claude Design
+
+![MyConnectedAgents](screens/MyConnectedAgents.webp)
+
+Links to: `MyConnectedAgentsDisconnectConfirm`, `AgentConsent`
+
+Shows: A Staff member's own agents: ChatGPT "Read", Claude "Read and create drafts", connected and last used, "Disconnect" · "Connect another agent" with the address and "Copy address"
+
+### MyConnectedAgentsDisconnectConfirm — "Disconnect ChatGPT?"
+**Priority:** P1 · **Phase:** 11 · **Stories:** US-MCP-04 · **Source:** Claude Design
+
+![MyConnectedAgentsDisconnectConfirm](screens/MyConnectedAgentsDisconnectConfirm.webp)
+
+Links to: `MyConnectedAgents`
+
+Shows: "It stops working at once. Drafts it created stay, marked with its name. To use it again, connect it from ChatGPT." · "Cancel" "Disconnect" (danger)
+
+### AuditLogAgent — Team › Audit log filtered to agent requests
+**Priority:** P2 · **Phase:** 11 · **Stories:** US-MCP-08 · **Source:** Claude Design
+
+![AuditLogAgent](screens/AuditLogAgent.webp)
+
+Links to: `QuoteActivityAgent`
+
+Shows: Record type "Agent request" · "Drafted a quote" (Quote · Draft · Harbour Road Residences), "Searched", "Read receivables", "Read an invoice", "Listed invoices", "Connected an agent" · Details: the agent and host, "Worked", "Refused — Field can't open money", "Slowed down — over 120 calls a minute" · "What agents asked and what Spine returned aren't stored — only who, which agent, what it did, the record and whether it worked."
+
+### QuoteActivityAgent — A draft quote an agent created — Activity says so
+**Priority:** P2 · **Phase:** 11 · **Stories:** US-MCP-07 · **Source:** Claude Design
+
+![QuoteActivityAgent](screens/QuoteActivityAgent.webp)
+
+Links to: `AuditLogAgent`
+
+Shows: "Draft quote" with no number (it's given one when sent) · "Claude created this draft for you. Check the lines, prices and customer before you send it — nothing has gone to Harbour Road Residences." · catalogue lines with totals worked out by Spine · Activity "Created as a draft · via Claude for Priya Raman" · "Edit" "Send quote"

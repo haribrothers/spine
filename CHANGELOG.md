@@ -88,7 +88,7 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - **Wiring and limits (D-258):** stateless Streamable HTTP in the NestJS API with `@modelcontextprotocol/sdk`; 15-minute JWTs for the MCP address, rotating refresh tokens, and a per-request connection check, so disconnecting is immediate; 120 calls a minute per connection, 30 drafts an hour; every call in `agent_requests` and the audit log without arguments' text or results.
 - **Contracts:** routes and events in `05-api.md`, tables in `04-data-model.md`, a "connected agents" section and principle 5's outbound call in `07-security.md`, risks R-27 to R-29, the tech stack, the overview's non-goal and the roadmap.
 - **Renumbering:** Packaging & 1.0 is Phase 12 in the phase plan, progress, feature files, QA script, risks and code comments; past decisions and changelog entries keep their numbers (as D-195 did). The Expo SDK 58 upgrade (R-25) follows Phase 11.
-- **Next:** the ten screens are drawn before the build.
+- **Screens:** ten, drawn in Claude Design (project "Spine web — Phase 11 connected agents", canvases 01 Settings, 02 Connect, 03 Connections and audit) on the refined web app, with light and dark versions of the settings pane and the consent page, exported to `docs/design/screens/` and listed in `screens.md` under "Connected agents (MCP)". A draft quote an agent creates has no number until it's sent, so US-MCP-07's answer names the customer and total instead.
 
 ### 2026-10-19 — AI suggestions while reconciling (US-AI-14)
 

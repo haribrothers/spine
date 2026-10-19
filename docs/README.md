@@ -44,7 +44,7 @@ Spine is a self-hosted business management app for small service and project bus
 ## Design
 
 - Brand book, tokens, motion and one page per component: [design/README.md](design/README.md).
-- Screens: all 361 screens in [design/screens.md](design/screens.md) — 172 captured from the running app, 189 drawn on the design canvas for what isn't built yet. Images are in `design/screens/`.
+- Screens: all 371 screens in [design/screens.md](design/screens.md) — 172 captured from the running app, 199 drawn on the design canvas for what isn't built yet. Images are in `design/screens/`.
 - Native implementation rules: [design/native-notes.md](design/native-notes.md).
 
 ## Other docs
