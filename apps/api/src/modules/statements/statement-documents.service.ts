@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
-import type { EmailDraft } from "@spine/shared";
+import type { EmailDraft, EmailTemplateText } from "@spine/shared";
 import { draftOf } from "../email-templates/email-documents.service";
 import { loadEmailText } from "../email/email-text";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -12,7 +12,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { EmailService } from "../email/email.service";
 import { loadEmailBrand } from "../email/email-brand";
 import { emailMoney, renderEmail } from "../email/email-layout";
-import { statementEmail } from "../email/email-templates";
+import { statementEmail, type EmailTemplate } from "../email/email-templates";
 import { FilesService } from "../files/files.service";
 import { loadSignatureDataUri } from "../pdf/signature";
 import { SettingsService } from "../org/settings.service";
@@ -59,6 +59,12 @@ export class StatementDocumentsService {
 
   /** US-SET-21 — what the statement dialog starts from: the "Statement" template with this customer's period and balance. */
   async draft(orgId: string, contactId: string, query: StatementQuery): Promise<EmailDraft> {
+    const { text, template, to } = await this.emailParts(orgId, contactId, query);
+    return draftOf("statement", text, { template, to, hasPdf: true });
+  }
+
+  /** The "Statement" template and this customer's email built from it — the dialog's draft, and what AI drafts from (US-AI-11). */
+  async emailParts(orgId: string, contactId: string, query: StatementQuery): Promise<{ text: EmailTemplateText; template: EmailTemplate; to: string | null }> {
     const statement = await this.statements.build(orgId, contactId, query);
     const brand = await loadEmailBrand(this.db, orgId);
     const text = await loadEmailText(this.db, orgId, "statement");
@@ -71,7 +77,7 @@ export class StatementDocumentsService {
       currency: statement.currency,
       text,
     });
-    return draftOf("statement", text, { template, to: statement.contactEmail ?? null, hasPdf: true });
+    return { text, template, to: statement.contactEmail ?? null };
   }
 
   async send(orgId: string, contactId: string, actorUserId: string, input: SendStatementInput): Promise<{ sentTo: string }> {

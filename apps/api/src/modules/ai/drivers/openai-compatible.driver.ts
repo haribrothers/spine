@@ -43,7 +43,7 @@ export class OpenAiCompatibleDriver implements AiDriver {
     const body = await this.http.json<{ choices?: { message?: { content?: unknown } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } }>(`${this.base}/chat/completions`, {
       method: "POST",
       headers: this.headers,
-      body: { model, max_tokens: prompt.maxTokens, temperature: 0, messages: [{ role: "system", content: prompt.system }, { role: "user", content }] },
+      body: { model, max_tokens: prompt.maxTokens, temperature: prompt.temperature ?? 0, messages: [{ role: "system", content: prompt.system }, { role: "user", content }] },
     });
     const answer = body.choices?.[0]?.message?.content;
     // Some servers answer with content parts instead of a string.

@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — Draft a customer email with AI (US-AI-11, D-254)
+
+- **"Draft with AI" in every send dialog** — quotes, invoices, reminders, receipts, credit notes, Receivables and the statement dialog — for people who may send the email and use AI. AI's draft shows as a suggestion above the email ("Use this draft", "Try again", "Discard"); Subject and Message change only when it's used, tagged "Drafted by AI" until edited, with "Undo".
+- **The document's own details, never the model's:** the model writes placeholders and Spine fills them, the same values as the template; a detail it wrote out goes back to Spine's value, and a draft with a made-up placeholder or number is refused as "AI didn't answer…". The text sent to the model is redacted (D-165); payment instructions aren't sent.
+- **Highlights:** the details Spine filled in are highlighted in the Message — the template draft too — on screen only. `RichTextEditor` and `RichTextContent` take `highlights` (documented in the design system). The statement dialog now catches a placeholder Spine doesn't know, like the other send dialogs.
+- **Design:** the dialog was redrawn from the app's real rich-text dialog ("05 Emails v2"): `SendEmailDialogAi`, `SendEmailDialogAiSuggestion`, `SendEmailDialogAiUsed`. D-171 amended.
+- **API:** `POST /ai/draft-email` (no Idempotency-Key — it saves nothing); `/email-drafts` and the statement draft return `values`. Drafting runs at temperature 0.7 so "Try again" differs.
+- **Tests:** API (`us-ai-11` unit and integration; US-OPS-08, US-SET-21 and statements suites), web (`us-ai-11`), `@spine/ui` highlights a11y, e2e `us-ai-11.spec.ts`. QA section 244.
+
 ### 2026-10-19 — The field app opens on iOS 27, back works on Android 13–15, and Maestro flows for US-AI-10 (D-252, D-253)
 
 - **iOS 27:** the app stopped at launch on the iOS 27 simulator (iOS now requires the scene lifecycle). It moves to Expo SDK 57.0.30 and turns on Expo's own scene support (`expo-build-properties` `ios.enableSceneSupport`); the `expo-modules-core` override and the `expo-modules-jsi` patch go, as 57.1.2 fixes that build error upstream. A stopgap until SDK 58, which is tracked as R-25 before Phase 11. `@expo/ui` 57.0.25 changed how a sheet's and a border's colours are passed; the text field and two tests follow.

@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { aiProviderCheckSchema, aiSettingsUpdateSchema, readDocumentSchema } from "@spine/shared";
+import { aiProviderCheckSchema, aiSettingsUpdateSchema, draftEmailSchema, readDocumentSchema } from "@spine/shared";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
 import { AiRequestService } from "./ai-request.service";
+import { DraftEmailService } from "./draft-email/draft-email.service";
 import { ReadDocumentService } from "./read-document/read-document.service";
 import { ReadReceiptService } from "./read-document/read-receipt.service";
 
@@ -73,6 +74,7 @@ export class AiController {
     private readonly requests: AiRequestService,
     private readonly readDocument: ReadDocumentService,
     private readonly readReceipt: ReadReceiptService,
+    private readonly draftEmail: DraftEmailService,
   ) {}
 
   @Get("status")
@@ -88,5 +90,14 @@ export class AiController {
     if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Choose a file to read."));
     const orgId = requireOrgId(session);
     return parsed.data.target === "expense" ? this.readReceipt.read(orgId, session.user.id, parsed.data.fileId) : this.readDocument.readVendorBill(orgId, session.user.id, parsed.data.fileId);
+  }
+
+  /** US-AI-11 — a draft of the send dialog's email. Saves nothing, so no Idempotency-Key (05-api). */
+  @Post("draft-email")
+  @HttpCode(200)
+  async draft(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = draftEmailSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Choose the email to draft."));
+    return this.draftEmail.draft(requireOrgId(session), session.user.id, parsed.data);
   }
 }

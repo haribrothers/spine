@@ -29,6 +29,14 @@ function RichTextEditorInsertDemo() {
   );
 }
 
+/** The details Spine filled into an email, marked on screen only (US-AI-11). */
+const FILLED = ["is 35 days overdue", "INV-0042", "Alan"];
+
+function RichTextEditorHighlightsDemo() {
+  const [value, setValue] = useState("<p>Hi Alan,</p><p>This is a friendly reminder that invoice INV-0042 is 35 days overdue.</p>");
+  return <RichTextEditor value={value} onValueChange={setValue} aria-label="Message" highlights={FILLED} />;
+}
+
 function RichTextContentDemo() {
   return <RichTextContent html="<p>Payment due within <strong>14 days</strong> of invoice date. See our <a href='#'>full policy</a>.</p>" />;
 }
@@ -53,6 +61,19 @@ export default function RichTextEditorPage() {
         </DocLead>
         <ComponentPreview>
           <RichTextEditorInsertDemo />
+        </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="highlights" title="Highlighting filled-in details">
+        <DocLead>
+          `highlights` marks each string wherever it appears as a whole word or phrase — the send dialog uses it for the details Spine filled
+          into an email. It&apos;s on screen only: the HTML the editor emits doesn&apos;t change, and a marked detail someone edits loses its mark.
+          RichTextContent takes the same prop. Say what the marks mean in the field&apos;s helper text.
+        </DocLead>
+        <ComponentPreview
+          code={`<RichTextEditor value={value} onValueChange={setValue} aria-label="Message" highlights={["is 35 days overdue", "INV-0042", "Alan"]} />`}
+        >
+          <RichTextEditorHighlightsDemo />
         </ComponentPreview>
       </DocSection>
 
@@ -89,6 +110,7 @@ export default () => {
             { prop: "aria-label", type: "string" },
             { prop: "onReady", type: "(handle: { insertText(text): void; focus(): void }) => void" },
             { prop: "onFocus", type: "() => void" },
+            { prop: "highlights", type: "readonly string[]", defaultValue: "[]" },
             { prop: "error", type: "boolean", defaultValue: "false" },
             { prop: "id / aria-invalid / aria-required / aria-describedby", type: "passed through to the editable region" },
           ]}
@@ -98,6 +120,7 @@ export default () => {
           rows={[
             { prop: "html", type: "string" },
             { prop: "className", type: "string" },
+            { prop: "highlights", type: "readonly string[]", defaultValue: "[]" },
           ]}
         />
       </DocSection>
@@ -125,6 +148,7 @@ export default () => {
           items={[
             "Toolbar buttons expose aria-pressed reflecting the active mark/block at the cursor.",
             "Pair with FormField for a proper label — id/aria-invalid/aria-required/aria-describedby all pass through to the editable region the same way Input/Textarea do.",
+            "Highlights are a tint with an underline, never colour alone, and only an aid: the field's helper text says what they mark. RichTextContent uses <mark>.",
             "Keyboard: standard contenteditable navigation, plus the browser's own text-editing shortcuts (Ctrl/Cmd+B for bold, Ctrl/Cmd+I for italic) work natively via Tiptap.",
           ]}
         />

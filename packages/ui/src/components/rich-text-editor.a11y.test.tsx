@@ -61,3 +61,31 @@ describe("RichTextContent a11y", () => {
     await expectNoA11yViolations(container);
   });
 });
+
+describe("RichTextEditor and RichTextContent highlights (US-AI-11)", () => {
+  it("marks each whole word or phrase on screen only, and stays accessible", async () => {
+    let html = "<p>Hi Alan, invoice INV-0042 is 35 days overdue. Alana knows.</p>";
+    const { container } = render(<RichTextEditor value={html} onValueChange={(v) => (html = v)} aria-label="Message" highlights={["INV-0042", "Alan", "is 35 days overdue"]} />);
+    await waitFor(() => expect(container.querySelectorAll("[data-highlight]").length).toBe(3));
+    expect([...container.querySelectorAll("[data-highlight]")].map((el) => el.textContent)).toEqual(["Alan", "INV-0042", "is 35 days overdue"]);
+    await expectNoA11yViolations(container);
+  });
+
+  it("follows a new list of highlights without changing the text", async () => {
+    const changes: string[] = [];
+    const { container, rerender } = render(<RichTextEditor value="<p>Hi Alan</p>" onValueChange={(v) => changes.push(v)} highlights={[]} />);
+    await waitFor(() => expect(container.querySelector(".ProseMirror")).toBeTruthy());
+    expect(container.querySelectorAll("[data-highlight]").length).toBe(0);
+    rerender(<RichTextEditor value="<p>Hi Alan</p>" onValueChange={(v) => changes.push(v)} highlights={["Alan"]} />);
+    await waitFor(() => expect(container.querySelectorAll("[data-highlight]").length).toBe(1));
+    // Whatever the editor reports (it reports its content once on mount), the text is as it was.
+    expect(changes.every((html) => html === "<p>Hi Alan</p>")).toBe(true);
+  });
+
+  it("RichTextContent marks the strings inside the sanitized HTML", async () => {
+    const { container } = render(<RichTextContent html="<p>Hi <strong>Alan</strong>, $800.00 is due.</p><script>x</script>" highlights={["$800.00", "Alan"]} />);
+    expect([...container.querySelectorAll("mark[data-highlight]")].map((el) => el.textContent)).toEqual(["Alan", "$800.00"]);
+    expect(container.querySelector("script")).toBeNull();
+    await expectNoA11yViolations(container);
+  });
+});

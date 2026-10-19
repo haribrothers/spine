@@ -13,5 +13,6 @@ import { StatementsService } from "./statements.service";
   imports: [AuditModule, EmailModule, FilesModule, LedgerModule, OrgModule],
   controllers: [StatementsController],
   providers: [StatementsService, StatementDocumentsService],
+  exports: [StatementDocumentsService],
 })
 export class StatementsModule {}

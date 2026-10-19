@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Checkbox, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, RichTextEditor, Spinner } from "@spine/ui";
 import { emailBodyText, unknownPlaceholder, unknownPlaceholderMessage, type EmailDraft, type EmailOverride } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
+import { AiField } from "./ai-suggested-tag";
+import { EmailAiDraftBar, emailMessageHelp, useEmailAiDraft } from "./email-ai-draft";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,6 +14,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * and Message (rich text, D-189) start from the email's template with the document's details
  * filled in, and can be changed for this one email. `onSend` gets only what
  * the dialog holds; the caller posts it to the document's send route.
+ * US-AI-11 — the details Spine filled in are highlighted, and "Draft with
+ * AI" offers a draft to use or not.
  */
 export function SendEmailDialog({
   open,
@@ -43,9 +47,23 @@ export function SendEmailDialog({
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
   const [sending, setSending] = useState(false);
+  // `/email-drafts/<type>/<id>`: the document AI drafts for.
+  const documentId = draftPath.split("/").at(-1) ?? "";
+  const aiInput = useMemo(() => (draft ? { type: draft.type, documentId } : null), [draft, documentId]);
+  const ai = useEmailAiDraft({
+    input: aiInput,
+    fields: { subject, message },
+    apply: (next) => {
+      setSubject(next.subject);
+      setMessage(next.message);
+    },
+  });
+  const { reset: resetAi } = ai;
+  const highlights = useMemo(() => [...new Set([...(draft?.values ?? []), ...(ai.used?.draft.values ?? [])])], [draft, ai.used]);
 
   useEffect(() => {
     if (!open) return;
+    resetAi();
     setDraft(null);
     setLoadError(null);
     setError(null);
@@ -60,7 +78,7 @@ export function SendEmailDialog({
         setMessage(d.message);
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "The email didn't load. Try again."));
-  }, [open, draftPath]);
+  }, [open, draftPath, resetAi]);
 
   const placeholderError = (text: string) => {
     const name = draft ? unknownPlaceholder(text, draft.type) : null;
@@ -107,22 +125,28 @@ export function SendEmailDialog({
               <FormField label="To" required errorText={touched ? toError : undefined}>
                 {(field) => <Input {...field} type="email" required={false} value={to} onChange={(e) => setTo(e.target.value)} autoComplete="email" />}
               </FormField>
-              <FormField label="Subject" errorText={touched || placeholderError(subject) ? subjectError : undefined}>
-                {(field) => <Input {...field} required={false} maxLength={200} value={subject} onChange={(e) => setSubject(e.target.value)} />}
-              </FormField>
-              <FormField label="Message" helperText="Starts from your template in Settings › Emails. Changes here apply to this email only." errorText={touched || placeholderError(message) ? messageError : undefined}>
-                {(field) => (
-                  <RichTextEditor
-                    id={field.id}
-                    aria-describedby={field["aria-describedby"]}
-                    aria-invalid={field["aria-invalid"]}
-                    aria-label="Message"
-                    className="[&_.ProseMirror]:min-h-40"
-                    value={message}
-                    onValueChange={setMessage}
-                  />
-                )}
-              </FormField>
+              <EmailAiDraftBar state={ai} type={draft.type} />
+              <AiField suggested={ai.subjectDrafted} label="Drafted by AI">
+                <FormField label="Subject" errorText={touched || placeholderError(subject) ? subjectError : undefined}>
+                  {(field) => <Input {...field} required={false} maxLength={200} value={subject} onChange={(e) => setSubject(e.target.value)} />}
+                </FormField>
+              </AiField>
+              <AiField suggested={ai.messageDrafted} label="Drafted by AI">
+                <FormField label="Message" helperText={emailMessageHelp(draft.type)} errorText={touched || placeholderError(message) ? messageError : undefined}>
+                  {(field) => (
+                    <RichTextEditor
+                      id={field.id}
+                      aria-describedby={field["aria-describedby"]}
+                      aria-invalid={field["aria-invalid"]}
+                      aria-label="Message"
+                      className="[&_.ProseMirror]:min-h-40"
+                      value={message}
+                      onValueChange={setMessage}
+                      highlights={highlights}
+                    />
+                  )}
+                </FormField>
+              </AiField>
               {draft.hasPdf && pdfLabel && (
                 <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[14px] text-on-surface">
                   <Checkbox checked={attachPdf} onCheckedChange={(v) => setAttachPdf(v === true)} />

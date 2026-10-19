@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import { emailBodyHtml, fillPlaceholders, type EmailDraft, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
+import { emailBodyHtml, fillPlaceholders, filledValues, type EmailDraft, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { contacts, creditNotes, invoices, payments, quotes } from "../../db/schema";
@@ -126,7 +126,7 @@ export class EmailDocumentsService {
   }
 }
 
-/** The dialog's starting text: subject and message with this document's details, `{link}` kept for the send to fill. */
+/** The dialog's starting text: subject and message with this document's details, `{link}` kept for the send to fill, and those details for the highlight (US-AI-11). */
 export function draftOf(type: EmailTemplateType, text: EmailTemplateText, built: Pick<BuiltEmail, "template" | "to" | "hasPdf">): EmailDraft {
   const values = built.template.values ?? {};
   return {
@@ -136,5 +136,6 @@ export function draftOf(type: EmailTemplateType, text: EmailTemplateText, built:
     // D-189: the message is the editor's HTML, with values escaped.
     message: fillPlaceholders(emailBodyHtml(text.body), Object.fromEntries(Object.entries(values).map(([k, v]) => [k, escapeHtml(v ?? "")]))).trim(),
     hasPdf: built.hasPdf,
+    values: filledValues(values),
   };
 }

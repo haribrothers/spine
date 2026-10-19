@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMAIL_TEMPLATE_TYPES } from "./email-templates.ts";
 
 /**
  * US-AI-01, US-AI-02 (D-162–D-164, D-242) — Settings › AI assistant: one
@@ -165,6 +166,32 @@ export const readDocumentSchema = z.object({
   target: z.enum(AI_DOCUMENT_TARGETS),
 });
 export type ReadDocumentInput = z.infer<typeof readDocumentSchema>;
+
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the statement's period.");
+
+/**
+ * US-AI-11 (D-171, D-254) — `POST /ai/draft-email`: a draft of the send
+ * dialog's email for one document. A statement's document is the contact,
+ * with the period the dialog shows.
+ */
+export const draftEmailSchema = z
+  .object({
+    type: z.enum(EMAIL_TEMPLATE_TYPES),
+    documentId: z.uuid("Choose the document to write about."),
+    from: day.optional(),
+    to: day.optional(),
+    mode: z.enum(["open", "all"]).optional(),
+  })
+  .refine((d) => d.type !== "statement" || (d.from !== undefined && d.to !== undefined && d.from <= d.to), { message: "Pick the statement's period.", path: ["from"] });
+export type DraftEmailInput = z.infer<typeof draftEmailSchema>;
+
+/** What "Draft with AI" gets back: the email with this document's details filled in by Spine — never the model's — and those details, for the highlight (D-254). */
+export interface AiEmailDraft {
+  subject: string;
+  /** The editor's HTML. */
+  message: string;
+  values: string[];
+}
 
 /** A line read from a document, matched to the business's items, taxes and accounts by Spine (D-170). */
 export interface DocumentSuggestionLine {

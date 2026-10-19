@@ -5256,6 +5256,23 @@ On an iPhone and an Android phone, signed in as Marcus (Field). The owner has AI
 14. Automated on a simulator: `e2e/us-ai-10-receipt.yaml` (iOS and Android) does steps 1–3 with a photo from the library; `e2e/us-ai-10-offline.yaml` (Android) does step 5.
 15. Android 13–15 (D-253): on an Android 15 phone or emulator, the back gesture and button go back a screen — from a job to Jobs, from Sync to Today, from New expense to Expenses — and close the app only from a tab's first screen. Same on Android 16+.
 
+## 244. Draft a customer email with AI (US-AI-11, Phase 10)
+
+As an Owner, with AI on against a model on your network (or the stub) and "Draft customer emails" on. Compare with `SendEmailDialogAi`, `SendEmailDialogAiSuggestion` and `SendEmailDialogAiUsed`. Use an overdue invoice with a balance (the demo data has one).
+
+1. The invoice › Send reminder: the dialog opens with the reminder template filled in as before. In the Message, the customer's name, the invoice number and "is <n> days overdue" are highlighted (a tint with an underline); the helper text reads "Starts from your template in Settings › Emails. Highlighted words are this invoice's details — Spine fills them in. Changes here apply to this email only." Subject isn't highlighted.
+2. "Draft with AI" sits between To and Subject with "Shows AI's draft first — your email stays as it is.". Press it: "Drafting…" with Cancel; the fields stay editable. Then a panel "AI's draft — check it, then use it. Your email below doesn't change until you do." shows a subject and message with the invoice's details highlighted; Subject and Message below are unchanged.
+3. Every highlighted detail in the draft matches the invoice exactly (number, amounts, due date, days overdue, business name). "Try again" gives another draft; "Discard" closes the panel and nothing changed.
+4. "Use this draft": Subject and Message take the draft, each tagged "Drafted by AI"; "Using AI's draft — check it before sending." with "Undo". Type in the Subject: its tag goes. "Undo": both fields are back as they were, with no tags.
+5. Use a draft and press "Send reminder": "Reminder sent"; the email log shows it with the drafted subject, and the email received reads as the dialog did, with no highlights.
+6. The same "Draft with AI" in: Email invoice, Send quote (a draft quote keeps `{document_number}` and `{link}` for the send), Email receipt (a payment), Email credit note, Receivables › Send reminder, and a contact's Send a statement (the draft follows the period shown; changing the period after using a draft doesn't overwrite it).
+7. Hidden: AI off, "Draft customer emails" off, or a Staff member without "Use AI features". Staff with the right but without "Send a payment reminder" don't get the reminder dialog at all. With the monthly budget used up: the button is dimmed with "AI is paused until 1 <month> — this month's budget is used up."
+8. Stop the model and press "Draft with AI": "AI didn't answer. Fill this in by hand or try again. Your email is as it was." with "Try again".
+9. A model that makes up a number ("pay within 7 days", a different amount) gets the same "AI didn't answer…" — check with the stub's reply, or note it if your model never does it.
+10. Type `{invoice_no}` in the statement dialog's Subject: "{invoice_no} isn't a placeholder Spine knows. Use one from the list." and "Send statement" is disabled.
+11. Keyboard and screen reader: the suggestion is a region named "AI's draft"; its buttons are reachable by Tab; the tags read "Drafted by AI". Dark mode: the panel, highlights and tags use the dark tokens.
+12. Regression: the send dialogs without AI send as before; Settings › Emails' editor and the quote notes editor show no highlights; the email template preview is unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

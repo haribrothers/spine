@@ -5801,14 +5801,32 @@ Links to: `MobExpensesListAndroid`
 
 Shows: Full-screen dialog, outlined fields · the same note, tags and fields as iOS · tonal "Read again", outlined "Retake"
 
-### SendEmailDialogAi — The send dialog — a reminder drafted by AI in a firm tone
-**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11, US-AI-12 · **Source:** Claude Design
+### SendEmailDialogAi — The send dialog — opens with the template, this invoice's details highlighted
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11, US-AI-12 · **Source:** Claude Design ("05 Emails v2", D-254)
 
 ![SendEmailDialogAi](screens/SendEmailDialogAi.webp)
 
+Links to: `SendEmailDialogAiSuggestion`, `EmailLog`
+
+Shows: "Send payment reminder — DEMO-INV-0010" · "Halcyon Tech Parks Pvt Ltd · ₹4,84,148.10 due" · To · "Draft with AI" with Tone "Friendly" "Formal" "Firm" and "Shows AI's draft first — your email stays as it is." · Subject · the rich-text Message with "Halcyon", "DEMO-INV-0010" and "is 35 days overdue" highlighted · "Starts from your template in Settings › Emails. Highlighted words are this invoice's details — Spine fills them in. Changes here apply to this email only." · "Attach the invoice PDF" · "Cancel" "Send reminder"
+
+### SendEmailDialogAiSuggestion — AI's draft as a suggestion above the untouched email
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11, US-AI-12 · **Source:** Claude Design ("05 Emails v2", D-254)
+
+![SendEmailDialogAiSuggestion](screens/SendEmailDialogAiSuggestion.webp)
+
+Links to: `SendEmailDialogAiUsed`
+
+Shows: a panel between To and Subject — "AI's draft — check it, then use it. Your email below doesn't change until you do." with the tone · its Subject and Message, the invoice's details highlighted · "Use this draft" "Try again" "Discard" · "Highlighted details are this invoice's — AI can't change them." · Subject and Message below as they were
+
+### SendEmailDialogAiUsed — After "Use this draft": tagged until changed, with Undo
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11 · **Source:** Claude Design ("05 Emails v2", D-254)
+
+![SendEmailDialogAiUsed](screens/SendEmailDialogAiUsed.webp)
+
 Links to: `EmailLog`
 
-Shows: "Send a payment reminder" for INV-0031 · "Draft with AI" with Tone "Friendly" "Formal" "Firm" · "Drafted by AI — check it before sending. Amounts, dates and numbers stay as placeholders and Spine fills them when it sends." "Try again" "Undo" · Subject and Message tagged "Drafted by AI" with {document_number}, {due_status}, {balance_due} and the other placeholders highlighted · "Sent as: …" · "Attach INV-0031.pdf" · "Send reminder"
+Shows: "Using AI's draft — check it before sending. The highlighted details are this invoice's; edit anything else as you like." with "Undo" · Subject and Message tagged "Drafted by AI" holding the draft, details highlighted · "Send reminder"
 
 ### QuoteBuilderAi — Compact quote builder — "Draft lines with AI" panel and the review list
 **Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-13 · **Source:** Claude Design

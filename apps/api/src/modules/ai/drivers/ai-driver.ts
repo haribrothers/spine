@@ -29,6 +29,8 @@ export interface AiPrompt {
   /** Base64 images, in order (a photo, or a scanned PDF's pages). */
   images?: { mimeType: string; base64: string }[];
   maxTokens: number;
+  /** 0 unless a feature wants variety: an email draft's "Try again" should give another one (D-254). */
+  temperature?: number;
 }
 
 export interface AiCompletion {

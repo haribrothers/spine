@@ -612,7 +612,7 @@ Stories and screens reworked for the refined web app before building (D-242), on
 - [x] US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo
 - [x] US-AI-09 · Fill in an expense from a receipt
 - [x] US-AI-10 · Fill in my expense from a receipt on the phone
-- [ ] US-AI-11 · Draft a customer email with AI
+- [x] US-AI-11 · Draft a customer email with AI
 - [ ] US-AI-12 · Draft a payment reminder or statement email in a chosen tone
 - [ ] US-AI-13 · Draft quote lines from an enquiry
 - [ ] US-AI-14 · Get AI suggestions while reconciling

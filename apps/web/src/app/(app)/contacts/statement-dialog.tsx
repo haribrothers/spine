@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { emailBodyText, type EmailDraft } from "@spine/shared";
+import { emailBodyText, unknownPlaceholder, unknownPlaceholderMessage, type EmailDraft } from "@spine/shared";
 import {
   Alert,
   AlertDescription,
@@ -34,6 +34,8 @@ import {
   type StatementPeriod,
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { AiField } from "../../../components/ai-suggested-tag";
+import { EmailAiDraftBar, emailMessageHelp, useEmailAiDraft } from "../../../components/email-ai-draft";
 import { formatMoney } from "../../../lib/money";
 import { filenameFrom, saveBlob } from "../../../lib/save-file";
 
@@ -49,7 +51,8 @@ function shortDate(value: string): string {
 /**
  * US-PAY-14 — "Send a statement" (`ContactStatementDialog`): the period and
  * what to show, a summary for the period, and who it goes to. "Download
- * PDF" saves the same PDF without emailing it.
+ * PDF" saves the same PDF without emailing it. US-AI-11 — the details
+ * Spine filled in are highlighted, and "Draft with AI" offers a draft.
  */
 export function StatementDialog({
   open,
@@ -76,13 +79,7 @@ export function StatementDialog({
   const [statement, setStatement] = useState<Statement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"send" | "download" | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setError(null);
-    setEmail(contactEmail ?? "");
-    setEdited(false);
-  }, [open, contactEmail]);
+  const [values, setValues] = useState<string[]>([]);
 
   const range = useMemo(() => {
     if (period !== "custom") return statementPeriodRange(period, toIsoDate(new Date()));
@@ -90,6 +87,34 @@ export function StatementDialog({
     return { from: toIsoDate(customFrom), to: toIsoDate(customTo) };
   }, [period, customFrom, customTo]);
   const query = range ? `from=${range.from}&to=${range.to}&mode=${mode}` : null;
+
+  const aiInput = useMemo(() => (range ? { type: "statement" as const, documentId: contactId, from: range.from, to: range.to, mode } : null), [range, contactId, mode]);
+  const ai = useEmailAiDraft({
+    input: aiInput,
+    fields: { subject, message },
+    apply: (next) => {
+      setSubject(next.subject);
+      setMessage(next.message);
+      setEdited(true);
+    },
+  });
+  const { reset: resetAi } = ai;
+  const highlights = useMemo(() => [...new Set([...values, ...(ai.used?.draft.values ?? [])])], [values, ai.used]);
+  // US-AI-11: a placeholder Spine doesn't know is caught here, as in the other send dialogs.
+  const placeholderError = (text: string) => {
+    const name = unknownPlaceholder(text, "statement");
+    return name === null ? undefined : unknownPlaceholderMessage(name);
+  };
+  const subjectError = placeholderError(subject);
+  const messageError = placeholderError(message);
+
+  useEffect(() => {
+    if (!open) return;
+    setError(null);
+    setEmail(contactEmail ?? "");
+    setEdited(false);
+    resetAi();
+  }, [open, contactEmail, resetAi]);
 
   useEffect(() => {
     if (!open || !query || edited) return;
@@ -100,6 +125,7 @@ export function StatementDialog({
         if (!current) return;
         setSubject(d.subject);
         setMessage(d.message);
+        setValues(d.values);
       })
       .catch(() => {});
     return () => {
@@ -135,7 +161,7 @@ export function StatementDialog({
   }
 
   async function send() {
-    if (!range) return;
+    if (!range || subjectError || messageError) return;
     setBusy("send");
     setError(null);
     try {
@@ -219,33 +245,40 @@ export function StatementDialog({
           </dl>
 
           <FormField label="To">{(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />}</FormField>
-          <FormField label="Subject">
-            {(field) => (
-              <Input
-                {...field}
-                maxLength={200}
-                value={subject}
-                onChange={(e) => {
-                  setSubject(e.target.value);
-                  setEdited(true);
-                }}
-              />
-            )}
-          </FormField>
-          <FormField label="Message" helperText="Starts from your template in Settings › Emails. Changes here apply to this email only.">
-            {(field) => (
-              <RichTextEditor
-                id={field.id}
-                aria-describedby={field["aria-describedby"]}
-                aria-label="Message"
-                value={message}
-                onValueChange={(html) => {
-                  setMessage(html);
-                  setEdited(true);
-                }}
-              />
-            )}
-          </FormField>
+          <EmailAiDraftBar state={ai} type="statement" />
+          <AiField suggested={ai.subjectDrafted} label="Drafted by AI">
+            <FormField label="Subject" errorText={subjectError}>
+              {(field) => (
+                <Input
+                  {...field}
+                  maxLength={200}
+                  value={subject}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    setEdited(true);
+                  }}
+                />
+              )}
+            </FormField>
+          </AiField>
+          <AiField suggested={ai.messageDrafted} label="Drafted by AI">
+            <FormField label="Message" helperText={emailMessageHelp("statement")} errorText={messageError}>
+              {(field) => (
+                <RichTextEditor
+                  id={field.id}
+                  aria-describedby={field["aria-describedby"]}
+                  aria-invalid={field["aria-invalid"]}
+                  aria-label="Message"
+                  value={message}
+                  onValueChange={(html) => {
+                    setMessage(html);
+                    setEdited(true);
+                  }}
+                  highlights={highlights}
+                />
+              )}
+            </FormField>
+          </AiField>
           {noInvoices && <p className="text-[13px] text-on-surface-muted">{NO_INVOICES_YET}</p>}
         </DialogBody>
         <DialogFooter>
@@ -255,7 +288,7 @@ export function StatementDialog({
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={busy !== null}>
             Cancel
           </Button>
-          <Button type="button" onClick={send} disabled={!statement || noInvoices || !email.trim() || busy !== null}>
+          <Button type="button" onClick={send} disabled={!statement || noInvoices || !email.trim() || Boolean(subjectError || messageError) || busy !== null}>
             {busy === "send" ? <Spinner size="sm" /> : "Send statement"}
           </Button>
         </DialogFooter>

@@ -40,7 +40,7 @@ export class AnthropicDriver implements AiDriver {
     const body = await this.http.json<{ content?: { type?: string; text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } }>(`${BASE}/messages`, {
       method: "POST",
       headers: this.headers,
-      body: { model, max_tokens: prompt.maxTokens, temperature: 0, system: prompt.system, messages: [{ role: "user", content }] },
+      body: { model, max_tokens: prompt.maxTokens, temperature: prompt.temperature ?? 0, system: prompt.system, messages: [{ role: "user", content }] },
     });
     const text = (body.content ?? []).filter((part) => part.type === "text").map((part) => part.text ?? "").join("");
     return { text, usage: { input: body.usage?.input_tokens ?? 0, output: body.usage?.output_tokens ?? 0 } };
