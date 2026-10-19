@@ -1,6 +1,6 @@
 # Progress
 
-Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Phases 0–9 are built (Phase 5 merged on 2026-10-09); Phases 10 and 11 are next. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 11 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Phases 0–10 are built (Phase 10 merged on 2026-10-19); Phases 11 (Connected agents, [D-256](prd/12-decisions.md)) and 12 (Packaging & 1.0) are next. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 moved after them ([D-133](prd/12-decisions.md); it's Phase 12 since [D-256](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
 
 ## Phase 0 · Foundation
 
@@ -617,7 +617,21 @@ Stories and screens reworked for the refined web app before building (D-242), on
 - [x] US-AI-13 · Draft quote lines from an enquiry
 - [x] US-AI-14 · Get AI suggestions while reconciling
 
-## Phase 11 · Packaging & 1.0
+## Phase 11 · Connected agents (MCP)
+
+Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
+
+- [ ] US-MCP-01 · Move Spine to Better Auth 1.7 with nobody noticing
+- [ ] US-MCP-02 · Switch connected agents on or off
+- [ ] US-MCP-03 · Connect an AI agent to Spine
+- [ ] US-MCP-04 · See and disconnect connected agents
+- [ ] US-MCP-05 · Ask an agent to find and read records
+- [ ] US-MCP-06 · Ask an agent who owes us and how the business is doing
+- [ ] US-MCP-07 · Have an agent start work as drafts
+- [ ] US-MCP-08 · See every agent request in the audit log
+- [ ] US-MCP-09 · Start from a ready-made task
+
+## Phase 12 · Packaging & 1.0
 
 - [ ] US-ONB-09 · Load demo data to explore
 - [ ] US-SET-08 · Remove demo data and keep my real data

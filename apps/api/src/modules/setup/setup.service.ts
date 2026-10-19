@@ -21,7 +21,7 @@ const SEEDED_ACCOUNT_NAMES = new Map<string, string>([
  * US-ONB-15 (D-155, D-194) — what's set up and what's left. Each card is
  * worked out from the business's own data, never ticked by hand, so it
  * turns "Done" the moment the thing is done. A loaded demo counts as it
- * stands (the page says so); Backups can't be checked until Phase 11 and
+ * stands (the page says so); Backups can't be checked until Phase 12 and
  * is `done: null`; Field app only applies while Jobs & field is on.
  */
 @Injectable()
@@ -109,7 +109,7 @@ export class SetupService {
       modules: setting("modules") !== undefined,
       team: others.length > 0 || invites.length > 0,
       email: this.email.isConfigured(),
-      // D-194: nothing to check until backups exist (US-OPS-03, Phase 11).
+      // D-194: nothing to check until backups exist (US-OPS-03, Phase 12).
       backups: null,
       field_app: fieldPeople.length > 0,
     };

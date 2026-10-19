@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — Phase 11 · Connected agents (MCP) specified; Packaging & 1.0 becomes Phase 12 (D-256–D-259)
+
+- **New phase, branch `phase-11-mcp`.** People will be able to use Spine from Claude, ChatGPT, Claude Code and other MCP clients: one MCP endpoint, `<APP_URL>/api/mcp`, where an agent acts as the person who connected it. Nine stories in `docs/features/22-mcp.md` (US-MCP-01 to US-MCP-09). This narrows the "public REST API for third parties" non-goal; there's still no public REST contract or plugin API.
+- **The Owner's choices (D-256):** read and drafts only — search, records, reports, and draft leads, quotes, vendor bills and notes; never issue, send, record, approve, void, match, post, delete or change settings. OAuth 2.1 through Better Auth, no API keys. Everyone can connect within their own role once an Owner switches Connected agents on (off by default). Expenses aren't a draft tool: they have no draft state (D-259).
+- **Better Auth 1.7 first (D-257):** the MCP authorization spec (2026-07-28) prefers Client ID Metadata Documents, which Better Auth supports from 1.7; the upgrade is US-MCP-01, a commit of its own.
+- **Wiring and limits (D-258):** stateless Streamable HTTP in the NestJS API with `@modelcontextprotocol/sdk`; 15-minute JWTs for the MCP address, rotating refresh tokens, and a per-request connection check, so disconnecting is immediate; 120 calls a minute per connection, 30 drafts an hour; every call in `agent_requests` and the audit log without arguments' text or results.
+- **Contracts:** routes and events in `05-api.md`, tables in `04-data-model.md`, a "connected agents" section and principle 5's outbound call in `07-security.md`, risks R-27 to R-29, the tech stack, the overview's non-goal and the roadmap.
+- **Renumbering:** Packaging & 1.0 is Phase 12 in the phase plan, progress, feature files, QA script, risks and code comments; past decisions and changelog entries keep their numbers (as D-195 did). The Expo SDK 58 upgrade (R-25) follows Phase 11.
+- **Next:** the ten screens are drawn before the build.
+
 ### 2026-10-19 — AI suggestions while reconciling (US-AI-14)
 
 - **"Suggest with AI (<n> lines)"** beside "Match all suggested" looks at the lines the rules couldn't settle (D-158), only when pressed. AI's suggestions join the Suggested tab: "AI suggests: <entry> · <contact>" with the reason, or "AI suggests creating: <category> · <contact>". The tab says "AI suggestions aren't in Match all — check and match each one." — Match all still takes only the rules'.

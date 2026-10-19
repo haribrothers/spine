@@ -6,7 +6,7 @@
 2. **One list.** The capability list the Teams UI renders and the list the API enforces are the same array (`CAPABILITIES` in `packages/shared/src/schemas/permissions.ts`). A capability in one and not the other is a bug.
 3. **Nothing financial is deleted.** Issued documents are voided or credited, never edited or deleted; every create/update/issue/void/delete is in the audit log.
 4. **Least exposure on phones.** Field users never see financial reports; Field's rights are fixed and can't be widened by a Team ([D-019](12-decisions.md)).
-5. **No mandatory SaaS, no silent calls home.** Telemetry is off by default; the only outbound calls are the optional daily update check and, only while an Owner has switched the AI assistant on, requests to the AI provider they configured ([D-164](12-decisions.md)) ([D-055](12-decisions.md)).
+5. **No mandatory SaaS, no silent calls home.** Telemetry is off by default; the only outbound calls are the optional daily update check and, only while an Owner has switched the AI assistant on, requests to the AI provider they configured ([D-164](12-decisions.md)) ([D-055](12-decisions.md)), and, only while Connected agents is on, fetching a connecting agent's client metadata document ([D-257](12-decisions.md)).
 
 ## Authentication
 
@@ -118,7 +118,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 ## Supply chain
 
 - Lockfile committed; `pnpm install --frozen-lockfile` in CI.
-- Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 11 (NFR-SEC-04).
+- Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 12 (NFR-SEC-04).
 - Docker images pinned to major versions (`postgres:16-alpine`, `caddy:2-alpine`); base images rebuilt per release.
 - OWASP Top 10 review documented before 1.0 (NFR-SEC-05).
 
@@ -217,3 +217,16 @@ No new capabilities: every new figure reuses an existing grant, in both the API 
 - **Data minimisation**: the redaction step removes account numbers, IFSC/routing numbers, IBANs, card numbers, tax IDs/GSTINs, PAN, UPI IDs, passwords, keys and tokens from text before it leaves the server ([D-165](12-decisions.md)); documents a person explicitly asks AI to read are sent as they are, as the feature's note says.
 - **Prompt injection**: text inside documents, enquiries and statements is data. The model only fills a fixed JSON schema; Spine validates every field (types, lengths, known ids) and ignores anything else, so instructions inside a document can't change what Spine does.
 - **Audit and limits**: every AI request is in `ai_requests` and the audit log without prompt or reply text ([D-169](12-decisions.md)); per-person rate limit 30 requests per 10 minutes and the Owner's monthly budget ([D-168](12-decisions.md)).
+
+## Added with connected agents (Phase 11, D-256–D-259)
+
+- **Off means off.** With the `agents` module off, `/mcp` answers 403 `MODULE_OFF` before any other check, the consent page refuses, no agent can be registered or connected, and every existing connection is refused (kept, not ended). The Owner-only routes are `GET/PUT /org/agents`, `GET /org/agents/connections` and `DELETE /org/agents/connections/:id`.
+- **An agent is the person, never more.** Every MCP call runs as the person who connected the agent, through the same services, capability checks, ownership rules (before status), module checks and Field rules as their web requests ([D-018](12-decisions.md), [D-019](12-decisions.md)). The tool list is filtered from the same `CAPABILITIES` list, and each call checks again — a tool hidden in one place and callable in another is a bug, like a capability gated in only one layer. Field's agent never gets financial reports, other people's money or job money (US-JOB-19).
+- **Read and drafts only.** Tools read, or create a draft lead, quote or vendor bill, or a note. No tool issues, sends, records, approves, voids, matches, posts, deletes, changes an existing record, or touches users, Teams, settings, tax or files beyond reading what the person can open; a route-introspection test checks the services each tool can reach against an allowlist ([D-256](12-decisions.md), [D-166](12-decisions.md)). The Owner's "Agents can create drafts" switch and the person's consent can each remove drafts.
+- **OAuth, per the MCP authorization spec.** Better Auth's OAuth 2.1 provider: authorization code with PKCE (S256 only), the `resource` parameter required and checked (RFC 8707), protected-resource metadata (RFC 9728), the `iss` parameter in authorization responses (RFC 9207), CIMD preferred and DCR allowed. No client-credentials grant, no personal access tokens, no API keys ([D-257](12-decisions.md)). Redirect URIs must exactly match the ones the agent declared; `http` only for `localhost`.
+- **Tokens.** Access tokens are JWTs for the MCP address only (audience checked), 15 minutes; refresh tokens rotate, are stored hashed and end after 30 days unused. A token not issued by Spine for this audience is refused with 401 and `WWW-Authenticate` naming the metadata; Spine never forwards a token anywhere. Tokens are never logged (request logs redact `Authorization`), never in a URL and never in an error.
+- **Ending a connection is immediate.** Because a JWT can't be revoked, every MCP request also checks the connection, the member and the module. Disconnecting (the person or an Owner), deactivation, removal and a password reset end connections at once; reactivating doesn't restore them ([D-258](12-decisions.md)).
+- **Consent tells the truth.** The page names what the agent can and can't do for that person's role, says that what it reads goes to the agent's AI provider, and leads with the host the agent returns to; a self-registered (DCR) agent's name is marked "Unverified name". Consent is per person and per agent, and Owners can see and end every connection.
+- **Fetching client metadata (CIMD).** Spine fetches an agent's metadata document only during sign-in, only over `https`, never to a private, loopback or link-local address (checked after DNS), with a 5-second timeout, a 64 KB limit, no redirects to another host, and a cache; dynamic registration is rate-limited per IP.
+- **Customer text is data.** Records an agent reads may contain text written by customers and vendors. Tools take typed, validated arguments only, and with no tool that sends, records or deletes, instructions hidden in a record can at worst produce a draft a person reviews.
+- **Audit and limits.** Every call is in `agent_requests` and the audit log as "Agent request" — who, which agent, which tool, which record, outcome — without arguments' text or results; connecting, disconnecting and the switch are audited; entries made through an agent carry `via`. 120 calls a minute per connection and 30 drafts an hour, on top of the per-session limit ([D-124](12-decisions.md), [D-258](12-decisions.md)).

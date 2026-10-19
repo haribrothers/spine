@@ -19,7 +19,7 @@ A public website built with Astro and Starlight (`apps/site`) that holds everyth
 ## User stories
 
 ### US-SITE-01 · Set up the docs site in the monorepo
-**Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SiteUserGuide`, `SiteUserGuideDark`
+**Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`, `SiteUserGuideDark`
 **As** a maintainer, **I want** one docs site that looks like Spine, **so that** guides, self-hosting and developer docs live in one place.
 
 Decision: D-108
@@ -37,7 +37,7 @@ Decision: D-108
 - Turbo task `build` for the site; no runtime server — the output is static HTML.
 
 ### US-SITE-02 · Show a home page for people discovering Spine
-**Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SiteHome`, `SiteHomeDark`
+**Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteHome`, `SiteHomeDark`
 **As** someone evaluating Spine, **I want** a clear home page, **so that** I understand what it does and how to try it in a minute.
 
 **Acceptance criteria**
@@ -51,7 +51,7 @@ Decision: D-108
 - Starlight `splash` template; screenshots from US-SITE-06.
 
 ### US-SITE-03 · Find any page with search
-**Feature:** F-SITE-01 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SiteSearch`
+**Feature:** F-SITE-01 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteSearch`
 **As** a reader, **I want** to search the whole site, **so that** I find the answer without knowing where it lives.
 
 **Acceptance criteria**
@@ -64,7 +64,7 @@ Decision: D-108
 - Pagefind index built at build time; no external search service.
 
 ### US-SITE-04 · Read a task-based guide for every module
-**Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SiteUserGuide`
+**Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`
 **As** an owner, office staff member or field user, **I want** step-by-step guides for the things I do, **so that** I can work without asking anyone.
 
 Decision: D-113
@@ -73,14 +73,14 @@ Decision: D-113
 - **Given** the "User guide" section, **when** it opens, **then** it has a group for each module a user touches: setting up your business, contacts and pipeline, meetings, catalogue, quotes, jobs and milestones, invoices and credit notes, payments and receivables, purchases and expenses, tax, reports, dashboard, team and permissions, and the field app.
 - **Given** a guide page, **when** it renders, **then** it is titled as a task ("Send a quote to a customer"), says who can do it (role and capability), lists numbered steps, and shows a screenshot.
 - **Given** a feature hidden behind a later phase or a capability, **when** its page renders, **then** it says which role or Team right is needed.
-- **Given** every feature built in Phases 0–9, **when** Phase 11 is done, **then** each has at least one guide page.
+- **Given** every feature built in Phases 0–11, **when** Phase 12 is done, **then** each has at least one guide page.
 - **Given** a page, **when** it renders, **then** it shows "Last updated with Spine <version>" and previous/next links.
 
 **Implementation notes**
 - Content in `apps/site/src/content/docs/guide/<module>/*.mdx`; asides use Starlight's note/tip/caution/danger.
 
 ### US-SITE-05 · Ship each story with its guide page
-**Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SiteUserGuide`
+**Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`
 **As** a maintainer, **I want** guide pages updated in the same change as the feature, **so that** the guide never lags behind the app.
 
 Decision: D-113
@@ -91,10 +91,10 @@ Decision: D-113
 - **Given** a guide page that names a button or field, **when** the app's copy changes, **then** the page is updated in the same change (the UI copy is the source of truth).
 
 **Implementation notes**
-- Rule recorded in CLAUDE.md and 11-testing-release; applies to stories from Phase 11 onward.
+- Rule recorded in CLAUDE.md and 11-testing-release; applies to stories from Phase 12 onward.
 
 ### US-SITE-06 · Capture guide screenshots automatically
-**Feature:** F-SITE-02 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SiteUserGuide`, `SiteUserGuideDark`
+**Feature:** F-SITE-02 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteUserGuide`, `SiteUserGuideDark`
 **As** a maintainer, **I want** screenshots captured from a real install, **so that** the guide always shows the current screens in both themes.
 
 **Acceptance criteria**
@@ -106,7 +106,7 @@ Decision: D-113
 - Playwright, reusing `apps/e2e`'s `seededOrg` fixture; a manifest maps guide pages to routes.
 
 ### US-SITE-07 · Install Spine from the self-hosting guide
-**Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SiteSelfHosting`
+**Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteSelfHosting`
 **As** a self-hoster, **I want** a complete install guide, **so that** I can go from a clean machine to a running Spine on my own.
 
 **Acceptance criteria**
@@ -119,7 +119,7 @@ Decision: D-113
 - The README's install section links here; the site is the long version (US-OPS-19).
 
 ### US-SITE-08 · Run, back up and upgrade from the self-hosting guide
-**Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SiteSelfHosting`
+**Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteSelfHosting`
 **As** a self-hoster, **I want** clear backup, restore, storage and upgrade pages, **so that** my business data is safe over the years.
 
 **Acceptance criteria**
@@ -132,7 +132,7 @@ Decision: D-113
 - Content mirrors US-OPS-01/03/04/27/30; those stories update these pages when they change.
 
 ### US-SITE-09 · Learn the codebase from the developer docs
-**Feature:** F-SITE-04 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SiteApiReference`
+**Feature:** F-SITE-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteApiReference`
 **As** a contributor, **I want** an overview of how Spine is built, **so that** I can make a correct change without reading the whole spec.
 
 **Acceptance criteria**
@@ -145,7 +145,7 @@ Decision: D-113
 - The spec in `docs/` stays the source for Claude Code; developer docs are written for people and link to it.
 
 ### US-SITE-10 · Browse a generated API reference
-**Feature:** F-SITE-04 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SiteApiReference`
+**Feature:** F-SITE-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteApiReference`
 **As** a developer integrating with Spine, **I want** an API reference that matches the code, **so that** I can trust what I read.
 
 **Acceptance criteria**
@@ -158,7 +158,7 @@ Decision: D-113
 - `starlight-openapi` reading the document exported by `apps/api` at build time.
 
 ### US-SITE-11 · Open help for the page I'm on
-**Feature:** F-SITE-05 · **Priority:** P1 · **Phase:** 11 · **Screens:** `AppHelpMenu`
+**Feature:** F-SITE-05 · **Priority:** P1 · **Phase:** 12 · **Screens:** `AppHelpMenu`
 **As** a member using Spine, **I want** the Help button to open the right guide page, **so that** help is one click away.
 
 Decision: D-110
@@ -174,7 +174,7 @@ Decision: D-110
 - `HelpButton` (today a placeholder) becomes a `DropdownMenu`; a route → guide-page map lives in `apps/web/src/lib/help-links.ts`.
 
 ### US-SITE-12 · Read the guide without internet
-**Feature:** F-SITE-05 · **Priority:** P1 · **Phase:** 11 · **Screens:** `BundledGuide`
+**Feature:** F-SITE-05 · **Priority:** P1 · **Phase:** 12 · **Screens:** `BundledGuide`
 **As** someone running Spine on a network with no internet, **I want** the guide served by my own server, **so that** help always works.
 
 Decision: D-110
@@ -189,7 +189,7 @@ Decision: D-110
 - The web image's build copies the site's `guide` and `self-hosting` output into `/help`; served as static files by the web app (no API involvement, no login needed).
 
 ### US-SITE-13 · Read docs for the version I run
-**Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SiteUserGuide`
+**Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteUserGuide`
 **As** a self-hoster who hasn't upgraded yet, **I want** docs that match my version, **so that** instructions match what I see.
 
 Decision: D-111
@@ -203,7 +203,7 @@ Decision: D-111
 - `starlight-versions` plugin; versions start at 1.0.
 
 ### US-SITE-14 · Publish the site after each merge
-**Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 11 · **Screens:** —
+**Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
 **As** a maintainer, **I want** the public site to update itself, **so that** published docs never fall behind `main`.
 
 Decision: D-112

@@ -4169,7 +4169,7 @@ Use the GST business from section 175.
    - "Done 0 of 13" (1 of 13 if the server has SMTP set up), "To do" and "Not needed 0", and a progress bar.
    - 14 cards in order, from "Business details and logo" to "Field app", each with its line.
    - Backups has no chip, and says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.".
-   - No "How it works" links (they come with the bundled guide in Phase 11).
+   - No "How it works" links (they come with the bundled guide in Phase 12).
 2. Business details and logo → "Set up":
    - Settings opens on Business profile, over the page.
    - Enter a name and address, save and close. You're back on Set up Spine, the card says "Done" and its button reads "Review".
@@ -5318,7 +5318,7 @@ As an Owner with AI on and "Suggest bank matches" on. Import a statement where o
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
-- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
+- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 12 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - No AI control shows in a form until US-AI-08 onwards, so the budget, the 30-requests-in-10-minutes limit and "AI didn't answer" are checked through the API until then. The Model picker offers to "Create" a typed model name. Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 

@@ -36,8 +36,8 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | `integration` ("Integration") | after `static`, when its paths changed | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · build shared packages → migrate → integration (one worker on its own copy of the migrated database; locally files run in parallel — [D-239](12-decisions.md)), stopping at five failing tests; a failure cancels the run | Through "Unit and integration" |
 | `unit-and-integration` ("Unit and integration") | after `static` and `integration` | Passes when `static` passed and `integration` passed or was skipped — the required check, keeping its name | Yes |
 | `e2e` ("E2E") | after `static`, alongside `integration`, when its paths changed; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build (Next.js build cache kept between runs, [D-241](12-decisions.md)) → `@spine/e2e test` (one worker), stopping after five failing specs; a failure cancels the run | Yes |
-| `a11y-routes` | PR (Phase 11) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
-| `restore-verify` | nightly and on `v*` tags (Phase 11) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
+| `a11y-routes` | PR (Phase 12) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
+| `restore-verify` | nightly and on `v*` tags (Phase 12) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
 | `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
 | `release` | tag `v*` | build images → push to registry → attach `install.sh` + checksums → mobile EAS build | — |
@@ -65,7 +65,7 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | One production build (in E2E), timeouts of 35 minutes (unit and integration, raised from 25 in Phase 9 as the suite grew) and 30 (E2E) | Duplicate builds, runaway jobs |
 | Failure-only Playwright report, kept 3 days | Artifact storage |
 
-Phase 11 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
+Phase 12 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
 
 ## Release artifacts
 
@@ -90,7 +90,7 @@ Phase 11 adds the nightly `restore-verify` job; keep it to one run a day, and co
 3. Any contract change is reflected in [04](04-data-model.md) / [05](05-api.md) in the same change.
 4. New capabilities are enforced in the service layer and reflected in the web UI ([07](07-security.md)).
 5. New or changed UI uses design-system components and tokens, works in light and dark mode, and component changes ship with their doc page and a11y test (both themes).
-6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 11, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
+6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 12, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
 
 ## Appendix — testing expectations moved verbatim from CLAUDE.md
 

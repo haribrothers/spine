@@ -20,7 +20,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Framework | NestJS 11, REST + OpenAPI (`@nestjs/swagger`) | Two known clients, not a public API; typed SDK from OpenAPI ([D-002](12-decisions.md)) |
 | Database | PostgreSQL 16 | Transactions, constraints, numeric, row locks — non-negotiable for financial data |
 | ORM / migrations | Drizzle ORM 0.45 + drizzle-kit 0.31, SQL migrations in `apps/api/drizzle/` | Readable SQL migrations |
-| Auth | Better Auth 1.6: email/password, `organization` plugin, `bearer()` plugin for mobile | Self-hostable, Postgres-backed ([D-016](12-decisions.md)) |
+| Auth | Better Auth 1.6 (1.7 from Phase 11, [D-257](12-decisions.md)): email/password, `organization` plugin, `bearer()` plugin for mobile; from Phase 11 also `@better-auth/oauth-provider` and `@better-auth/cimd` for agents signing in | Self-hostable, Postgres-backed ([D-016](12-decisions.md)) |
 | Background jobs | pg-boss 12 (queues in Postgres) | No Redis container |
 | Files | `StorageDriver` with two drivers: `local` (default — a Docker volume on the API container) and `s3` (`@aws-sdk/client-s3`, for AWS S3, R2, B2 or a self-hosted store) ([D-102](12-decisions.md)) | No extra container by default; MinIO dropped after its free images were withdrawn |
 | Email | Nodemailer 9 over SMTP | No SaaS needed; queued with retry |
@@ -29,6 +29,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | QR codes | `qrcode` for UPI QR codes on invoices (Phase 9, [D-150](12-decisions.md)) | MIT, no network |
 | ZIP | `fflate` ([D-132](12-decisions.md)) — bulk PDFs, data export, Tally export | Small, dependency-free |
 | AI (optional, Phase 9) | `AiDriver`: `openai-compatible` and `anthropic` drivers over `fetch` (no SDK dependency); `unpdf` (MIT) for PDF text before sending ([D-163](12-decisions.md), [D-170](12-decisions.md)) | Owner's own local or cloud model; nothing runs when AI is off |
+| Connected agents (optional, Phase 11) | `@modelcontextprotocol/sdk` 1.x (MIT), Streamable HTTP in stateless mode inside the NestJS API; tool schemas from the shared Zod 4 schemas | The official SDK, kept current with the MCP spec ([D-258](12-decisions.md)) |
 | Browser push | `web-push` 3 (VAPID) | Optional; disabled without keys |
 | Rate limiting | `@nestjs/throttler` 6 (in-memory) | Public quote endpoints |
 | Tests | Vitest 2 (unit + integration against a real `spine_test` database) | |
@@ -45,7 +46,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Command palette | cmdk | |
 | Docs | `apps/design-system` (Next.js docs app) | Living spec for `@spine/ui` |
 
-## `apps/site` — website, user guide and developer docs (Phase 11)
+## `apps/site` — website, user guide and developer docs (Phase 12)
 
 | Concern | Choice | Why |
 |---|---|---|

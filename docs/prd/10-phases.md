@@ -1,6 +1,6 @@
 # 10 · Phases
 
-Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
+Phases 0–10 are built; Phases 11 and 12 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own; [D-256](12-decisions.md) added Connected agents before 1.0). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
 
 | Phase | Name | Stories | Milestone |
 |---|---|---|---|
@@ -15,9 +15,10 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
 | 9 | Tax, documents and setup | 31 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails, modules and a setup page that fit it |
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
-| 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
+| 11 | Connected agents (MCP) | 9 | Someone connects Claude or ChatGPT to Spine, asks it about the business and gets drafts to check and finish in Spine |
+| 12 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 534 stories.
+Total: 543 stories.
 
 ## Phase 0 · Foundation
 
@@ -1030,7 +1031,33 @@ Total: 534 stories.
 - US-AI-13 · Draft quote lines from an enquiry (P1)
 - US-AI-14 · Get AI suggestions while reconciling (P1)
 
-## Phase 11 · Packaging & 1.0
+## Phase 11 · Connected agents (MCP)
+
+**Goal:** Someone connects Claude or ChatGPT to Spine with their own sign-in, asks it about the business, and gets drafts to check and finish in Spine — and the agent can never do more than that person, or more than read and draft.
+
+**Deliverables:** Better Auth 1.7 with its OAuth 2.1 provider, Client ID Metadata Documents and dynamic client registration ([D-257](12-decisions.md)); an MCP server in the API at `<APP_URL>/api/mcp` (Streamable HTTP, stateless) with protected-resource metadata; Settings › Connected agents (the Owner's switch, drafts switch, connector address and every connection), the consent page and each person's Connected agents; read tools for records and reports, draft tools for leads, quotes, vendor bills and notes, and three ready-made prompts; every call in the audit log, with limits ([D-256](12-decisions.md)–[D-259](12-decisions.md)). The screens are drawn before the build. The branch is `phase-11-mcp`.
+
+**Done when:**
+- With Connected agents off, `/api/mcp` and the consent page refuse, and no agent can connect; with it on, Claude (web and Claude Code) and ChatGPT each connect through the consent page, and MCP Inspector passes against `/api/mcp`.
+- For each role (Owner, a Staff Team without invoices, Field), the tools listed and every call's result match what that person can do in Spine; Field never gets a money figure.
+- A route-introspection test shows no tool reaches an issue, send, record, approve, void, match, post or delete service; a disconnected, deactivated or reset person's agent is refused on its next call.
+- Every agent call is in the audit log without arguments' text or results.
+
+**Stories:**
+
+*Connected agents*
+
+- US-MCP-01 · Move Spine to Better Auth 1.7 with nobody noticing (P1)
+- US-MCP-02 · Switch connected agents on or off (P1)
+- US-MCP-03 · Connect an AI agent to Spine (P1)
+- US-MCP-04 · See and disconnect connected agents (P1)
+- US-MCP-05 · Ask an agent to find and read records (P1)
+- US-MCP-06 · Ask an agent who owes us and how the business is doing (P1)
+- US-MCP-07 · Have an agent start work as drafts (P1)
+- US-MCP-08 · See every agent request in the audit log (P2)
+- US-MCP-09 · Start from a ready-made task (P3)
+
+## Phase 12 · Packaging & 1.0
 
 **Goal:** A stranger installs from the README and issues their first invoice.
 

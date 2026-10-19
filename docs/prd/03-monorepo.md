@@ -22,7 +22,7 @@ spine/
 │  ├─ e2e/                    Playwright suite against real api + web
 │  ├─ design-system/          Docs app for @spine/ui
 │  ├─ showcase-native/        Docs app for every @spine/ui-native component (expo-router; D-240)
-│  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 11)
+│  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 12)
 ├─ packages/
 │  ├─ shared/                 money + tax engine, Zod schemas, capability list, shared types
 │  ├─ ui/                     @spine/ui (79 web components)
@@ -30,7 +30,7 @@ spine/
 │  ├─ sdk/                    API client generated from OpenAPI
 │  └─ config/                 eslint, tsconfig, tailwind preset (CSS tokens)
 ├─ docker/                    Dockerfile.api, Dockerfile.web, Caddyfile
-├─ scripts/                   seed.ts, create-native-app.mjs (install.sh, backup.sh, restore.sh: Phase 11)
+├─ scripts/                   seed.ts, create-native-app.mjs (install.sh, backup.sh, restore.sh: Phase 12)
 ├─ docs/                      this spec, design, QA script
 ├─ docker-compose.yml         production (profiles minimal/full)
 ├─ docker-compose.dev.yml     local infra: Postgres, MailDev (files use the local driver; optional rustfs profile)
@@ -68,4 +68,4 @@ Runs on pull requests into `main` only (and on demand), never on every push; doc
 | `test` · "Unit and integration" | install → lint → typecheck → unit tests (Turbo-cached) → run migrations → integration tests (real Postgres) |
 | `e2e` · "E2E" | runs after `test` passes · install → Playwright browsers (cached) → production build of API + web → E2E suite on a scratch database |
 
-Release, restore verification and mobile builds are added in Phase 11 ([11-testing-release](11-testing-release.md)).
+Release, restore verification and mobile builds are added in Phase 12 ([11-testing-release](11-testing-release.md)).

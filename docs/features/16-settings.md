@@ -126,7 +126,7 @@ Legacy: S-10.6
 - Data: `audit_log`.
 
 ### US-SET-08 · Remove demo data and keep my real data
-**Feature:** F-SET-04 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SettingsDemoData`, `DeleteDemoDataConfirm`
+**Feature:** F-SET-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SettingsDemoData`, `DeleteDemoDataConfirm`
 **As** an owner who evaluated with demo data, **I want** to delete it in one step, **so that** I can start real work in the same install.
 
 Legacy: S-12.8
@@ -448,7 +448,7 @@ Decision: D-218, D-220
 Decision: D-015, D-220
 
 **Acceptance criteria**
-- **Given** no SMTP server configured, **when** I open the email log or Settings › Emails, **then** a warning reads "Email isn't set up — <n> emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." (The link to the install guide comes with the docs site, Phase 11.)
+- **Given** no SMTP server configured, **when** I open the email log or Settings › Emails, **then** a warning reads "Email isn't set up — <n> emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." (The link to the install guide comes with the docs site, Phase 12.)
 - **Given** no SMTP server configured, **when** a queued email's turn comes, **then** it isn't tried: it stays Queued ("Waiting for email to be set up", no attempts used) and is queued again when Spine next starts with email set up.
 - **Given** SMTP is configured, **when** emails keep failing, **then** the warning reads "Emails are failing — the last error was: <error>." when the last 3 queued emails in a row failed.
 
