@@ -614,7 +614,7 @@ Stories and screens reworked for the refined web app before building (D-242), on
 - [x] US-AI-10 · Fill in my expense from a receipt on the phone
 - [x] US-AI-11 · Draft a customer email with AI
 - [x] US-AI-12 · Draft a payment reminder or statement email in a chosen tone
-- [ ] US-AI-13 · Draft quote lines from an enquiry
+- [x] US-AI-13 · Draft quote lines from an enquiry
 - [ ] US-AI-14 · Get AI suggestions while reconciling
 
 ## Phase 11 · Packaging & 1.0

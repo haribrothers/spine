@@ -1,11 +1,12 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { aiProviderCheckSchema, aiSettingsUpdateSchema, draftEmailSchema, readDocumentSchema } from "@spine/shared";
+import { aiProviderCheckSchema, aiSettingsUpdateSchema, draftEmailSchema, draftQuoteLinesSchema, readDocumentSchema } from "@spine/shared";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { AiSettingsService } from "./ai-settings.service";
 import { AiRequestService } from "./ai-request.service";
 import { DraftEmailService } from "./draft-email/draft-email.service";
+import { DraftQuoteLinesService } from "./draft-quote-lines/draft-quote-lines.service";
 import { ReadDocumentService } from "./read-document/read-document.service";
 import { ReadReceiptService } from "./read-document/read-receipt.service";
 
@@ -75,6 +76,7 @@ export class AiController {
     private readonly readDocument: ReadDocumentService,
     private readonly readReceipt: ReadReceiptService,
     private readonly draftEmail: DraftEmailService,
+    private readonly draftQuoteLines: DraftQuoteLinesService,
   ) {}
 
   @Get("status")
@@ -99,5 +101,14 @@ export class AiController {
     const parsed = draftEmailSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Choose the email to draft."));
     return this.draftEmail.draft(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  /** US-AI-13 — proposed quote lines from an enquiry. Saves nothing, so no Idempotency-Key (05-api). */
+  @Post("draft-quote-lines")
+  @HttpCode(200)
+  async quoteLines(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = draftQuoteLinesSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error.issues, "Paste the enquiry or describe the work."));
+    return this.draftQuoteLines.draft(requireOrgId(session), session.user.id, parsed.data);
   }
 }

@@ -11,6 +11,7 @@ import { AiSettingsService } from "./ai-settings.service";
 import { AiRequestService } from "./ai-request.service";
 import { AiHttp } from "./drivers";
 import { DraftEmailService } from "./draft-email/draft-email.service";
+import { DraftQuoteLinesService } from "./draft-quote-lines/draft-quote-lines.service";
 import { ReadDocumentService } from "./read-document/read-document.service";
 import { ReadReceiptService } from "./read-document/read-receipt.service";
 
@@ -18,7 +19,7 @@ import { ReadReceiptService } from "./read-document/read-receipt.service";
 @Module({
   imports: [OrgModule, AuditModule, NotificationsModule, FilesModule, TaxModule, EmailTemplatesModule, StatementsModule],
   controllers: [AiSettingsController, AiController],
-  providers: [AiSettingsService, AiRequestService, AiHttp, ReadDocumentService, ReadReceiptService, DraftEmailService],
+  providers: [AiSettingsService, AiRequestService, AiHttp, ReadDocumentService, ReadReceiptService, DraftEmailService, DraftQuoteLinesService],
   exports: [AiSettingsService, AiRequestService],
 })
 export class AiModule {}

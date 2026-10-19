@@ -27,6 +27,11 @@ import { apiClient } from "../../../lib/api-client";
 import type { CatalogItemOption, QuoteLineType, TaxGroupOption, TaxRateOption } from "./types";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney } from "../../../lib/money";
+import type { AiQuoteLine } from "@spine/shared";
+import { AiSuggestedTag } from "../../../components/ai-suggested-tag";
+import { aiFeatureShown, useAiStatus } from "../../../lib/use-ai-status";
+import { QuoteAiLinesPanel } from "./quote-ai-lines-panel";
+import { isUntouchedBlank, rowsFromAiLines } from "./quote-ai-lines";
 
 /** Client-side line shape while editing — money fields as `bigint` (never a float), matching MoneyInput's own contract. Not the same as the API's QuoteLine (which serializes bigints as strings and includes server-computed fields this component doesn't need pre-save). */
 export interface EditableQuoteLine {
@@ -49,6 +54,8 @@ export interface EditableQuoteLine {
   hsnSac: string;
   /** US-CAT-06 — a one-off line to add to the catalogue when the quote is saved (it needs a price). Never sent to the server. */
   saveToCatalogue?: boolean;
+  /** US-AI-13 — "Add a price — …" on a line AI proposed without one, until it has a price. Never sent to the server. */
+  aiPriceNote?: string;
 }
 
 let keySeq = 0;
@@ -128,7 +135,9 @@ export function computeLinePreview(
  * HSN/SAC, supply type) under it; headings and text lines span the row.
  * Rows move by dragging the handle (only the handle is draggable, so text
  * in the fields can still be selected), from the row's menu, or with
- * Alt + ↑/↓; Enter in the last row's tax adds a row.
+ * Alt + ↑/↓; Enter in the last row's tax adds a row. US-AI-13 — "Draft
+ * lines with AI" beside "Add item"; the rows it adds read "Suggested by AI"
+ * until changed (`aiKeys`).
  */
 export function QuoteLineEditor({
   lines,
@@ -138,7 +147,13 @@ export function QuoteLineEditor({
   exportUnderLut = false,
   flaggedKeys,
   showHsn = false,
+  aiKeys,
+  aiDraft,
 }: {
+  /** US-AI-13 — rows AI added that haven't been changed. */
+  aiKeys?: Set<string>;
+  /** US-AI-13 — where "Draft lines with AI" adds to: the draft quote, and the keys of the rows it added. */
+  aiDraft?: { quoteId?: string; onAdded: (keys: string[]) => void };
   /** US-TAX-13 — picks each item's intra- or inter-state tax. */
   supplyType?: SupplyType | null;
   /** D-181 — exports under LUT have no IGST. */
@@ -191,6 +206,27 @@ export function QuoteLineEditor({
     // US-TAX-11: the supply type follows the tax and the catalogue item.
     next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
     onChange(next);
+  }
+
+  // US-AI-13: drafted lines become rows exactly as if picked by hand, after the last line.
+  const aiStatus = useAiStatus();
+  const aiShown = Boolean(aiDraft) && aiFeatureShown(aiStatus, "draftQuoteLines");
+  function addAiLines(proposed: AiQuoteLine[]) {
+    const rows = rowsFromAiLines(proposed, {
+      catalogItems,
+      bundles,
+      currency,
+      supplyType,
+      exportUnderLut,
+      // As picking the item by hand: the item and its tax are what changed, so the supply type follows them.
+      withSupply: (line, item) =>
+        withSupplyClass(line, { catalogItemId: line.catalogItemId, taxRateId: line.taxRateId, taxGroupId: line.taxGroupId }, lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups)), item, taxRates),
+    });
+    if (!rows.length) return;
+    const base = lines.length === 1 && isUntouchedBlank(lines[0]!) ? [] : lines;
+    onChange([...base, ...rows]);
+    aiDraft?.onAdded(rows.map((r) => r.key));
+    setAnnouncement(`${rows.length} line${rows.length === 1 ? "" : "s"} added`);
   }
 
   function removeLine(index: number) {
@@ -303,6 +339,7 @@ export function QuoteLineEditor({
             }}
             className={cn(
               "relative border-b border-border px-3 py-2",
+              aiKeys?.has(line.key) && "bg-info-bg/40",
               dragKey === line.key && "opacity-40",
               over?.key === line.key && (over.before ? "shadow-[inset_0_2px_0_var(--color-primary)]" : "shadow-[inset_0_-2px_0_var(--color-primary)]"),
             )}
@@ -319,6 +356,7 @@ export function QuoteLineEditor({
               taxRates={taxRates}
               taxGroups={taxGroups}
               showHsn={showHsn}
+              suggested={aiKeys?.has(line.key) ?? false}
               onChange={(patch) => updateLine(index, patch)}
               onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
               onPickBundle={(id) => insertBundle(index, id)}
@@ -343,6 +381,7 @@ export function QuoteLineEditor({
         <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("item")}>
           <Plus size={14} /> Add item
         </Button>
+        {aiShown && <QuoteAiLinesPanel currency={currency} quoteId={aiDraft?.quoteId} catalogItems={catalogItems} bundles={bundles} pausedUntil={aiStatus?.pausedUntil ?? null} onAdd={addAiLines} />}
         <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("heading")}>
           <Heading size={14} /> Add heading
         </Button>
@@ -372,6 +411,7 @@ function LineRow({
   taxRates,
   taxGroups,
   showHsn,
+  suggested,
   onChange,
   onApplyCatalogItem,
   onPickBundle,
@@ -392,6 +432,7 @@ function LineRow({
   taxRates: TaxRateOption[];
   taxGroups: TaxGroupOption[];
   showHsn: boolean;
+  suggested: boolean;
   onChange: (patch: Partial<EditableQuoteLine>) => void;
   onApplyCatalogItem: (id: string) => void;
   onPickBundle: (id: string) => void;
@@ -535,6 +576,17 @@ function LineRow({
         </span>
         <span className="row-start-1 col-start-7 lg:row-start-auto lg:col-start-auto">{menu}</span>
       </div>
+      {/* US-AI-13: an AI line without a price says so until it has one; the tag goes once the line is changed. */}
+      {((line.aiPriceNote && line.unitPriceAmount === 0n) || suggested) && (
+        <div className="flex items-center gap-3 pl-8">
+          {line.aiPriceNote && line.unitPriceAmount === 0n && (
+            <p className="text-[12.5px] font-medium text-due-soon" data-testid="ai-price-note">
+              {line.aiPriceNote}
+            </p>
+          )}
+          {suggested && <AiSuggestedTag className="ml-auto" />}
+        </div>
+      )}
       {line.saveToCatalogue && (
         <p className="pl-8 text-[12px] text-on-surface-muted">
           Added to the catalogue when you save the quote{line.unitPriceAmount > 0n ? "." : " — give it a price first."}{" "}

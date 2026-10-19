@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-19 — Draft quote lines from an enquiry (US-AI-13)
+
+- **"Draft lines with AI"** beside "Add item" on a new or draft quote opens a side panel: paste the enquiry, press "Draft lines", and AI proposes lines matched to the catalogue — items with their price, bundles with their total, and work that isn't in the catalogue with "Add a price". Tick the ones you want and "Add to quote".
+- **Lines arrive as if picked by hand:** the item's price, its tax for the place of supply and its HSN/SAC, a bundle as its lines; each row reads "Suggested by AI" until changed, and a line without a price says so until it has one. AI never sets a price (D-172) — an item priced in another currency comes in without one. The saved quote says "filled in with AI".
+- **The catalogue sent:** the 50 active items and bundles (in the quote's currency) that best match the enquiry by trigram similarity, as refs, names, units and contents — never prices; the enquiry is redacted.
+- **API:** `POST /ai/draft-quote-lines` (no Idempotency-Key). Tried live on `qwen3.5:4b`: lines in 20–23 seconds — close to the 30-second limit on a bigger catalogue (R-26).
+- **Tests:** API (`us-ai-13` unit and integration), web (`us-ai-13`), e2e `us-ai-13.spec.ts`. QA section 246.
+
 ### 2026-10-19 — A reminder or statement in a chosen tone (US-AI-12)
 
 - **Tone:** reminders and statements — from an invoice, Receivables or a contact — offer Friendly, Formal and Firm beside "Draft with AI" (Friendly until changed) and in the suggestion's header, where choosing another tone drafts again in it. Other emails have no tone; the API refuses one with 400.

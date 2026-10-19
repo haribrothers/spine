@@ -195,6 +195,29 @@ export const draftEmailSchema = z
   .refine((d) => d.tone === undefined || (AI_TONED_EMAILS as readonly string[]).includes(d.type), { message: AI_TONE_ONLY_MESSAGE, path: ["tone"] });
 export type DraftEmailInput = z.infer<typeof draftEmailSchema>;
 
+/** US-AI-13 (D-172) — `POST /ai/draft-quote-lines`: the enquiry, the quote's currency, and the draft quote when there is one. */
+export const AI_ENQUIRY_MAX = 4000;
+export const draftQuoteLinesSchema = z.object({
+  text: z.string().trim().min(1, "Paste the enquiry or describe the work.").max(AI_ENQUIRY_MAX, "Keep the enquiry under 4,000 characters."),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Choose the quote's currency."),
+  quoteId: z.uuid().optional(),
+});
+export type DraftQuoteLinesInput = z.infer<typeof draftQuoteLinesSchema>;
+
+/** One proposed line: a catalogue item, a bundle, or work that isn't in the catalogue (both null). The model never sets a price (D-172). */
+export interface AiQuoteLine {
+  catalogItemId: string | null;
+  bundleId: string | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+}
+export interface AiQuoteLines {
+  lines: AiQuoteLine[];
+  /** How many catalogue items and bundles were offered — "Drafted from the enquiry and 38 catalogue items". */
+  candidates: number;
+}
+
 /** What "Draft with AI" gets back: the email with this document's details filled in by Spine — never the model's — and those details, for the highlight (D-254). */
 export interface AiEmailDraft {
   subject: string;

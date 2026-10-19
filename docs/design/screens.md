@@ -5835,6 +5835,8 @@ Shows: "Using AI's draft — check it before sending. The highlighted details ar
 
 Links to: `QuoteBuilderAiDark`
 
+As built (US-AI-13): an added row's "Suggested by AI" and its "Add a price — …" note sit on a line under the row, since today's row has the supply type where the canvas put the tag.
+
 Shows: "Draft lines with AI" beside Add item · side panel: the pasted enquiry, "Draft again", "Proposed lines" tagged "Suggested by AI": catalogue items and a bundle with prices, "Glass shower screen" "Not in your catalogue" "Add a price", one unticked · "5 of 6 ticked" "Close" "Add to quote (5)"
 
 ### QuoteBuilderAiDark — Compact quote builder with AI lines, in dark mode

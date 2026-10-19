@@ -5284,6 +5284,20 @@ Same setup as section 244. Compare with `SendEmailDialogAi` and `SendEmailDialog
 5. Close the dialog and open it again: Friendly is chosen again.
 6. Keyboard: Tab reaches the tone; arrow keys move between Friendly, Formal and Firm; a screen reader names the group "Tone" and says which is chosen.
 
+## 246. Draft quote lines from an enquiry (US-AI-13, Phase 10)
+
+As an Owner with AI on and "Draft quote lines" on, and a catalogue with a few items (one priced in another currency) and a bundle. Compare with `QuoteBuilderAi` and `QuoteBuilderAiDark`.
+
+1. New quote: "Draft lines with AI" sits beside "Add item" (tinted, sparkles). Press it: a side panel "Draft lines with AI" — "Paste the enquiry or describe the work. Lines are matched to your catalogue; nothing changes until you add them." — with an Enquiry box. "Draft lines" is dimmed until there's text.
+2. Paste an enquiry and press "Draft lines": "Drafting…" with Cancel; then "Proposed lines" (tagged "Suggested by AI"), every line ticked: catalogue items read "Catalogue item · per <unit>" with their price, a bundle "Bundle · <its items> · <n> lines" with its total, work not in the catalogue "Not in your catalogue" with "Add a price" in amber. "Draft again" and "Drafted from the enquiry and <n> catalogue items" show; the footer reads "<n> of <n> ticked".
+3. Untick one: the count follows and "Add to quote (<n>)" with it. Press it: the panel closes and the ticked lines are rows after the last line (a new quote's empty first row is replaced). Each reads "Suggested by AI" on its tinted row; an item has its catalogue price and its tax for the place of supply (inter-state for another state), a bundle is its lines, and a line with no price says "Add a price — not in your catalogue." (or "…the catalogue price is in USD.").
+4. Change a row's quantity: its tag and tint go. Give the unpriced row a price: its note goes. Totals follow as usual.
+5. Close the panel without adding: the quote is unchanged; reopening shows the enquiry and proposal again.
+6. Save as draft: the quote's activity says "Created … · filled in with AI". Edit a draft quote and draft lines there too.
+7. Hidden for a Staff member without "Use AI features", and with "Draft quote lines" off. A sent quote has no builder. Stop the model: "AI didn't answer. Fill this in by hand or try again. The quote is as it was." with "Try again".
+8. Keyboard: Tab through the panel; Space ticks a line; "Tick all lines" ticks or clears them all; Escape closes it. Dark mode: the panel, the tints and the amber note use the dark tokens.
+9. Regression: Add item, picking an item or a bundle by hand, Add heading and Add text line, moving rows, Preview PDF and Save behave as before.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
