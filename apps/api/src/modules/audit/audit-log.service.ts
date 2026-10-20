@@ -70,7 +70,9 @@ export type AuditEntityType =
   // US-MCP-02 (D-258): connected agents switched on or off, or drafts allowed or not (entity id is the organisation's).
   | "agents_settings"
   // US-MCP-03, US-MCP-04 (D-258): an agent connected or disconnected (entity id is the `agent_connections` row's).
-  | "agent_connection";
+  | "agent_connection"
+  // US-MCP-08 (D-258): one entry per agent tool call (entity id is the `agent_requests` row's).
+  | "agent_request";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

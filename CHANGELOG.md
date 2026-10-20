@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — See every agent request in the audit log (US-MCP-08)
+
+- **Every call recorded:** `agent_requests` (migration `0132`) gets one row per tool call — the person, the connection, the tool, the record it touched, the outcome (`ok`, `refused`, `error`, `rate_limited`) and how long it took. Never the arguments' text or the result.
+- **Team › Audit log › "Agent request":** each entry shows when, who, the action as a sentence ("Searched", "Read a quote", "Read receivables", "Drafted a quote"), the record it touched (linked) and "<Agent> · Worked", "<Agent> · Refused — <Spine's reason>" or "Slowed down". Connecting, disconnecting and the Connected agents switch were already logged.
+- **120 calls a minute per connection:** past it, `/mcp` answers 429 with `Retry-After: 60` and "Too many requests from this agent. Wait a minute and try again.", and the call is logged as slowed down. The per-session limit (D-124) still applies to the person.
+- **Tests:** `us-mcp-08` (API, shared, E2E). QA section 255.
+
 ### 2026-10-20 — Have an agent start work as drafts (US-MCP-07)
 
 - **Draft tools:** `create_lead` (adding the contact if new, the enquiry as its first note), `draft_quote` and `draft_vendor_bill` (catalogue lines take the item's price and tax; Spine computes totals) and `add_note` (contact, lead or job; Field only on their assigned jobs). Offered only with `spine:draft`, while the Owner allows drafts, and per the person's rights. Expenses aren't offered: they have no draft state.

@@ -5405,6 +5405,17 @@ Connect Claude Code (section 250) as each role in turn.
 10. Team › Audit log: the drafts' "created" entries name the agent (US-MCP-08 lists the agent's requests).
 11. Regression: quotes, bills, leads and notes made in Spine itself show no "via".
 
+## 255. See every agent request in the audit log (US-MCP-08, Phase 11)
+
+1. With a connected agent, ask it to search for a customer, open a quote, read receivables and draft a quote.
+2. As an Owner, open Team › Audit log and choose Record type "Agent request": one row per call, newest first, each with when, who (the person the agent acts for), the action ("Searched", "Read a quote", "Read receivables", "Drafted a quote"), the record it touched and "<Agent> · Worked" in Details.
+3. Select the quote's record link: the quote opens. A search or a report has no record ("—").
+4. Ask it for a quote number that doesn't exist: the row reads "Read a quote" with "<Agent> · Refused — No quote Q-9999 that you can open."
+5. Nothing you typed to the agent, and nothing it was told, appears in the log or the CSV export — only the tool, the record and the outcome.
+6. Record type "Agent connection": connecting and disconnecting are there. Record type "Connected agents": switching agents on or off, and allowing drafts, are there.
+7. Make more than 120 calls in a minute from one agent (a script, or ask it to read many records quickly): it's told "Too many requests from this agent. Wait a minute and try again." and the log shows "Slowed down — over 120 calls a minute". After a minute it works again.
+8. Regression: the audit log's other record types, the One record view and Export CSV read as before; AI request entries still read "AI request".
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
