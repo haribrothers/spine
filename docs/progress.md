@@ -621,7 +621,7 @@ Stories and screens reworked for the refined web app before building (D-242), on
 
 Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 
-- [ ] US-MCP-01 · Move Spine to Better Auth 1.7 with nobody noticing
+- [x] US-MCP-01 · Move Spine to Better Auth 1.7 with nobody noticing
 - [ ] US-MCP-02 · Switch connected agents on or off
 - [ ] US-MCP-03 · Connect an AI agent to Spine
 - [ ] US-MCP-04 · See and disconnect connected agents

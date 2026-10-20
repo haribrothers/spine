@@ -252,6 +252,9 @@ export const jwks = pgTable("jwks", {
   privateKey: text("private_key").notNull(),
   createdAt: timestamp("created_at").notNull(),
   expiresAt: timestamp("expires_at"),
+  // US-MCP-01 (D-257): Better Auth 1.7 records each key's algorithm and curve.
+  alg: text("alg"),
+  crv: text("crv"),
 });
 
 export const userRelations = relations(user, ({ many }) => ({

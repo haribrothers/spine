@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Spine on Better Auth 1.7 (US-MCP-01, D-257)
+
+- **Upgrade, nothing visible:** `better-auth` 1.6.26 → 1.7.11 (API and web), `@thallesp/nestjs-better-auth` 2.7 → 2.8, and the CLI is now the `auth` package (`@better-auth/cli` stops at 1.4). zod moves to 4.6.7 so Spine and Better Auth share one copy — two made the exported `auth` type unnameable (TS2742).
+- **Database:** `auth generate` against Spine's schema asks only for `jwks.alg` and `jwks.crv`; migration `0129` adds them, nullable. Existing signing keys keep working (null means the 1.6 default, EdDSA) and nothing rotates. No account backfill: 1.7.3 reverted the issuer-keyed accounts of 1.7.0.
+- **Code:** `getIp` → `getIP` in the reset-rate-limit hook.
+- **Checks:** every auth test passes unchanged; `us-mcp-01` checks the version, cookie and Bearer sessions, and that a pre-upgrade key still signs. QA section 248.
+
 ### 2026-10-19 — Phase 11 · Connected agents (MCP) specified; Packaging & 1.0 becomes Phase 12 (D-256–D-259)
 
 - **New phase, branch `phase-11-mcp`.** People will be able to use Spine from Claude, ChatGPT, Claude Code and other MCP clients: one MCP endpoint, `<APP_URL>/api/mcp`, where an agent acts as the person who connected it. Nine stories in `docs/features/22-mcp.md` (US-MCP-01 to US-MCP-09). This narrows the "public REST API for third parties" non-goal; there's still no public REST contract or plugin API.

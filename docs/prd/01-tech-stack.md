@@ -20,7 +20,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Framework | NestJS 11, REST + OpenAPI (`@nestjs/swagger`) | Two known clients, not a public API; typed SDK from OpenAPI ([D-002](12-decisions.md)) |
 | Database | PostgreSQL 16 | Transactions, constraints, numeric, row locks — non-negotiable for financial data |
 | ORM / migrations | Drizzle ORM 0.45 + drizzle-kit 0.31, SQL migrations in `apps/api/drizzle/` | Readable SQL migrations |
-| Auth | Better Auth 1.6 (1.7 from Phase 11, [D-257](12-decisions.md)): email/password, `organization` plugin, `bearer()` plugin for mobile; from Phase 11 also `@better-auth/oauth-provider` and `@better-auth/cimd` for agents signing in | Self-hostable, Postgres-backed ([D-016](12-decisions.md)) |
+| Auth | Better Auth 1.7 ([D-257](12-decisions.md)): email/password, `organization` plugin, `bearer()` plugin for mobile; from US-MCP-03 also `@better-auth/oauth-provider` and `@better-auth/cimd` for agents signing in | Self-hostable, Postgres-backed ([D-016](12-decisions.md)) |
 | Background jobs | pg-boss 12 (queues in Postgres) | No Redis container |
 | Files | `StorageDriver` with two drivers: `local` (default — a Docker volume on the API container) and `s3` (`@aws-sdk/client-s3`, for AWS S3, R2, B2 or a self-hosted store) ([D-102](12-decisions.md)) | No extra container by default; MinIO dropped after its free images were withdrawn |
 | Email | Nodemailer 9 over SMTP | No SaaS needed; queued with retry |

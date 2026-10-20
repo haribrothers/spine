@@ -5313,6 +5313,18 @@ As an Owner with AI on and "Suggest bank matches" on. Import a statement where o
 9. Keyboard and screen reader: the button and each Match / Not this one / Create are reachable and named; AI's text is read with the line. Dark mode: the tints and marks use the dark tokens.
 10. Regression: matching by hand, several entries to one line, "Not this one" on a rule suggestion, Exclude / Include, Unmatch, "Match all suggested" (its confirm lists only the rules' pairs), Create without AI, Finish and Undo behave as before.
 
+## 248. Spine on Better Auth 1.7 (US-MCP-01, Phase 11)
+
+Nothing should look different. Before upgrading a test install, sign in on the web in one browser and on the phone; leave both signed in.
+
+1. Upgrade and run the migrations (`0129` adds two columns to `jwks`). Reload the web app: still signed in, same page. Open the phone app: still on Today, no sign-in screen.
+2. Sign out and in again on the web: "Log in" works; a wrong password says "Invalid email or password". Sign up on a new install: the first account becomes the Owner and lands in onboarding; a second sign-up without an invitation is refused ("This Spine is invite-only").
+3. Invite a Staff member, accept the email link while signed in with that email: they join the business and its Teams.
+4. Password reset: request a link, use it within the hour, then try it again ("This link can't be used" — "Reset links work once and expire after 1 hour."). Every other session — the other browser, the phone — is signed out. A common password like "password123" is refused at sign-up, reset and change.
+5. Deactivate a member who is signed in on the phone: their next request shows "Your access to <Business> was removed." and the app signs out. Reactivate: they can sign in again.
+6. Phone (iOS Simulator and an Android 15 emulator): `maestro test apps/mobile/e2e/us-mob-01-sign-in.yaml` passes (Android with `-e SERVER=http://10.0.2.2:4000` and the dev-client URL, as the flow's header says).
+7. Regression: switching business on the web, "Not you?" on the accept-invite page, the session dialog after signing out in another tab (US-AUTH-12), and the 300-a-minute limit per session.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

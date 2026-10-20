@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware, getIp, getSessionFromCtx } from "better-auth/api";
+import { APIError, createAuthMiddleware, getIP, getSessionFromCtx } from "better-auth/api";
 import { isCommonPassword, linkInUse, linkUploadFirst, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
 import { assertLinkable } from "../modules/files/files.service";
 import { assertSignupAllowed } from "./signup-policy";
@@ -112,7 +112,7 @@ export const auth = betterAuth({
         }
       }
       if (ctx.path !== "/request-password-reset") return;
-      const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";
+      const ip = (ctx.request && getIP(ctx.request, ctx.context.options)) || "unknown";
       if (!resetIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: RESET_TOO_MANY_MESSAGE });
     }),
   },

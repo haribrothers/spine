@@ -39,11 +39,11 @@ Decision: D-257
 **Acceptance criteria**
 - **Given** an install on 1.6 with people signed in on the web and the phone, **when** it upgrades, **then** nobody is signed out: web cookies and phone Bearer sessions keep working, and migrations only add tables and columns.
 - **Given** the upgrade, **when** the auth tests run, **then** every existing sign-up, invite-only, invitation, password (Argon2id, common-passwords), reset (one hour, single use, signs everyone out), session lifetime, organisation, active-organisation, deactivated-member (`ACCESS_REMOVED`), 401-not-403 and rate-limit test passes unchanged.
-- **Given** the field app, **when** a Field user signs in and out on iOS and Android (Maestro), **then** it works as before, with the Expo client on its 1.7 line.
+- **Given** the field app, **when** a Field user signs in and out on iOS and Android (Maestro), **then** it works as before (the phone sends its session as a Bearer header and has no Better Auth package of its own).
 - **Given** the JWKS the `jwt()` plugin already keeps, **when** 1.7 starts, **then** it keeps using it (no key rotation forced by the upgrade).
 
 **Implementation notes**
-- `better-auth`, `@better-auth/expo` and `@better-auth/cli` move to 1.7.x in one commit, with the 1.6 → 1.7 migration notes applied and the generated migration reviewed. Nothing user-visible changes; this is its own story so the auth change ships on its own, tested, before anything is built on it.
+- `better-auth` (API and web) moves to 1.7.11 and `@thallesp/nestjs-better-auth` to 2.8; the CLI is now the `auth` package (`@better-auth/cli` ends at 1.4). zod moves to 4.6 so Spine and Better Auth share one copy. `auth generate` against Spine's schema asks only for `jwks.alg` and `jwks.crv` (migration `0129`, nullable — a key without them is the 1.6 default, EdDSA). No account backfill: 1.7.3 reverted the issuer-keyed account schema of the 1.7.0 release. `getIp` is now `getIP`. Nothing user-visible changes; this is its own story so the auth change ships on its own, tested, before anything is built on it.
 
 ### US-MCP-02 · Switch connected agents on or off
 **Feature:** F-MCP-02 · **Priority:** P1 · **Phase:** 11 · **Screens:** `SettingsConnectedAgents`, `SettingsConnectedAgentsDark`, `SettingsConnectedAgentsTurnOnConfirm`
