@@ -5391,6 +5391,20 @@ Connect Claude Code (section 250) as each role in turn.
 6. As Field: no report or bank tools at all; asking about money gets a refusal, never a figure.
 7. Regression: the Reports pages themselves.
 
+## 254. Have an agent start work as drafts (US-MCP-07, Phase 11)
+
+1. With a connection that allowed drafts, ask "Draft a quote for Harbour Road for 20 m² of deck boards and two days of labour": `draft_quote` creates a draft (no number yet) with the catalogue item's price and tax and Spine's totals; the answer links to it and says to check and send it in Spine.
+2. Open the quote: Activity's first entry reads "Created as a draft · via <Agent> for <you>". Nothing was emailed.
+3. Ask for a line priced in another currency without a price: "<item> is priced in EUR. Give its price in USD."
+4. "Draft the bill from Coastal Timber CT-8812": `draft_vendor_bill` makes a draft bill; Banking, the books and Payables don't change until you record it.
+5. "Create a lead for Anika Shah, who wants her kitchen redone": a new contact (if she isn't one), the lead, and her enquiry as its first note.
+6. "Add a note to the Harbour Road job": the note appears on the job. As Field: only jobs you're assigned to.
+7. Ask it to send the quote, issue an invoice, record a payment, approve an expense or delete anything: it has no tool for that and says you'll need to do it in Spine.
+8. A read-only connection, or drafts switched off for everyone: no draft tools.
+9. After 30 drafts in an hour from one agent: "Too many drafts from this agent. Try again later."
+10. Team › Audit log: the drafts' "created" entries name the agent (US-MCP-08 lists the agent's requests).
+11. Regression: quotes, bills, leads and notes made in Spine itself show no "via".
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

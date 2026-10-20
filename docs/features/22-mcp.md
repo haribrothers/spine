@@ -149,6 +149,7 @@ Decision: D-256, D-259
 
 **Implementation notes**
 - Expenses aren't a draft tool: an expense has no draft state — it's submitted when created, and with Approvals off it's approved and posted at once (D-154), so an agent creating one would record money (D-259).
+- As built: the tools POST to `/contacts`, `/leads`, `/activities`, `/quotes`, `/vendor-bills` and `/jobs/:id/notes` as the person — the agent API client has no PUT, PATCH or DELETE, and a unit test checks every write path against that list. A catalogue line takes the item's name, description, price (in the quote's currency, or the agent must give one), default tax and HSN/SAC; place-of-supply tax changes happen when the person opens the draft. The Idempotency-Key is a hash of the connection, tool, JSON-RPC request id and arguments. A request an agent's tool makes carries `x-spine-agent`, signed over its session, so the audit entries it writes carry `via` (`audit_log.via`, migration `0131`) and quote and vendor bill Activity read "· via <Agent> for <person>".
 
 ### US-MCP-08 · See every agent request in the audit log
 **Feature:** F-MCP-04 · **Priority:** P2 · **Phase:** 11 · **Screens:** `AuditLogAgent`

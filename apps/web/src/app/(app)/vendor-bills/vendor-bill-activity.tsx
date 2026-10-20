@@ -8,6 +8,7 @@ import { Ban, Banknote, FileCheck, FilePlus, ArrowRightLeft, Trash2 } from "luci
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { AiFilledMark } from "../../../components/ai-filled-mark";
+import { AgentMark } from "../../../components/agent-mark";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -108,6 +109,7 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
                   )}
                   {after && <> · “{after}”</>}
                   {item.aiAssisted && <AiFilledMark />}
+                  {item.via && <AgentMark agent={item.via} person={item.actorName} />}
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{[item.actorName, when(item.at)].filter(Boolean).join(" · ")}</p>
               </div>

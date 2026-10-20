@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Have an agent start work as drafts (US-MCP-07)
+
+- **Draft tools:** `create_lead` (adding the contact if new, the enquiry as its first note), `draft_quote` and `draft_vendor_bill` (catalogue lines take the item's price and tax; Spine computes totals) and `add_note` (contact, lead or job; Field only on their assigned jobs). Offered only with `spine:draft`, while the Owner allows drafts, and per the person's rights. Expenses aren't offered: they have no draft state.
+- **Only creates:** tools POST through Spine's normal create routes as the person; the client has no PUT, PATCH or DELETE, and a unit test checks every write path. Retries reuse an Idempotency-Key derived from the connection, tool, request and arguments; 30 drafts an hour per connection.
+- **"via <Agent>":** `audit_log.via` (migration `0131`), set when a request's `x-spine-agent` header is signed for its own session; quote and vendor bill Activity read "Created as a draft · via Claude for Priya Raman".
+- **Tests:** `us-mcp-07` (API, unit introspection and keys, web, E2E). QA section 254.
+
 ### 2026-10-20 — Ask an agent who owes us and how the business is doing (US-MCP-06)
 
 - **Report tools:** `receivables`, `payables`, `profit_and_loss`, `balance_sheet`, `job_profitability`, `bank_balances` and `dashboard_summary`, each calling the report's own route as the person, so the figures are the report's (from journal lines), with formatted amounts and the report's link. Each is offered only to people whose capabilities open that report; Field gets none.

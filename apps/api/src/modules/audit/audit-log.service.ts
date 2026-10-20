@@ -1,3 +1,4 @@
+import { currentAgentVia } from "../agents/agent-request-context";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
@@ -121,9 +122,12 @@ export class AuditLogService {
       entityId: string;
       contactId: string | null;
       changes?: FieldChange[] | Record<string, unknown> | null;
+      /** The agent it came through; defaults to the current request's (US-MCP-07). */
+      via?: string | null;
     },
   ) {
     await tx.insert(auditLog).values({
+      via: params.via ?? currentAgentVia(),
       orgId: params.orgId,
       actorUserId: params.actorUserId,
       action: params.action,
@@ -207,6 +211,7 @@ export class AuditLogService {
         createdAt: auditLog.createdAt,
         actorUserId: auditLog.actorUserId,
         actorName: user.name,
+        via: auditLog.via,
       })
       .from(auditLog)
       .leftJoin(user, eq(auditLog.actorUserId, user.id))

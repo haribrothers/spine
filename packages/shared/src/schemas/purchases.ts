@@ -212,6 +212,8 @@ export interface VendorBillActivityEntry {
   linkId?: string | null;
   /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
   aiAssisted?: true;
+  /** US-MCP-07 — the agent it was made through ("· via Claude for Priya Raman"). */
+  via?: string;
 }
 
 /** US-PUR-35 — a bill this vendor already has with the same number: `GET /vendor-bills/possible-duplicates`. */

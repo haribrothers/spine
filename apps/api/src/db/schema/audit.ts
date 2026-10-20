@@ -37,6 +37,8 @@ export const auditLog = pgTable(
     entityId: text("entity_id").notNull(),
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
     changes: jsonb("changes"),
+    /** US-MCP-07 (D-258): the agent's name when the change came through one. */
+    via: text("via"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

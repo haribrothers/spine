@@ -1,4 +1,4 @@
-import { createHmac, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { HttpAdapterHost } from "@nestjs/core";
 import { and, eq, gt } from "drizzle-orm";
@@ -7,7 +7,7 @@ import type { Database } from "../../db/client";
 import { session as sessionTable } from "../../db/schema";
 import { auth } from "../../auth/auth";
 import type { AgentContext } from "./mcp-context";
-import { agentSessionMarker } from "./agent-session";
+import { agentSessionMarker, signAgentHeader } from "./agent-session";
 import { AgentCallError } from "./agent-call-error";
 
 export { AgentCallError };
@@ -35,7 +35,8 @@ export class AgentApi {
     return this.call<T>(ctx, "GET", path);
   }
 
-  async send<T>(ctx: AgentContext, method: "POST" | "PUT", path: string, body: unknown, idempotencyKey: string): Promise<T> {
+  /** Creates only: agents never change or delete what exists (D-259), so there is no PUT, PATCH or DELETE here. */
+  async send<T>(ctx: AgentContext, method: "POST", path: string, body: unknown, idempotencyKey: string): Promise<T> {
     return this.call<T>(ctx, method, path, body, idempotencyKey);
   }
 
@@ -75,10 +76,4 @@ export class AgentApi {
     const created = await internalAdapter.createSession(ctx.userId, false, { userAgent: marker, ipAddress: null, activeOrganizationId: ctx.orgId });
     return created.token;
   }
-}
-
-/** `<connection id>.<HMAC>` — only Spine can make one, so a client can't pass its own requests off as an agent's. */
-export function signAgentHeader(connectionId: string, sessionToken: string): string {
-  const mac = createHmac("sha256", process.env.AUTH_SECRET ?? "").update(`${connectionId}.${sessionToken}`).digest("base64url");
-  return `${connectionId}.${mac}`;
 }

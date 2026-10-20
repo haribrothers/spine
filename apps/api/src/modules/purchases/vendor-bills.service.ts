@@ -268,12 +268,12 @@ export class VendorBillsService {
     const iso = (d: Date | string) => new Date(d).toISOString();
     const entries: VendorBillActivityEntry[] = [];
     const audit = await this.db
-      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name })
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name, via: auditLog.via })
       .from(auditLog)
       .leftJoin(user, eq(auditLog.actorUserId, user.id))
       .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "vendor_bill"), eq(auditLog.entityId, id)));
     for (const row of audit) {
-      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: row.actorName ?? null, ...aiMark(row.changes) });
+      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: row.actorName ?? null, ...aiMark(row.changes), ...(row.via ? { via: row.via } : {}) });
       else if (row.action === "recorded") entries.push({ type: "recorded", at: iso(row.at), actorName: row.actorName ?? null, amount: bill.totalAmount.toString() });
       else if (row.action === "voided") {
         const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; to: unknown }[];

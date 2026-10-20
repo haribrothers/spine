@@ -130,6 +130,8 @@ export interface QuoteActivityEntry {
   method?: "in_person" | "public_link" | null;
   /** US-AI-06 — this save was filled in with AI ("· filled in with AI"). */
   aiAssisted?: true;
+  /** US-MCP-07 — the agent it was made through ("· via Claude for Priya Raman"). */
+  via?: string;
 }
 
 /** US-QUO-33 — what a quote is connected to (`GET /quotes/:id/related`). */
