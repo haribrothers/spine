@@ -17,7 +17,7 @@ describe("US-MCP-02 · connected agents are the sixth module", () => {
     expect(ownedByOffModule(resolveModules(null), "settingsPanes", "my-connected-agents")).toBe(true);
   });
 
-  it("knows when Claude and ChatGPT on the web can't reach the address", () => {
+  it("knows when no agent can sign in at the address (http only on localhost)", () => {
     expect(agentsAddressReachable("https://spine.example.com/api/mcp")).toBe(true);
     expect(agentsAddressReachable("http://localhost:4000/mcp")).toBe(true);
     expect(agentsAddressReachable("http://127.0.0.1:4000/mcp")).toBe(true);

@@ -6,16 +6,11 @@ import { settings as settingsTable } from "../../db/schema";
 import { AGENTS_SETTINGS_KEY, forgetModules } from "../../common/modules";
 import { AuditLogService } from "../audit/audit-log.service";
 import { SettingsService } from "../org/settings.service";
+import { mcpUrl } from "./mcp-url";
 
 interface StoredAgents {
   enabled: boolean;
   drafts: boolean;
-}
-
-/** The connector address people add to their agent: the API's public address + `/mcp` (D-258). */
-export function mcpUrl(): string {
-  const base = (process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`).replace(/\/+$/, "");
-  return `${base}/mcp`;
 }
 
 /**

@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Connect an AI agent to Spine (US-MCP-03)
+
+- **Sign-in for agents:** Better Auth 1.7's MCP OAuth provider (`@better-auth/mcp`) with Client ID Metadata Documents (`@better-auth/cimd`, its safe Node transport) and dynamic registration for agents without CIMD; authorization code + PKCE S256, tokens bound to the MCP address, 15-minute JWTs. Discovery at `/.well-known/oauth-protected-resource/…` and `/.well-known/oauth-authorization-server/…` (Caddy routes them to the API).
+- **`/mcp`:** Streamable HTTP, stateless, JSON responses, `@modelcontextprotocol/sdk`. Every call also checks the person's connection, that they're active, and the module (403 `MODULE_OFF` with the business's name). Tools arrive from US-MCP-05.
+- **Pages:** log-in names the agent asking and continues its sign-in; the new consent page (`/oauth/consent`) says what the agent can and can't do for the person's role, marks self-registered agents "Unverified name", lets them untick drafts, and answers Allow or Cancel. `GET /agent-consent` and `/agent-consent/agent` read the signed request.
+- **Connections:** `agent_connections` (migration `0130`, with Better Auth's OAuth tables) is written on Allow and audited ("Agent connection"); deactivation and password reset end them, with their consents and tokens.
+- **As built (D-258):** OAuth 2.1 allows http only on localhost, so an http address that isn't this machine can't take agents — `/mcp` answers 503 and the pane's warning now says so. The challenge names both scopes; registration infers native apps for localhost callbacks.
+- **Tests:** `us-mcp-03` (API with the MCP SDK client through DCR and CIMD, web, E2E through the real log-in and consent pages). QA section 250.
+
 ### 2026-10-20 — Switch connected agents on or off (US-MCP-02)
 
 - **Settings › Connected agents** (Owners, Business group after AI assistant): one switch, off by default, that asks first in both directions; with it on, the connector address (`API_URL` + `/mcp`) with Copy, how to add it in Claude, ChatGPT and Claude Code, a warning when an `http` address can't be reached by hosted agents, and "Agents can create drafts". Settings › Modules lists it after AI assistant with "Set up in Connected agents".

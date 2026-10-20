@@ -1,4 +1,5 @@
 import { orgMoneySettings } from "../../common/money-format";
+import { endAgentConnections } from "../agents/agent-connections";
 import { BadRequestException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq, inArray, max } from "drizzle-orm";
 import type { MemberAccess, MemberTeamRef } from "@spine/shared";
@@ -269,6 +270,8 @@ export class MembersService {
     if (existing.isActive !== isActive) {
       await this.recordUserChange(orgId, actorUserId, existing.userId, isActive ? "reactivated" : "deactivated", "status", existing.isActive ? "Active" : "Deactivated", isActive ? "Active" : "Deactivated");
     }
+    // US-MCP-03 (D-258): deactivation ends their agent connections; reactivating doesn't bring them back.
+    if (!isActive) await endAgentConnections(this.db, { userId: existing.userId, reason: "deactivated", actorUserId });
 
     return this.getRow(updated!.id);
   }

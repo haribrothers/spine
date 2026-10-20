@@ -5330,13 +5330,31 @@ Nothing should look different. Before upgrading a test install, sign in on the w
 1. As an Owner, open Settings: "Connected agents" (Plug icon) sits in Business after AI assistant. Search settings for "MCP", "agent", "Claude" or "ChatGPT": it's found. As Staff or Field it isn't listed.
 2. On a new install it's off: the pane says what agents do ("… they never issue, send, record or delete anything.") and "The address to add and everyone's connections appear once it's on."
 3. Switch it on: "Turn on connected agents?" says an agent sees what its person can see and sends it to that agent's AI provider, with what agents can and can't do. "Go back" changes nothing; "Turn on connected agents" switches it on and the toast says "Connected agents are on".
-4. On: "Connector address" shows the API's address + `/mcp` with "Copy" (pasting gives the address), and how to add it in Claude, ChatGPT and Claude Code. On an `http://` address that isn't `localhost` (e.g. `API_URL=http://192.168.1.10/api`), a warning says Claude and ChatGPT on the web can't reach it.
+4. On: "Connector address" shows the API's address + `/mcp` with "Copy" (pasting gives the address), and how to add it in Claude, ChatGPT and Claude Code. On an `http://` address that isn't `localhost` (e.g. `API_URL=http://192.168.1.10/api`), a warning says agents can only connect over https, or from the same computer at localhost.
 5. "Agents can create drafts" switches without asking; the toast says "Agents can only read" (or "Agents can create drafts").
 6. Settings › Modules lists "Connected agents" after AI assistant with "On" or "Off" and "Set up in Connected agents", which opens the pane.
 7. Switch it off: "Turn off connected agents?" ("Every connected agent stops working at once. Connections are kept …"), then "Connected agents are off".
 8. Team › Audit log, record type "Connected agents": each switch and the drafts change are there with who and when.
 9. Keyboard and screen reader: both switches are named, the confirm traps focus, Copy says what it copies. Dark mode: the warning and cards use the dark tokens.
 10. Regression: the AI assistant pane and its Modules row, the four Modules switches, settings search, and the generic settings (business profile, branding) still save.
+
+## 250. Connect an AI agent to Spine (US-MCP-03, Phase 11)
+
+Needs Connected agents on. A real hosted agent needs Spine on an `https` address reachable from the internet; on your own computer, Claude Code works against `http://localhost:4000/mcp`.
+
+1. Claude Code (local): `claude mcp add --transport http spine http://localhost:4000/mcp`, then `/mcp` in Claude Code and choose to authenticate. The browser opens Spine's log-in with "<agent> is asking to connect to Spine. Log in to choose what it can do." and "Your password stays with Spine."
+2. Log in: the consent page reads "localhost:<port> wants to use Spine as you" — Claude Code registers itself, so it shows "Calls itself “Claude Code”" with "Unverified name" — then who you're signed in as, what it can read, "Create drafts for you to check" (ticked), what it can't do and that what it reads goes to its AI provider.
+3. Allow: the browser returns to Claude Code, which says it's connected. Team › Audit log, record type "Agent connection": "connected" with the agent and what it may do.
+4. Claude (claude.ai › Settings › Connectors › Add custom connector) and ChatGPT (Settings › Connectors) with `https://<your-domain>/api/mcp`: the same pages. An agent that identifies itself by its https address (CIMD) shows its name, its host and "Verified address"; one that registers itself shows "Calls itself …" and "Unverified name". Note which each uses.
+5. Untick "Create drafts" and Allow: the connection can only read (US-MCP-07 checks no draft tools are offered).
+6. Cancel: the agent says access was denied; nothing is connected or audited.
+7. As Field: the page lists only "Read your assigned jobs, contacts and the catalogue", "Add notes to your jobs", and "It can't see money or reports…".
+8. "Not you?" signs out and returns to log-in for the same request.
+9. Switch Connected agents off: the agent's next request is refused ("Connected agents are turned off for <Business>…"); a new consent page says agents are off. Back on: it works again without reconnecting.
+10. Deactivate the member: their agent is refused at once; reactivate: it stays disconnected until they connect again. Reset a password: every agent of that person is disconnected.
+11. On an `http` address that isn't localhost: the Settings pane warns, and an agent pointed at `/mcp` gets "Spine needs an https address before agents can connect…".
+12. Keyboard and screen reader: the checkbox, Allow, Cancel and Not you? are reachable and named; the picture on the right is skipped. Dark mode: the page and the picture use the dark tokens.
+13. Regression: ordinary log-in (no agent) lands on the dashboard; sign-up, invitations, password reset, the phone's sign-in.
 
 ## Known gaps — don't file these as bugs
 

@@ -76,9 +76,9 @@ describe("US-MCP-02 · Settings › Connected agents", () => {
     expect(state.toast).toHaveBeenCalledWith("Connected agents are off", expect.any(String));
   });
 
-  it("warns when hosted agents can't reach an http address, and offers how to connect each agent", async () => {
+  it("warns that agents need https (or localhost), and offers how to connect each agent", async () => {
     await show({ ...off, enabled: true, mcpUrl: "http://192.168.1.10/api/mcp", httpsReachable: false });
-    expect(screen.getByTestId("agents-http-warning").textContent).toContain("Claude and ChatGPT on the web can only connect to an https address they can reach from the internet. Agents on this network, like Claude Code, can still connect.");
+    expect(screen.getByTestId("agents-http-warning").textContent).toContain("Agents can only connect to Spine over https, or from this same computer at localhost.");
     for (const agent of ["Claude", "ChatGPT", "Claude Code"]) expect(screen.getByText(agent)).toBeTruthy();
   });
 

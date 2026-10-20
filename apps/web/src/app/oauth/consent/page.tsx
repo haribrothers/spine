@@ -1,0 +1,193 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Ban, Bot, CircleCheck, Globe, TriangleAlert } from "lucide-react";
+import { Alert, AlertDescription, Avatar, AvatarFallback, AvatarImage, Button, Checkbox, Spinner } from "@spine/ui";
+import { initials } from "../../../lib/initials";
+import { AGENT_SCOPES, agentsOffMessage, consentLines, type AgentConsentInfo } from "@spine/shared";
+import { apiClient } from "../../../lib/api-client";
+import { authClient } from "../../../lib/auth-client";
+import { AuthFrame, AuthHeading } from "../../../components/auth-frame";
+import { AgentScene } from "../agent-scene";
+
+export default function AgentConsentPage() {
+  return (
+    <Suspense>
+      <Consent />
+    </Suspense>
+  );
+}
+
+const ROLE_LABEL = { owner: "Owner", staff: "Staff", field: "Field" } as const;
+
+/**
+ * US-MCP-03 (D-256, D-258) — "<Agent> wants to use Spine as you". Better
+ * Auth sends the person here, signed in, with the agent's signed request.
+ * The page says, for their role, what the agent can and can't do and where
+ * what it reads goes; drafts are a box they can untick. Allow and Cancel
+ * answer Better Auth, which sends the browser back to the agent.
+ */
+function Consent() {
+  const searchParams = useSearchParams();
+  const query = searchParams.toString();
+  const [info, setInfo] = useState<AgentConsentInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState(true);
+  const [busy, setBusy] = useState<"allow" | "cancel" | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<AgentConsentInfo>(`/agent-consent?${query}`)
+      .then(setInfo)
+      .catch((err) => setError(err instanceof Error ? err.message : "This request has expired. Go back to your agent and connect again."));
+  }, [query]);
+
+  async function answer(accept: boolean) {
+    setError(null);
+    setBusy(accept ? "allow" : "cancel");
+    const requested = (searchParams.get("scope") ?? "").split(" ").filter(Boolean);
+    const scope = requested.filter((s) => s !== AGENT_SCOPES.draft || (info?.draftsOffered && drafts)).join(" ");
+    const { data, error: consentError } = await authClient.$fetch<{ redirect?: boolean; url?: string }>("/oauth2/consent", { method: "POST", body: accept ? { accept, scope } : { accept } });
+    if (consentError || !data?.url) {
+      setBusy(null);
+      setError(consentError?.message ?? "Spine couldn't answer the agent. Go back to it and connect again.");
+      return;
+    }
+    window.location.assign(data.url);
+  }
+
+  async function notYou() {
+    await authClient.signOut();
+    window.location.assign(`/login?${query}`);
+  }
+
+  if (!info) {
+    return (
+      <AuthFrame scene="login">
+        {error ? (
+          <>
+            <AuthHeading title="This request can't be used">{error}</AuthHeading>
+          </>
+        ) : (
+          <div className="flex justify-center py-12">
+            <Spinner />
+          </div>
+        )}
+      </AuthFrame>
+    );
+  }
+
+  if (info.off) {
+    return (
+      <AuthFrame scene="login">
+        <AuthHeading title="Connected agents are off">{agentsOffMessage(info.business)}</AuthHeading>
+      </AuthFrame>
+    );
+  }
+
+  const lines = consentLines(info.person.role, info.agent);
+  const allowDrafts = info.draftsOffered && drafts;
+  const scene = {
+    name: info.person.name,
+    detail: `${info.business} · ${ROLE_LABEL[info.person.role]}`,
+    lines: [
+      { text: info.person.role === "field" ? `Reads ${info.person.name.split(" ")[0]}'s assigned jobs` : `Reads what ${info.person.name.split(" ")[0]} can see`, ok: true },
+      ...(allowDrafts ? [{ text: info.person.role === "field" ? "Adds notes to them" : "Creates drafts to check", ok: true }] : []),
+      { text: info.person.role === "field" ? "No money, no reports" : "Never issues, sends or records", ok: false },
+    ],
+  };
+
+  return (
+    <AuthFrame scene="login" panel={<AgentScene agent={info.agent} person={scene} />}>
+      <div className="flex flex-col" data-testid="agent-consent">
+        <div className="mb-4 flex items-center gap-2.5" aria-hidden>
+          <span className={`grid size-11 place-items-center rounded-xl ${info.agent.verified ? "bg-info-bg text-primary" : "bg-surface-sunken text-on-surface-muted"}`}>
+            <Bot size={22} />
+          </span>
+          <span className="flex gap-[3px]">
+            {[0, 1, 2].map((i) => (
+              <i key={i} className="block size-1 rounded-full bg-border-strong" />
+            ))}
+          </span>
+        </div>
+        <AuthHeading title={lines.title} />
+        <p className="mt-2.5 inline-flex w-fit flex-wrap items-center gap-2 rounded-md bg-surface-sunken px-2.5 py-1.5 text-[13px] font-medium text-on-surface" data-testid="agent-host">
+          {info.agent.verified ? (
+            <>
+              <Globe size={14} aria-hidden className="text-on-surface-muted" />
+              {info.agent.host}
+              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-on-surface-muted">
+                <CircleCheck size={13} aria-hidden className="text-paid" />
+                Verified address
+              </span>
+            </>
+          ) : (
+            <>
+              Calls itself “{info.agent.name}”
+              <span className="inline-flex items-center gap-1 rounded-full bg-due-soon-bg px-2 py-0.5 text-[11px] font-semibold text-due-soon">
+                <TriangleAlert size={11} aria-hidden />
+                Unverified name
+              </span>
+            </>
+          )}
+        </p>
+
+        <div className="mt-4 flex items-center gap-2.5 rounded-lg border border-border p-3 text-[13px] text-on-surface-muted">
+          <Avatar size="md">
+            {info.person.image && <AvatarImage src={info.person.image} alt="" />}
+            <AvatarFallback>{initials(info.person.name)}</AvatarFallback>
+          </Avatar>
+          <span className="min-w-0 flex-1">
+            Signed in as <b className="font-semibold text-on-surface">{info.person.name}</b>
+            <br />
+            {info.business} · {ROLE_LABEL[info.person.role]}
+          </span>
+          <button type="button" className="font-medium text-primary hover:underline" onClick={() => void notYou()}>
+            Not you?
+          </button>
+        </div>
+
+        <ul className="mt-4 flex flex-col gap-2.5 text-[13.5px] text-on-surface">
+          <li className="flex items-start gap-2.5">
+            <CircleCheck size={16} aria-hidden className="mt-0.5 shrink-0 text-paid" />
+            {lines.read}
+          </li>
+        </ul>
+        {info.draftsOffered && (
+          <label className="mt-2.5 flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3 text-[13.5px] text-on-surface">
+            <Checkbox checked={drafts} onCheckedChange={(v) => setDrafts(v === true)} aria-describedby="consent-drafts-hint" className="mt-0.5" />
+            <span>
+              {lines.draftLabel}
+              <small id="consent-drafts-hint" className="mt-0.5 block text-[12.5px] text-on-surface-muted">
+                {lines.draftHint}
+              </small>
+            </span>
+          </label>
+        )}
+        <p className="mt-3 flex items-start gap-2.5 text-[13.5px] text-on-surface-muted">
+          <Ban size={16} aria-hidden className="mt-0.5 shrink-0" />
+          {lines.cant}
+        </p>
+        <p className="mt-3 flex items-start gap-2 text-[12.5px] text-on-surface-muted" data-testid="agent-sends">
+          <TriangleAlert size={15} aria-hidden className="mt-0.5 shrink-0 text-due-soon" />
+          {lines.sends}
+        </p>
+
+        {error && (
+          <Alert variant="critical" className="mt-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          <Button variant="secondary" size="touch" disabled={busy !== null} onClick={() => void answer(false)}>
+            {busy === "cancel" ? "Cancelling…" : "Cancel"}
+          </Button>
+          <Button size="touch" disabled={busy !== null} onClick={() => void answer(true)}>
+            {busy === "allow" ? "Allowing…" : "Allow"}
+          </Button>
+        </div>
+      </div>
+    </AuthFrame>
+  );
+}

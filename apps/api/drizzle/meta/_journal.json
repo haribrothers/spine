@@ -911,6 +911,13 @@
       "when": 1792437521480,
       "tag": "0129_better_auth_1_7",
       "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1792472840327,
+      "tag": "0130_connected_agents",
+      "breakpoints": true
     }
   ]
 }

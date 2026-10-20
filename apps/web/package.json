@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@better-auth/oauth-provider": "1.7.11",
     "@spine/shared": "workspace:*",
     "@spine/ui": "workspace:*",
     "better-auth": "^1.7.11",
