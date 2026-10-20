@@ -1,6 +1,6 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
-import type { AgentConnectionEnd } from "@spine/shared";
+import { AGENT_IDLE_DAYS, type AgentConnectionEnd } from "@spine/shared";
 import type { Database, Transaction } from "../../db/client";
 import { agentConnections, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -110,4 +110,27 @@ export async function endAgentConnections(db: Database, input: { userId: string;
     }
     return ended.length;
   });
+}
+
+/**
+ * US-MCP-04 (D-258) — connections unused for 30 days end ("idle"), with
+ * their consents and tokens; the agent connects again. Checked whenever a
+ * list is read and on every `/mcp` call, so no scheduled job is needed.
+ */
+export async function endIdleAgentConnections(db: Database, where: { orgId?: string; connectionId?: string }): Promise<number> {
+  const cutoff = new Date(Date.now() - AGENT_IDLE_DAYS * 24 * 60 * 60 * 1000);
+  const idle = await db
+    .select({ userId: agentConnections.userId, clientId: agentConnections.oauthClientId })
+    .from(agentConnections)
+    .where(
+      and(
+        isNull(agentConnections.endedAt),
+        where.orgId ? eq(agentConnections.orgId, where.orgId) : undefined,
+        where.connectionId ? eq(agentConnections.id, where.connectionId) : undefined,
+        sql`coalesce(${agentConnections.lastUsedAt}, ${agentConnections.connectedAt}) < ${cutoff.toISOString()}::timestamptz`,
+      ),
+    );
+  let ended = 0;
+  for (const row of idle) ended += await endAgentConnections(db, { userId: row.userId, clientId: row.clientId, reason: "idle", actorUserId: null });
+  return ended;
 }

@@ -5356,6 +5356,18 @@ Needs Connected agents on. A real hosted agent needs Spine on an `https` address
 12. Keyboard and screen reader: the checkbox, Allow, Cancel and Not you? are reachable and named; the picture on the right is skipped. Dark mode: the page and the picture use the dark tokens.
 13. Regression: ordinary log-in (no agent) lands on the dashboard; sign-up, invitations, password reset, the phone's sign-in.
 
+## 251. See and disconnect connected agents (US-MCP-04, Phase 11)
+
+1. With Connected agents on, every role has Settings › Your account › "Connected agents". With it off, the pane isn't listed and `?settings=my-connected-agents` opens the first pane.
+2. Connect an agent (section 250). Your pane lists it: the agent and its host (a check for a verified address, or "Unverified name"), "Read" or "Read and create drafts" ("Read and add job notes" for Field), when it was connected and "Last used" ("Just now", "2 hours ago"…, or "Not used yet").
+3. Disconnect: "Disconnect <Agent>?" ("It stops working at once. Drafts it created stay, marked with its name."), then the toast "<Agent> disconnected". The agent's next request is refused; it has to connect again. The audit log has "disconnected".
+4. With none: "No agents connected" and the address with "Copy address".
+5. As an Owner, Settings › Connected agents › Connections lists everyone's, with the person and their role. Disconnecting someone else's says they'll be told; they get "<Owner> disconnected <Agent> from your account." in their notifications and by email.
+6. Leave a connection unused for 30 days (or set its last use back in the database): it disappears from the lists and its agent is refused.
+7. Staff can't call `GET /org/agents/connections` (403). Disconnecting someone else's from your own pane isn't possible.
+8. Keyboard and screen reader: each Disconnect says which agent (and whose, on the Owner's list). Dark mode: the badges and table use the dark tokens.
+9. Regression: Settings deep links (`?settings=data-export`, `?settings=ai`), the Modules pane, notifications.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

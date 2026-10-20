@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — See and disconnect connected agents (US-MCP-04)
+
+- **Your account › Connected agents** (every role, while the module is on): your agents with their host (verified or "Unverified name"), what each may do, when connected and last used, and Disconnect (asks first, then a toast); with none, the address to add one.
+- **The Owner's Connections card** in Settings › Connected agents: everyone's agents, whose and their role; disconnecting someone's tells them (in-app and email).
+- **API:** `GET/DELETE /agents/connections[/:id]` (own) and `GET/DELETE /org/agents/connections[/:id]` (Owner). Ending a connection deletes its consent and tokens and is audited; connections unused for 30 days end when a list is read or their agent calls.
+- **Fix along the way:** a Settings link to a module's pane (`?settings=my-connected-agents`) no longer falls back to the first pane before the module switches have loaded.
+- **Tests:** `us-mcp-04` (API, web, E2E). QA section 251.
+
 ### 2026-10-20 — Connect an AI agent to Spine (US-MCP-03)
 
 - **Sign-in for agents:** Better Auth 1.7's MCP OAuth provider (`@better-auth/mcp`) with Client ID Metadata Documents (`@better-auth/cimd`, its safe Node transport) and dynamic registration for agents without CIMD; authorization code + PKCE S256, tokens bound to the MCP address, 15-minute JWTs. Discovery at `/.well-known/oauth-protected-resource/…` and `/.well-known/oauth-authorization-server/…` (Caddy routes them to the API).

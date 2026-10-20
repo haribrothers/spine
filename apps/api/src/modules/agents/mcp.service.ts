@@ -10,7 +10,7 @@ import { agentConnections, member } from "../../db/schema";
 import { auth } from "../../auth/auth";
 import { moduleOn } from "../../common/modules";
 import { loadEmailBrand } from "../email/email-brand";
-import { liveAgentConnection } from "./agent-connections";
+import { endIdleAgentConnections, liveAgentConnection } from "./agent-connections";
 import type { AgentContext, AgentToolRegistrar } from "./mcp-context";
 import { mcpAvailable, mcpUrl } from "./mcp-url";
 
@@ -65,7 +65,9 @@ export class McpService {
     const userId = typeof claims.sub === "string" ? claims.sub : null;
     const clientId = typeof claims.azp === "string" ? claims.azp : typeof claims.client_id === "string" ? claims.client_id : null;
     if (!userId || !clientId) return ended();
-    const connection = await liveAgentConnection(this.db, userId, clientId);
+    let connection = await liveAgentConnection(this.db, userId, clientId);
+    // US-MCP-04: unused for 30 days, it has ended.
+    if (connection && (await endIdleAgentConnections(this.db, { connectionId: connection.id }))) connection = null;
     if (!connection) return ended();
     const [membership] = await this.db
       .select({ role: member.role, isActive: member.isActive })

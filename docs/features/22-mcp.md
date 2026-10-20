@@ -99,7 +99,7 @@ Decision: D-258
 - **Given** a connection unused for 30 days, **when** its agent tries to refresh, **then** it's ended and the agent has to connect again.
 
 **Implementation notes**
-- A connection is one person's consent for one agent (Better Auth's `oauthConsent`) plus Spine's `agent_connections` row (last used, ended). Access tokens are short-lived JWTs (15 minutes, audience = the MCP address) and every MCP request also checks the connection, the member and the module, so disconnecting is immediate even though a JWT can't be revoked (D-258). API: `GET /agents/connections`, `DELETE /agents/connections/:id` (any member, their own), `GET /org/agents/connections`, `DELETE /org/agents/connections/:id` (roles: owner).
+- A connection is one person's consent for one agent (Better Auth's `oauth_consent`) plus Spine's `agent_connections` row (last used, ended). Idle connections (30 days since last used) are ended when a list is read or the agent calls `/mcp`, so no scheduled job is needed. The person's pane is `my-connected-agents` in Your account, owned by the agents module (hidden while it's off); its deep link waits for the module switches before falling back. Access tokens are short-lived JWTs (15 minutes, audience = the MCP address) and every MCP request also checks the connection, the member and the module, so disconnecting is immediate even though a JWT can't be revoked (D-258). API: `GET /agents/connections`, `DELETE /agents/connections/:id` (any member, their own), `GET /org/agents/connections`, `DELETE /org/agents/connections/:id` (roles: owner).
 
 ### US-MCP-05 · Ask an agent to find and read records
 **Feature:** F-MCP-03 · **Priority:** P1 · **Phase:** 11 · **Screens:** —

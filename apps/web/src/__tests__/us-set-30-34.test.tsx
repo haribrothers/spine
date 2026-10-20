@@ -26,7 +26,8 @@ describe("US-SET-30", () => {
 describe("US-SET-31", () => {
   it("groups the panes in order, with Team links that open pages", () => {
     expect(SETTINGS_GROUPS.map((g) => g.label)).toEqual(["Your account", "Business", "Money & tax", "Documents & emails", "Sales & meetings", "Data", "Team"]);
-    expect(labels("account")).toEqual(["Profile", "Password & security", "Notifications"]);
+    // US-MCP-04: Connected agents, shown only while that module is on.
+    expect(labels("account")).toEqual(["Profile", "Password & security", "Notifications", "Connected agents"]);
     // US-AI-01 (D-242): AI assistant follows Modules; US-MCP-02: Connected agents follows AI.
     expect(labels("business")).toEqual(["Business profile", "Branding", "Industry template", "Currency & locale", "Modules", "AI assistant", "Connected agents"]);
     expect(labels("money")).toEqual(["Financial year", "Tax", "GST", "Chart of accounts", "Opening balances", "Payment instructions"]);

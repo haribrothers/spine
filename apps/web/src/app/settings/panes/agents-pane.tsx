@@ -15,9 +15,12 @@ import {
   AGENTS_TURN_ON_CAN,
   AGENTS_TURN_ON_MESSAGE,
   AGENTS_TURN_ON_TITLE,
+  agentDisconnectedToast,
+  type AgentConnection,
   type AgentsSettings,
   type AgentsSettingsUpdate,
 } from "@spine/shared";
+import { AgentConnectionsTable } from "./agent-connections-table";
 import { apiClient } from "../../../lib/api-client";
 import { useModules } from "../../../lib/modules-context";
 import { useToast } from "../../../components/toast-host";
@@ -78,11 +81,20 @@ export function AgentsPane() {
   const [busy, setBusy] = useState<"switch" | "drafts" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // US-MCP-04: every connection in the business.
+  const [connections, setConnections] = useState<AgentConnection[] | null>(null);
+  const loadConnections = () =>
+    apiClient
+      .get<AgentConnection[]>("/org/agents/connections")
+      .then(setConnections)
+      .catch(() => setConnections(null));
+
   useEffect(() => {
     apiClient
       .get<AgentsSettings>("/org/agents")
       .then(setSaved)
       .catch((err) => setError(err instanceof Error ? err.message : "The settings didn't load. Try again."));
+    void loadConnections();
   }, []);
 
   if (!saved) {
@@ -116,6 +128,16 @@ export function AgentsPane() {
       setError(err instanceof Error ? err.message : "Connected agents weren't switched. Try again.");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function disconnect(c: AgentConnection) {
+    try {
+      await apiClient.delete(`/org/agents/connections/${c.id}`);
+      toast(agentDisconnectedToast(c.clientName), c.user ? `${c.user.name} is told it was disconnected.` : "It can't use Spine any more.");
+      await loadConnections();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "It wasn't disconnected. Try again.");
     }
   }
 
@@ -191,6 +213,17 @@ export function AgentsPane() {
               <Switch aria-label="Agents can create drafts" aria-describedby="agents-drafts-hint" checked={saved.drafts} disabled={busy === "drafts"} onCheckedChange={(on) => void switchDrafts(on)} />
             </label>
           </section>
+
+          <AccountCard title="Connections" description="Every agent connected to Spine, by person. Disconnecting stops it at once; drafts it created stay.">
+            {connections && connections.length > 0 ? (
+              <AgentConnectionsTable connections={connections} showPerson onDisconnect={disconnect} />
+            ) : (
+              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center text-[13px] text-on-surface-muted" data-testid="agents-none">
+                <b className="text-[14px] font-semibold text-on-surface">No agents connected yet</b>
+                When someone adds the address to their agent and allows it, it shows here.
+              </div>
+            )}
+          </AccountCard>
         </>
       )}
       {dialog}

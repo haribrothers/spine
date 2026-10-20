@@ -107,3 +107,37 @@ export function consentLines(role: AgentConsentInfo["person"]["role"], agent: Ag
 
 /** The sign-in page's line when an agent sent the person there. */
 export const agentSignInNote = (agent: AgentIdentity) => `${agent.verified ? agent.name : agent.host}${agent.verified ? ` (${agent.host})` : ""} is asking to connect to Spine. Log in to choose what it can do.`;
+
+/** US-MCP-04 — a live connection, as the lists show it. */
+export interface AgentConnection {
+  id: string;
+  clientName: string;
+  clientHost: string;
+  verified: boolean;
+  scopes: string[];
+  connectedAt: string;
+  lastUsedAt: string | null;
+  /** On the Owner's list: whose it is. */
+  user?: { id: string; name: string; role: "owner" | "staff" | "field" };
+}
+
+/** `GET /agents/connections` — the person's own, and the address to add another. */
+export interface MyAgentConnections {
+  mcpUrl: string;
+  connections: AgentConnection[];
+}
+
+/** A connection unused this long ends; the agent has to connect again (D-258). */
+export const AGENT_IDLE_DAYS = 30;
+
+/** "Read and create drafts" / "Read" / "Read and add job notes", for the lists. */
+export function agentCanLabel(scopes: readonly string[], role?: "owner" | "staff" | "field"): string {
+  if (!scopes.includes(AGENT_SCOPES.draft)) return "Read";
+  return role === "field" ? "Read and add job notes" : "Read and create drafts";
+}
+
+export const AGENTS_MINE_INTRO = "AI agents you've connected to Spine. Each one works as you, with what you're allowed to do — nothing more.";
+export const agentDisconnectedToast = (agent: string) => `${agent} disconnected`;
+export const agentDisconnectTitle = (agent: string) => `Disconnect ${agent}?`;
+export const AGENT_DISCONNECT_MESSAGE = "It stops working at once. Drafts it created stay, marked with its name.";
+export const agentDisconnectedByOwner = (owner: string, agent: string) => `${owner} disconnected ${agent} from your account.`;

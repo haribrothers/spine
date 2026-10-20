@@ -60,6 +60,7 @@ import { EmailsPane } from "../app/settings/panes/emails-pane";
 import { ModulesPane } from "../app/settings/panes/modules-pane";
 import { AiPane } from "../app/settings/panes/ai-pane";
 import { AgentsPane } from "../app/settings/panes/agents-pane";
+import { MyAgentsPane } from "../app/settings/panes/my-agents-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { OpeningBalancesPane } from "../app/settings/panes/opening-balances-pane";
@@ -106,6 +107,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { key: "profile", label: "Profile", icon: UserRound, group: "account", render: () => <AccountProfilePane />, keywords: ["photo", "avatar", "name", "sign-in email", "email"] },
   { key: "security", label: "Password & security", icon: KeyRound, group: "account", render: () => <AccountSecurityPane />, keywords: ["password", "change password", "devices", "sessions", "sign out", "signed in"] },
   { key: "notifications", label: "Notifications", icon: Bell, group: "account", render: () => <AccountNotificationsPane />, keywords: ["browser notifications", "daily digest", "meeting reminders", "email summary"], savesOnChange: true },
+  // US-MCP-04: each person's own agents; gone while Connected agents is off (its module owns the pane).
+  { key: "my-connected-agents", label: "Connected agents", icon: Plug, group: "account", render: () => <MyAgentsPane />, keywords: ["MCP", "agent", "agents", "Claude", "ChatGPT", "disconnect", "connected apps"], savesOnChange: true },
   // Business
   { key: "business", label: "Business profile", icon: Building2, group: "business", render: () => <BusinessPane />, keywords: ["business name", "registered name", "address", "phone", "GSTIN", "PAN", "tax number"] },
   { key: "branding", label: "Branding", icon: Palette, group: "business", render: () => <BrandingPane />, keywords: ["logo", "brand colour", "app theme", "footer"] },
@@ -256,9 +259,10 @@ export function SettingsDialog({
   const results = useMemo(() => searchSettings(sections, query), [sections, query]);
   // US-SET-33: an unknown pane, or one this person can't open, opens their first pane.
   const active = sections.find((s) => s.key === requestedKey && s.render) ?? sections.find((s) => s.key === firstSettingsPane(isOwner)) ?? sections[0]!;
+  // Not while the modules are still loading: a link to a module's pane (US-MCP-04) opens once they arrive.
   useEffect(() => {
-    if (open && controlledKey && controlledKey !== active.key) onActiveKeyChange?.(active.key);
-  }, [open, controlledKey, active.key, onActiveKeyChange]);
+    if (open && controlledKey && modules !== null && controlledKey !== active.key) onActiveKeyChange?.(active.key);
+  }, [open, controlledKey, active.key, onActiveKeyChange, modules]);
 
   const markSaved = useCallback(() => setDirty(false), []);
 
