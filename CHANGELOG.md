@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Start from a ready-made task (US-MCP-09)
+
+- **MCP prompts:** "Chase overdue invoices" (reads receivables and drafts nothing — it suggests a reminder for each customer, for the person to send from Spine), "Summarise a job" (asks for the job's number or name) and "This week in the business".
+- **Per the person's tools:** each prompt is offered only when the tools it needs were offered to that person, and its text names only those tools — so Field and Staff without money reports aren't offered chasing, and their briefing uses jobs and quotes only. Running a prompt is the agent calling those tools, as the person.
+- **Tests:** `us-mcp-09` (API through the MCP SDK as Owner, Staff without money reports, and Field). QA section 256.
+
 ### 2026-10-20 — See every agent request in the audit log (US-MCP-08)
 
 - **Every call recorded:** `agent_requests` (migration `0132`) gets one row per tool call — the person, the connection, the tool, the record it touched, the outcome (`ok`, `refused`, `error`, `rate_limited`) and how long it took. Never the arguments' text or the result.

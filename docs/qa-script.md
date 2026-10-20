@@ -5416,6 +5416,16 @@ Connect Claude Code (section 250) as each role in turn.
 7. Make more than 120 calls in a minute from one agent (a script, or ask it to read many records quickly): it's told "Too many requests from this agent. Wait a minute and try again." and the log shows "Slowed down — over 120 calls a minute". After a minute it works again.
 8. Regression: the audit log's other record types, the One record view and Export CSV read as before; AI request entries still read "AI request".
 
+## 256. Start from a ready-made task (US-MCP-09, Phase 11)
+
+1. In an agent that shows MCP prompts (Claude Desktop's "+" menu, Claude Code's `/` commands, VS Code's prompt list), connected as an Owner: it offers "Chase overdue invoices", "Summarise a job" and "This week in the business".
+2. Run "Chase overdue invoices": the agent reads Receivables (overdue) and lists each customer's overdue invoices with amounts and days late, with a suggested reminder for each. It creates and sends nothing — Team › Audit log shows only "Read receivables" (and any "Read an invoice") for that agent.
+3. Run "Summarise a job" and give a job's number or name: the agent finds and opens the job and says where it stands, with its profit so far; the job link opens it in Spine.
+4. Run "This week in the business": a short briefing from the dashboard, receivables, payables, bank balances, jobs in progress and quotes waiting.
+5. Connected as Staff whose Teams can't see money reports: no "Chase overdue invoices"; the briefing covers jobs and quotes only.
+6. Connected as Field: "Summarise a job" (assigned jobs only, no money) and "This week in the business" (their jobs); no chasing.
+7. Regression: tools, the audit log entries and drafts behave as in sections 252–255.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

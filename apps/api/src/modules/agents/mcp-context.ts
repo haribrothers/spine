@@ -11,6 +11,8 @@ export interface AgentContext {
   connectionId: string;
   clientId: string;
   clientName: string;
+  /** US-MCP-09: what this request's server offers — filled in as tools register, read by the prompts. */
+  offered: { tools: Set<string>; recordTypes: Set<string> };
 }
 
 /** Adds the tools (and prompts) this person may use to a fresh per-request server (US-MCP-05 onwards). */

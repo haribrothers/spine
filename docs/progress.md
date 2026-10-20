@@ -629,7 +629,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-MCP-06 · Ask an agent who owes us and how the business is doing
 - [x] US-MCP-07 · Have an agent start work as drafts
 - [x] US-MCP-08 · See every agent request in the audit log
-- [ ] US-MCP-09 · Start from a ready-made task
+- [x] US-MCP-09 · Start from a ready-made task
 
 ## Phase 12 · Packaging & 1.0
 

@@ -29,6 +29,7 @@ export class ReadTools implements AgentToolRegistrar {
   async register(server: McpServer, ctx: AgentContext): Promise<void> {
     const types = readableTypes(ctx.role, await getEffectiveCapabilities(this.db, { orgId: ctx.orgId, userId: ctx.userId }));
     if (!types.length) return;
+    for (const t of types) ctx.offered.recordTypes.add(t.key);
     const keys = types.map((t) => t.key) as [string, ...string[]];
     const typeOf = (key: string) => types.find((t) => t.key === key)!;
     const { locale } = await orgMoneySettings(this.db, ctx.orgId);

@@ -14,6 +14,7 @@ import { endIdleAgentConnections, liveAgentConnection } from "./agent-connection
 import { agentAction, agentRecord, recordAgentRequest } from "./agent-requests";
 import { SlidingWindowLimiter } from "../../auth/password-reset";
 import { TOO_MANY_DRAFTS } from "./tools/draft-tools";
+import { registerAgentPrompts } from "./tools/prompts";
 import type { AgentContext, AgentToolRegistrar } from "./mcp-context";
 import { mcpAvailable, mcpUrl } from "./mcp-url";
 
@@ -100,6 +101,7 @@ export class McpService {
       connectionId: connection.id,
       clientId,
       clientName: connection.clientName,
+      offered: { tools: new Set(), recordTypes: new Set() },
     };
     const server = new McpServer(
       { name: "Spine", version: "1.0.0" },
@@ -107,6 +109,7 @@ export class McpService {
     );
     this.recordToolCalls(server, ctx);
     for (const registrar of this.registrars) await registrar.register(server, ctx);
+    registerAgentPrompts(server, ctx.offered.tools, ctx.offered.recordTypes);
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     try {
       await server.connect(transport);
@@ -119,11 +122,12 @@ export class McpService {
     }
   }
 
-  /** US-MCP-08 — every tool call is recorded as it ends: the tool, the record, how it ended, how long it took. */
+  /** US-MCP-08 — every tool call is recorded as it ends: the tool, the record, how it ended, how long it took. US-MCP-09: and each offered tool is noted for the prompts. */
   private recordToolCalls(server: McpServer, ctx: AgentContext) {
     const register = server.registerTool.bind(server) as (name: string, config: unknown, cb: (...a: unknown[]) => unknown) => unknown;
-    (server as unknown as { registerTool: typeof register }).registerTool = (name, config, cb) =>
-      register(name, config, async (...cbArgs: unknown[]) => {
+    (server as unknown as { registerTool: typeof register }).registerTool = (name, config, cb) => {
+      ctx.offered.tools.add(name);
+      return register(name, config, async (...cbArgs: unknown[]) => {
         const args = (cbArgs[0] ?? {}) as Record<string, unknown>;
         const started = Date.now();
         let result: { isError?: boolean; content?: { text?: string }[]; structuredContent?: Record<string, unknown> } | undefined;
@@ -138,6 +142,7 @@ export class McpService {
           );
         }
       });
+    };
   }
 
   /** Last used, at most once a minute per connection. */
