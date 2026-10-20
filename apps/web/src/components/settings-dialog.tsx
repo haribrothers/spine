@@ -27,6 +27,7 @@ import {
   Mails,
   Palette,
   Percent,
+  Plug,
   Scale,
   Search,
   Shield,
@@ -58,6 +59,7 @@ import { DocumentsPane } from "../app/settings/panes/documents-pane";
 import { EmailsPane } from "../app/settings/panes/emails-pane";
 import { ModulesPane } from "../app/settings/panes/modules-pane";
 import { AiPane } from "../app/settings/panes/ai-pane";
+import { AgentsPane } from "../app/settings/panes/agents-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { OpeningBalancesPane } from "../app/settings/panes/opening-balances-pane";
@@ -113,6 +115,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { key: "modules", label: "Modules", icon: ToggleRight, group: "business", render: () => <ModulesPane />, keywords: ["modules", "leads and meetings", "jobs and field", "approvals", "recurring documents"] },
   // US-AI-01, US-AI-02 (D-242): after Modules; the Bot icon, since Industry template has Sparkles.
   { key: "ai", label: "AI assistant", icon: Bot, group: "business", render: () => <AiPane />, keywords: ["AI", "artificial intelligence", "provider", "model", "API key", "Anthropic", "Claude", "OpenAI", "Ollama", "budget", "receipts"] },
+  // US-MCP-02 (D-256): outside agents, switched in their own pane like AI.
+  { key: "agents", label: "Connected agents", icon: Plug, group: "business", render: () => <AgentsPane />, keywords: ["MCP", "agent", "agents", "Claude", "ChatGPT", "Claude Code", "connector", "connected apps"], savesOnChange: true },
   // Money & tax
   { key: "fiscal-year", label: "Financial year", icon: Calendar, group: "money", render: () => <FiscalYearPane />, keywords: ["financial year", "year end", "fiscal year"] },
   { key: "tax", label: "Tax", icon: Percent, group: "money", render: () => <TaxPane />, keywords: ["tax rates", "tax groups", "VAT", "sales tax", "country"] },

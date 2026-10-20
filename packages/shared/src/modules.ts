@@ -22,10 +22,16 @@ export type SwitchableModuleKey = (typeof MODULE_KEYS)[number];
  * only when `settings.ai.enabled` is.
  */
 export const AI_MODULE = "ai" as const;
-export const ALL_MODULE_KEYS = [...MODULE_KEYS, AI_MODULE] as const;
+/**
+ * US-MCP-02 (D-256, D-258) — connected agents (MCP) are the sixth module,
+ * switched in Settings › Connected agents like AI; on only while
+ * `settings.agents.enabled` is.
+ */
+export const AGENTS_MODULE = "agents" as const;
+export const ALL_MODULE_KEYS = [...MODULE_KEYS, AI_MODULE, AGENTS_MODULE] as const;
 export type ModuleKey = (typeof ALL_MODULE_KEYS)[number];
-/** The switches, and `ai: true` while the AI assistant is on (absent means off). */
-export type ModuleSettings = Record<SwitchableModuleKey, boolean> & { ai?: boolean };
+/** The switches, and `ai: true` / `agents: true` while those are on (absent means off). */
+export type ModuleSettings = Record<SwitchableModuleKey, boolean> & { ai?: boolean; agents?: boolean };
 
 /** `GET /org/modules`: the switches, and since when each switched-off module has been off (YYYY-MM-DD). */
 export type ModulesResponse = ModuleSettings & { offSince?: Partial<Record<ModuleKey, string>> };
@@ -154,6 +160,21 @@ export const MODULES: Record<ModuleKey, ModuleDefinition> = {
     settingsPanes: [],
     reports: [],
   },
+  agents: {
+    label: "Connected agents",
+    description: "Let people use Spine from AI agents like Claude and ChatGPT — reading, and drafts for a person to finish. Each person connects their own agent.",
+    includes: "AI agents connected to Spine",
+    // Settings › Connected agents (`/org/agents`) stays reachable while it's off: it's where an Owner switches it on.
+    routes: [/^\/mcp(\/|$)/, /^\/agents(\/|$)/],
+    capabilities: [],
+    pages: [],
+    dashboardWidgets: [],
+    attention: [],
+    search: [],
+    notifications: ["agent_disconnected"],
+    settingsPanes: ["my-connected-agents"],
+    reports: [],
+  },
 };
 
 export const ALWAYS_ON_NOTE = "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on.";
@@ -162,6 +183,7 @@ export const MODULE_OFF_ERROR = "MODULE_OFF";
 /** "<Module> is switched off. An owner can switch it on in Settings › Modules." */
 export function moduleOffMessage(key: ModuleKey): string {
   if (key === AI_MODULE) return "The AI assistant is off. An owner can switch it on in Settings › AI assistant.";
+  if (key === AGENTS_MODULE) return "Connected agents are off. An owner can switch them on in Settings › Connected agents.";
   return `${MODULES[key].label} is switched off. An owner can switch it on in Settings › Modules.`;
 }
 

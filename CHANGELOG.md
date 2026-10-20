@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Switch connected agents on or off (US-MCP-02)
+
+- **Settings › Connected agents** (Owners, Business group after AI assistant): one switch, off by default, that asks first in both directions; with it on, the connector address (`API_URL` + `/mcp`) with Copy, how to add it in Claude, ChatGPT and Claude Code, a warning when an `http` address can't be reached by hosted agents, and "Agents can create drafts". Settings › Modules lists it after AI assistant with "Set up in Connected agents".
+- **The sixth module:** `agents` in `modules.ts` owns `/mcp`, `/agents/*`, the `agent_disconnected` notification and Your account's pane, so the module guard refuses them while it's off. `GET/PUT /org/agents` (Owner); `settings.agents` is kept out of the generic settings routes; changes are audited as "Connected agents".
+- **Tests:** `us-mcp-02` (API, web, shared, E2E). QA section 249.
+
 ### 2026-10-20 — Spine on Better Auth 1.7 (US-MCP-01, D-257)
 
 - **Upgrade, nothing visible:** `better-auth` 1.6.26 → 1.7.11 (API and web), `@thallesp/nestjs-better-auth` 2.7 → 2.8, and the CLI is now the `auth` package (`@better-auth/cli` stops at 1.4). zod moves to 4.6.7 so Spine and Better Auth share one copy — two made the exported `auth` type unnameable (TS2742).

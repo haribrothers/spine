@@ -51,6 +51,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   email: "Email",
   ai_settings: "AI assistant",
   ai_request: "AI request",
+  agents_settings: "Connected agents",
 };
 
 function sentenceCase(key: string): string {

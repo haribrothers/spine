@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Bot } from "lucide-react";
+import { ArrowRight, Bot, Plug } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   Spinner,
   Switch,
 } from "@spine/ui";
-import { ALWAYS_ON_NOTE, MODULES, MODULE_KEYS, SWITCH_OFF_REASSURANCE, type AiSettings, type ModuleKey, type ModuleSettings, type ModulesResponse } from "@spine/shared";
+import { ALWAYS_ON_NOTE, MODULES, MODULE_KEYS, SWITCH_OFF_REASSURANCE, type AgentsSettings, type AiSettings, type ModuleKey, type ModuleSettings, type ModulesResponse } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useModules } from "../../../lib/modules-context";
 import { useOpenSettings } from "../../../components/settings-route";
@@ -39,6 +39,8 @@ export function ModulesPane() {
   const [error, setError] = useState<string | null>(null);
   // US-AI-01 (D-242): the fifth module, switched in its own pane.
   const [ai, setAi] = useState<AiSettings | null>(null);
+  // US-MCP-02 (D-256): the sixth, also switched in its own pane.
+  const [agents, setAgents] = useState<AgentsSettings | null>(null);
   const openSettings = useOpenSettings(true);
 
   useEffect(() => {
@@ -46,6 +48,10 @@ export function ModulesPane() {
       .get<AiSettings>("/org/ai")
       .then(setAi)
       .catch(() => setAi(null));
+    apiClient
+      .get<AgentsSettings>("/org/agents")
+      .then(setAgents)
+      .catch(() => setAgents(null));
   }, []);
 
   useEffect(() => {
@@ -134,6 +140,22 @@ export function ModulesPane() {
             <span className="text-[12.5px] font-medium text-on-surface-muted">{ai?.enabled ? `On · ${ai.providerHost}` : "Off"}</span>
             <Button variant="secondary" size="sm" aria-describedby="module-ai-label" onClick={() => openSettings("ai")}>
               Set up in AI assistant
+              <ArrowRight size={14} aria-hidden />
+            </Button>
+          </div>
+        </li>
+        <li className="flex items-center justify-between gap-4 rounded-md border border-border-strong bg-info-bg/50 p-4" data-testid="module-agents">
+          <div className="min-w-0">
+            <p id="module-agents-label" className="flex items-center gap-2 text-[14px] font-medium text-on-surface">
+              <Plug size={16} aria-hidden className="text-primary" />
+              {MODULES.agents.label}
+            </p>
+            <p className="text-[13px] text-on-surface-muted">{MODULES.agents.description}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="text-[12.5px] font-medium text-on-surface-muted">{agents?.enabled ? "On" : "Off"}</span>
+            <Button variant="secondary" size="sm" aria-describedby="module-agents-label" onClick={() => openSettings("agents")}>
+              Set up in Connected agents
               <ArrowRight size={14} aria-hidden />
             </Button>
           </div>

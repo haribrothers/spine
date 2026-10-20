@@ -5325,6 +5325,19 @@ Nothing should look different. Before upgrading a test install, sign in on the w
 6. Phone (iOS Simulator and an Android 15 emulator): `maestro test apps/mobile/e2e/us-mob-01-sign-in.yaml` passes (Android with `-e SERVER=http://10.0.2.2:4000` and the dev-client URL, as the flow's header says).
 7. Regression: switching business on the web, "Not you?" on the accept-invite page, the session dialog after signing out in another tab (US-AUTH-12), and the 300-a-minute limit per session.
 
+## 249. Switch connected agents on or off (US-MCP-02, Phase 11)
+
+1. As an Owner, open Settings: "Connected agents" (Plug icon) sits in Business after AI assistant. Search settings for "MCP", "agent", "Claude" or "ChatGPT": it's found. As Staff or Field it isn't listed.
+2. On a new install it's off: the pane says what agents do ("… they never issue, send, record or delete anything.") and "The address to add and everyone's connections appear once it's on."
+3. Switch it on: "Turn on connected agents?" says an agent sees what its person can see and sends it to that agent's AI provider, with what agents can and can't do. "Go back" changes nothing; "Turn on connected agents" switches it on and the toast says "Connected agents are on".
+4. On: "Connector address" shows the API's address + `/mcp` with "Copy" (pasting gives the address), and how to add it in Claude, ChatGPT and Claude Code. On an `http://` address that isn't `localhost` (e.g. `API_URL=http://192.168.1.10/api`), a warning says Claude and ChatGPT on the web can't reach it.
+5. "Agents can create drafts" switches without asking; the toast says "Agents can only read" (or "Agents can create drafts").
+6. Settings › Modules lists "Connected agents" after AI assistant with "On" or "Off" and "Set up in Connected agents", which opens the pane.
+7. Switch it off: "Turn off connected agents?" ("Every connected agent stops working at once. Connections are kept …"), then "Connected agents are off".
+8. Team › Audit log, record type "Connected agents": each switch and the drafts change are there with who and when.
+9. Keyboard and screen reader: both switches are named, the confirm traps focus, Copy says what it copies. Dark mode: the warning and cards use the dark tokens.
+10. Regression: the AI assistant pane and its Modules row, the four Modules switches, settings search, and the generic settings (business profile, branding) still save.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
