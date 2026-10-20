@@ -129,6 +129,9 @@ Decision: D-259
 - **Given** any of them, **when** it answers, **then** the figures are exactly the report's in Spine for the same period and basis (cash or accrual) — they come from the same report service, from journal lines, never a separate calculation.
 - **Given** Field, or Staff without the capability, **when** their agent lists tools, **then** those report tools aren't there, and a direct call answers 403 — Field never gets a money figure (security rule).
 
+**Implementation notes**
+- Each tool calls the report's own route as the person (`/reports/receivables`, `/reports/payables`, `/reports/profit-and-loss`, `/reports/balance-sheet`, `/reports/job-profitability`, `/money-accounts`, `/reports/dashboard-summary`), with the same parameters (`age`; `from`, `to`, `basis`, `compare`; `asOf`, `compareAsOf`; `status`), and adds the report's link and formatted amounts. A tool the person can't use isn't registered, so calling it is "tool not found".
+
 ### US-MCP-07 · Have an agent start work as drafts
 **Feature:** F-MCP-03 · **Priority:** P1 · **Phase:** 11 · **Screens:** `QuoteActivityAgent`
 **As** anyone who works in Spine, **I want** my agent to create drafts for me, **so that** it does the typing and I check and finish the work in Spine.

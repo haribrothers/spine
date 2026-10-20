@@ -11,6 +11,7 @@ import { NotificationsModule } from "../notifications/notifications.module";
 import { AGENT_TOOL_REGISTRARS, McpService } from "./mcp.service";
 import { AgentApi } from "./agent-api";
 import { ReadTools } from "./tools/read-tools";
+import { ReportTools } from "./tools/report-tools";
 
 /** Connected agents (D-256–D-259): the Owner's switch, and from US-MCP-03 the MCP server, sign-in and connections. */
 @Module({
@@ -18,8 +19,9 @@ import { ReadTools } from "./tools/read-tools";
   controllers: [AgentsSettingsController, McpController, WellKnownController, AgentConsentController, MyAgentConnectionsController, OrgAgentConnectionsController],
   providers: [AgentsSettingsService, AgentConnectionsService, McpService, AgentApi,
     ReadTools,
+    ReportTools,
     // The tools agents get, story by story (D-259).
-    { provide: AGENT_TOOL_REGISTRARS, useFactory: (read: ReadTools) => [read], inject: [ReadTools] }],
+    { provide: AGENT_TOOL_REGISTRARS, useFactory: (read: ReadTools, reports: ReportTools) => [read, reports], inject: [ReadTools, ReportTools] }],
   exports: [AgentsSettingsService],
 })
 export class AgentsModule {}

@@ -5381,6 +5381,16 @@ Connect Claude Code (section 250) as each role in turn.
 7. Settings › Your account › Password & security: the agent doesn't appear as a signed-in device, and "Sign out other devices" doesn't disconnect it.
 8. Regression: the web's lists and pages for the same records show the same things.
 
+## 253. Ask an agent who owes us and how the business is doing (US-MCP-06, Phase 11)
+
+1. As an Owner's agent: "Who owes us money?" — it uses `receivables`; the totals and invoices match Receivables in Spine exactly, with formatted amounts and a link.
+2. "What did we make last month?" — `profit_and_loss` for that month; the figures match the Profit & Loss report for the same dates and basis. Ask for cash basis: it matches the cash-basis report.
+3. "What's our balance sheet at the end of September?", "How are our jobs doing?", "What's in the bank?", "How's the business doing?" — `balance_sheet`, `job_profitability`, `bank_balances`, `dashboard_summary`, each matching its page.
+4. Dates the wrong way round: "Choose a From date on or before the To date."
+5. As Staff whose Teams only read receivables: only `receivables` among the report tools; asking for profit and loss says it can't.
+6. As Field: no report or bank tools at all; asking about money gets a refusal, never a figure.
+7. Regression: the Reports pages themselves.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

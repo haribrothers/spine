@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Ask an agent who owes us and how the business is doing (US-MCP-06)
+
+- **Report tools:** `receivables`, `payables`, `profit_and_loss`, `balance_sheet`, `job_profitability`, `bank_balances` and `dashboard_summary`, each calling the report's own route as the person, so the figures are the report's (from journal lines), with formatted amounts and the report's link. Each is offered only to people whose capabilities open that report; Field gets none.
+- **Tests:** `us-mcp-06` compares each tool's answer with the report route's. QA section 253.
+
 ### 2026-10-20 — Ask an agent to find and read records (US-MCP-05)
 
 - **Tools:** `search`, `list_records` (contacts, leads, quotes, jobs, invoices, credit notes, payments, vendor bills, vendor credits, vendor payments, expenses, catalogue items — with status, contact, job and contact filters, pages of 25 up to 100) and `get_record` (by id, or by number, bill number or reference), all read-only. Amounts come with a formatted copy in the business's locale; records with a page carry their link.
