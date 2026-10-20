@@ -116,7 +116,7 @@ Decision: D-259
 - **Given** a Staff member whose Teams can't open invoices, **when** their agent asks for invoices, **then** the type isn't offered and a direct call answers "You don't have permission to open invoices."
 
 **Implementation notes**
-- One handler per record type over the module's existing list/get service, with the caller's `Principal`; no new queries that bypass a service. Tool input and output schemas are built from the shared zod schemas.
+- As built: tools call Spine's own API routes in-process as the person (`AgentApi`), in a Better Auth session of their own per connection (marked `spine-agent/<connection>`, hidden from Password & security's devices and "sign out others", deleted when the connection ends). So every guard — session, active member, module, section, capability, ownership, Field's "assigned jobs, no money" — runs exactly as for their web requests, with no second copy of any rule. Which types are offered: Owners every type whose module is on; Staff the sections their Teams open (and their expenses); Field contacts, the catalogue, assigned jobs and own expenses. `get_record` by number matches `number`, `billNumber` or `reference`. Amounts gain a `…Formatted` copy in the business's locale.
 
 ### US-MCP-06 · Ask an agent who owes us and how the business is doing
 **Feature:** F-MCP-03 · **Priority:** P1 · **Phase:** 11 · **Screens:** —

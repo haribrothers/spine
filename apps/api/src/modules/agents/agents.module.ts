@@ -9,16 +9,17 @@ import { MyAgentConnectionsController, OrgAgentConnectionsController } from "./a
 import { AgentConnectionsService } from "./agent-connections.service";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { AGENT_TOOL_REGISTRARS, McpService } from "./mcp.service";
-import type { AgentToolRegistrar } from "./mcp-context";
-
-/** The tools agents get, added story by story (US-MCP-05 onwards). */
-const registrars: AgentToolRegistrar[] = [];
+import { AgentApi } from "./agent-api";
+import { ReadTools } from "./tools/read-tools";
 
 /** Connected agents (D-256–D-259): the Owner's switch, and from US-MCP-03 the MCP server, sign-in and connections. */
 @Module({
   imports: [OrgModule, AuditModule, NotificationsModule],
   controllers: [AgentsSettingsController, McpController, WellKnownController, AgentConsentController, MyAgentConnectionsController, OrgAgentConnectionsController],
-  providers: [AgentsSettingsService, AgentConnectionsService, McpService, { provide: AGENT_TOOL_REGISTRARS, useValue: registrars }],
+  providers: [AgentsSettingsService, AgentConnectionsService, McpService, AgentApi,
+    ReadTools,
+    // The tools agents get, story by story (D-259).
+    { provide: AGENT_TOOL_REGISTRARS, useFactory: (read: ReadTools) => [read], inject: [ReadTools] }],
   exports: [AgentsSettingsService],
 })
 export class AgentsModule {}

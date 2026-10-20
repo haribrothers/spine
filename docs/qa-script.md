@@ -5368,6 +5368,19 @@ Needs Connected agents on. A real hosted agent needs Spine on an `https` address
 8. Keyboard and screen reader: each Disconnect says which agent (and whose, on the Owner's list). Dark mode: the badges and table use the dark tokens.
 9. Regression: Settings deep links (`?settings=data-export`, `?settings=ai`), the Modules pane, notifications.
 
+## 252. Ask an agent to find and read records (US-MCP-05, Phase 11)
+
+Connect Claude Code (section 250) as each role in turn.
+
+1. Ask "What tools do you have from Spine?": `search`, `list_records` and `get_record`, read-only.
+2. "Find Harbour Road" (a contact you have): it uses `search` and finds the contact (and its documents).
+3. "List my overdue invoices": it uses `list_records` with type invoice and status overdue; amounts come as "$1,250.00", each with a link that opens the invoice in Spine.
+4. "Open invoice INV-0042": `get_record` by number, with its lines, tax, totals and balance. A number that doesn't exist: "No invoice INV-9999 that you can open."
+5. As Staff whose Teams can't open invoices: invoices aren't among the types it can list, and asking for one by id is refused.
+6. As Field: only contacts, catalogue items, jobs assigned to them (no contract value or costs) and their own expenses.
+7. Settings › Your account › Password & security: the agent doesn't appear as a signed-in device, and "Sign out other devices" doesn't disconnect it.
+8. Regression: the web's lists and pages for the same records show the same things.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.

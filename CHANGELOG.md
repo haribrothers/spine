@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-20 — Ask an agent to find and read records (US-MCP-05)
+
+- **Tools:** `search`, `list_records` (contacts, leads, quotes, jobs, invoices, credit notes, payments, vendor bills, vendor credits, vendor payments, expenses, catalogue items — with status, contact, job and contact filters, pages of 25 up to 100) and `get_record` (by id, or by number, bill number or reference), all read-only. Amounts come with a formatted copy in the business's locale; records with a page carry their link.
+- **As the person:** tools call Spine's own routes in-process in a session kept for the connection, so sections, ownership and Field's "assigned jobs, no money" apply exactly as on the web. Only the types the person can open are offered. That session isn't a device in Password & security and ends with the connection.
+- **Tests:** `us-mcp-05` (API through the MCP SDK as Owner, Staff without invoices, and Field; unit). QA section 252.
+
 ### 2026-10-20 — See and disconnect connected agents (US-MCP-04)
 
 - **Your account › Connected agents** (every role, while the module is on): your agents with their host (verified or "Unverified name"), what each may do, when connected and last used, and Disconnect (asks first, then a toast); with none, the address to add one.

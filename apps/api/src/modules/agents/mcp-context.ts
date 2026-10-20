@@ -14,4 +14,6 @@ export interface AgentContext {
 }
 
 /** Adds the tools (and prompts) this person may use to a fresh per-request server (US-MCP-05 onwards). */
-export type AgentToolRegistrar = (server: McpServer, ctx: AgentContext) => void | Promise<void>;
+export interface AgentToolRegistrar {
+  register(server: McpServer, ctx: AgentContext): void | Promise<void>;
+}

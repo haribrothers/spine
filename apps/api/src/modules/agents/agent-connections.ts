@@ -1,8 +1,9 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { AGENT_IDLE_DAYS, type AgentConnectionEnd } from "@spine/shared";
 import type { Database, Transaction } from "../../db/client";
-import { agentConnections, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken } from "../../db/schema";
+import { agentConnections, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken, session as sessionTable } from "../../db/schema";
+import { agentSessionMarker } from "./agent-session";
 import { AuditLogService } from "../audit/audit-log.service";
 
 type Db = Database | Transaction;
@@ -97,6 +98,8 @@ export async function endAgentConnections(db: Database, input: { userId: string;
     await tx.delete(oauthConsent).where(and(eq(oauthConsent.userId, input.userId), client(oauthConsent.clientId)));
     await tx.delete(oauthAccessToken).where(and(eq(oauthAccessToken.userId, input.userId), client(oauthAccessToken.clientId)));
     await tx.delete(oauthRefreshToken).where(and(eq(oauthRefreshToken.userId, input.userId), client(oauthRefreshToken.clientId)));
+    // US-MCP-05: the session its tool calls ran in ends with it.
+    if (ended.length) await tx.delete(sessionTable).where(and(eq(sessionTable.userId, input.userId), inArray(sessionTable.userAgent, ended.map((r) => agentSessionMarker(r.id)))));
     for (const row of ended) {
       await new AuditLogService(db).record(tx, {
         orgId: row.orgId,

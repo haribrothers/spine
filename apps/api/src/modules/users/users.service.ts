@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { REPORTS, deviceName, digestEnabledFor, type AccountSession, type DashboardLayout, type DigestDays, type NotificationPreferences } from "@spine/shared";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, notLike, or, sql } from "drizzle-orm";
+import { AGENT_SESSION_PREFIX } from "../agents/agent-session";
 import { auth } from "../../auth/auth";
 import { verifyPassword } from "../../auth/password";
 import { orgLocale } from "../../common/money-format";
@@ -37,6 +38,9 @@ export interface ProfileRow {
  * must work regardless of role (Owner/Staff/Field alike) — never gate
  * anything here with @OrgRoles.
  */
+
+/** US-MCP-05: the sessions agents' tool calls run in aren't devices. */
+const notAgentSession = or(isNull(sessionTable.userAgent), notLike(sessionTable.userAgent, `${AGENT_SESSION_PREFIX}%`));
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -164,7 +168,7 @@ export class UsersService {
     const rows = await this.db
       .select({ id: sessionTable.id, userAgent: sessionTable.userAgent, ipAddress: sessionTable.ipAddress, updatedAt: sessionTable.updatedAt, createdAt: sessionTable.createdAt, expiresAt: sessionTable.expiresAt })
       .from(sessionTable)
-      .where(eq(sessionTable.userId, userId))
+      .where(and(eq(sessionTable.userId, userId), notAgentSession))
       .orderBy(desc(sessionTable.updatedAt));
     const now = Date.now();
     return rows
@@ -182,7 +186,8 @@ export class UsersService {
 
   /** US-AUTH-17 — ends every session but this one. */
   async endOtherSessions(userId: string, currentSessionId: string | null): Promise<{ signedOut: number }> {
-    const where = currentSessionId ? and(eq(sessionTable.userId, userId), ne(sessionTable.id, currentSessionId)) : eq(sessionTable.userId, userId);
+    // Agents' sessions belong to their connections (US-MCP-04), not to "sign out everywhere else".
+    const where = currentSessionId ? and(eq(sessionTable.userId, userId), ne(sessionTable.id, currentSessionId), notAgentSession) : and(eq(sessionTable.userId, userId), notAgentSession);
     const deleted = await this.db.delete(sessionTable).where(where).returning({ id: sessionTable.id });
     return { signedOut: deleted.length };
   }

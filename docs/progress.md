@@ -625,7 +625,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-MCP-02 · Switch connected agents on or off
 - [x] US-MCP-03 · Connect an AI agent to Spine
 - [x] US-MCP-04 · See and disconnect connected agents
-- [ ] US-MCP-05 · Ask an agent to find and read records
+- [x] US-MCP-05 · Ask an agent to find and read records
 - [ ] US-MCP-06 · Ask an agent who owes us and how the business is doing
 - [ ] US-MCP-07 · Have an agent start work as drafts
 - [ ] US-MCP-08 · See every agent request in the audit log
