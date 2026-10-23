@@ -5476,6 +5476,18 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 7. `./backup.sh --help` shows a nightly cron line and how to copy backups off the machine.
 8. Regression: the storage banner (US-OPS-31) still shows alongside it when the files volume is nearly full.
 
+## 262. Restore a backup into a clean install (US-OPS-04, Phase 12)
+
+1. On an install with real data (some issued invoices, an uploaded logo), run `./backup.sh --passphrase`, and copy the archive and `.env` to another machine (or folder).
+2. There: run `./install.sh --non-interactive`, replace its `.env` with the old install's (at least `AUTH_SECRET`), then `./restore.sh <archive>`. It asks for the passphrase, says it's stopping Spine, checks every file, replaces the database, puts the files back and prints "Restored. Spine is running at <address> with the backup's data — sign in as before."
+3. Sign in with your old account: invoices, the trial balance, logos and PDFs are all there and open.
+4. Run `./restore.sh <archive>` again: "This install already has data (1 organisation). Restore into a clean install, or pass --replace…". Nothing changes, and Spine keeps running. `--replace` restores over it.
+5. Restore with the wrong passphrase: "The passphrase doesn't open this backup…", and nothing changes.
+6. On a fresh install with its own new `AUTH_SECRET`: the restore refuses, explaining that two-factor and stored keys need the old secret. With `--new-secret` it restores, and two-factor users set it up again.
+7. A backup from a newer Spine (for example a 1.1 archive on 1.0): "This backup is from Spine 1.1.0, which is newer than this install… Upgrade this install to 1.1.0 or later first". A backup from an older Spine restores, and the API brings it up to date on start ("Applied N database migrations").
+8. `scripts/ci/restore-verify.sh` (with this version's images built) passes: "the trial balance and all <n> files match". CI runs it on every release tag before publishing.
+9. Regression: `./backup.sh` and Spine's start-up behave as before.
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

@@ -53,6 +53,8 @@ ENV NODE_ENV=production
 COPY --from=prod-deps /repo /repo
 COPY --from=build /repo/packages/shared/dist packages/shared/dist
 COPY --from=build /repo/apps/api/dist apps/api/dist
+# PDF fonts and the demo business's photos, read at runtime.
+COPY apps/api/assets apps/api/assets
 # The migrations the API applies when it starts (D-264): the SQL and the journal, not drizzle-kit's snapshots.
 COPY apps/api/drizzle/*.sql apps/api/drizzle/
 COPY apps/api/drizzle/meta/_journal.json apps/api/drizzle/meta/

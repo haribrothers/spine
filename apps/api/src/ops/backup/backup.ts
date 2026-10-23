@@ -14,11 +14,18 @@ import { encryptFile } from "./archive-crypto";
 
 export const BACKUP_FORMAT = 1;
 
+/** A fingerprint of AUTH_SECRET that says whether two installs share it, without revealing it. */
+export function authSecretFingerprint(secret: string | undefined = process.env.AUTH_SECRET): string | null {
+  return secret ? createHash("sha256").update(`spine-backup-fingerprint:${secret}`).digest("hex").slice(0, 16) : null;
+}
+
 /** What a backup's `manifest.json` records (US-OPS-03). */
 export interface BackupManifest {
   format: number;
   spineVersion: string;
   createdAt: string;
+  /** Which AUTH_SECRET the install had (a fingerprint, not the secret): two-factor and stored keys need the same one after a restore (US-OPS-04). */
+  authSecretFingerprint: string | null;
   database: { file: string; bytes: number; sha256: string };
   files: { count: number; bytes: number; entries: { id: string; key: string; driver: StorageDriverName; bytes: number; sha256: string }[]; missing: { id: string; key: string }[] };
 }
@@ -128,6 +135,7 @@ export async function createBackup(options: BackupOptions): Promise<BackupResult
       format: BACKUP_FORMAT,
       spineVersion: spineVersion(),
       createdAt: (options.now ?? new Date()).toISOString(),
+      authSecretFingerprint: authSecretFingerprint(),
       database,
       files: { count: entries.length, bytes: entries.reduce((n, e) => n + e.bytes, 0), entries, missing },
     };

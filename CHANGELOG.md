@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Restore a backup into a clean install (US-OPS-04)
+
+- **`restore.sh <archive>`:** stops Spine and streams the archive into a one-off API container. It checks everything before changing anything:
+  - the passphrase;
+  - the version: a backup from a newer Spine is refused, with a message to upgrade first;
+  - every checksum;
+  - that the install is empty (`--replace` otherwise);
+  - that `AUTH_SECRET` matches the backup's fingerprint (`--new-secret` otherwise).
+
+  Then it replaces the database with `pg_restore`, writes each file back through its storage driver and reads it back to check its checksum, and starts Spine again. A backup from an older Spine is brought up to date by the start-up migrations.
+- **`restore-verify` (NFR-REL-03):** `scripts/ci/restore-verify.sh`:
+  1. installs from the release's files with this commit's images;
+  2. seeds the demo business and waits for the issued PDFs;
+  3. makes an encrypted backup, wipes the install and installs it again;
+  4. restores, and compares the trial balance and the file count.
+
+  CI runs it on every tag before "Release". `nightly.yml` runs it every night once the repo is public. Locally: 35 files and the trial balance match, in about 2 minutes.
+- **Found by it:** the slim API image (US-OPS-01) had left out `apps/api/assets`, the PDF fonts and the demo photos, so loading demo data, and issuing documents, failed in the image. The image now includes them.
+- **Tests:** `us-ops-04`, an integration test covering version order, passphrases, a newer backup, a different secret, a full restore matching every table and every file, and `--replace`. QA section 262.
+
 ### 2026-10-23 — Back up everything into one file (US-OPS-03)
 
 - **`backup.sh`:** one command writes `backups/spine-backup-<time>.tar.gz` (readable only by you). The archive holds a `pg_dump` of the database, every stored file (read through its storage driver, so the local volume or the S3 bucket alike) and a manifest with the version and checksums. A missing file is listed rather than stopping the backup. Any failure exits non-zero and leaves nothing behind. `--help` has a nightly cron line.
