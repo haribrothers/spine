@@ -1,14 +1,18 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Plug, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription, Button, FormField, Input, PasswordInput } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
 import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { useSignupStatus } from "../../lib/signup-status";
 import { safeNextPath } from "../../lib/safe-next";
 import { TOO_MANY_ATTEMPTS_MESSAGE, WRONG_CREDENTIALS_MESSAGE } from "../../lib/auth-messages";
+import { agentSignInNote, type AgentIdentity } from "@spine/shared";
+import { apiClient } from "../../lib/api-client";
+import { AgentScene } from "../oauth/agent-scene";
 
 export default function LoginPage() {
   return (
@@ -35,13 +39,23 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // US-MCP-03: an agent's sign-in sent them here with a signed query; say which agent is asking.
+  const [agent, setAgent] = useState<AgentIdentity | null>(null);
+  const agentQuery = searchParams.has("sig") && searchParams.has("client_id") ? searchParams.toString() : null;
+  useEffect(() => {
+    if (!agentQuery) return;
+    apiClient
+      .get<AgentIdentity>(`/agent-consent/agent?${agentQuery}`)
+      .then(setAgent)
+      .catch(() => setAgent(null));
+  }, [agentQuery]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const { error: signInError } = await authClient.signIn.email({
+    const { data, error: signInError } = await authClient.signIn.email({
       email,
       password,
     });
@@ -53,11 +67,23 @@ function LoginForm() {
       return;
     }
 
+    // US-MCP-03: signing in for an agent continues its sign-in (to the consent page, or back to the agent).
+    const redirect = data as { redirect?: boolean; url?: string } | null;
+    if (redirect?.redirect && redirect.url) {
+      window.location.assign(redirect.url);
+      return;
+    }
     router.push(safeNextPath(next) ?? "/dashboard");
   }
 
   return (
-    <AuthFrame scene="login">
+    <AuthFrame scene="login" panel={agent ? <AgentScene agent={agent} /> : undefined}>
+      {agent && (
+        <p className="mb-6 flex items-start gap-2.5 rounded-md border border-primary/20 bg-info-bg p-3 text-[13px] text-on-surface" data-testid="agent-signin-note">
+          <Plug size={16} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+          {agentSignInNote(agent)}
+        </p>
+      )}
       <AuthHeading title="Log in">Welcome back to Spine.</AuthHeading>
       <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
         {error && (
@@ -82,6 +108,12 @@ function LoginForm() {
         <Button type="submit" size="touch" disabled={loading} className="mt-1">
           {loading ? "Logging in…" : "Log in"}
         </Button>
+        {agent && (
+          <p className="flex items-center gap-2 text-[13px] text-on-surface-muted">
+            <ShieldCheck size={16} aria-hidden className="shrink-0 text-paid" />
+            Your password stays with Spine. {agent.verified ? agent.name : "The agent"} never sees it.
+          </p>
+        )}
       </form>
 
       {/* US-AUTH-08: only while the instance still takes a first account. */}

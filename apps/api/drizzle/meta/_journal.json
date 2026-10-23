@@ -904,6 +904,34 @@
       "when": 1792422109554,
       "tag": "0128_ai_bank_suggestions",
       "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1792437521480,
+      "tag": "0129_better_auth_1_7",
+      "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1792472840327,
+      "tag": "0130_connected_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1792475747926,
+      "tag": "0131_audit_via",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1792476381483,
+      "tag": "0132_agent_requests",
+      "breakpoints": true
     }
   ]
 }

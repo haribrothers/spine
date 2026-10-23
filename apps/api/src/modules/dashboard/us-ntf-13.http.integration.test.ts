@@ -131,6 +131,7 @@ describe("US-NTF-13 · get a daily digest by email (requires local Postgres)", (
     expect(to(owner)).toHaveLength(0);
   });
 
+  // The run goes through every member in the shared test database (every earlier test's Owner is due at 7:10), so it gets longer than the default 5 s.
   it("at 'Send at' the Owner gets one email: attention counts, today, yesterday, Open dashboard and the footer", async () => {
     await digest.runDue(morning);
     morningRun = [...sent];
@@ -147,7 +148,7 @@ describe("US-NTF-13 · get a daily digest by email (requires local Postgres)", (
     expect(mail!.text).toContain("Open dashboard:");
     expect(mail!.text).toContain("You get this daily digest because you're an owner of");
     expect(mail!.html).toContain("Open dashboard");
-  });
+  }, 30_000);
 
   it("goes out once a day, however often the worker runs", async () => {
     await digest.runDue(todayAt(7, 25));

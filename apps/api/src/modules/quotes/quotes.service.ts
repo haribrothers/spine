@@ -970,7 +970,7 @@ export class QuotesService {
       const changes = (row.changes ?? []) as { field: string; from: unknown; to: unknown }[];
       switch (row.action) {
         case "created":
-          entries.push({ at: iso(row.createdAt), type: "created", actorName, detail: null, ...aiMark(row.changes) });
+          entries.push({ at: iso(row.createdAt), type: "created", actorName, detail: null, ...aiMark(row.changes), ...(row.via ? { via: row.via } : {}) });
           break;
         case "updated":
           entries.push({ at: iso(row.createdAt), type: "edited", actorName, detail: null, ...aiMark(row.changes) });

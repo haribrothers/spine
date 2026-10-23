@@ -28,3 +28,4 @@ export * from "./opening-balances";
 export * from "./manual-journals";
 export * from "./email-log";
 export * from "./ai";
+export * from "./agents";

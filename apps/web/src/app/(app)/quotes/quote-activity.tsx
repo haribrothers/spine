@@ -8,6 +8,7 @@ import { Check, Copy, Eye, GitBranch, HardHat, Link2, Mail, MailCheck, MailX, Pe
 import { apiClient } from "../../../lib/api-client";
 import { orgLocaleTag } from "../../../lib/money";
 import { AiFilledMark } from "../../../components/ai-filled-mark";
+import { AgentMark } from "../../../components/agent-mark";
 
 /** Consecutive views of the link become one entry: "Viewed by the customer 3 times". */
 export interface ActivityItem extends QuoteActivityEntry {
@@ -156,6 +157,7 @@ export function QuoteActivity({ quoteId, status, refreshKey, onViewHistory }: { 
                     <span className="font-semibold">{activityText(item)}</span>
                   )}
                   {item.aiAssisted && <AiFilledMark />}
+                  {item.via && <AgentMark agent={item.via} person={item.actorName} />}
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{sub}</p>
                 {(item.type === "accepted" || item.type === "rejected") && item.detail && (

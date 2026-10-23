@@ -4,6 +4,7 @@ import { and, count, desc, eq, gte, inArray, lt, or, type SQL } from "drizzle-or
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
+  agentRequests,
   aiRequests,
   bankReconciliations,
   activities,
@@ -158,6 +159,21 @@ const RESOLVERS: Record<string, Resolver> = {
       (r) => `${r.name} to ${r.endDate}`,
       (r) => `/banking/${r.accountId}/reconcile`,
     ),
+  // US-MCP-08 (D-258): an agent request names and opens the record it touched ("Quote · Draft").
+  agent_request: async (db, orgId, ids) => {
+    const rows = await db.select({ id: agentRequests.id, entityType: agentRequests.entityType, entityId: agentRequests.entityId }).from(agentRequests).where(and(eq(agentRequests.orgId, orgId), inArray(agentRequests.id, ids)));
+    const records = new Map<string, Resolved>();
+    for (const type of new Set(rows.map((r) => r.entityType).filter((t): t is string => Boolean(t && RESOLVERS[t])))) {
+      const recordIds = rows.filter((r) => r.entityType === type && r.entityId && UUID.test(r.entityId)).map((r) => r.entityId!);
+      if (recordIds.length) records.set(type, await RESOLVERS[type]!(db, orgId, recordIds));
+    }
+    return new Map(
+      rows.map((r) => {
+        const record = r.entityType && r.entityId ? records.get(r.entityType)?.get(r.entityId) : undefined;
+        return [r.id, { label: r.entityType ? `${auditEntityLabel(r.entityType)}${record?.label ? ` · ${record.label}` : ""}` : null, link: record?.link ?? null }];
+      }),
+    );
+  },
   // US-AI-06 (D-169): an AI request names and opens the record it was for ("Vendor bill · ABM-20611").
   ai_request: async (db, orgId, ids) => {
     const rows = await db.select({ id: aiRequests.id, entityType: aiRequests.entityType, entityId: aiRequests.entityId }).from(aiRequests).where(and(eq(aiRequests.orgId, orgId), inArray(aiRequests.id, ids)));

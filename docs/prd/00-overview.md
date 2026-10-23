@@ -42,13 +42,13 @@ Out of scope for 1.0. Work planned after 1.0 is listed, with reasons, in [16-roa
 - Multi-currency.
 - Live bank feeds. Importing a statement file and reconciling it is in V1 ([D-135](12-decisions.md)).
 - Native desktop app.
-- Purchase orders (planned for later, [16-roadmap](16-roadmap.md)), timesheets, plugin API, public REST API for third parties.
+- Purchase orders (planned for later, [16-roadmap](16-roadmap.md)), timesheets, plugin API, public REST API for third parties (agents acting as a signed-in person use the one MCP endpoint instead — [D-256](12-decisions.md), [22-mcp](../features/22-mcp.md)).
 - Cross-owner content ownership (one Owner restricting another Owner's access). All Owners are equal in v1.
 - Offline creation of financial documents (quotes, invoices) on mobile.
 
 ## Licence and repository
 
-Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md), needed before Phase 11). The repository is a pnpm/Turborepo monorepo ([03-monorepo](03-monorepo.md)).
+Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md), needed before Phase 12). The repository is a pnpm/Turborepo monorepo ([03-monorepo](03-monorepo.md)).
 
 ## Personas
 

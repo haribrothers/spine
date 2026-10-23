@@ -27,6 +27,8 @@ const EXEMPT = new Set([
   "POST /invoices/preview-pdf",
   "POST /credit-notes/preview",
   // US-AI-02, US-AI-08, US-AI-11, US-AI-13: AI routes save nothing — a connection test, a model list, a document read, an email draft, quote lines (05-api).
+  // US-MCP-03 (D-258, D-259): JSON-RPC for agents, with its own Bearer token; it has no Idempotency-Key header to read, and the draft tools derive theirs from the connection and the call.
+  "POST /mcp",
   "POST /org/ai/test",
   "POST /org/ai/models",
   "POST /ai/read-document",

@@ -1,5 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 import { organizationClient } from "better-auth/client/plugins";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 
 /**
  * Browser-side Better Auth client. Points at the API's own origin
@@ -14,7 +15,8 @@ import { organizationClient } from "better-auth/client/plugins";
  */
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  plugins: [organizationClient()],
+  // US-MCP-03: on a page an agent's sign-in sent people to, requests carry its signed query so the flow continues.
+  plugins: [organizationClient(), oauthProviderClient()],
 });
 
 export const { useSession, signIn, signUp, signOut } = authClient;

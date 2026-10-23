@@ -51,6 +51,10 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   email: "Email",
   ai_settings: "AI assistant",
   ai_request: "AI request",
+  agents_settings: "Connected agents",
+  agent_connection: "Agent connection",
+  agent_request: "Agent request",
+  note: "Note",
 };
 
 function sentenceCase(key: string): string {
@@ -65,7 +69,16 @@ export function auditEntityLabel(entityType: string): string {
 /** "accepted_in_person" → "Accepted in person"; "approve" → "Approved". */
 export function auditActionLabel(action: string): string {
   const special: Record<string, string> = { approve: "Approved", role_changed: "Role changed", primary_owner_transferred: "Primary owner transferred", password_set: "Password set by an owner", members_changed: "Members changed", privileges_changed: "Permissions changed", read_document: "Read a document", draft_email: "Drafted an email", draft_quote_lines: "Drafted quote lines", bank_suggestions: "Suggested bank matches" };
-  return special[action] ?? sentenceCase(action);
+  if (special[action]) return special[action];
+  // US-MCP-08: an agent's calls read as sentences — "Read a quote", "Listed invoices", "Drafted a vendor bill".
+  const agent = /^(read|listed|drafted|created|added)_(.+)$/.exec(action);
+  if (agent && (AUDIT_ENTITY_LABELS[agent[2]!] || (agent[1] === "listed" && AUDIT_ENTITY_LABELS[agent[2]!.replace(/s$/, "")]))) {
+    const [, verb, rest] = agent;
+    const label = auditEntityLabel(verb === "listed" ? rest!.replace(/s$/, "") : rest!).toLowerCase();
+    if (verb === "listed") return `Listed ${label}s`;
+    return `${sentenceCase(verb!)} ${/^[aeiou]/.test(label) ? "an" : "a"} ${label}`;
+  }
+  return sentenceCase(action);
 }
 
 /** The chip's tone: good outcomes green, undone or refused red, money moving blue, the rest neutral. Text always says it too. */

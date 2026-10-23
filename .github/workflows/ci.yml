@@ -1,17 +1,20 @@
 name: CI
 
-# Runs only on pull requests into main (and on demand). Work happens on a
-# phase branch; `pnpm verify` runs the same checks locally first, and the
-# PR stays a draft (no minutes) until that's green — CI confirms, it
-# shouldn't discover.
+# Runs on pull requests into main, on a release tag (v*) and on demand.
+# Work happens on a phase branch; `pnpm verify` runs every check locally
+# first, E2E included, and the PR stays a draft (no minutes) until that's
+# green — CI confirms, it shouldn't discover.
 #
 # Tuned for a private repo's Actions-minutes budget:
+# - pull requests run lint, typecheck, unit and integration; the E2E suite
+#   runs locally in `pnpm verify` before every PR, and in CI only before a
+#   release (a v* tag) or on demand (D-260);
 # - docs-only changes skip everything, and each suite runs only when the
 #   code it covers changed (a mobile-only change runs lint, typecheck and
 #   unit tests alone);
 # - lint, typecheck and unit tests run first (a few minutes); integration
-#   and E2E then run side by side, and the first of them to fail cancels the
-#   other;
+#   and E2E (when it runs) then run side by side, and the first of them to
+#   fail cancels the other;
 # - integration stops at five failing tests and E2E at five failing specs;
 # - draft PRs and superseded runs are skipped, and installs, Turbo results
 #   and Playwright browsers are cached.
@@ -20,6 +23,9 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  # D-260: a release tag runs everything, E2E included.
+  push:
+    tags: ["v*"]
   workflow_dispatch:
 
 # A new push to the same PR cancels the run still in progress.
@@ -40,15 +46,16 @@ jobs:
   changes:
     name: Detect changes
     # Draft PRs don't use minutes; marking the PR "Ready for review" starts the run.
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       pull-requests: read
     outputs:
-      code: ${{ github.event_name == 'workflow_dispatch' || steps.code.outputs.code == 'true' }}
-      integration: ${{ github.event_name == 'workflow_dispatch' || steps.suites.outputs.integration == 'true' }}
-      e2e: ${{ github.event_name == 'workflow_dispatch' || steps.suites.outputs.e2e == 'true' }}
+      code: ${{ github.event_name != 'pull_request' || steps.code.outputs.code == 'true' }}
+      integration: ${{ github.event_name != 'pull_request' || steps.suites.outputs.integration == 'true' }}
+      # D-260: E2E runs before a release or on demand, never on a pull request.
+      e2e: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: dorny/paths-filter@v3
         id: code
@@ -62,8 +69,8 @@ jobs:
               - "!**/*.md"
               - "!.vscode/**"
               - "!LICENSE"
-      # What each suite exercises; the field app and its native packages are
-      # covered by the unit tests alone.
+      # What the integration suite exercises; the field app and its native
+      # packages are covered by the unit tests alone.
       - uses: dorny/paths-filter@v3
         id: suites
         if: github.event_name == 'pull_request'
@@ -80,14 +87,6 @@ jobs:
               - *shared
               - "apps/api/**"
               - ".env.test"
-            e2e:
-              - *shared
-              - "apps/api/**"
-              - "apps/web/**"
-              - "apps/e2e/**"
-              - "packages/ui/**"
-              - "packages/sdk/**"
-              - ".env.e2e"
 
   static:
     name: Lint, typecheck and unit
@@ -231,14 +230,16 @@ jobs:
           [ "${{ needs.static.result }}" = "success" ] || exit 1
           case "${{ needs.integration.result }}" in success|skipped) ;; *) exit 1 ;; esac
 
+  # D-260: runs on a release tag or on demand. On a pull request it's
+  # skipped, which main's branch protection counts as passing.
   e2e:
     name: E2E
     # Starts once lint, typecheck and unit pass, alongside integration.
     needs: [changes, static]
     if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
-    # D-241: the suite takes about 28 minutes on this runner, plus 5 of setup.
-    timeout-minutes: 45
+    # D-241, D-260: the suite takes 30–40 minutes on this runner, plus 5 of setup.
+    timeout-minutes: 60
     permissions:
       contents: read
       actions: write # cancels the run when this job fails
@@ -325,9 +326,9 @@ jobs:
         env:
           CI: "true"
 
-      # Kept only when something fails, and only for 3 days, to save artifact storage.
+      # Kept only when something fails or runs out of time, and only for 3 days, to save artifact storage.
       - name: Upload Playwright report
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report

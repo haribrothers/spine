@@ -24,15 +24,18 @@ export interface TestApp {
  * bodyParser stays disabled, matching main.ts's own comment: Better Auth
  * reads the raw request body itself.
  */
-export async function createTestApp(): Promise<TestApp> {
+export async function createTestApp(options: { port?: number } = {}): Promise<TestApp> {
   installBigIntJsonSerialization();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication({ bodyParser: false });
   await app.init();
-  await app.listen(0); // ephemeral port — parallel test files never collide
+  // Ephemeral port — parallel test files never collide. A fixed port is for
+  // flows where the server's own address matters (OAuth issuer and MCP
+  // resource, US-MCP-03): those files set API_URL to it before loading the app.
+  await app.listen(options.port ?? 0);
   const address = app.getHttpServer().address();
   const port = typeof address === "object" && address ? address.port : 0;
-  const baseUrl = `http://127.0.0.1:${port}`;
+  const baseUrl = options.port ? `http://localhost:${port}` : `http://127.0.0.1:${port}`;
 
   return {
     app,

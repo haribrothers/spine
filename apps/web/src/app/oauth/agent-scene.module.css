@@ -1,0 +1,53 @@
+/* US-MCP-03 — the signed-out frame's panel when an agent is connecting: the agent, Spine's mark and the
+   person (or business), joined by a dashed line. The panel matches the sign-in illustration's; colours are
+   tokens, so dark mode follows. */
+.panel {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-brand-teal) 9%, var(--color-background)) 0%,
+    color-mix(in srgb, var(--color-brand-sky) 11%, var(--color-background)) 58%,
+    var(--color-surface-sunken) 100%
+  );
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(color-mix(in srgb, var(--color-brand-deep) 11%, transparent) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+.stack {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12%;
+}
+.card {
+  box-sizing: border-box;
+  width: 300px;
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  padding: 12px 14px;
+}
+:global([data-theme="dark"]) .card {
+  border: 1px solid var(--color-border);
+}
+.line {
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--color-primary) 0 6px, transparent 6px 12px);
+  opacity: 0.45;
+}
+.caption {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 28px;
+  z-index: 1;
+}

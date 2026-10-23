@@ -4,7 +4,8 @@ import { aiProviderHost, aiProviderReady, isLocalAddress, maskedKey } from "./sc
 
 describe("US-AI-01", () => {
   it("the AI assistant is the fifth module, but not one of the Modules switches", () => {
-    expect(ALL_MODULE_KEYS).toEqual([...MODULE_KEYS, "ai"]);
+    // US-MCP-02: connected agents (sixth) come after it.
+    expect(ALL_MODULE_KEYS).toEqual([...MODULE_KEYS, "ai", "agents"]);
     expect(moduleSettingsSchema.safeParse({ leadsMeetings: true, jobsField: true, approvals: true, recurring: true, ai: true }).success).toBe(false);
   });
 

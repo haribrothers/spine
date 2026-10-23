@@ -32,6 +32,7 @@ export * from "./today.ts";
 export * from "./activity-feed.ts";
 export * from "./digest.ts";
 export * from "./ai.ts";
+export * from "./agents.ts";
 export * from "./audit-log.ts";
 export * from "./data-export.ts";
 export * from "./search.ts";

@@ -1,15 +1,22 @@
 import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware, getIp, getSessionFromCtx } from "better-auth/api";
+import { APIError, createAuthMiddleware, getIP, getSessionFromCtx } from "better-auth/api";
 import { isCommonPassword, linkInUse, linkUploadFirst, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
 import { assertLinkable } from "../modules/files/files.service";
 import { assertSignupAllowed } from "./signup-policy";
-import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
+import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, SlidingWindowLimiter, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
 import { organization } from "better-auth/plugins/organization";
+import { mcp } from "@better-auth/mcp";
+import { cimd } from "@better-auth/cimd";
+import { AGENT_SCOPES, AGENT_SUPPORTED_SCOPES, agentsOffMessage } from "@spine/shared";
+import { fetchClientMetadataResource } from "../modules/agents/client-metadata-fetch";
+import { endAgentConnections, recordAgentConnection } from "../modules/agents/agent-connections";
+import { moduleOn } from "../common/modules";
+import { mcpAvailable, mcpUrl } from "../modules/agents/mcp-url";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { createDb } from "../db/client";
 import {
@@ -37,6 +44,8 @@ if (!databaseUrl) {
 
 const db = createDb(databaseUrl);
 const authLogger = new Logger("Auth");
+/** US-MCP-03 — agents registering themselves (DCR): 20 an hour per IP. */
+const registerIpLimiter = new SlidingWindowLimiter({ max: 20, windowMs: 60 * 60_000 });
 
 /**
  * Cookie sessions for web, a Bearer-sent session token for mobile — see
@@ -80,6 +89,8 @@ export const auth = betterAuth({
     // US-TEAM-24 — a password chosen through a reset link is their own: no "choose your own" step after it.
     onPasswordReset: async ({ user: resetUser }) => {
       await db.update(userTable).set({ mustChangePassword: false }).where(eq(userTable.id, resetUser.id));
+      // US-MCP-03 (D-258): a reset ends every agent connection too; they connect again.
+      await endAgentConnections(db, { userId: resetUser.id, reason: "password_reset", actorUserId: resetUser.id });
     },
   },
   hooks: {
@@ -89,6 +100,20 @@ export const auth = betterAuth({
      * sign-in); the per-email limit lives in `sendResetPasswordEmail`.
      */
     before: createAuthMiddleware(async (ctx) => {
+      // US-MCP-03 (D-258): agents registering themselves are limited per IP.
+      if (ctx.path === "/oauth2/register") {
+        const ip = (ctx.request && getIP(ctx.request, ctx.context.options)) || "unknown";
+        if (!registerIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: "Too many agents registered from this network. Try again later." });
+      }
+      // US-MCP-03: Allow only while connected agents are on, and only for an active member.
+      if (ctx.path === "/oauth2/consent" && ctx.body?.accept === true) {
+        const current = await getSessionFromCtx(ctx);
+        const orgId = (current?.session as { activeOrganizationId?: string | null } | undefined)?.activeOrganizationId;
+        if (!current || !orgId) throw new APIError("UNAUTHORIZED", { message: "Sign in to Spine to connect an agent." });
+        const [membership] = await db.select({ isActive: member.isActive }).from(member).where(and(eq(member.userId, current.user.id), eq(member.organizationId, orgId)));
+        if (!membership?.isActive) throw new APIError("FORBIDDEN", { message: "Your access to this business was removed." });
+        if (!(await moduleOn(db, orgId, "agents"))) throw new APIError("FORBIDDEN", { message: agentsOffMessage((await loadEmailBrand(db, orgId)).name), code: "MODULE_OFF" });
+      }
       // US-AUTH-15 (D-207): the most common passwords are refused wherever one is chosen.
       const chosen = ctx.path === "/sign-up/email" ? ctx.body?.password : ctx.path === "/reset-password" || ctx.path === "/change-password" ? ctx.body?.newPassword : undefined;
       if (typeof chosen === "string" && isCommonPassword(chosen)) {
@@ -112,8 +137,17 @@ export const auth = betterAuth({
         }
       }
       if (ctx.path !== "/request-password-reset") return;
-      const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";
+      const ip = (ctx.request && getIP(ctx.request, ctx.context.options)) || "unknown";
       if (!resetIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: RESET_TOO_MANY_MESSAGE });
+    }),
+    /** US-MCP-03 (D-258) — once a person presses Allow, their connection to the agent is recorded (and audited). */
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/oauth2/consent" || ctx.body?.accept !== true || typeof ctx.body?.oauth_query !== "string") return;
+      const clientId = new URLSearchParams(ctx.body.oauth_query).get("client_id");
+      const current = await getSessionFromCtx(ctx);
+      const orgId = (current?.session as { activeOrganizationId?: string | null } | undefined)?.activeOrganizationId;
+      if (!clientId || !current || !orgId) return;
+      await recordAgentConnection(db, { userId: current.user.id, orgId, clientId });
     }),
   },
   /**
@@ -229,6 +263,33 @@ export const auth = betterAuth({
      * 401 against a real endpoint, not a typecheck).
      */
     bearer(),
+    /**
+     * US-MCP-03 (D-257, D-258) — AI agents sign in as a person through
+     * OAuth 2.1: Better Auth's MCP authorization server (authorization code +
+     * PKCE S256, `resource` bound to the MCP address, RFC 9728 metadata) with
+     * Client ID Metadata Documents preferred and dynamic registration kept for
+     * agents that don't do CIMD. Access tokens are 15-minute JWTs; `/mcp`
+     * also checks the connection, the member and the module on every call.
+     * Only on an https (or localhost) address — OAuth 2.1 allows nothing else.
+     */
+    ...(mcpAvailable()
+      ? [
+          mcp({
+            resource: mcpUrl(),
+            loginPage: appUrl("/login"),
+            consentPage: appUrl("/oauth/consent"),
+            scopes: [...AGENT_SUPPORTED_SCOPES],
+            accessTokenExpiresIn: 15 * 60,
+            allowDynamicClientRegistration: true,
+            allowUnauthenticatedClientRegistration: true,
+            clientRegistrationDefaultScopes: [AGENT_SCOPES.read, AGENT_SCOPES.draft, "offline_access"],
+            clientRegistrationAllowedScopes: [...AGENT_SUPPORTED_SCOPES],
+            // Local agents (Claude Code, Cursor) are native apps that come back to http://localhost:<port> (RFC 8252).
+            clientRegistrationDefaultApplicationType: "infer",
+          }),
+          cimd({ fetchClientMetadataResource, metadataProfile: "mcp-2026-07-28" }),
+        ]
+      : []),
   ],
   databaseHooks: {
     user: {

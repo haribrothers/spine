@@ -31,23 +31,23 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 
 | Job | Trigger | Steps | Blocks merge |
 |---|---|---|---|
-| `changes` ("Detect changes") | PR into `main` (not drafts), manual | Decides what runs: docs-only changes run nothing; integration runs when the API, shared packages, lockfile or workflow changed; E2E when the API, web, E2E, `ui`, `sdk`, shared packages, lockfile or workflow changed ([D-205](12-decisions.md)) | — |
+| `changes` ("Detect changes") | PR into `main` (not drafts), `v*` tag, manual | Decides what runs: docs-only changes run nothing; integration runs when the API, shared packages, lockfile or workflow changed ([D-205](12-decisions.md)); E2E only on a `v*` tag or a manual run ([D-260](12-decisions.md)); a tag or manual run runs everything | — |
 | `static` ("Lint, typecheck and unit") | any code change | install (frozen lockfile) → lint → typecheck → unit (no services) | Through "Unit and integration" |
 | `integration` ("Integration") | after `static`, when its paths changed | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · build shared packages → migrate → integration (one worker on its own copy of the migrated database; locally files run in parallel — [D-239](12-decisions.md)), stopping at five failing tests; a failure cancels the run | Through "Unit and integration" |
 | `unit-and-integration` ("Unit and integration") | after `static` and `integration` | Passes when `static` passed and `integration` passed or was skipped — the required check, keeping its name | Yes |
-| `e2e` ("E2E") | after `static`, alongside `integration`, when its paths changed; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build (Next.js build cache kept between runs, [D-241](12-decisions.md)) → `@spine/e2e test` (one worker), stopping after five failing specs; a failure cancels the run | Yes |
-| `a11y-routes` | PR (Phase 11) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
-| `restore-verify` | nightly and on `v*` tags (Phase 11) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
+| `e2e` ("E2E") | `v*` tag or manual run, after `static`, alongside `integration`; skipped on PRs, which counts as passing ([D-260](12-decisions.md)); files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build (Next.js build cache kept between runs, [D-241](12-decisions.md)) → `@spine/e2e test` (one worker, 60-minute limit), stopping after five failing specs; a failure cancels the run, and the report is kept when it fails or runs out of time | Before a release |
+| `a11y-routes` | `v*` tag or manual run (Phase 12), like E2E ([D-260](12-decisions.md)); locally in `pnpm verify` | Playwright + axe on every route with demo data (US-OPS-17) | Before a release |
+| `restore-verify` | nightly and on `v*` tags (Phase 12) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
 | `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
 | `release` | tag `v*` | build images → push to registry → attach `install.sh` + checksums → mobile EAS build | — |
 
 ## Branches and pull requests
 
-- `main` is protected: no direct pushes, no force-pushes, no deletion; changes arrive only by pull request with both CI checks green ([D-101](12-decisions.md)).
+- `main` is protected: no direct pushes, no force-pushes, no deletion; changes arrive only by pull request with both CI checks green ([D-101](12-decisions.md)). "E2E" is skipped on pull requests and counts as passing ([D-260](12-decisions.md)).
 - Each phase gets its own branch from `main`, named `phase-<n>-<short-name>` (e.g. `phase-6-fix-and-harden`). Stories are committed on that branch, one commit (or more) per story, with the story id in the message (`US-OPS-08: add idempotency to the remaining routes`).
 - Run the checks locally while working (`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm --filter @spine/api test:integration`, `pnpm test:e2e`); CI does not run on branch pushes.
-- Before a pull request is opened (or marked ready for review), `pnpm verify` runs everything CI runs, in CI's order, against the local Docker database: lint → typecheck → unit → integration → E2E. It creates and migrates `spine_test` and `spine_e2e` if they're missing, stops at the first failure, and `pnpm verify --from <step>` resumes there ([D-205](12-decisions.md)). CI should confirm a green branch, not discover failures.
+- Before a pull request is opened (or marked ready for review), `pnpm verify` runs everything CI runs, in CI's order, against the local Docker database: lint → typecheck → unit → integration → E2E. It creates and migrates `spine_test` and `spine_e2e` if they're missing, stops at the first failure, and `pnpm verify --from <step>` resumes there ([D-205](12-decisions.md)). CI should confirm a green branch, not discover failures. CI doesn't run E2E on pull requests, so this is the only E2E run before merging: open the PR from the commit `pnpm verify` passed on, and say in its description which commit that was and how many E2E tests passed ([D-260](12-decisions.md)).
 - When every story in the phase is done and `pnpm verify` passes, open one pull request into `main`. Open it as a draft if you want to share it early — drafts don't run CI; "Ready for review" does.
 - After a CI failure, fix it locally, then push (a new run) or use "Re-run failed jobs" for a flaky job — never "Re-run all jobs", which repeats the jobs that passed.
 - Each new push to the PR cancels the run in progress and starts a fresh one.
@@ -56,16 +56,17 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 
 | Rule | Saves |
 |---|---|
-| Runs on PRs into `main` and manual dispatch only | Every routine commit |
+| Runs on PRs into `main`, `v*` tags and manual dispatch only | Every routine commit |
+| E2E runs in CI only on a `v*` tag or a manual run; locally in `pnpm verify` before every PR ([D-260](12-decisions.md)) | 35–45 minutes of every PR run |
 | A "Detect changes" job (`dorny/paths-filter`) skips both test jobs when only `docs/**`, `*.md`, `.vscode/**` or `LICENSE` changed; skipped required checks count as passed, so docs-only PRs still merge | Spec and docs-only PRs (~10 s instead of ~7 min) |
 | Draft PRs skipped | Work-in-progress pushes |
 | `concurrency` with `cancel-in-progress` | Superseded runs |
 | E2E waits for `test` (`needs`) | E2E minutes when unit tests already fail |
 | pnpm store, Turbo and Playwright browser caches | Install and rebuild time on re-runs |
-| One production build (in E2E), timeouts of 35 minutes (unit and integration, raised from 25 in Phase 9 as the suite grew) and 30 (E2E) | Duplicate builds, runaway jobs |
-| Failure-only Playwright report, kept 3 days | Artifact storage |
+| One production build (in E2E), timeouts of 15 minutes (lint, typecheck and unit), 30 (integration) and 60 (E2E, which runs only before a release) | Duplicate builds, runaway jobs |
+| Playwright report only when E2E fails or runs out of time, kept 3 days | Artifact storage |
 
-Phase 11 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
+Phase 12 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
 
 ## Release artifacts
 
@@ -86,11 +87,11 @@ Phase 11 adds the nightly `restore-verify` job; keep it to one run a day, and co
 ## Definition of done (every story)
 
 1. Every acceptance criterion has a passing automated test named after the story id (or a QA-script step where automation isn't possible, e.g. VoiceOver).
-2. Lint, typecheck, unit, integration and E2E jobs pass.
+2. Lint, typecheck, unit, integration and E2E pass — E2E locally in `pnpm verify` before the PR, the rest in CI too ([D-260](12-decisions.md)).
 3. Any contract change is reflected in [04](04-data-model.md) / [05](05-api.md) in the same change.
 4. New capabilities are enforced in the service layer and reflected in the web UI ([07](07-security.md)).
 5. New or changed UI uses design-system components and tokens, works in light and dark mode, and component changes ship with their doc page and a11y test (both themes).
-6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 11, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
+6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 12, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
 
 ## Appendix — testing expectations moved verbatim from CLAUDE.md
 

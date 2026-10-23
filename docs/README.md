@@ -2,7 +2,7 @@
 
 Spine is a self-hosted business management app for small service and project businesses: enquiry → quote → job → invoice → payment → books, with double-entry accounting derived from business events. This folder is the spec Claude Code builds against.
 
-156 features and 434 user stories across 21 modules.
+160 features and 443 user stories across 22 modules.
 
 ## Read in this order
 
@@ -39,11 +39,12 @@ Spine is a self-hosted business management app for small service and project bus
 | [19-website](features/19-website.md) | Website and help | 14 |
 | [20-banking](features/20-banking.md) | Banking | 12 |
 | [21-ai](features/21-ai.md) | AI assistant | 14 |
+| [22-mcp](features/22-mcp.md) | Connected agents (MCP) | 9 |
 
 ## Design
 
 - Brand book, tokens, motion and one page per component: [design/README.md](design/README.md).
-- Screens: all 361 screens in [design/screens.md](design/screens.md) — 172 captured from the running app, 189 drawn on the design canvas for what isn't built yet. Images are in `design/screens/`.
+- Screens: all 371 screens in [design/screens.md](design/screens.md) — 172 captured from the running app, 199 drawn on the design canvas for what isn't built yet. Images are in `design/screens/`.
 - Native implementation rules: [design/native-notes.md](design/native-notes.md).
 
 ## Other docs

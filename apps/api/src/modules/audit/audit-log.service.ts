@@ -1,3 +1,4 @@
+import { currentAgentVia } from "../agents/agent-request-context";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
@@ -65,7 +66,13 @@ export type AuditEntityType =
   // US-AI-01, US-AI-02 (D-164): the AI assistant switched, its provider changed, or what's sent acknowledged (entity id is the organisation's).
   | "ai_settings"
   // US-AI-06 (D-169): one entry per AI request (entity id is the `ai_requests` row's).
-  | "ai_request";
+  | "ai_request"
+  // US-MCP-02 (D-258): connected agents switched on or off, or drafts allowed or not (entity id is the organisation's).
+  | "agents_settings"
+  // US-MCP-03, US-MCP-04 (D-258): an agent connected or disconnected (entity id is the `agent_connections` row's).
+  | "agent_connection"
+  // US-MCP-08 (D-258): one entry per agent tool call (entity id is the `agent_requests` row's).
+  | "agent_request";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see
@@ -117,9 +124,12 @@ export class AuditLogService {
       entityId: string;
       contactId: string | null;
       changes?: FieldChange[] | Record<string, unknown> | null;
+      /** The agent it came through; defaults to the current request's (US-MCP-07). */
+      via?: string | null;
     },
   ) {
     await tx.insert(auditLog).values({
+      via: params.via ?? currentAgentVia(),
       orgId: params.orgId,
       actorUserId: params.actorUserId,
       action: params.action,
@@ -203,6 +213,7 @@ export class AuditLogService {
         createdAt: auditLog.createdAt,
         actorUserId: auditLog.actorUserId,
         actorName: user.name,
+        via: auditLog.via,
       })
       .from(auditLog)
       .leftJoin(user, eq(auditLog.actorUserId, user.id))

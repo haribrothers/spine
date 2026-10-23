@@ -4169,7 +4169,7 @@ Use the GST business from section 175.
    - "Done 0 of 13" (1 of 13 if the server has SMTP set up), "To do" and "Not needed 0", and a progress bar.
    - 14 cards in order, from "Business details and logo" to "Field app", each with its line.
    - Backups has no chip, and says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.".
-   - No "How it works" links (they come with the bundled guide in Phase 11).
+   - No "How it works" links (they come with the bundled guide in Phase 12).
 2. Business details and logo → "Set up":
    - Settings opens on Business profile, over the page.
    - Enter a name and address, save and close. You're back on Set up Spine, the card says "Done" and its button reads "Review".
@@ -5313,12 +5313,125 @@ As an Owner with AI on and "Suggest bank matches" on. Import a statement where o
 9. Keyboard and screen reader: the button and each Match / Not this one / Create are reachable and named; AI's text is read with the line. Dark mode: the tints and marks use the dark tokens.
 10. Regression: matching by hand, several entries to one line, "Not this one" on a rule suggestion, Exclude / Include, Unmatch, "Match all suggested" (its confirm lists only the rules' pairs), Create without AI, Finish and Undo behave as before.
 
+## 248. Spine on Better Auth 1.7 (US-MCP-01, Phase 11)
+
+Nothing should look different. Before upgrading a test install, sign in on the web in one browser and on the phone; leave both signed in.
+
+1. Upgrade and run the migrations (`0129` adds two columns to `jwks`). Reload the web app: still signed in, same page. Open the phone app: still on Today, no sign-in screen.
+2. Sign out and in again on the web: "Log in" works; a wrong password says "Invalid email or password". Sign up on a new install: the first account becomes the Owner and lands in onboarding; a second sign-up without an invitation is refused ("This Spine is invite-only").
+3. Invite a Staff member, accept the email link while signed in with that email: they join the business and its Teams.
+4. Password reset: request a link, use it within the hour, then try it again ("This link can't be used" — "Reset links work once and expire after 1 hour."). Every other session — the other browser, the phone — is signed out. A common password like "password123" is refused at sign-up, reset and change.
+5. Deactivate a member who is signed in on the phone: their next request shows "Your access to <Business> was removed." and the app signs out. Reactivate: they can sign in again.
+6. Phone (iOS Simulator and an Android 15 emulator): `maestro test apps/mobile/e2e/us-mob-01-sign-in.yaml` passes (Android with `-e SERVER=http://10.0.2.2:4000` and the dev-client URL, as the flow's header says).
+7. Regression: switching business on the web, "Not you?" on the accept-invite page, the session dialog after signing out in another tab (US-AUTH-12), and the 300-a-minute limit per session.
+
+## 249. Switch connected agents on or off (US-MCP-02, Phase 11)
+
+1. As an Owner, open Settings: "Connected agents" (Plug icon) sits in Business after AI assistant. Search settings for "MCP", "agent", "Claude" or "ChatGPT": it's found. As Staff or Field it isn't listed.
+2. On a new install it's off: the pane says what agents do ("… they never issue, send, record or delete anything.") and "The address to add and everyone's connections appear once it's on."
+3. Switch it on: "Turn on connected agents?" says an agent sees what its person can see and sends it to that agent's AI provider, with what agents can and can't do. "Go back" changes nothing; "Turn on connected agents" switches it on and the toast says "Connected agents are on".
+4. On: "Connector address" shows the API's address + `/mcp` with "Copy" (pasting gives the address), and how to add it in Claude, ChatGPT and Claude Code. On an `http://` address that isn't `localhost` (e.g. `API_URL=http://192.168.1.10/api`), a warning says agents can only connect over https, or from the same computer at localhost.
+5. "Agents can create drafts" switches without asking; the toast says "Agents can only read" (or "Agents can create drafts").
+6. Settings › Modules lists "Connected agents" after AI assistant with "On" or "Off" and "Set up in Connected agents", which opens the pane.
+7. Switch it off: "Turn off connected agents?" ("Every connected agent stops working at once. Connections are kept …"), then "Connected agents are off".
+8. Team › Audit log, record type "Connected agents": each switch and the drafts change are there with who and when.
+9. Keyboard and screen reader: both switches are named, the confirm traps focus, Copy says what it copies. Dark mode: the warning and cards use the dark tokens.
+10. Regression: the AI assistant pane and its Modules row, the four Modules switches, settings search, and the generic settings (business profile, branding) still save.
+
+## 250. Connect an AI agent to Spine (US-MCP-03, Phase 11)
+
+Needs Connected agents on. A real hosted agent needs Spine on an `https` address reachable from the internet; on your own computer, Claude Code works against `http://localhost:4000/mcp`.
+
+1. Claude Code (local): `claude mcp add --transport http spine http://localhost:4000/mcp`, then `/mcp` in Claude Code and choose to authenticate. The browser opens Spine's log-in with "<agent> is asking to connect to Spine. Log in to choose what it can do." and "Your password stays with Spine."
+2. Log in: the consent page reads "localhost:<port> wants to use Spine as you" — Claude Code registers itself, so it shows "Calls itself “Claude Code”" with "Unverified name" — then who you're signed in as, what it can read, "Create drafts for you to check" (ticked), what it can't do and that what it reads goes to its AI provider.
+3. Allow: the browser returns to Claude Code, which says it's connected. Team › Audit log, record type "Agent connection": "connected" with the agent and what it may do.
+4. Claude (claude.ai › Settings › Connectors › Add custom connector) and ChatGPT (Settings › Connectors) with `https://<your-domain>/api/mcp`: the same pages. An agent that identifies itself by its https address (CIMD) shows its name, its host and "Verified address"; one that registers itself shows "Calls itself …" and "Unverified name". Note which each uses.
+5. Untick "Create drafts" and Allow: the connection can only read (US-MCP-07 checks no draft tools are offered).
+6. Cancel: the agent says access was denied; nothing is connected or audited.
+7. As Field: the page lists only "Read your assigned jobs, contacts and the catalogue", "Add notes to your jobs", and "It can't see money or reports…".
+8. "Not you?" signs out and returns to log-in for the same request.
+9. Switch Connected agents off: the agent's next request is refused ("Connected agents are turned off for <Business>…"); a new consent page says agents are off. Back on: it works again without reconnecting.
+10. Deactivate the member: their agent is refused at once; reactivate: it stays disconnected until they connect again. Reset a password: every agent of that person is disconnected.
+11. On an `http` address that isn't localhost: the Settings pane warns, and an agent pointed at `/mcp` gets "Spine needs an https address before agents can connect…".
+12. Keyboard and screen reader: the checkbox, Allow, Cancel and Not you? are reachable and named; the picture on the right is skipped. Dark mode: the page and the picture use the dark tokens.
+13. Regression: ordinary log-in (no agent) lands on the dashboard; sign-up, invitations, password reset, the phone's sign-in.
+
+## 251. See and disconnect connected agents (US-MCP-04, Phase 11)
+
+1. With Connected agents on, every role has Settings › Your account › "Connected agents". With it off, the pane isn't listed and `?settings=my-connected-agents` opens the first pane.
+2. Connect an agent (section 250). Your pane lists it: the agent and its host (a check for a verified address, or "Unverified name"), "Read" or "Read and create drafts" ("Read and add job notes" for Field), when it was connected and "Last used" ("Just now", "2 hours ago"…, or "Not used yet").
+3. Disconnect: "Disconnect <Agent>?" ("It stops working at once. Drafts it created stay, marked with its name."), then the toast "<Agent> disconnected". The agent's next request is refused; it has to connect again. The audit log has "disconnected".
+4. With none: "No agents connected" and the address with "Copy address".
+5. As an Owner, Settings › Connected agents › Connections lists everyone's, with the person and their role. Disconnecting someone else's says they'll be told; they get "<Owner> disconnected <Agent> from your account." in their notifications and by email.
+6. Leave a connection unused for 30 days (or set its last use back in the database): it disappears from the lists and its agent is refused.
+7. Staff can't call `GET /org/agents/connections` (403). Disconnecting someone else's from your own pane isn't possible.
+8. Keyboard and screen reader: each Disconnect says which agent (and whose, on the Owner's list). Dark mode: the badges and table use the dark tokens.
+9. Regression: Settings deep links (`?settings=data-export`, `?settings=ai`), the Modules pane, notifications.
+
+## 252. Ask an agent to find and read records (US-MCP-05, Phase 11)
+
+Connect Claude Code (section 250) as each role in turn.
+
+1. Ask "What tools do you have from Spine?": `search`, `list_records` and `get_record`, read-only.
+2. "Find Harbour Road" (a contact you have): it uses `search` and finds the contact (and its documents).
+3. "List my overdue invoices": it uses `list_records` with type invoice and status overdue; amounts come as "$1,250.00", each with a link that opens the invoice in Spine.
+4. "Open invoice INV-0042": `get_record` by number, with its lines, tax, totals and balance. A number that doesn't exist: "No invoice INV-9999 that you can open."
+5. As Staff whose Teams can't open invoices: invoices aren't among the types it can list, and asking for one by id is refused.
+6. As Field: only contacts, catalogue items, jobs assigned to them (no contract value or costs) and their own expenses.
+7. Settings › Your account › Password & security: the agent doesn't appear as a signed-in device, and "Sign out other devices" doesn't disconnect it.
+8. Regression: the web's lists and pages for the same records show the same things.
+
+## 253. Ask an agent who owes us and how the business is doing (US-MCP-06, Phase 11)
+
+1. As an Owner's agent: "Who owes us money?" — it uses `receivables`; the totals and invoices match Receivables in Spine exactly, with formatted amounts and a link.
+2. "What did we make last month?" — `profit_and_loss` for that month; the figures match the Profit & Loss report for the same dates and basis. Ask for cash basis: it matches the cash-basis report.
+3. "What's our balance sheet at the end of September?", "How are our jobs doing?", "What's in the bank?", "How's the business doing?" — `balance_sheet`, `job_profitability`, `bank_balances`, `dashboard_summary`, each matching its page.
+4. Dates the wrong way round: "Choose a From date on or before the To date."
+5. As Staff whose Teams only read receivables: only `receivables` among the report tools; asking for profit and loss says it can't.
+6. As Field: no report or bank tools at all; asking about money gets a refusal, never a figure.
+7. Regression: the Reports pages themselves.
+
+## 254. Have an agent start work as drafts (US-MCP-07, Phase 11)
+
+1. With a connection that allowed drafts, ask "Draft a quote for Harbour Road for 20 m² of deck boards and two days of labour": `draft_quote` creates a draft (no number yet) with the catalogue item's price and tax and Spine's totals; the answer links to it and says to check and send it in Spine.
+2. Open the quote: Activity's first entry reads "Created as a draft · via <Agent> for <you>". Nothing was emailed.
+3. Ask for a line priced in another currency without a price: "<item> is priced in EUR. Give its price in USD."
+4. "Draft the bill from Coastal Timber CT-8812": `draft_vendor_bill` makes a draft bill; Banking, the books and Payables don't change until you record it.
+5. "Create a lead for Anika Shah, who wants her kitchen redone": a new contact (if she isn't one), the lead, and her enquiry as its first note.
+6. "Add a note to the Harbour Road job": the note appears on the job. As Field: only jobs you're assigned to.
+7. Ask it to send the quote, issue an invoice, record a payment, approve an expense or delete anything: it has no tool for that and says you'll need to do it in Spine.
+8. A read-only connection, or drafts switched off for everyone: no draft tools.
+9. After 30 drafts in an hour from one agent: "Too many drafts from this agent. Try again later."
+10. Team › Audit log: the drafts' "created" entries name the agent (US-MCP-08 lists the agent's requests).
+11. Regression: quotes, bills, leads and notes made in Spine itself show no "via".
+
+## 255. See every agent request in the audit log (US-MCP-08, Phase 11)
+
+1. With a connected agent, ask it to search for a customer, open a quote, read receivables and draft a quote.
+2. As an Owner, open Team › Audit log and choose Record type "Agent request": one row per call, newest first, each with when, who (the person the agent acts for), the action ("Searched", "Read a quote", "Read receivables", "Drafted a quote"), the record it touched and "<Agent> · Worked" in Details.
+3. Select the quote's record link: the quote opens. A search or a report has no record ("—").
+4. Ask it for a quote number that doesn't exist: the row reads "Read a quote" with "<Agent> · Refused — No quote Q-9999 that you can open."
+5. Nothing you typed to the agent, and nothing it was told, appears in the log or the CSV export — only the tool, the record and the outcome.
+6. Record type "Agent connection": connecting and disconnecting are there. Record type "Connected agents": switching agents on or off, and allowing drafts, are there.
+7. Make more than 120 calls in a minute from one agent (a script, or ask it to read many records quickly): it's told "Too many requests from this agent. Wait a minute and try again." and the log shows "Slowed down — over 120 calls a minute". After a minute it works again.
+8. Regression: the audit log's other record types, the One record view and Export CSV read as before; AI request entries still read "AI request".
+
+## 256. Start from a ready-made task (US-MCP-09, Phase 11)
+
+1. In an agent that shows MCP prompts (Claude Desktop's "+" menu, Claude Code's `/` commands, VS Code's prompt list), connected as an Owner: it offers "Chase overdue invoices", "Summarise a job" and "This week in the business".
+2. Run "Chase overdue invoices": the agent reads Receivables (overdue) and lists each customer's overdue invoices with amounts and days late, with a suggested reminder for each. It creates and sends nothing — Team › Audit log shows only "Read receivables" (and any "Read an invoice") for that agent.
+3. Run "Summarise a job" and give a job's number or name: the agent finds and opens the job and says where it stands, with its profit so far; the job link opens it in Spine.
+4. Run "This week in the business": a short briefing from the dashboard, receivables, payables, bank balances, jobs in progress and quotes waiting.
+5. Connected as Staff whose Teams can't see money reports: no "Chase overdue invoices"; the briefing covers jobs and quotes only.
+6. Connected as Field: "Summarise a job" (assigned jobs only, no money) and "This week in the business" (their jobs); no chasing.
+7. Regression: tools, the audit log entries and drafts behave as in sections 252–255.
+
 ## Known gaps — don't file these as bugs
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
-- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
+- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 12 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - No AI control shows in a form until US-AI-08 onwards, so the budget, the 30-requests-in-10-minutes limit and "AI didn't answer" are checked through the API until then. The Model picker offers to "Create" a typed model name. Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 

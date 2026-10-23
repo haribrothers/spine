@@ -5,19 +5,19 @@ Spine is a self-hosted business management app for small service and project bus
 ## Before you start any task
 1. Read `docs/README.md` once per session, then only the docs the task needs. Check `CHANGELOG.md` for what landed recently.
 2. For a story: read the story in `docs/features/<module>.md`, its screens in `docs/design/screens.md` (look at the images in `docs/design/screens/`), and the contracts it names in `docs/prd/04-data-model.md` and `docs/prd/05-api.md` (including "Contract additions from the feature files").
-3. For a phase: read `docs/prd/10-phases.md` for that phase and work through its stories in order. Phases 0–9 are built; check `docs/progress.md` for what's open.
+3. For a phase: read `docs/prd/10-phases.md` for that phase and work through its stories in order. Phases 0–10 are built; check `docs/progress.md` for what's open.
 4. Check `docs/prd/12-decisions.md` before choosing a library, a pattern or behaviour that isn't spelled out.
 5. Touching auth, roles or any endpoint's authorization: read `docs/prd/07-security.md` first, including its appendix. Touching `packages/ui-native` or a native app: read `docs/design/native-notes.md` first.
 
 ## How to work
-- Never commit to `main`. Each phase is a branch `phase-<n>-<short-name>` from `main`; commit each story there with its id in the message; open one PR into `main` when the phase's stories are done. CI runs only on that PR, so run lint, typecheck and tests locally before committing, and `pnpm verify` (everything CI runs, including E2E) before opening the PR or marking it ready.
+- Never commit to `main`. Each phase is a branch `phase-<n>-<short-name>` from `main`; commit each story there with its id in the message; open one PR into `main` when the phase's stories are done. CI runs only on that PR, so run lint, typecheck and tests locally before committing, and `pnpm verify` before opening the PR or marking it ready. CI doesn't run E2E on PRs, only before a release, so `pnpm verify` is the E2E check: say in the PR which commit it passed on (D-260).
 - Work one story at a time. Say which story (e.g. `US-INV-05`) you're implementing.
 - A story is done only when every acceptance criterion passes with an automated test named after the story id (`us-inv-05.spec.ts` or `describe('US-INV-05', …)`), plus the definition of done in `docs/prd/11-testing-release.md`.
 - Tick the story in `docs/progress.md`, add a `CHANGELOG.md` entry and update `docs/qa-script.md` (new steps plus regression checks for every screen the change touches) in the same change.
 - If you change a contract (API route, table, column, event, error code, capability, posting rule), update `docs/prd/05-api.md`, `04-data-model.md`, `07-security.md` or `06-ledger-posting-rules.md` in the same change.
 - If a story, a screen and the architecture disagree: the story wins over the screen; the architecture and decisions win over the story. If it's still unclear, stop and ask; add the question to `docs/prd/13-risks-open-questions.md`.
 - Controls that depend on a later phase are hidden behind flags in `packages/shared/src/feature-flags.ts` until that phase ships.
-- User-facing help lives in the docs site (`apps/site/src/content/docs/guide/`), not in `docs/` (that's the spec). From Phase 11, when a story changes what people see, update its guide page in the same change.
+- User-facing help lives in the docs site (`apps/site/src/content/docs/guide/`), not in `docs/` (that's the spec). From Phase 12, when a story changes what people see, update its guide page in the same change.
 - Don't build beyond the story. Non-goals in `docs/prd/00-overview.md` are out of scope (no multi-tenant SaaS, multi-org, payroll, inventory valuation, multi-currency, live bank feeds, filing returns). Work planned after 1.0 is in `docs/prd/16-roadmap.md` — don't build it early.
 
 ## Stack (don't substitute)

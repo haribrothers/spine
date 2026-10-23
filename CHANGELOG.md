@@ -80,6 +80,83 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — E2E runs before a release, not on every PR (D-260)
+
+- **CI:** pull requests into `main` run lint, typecheck, unit and integration. The E2E job runs on a `v*` tag (with everything else) or a manual run, with a 60-minute limit, and keeps its Playwright report when it fails or runs out of time. On a pull request it's skipped, which `main`'s branch protection counts as passing.
+- **Why:** on CI's two-core runner E2E took 33 minutes in Phase 10 and over 45 in Phase 11's PR, failing on runner speed rather than the code (the same tests take 11–12 minutes locally). `pnpm verify` already runs it before every PR; the PR now says which commit that was.
+- **Docs:** D-260 (supersedes the E2E parts of D-205 and D-241), `11-testing-release.md` (CI jobs, definition of done) and CLAUDE.md.
+
+### 2026-10-20 — Start from a ready-made task (US-MCP-09)
+
+- **MCP prompts:** "Chase overdue invoices" (reads receivables and drafts nothing — it suggests a reminder for each customer, for the person to send from Spine), "Summarise a job" (asks for the job's number or name) and "This week in the business".
+- **Per the person's tools:** each prompt is offered only when the tools it needs were offered to that person, and its text names only those tools — so Field and Staff without money reports aren't offered chasing, and their briefing uses jobs and quotes only. Running a prompt is the agent calling those tools, as the person.
+- **Tests:** `us-mcp-09` (API through the MCP SDK as Owner, Staff without money reports, and Field). QA section 256.
+
+### 2026-10-20 — See every agent request in the audit log (US-MCP-08)
+
+- **Every call recorded:** `agent_requests` (migration `0132`) gets one row per tool call — the person, the connection, the tool, the record it touched, the outcome (`ok`, `refused`, `error`, `rate_limited`) and how long it took. Never the arguments' text or the result.
+- **Team › Audit log › "Agent request":** each entry shows when, who, the action as a sentence ("Searched", "Read a quote", "Read receivables", "Drafted a quote"), the record it touched (linked) and "<Agent> · Worked", "<Agent> · Refused — <Spine's reason>" or "Slowed down". Connecting, disconnecting and the Connected agents switch were already logged.
+- **120 calls a minute per connection:** past it, `/mcp` answers 429 with `Retry-After: 60` and "Too many requests from this agent. Wait a minute and try again.", and the call is logged as slowed down. The per-session limit (D-124) still applies to the person.
+- **Tests:** `us-mcp-08` (API, shared, E2E). QA section 255.
+
+### 2026-10-20 — Have an agent start work as drafts (US-MCP-07)
+
+- **Draft tools:** `create_lead` (adding the contact if new, the enquiry as its first note), `draft_quote` and `draft_vendor_bill` (catalogue lines take the item's price and tax; Spine computes totals) and `add_note` (contact, lead or job; Field only on their assigned jobs). Offered only with `spine:draft`, while the Owner allows drafts, and per the person's rights. Expenses aren't offered: they have no draft state.
+- **Only creates:** tools POST through Spine's normal create routes as the person; the client has no PUT, PATCH or DELETE, and a unit test checks every write path. Retries reuse an Idempotency-Key derived from the connection, tool, request and arguments; 30 drafts an hour per connection.
+- **"via <Agent>":** `audit_log.via` (migration `0131`), set when a request's `x-spine-agent` header is signed for its own session; quote and vendor bill Activity read "Created as a draft · via Claude for Priya Raman".
+- **Tests:** `us-mcp-07` (API, unit introspection and keys, web, E2E). QA section 254.
+
+### 2026-10-20 — Ask an agent who owes us and how the business is doing (US-MCP-06)
+
+- **Report tools:** `receivables`, `payables`, `profit_and_loss`, `balance_sheet`, `job_profitability`, `bank_balances` and `dashboard_summary`, each calling the report's own route as the person, so the figures are the report's (from journal lines), with formatted amounts and the report's link. Each is offered only to people whose capabilities open that report; Field gets none.
+- **Tests:** `us-mcp-06` compares each tool's answer with the report route's. QA section 253.
+
+### 2026-10-20 — Ask an agent to find and read records (US-MCP-05)
+
+- **Tools:** `search`, `list_records` (contacts, leads, quotes, jobs, invoices, credit notes, payments, vendor bills, vendor credits, vendor payments, expenses, catalogue items — with status, contact, job and contact filters, pages of 25 up to 100) and `get_record` (by id, or by number, bill number or reference), all read-only. Amounts come with a formatted copy in the business's locale; records with a page carry their link.
+- **As the person:** tools call Spine's own routes in-process in a session kept for the connection, so sections, ownership and Field's "assigned jobs, no money" apply exactly as on the web. Only the types the person can open are offered. That session isn't a device in Password & security and ends with the connection.
+- **Tests:** `us-mcp-05` (API through the MCP SDK as Owner, Staff without invoices, and Field; unit). QA section 252.
+
+### 2026-10-20 — See and disconnect connected agents (US-MCP-04)
+
+- **Your account › Connected agents** (every role, while the module is on): your agents with their host (verified or "Unverified name"), what each may do, when connected and last used, and Disconnect (asks first, then a toast); with none, the address to add one.
+- **The Owner's Connections card** in Settings › Connected agents: everyone's agents, whose and their role; disconnecting someone's tells them (in-app and email).
+- **API:** `GET/DELETE /agents/connections[/:id]` (own) and `GET/DELETE /org/agents/connections[/:id]` (Owner). Ending a connection deletes its consent and tokens and is audited; connections unused for 30 days end when a list is read or their agent calls.
+- **Fix along the way:** a Settings link to a module's pane (`?settings=my-connected-agents`) no longer falls back to the first pane before the module switches have loaded.
+- **Tests:** `us-mcp-04` (API, web, E2E). QA section 251.
+
+### 2026-10-20 — Connect an AI agent to Spine (US-MCP-03)
+
+- **Sign-in for agents:** Better Auth 1.7's MCP OAuth provider (`@better-auth/mcp`) with Client ID Metadata Documents (`@better-auth/cimd`, its safe Node transport) and dynamic registration for agents without CIMD; authorization code + PKCE S256, tokens bound to the MCP address, 15-minute JWTs. Discovery at `/.well-known/oauth-protected-resource/…` and `/.well-known/oauth-authorization-server/…` (Caddy routes them to the API).
+- **`/mcp`:** Streamable HTTP, stateless, JSON responses, `@modelcontextprotocol/sdk`. Every call also checks the person's connection, that they're active, and the module (403 `MODULE_OFF` with the business's name). Tools arrive from US-MCP-05.
+- **Pages:** log-in names the agent asking and continues its sign-in; the new consent page (`/oauth/consent`) says what the agent can and can't do for the person's role, marks self-registered agents "Unverified name", lets them untick drafts, and answers Allow or Cancel. `GET /agent-consent` and `/agent-consent/agent` read the signed request.
+- **Connections:** `agent_connections` (migration `0130`, with Better Auth's OAuth tables) is written on Allow and audited ("Agent connection"); deactivation and password reset end them, with their consents and tokens.
+- **As built (D-258):** OAuth 2.1 allows http only on localhost, so an http address that isn't this machine can't take agents — `/mcp` answers 503 and the pane's warning now says so. The challenge names both scopes; registration infers native apps for localhost callbacks.
+- **Tests:** `us-mcp-03` (API with the MCP SDK client through DCR and CIMD, web, E2E through the real log-in and consent pages). QA section 250.
+
+### 2026-10-20 — Switch connected agents on or off (US-MCP-02)
+
+- **Settings › Connected agents** (Owners, Business group after AI assistant): one switch, off by default, that asks first in both directions; with it on, the connector address (`API_URL` + `/mcp`) with Copy, how to add it in Claude, ChatGPT and Claude Code, a warning when an `http` address can't be reached by hosted agents, and "Agents can create drafts". Settings › Modules lists it after AI assistant with "Set up in Connected agents".
+- **The sixth module:** `agents` in `modules.ts` owns `/mcp`, `/agents/*`, the `agent_disconnected` notification and Your account's pane, so the module guard refuses them while it's off. `GET/PUT /org/agents` (Owner); `settings.agents` is kept out of the generic settings routes; changes are audited as "Connected agents".
+- **Tests:** `us-mcp-02` (API, web, shared, E2E). QA section 249.
+
+### 2026-10-20 — Spine on Better Auth 1.7 (US-MCP-01, D-257)
+
+- **Upgrade, nothing visible:** `better-auth` 1.6.26 → 1.7.11 (API and web), `@thallesp/nestjs-better-auth` 2.7 → 2.8, and the CLI is now the `auth` package (`@better-auth/cli` stops at 1.4). zod moves to 4.6.7 so Spine and Better Auth share one copy — two made the exported `auth` type unnameable (TS2742).
+- **Database:** `auth generate` against Spine's schema asks only for `jwks.alg` and `jwks.crv`; migration `0129` adds them, nullable. Existing signing keys keep working (null means the 1.6 default, EdDSA) and nothing rotates. No account backfill: 1.7.3 reverted the issuer-keyed accounts of 1.7.0.
+- **Code:** `getIp` → `getIP` in the reset-rate-limit hook.
+- **Checks:** every auth test passes unchanged; `us-mcp-01` checks the version, cookie and Bearer sessions, and that a pre-upgrade key still signs. QA section 248.
+
+### 2026-10-19 — Phase 11 · Connected agents (MCP) specified; Packaging & 1.0 becomes Phase 12 (D-256–D-259)
+
+- **New phase, branch `phase-11-mcp`.** People will be able to use Spine from Claude, ChatGPT, Claude Code and other MCP clients: one MCP endpoint, `<APP_URL>/api/mcp`, where an agent acts as the person who connected it. Nine stories in `docs/features/22-mcp.md` (US-MCP-01 to US-MCP-09). This narrows the "public REST API for third parties" non-goal; there's still no public REST contract or plugin API.
+- **The Owner's choices (D-256):** read and drafts only — search, records, reports, and draft leads, quotes, vendor bills and notes; never issue, send, record, approve, void, match, post, delete or change settings. OAuth 2.1 through Better Auth, no API keys. Everyone can connect within their own role once an Owner switches Connected agents on (off by default). Expenses aren't a draft tool: they have no draft state (D-259).
+- **Better Auth 1.7 first (D-257):** the MCP authorization spec (2026-07-28) prefers Client ID Metadata Documents, which Better Auth supports from 1.7; the upgrade is US-MCP-01, a commit of its own.
+- **Wiring and limits (D-258):** stateless Streamable HTTP in the NestJS API with `@modelcontextprotocol/sdk`; 15-minute JWTs for the MCP address, rotating refresh tokens, and a per-request connection check, so disconnecting is immediate; 120 calls a minute per connection, 30 drafts an hour; every call in `agent_requests` and the audit log without arguments' text or results.
+- **Contracts:** routes and events in `05-api.md`, tables in `04-data-model.md`, a "connected agents" section and principle 5's outbound call in `07-security.md`, risks R-27 to R-29, the tech stack, the overview's non-goal and the roadmap.
+- **Renumbering:** Packaging & 1.0 is Phase 12 in the phase plan, progress, feature files, QA script, risks and code comments; past decisions and changelog entries keep their numbers (as D-195 did). The Expo SDK 58 upgrade (R-25) follows Phase 11.
+- **Screens:** ten, drawn in Claude Design (project "Spine web — Phase 11 connected agents", canvases 01 Settings, 02 Connect, 03 Connections and audit) on the refined web app, with light and dark versions of the settings pane and the consent page, exported to `docs/design/screens/` and listed in `screens.md` under "Connected agents (MCP)". A draft quote an agent creates has no number until it's sent, so US-MCP-07's answer names the customer and total instead.
+
 ### 2026-10-19 — AI suggestions while reconciling (US-AI-14)
 
 - **"Suggest with AI (<n> lines)"** beside "Match all suggested" looks at the lines the rules couldn't settle (D-158), only when pressed. AI's suggestions join the Suggested tab: "AI suggests: <entry> · <contact>" with the reason, or "AI suggests creating: <category> · <contact>". The tab says "AI suggestions aren't in Match all — check and match each one." — Match all still takes only the rules'.

@@ -86,7 +86,7 @@ test.describe("US-ONB-16", () => {
     // Email sending and Backups are set by whoever runs the server.
     await expect(page.getByTestId("setup-card-email").getByRole("link", { name: "Read the guide" })).toHaveAttribute("href", /production--self-hosting/);
     await expect(page.getByTestId("setup-card-backups").getByRole("link", { name: "Read the guide" })).toHaveAttribute("href", /production--self-hosting/);
-    // The bundled guide arrives in Phase 11 (US-SITE-11).
+    // The bundled guide arrives in Phase 12 (US-SITE-11).
     await expect(page.getByRole("link", { name: "How it works" })).toHaveCount(0);
 
     // A page card goes to its page.

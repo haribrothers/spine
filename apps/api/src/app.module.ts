@@ -14,6 +14,7 @@ import { DbModule } from "./db/db.module";
 import { HealthModule } from "./health/health.module";
 import { OrgModule } from "./modules/org/org.module";
 import { AiModule } from "./modules/ai/ai.module";
+import { AgentsModule } from "./modules/agents/agents.module";
 import { TeamsModule } from "./modules/teams/teams.module";
 import { UsersModule } from "./modules/users/users.module";
 import { ContactsModule } from "./modules/contacts/contacts.module";
@@ -67,6 +68,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     HealthModule,
     OrgModule,
     AiModule,
+    AgentsModule,
     TeamsModule,
     UsersModule,
     ContactsModule,
