@@ -5465,6 +5465,17 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 8. `docker images`: `spine-api` and `spine-web` are a few hundred MB each, not several GB.
 9. Regression: `pnpm dev` and `pnpm verify` work as before (the API now also applies migrations when it starts; `MIGRATE_ON_START=false` turns that off).
 
+## 261. Back up everything into one file (US-OPS-03, Phase 12)
+
+1. On a running install with some data, including an uploaded logo or receipt, run `./backup.sh` (`scripts/backup.sh` in a clone). It prints each step, then "Backup saved: backups/spine-backup-<YYYYMMDD-HHMMSS>.tar.gz (<size>)" and a reminder that it isn't encrypted. It exits 0.
+2. `ls -l backups`: the file is `-rw-------`. `tar -tzf <file>` lists `manifest.json`, `database.dump` and `files/…`. The manifest has the Spine version, the dump's checksum and each file's checksum.
+3. `./backup.sh --passphrase`: it asks twice, without echoing, and writes `….tar.gz.enc`. Mismatched passphrases stop it with "The two passphrases don't match." With `BACKUP_PASSPHRASE` in `.env`, it encrypts without asking.
+4. Stop the database (`docker compose stop db`) and run `./backup.sh`: it fails with the reason, exits non-zero, and leaves no file in `backups/`. Start the database again.
+5. Set `BACKUP_REMOTE` and its keys for a test bucket (R2 or B2) with no passphrase: it refuses, because only encrypted archives are copied off the machine. Add `BACKUP_PASSPHRASE`: the archive is uploaded. After backups across more than 7 days, at most 7 daily and 4 weekly copies remain.
+6. As an Owner, with the last backup more than 2 days old (or none, on an install older than 2 days), every page shows "Your last backup was <n> days ago. Run a backup to keep your data safe." (or "Spine hasn't been backed up yet…"). It goes after a backup. Staff and Field never see it.
+7. `./backup.sh --help` shows a nightly cron line and how to copy backups off the machine.
+8. Regression: the storage banner (US-OPS-31) still shows alongside it when the files volume is nearly full.
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

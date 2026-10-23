@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Back up everything into one file (US-OPS-03)
+
+- **`backup.sh`:** one command writes `backups/spine-backup-<time>.tar.gz` (readable only by you). The archive holds a `pg_dump` of the database, every stored file (read through its storage driver, so the local volume or the S3 bucket alike) and a manifest with the version and checksums. A missing file is listed rather than stopping the backup. Any failure exits non-zero and leaves nothing behind. `--help` has a nightly cron line.
+- **Encryption and off-site copies (D-105):** `--passphrase` or `BACKUP_PASSPHRASE` encrypts with AES-256-GCM (scrypt key). `BACKUP_REMOTE` uploads encrypted archives to S3, R2 or B2 and keeps 7 daily and 4 weekly copies.
+- **Runs in the API container:** the host needs only Docker. The image gains the Postgres 16 client, which restores and US-OPS-50's snapshots will use too.
+- **The Owners' banner:** "Your last backup was <n> days ago. Run a backup to keep your data safe." when it's over 2 days, from the new `GET /org/backup-status`.
+- **Tests:**
+  - `us-ops-03`: API unit tests (encryption, tampering, pruning, remote settings), an integration test (a real archive, encryption, failure cleanup, the status route) and a web test (the banner);
+  - a real backup from an installed stack.
+- **QA section 261.**
+
 ### 2026-10-23 — Install Spine with one command (US-OPS-01)
 
 - **`install.sh`:** POSIX shell, shellcheck-clean, run from a release's files or a clone. It checks for Docker 24+ and Compose 2.20+ and names what's missing or too old. It creates `.env` (mode 600) with a random `AUTH_SECRET` and database password and the address you give, or keeps an existing `.env` untouched. It pulls the images and waits until Spine is healthy, then prints the address and the commands for logs, backup, upgrade and stop. `--non-interactive` and `APP_URL` mean it asks nothing.

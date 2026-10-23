@@ -17,6 +17,7 @@ export * from "./purchases.ts";
 export * from "./reports.ts";
 export * from "./dashboard-widgets.ts";
 export * from "./storage.ts";
+export * from "./backups.ts";
 export * from "./business-profile.ts";
 export * from "./branding.ts";
 export * from "./lead-stages.ts";

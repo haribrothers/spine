@@ -168,6 +168,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 |---|---|---|---|
 | GET | `/health` → `{ status: "ok", service: "spine", appUrl }` — the field app checks a typed address is a Spine server and opens "Forgot password?" at `appUrl` (US-MOB-01) | Public | — |
 | GET | `/health/ready` → 200 `{ status: "ok", database: "ok", queue: "ok", storage }` when the database and the job queue (pg-boss) answer within 3 s each; otherwise 503 `{ status: "unavailable", database, queue: "ok"\|"unreachable", storage, message }`, the message naming what's down ("The database isn't reachable.", "The job queue isn't reachable.", "The database and the job queue aren't reachable."). `storage` is `{ driver, usedPercent }` (US-OPS-31), or null if it can't be read. Docker Compose's `api` healthcheck calls it, and `web` starts only once it passes (US-OPS-05) | Public | — |
+| GET | `/org/backup-status` → `{ lastBackupAt: string \| null, daysSince, stale }` — `stale` when the last successful `backup.sh` run (`settings.last_backup_at`) is more than 2 days old, or there's never been one on an install older than that; the Owners' banner reads it (US-OPS-03, D-105) | Owner | — |
 
 ### Invoices — `/invoices`
 
