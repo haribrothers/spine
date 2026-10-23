@@ -65,7 +65,10 @@ export const auth = betterAuth({
   // — see main.ts for the port). It is NOT the web app's origin — APP_URL is
   // used below only as the CORS-allowed origin, i.e. where browser requests
   // originate from, which is a different concern.
-  baseURL: process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`,
+  // US-OPS-01: only the origin. Better Auth takes its route prefix from this address's path, and
+  // behind Caddy API_URL is `<address>/api` while sign-in lives at `<address>/api/auth` — the same
+  // path the API sees, since Caddy passes /api/auth/* through unchanged (docker/Caddyfile).
+  baseURL: new URL(process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`).origin,
   secret: process.env.AUTH_SECRET,
   // US-OPS-07: Better Auth's own messages go through the API's logger, redacted and with the request id.
   logger: {

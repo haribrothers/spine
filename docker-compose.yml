@@ -1,3 +1,6 @@
+# Spine's self-hosted stack. scripts/install.sh sets it up and starts it.
+# From a clone, `docker compose build` builds the api and web images from
+# source instead of pulling them.
 services:
   db:
     image: postgres:16-alpine
@@ -16,6 +19,8 @@ services:
     profiles: ["minimal", "full"]
 
   api:
+    # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
+    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.1}
     build:
       context: .
       dockerfile: docker/Dockerfile.api
@@ -38,6 +43,8 @@ services:
     profiles: ["minimal", "full"]
 
   web:
+    # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
+    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.1}
     build:
       context: .
       dockerfile: docker/Dockerfile.web

@@ -187,7 +187,10 @@ The public site is two Astro projects: `apps/site`, the home page at `<domain>`,
 
 ## Updates
 
-Migrations run automatically on boot, forward-only and idempotent, after an automatic pre-migration database snapshot. Semantic versioning; every release notes breaking changes. Once a day the server checks the latest public release and shows Owners an update banner unless disabled ([D-055](12-decisions.md)). Mobile builds ship through the stores; JavaScript-only fixes may ship over the air ([15-mobile-release](15-mobile-release.md)).
+Behind Caddy, one address serves everything: `/api/auth/*` goes to the API unchanged (Better Auth's own path), the rest of `/api/*` to the API without the `/api` prefix, `/.well-known/oauth-*` to the API, and everything else to the web app. The web image is built with `NEXT_PUBLIC_API_URL=/api`, so one image serves any domain (US-OPS-01, US-OPS-51).
+
+
+Migrations run automatically on boot (built in US-OPS-01, under a Postgres advisory lock so one instance migrates), forward-only and idempotent, after an automatic pre-migration database snapshot (US-OPS-50). Semantic versioning; every release notes breaking changes. Once a day the server checks the latest public release and shows Owners an update banner unless disabled ([D-055](12-decisions.md)). Mobile builds ship through the stores; JavaScript-only fixes may ship over the air ([15-mobile-release](15-mobile-release.md)).
 
 ## Appendix — rules moved verbatim from CLAUDE.md
 

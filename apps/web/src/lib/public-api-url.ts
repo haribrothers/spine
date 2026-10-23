@@ -13,3 +13,13 @@ export function absoluteApiUrl(value: string | undefined = process.env.NEXT_PUBL
   if (typeof window !== "undefined") return `${window.location.origin}${url}`;
   return process.env.API_URL ?? "http://localhost:4000";
 }
+
+/**
+ * Where Better Auth's client sends sign-in requests: the API's origin, to
+ * which it adds `/api/auth`. Behind Caddy that's the page's own origin
+ * (Caddy passes /api/auth/* to the API unchanged); in development, the API's
+ * own address.
+ */
+export function authOrigin(value: string | undefined = process.env.NEXT_PUBLIC_API_URL): string {
+  return new URL(absoluteApiUrl(value)).origin;
+}

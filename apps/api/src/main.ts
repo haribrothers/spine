@@ -5,9 +5,21 @@ import { AppModule } from "./app.module";
 import { installBigIntJsonSerialization } from "./common/bigint-json";
 import { requestLogging } from "./common/logging/request-logging";
 import { spineLogger } from "./common/logging/spine-logger";
+import { migrateOnStart } from "./db/migrate-on-start";
 
 async function bootstrap() {
   installBigIntJsonSerialization();
+  // US-OPS-01 (D-264): the database is brought up to date before anything is served.
+  // MIGRATE_ON_START=false leaves it to `pnpm db:migrate` (development, tests).
+  if (process.env.MIGRATE_ON_START !== "false" && process.env.DATABASE_URL) {
+    try {
+      const { applied, total } = await migrateOnStart(process.env.DATABASE_URL);
+      spineLogger.log(applied ? `Applied ${applied} database migration${applied === 1 ? "" : "s"} (${total} in all).` : `The database is up to date (${total} migrations).`, "Migrations");
+    } catch (err) {
+      spineLogger.error(`The database couldn't be brought up to date, so Spine won't start: ${err instanceof Error ? err.message : String(err)}`, err instanceof Error ? err.stack : undefined, "Migrations");
+      process.exit(1);
+    }
+  }
   // Better Auth parses the raw request body itself (see @thallesp/nestjs-better-auth);
   // Nest's built-in body parser must stay off or it consumes the stream first.
   // US-OPS-07: JSON logs in production, every line redacted; each request gets an id and one line when it finishes.

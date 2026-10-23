@@ -638,7 +638,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-05 · Report health and readiness
 - [x] US-OPS-07 · Log every request with an id
 - [x] US-OPS-51 · Publish a release with one tag
-- [ ] US-OPS-01 · Install Spine with one command
+- [x] US-OPS-01 · Install Spine with one command
 - [ ] US-OPS-03 · Back up everything into one file
 - [ ] US-OPS-04 · Restore a backup into a clean install
 - [ ] US-OPS-50 · Upgrade Spine with one command

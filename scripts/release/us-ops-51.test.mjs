@@ -16,18 +16,21 @@ describe("US-OPS-51 · publish a release with one tag", () => {
     assert.throws(() => releaseVersion("v0.0.0", "0.0"), /isn't a version/);
   });
 
-  it("the root package.json carries the product version", () => {
+  it("the root package.json carries the product version, and the repo's Compose file defaults to the same images", () => {
     const { version } = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
     assert.match(version, /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
+    const compose = readFileSync(new URL("../../docker-compose.yml", import.meta.url), "utf8");
+    for (const app of ["api", "web"]) assert.ok(compose.includes(`image: ghcr.io/haribrothers/spine-${app}:\${SPINE_VERSION:-${version}}`), `${app} image defaults to ${version}`);
   });
 
   it("the published Compose file pulls that version's images and builds nothing", () => {
     const compose = readFileSync(new URL("../../docker-compose.yml", import.meta.url), "utf8");
     const published = releaseCompose(compose, "1.0.0-beta.1");
-    assert.match(published, /^ {4}image: ghcr\.io\/haribrothers\/spine-api:1\.0\.0-beta\.1$/m);
-    assert.match(published, /^ {4}image: ghcr\.io\/haribrothers\/spine-web:1\.0\.0-beta\.1$/m);
+    assert.match(published, /^ {4}image: ghcr\.io\/haribrothers\/spine-api:\$\{SPINE_VERSION:-1\.0\.0-beta\.1\}$/m);
+    assert.match(published, /^ {4}image: ghcr\.io\/haribrothers\/spine-web:\$\{SPINE_VERSION:-1\.0\.0-beta\.1\}$/m);
     assert.doesNotMatch(published, /^\s+build:/m);
-    assert.doesNotMatch(published, /dockerfile:/);
+    assert.doesNotMatch(published, /dockerfile:|from source/);
+    assert.match(published, /^# Spine 1\.0\.0-beta\.1's self-hosted stack/);
     // Everything else is the repo's own file.
     assert.match(published, /healthcheck:/);
     assert.match(published, /image: postgres:16-alpine/);

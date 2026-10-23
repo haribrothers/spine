@@ -5451,6 +5451,20 @@ Connect Claude Code (section 250) as each role in turn.
 4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `Caddyfile`, `.env.example` and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`).
 5. Regression: pull requests still run only lint, typecheck, unit (now with script tests) and integration; "Release" doesn't appear on a PR.
 
+## 260. Install Spine with one command (US-OPS-01, Phase 12)
+
+Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and nothing of Spine on it. Start a stopwatch.
+
+1. Download the release's files (or clone the repo) and run `./install.sh` (`scripts/install.sh` in a clone). It checks Docker and Compose, asks "The address people will open Spine at [http://localhost]", and creates `.env` with a random `AUTH_SECRET` and database password. `.env` is readable only by you.
+2. It pulls the images and waits until Spine is healthy, then prints "Spine is running at <address> — open it to create the first account." and the commands for logs, backup, upgrade and stop.
+3. Open the address and sign up: the first account is the Primary Owner. Follow onboarding and issue a first invoice. Stop the stopwatch: under 5 minutes from download to issued invoice (NFR-MNT-01).
+4. `docker compose logs api` shows "Applied 133 database migrations" on the first start, and "The database is up to date" after a restart.
+5. Run `./install.sh` again: "Keeping your existing .env — nothing in it is changed.", and Spine starts as before with your data.
+6. `APP_URL=https://spine.example.com ./install.sh` on a fresh folder asks nothing. So does `./install.sh --non-interactive` (address http://localhost).
+7. With Docker stopped: "Docker is installed but isn't running…". Without Docker: "Docker isn't installed. Install Docker 24 or newer…". Both exit with an error.
+8. `docker images`: `spine-api` and `spine-web` are a few hundred MB each, not several GB.
+9. Regression: `pnpm dev` and `pnpm verify` work as before (the API now also applies migrations when it starts; `MIGRATE_ON_START=false` turns that off).
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

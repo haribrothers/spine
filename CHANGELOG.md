@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Install Spine with one command (US-OPS-01)
+
+- **`install.sh`:** POSIX shell, shellcheck-clean, run from a release's files or a clone. It checks for Docker 24+ and Compose 2.20+ and names what's missing or too old. It creates `.env` (mode 600) with a random `AUTH_SECRET` and database password and the address you give, or keeps an existing `.env` untouched. It pulls the images and waits until Spine is healthy, then prints the address and the commands for logs, backup, upgrade and stop. `--non-interactive` and `APP_URL` mean it asks nothing.
+- **Migrations at start (D-264):** the API applies pending migrations before serving, under an advisory lock. A fresh database gets every table, and two instances starting together don't both migrate.
+- **A real install works:** found and fixed through an install from release-style files with locally built images: 15 seconds to a running stack, then sign-up, sign-in in a browser, dashboard and onboarding.
+  - Sign-in returned 404 behind Caddy, because Better Auth took `/api` from `API_URL` as its route prefix. Better Auth now uses the origin, and Caddy passes `/api/auth/*` through unchanged.
+  - `.env.example`'s `API_URL` is `<address>/api`, and its unused `NEXT_PUBLIC_API_URL` is gone.
+  - Compose names the release images (`ghcr.io/haribrothers/spine-*:${SPINE_VERSION:-<version>}`), and `docker compose build` still builds from source.
+- **Smaller images:** the web image runs Next.js's standalone server (3.3 GB to 367 MB). The API image installs production dependencies only, without the peer packages it never loads, and ships the migrations' SQL without drizzle-kit's snapshots (2.8 GB to 1.05 GB).
+- **Tests:** `us-ops-01`: installer tests against a fake `docker` (`pnpm test:scripts`), and an integration test of migrations on fresh databases. QA section 260.
+
 ### 2026-10-23 — Publish a release with one tag (US-OPS-51)
 
 - **One tag, everything published:** on a `v*` tag, once every CI check has passed (E2E included), the new `release.yml` builds `ghcr.io/haribrothers/spine-api` and `spine-web` natively per platform. It tags them with the version (and `latest` unless it's a pre-release), and creates the GitHub release with the scripts, a Compose file that pulls those images, the Caddyfile, `.env.example` and SHA-256 checksums.

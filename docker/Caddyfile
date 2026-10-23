@@ -1,4 +1,9 @@
 {$APP_URL:localhost} {
+	# Sign-in (Better Auth) keeps its path: the API serves it at /api/auth.
+	handle /api/auth/* {
+		reverse_proxy api:4000
+	}
+
 	handle /api/* {
 		uri strip_prefix /api
 		reverse_proxy api:4000
