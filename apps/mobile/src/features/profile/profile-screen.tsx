@@ -11,7 +11,7 @@ import { useSession, useSignedInSession } from "../../lib/session/session-provid
 import { lastSentAt, pendingItems, useOutboxItems, usePendingSummary } from "../../lib/outbox/pending";
 import { SectionHeader } from "../../components/section-header";
 import { initials, roleLine } from "../../lib/member-display";
-import { APP_BUILD, APP_VERSION } from "../../lib/app-version";
+import { versionLine } from "../../lib/app-version";
 import { confirmSignOut } from "./sign-out";
 
 const APPEARANCE: { label: string; value: ThemePreference }[] = [
@@ -92,8 +92,7 @@ export function ProfileScreen() {
   );
   const version = (
     <Text className="text-center text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">
-      Spine {APP_VERSION}
-      {APP_BUILD ? ` (${APP_BUILD})` : ""}
+      {versionLine()}
     </Text>
   );
 

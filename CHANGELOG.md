@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — Give testers the field app through TestFlight and an APK (US-MOB-28)
+
+- **One version for the app too:** `apps/mobile/app.config.js` takes it from the root `package.json`. The stores get `1.0.0`, and the full `1.0.0-beta.1` is in `extra.spineVersion`, so Profile reads "Spine 1.0.0-beta.1 (12) · Beta". The bundle id and the EAS project can be set from the environment, ready for the final id from the domain.
+- **`eas.json`:** a `beta` profile (TestFlight for iOS, an APK for Android) and a `production` profile (store builds, an app bundle for Play). Build numbers increase on EAS, so testers get updates in place.
+- **The release builds it:** on a pre-release tag, `release.yml`'s "Field app beta" job sends iOS to TestFlight and attaches `spine-<version>.apk` to the GitHub release. Without the `EXPO_TOKEN` secret it skips with a notice. `docs/beta.md` › The phone app is the one-time setup.
+- **Tests:** `us-mob-28` (mobile Jest: versions, the Beta line, the build profiles, the bundle-id override). QA section 265.
+
 ### 2026-10-24 — Run a beta for testers (US-OPS-52)
 
 - **`docs/beta.md`:** running the beta on your own server, for the Owner. It covers:

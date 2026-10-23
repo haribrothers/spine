@@ -22,11 +22,11 @@ Bundle ids are placeholders until the owner registers a domain; changing them af
 | Track | Built by | Audience |
 |---|---|---|
 | Development | `eas build --profile development` (dev client) | Developers; required because `@expo/ui` needs native code (no Expo Go) |
-| Preview | `eas build --profile preview` | Internal testers via TestFlight and the Play internal track |
+| Beta | `eas build --profile beta` on a pre-release tag (`release.yml`, US-MOB-28) | Testers during the beta: iOS through TestFlight (store distribution, auto-submitted), Android as an APK attached to the GitHub release ([D-265](12-decisions.md)) |
 | Production | `eas build --profile production` on a `v*` tag | App Store and Play Store, submitted after the v1.0 tag ([D-266](12-decisions.md)); during the beta, testers get the preview build through TestFlight and an APK link ([D-265](12-decisions.md)) |
 
 - Signing: EAS-managed credentials (Apple distribution certificate + provisioning profile; Android upload keystore). Credentials never live in the repo.
-- Version: marketing version = product version (`X.Y.Z`); `buildNumber` / `versionCode` auto-increment per upload ([11](11-testing-release.md)).
+- Version: `apps/mobile/app.config.js` takes the product version from the root `package.json`. The stores' version is its `X.Y.Z`, and a beta's full version (`1.0.0-beta.1`) is `extra.spineVersion`, which Profile shows with "Beta" (US-MOB-28). `buildNumber` / `versionCode` auto-increment per build (`eas.json`, `appVersionSource: remote`). The bundle id and EAS project come from `SPINE_IOS_BUNDLE_ID`, `SPINE_ANDROID_PACKAGE` and `EAS_PROJECT_ID` when they're set.
 - Store review: provide reviewer notes with a hosted demo server address and a Field test account, since sign-in needs a server ([R-11](13-risks-open-questions.md)).
 
 ## Over-the-air updates

@@ -73,6 +73,16 @@ The repo and its images are private until 1.0. So the server needs a GitHub toke
 
 The demo business (Settings › Data › Demo data) is a quick way to see Spine full of work. The accountant may prefer to enter a few real-looking transactions of their own, too. "Delete all demo data" removes only the demo.
 
+## The phone app (one-time setup)
+
+Each beta tag builds the field app on EAS, Expo's build service: iOS goes to TestFlight, and Android becomes an APK attached to the GitHub release. That needs a few accounts, set up once. Until then the release skips the phone app with a notice and everything else still publishes.
+
+1. **The bundle id comes first.** Pick the app's final id from the domain, e.g. `com.<domain>.spine`. It can never change after the first TestFlight upload, and both stores use it. Set it as GitHub repository variables `SPINE_IOS_BUNDLE_ID` and `SPINE_ANDROID_PACKAGE` (Settings › Secrets and variables › Actions › Variables).
+2. **Expo:** create an account at expo.dev. In `apps/mobile`, run `npx eas-cli init` and set the project id it prints as the variable `EAS_PROJECT_ID`. Create an access token (expo.dev › Account settings › Access tokens) and add it as the secret `EXPO_TOKEN`.
+3. **Apple:** with your Apple Developer account, create the app in App Store Connect with that bundle id. In `apps/mobile`, run `npx eas-cli credentials` once to make the signing certificate, and give EAS an App Store Connect API key for uploads (`npx eas-cli submit --platform ios` asks for it the first time).
+4. **TestFlight:** in App Store Connect › TestFlight, create an external group, add the testers' emails or turn on a public link, and add each new build to the group. Apple reviews the first build for external testers, which usually takes about a day.
+5. **Android** needs no account for the beta. Testers open the APK link from the release on their phone and allow installing it. Each new APK installs over the last.
+
 ## A new beta
 
 When a new beta is tagged (`v1.0.0-beta.2` and so on):

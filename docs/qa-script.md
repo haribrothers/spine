@@ -5512,6 +5512,16 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 8. The accountant has `docs/accounting-review.md`. Their findings go in its table, and their sign-off at the end.
 9. Regression: on a release (not a pre-release), About Spine shows only the version, with no "Beta".
 
+## 265. Give testers the field app through TestFlight and an APK (US-MOB-28, Phase 12)
+
+1. Do the one-time setup in `docs/beta.md` › The phone app: the bundle id variables, Expo (`EAS_PROJECT_ID`, `EXPO_TOKEN`), App Store Connect and EAS credentials, and a TestFlight external group.
+2. Tag a beta. After "Release", the "Field app beta" job builds iOS (sent to TestFlight) and Android. The GitHub release gains `spine-<version>.apk`.
+3. iPhone: accept the TestFlight invitation (or open the public link), install Spine, type the beta's address and sign in. Profile shows "Spine 1.0.0-beta.1 (<build>) · Beta".
+4. Android: open the APK link on the phone, allow the install, then sign in the same way. Profile shows the same.
+5. Tag the next beta: TestFlight offers the update, and the new APK installs over the old one, keeping the signed-in account and anything waiting to send.
+6. Without the `EXPO_TOKEN` secret, the release still publishes, and the job leaves a notice that the field app wasn't built.
+7. Regression: the field app still sends `X-Spine-Client-Version: 1.0.0`, and the server's minimum version check (`MOBILE_MIN_VERSION`) behaves as before.
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
