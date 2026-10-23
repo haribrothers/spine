@@ -5428,6 +5428,8 @@ Connect Claude Code (section 250) as each role in turn.
 
 ## Known gaps — don't file these as bugs
 
+- On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
+
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

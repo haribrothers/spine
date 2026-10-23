@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Phase 12 begins; the field app ships in 1.0 on Expo SDK 57 (D-261)
+
+- **Phase 12 · Packaging & 1.0** starts on `phase-12-packaging`.
+- **Field app in 1.0:** SDK 57.0.30 with Expo's scene switch (D-252). The Owner checked the camera, photo picker and document scanner on an iOS 27 iPhone. The upgrade to SDK 58 moves to v1.1 in the roadmap (R-25); until then, the iOS 27 Search tab label and field placement are a known gap.
+
 ### 2026-10-23 — E2E runs before a release, not on every PR (D-260)
 
 - **CI:** pull requests into `main` run lint, typecheck, unit and integration. The E2E job runs on a `v*` tag (with everything else) or a manual run, with a 60-minute limit, and keeps its Playwright report when it fails or runs out of time. On a pull request it's skipped, which `main`'s branch protection counts as passing.
