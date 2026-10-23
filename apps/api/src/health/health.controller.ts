@@ -1,6 +1,7 @@
 import { Controller, Get, Res } from "@nestjs/common";
 import type { Response } from "express";
 import { AllowAnonymous } from "@thallesp/nestjs-better-auth";
+import { spineVersion } from "../common/version";
 import { FilesService } from "../modules/files/files.service";
 import { HealthService } from "./health.service";
 
@@ -21,7 +22,8 @@ export class HealthController {
   check() {
     // US-MOB-01 — the field app checks the address it was given is a Spine
     // server (`service`) and opens "Forgot password?" on the web app (`appUrl`).
-    return { status: "ok", service: "spine", appUrl: process.env.APP_URL ?? null };
+    // US-OPS-52 — the version, so Settings › About and the field app can show it (and "Beta").
+    return { status: "ok", service: "spine", appUrl: process.env.APP_URL ?? null, version: spineVersion() };
   }
 
   /**

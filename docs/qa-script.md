@@ -5500,6 +5500,18 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 8. From a clone: `git checkout v<new>` first, then `./scripts/upgrade.sh --version <new>`. Without the checkout it says so.
 9. Regression: `./install.sh`, `./backup.sh` and `./restore.sh` work as before. A fresh install takes no snapshot (there's no data yet).
 
+## 264. Run a beta for testers (US-OPS-52, Phase 12)
+
+1. Follow `docs/beta.md` on a fresh VPS: Docker, `docker login ghcr.io` and `gh auth login` with the token, `gh release download v1.0.0-beta.1`, then `./install.sh --app-url https://beta.<domain>`. The address opens over HTTPS with a valid certificate.
+2. Sign up first: you're the Owner. A second person who tries to sign up is told Spine is invite-only.
+3. With SMTP set in `.env`, invite a tester from Team › Users. They get the email, join, and sign in.
+4. Settings › Your account › About Spine shows "Spine 1.0.0-beta.1" with a "Beta" label and the note about the beta. Everyone sees it, Field included.
+5. Add the nightly backup line to the crontab. The next morning `backups/` has an encrypted backup, and `backup.log` shows "Backup saved".
+6. When `v1.0.0-beta.2` is tagged, `./upgrade.sh --version 1.0.0-beta.2` keeps everyone's data, and About Spine shows the new version.
+7. Send testers the "Reporting a problem" section. A report with the version and a screenshot is enough to act on.
+8. The accountant has `docs/accounting-review.md`. Their findings go in its table, and their sign-off at the end.
+9. Regression: on a release (not a pre-release), About Spine shows only the version, with no "Beta".
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

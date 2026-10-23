@@ -80,6 +80,29 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — Run a beta for testers (US-OPS-52)
+
+- **`docs/beta.md`:** running the beta on your own server, for the Owner. It covers:
+  - a VPS, DNS and HTTPS (Caddy does it);
+  - the GitHub token for the private images and release;
+  - installing at `https://beta.<domain>`;
+  - the first account, then invite-only;
+  - SMTP for invitations;
+  - nightly encrypted backups;
+  - inviting testers and the accountant;
+  - TestFlight and the APK;
+  - upgrading to each new beta;
+  - a "Reporting a problem" section to send testers.
+- **`docs/accounting-review.md`:** the accountant's pack:
+  - how Spine keeps the books;
+  - the chart of accounts;
+  - what every event posts, with worked examples;
+  - the choices worth questioning;
+  - ten areas to try;
+  - a findings table and a sign-off. 1.0 waits for it (D-265).
+- **Settings › About Spine:** every member sees the server's version, with a "Beta" label and a note on a pre-release. `GET /health` now includes `version`.
+- **Tests:** `us-ops-52` (API, shared, web). QA section 264.
+
 ### 2026-10-24 — Upgrade Spine with one command (US-OPS-50)
 
 - **`upgrade.sh`:** it backs up, then takes the new version's files, downloaded from the GitHub release or from `--files <folder>`, checked against `SHA256SUMS` and keeping the old ones in `.previous/`. It sets `SPINE_VERSION` in `.env`, pulls the images and restarts, then prints "Spine is now <version>. Your backup is <file>." It never goes back a version, and stops before changing anything if the backup fails or the files don't check out. If the new version doesn't start, it says the data is safe and how to go back.
