@@ -1,6 +1,6 @@
 # 19 · Website and help
 
-A public website built with Astro and Starlight (`apps/site`) that holds everything people read about Spine: a home page, a task-based user guide, a self-hosting guide, developer docs and a generated API reference. The same user guide is bundled into every Spine install, so the in-app Help menu works without internet and always matches the running version.
+A public website built with Astro and Starlight that holds everything people read about Spine — the home page at `<domain>` (`apps/site`) and, at `docs.<domain>` (`apps/docs`), a task-based user guide, a self-hosting guide, developer docs and a generated API reference. The same user guide is bundled into every Spine install, so the in-app Help menu works without internet and always matches the running version.
 
 **Screens:** `SiteHome` (P1), `SiteHomeDark` (P2), `SiteUserGuide` (P1), `SiteUserGuideDark` (P2), `SiteSelfHosting` (P1), `SiteApiReference` (P2), `SiteSearch` (P2), `AppHelpMenu` (P1), `BundledGuide` (P1)
 **Depends on:** 18 Self-hosting (install, backups, storage), 05-api (OpenAPI document), design tokens, `apps/e2e` (screenshot capture).
@@ -20,20 +20,20 @@ A public website built with Astro and Starlight (`apps/site`) that holds everyth
 
 ### US-SITE-01 · Set up the docs site in the monorepo
 **Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`, `SiteUserGuideDark`
-**As** a maintainer, **I want** one docs site that looks like Spine, **so that** guides, self-hosting and developer docs live in one place.
+**As** a maintainer, **I want** a home page and one docs site that look like Spine, **so that** guides, self-hosting and developer docs live in one place.
 
 Decision: D-108
 
 **Acceptance criteria**
-- **Given** the monorepo, **when** I run `pnpm --filter @spine/site dev`, **then** an Astro + Starlight site starts with the sections "Get started", "User guide", "Self-hosting" and "Developers" in its sidebar.
+- **Given** the monorepo, **when** I run `pnpm --filter @spine/docs dev`, **then** an Astro + Starlight site starts with the sections "Get started", "User guide", "Self-hosting" and "Developers" in its sidebar; `pnpm --filter @spine/site dev` starts the home page, whose links lead to `docs.<domain>`.
 - **Given** the site, **when** it renders, **then** its accent colour, fonts, radius and logo come from `docs/design/tokens.json` and the Spine wordmark, and it looks like the `SiteUserGuide` design.
 - **Given** a reader's system or the theme menu ("Auto", "Light", "Dark"), **when** they change it, **then** the whole site switches, matching `SiteUserGuideDark` (D-100).
 - **Given** the build, **when** it runs, **then** every internal link is checked and the build fails on a broken one.
 - **Given** the site's folder structure, **when** a second language is added later, **then** it only needs a new locale folder (English only for 1.0, D-108).
-- **Given** the CI pipeline, **when** a PR changes `apps/site/**`, **then** the site is built and link-checked in the unit and integration job.
+- **Given** `pnpm verify` or the CI pipeline, **when** a change touches `apps/site/**` or `apps/docs/**`, **then** both are built and link-checked in the unit and integration job.
 
 **Implementation notes**
-- `apps/site` (package `@spine/site`): Astro 5, `@astrojs/starlight`, `starlight-links-validator`; Starlight's built-in Pagefind search.
+- `apps/docs` (package `@spine/docs`): Astro 5, `@astrojs/starlight`, `starlight-links-validator`; Starlight's built-in Pagefind search. `apps/site` (package `@spine/site`): Astro 5, sharing the docs' theme tokens ([D-270](12-decisions.md)).
 - Turbo task `build` for the site; no runtime server — the output is static HTML.
 
 ### US-SITE-02 · Show a home page for people discovering Spine
@@ -45,7 +45,7 @@ Decision: D-108
 - **Given** the workflow strip, **when** it renders, **then** it reads "Enquiry → Quote → Job → Invoice → Payment → Books".
 - **Given** the product screenshot, **when** a reader uses dark mode, **then** the dark version of the dashboard screenshot is shown.
 - **Given** the feature cards, **when** they render, **then** they cover quotes accepted online, jobs with milestones and retention, invoices that post to the books, the offline field app, self-hosting, and a link to the developer docs.
-- **Given** the footer, **when** it renders, **then** it names the licence (once Q-01 is decided) and links to older doc versions.
+- **Given** the footer, **when** it renders, **then** it names the licence (AGPL-3.0, [D-263](../prd/12-decisions.md)) and links to older doc versions.
 
 **Implementation notes**
 - Starlight `splash` template; screenshots from US-SITE-06.
@@ -77,7 +77,7 @@ Decision: D-113
 - **Given** a page, **when** it renders, **then** it shows "Last updated with Spine <version>" and previous/next links.
 
 **Implementation notes**
-- Content in `apps/site/src/content/docs/guide/<module>/*.mdx`; asides use Starlight's note/tip/caution/danger.
+- Content in `apps/docs/src/content/docs/guide/<module>/*.mdx`; asides use Starlight's note/tip/caution/danger.
 
 ### US-SITE-05 · Ship each story with its guide page
 **Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`
@@ -86,7 +86,7 @@ Decision: D-113
 Decision: D-113
 
 **Acceptance criteria**
-- **Given** a story that changes what people see, **when** its PR is opened, **then** it includes the new or updated guide page under `apps/site/src/content/docs/guide/`.
+- **Given** a story that changes what people see, **when** its PR is opened, **then** it includes the new or updated guide page under `apps/docs/src/content/docs/guide/`.
 - **Given** the definition of done in 11-testing-release, **when** a story is ticked in `docs/progress.md`, **then** "guide page updated" is part of it.
 - **Given** a guide page that names a button or field, **when** the app's copy changes, **then** the page is updated in the same change (the UI copy is the source of truth).
 
@@ -98,7 +98,7 @@ Decision: D-113
 **As** a maintainer, **I want** screenshots captured from a real install, **so that** the guide always shows the current screens in both themes.
 
 **Acceptance criteria**
-- **Given** `pnpm --filter @spine/e2e screenshots`, **when** it runs against a demo-seeded install, **then** it saves each listed screen in light and dark mode to `apps/site/src/assets/screens/`.
+- **Given** `pnpm --filter @spine/e2e screenshots`, **when** it runs against a demo-seeded install, **then** it saves each listed screen in light and dark mode to `apps/docs/src/assets/screens/`.
 - **Given** a guide page with a screenshot, **when** a reader uses dark mode, **then** the dark capture is shown.
 - **Given** a screen's layout changes, **when** the command runs again, **then** the images update and the PR shows the diff.
 
@@ -186,7 +186,7 @@ Decision: D-110
 - **Given** search in the bundled guide, **when** I use it offline, **then** it works.
 
 **Implementation notes**
-- The web image's build copies the site's `guide` and `self-hosting` output into `/help`; served as static files by the web app (no API involvement, no login needed).
+- The web image's build copies `apps/docs`' `guide` and `self-hosting` output into `/help`; served as static files by the web app (no API involvement, no login needed).
 
 ### US-SITE-13 · Read docs for the version I run
 **Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteUserGuide`
@@ -206,13 +206,14 @@ Decision: D-111
 **Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
 **As** a maintainer, **I want** the public site to update itself, **so that** published docs never fall behind `main`.
 
-Decision: D-112
+Decision: D-270
 
 **Acceptance criteria**
-- **Given** a merge to `main` that changes `apps/site/**` or the API's OpenAPI document, **when** the publish workflow runs, **then** the site is built and deployed to GitHub Pages at `docs.[DOMAIN]` (placeholder until Q-15 is answered).
+- **Given** a merge to `main` that changes `apps/site/**`, `apps/docs/**` or the API's OpenAPI document, **when** Cloudflare Pages sees it, **then** the changed project is built and deployed: the home page at `<domain>`, the docs at `docs.<domain>` (placeholder until the Owner names the domain, Q-15).
+- **Given** a branch, **when** it's pushed, **then** each changed project gets a preview address to check before merging.
 - **Given** a merge that doesn't touch the site, **when** it lands, **then** the publish workflow doesn't run.
 - **Given** the build fails (e.g. a broken link), **when** the workflow runs, **then** the live site is left unchanged and the run fails.
-- **Given** the repo is private until the v1.0 tag ([D-262](../prd/12-decisions.md)), **when** the site publishes before then, **then** the site is public (GitHub Pages from a private repo on the Pro plan).
+- **Given** the repo is private until the v1.0 tag ([D-262](../prd/12-decisions.md)), **when** the site publishes before then, **then** the site is still public.
 
 **Implementation notes**
-- `.github/workflows/site.yml`: `on: push: branches: [main], paths: [apps/site/**, apps/api/openapi.json]`, `actions/deploy-pages`; minutes are small because it only runs when the site changes.
+- Cloudflare Pages' Git integration, two projects with root folders `apps/site` and `apps/docs` and build watch paths; no GitHub workflow and no Actions minutes ([D-270](12-decisions.md)). Web analytics off.

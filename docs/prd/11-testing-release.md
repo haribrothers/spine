@@ -39,7 +39,7 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | `a11y-routes` | `v*` tag or manual run (Phase 12), like E2E ([D-260](12-decisions.md)); locally in `pnpm verify` | Playwright + axe on every route with demo data (US-OPS-17) | Before a release |
 | `restore-verify` | `v*` tags, and nightly once the repo is public at v1.0 (Phase 12, [D-262](12-decisions.md)) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
-| `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
+| Site publishing (Cloudflare Pages, not a GitHub workflow) | push to `main` touching `apps/site/**`, `apps/docs/**` or `apps/api/openapi.json`; a preview for every branch | build (link-checked) → deploy the home page to `<domain>` and the docs to `docs.<domain>` ([D-270](12-decisions.md)) | — (main is already merged) |
 | `upgrade-verify` | `v*` tags (Phase 12) | install the previous release with demo data → upgrade to this one → compare trial balance and file count (US-OPS-50, [D-264](12-decisions.md)) | Before a release |
 | `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api` and `spine-web` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → EAS builds: preview (TestFlight, APK) for a pre-release, production for a release (US-MOB-28, US-MOB-29) | — |
 
@@ -92,7 +92,7 @@ Phase 12 adds the nightly `restore-verify` job; keep it to one run a day, and co
 3. Any contract change is reflected in [04](04-data-model.md) / [05](05-api.md) in the same change.
 4. New capabilities are enforced in the service layer and reflected in the web UI ([07](07-security.md)).
 5. New or changed UI uses design-system components and tokens, works in light and dark mode, and component changes ship with their doc page and a11y test (both themes).
-6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 12, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
+6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 12, the story's user-guide page in `apps/docs` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
 
 ## Appendix — testing expectations moved verbatim from CLAUDE.md
 

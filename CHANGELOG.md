@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — The website and docs move to Cloudflare Pages (D-270)
+
+- **Two projects from the monorepo:** `apps/site`, the home page at `<domain>`, and `apps/docs`, Starlight with the guides, developer docs and API reference at `docs.<domain>`.
+- **Publishing:** Cloudflare builds each project after merges to `main` and gives every branch a preview. It works while the repo is private and uses no Actions minutes.
+- **Supersedes:** D-112's GitHub Pages hosting. US-SITE-01, -02, -04 to -06, -12 and -14, the architecture, the tech stack, the testing doc and CLAUDE.md now name `apps/docs` for the guide.
+
 ### 2026-10-23 — Phase 12 plan: a beta for the accountant, then 1.0 (D-262–D-269)
 
 - **Two milestones (D-265):** milestone 1 builds health checks, logs, the release workflow, install, backup, restore and upgrade, the beta itself and the field app for testers, and ends with `v1.0.0-beta.1` on the Owner's server, where an accountant reviews the books. Milestone 2 finishes the phase during the beta; 1.0 needs both and the accountant's sign-off.

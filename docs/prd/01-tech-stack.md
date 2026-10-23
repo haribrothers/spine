@@ -46,7 +46,9 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Command palette | cmdk | |
 | Docs | `apps/design-system` (Next.js docs app) | Living spec for `@spine/ui` |
 
-## `apps/site` — website, user guide and developer docs (Phase 12)
+## `apps/site` and `apps/docs` — website, user guide and developer docs (Phase 12)
+
+`apps/site` is the home page at `<domain>` (Astro); `apps/docs` is everything people read, at `docs.<domain>` (Astro + Starlight) ([D-270](12-decisions.md)).
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -55,7 +57,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | API reference | `starlight-openapi`, from the API's OpenAPI document | Generated, so it never drifts from the code |
 | Versions | `starlight-versions`, one per minor release from 1.0 ([D-111](12-decisions.md)) | Self-hosters on older versions read matching docs |
 | Link checks | `starlight-links-validator` | Broken links fail the build |
-| Hosting | GitHub Pages at `docs.[DOMAIN]` ([D-112](12-decisions.md), [Q-15](13-risks-open-questions.md)) | Free on the Pro plan; public site from the private repo |
+| Hosting | Cloudflare Pages: `apps/site` at `<domain>`, `apps/docs` at `docs.<domain>` ([D-270](12-decisions.md), [Q-15](13-risks-open-questions.md)) | Two projects from one repo, each on its own domain; free; works while the repo is private; a preview per branch |
 | In-app copy | The user guide and self-hosting sections are bundled into the web image at `/help` ([D-110](12-decisions.md)) | Help works offline and matches the installed version |
 
 ## `apps/mobile` — the field app (Phase 5)
