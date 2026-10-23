@@ -80,6 +80,24 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Phase 12 plan: a beta for the accountant, then 1.0 (D-262–D-269)
+
+- **Two milestones (D-265):** milestone 1 builds health checks, logs, the release workflow, install, backup, restore and upgrade, the beta itself and the field app for testers, and ends with `v1.0.0-beta.1` on the Owner's server, where an accountant reviews the books. Milestone 2 finishes the phase during the beta; 1.0 needs both and the accountant's sign-off.
+- **New stories:**
+  - US-OPS-50: upgrade with one command; migrations run at start after a snapshot (D-264).
+  - US-OPS-51: publish a release with one tag; images on GHCR (D-262).
+  - US-OPS-52: run a beta for testers.
+  - US-MOB-28: the field app through TestFlight and an APK.
+  - US-MOB-29: the App Store and Play Store after the v1.0 tag (D-266).
+- **Decisions:**
+  - The repo goes public at the v1.0 tag; installs run on Linux and macOS, and on Windows through WSL2 (D-262).
+  - Spine is licensed AGPL-3.0, copyright Hari Prasad (D-263).
+  - The security review is done in-house and signed off by the Owner (D-267).
+  - Web and mobile strings move to i18next in 1.0 (D-268).
+  - The update check reads GitHub Releases (D-269).
+  - Q-01, Q-02 and Q-07 are closed; for Q-15, the Owner buys a domain.
+- **Updated stories:** US-OPS-01 (images, platforms, migrations at start, non-interactive mode), US-OPS-18, US-SITE-04 (guides for banking, AI and agents) and US-SITE-14.
+
 ### 2026-10-23 — Phase 12 begins; the field app ships in 1.0 on Expo SDK 57 (D-261)
 
 - **Phase 12 · Packaging & 1.0** starts on `phase-12-packaging`.

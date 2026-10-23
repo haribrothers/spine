@@ -39,13 +39,13 @@
 
 | ID | Question | Options | Needed before | Owner |
 |---|---|---|---|---|
-| Q-01 | Licence | AGPL-3.0 · MIT | Phase 12 (US-OPS-19) | Product owner |
-| Q-02 | Is a practising accountant available to review the chart of accounts and posting rules? | Yes, name · No, accept risk R-01 | Before the Phase 8 PR merges (P17–P27 are built first, decided 2026-10-06), and again before the Phase 12 release | Product owner |
+| Q-01 | ~~Licence~~ — closed by [D-263](12-decisions.md): AGPL-3.0, copyright Hari Prasad | — | — | — |
+| Q-02 | ~~Is a practising accountant available to review the chart of accounts and posting rules?~~ — closed by [D-265](12-decisions.md): yes — the Owner arranges an accountant, who reviews the books during the beta before 1.0 | — | — | — |
 | Q-03 | ~~Does the reference business migrate historical data or start clean from a cutover date?~~ — closed by [D-137](12-decisions.md): opening balances at a cutover date plus open invoices, bills, retention and credits | — | — | — |
 | Q-04 | ~~Is accrual-only accounting acceptable for v1, or is a cash-basis report needed?~~ — closed by [D-138](12-decisions.md): a cash-basis P&L and dashboard profit, derived at report time | — | — | — |
 | Q-05 | Should expenses paid personally by an employee credit an "Employee reimbursements payable" account instead of Bank? | Keep Bank · Add the account and a reimburse action | v1.1 ([16-roadmap](16-roadmap.md)) | Accountant |
 | Q-06 | ~~Default document number pattern~~ — closed by [D-077](12-decisions.md): keep `QUO-0001`, no yearly reset | — | — | — |
-| Q-07 | Should mobile builds be published to the public stores or distributed privately (TestFlight / internal track / APK)? | Public stores · Private distribution | Phase 5 release | Product owner |
+| Q-07 | ~~Should mobile builds be published to the public stores or distributed privately (TestFlight / internal track / APK)?~~ — closed by [D-266](12-decisions.md): public stores, submitted after the v1.0 tag; testers use TestFlight and an APK during the beta ([D-265](12-decisions.md)) | — | — | — |
 | Q-08 | Two-factor authentication in v1? | No (v2) · TOTP for Owners · TOTP for everyone | v1.1 ([16-roadmap](16-roadmap.md)) | Product owner |
 | Q-09 | ~~Should tax rates carry a classification (standard, zero-rated, exempt) so the Tax Summary reports them separately?~~ — closed by [D-147](12-decisions.md): a supply class on every line | — | — | — |
 | Q-10 | ~~Should issued documents snapshot the customer address, logo/branding and payment instructions, or store the rendered PDF at issue?~~ — closed by [D-083](12-decisions.md): store the issue-time PDF | — | — | — |
@@ -53,7 +53,7 @@
 | Q-12 | ~~May a member with `expenses.approve` approve their own expense?~~ — closed by [D-085](12-decisions.md): no self-approval for Staff; Owners may | — | — | — |
 | Q-13 | ~~With `SEED_DEMO=true`, how does someone sign in to the demo organisation?~~ — closed by [D-086](12-decisions.md): the first sign-up adopts the demo organisation | — | — | — |
 | Q-14 | ~~Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`?~~ — closed by [D-102](12-decisions.md) and [D-103](12-decisions.md): local disk by default, optional pinned RustFS | — | — | — |
-| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 12 (US-SITE-14) | Product owner |
+| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain (chosen 2026-10-23; the Owner will name it) | Phase 12 (US-SITE-14) | Product owner |
 | Q-16 | When a customer certifies less than a progress claim, should Spine record the claimed and certified amounts on the invoice? Today the office issues a credit note for the difference after issue, or edits the draft before issuing | Keep credit notes · Record a certified amount on the draft before issue (claimed amount kept for reference) · Add a certification step after issue that raises the credit note automatically | Before the next construction round | Product owner + accountant |
 | Q-17 | Should statement import ship ready-made column mappings for common Indian banks (HDFC, ICICI, SBI, Axis, Kotak)? | No, map by hand · Ship presets for the five banks | Phase 8 (US-BANK-07) | Product owner |
 | Q-18 | ~~For export invoices in 1.0, is IGST-paid (`WPAY`) enough, or must exports under LUT (zero-rated, no IGST) be supported before v1.1?~~ — closed by [D-181](12-decisions.md): a per-business "We export under LUT" setting | — | — | — |

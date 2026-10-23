@@ -70,7 +70,7 @@ Decision: D-108
 Decision: D-113
 
 **Acceptance criteria**
-- **Given** the "User guide" section, **when** it opens, **then** it has a group for each module a user touches: setting up your business, contacts and pipeline, meetings, catalogue, quotes, jobs and milestones, invoices and credit notes, payments and receivables, purchases and expenses, tax, reports, dashboard, team and permissions, and the field app.
+- **Given** the "User guide" section, **when** it opens, **then** it has a group for each module a user touches: setting up your business, contacts and pipeline, meetings, catalogue, quotes, jobs and milestones, invoices and credit notes, payments and receivables, purchases and expenses, tax, reports, dashboard, team and permissions, banking, notifications, settings and data export, the AI assistant, connected agents, and the field app.
 - **Given** a guide page, **when** it renders, **then** it is titled as a task ("Send a quote to a customer"), says who can do it (role and capability), lists numbered steps, and shows a screenshot.
 - **Given** a feature hidden behind a later phase or a capability, **when** its page renders, **then** it says which role or Team right is needed.
 - **Given** every feature built in Phases 0–11, **when** Phase 12 is done, **then** each has at least one guide page.
@@ -212,7 +212,7 @@ Decision: D-112
 - **Given** a merge to `main` that changes `apps/site/**` or the API's OpenAPI document, **when** the publish workflow runs, **then** the site is built and deployed to GitHub Pages at `docs.[DOMAIN]` (placeholder until Q-15 is answered).
 - **Given** a merge that doesn't touch the site, **when** it lands, **then** the publish workflow doesn't run.
 - **Given** the build fails (e.g. a broken link), **when** the workflow runs, **then** the live site is left unchanged and the run fails.
-- **Given** the repo stays private, **when** the site publishes, **then** the site is public (GitHub Pages from a private repo on the Pro plan).
+- **Given** the repo is private until the v1.0 tag ([D-262](../prd/12-decisions.md)), **when** the site publishes before then, **then** the site is public (GitHub Pages from a private repo on the Pro plan).
 
 **Implementation notes**
 - `.github/workflows/site.yml`: `on: push: branches: [main], paths: [apps/site/**, apps/api/openapi.json]`, `actions/deploy-pages`; minutes are small because it only runs when the site changes.

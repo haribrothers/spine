@@ -23,7 +23,7 @@ Bundle ids are placeholders until the owner registers a domain; changing them af
 |---|---|---|
 | Development | `eas build --profile development` (dev client) | Developers; required because `@expo/ui` needs native code (no Expo Go) |
 | Preview | `eas build --profile preview` | Internal testers via TestFlight and the Play internal track |
-| Production | `eas build --profile production` on a `v*` tag | Public stores or private distribution (open: [Q-07](13-risks-open-questions.md)) |
+| Production | `eas build --profile production` on a `v*` tag | App Store and Play Store, submitted after the v1.0 tag ([D-266](12-decisions.md)); during the beta, testers get the preview build through TestFlight and an APK link ([D-265](12-decisions.md)) |
 
 - Signing: EAS-managed credentials (Apple distribution certificate + provisioning profile; Android upload keystore). Credentials never live in the repo.
 - Version: marketing version = product version (`X.Y.Z`); `buildNumber` / `versionCode` auto-increment per upload ([11](11-testing-release.md)).

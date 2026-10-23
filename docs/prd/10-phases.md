@@ -16,7 +16,7 @@ Phases 0–10 are built; Phases 11 and 12 follow ([D-098](12-decisions.md) split
 | 9 | Tax, documents and setup | 31 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails, modules and a setup page that fit it |
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Connected agents (MCP) | 9 | Someone connects Claude or ChatGPT to Spine, asks it about the business and gets drafts to check and finish in Spine |
-| 12 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
+| 12 | Packaging & 1.0 | 37 | A stranger installs from the README and issues their first invoice |
 
 Total: 543 stories.
 
@@ -1061,6 +1061,8 @@ Total: 543 stories.
 
 **Goal:** A stranger installs from the README and issues their first invoice.
 
+**Two milestones ([D-265](12-decisions.md)).** Milestone 1 builds what a release needs and ends with `v1.0.0-beta.1`, which the Owner runs on their own server for an accountant and other testers, with the field app through TestFlight and an APK. Milestone 2 finishes the phase while the beta runs; fixes ship as further betas. 1.0 is tagged when both are done and the accountant has signed off.
+
 **Deliverables:** Install script, backup/restore with CI-verified restore, upgrades, health checks, logs, update notice, demo seed, system pages, phone-width web layout, reduced motion, i18n extraction, accessibility audit, security review, README, licence, the public website and docs (Astro + Starlight: home page, user guide, self-hosting, developer docs, API reference) with the guide bundled into every install for offline help, and the v1.0 release.
 
 **Done when:**
@@ -1068,27 +1070,32 @@ Total: 543 stories.
 - Backup → restore is verified nightly in CI (NFR-REL-03).
 - Every route passes axe AA and works at 390×844 (NFR-A11Y-02, NFR-COMP-02).
 - The security review is written up with no open high-severity items (NFR-SEC-05).
+- The accountant's review is signed off in `docs/accounting-review.md`, and each beta upgraded in place with testers' data intact (NFR-MNT-02).
 - Every feature has a user-guide page, and the Help menu opens the bundled guide offline.
 
 **Stories:**
 
-*Onboarding & first run*
+*Milestone 1 · Beta (`v1.0.0-beta.1`)*
 
-- US-ONB-09 · Load demo data to explore (P1)
-
-*Settings & administration*
-
-- US-SET-08 · Remove demo data and keep my real data (P2)
-
-*Self-hosting & system states*
-
+- US-OPS-05 · Report health and readiness (P2)
+- US-OPS-07 · Log every request with an id (P2)
+- US-OPS-51 · Publish a release with one tag (P1)
 - US-OPS-01 · Install Spine with one command (P1)
-- US-OPS-02 · Start with demo data from an environment flag (P2)
 - US-OPS-03 · Back up everything into one file (P1)
 - US-OPS-04 · Restore a backup into a clean install (P1)
-- US-OPS-05 · Report health and readiness (P2)
+- US-OPS-50 · Upgrade Spine with one command (P1)
+- US-OPS-52 · Run a beta for testers (P1)
+- US-MOB-28 · Give testers the field app through TestFlight and an APK (P1)
+
+*Milestone 2 · 1.0 — onboarding & first run*
+
+- US-ONB-09 · Load demo data to explore (P1)
+- US-SET-08 · Remove demo data and keep my real data (P2)
+- US-OPS-02 · Start with demo data from an environment flag (P2)
+
+*Milestone 2 · system states and the web app on a phone*
+
 - US-OPS-06 · Tell owners a new version is available (P3)
-- US-OPS-07 · Log every request with an id (P2)
 - US-OPS-09 · Respect reduced-motion settings everywhere (P2)
 - US-OPS-11 · Show a helpful page for a missing page (P2)
 - US-OPS-13 · Recover from an unexpected error (P2)
@@ -1099,7 +1106,7 @@ Total: 543 stories.
 - US-OPS-18 · Complete a security review before 1.0 (P1)
 - US-OPS-19 · Ship the README, licence and contributor guide (P1)
 
-*Website and help*
+*Milestone 2 · website and help*
 
 - US-SITE-01 · Set up the docs site in the monorepo (P1)
 - US-SITE-02 · Show a home page for people discovering Spine (P1)
@@ -1115,3 +1122,7 @@ Total: 543 stories.
 - US-SITE-12 · Read the guide without internet (P1)
 - US-SITE-13 · Read docs for the version I run (P2)
 - US-SITE-14 · Publish the site after each merge (P2)
+
+*After the v1.0 tag*
+
+- US-MOB-29 · Get the field app from the App Store and Play Store (P1)

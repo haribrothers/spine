@@ -37,10 +37,11 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | `unit-and-integration` ("Unit and integration") | after `static` and `integration` | Passes when `static` passed and `integration` passed or was skipped — the required check, keeping its name | Yes |
 | `e2e` ("E2E") | `v*` tag or manual run, after `static`, alongside `integration`; skipped on PRs, which counts as passing ([D-260](12-decisions.md)); files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build (Next.js build cache kept between runs, [D-241](12-decisions.md)) → `@spine/e2e test` (one worker, 60-minute limit), stopping after five failing specs; a failure cancels the run, and the report is kept when it fails or runs out of time | Before a release |
 | `a11y-routes` | `v*` tag or manual run (Phase 12), like E2E ([D-260](12-decisions.md)); locally in `pnpm verify` | Playwright + axe on every route with demo data (US-OPS-17) | Before a release |
-| `restore-verify` | nightly and on `v*` tags (Phase 12) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
+| `restore-verify` | `v*` tags, and nightly once the repo is public at v1.0 (Phase 12, [D-262](12-decisions.md)) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
 | `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
-| `release` | tag `v*` | build images → push to registry → attach `install.sh` + checksums → mobile EAS build | — |
+| `upgrade-verify` | `v*` tags (Phase 12) | install the previous release with demo data → upgrade to this one → compare trial balance and file count (US-OPS-50, [D-264](12-decisions.md)) | Before a release |
+| `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api` and `spine-web` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → EAS builds: preview (TestFlight, APK) for a pre-release, production for a release (US-MOB-28, US-MOB-29) | — |
 
 ## Branches and pull requests
 
