@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — E2E runs before a release, not on every PR (D-260)
+
+- **CI:** pull requests into `main` run lint, typecheck, unit and integration. The E2E job runs on a `v*` tag (with everything else) or a manual run, with a 60-minute limit, and keeps its Playwright report when it fails or runs out of time. On a pull request it's skipped, which `main`'s branch protection counts as passing.
+- **Why:** on CI's two-core runner E2E took 33 minutes in Phase 10 and over 45 in Phase 11's PR, failing on runner speed rather than the code (the same tests take 11–12 minutes locally). `pnpm verify` already runs it before every PR; the PR now says which commit that was.
+- **Docs:** D-260 (supersedes the E2E parts of D-205 and D-241), `11-testing-release.md` (CI jobs, definition of done) and CLAUDE.md.
+
 ### 2026-10-20 — Start from a ready-made task (US-MCP-09)
 
 - **MCP prompts:** "Chase overdue invoices" (reads receivables and drafts nothing — it suggests a reminder for each customer, for the person to send from Spine), "Summarise a job" (asks for the job's number or name) and "This week in the business".
