@@ -1,24 +1,31 @@
-name: Restore verify
+name: Self-hosting checks
 
-# US-OPS-04 (NFR-REL-03) — installs Spine from this commit's images, seeds the
-# demo business, backs it up (encrypted), wipes the install, restores it into a
-# clean one and checks the trial balance and the files match
-# (scripts/ci/restore-verify.sh). Called by CI on release tags and manual runs,
-# and by nightly.yml.
+# With this commit's images built once:
+# - restore-verify (US-OPS-04, NFR-REL-03): install, seed the demo business,
+#   back up (encrypted), wipe, restore into a clean install, compare the trial
+#   balance and the files (scripts/ci/restore-verify.sh);
+# - upgrade-verify (US-OPS-50, NFR-MNT-02): install the previous release with
+#   the demo business, upgrade it to this commit with upgrade.sh, compare
+#   (scripts/ci/upgrade-verify.sh; nothing to do before the first release).
+# Called by CI on release tags and manual runs, and by nightly.yml.
 on:
   workflow_call:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
-  restore-verify:
-    name: Restore verify
+  self-hosting:
+    name: Restore and upgrade
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
+      # Every tag, to find the previous release.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -55,3 +62,16 @@ jobs:
 
       - name: Back up, wipe, restore and compare
         run: scripts/ci/restore-verify.sh
+
+      # The previous release's images, which are private until the repo is public at v1.0.
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upgrade from the previous release and compare
+        run: scripts/ci/upgrade-verify.sh
+        env:
+          GH_TOKEN: ${{ github.token }}

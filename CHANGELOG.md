@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — Upgrade Spine with one command (US-OPS-50)
+
+- **`upgrade.sh`:** it backs up, then takes the new version's files, downloaded from the GitHub release or from `--files <folder>`, checked against `SHA256SUMS` and keeping the old ones in `.previous/`. It sets `SPINE_VERSION` in `.env`, pulls the images and restarts, then prints "Spine is now <version>. Your backup is <file>." It never goes back a version, and stops before changing anything if the backup fails or the files don't check out. If the new version doesn't start, it says the data is safe and how to go back.
+- **A snapshot before migrations (D-264):** when an upgrade brings migrations and there's data, the API writes a `pg_dump` snapshot to the new `spine_snapshots` volume first (the last three are kept). In production it won't migrate without one. All pending migrations run in one transaction, so a failure leaves the database as it was, and the log names the snapshot.
+- **Self-hosting checks in CI:** `restore-verify.yml` becomes `self-hosting.yml`. It builds the images once, runs restore-verify, then upgrade-verify (`scripts/ci/upgrade-verify.sh`), which installs the previous release with the demo business, upgrades it with `upgrade.sh` and compares the trial balance and files. It runs on every tag before "Release", and nightly once public.
+- **Found while testing:**
+  - `upgrade.sh` overwrote itself while running and stopped early; files are now renamed into place.
+  - On macOS `$target…` read the `…` as part of the variable's name. A script test now guards against that pattern.
+- **Tests:** `us-ops-50`: snapshots, keeping three, no migration without a snapshot, and a failed migration changing nothing (integration); 7 script tests of `upgrade.sh`. upgrade-verify passes locally from a stand-in previous version. QA section 263.
+
 ### 2026-10-23 — Restore a backup into a clean install (US-OPS-04)
 
 - **`restore.sh <archive>`:** stops Spine and streams the archive into a one-off API container. It checks everything before changing anything:

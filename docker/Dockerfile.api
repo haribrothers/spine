@@ -64,7 +64,7 @@ RUN apk add --no-cache postgresql16-client
 # The local storage driver writes to the spine_files volume mounted here
 # (D-102). A fresh named volume takes this folder's owner, so the API runs
 # as the image's non-root `node` user and still owns its files.
-RUN mkdir -p /data/files && chown node:node /data/files
+RUN mkdir -p /data/files /data/snapshots && chown node:node /data/files /data/snapshots
 USER node
 EXPOSE 4000
 CMD ["node", "apps/api/dist/main.js"]

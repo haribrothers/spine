@@ -641,7 +641,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-01 · Install Spine with one command
 - [x] US-OPS-03 · Back up everything into one file
 - [x] US-OPS-04 · Restore a backup into a clean install
-- [ ] US-OPS-50 · Upgrade Spine with one command
+- [x] US-OPS-50 · Upgrade Spine with one command
 - [ ] US-OPS-52 · Run a beta for testers
 - [ ] US-MOB-28 · Give testers the field app through TestFlight and an APK
 

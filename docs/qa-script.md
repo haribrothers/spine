@@ -5488,6 +5488,18 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 8. `scripts/ci/restore-verify.sh` (with this version's images built) passes: "the trial balance and all <n> files match". CI runs it on every release tag before publishing.
 9. Regression: `./backup.sh` and Spine's start-up behave as before.
 
+## 263. Upgrade Spine with one command (US-OPS-50, Phase 12)
+
+1. On an install of the previous release with data, run `./upgrade.sh --version <new>` (betas need the version; `./upgrade.sh` alone takes the latest release). It backs up ("Backup saved: …"), downloads the new version's files and checks them against `SHA256SUMS`, pulls the images and restarts, then prints "Spine is now <new>. Your backup is <file>."
+2. `.env` keeps everything you set, with `SPINE_VERSION=<new>` added or changed. The old Compose file and scripts are in `.previous/`.
+3. `docker compose logs api`: "Taking a snapshot of the database before <n> migrations…" and "Applied <n> database migrations … The snapshot from before is /data/snapshots/spine-snapshot-<time>-before-<n>-migrations.dump". At most 3 snapshots are kept.
+4. Sign in: everything is there, and the trial balance and documents are unchanged.
+5. `./upgrade.sh --version <the same>`: "Spine is already <version>." `./upgrade.sh --version <older>`: refused ("can't go back a version").
+6. Change a byte in a downloaded file (or use `--files` with a folder whose files don't match `SHA256SUMS`): it stops with "… don't match their checksums, so nothing was changed."
+7. Offline: download the release's files into a folder and run `./upgrade.sh --version <new> --files <folder>`.
+8. From a clone: `git checkout v<new>` first, then `./scripts/upgrade.sh --version <new>`. Without the checkout it says so.
+9. Regression: `./install.sh`, `./backup.sh` and `./restore.sh` work as before. A fresh install takes no snapshot (there's no data yet).
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
