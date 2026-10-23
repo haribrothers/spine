@@ -28,6 +28,8 @@ describe("US-OPS-03 · back up everything into one file (requires local Postgres
   const storage = new LocalStorageDriver(join(dir, "files"));
   const stored = { id: randomUUID(), bytes: Buffer.from("%PDF-1.7 receipt for Harbour Road") };
   const gone = { id: randomUUID() };
+  /** A row whose key the local driver won't use (an old S3 key with the file's name in it). */
+  const oddKey = { id: randomUUID(), key: "" };
   const databaseUrl = process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine";
   const get = (who: Who, path: string) => fetch(`${testApp.baseUrl}${path}`, { headers: { cookie: who.cookie } });
 
@@ -41,14 +43,16 @@ describe("US-OPS-03 · back up everything into one file (requires local Postgres
     await db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId: staff.userId, role: "staff", createdAt: new Date() });
     await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, staff.userId));
     await storage.save(fileKey(orgId, stored.id), stored.bytes, "application/pdf");
+    oddKey.key = `${orgId}/${oddKey.id}/site photo (1).jpg`;
     await db.insert(files).values([
+      { id: oddKey.id, orgId, key: oddKey.key, storageDriver: "local", originalFilename: "site photo (1).jpg", mimeType: "image/jpeg", sizeBytes: 10 },
       { id: stored.id, orgId, key: fileKey(orgId, stored.id), storageDriver: "local", originalFilename: "receipt.pdf", mimeType: "application/pdf", sizeBytes: stored.bytes.length },
       { id: gone.id, orgId, key: fileKey(orgId, gone.id), storageDriver: "local", originalFilename: "lost.pdf", mimeType: "application/pdf", sizeBytes: 10 },
     ]);
   }, 60_000);
 
   afterAll(async () => {
-    await db.delete(files).where(inArray(files.id, [stored.id, gone.id]));
+    await db.delete(files).where(inArray(files.id, [stored.id, gone.id, oddKey.id]));
     await testApp?.close();
   });
 
@@ -64,9 +68,12 @@ describe("US-OPS-03 · back up everything into one file (requires local Postgres
     expect(readFileSync(join(out, "database.dump")).subarray(0, 5).toString()).toBe("PGDMP");
     const entry = manifest.files.entries.find((e) => e.id === stored.id)!;
     expect(entry).toMatchObject({ driver: "local", bytes: stored.bytes.length, sha256: createHash("sha256").update(stored.bytes).digest("hex") });
-    expect(readFileSync(join(out, "files", entry.key)).equals(stored.bytes)).toBe(true);
+    // Stored in the archive by id, never by key.
+    expect(readFileSync(join(out, "files", entry.id)).equals(stored.bytes)).toBe(true);
     // A file whose bytes are gone doesn't stop the backup; it's listed.
     expect(manifest.files.missing).toContainEqual({ id: gone.id, key: fileKey(orgId, gone.id) });
+    // So is one whose key its driver can't hold.
+    expect(manifest.files.missing).toContainEqual({ id: oddKey.id, key: oddKey.key });
   }, 120_000);
 
   it("with a passphrase, the archive is encrypted and opens only with it", async () => {

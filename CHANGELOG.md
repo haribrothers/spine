@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — Backups keep going past a file their storage can't address (US-OPS-03)
+
+- **What failed:** a file record whose key the local driver won't use (an old S3-style key with the file's name in it) stopped the whole backup. Such files are now listed as missing in the manifest, like files that are gone. A real read error (disk or network) still fails the backup.
+- **Archive layout:** files sit in the archive at `files/<id>`, not at their key. A key comes from the database, so it never becomes a path; the manifest maps each id to the key it's restored to.
+- **Tests:** `us-ops-03` adds a record with such a key. Found by `pnpm verify`.
+
 ### 2026-10-24 — Give testers the field app through TestFlight and an APK (US-MOB-28)
 
 - **One version for the app too:** `apps/mobile/app.config.js` takes it from the root `package.json`. The stores get `1.0.0`, and the full `1.0.0-beta.1` is in `extra.spineVersion`, so Profile reads "Spine 1.0.0-beta.1 (12) · Beta". The bundle id and the EAS project can be set from the environment, ready for the final id from the domain.

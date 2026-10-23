@@ -4,7 +4,7 @@ import { link, mkdir, open, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { type ByteRange, type StorageDriver, StoredObjectExistsError, StoredObjectMissingError } from "./storage-driver";
+import { type ByteRange, type StorageDriver, StoredObjectExistsError, StoredObjectMissingError, UnsafeStorageKeyError } from "./storage-driver";
 
 /** Keys are ids joined by `/` (see `fileKey`); anything else is refused before it reaches the disk. */
 const SAFE_KEY = /^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/;
@@ -92,7 +92,7 @@ export class LocalStorageDriver implements StorageDriver {
   }
 
   private pathFor(key: string): string {
-    if (!SAFE_KEY.test(key)) throw new Error(`Refusing unsafe storage key: ${key}`);
+    if (!SAFE_KEY.test(key)) throw new UnsafeStorageKeyError(key);
     const resolved = path.resolve(this.root, key);
     if (!resolved.startsWith(path.resolve(this.root) + path.sep)) {
       throw new Error(`Refusing storage key outside the files folder: ${key}`);

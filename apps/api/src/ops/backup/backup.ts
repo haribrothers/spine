@@ -3,13 +3,13 @@ import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { asc, gt } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import { files } from "../../db/schema";
 import { spineVersion } from "../../common/version";
-import { type StorageDriver, type StorageDriverName, StoredObjectMissingError } from "../../modules/files/storage/storage-driver";
+import { type StorageDriver, type StorageDriverName, StoredObjectMissingError, UnsafeStorageKeyError } from "../../modules/files/storage/storage-driver";
 import { encryptFile } from "./archive-crypto";
 
 export const BACKUP_FORMAT = 1;
@@ -27,6 +27,7 @@ export interface BackupManifest {
   /** Which AUTH_SECRET the install had (a fingerprint, not the secret): two-factor and stored keys need the same one after a restore (US-OPS-04). */
   authSecretFingerprint: string | null;
   database: { file: string; bytes: number; sha256: string };
+  /** Each file is at `files/<id>` in the archive (never its key, which comes from the database); `key` is where it goes back. */
   files: { count: number; bytes: number; entries: { id: string; key: string; driver: StorageDriverName; bytes: number; sha256: string }[]; missing: { id: string; key: string }[] };
 }
 
@@ -115,14 +116,14 @@ export async function createBackup(options: BackupOptions): Promise<BackupResult
       if (!page.length) break;
       for (const row of page) {
         const driver = options.readers[row.driver as StorageDriverName];
-        const target = join(content, "files", row.key);
+        const target = join(content, "files", row.id);
         try {
           if (!driver) throw new StoredObjectMissingError(row.key);
-          await mkdir(dirname(target), { recursive: true });
           await pipeline(await driver.openReadStream(row.key), createWriteStream(target));
           entries.push({ id: row.id, key: row.key, driver: row.driver as StorageDriverName, bytes: (await stat(target)).size, sha256: await sha256File(target) });
         } catch (err) {
-          if (!(err instanceof StoredObjectMissingError)) throw err;
+          // Gone, or a key its driver can't hold: listed as missing. Anything else (a disk or network error) fails the backup.
+          if (!(err instanceof StoredObjectMissingError || err instanceof UnsafeStorageKeyError)) throw err;
           await rm(target, { force: true });
           missing.push({ id: row.id, key: row.key });
         }

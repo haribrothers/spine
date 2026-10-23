@@ -17,6 +17,14 @@ export class StoredObjectMissingError extends Error {
 }
 
 /** A save targeted a key that already holds a file. Stored files are write-once (D-104). */
+/** A key the driver won't use (the local driver takes letters, digits, `_`, `-` and `/` only). */
+export class UnsafeStorageKeyError extends Error {
+  constructor(key: string) {
+    super(`Refusing unsafe storage key: ${key}`);
+    this.name = "UnsafeStorageKeyError";
+  }
+}
+
 export class StoredObjectExistsError extends Error {
   constructor(key: string) {
     super(`Stored object ${key} already exists and can't be replaced`);

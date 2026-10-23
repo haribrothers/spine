@@ -111,7 +111,7 @@ export async function restoreBackup(options: RestoreOptions): Promise<RestoreRes
     log("Checking every file in the backup…");
     if ((await sha256File(join(content, manifest.database.file))) !== manifest.database.sha256) throw new RestoreRefusedError("The backup is damaged: the database dump doesn't match its checksum. Nothing was changed.");
     for (const entry of manifest.files.entries) {
-      const sum = await sha256File(join(content, "files", entry.key)).catch(() => null);
+      const sum = await sha256File(join(content, "files", entry.id)).catch(() => null);
       if (sum !== entry.sha256) throw new RestoreRefusedError(`The backup is damaged: ${entry.key} is missing or doesn't match its checksum. Nothing was changed.`);
     }
 
@@ -145,7 +145,7 @@ export async function restoreBackup(options: RestoreOptions): Promise<RestoreRes
       await target.delete(entry.key).catch((err: unknown) => {
         if (!(err instanceof StoredObjectMissingError)) throw err;
       });
-      await target.save(entry.key, createReadStream(join(content, "files", entry.key)), "application/octet-stream");
+      await target.save(entry.key, createReadStream(join(content, "files", entry.id)), "application/octet-stream");
       // Read back what was written: a file only counts as restored when its checksum matches.
       const written = createHash("sha256");
       await pipeline(await target.openReadStream(entry.key), written);
