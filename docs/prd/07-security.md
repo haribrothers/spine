@@ -114,6 +114,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 - All data stays on the self-hoster's server. No analytics or telemetry unless the Owner opts in (none exists in v1).
 - The mobile app stores the session token in the secure store and cached job data in its sandbox; signing out clears both after the outbox is empty or the user confirms discarding it.
 - Audit log rows record actor, action, record and a field diff; they are never edited.
+- **Logs** (US-OPS-07): one JSON line per request (time, level, request id, method, path, status, duration) and per message the API logs, Better Auth's included. Request bodies and query strings are never logged; path segments that look like tokens (public quote and invitation links) are replaced; every message and stack is redacted of passwords, tokens, secrets, cookies, IBANs and 9–19-digit card and account numbers (`apps/api/src/common/logging/redact.ts`).
 
 ## Supply chain
 

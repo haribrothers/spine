@@ -3,15 +3,21 @@ import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { installBigIntJsonSerialization } from "./common/bigint-json";
+import { requestLogging } from "./common/logging/request-logging";
+import { spineLogger } from "./common/logging/spine-logger";
 
 async function bootstrap() {
   installBigIntJsonSerialization();
   // Better Auth parses the raw request body itself (see @thallesp/nestjs-better-auth);
   // Nest's built-in body parser must stay off or it consumes the stream first.
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  // US-OPS-07: JSON logs in production, every line redacted; each request gets an id and one line when it finishes.
+  const app = await NestFactory.create(AppModule, { bodyParser: false, logger: spineLogger });
+  app.use(requestLogging());
   app.enableCors({
     origin: process.env.APP_URL,
     credentials: true,
+    // The web app's error page shows the failed request's id (US-OPS-13).
+    exposedHeaders: ["X-Request-Id"],
   });
 
   /**

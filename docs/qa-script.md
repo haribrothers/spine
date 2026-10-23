@@ -5434,6 +5434,15 @@ Connect Claude Code (section 250) as each role in turn.
 4. With Docker Compose (`--profile minimal up -d`), run `docker compose ps`: `api` shows `healthy` after start-up, and `web` starts only after that. If the API can't reach the database, `api` turns `unhealthy` and `web` doesn't start.
 5. Regression: the field app's sign-in still finds the server by its address (it reads `/health`), and the storage banner (section on US-OPS-31) still shows when the files volume is nearly full.
 
+## 258. Log every request with an id (US-OPS-07, Phase 12)
+
+1. Run the API image (or the API with `LOG_FORMAT=json`) and follow its logs (`docker compose logs -f api`).
+2. Open any page in the web app: each API request writes one JSON line with `time`, `level`, `requestId`, `method`, `path`, `status` and `durationMs`. A 4xx is `"level":"warn"` and a 5xx is `"level":"error"`.
+3. In the browser's network tab, any API response has an `X-Request-Id` header, and the same id is on that request's log line.
+4. Sign in with a wrong password, then a right one; open a public quote link and a file download. In the logs, search for the password, the quote link's token, `session_token=`, and the file link's `sig=`: none of them appear. Paths show `[token]` where a link's token was.
+5. Without `LOG_FORMAT` and outside production (`pnpm dev`), logs are Nest's readable lines, and request lines read `GET /invoices 200 12ms [<id>]`.
+6. Regression: the API's start-up lines, email worker lines and Better Auth warnings still appear (now through the same logger).
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

@@ -636,7 +636,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 ### Milestone 1 · Beta (`v1.0.0-beta.1`)
 
 - [x] US-OPS-05 · Report health and readiness
-- [ ] US-OPS-07 · Log every request with an id
+- [x] US-OPS-07 · Log every request with an id
 - [ ] US-OPS-51 · Publish a release with one tag
 - [ ] US-OPS-01 · Install Spine with one command
 - [ ] US-OPS-03 · Back up everything into one file

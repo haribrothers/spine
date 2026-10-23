@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Log every request with an id (US-OPS-07)
+
+- **Request ids:** every response carries `X-Request-Id`, exposed to the web app for the error page (US-OPS-13). A plain id sent by a proxy is kept.
+- **Logs:** one logger for the API and Better Auth. It writes JSON lines in production (time, level, request id, context, message), plus one line per request with method, path, status and duration. Elsewhere it writes readable lines; `LOG_FORMAT` and `LOG_REQUESTS` override this.
+- **Nothing secret:** every message and stack is redacted of passwords, tokens, secrets, cookies, IBANs and full card or account numbers. Request bodies and query strings are never logged, and token-like path segments are replaced.
+- **Tests:** `us-ops-07` (unit: redaction, paths and line shapes; integration: headers, levels, and no secrets after sign-in). QA section 258.
+
 ### 2026-10-23 — Report health and readiness (US-OPS-05)
 
 - **`GET /health/ready`:** 200 when the database and the job queue answer, each within 3 seconds; otherwise 503, naming what isn't reachable ("The database isn't reachable."). It still reports file storage (US-OPS-31).
