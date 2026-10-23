@@ -1,10 +1,20 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, Res } from "@nestjs/common";
+import type { Response } from "express";
 import { AllowAnonymous } from "@thallesp/nestjs-better-auth";
 import { FilesService } from "../modules/files/files.service";
+import { HealthService } from "./health.service";
+
+/** "The database isn't reachable." / "The database and the job queue aren't reachable." */
+function downMessage(down: string[]): string {
+  return down.length === 1 ? `The ${down[0]} isn't reachable.` : `The ${down.join(" and the ")} aren't reachable.`;
+}
 
 @Controller("health")
 export class HealthController {
-  constructor(private readonly files: FilesService) {}
+  constructor(
+    private readonly files: FilesService,
+    private readonly health: HealthService,
+  ) {}
 
   @Get()
   @AllowAnonymous()
@@ -15,13 +25,22 @@ export class HealthController {
   }
 
   /**
-   * Readiness. Today it reports file storage (US-OPS-31): the driver and,
-   * for the `local` driver, how full the files volume is. The database and
-   * queue checks, with a 503 naming what's down, arrive with US-OPS-05.
+   * Readiness (US-OPS-05): 200 when the database and the job queue answer,
+   * otherwise 503 naming which isn't reachable — Docker's healthcheck and
+   * monitors use it. Also reports file storage (US-OPS-31): the driver and,
+   * for the `local` driver, how full the files volume is.
    */
   @Get("ready")
   @AllowAnonymous()
-  async ready() {
-    return { status: "ok", storage: await this.files.storageStatus() };
+  async ready(@Res({ passthrough: true }) res: Response) {
+    const [database, queue] = await Promise.all([this.health.database(), this.health.jobQueue()]);
+    const storage = await this.files.storageStatus().catch(() => null);
+    const down = [...(database ? [] : ["database"]), ...(queue ? [] : ["job queue"])];
+    const checks = { database: database ? "ok" : "unreachable", queue: queue ? "ok" : "unreachable" } as const;
+    if (down.length) {
+      res.status(503);
+      return { status: "unavailable", ...checks, storage, message: downMessage(down) };
+    }
+    return { status: "ok", ...checks, storage };
   }
 }

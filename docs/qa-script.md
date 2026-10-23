@@ -5426,6 +5426,14 @@ Connect Claude Code (section 250) as each role in turn.
 6. Connected as Field: "Summarise a job" (assigned jobs only, no money) and "This week in the business" (their jobs); no chasing.
 7. Regression: tools, the audit log entries and drafts behave as in sections 252–255.
 
+## 257. Report health and readiness (US-OPS-05, Phase 12)
+
+1. With Spine running, open `<API>/health`: `{ "status": "ok", "service": "spine", … }`.
+2. Open `<API>/health/ready` without signing in: 200 with `"database": "ok"`, `"queue": "ok"` and the storage driver.
+3. Stop Postgres (`docker compose stop db`), then open `/health/ready` again: within about 3 seconds it answers 503 with `"database": "unreachable"` and "The database isn't reachable." Start Postgres again: it's back to 200 without restarting the API.
+4. With Docker Compose (`--profile minimal up -d`), run `docker compose ps`: `api` shows `healthy` after start-up, and `web` starts only after that. If the API can't reach the database, `api` turns `unhealthy` and `web` doesn't start.
+5. Regression: the field app's sign-in still finds the server by its address (it reads `/health`), and the storage banner (section on US-OPS-31) still shows when the files volume is nearly full.
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

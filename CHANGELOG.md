@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Report health and readiness (US-OPS-05)
+
+- **`GET /health/ready`:** 200 when the database and the job queue answer, each within 3 seconds; otherwise 503, naming what isn't reachable ("The database isn't reachable."). It still reports file storage (US-OPS-31).
+- **Docker Compose:** the `api` service has a healthcheck on `/health/ready`, and `web` starts only once the API is healthy.
+- **Tests:** `us-ops-05` (integration: ok, database down, queue down, both; unit: timeouts and the Compose healthcheck). QA section 257.
+
 ### 2026-10-23 — The website and docs move to Cloudflare Pages (D-270)
 
 - **Two projects from the monorepo:** `apps/site`, the home page at `<domain>`, and `apps/docs`, Starlight with the guides, developer docs and API reference at `docs.<domain>`.
