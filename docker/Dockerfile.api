@@ -10,8 +10,6 @@ RUN corepack enable
 FROM base AS deps
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
-# pnpm reads patchedDependencies (root package.json) during install.
-COPY patches patches
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/config/package.json packages/config/package.json

@@ -8,6 +8,7 @@
 **/.data
 **/node_modules
 **/.next
+**/.next-*
 **/.turbo
 **/dist
 **/.expo
@@ -16,3 +17,9 @@ apps/e2e/test-results
 apps/e2e/playwright-report
 *.log
 .DS_Store
+# Not part of the API or web images: the native apps (with their Android and
+# iOS builds), the component showcases and the spec.
+apps/mobile
+apps/showcase-native
+apps/design-system
+docs

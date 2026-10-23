@@ -8,8 +8,6 @@ RUN corepack enable
 FROM base AS deps
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
-# pnpm reads patchedDependencies (root package.json) during install.
-COPY patches patches
 COPY apps/web/package.json apps/web/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/shared/package.json packages/shared/package.json
@@ -25,6 +23,12 @@ FROM base AS build
 WORKDIR /repo
 COPY --from=deps /repo /repo
 COPY . .
+# US-OPS-51: one image for every install. The browser reaches the API on the
+# page's own origin under /api (Caddy), whatever the domain; the web server's
+# own calls use API_URL at runtime (docker-compose.yml points it at the api
+# container).
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm --filter @spine/web... build
 
 FROM base AS runtime

@@ -1,0 +1,170 @@
+name: Release
+
+# US-OPS-51 (D-262) — called by CI on a v* tag once every check has passed
+# (lint, typecheck, unit, integration and E2E, D-260). Publishes:
+# - ghcr.io/haribrothers/spine-api and spine-web, tagged with the version, and
+#   `latest` too unless it's a pre-release (vX.Y.Z-beta.N, -rc.N);
+# - a GitHub release (a pre-release for a suffixed tag) with the install,
+#   backup, restore and upgrade scripts, the Compose file pulling those images,
+#   the Caddyfile, .env.example and SHA-256 checksums.
+# arm64 images build on GitHub's arm64 runners, which public repos get free;
+# while the repo is private, pre-releases are amd64 only.
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  version:
+    name: Check the version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      platforms: ${{ steps.platforms.outputs.platforms }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Fails, naming both, unless the tag is v<root package.json version>.
+      - name: Tag matches package.json
+        id: version
+        run: node scripts/release/version.mjs "$GITHUB_REF_NAME"
+
+      - name: Platforms
+        id: platforms
+        run: |
+          if [ "${{ github.event.repository.private }}" = "true" ]; then
+            echo 'platforms=["amd64"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'platforms=["amd64","arm64"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  images:
+    name: Build ${{ matrix.app }} (${{ matrix.platform }})
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        app: [api, web]
+        platform: ${{ fromJSON(needs.version.outputs.platforms) }}
+    # Each platform builds natively: emulating arm64 makes the web build take far longer.
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pushed by digest; the next job gives the platforms one tag.
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.${{ matrix.app }}
+          platforms: linux/${{ matrix.platform }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+          outputs: type=image,name=ghcr.io/haribrothers/spine-${{ matrix.app }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.app }}-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}-${{ matrix.platform }}
+
+      - name: Keep the digest
+        run: mkdir -p /tmp/digests && touch "/tmp/digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+
+      - name: Upload the digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.app }}-${{ matrix.platform }}
+          path: /tmp/digests/*
+          retention-days: 1
+
+  tags:
+    name: Tag ${{ matrix.app }}
+    needs: [version, images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - name: Download the digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digest-${{ matrix.app }}-*
+          merge-multiple: true
+          path: /tmp/digests
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # A pre-release never moves `latest`.
+      - name: Tag the image
+        working-directory: /tmp/digests
+        run: |
+          image="ghcr.io/haribrothers/spine-${{ matrix.app }}"
+          tags=(-t "$image:$VERSION")
+          [ "$PRERELEASE" = "true" ] || tags+=(-t "$image:latest")
+          sources=()
+          for digest in *; do sources+=("$image@sha256:$digest"); done
+          docker buildx imagetools create "${tags[@]}" "${sources[@]}"
+          docker buildx imagetools inspect "$image:$VERSION"
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+
+  github-release:
+    name: GitHub release
+    needs: [version, tags]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Fails if a script is missing: an install needs every one of them.
+      - name: Gather the release files
+        run: |
+          mkdir dist
+          node scripts/release/release-compose.mjs "$VERSION" > dist/docker-compose.yml
+          cp docker/Caddyfile .env.example dist/
+          for script in install.sh backup.sh restore.sh upgrade.sh; do cp "scripts/$script" dist/; done
+          (cd dist && sha256sum -- * .env.example > SHA256SUMS)
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+
+      # Release notes from docs/releases/v<version>.md when there is one, otherwise GitHub's from the merged PRs.
+      - name: Publish
+        run: |
+          notes="docs/releases/v$VERSION.md"
+          if [ -f "$notes" ]; then notes_args=(--notes-file "$notes"); else notes_args=(--generate-notes); fi
+          if [ "$PRERELEASE" = "true" ]; then kind=(--prerelease); else kind=(--latest); fi
+          gh release create "$GITHUB_REF_NAME" dist/* dist/.env.example --title "Spine $VERSION" "${notes_args[@]}" "${kind[@]}" --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}

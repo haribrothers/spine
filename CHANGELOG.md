@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-23 — Publish a release with one tag (US-OPS-51)
+
+- **One tag, everything published:** on a `v*` tag, once every CI check has passed (E2E included), the new `release.yml` builds `ghcr.io/haribrothers/spine-api` and `spine-web` natively per platform. It tags them with the version (and `latest` unless it's a pre-release), and creates the GitHub release with the scripts, a Compose file that pulls those images, the Caddyfile, `.env.example` and SHA-256 checksums.
+- **One version:** the root `package.json` carries the product version (`1.0.0-beta.1`), and the tag must match it.
+- **One image for every domain:** the web image is built with `NEXT_PUBLIC_API_URL=/api`, resolved against the page's origin. The web container calls the API inside the stack (`API_URL=http://api:4000`). Before this, a built web image pointed browsers at `localhost:4000`.
+- **Tests:**
+  - `us-ops-51`: script tests run with `pnpm test:scripts`, now also in CI's static job; a web test covers the address;
+  - both images built locally;
+  - actionlint is clean.
+- **QA section 259.**
+
 ### 2026-10-23 — Log every request with an id (US-OPS-07)
 
 - **Request ids:** every response carries `X-Request-Id`, exposed to the web app for the error page (US-OPS-13). A plain id sent by a proxy is kept.

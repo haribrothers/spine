@@ -827,9 +827,10 @@ Decision: D-262
 - **Given** the tag doesn't match the root `package.json` version, **when** the workflow runs, **then** it fails naming both, and publishes nothing.
 - **Given** CI fails, **when** the tag was pushed, **then** nothing is published.
 - **Given** the published `docker-compose.yml`, **when** it starts, **then** it pulls that version's images and builds nothing.
+- **Given** one web image, **when** it runs at any domain, **then** the browser reaches the API at the page's own `/api` and the web server reaches it inside the stack, so no address is baked into the image.
 
 **Implementation notes**
-- `.github/workflows/release.yml` (needs the CI workflow's success). While the repo is private, the images are private and a server pulls them with a read-only token; they become public with the repo at v1.0. `docs/release.md` lists the steps (US-OPS-19).
+- CI's `release` job calls `.github/workflows/release.yml` on a `v*` tag once every check passed; `scripts/release/version.mjs` checks the tag and `release-compose.mjs` writes the published Compose file (tests: `pnpm test:scripts`). The web image is built with `NEXT_PUBLIC_API_URL=/api`, resolved against the page's origin for Better Auth's client; Compose gives the web container `API_URL=http://api:4000`. arm64 images build on GitHub's arm64 runners once the repo is public; private pre-releases are amd64 only. Release notes come from `docs/releases/v<version>.md` when it exists. While the repo is private, the images are private and a server pulls them with a read-only token; they become public with the repo at v1.0. `docs/release.md` lists the steps (US-OPS-19).
 
 ### US-OPS-52 · Run a beta for testers
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —

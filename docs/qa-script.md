@@ -5443,6 +5443,14 @@ Connect Claude Code (section 250) as each role in turn.
 5. Without `LOG_FORMAT` and outside production (`pnpm dev`), logs are Nest's readable lines, and request lines read `GET /invoices 200 12ms [<id>]`.
 6. Regression: the API's start-up lines, email worker lines and Better Auth warnings still appear (now through the same logger).
 
+## 259. Publish a release with one tag (US-OPS-51, Phase 12)
+
+1. `node scripts/release/version.mjs v1.0.0-beta.1` prints `version=1.0.0-beta.1` and `prerelease=true`. `node scripts/release/version.mjs v1.0.0` fails, saying the tag doesn't match the root `package.json` version.
+2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api and web services read `image: ghcr.io/haribrothers/spine-api:1.0.0-beta.1` (and `spine-web`), there's no `build:`, and the Caddyfile mounts from `./Caddyfile`.
+3. Build the web image (`docker build -f docker/Dockerfile.web .`) and run the stack: signing in works at `http://localhost`, and in the browser's network tab, API calls go to `http://localhost/api/...`, not port 4000.
+4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `Caddyfile`, `.env.example` and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`).
+5. Regression: pull requests still run only lint, typecheck, unit (now with script tests) and integration; "Release" doesn't appear on a PR.
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
