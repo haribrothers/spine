@@ -2,12 +2,15 @@
 // install.sh runs against a fake `docker` that records what it was asked to do.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 
 const repo = new URL("..", import.meta.url).pathname;
+
+/** What install.sh (and the fake docker) run, besides docker. */
+const TOOLS = ["sh", "dirname", "tr", "dd", "awk", "sed", "tail", "head", "cat", "mkdir", "rm", "cp", "chmod"];
 
 const FAKE_DOCKER = `#!/bin/sh
 echo "$*" >> "$FAKE_DOCKER_LOG"
@@ -32,13 +35,19 @@ function setup({ layout = "release", docker = true } = {}) {
     writeFileSync(join(bin, "docker"), FAKE_DOCKER);
     chmodSync(join(bin, "docker"), 0o755);
   }
+  // PATH is this folder alone, with links to the tools install.sh uses: a real
+  // docker in /usr/bin (as on Linux) must never be found, let alone run.
+  for (const tool of TOOLS) {
+    const found = spawnSync("sh", ["-c", `command -v ${tool}`], { encoding: "utf8" }).stdout.trim();
+    if (found && !existsSync(join(bin, tool))) symlinkSync(found, join(bin, tool));
+  }
   const log = join(dir, "docker.log");
   const run = (args = [], env = {}) => {
     const result = spawnSync("sh", [join(scriptDir, "install.sh"), ...args], {
       cwd: tmpdir(),
       encoding: "utf8",
       input: "",
-      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: dir, FAKE_DOCKER_LOG: log, ...env },
+      env: { PATH: bin, HOME: dir, FAKE_DOCKER_LOG: log, ...env },
     });
     return { ...result, calls: existsSync(log) ? readFileSync(log, "utf8") : "" };
   };
