@@ -10,6 +10,7 @@ Small, accounting-first gaps that 1.0 users and their accountants will ask for f
 
 | Area | Item | What it is | Why it waits | Source |
 |---|---|---|---|---|
+| Field app | Expo SDK 58 | Move the field app to SDK 58: the iOS scene lifecycle in Expo's template instead of D-252's switch, and the iOS 27 Search tab fix | 1.0 ships on SDK 57 with the scene switch; the upgrade is large (Jest 30, expo-router 58, React Native 0.88) | [R-25](13-risks-open-questions.md), [D-261](12-decisions.md) |
 | Accounting | Employee reimbursements | Expenses paid personally credit an "Employee reimbursements payable" account; a "Reimburse" action pays the employee back from a money account | Needs an accountant's view on the account and flow | [Q-05](13-risks-open-questions.md) |
 | Accounting | Recurring expenses | Scheduled expenses (e.g. a monthly phone bill paid by card), on the recurring-bills engine | Recurring bills cover most cases in 1.0 | Research |
 | Accounting | Recurring journals | Scheduled adjusting journals (monthly depreciation, prepaid rent release) | Manual journals arrive in 1.0; schedules after they're proven | Research |

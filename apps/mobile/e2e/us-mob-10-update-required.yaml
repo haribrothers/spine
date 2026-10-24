@@ -2,7 +2,7 @@
 # MOBILE_MIN_VERSION=99.0.0 and an existing session on the phone (run
 # us-mob-01-sign-in.yaml without its last two steps first), then:
 #   maestro test apps/mobile/e2e/us-mob-10-update-required.yaml
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - launchApp
 - runFlow: _open-app.yaml

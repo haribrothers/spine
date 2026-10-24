@@ -1,7 +1,7 @@
 # US-MOB-12 / US-MOB-13 — log an expense on the phone: it's queued, sent,
 # and listed under "Submitted by you". Uses the demo business's "Materials"
 # category. Run like us-mob-01-sign-in.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - tapOn: "Expenses"

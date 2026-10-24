@@ -94,7 +94,7 @@ test.describe("US-SET-30 to US-SET-34", () => {
     await page.getByRole("menuitem", { name: "Settings" }).click();
     await expect(page).toHaveURL(/settings=profile/);
     const list = page.getByTestId("settings-sections");
-    await expect(list.getByRole("button")).toHaveText(["Profile", "Password & security", "Notifications"]);
+    await expect(list.getByRole("button")).toHaveText(["Profile", "Password & security", "Notifications", "About Spine"]);
     await expect(list.getByText("Business", { exact: true })).toHaveCount(0);
     // Asking for a business pane opens their first pane instead.
     await page.goto("/dashboard?settings=numbering");

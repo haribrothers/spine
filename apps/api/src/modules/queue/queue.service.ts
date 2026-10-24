@@ -33,6 +33,7 @@ import { poolSize, type Database } from "../../db/client";
 export class QueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
   private boss: PgBoss | null = null;
+  private stopped = false;
 
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
@@ -47,12 +48,26 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     const max = poolSize();
     this.boss = new PgBoss({ connectionString: databaseUrl, ...(max ? { max } : {}) });
     this.boss.on("error", (err: Error) => this.logger.error("pg-boss error", err));
+    this.boss.on("stopped", () => {
+      this.stopped = true;
+    });
     await this.boss.start();
     this.logger.log("pg-boss started");
   }
 
   async onModuleDestroy() {
+    this.stopped = true;
     await this.boss?.stop({ graceful: true, timeout: 5000 });
+  }
+
+  /** US-OPS-05 — readiness: pg-boss is running and can read its own schema. */
+  async reachable(): Promise<boolean> {
+    if (!this.boss || this.stopped) return false;
+    try {
+      return await this.boss.isInstalled();
+    } catch {
+      return false;
+    }
   }
 
   /** The started `PgBoss` instance — throws if called before `onModuleInit` has run (shouldn't happen; Nest awaits every module's `onModuleInit` before serving requests). */

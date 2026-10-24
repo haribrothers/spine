@@ -1,7 +1,7 @@
 # US-MOB-04 / US-MOB-05 / US-JOB-16 — the Jobs tab lists the jobs the demo
 # Field user is on; a job opens with its site, contact, milestones, photos
 # and quotes to present. Run like us-mob-01-sign-in.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - tapOn: "Jobs"

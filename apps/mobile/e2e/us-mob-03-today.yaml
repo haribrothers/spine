@@ -2,7 +2,7 @@
 # KPI cards, quick actions, today's jobs with call and directions, and the
 # bell. Needs a demo business loaded (its first job has a milestone due this
 # week and the demo Field user is on its crew). Run like us-mob-01-sign-in.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - assertVisible: "Good (morning|afternoon|evening), .*"

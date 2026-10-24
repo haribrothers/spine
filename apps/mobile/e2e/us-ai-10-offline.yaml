@@ -1,7 +1,7 @@
 # US-AI-10 — offline, "Read receipt" is dimmed with why, and the expense
 # still queues by hand. Android only: Maestro can switch airplane mode there.
 # Same setup as us-ai-10-receipt.yaml; run like us-mob-07-offline.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - tapOn: "Expenses"

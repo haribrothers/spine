@@ -2,6 +2,7 @@ import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { AppModule } from "../app.module";
 import { installBigIntJsonSerialization } from "../common/bigint-json";
+import { requestLogging } from "../common/logging/request-logging";
 
 export interface TestApp {
   app: INestApplication;
@@ -28,6 +29,8 @@ export async function createTestApp(options: { port?: number } = {}): Promise<Te
   installBigIntJsonSerialization();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication({ bodyParser: false });
+  // As main.ts: every request gets an id (US-OPS-07); its log line only with LOG_REQUESTS=on.
+  app.use(requestLogging());
   await app.init();
   // Ephemeral port — parallel test files never collide. A fixed port is for
   // flows where the server's own address matters (OAuth issuer and MCP

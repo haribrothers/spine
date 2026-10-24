@@ -80,6 +80,163 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — h4loom.com, Mac-built beta apps, and Spine on Coolify (D-271)
+
+- **Domain and app id:** `h4loom.com` (home page), `docs.h4loom.com`, `beta.h4loom.com` and `demo.h4loom.com`. The field app is `com.h4loom.spine` on iOS and Android, set in `app.json` and the Maestro flows. Q-15 is closed.
+- **Beta apps built on the Owner's Mac, no Expo account:** `scripts/mobile/build-beta.sh` replaces the EAS job. It runs `expo prebuild`, then Xcode archives and uploads to App Store Connect for TestFlight, and Gradle builds a signed 64-bit ARM APK (about 55 MB) attached to the release with `--upload`. The build number is the commit count (`SPINE_BUILD_NUMBER` in `app.config.js`). `eas.json` is gone. The store builds move to GitHub's macOS runners once the repo is public (US-MOB-29).
+- **Found by a real Android build:** Gradle and Xcode start Expo's bundler with plain `node`, so under pnpm Babel couldn't find its presets. The script puts pnpm's hoisted packages on `NODE_PATH`, as pnpm's own launcher does. The iOS half isn't run here: it needs your Apple team.
+- **Spine on Coolify:** `docker/coolify/docker-compose.yml` (published as `docker-compose.coolify.yml`) is the stack for a Coolify server:
+  - Spine's Caddy runs behind Coolify's proxy on port 80, with no published ports;
+  - the domain is set on the `caddy` service;
+  - the settings are explicit environment variables;
+  - Coolify generates `AUTH_SECRET` and the database password;
+  - the Caddyfile is inline.
+
+  The Caddyfile now takes `SITE_ADDRESS` (default `APP_URL`) and `TRUSTED_PROXIES`, so visitors' own addresses reach the API through a proxy. `docs/self-hosting-coolify.md` covers deploying, backups, upgrading, restoring, and other proxied platforms. Tested locally behind a stand-in proxy: health, sign-up and the web app.
+- **Backups for scheduled tasks:** `backup.js --remote-only` names the archive itself, uploads it encrypted to `BACKUP_REMOTE` and keeps no local copy.
+- **Tests:** `us-ops-52` script tests keep the Coolify file in step with the main stack and the Caddyfile. `us-mob-28` checks the build number and the id. QA sections 265 (rewritten) and 266.
+
+### 2026-10-24 — Backups keep going past a file their storage can't address (US-OPS-03)
+
+- **What failed:** a file record whose key the local driver won't use (an old S3-style key with the file's name in it) stopped the whole backup. Such files are now listed as missing in the manifest, like files that are gone. A real read error (disk or network) still fails the backup.
+- **Archive layout:** files sit in the archive at `files/<id>`, not at their key. A key comes from the database, so it never becomes a path; the manifest maps each id to the key it's restored to.
+- **Tests:** `us-ops-03` adds a record with such a key. Found by `pnpm verify`.
+
+### 2026-10-24 — Give testers the field app through TestFlight and an APK (US-MOB-28)
+
+- **One version for the app too:** `apps/mobile/app.config.js` takes it from the root `package.json`. The stores get `1.0.0`, and the full `1.0.0-beta.1` is in `extra.spineVersion`, so Profile reads "Spine 1.0.0-beta.1 (12) · Beta". The bundle id and the EAS project can be set from the environment, ready for the final id from the domain.
+- **`eas.json`:** a `beta` profile (TestFlight for iOS, an APK for Android) and a `production` profile (store builds, an app bundle for Play). Build numbers increase on EAS, so testers get updates in place.
+- **The release builds it:** on a pre-release tag, `release.yml`'s "Field app beta" job sends iOS to TestFlight and attaches `spine-<version>.apk` to the GitHub release. Without the `EXPO_TOKEN` secret it skips with a notice. `docs/beta.md` › The phone app is the one-time setup.
+- **Tests:** `us-mob-28` (mobile Jest: versions, the Beta line, the build profiles, the bundle-id override). QA section 265.
+
+### 2026-10-24 — Run a beta for testers (US-OPS-52)
+
+- **`docs/beta.md`:** running the beta on your own server, for the Owner. It covers:
+  - a VPS, DNS and HTTPS (Caddy does it);
+  - the GitHub token for the private images and release;
+  - installing at `https://beta.<domain>`;
+  - the first account, then invite-only;
+  - SMTP for invitations;
+  - nightly encrypted backups;
+  - inviting testers and the accountant;
+  - TestFlight and the APK;
+  - upgrading to each new beta;
+  - a "Reporting a problem" section to send testers.
+- **`docs/accounting-review.md`:** the accountant's pack:
+  - how Spine keeps the books;
+  - the chart of accounts;
+  - what every event posts, with worked examples;
+  - the choices worth questioning;
+  - ten areas to try;
+  - a findings table and a sign-off. 1.0 waits for it (D-265).
+- **Settings › About Spine:** every member sees the server's version, with a "Beta" label and a note on a pre-release. `GET /health` now includes `version`.
+- **Tests:** `us-ops-52` (API, shared, web). QA section 264.
+
+### 2026-10-24 — Upgrade Spine with one command (US-OPS-50)
+
+- **`upgrade.sh`:** it backs up, then takes the new version's files, downloaded from the GitHub release or from `--files <folder>`, checked against `SHA256SUMS` and keeping the old ones in `.previous/`. It sets `SPINE_VERSION` in `.env`, pulls the images and restarts, then prints "Spine is now <version>. Your backup is <file>." It never goes back a version, and stops before changing anything if the backup fails or the files don't check out. If the new version doesn't start, it says the data is safe and how to go back.
+- **A snapshot before migrations (D-264):** when an upgrade brings migrations and there's data, the API writes a `pg_dump` snapshot to the new `spine_snapshots` volume first (the last three are kept). In production it won't migrate without one. All pending migrations run in one transaction, so a failure leaves the database as it was, and the log names the snapshot.
+- **Self-hosting checks in CI:** `restore-verify.yml` becomes `self-hosting.yml`. It builds the images once, runs restore-verify, then upgrade-verify (`scripts/ci/upgrade-verify.sh`), which installs the previous release with the demo business, upgrades it with `upgrade.sh` and compares the trial balance and files. It runs on every tag before "Release", and nightly once public.
+- **Found while testing:**
+  - `upgrade.sh` overwrote itself while running and stopped early; files are now renamed into place.
+  - On macOS `$target…` read the `…` as part of the variable's name. A script test now guards against that pattern.
+- **Tests:** `us-ops-50`: snapshots, keeping three, no migration without a snapshot, and a failed migration changing nothing (integration); 7 script tests of `upgrade.sh`. upgrade-verify passes locally from a stand-in previous version. QA section 263.
+
+### 2026-10-23 — Restore a backup into a clean install (US-OPS-04)
+
+- **`restore.sh <archive>`:** stops Spine and streams the archive into a one-off API container. It checks everything before changing anything:
+  - the passphrase;
+  - the version: a backup from a newer Spine is refused, with a message to upgrade first;
+  - every checksum;
+  - that the install is empty (`--replace` otherwise);
+  - that `AUTH_SECRET` matches the backup's fingerprint (`--new-secret` otherwise).
+
+  Then it replaces the database with `pg_restore`, writes each file back through its storage driver and reads it back to check its checksum, and starts Spine again. A backup from an older Spine is brought up to date by the start-up migrations.
+- **`restore-verify` (NFR-REL-03):** `scripts/ci/restore-verify.sh`:
+  1. installs from the release's files with this commit's images;
+  2. seeds the demo business and waits for the issued PDFs;
+  3. makes an encrypted backup, wipes the install and installs it again;
+  4. restores, and compares the trial balance and the file count.
+
+  CI runs it on every tag before "Release". `nightly.yml` runs it every night once the repo is public. Locally: 35 files and the trial balance match, in about 2 minutes.
+- **Found by it:** the slim API image (US-OPS-01) had left out `apps/api/assets`, the PDF fonts and the demo photos, so loading demo data, and issuing documents, failed in the image. The image now includes them.
+- **Tests:** `us-ops-04`, an integration test covering version order, passphrases, a newer backup, a different secret, a full restore matching every table and every file, and `--replace`. QA section 262.
+
+### 2026-10-23 — Back up everything into one file (US-OPS-03)
+
+- **`backup.sh`:** one command writes `backups/spine-backup-<time>.tar.gz` (readable only by you). The archive holds a `pg_dump` of the database, every stored file (read through its storage driver, so the local volume or the S3 bucket alike) and a manifest with the version and checksums. A missing file is listed rather than stopping the backup. Any failure exits non-zero and leaves nothing behind. `--help` has a nightly cron line.
+- **Encryption and off-site copies (D-105):** `--passphrase` or `BACKUP_PASSPHRASE` encrypts with AES-256-GCM (scrypt key). `BACKUP_REMOTE` uploads encrypted archives to S3, R2 or B2 and keeps 7 daily and 4 weekly copies.
+- **Runs in the API container:** the host needs only Docker. The image gains the Postgres 16 client, which restores and US-OPS-50's snapshots will use too.
+- **The Owners' banner:** "Your last backup was <n> days ago. Run a backup to keep your data safe." when it's over 2 days, from the new `GET /org/backup-status`.
+- **Tests:**
+  - `us-ops-03`: API unit tests (encryption, tampering, pruning, remote settings), an integration test (a real archive, encryption, failure cleanup, the status route) and a web test (the banner);
+  - a real backup from an installed stack.
+- **QA section 261.**
+
+### 2026-10-23 — Install Spine with one command (US-OPS-01)
+
+- **`install.sh`:** POSIX shell, shellcheck-clean, run from a release's files or a clone. It checks for Docker 24+ and Compose 2.20+ and names what's missing or too old. It creates `.env` (mode 600) with a random `AUTH_SECRET` and database password and the address you give, or keeps an existing `.env` untouched. It pulls the images and waits until Spine is healthy, then prints the address and the commands for logs, backup, upgrade and stop. `--non-interactive` and `APP_URL` mean it asks nothing.
+- **Migrations at start (D-264):** the API applies pending migrations before serving, under an advisory lock. A fresh database gets every table, and two instances starting together don't both migrate.
+- **A real install works:** found and fixed through an install from release-style files with locally built images: 15 seconds to a running stack, then sign-up, sign-in in a browser, dashboard and onboarding.
+  - Sign-in returned 404 behind Caddy, because Better Auth took `/api` from `API_URL` as its route prefix. Better Auth now uses the origin, and Caddy passes `/api/auth/*` through unchanged.
+  - `.env.example`'s `API_URL` is `<address>/api`, and its unused `NEXT_PUBLIC_API_URL` is gone.
+  - Compose names the release images (`ghcr.io/haribrothers/spine-*:${SPINE_VERSION:-<version>}`), and `docker compose build` still builds from source.
+- **Smaller images:** the web image runs Next.js's standalone server (3.3 GB to 367 MB). The API image installs production dependencies only, without the peer packages it never loads, and ships the migrations' SQL without drizzle-kit's snapshots (2.8 GB to 1.05 GB).
+- **Tests:** `us-ops-01`: installer tests against a fake `docker` (`pnpm test:scripts`), and an integration test of migrations on fresh databases. QA section 260.
+
+### 2026-10-23 — Publish a release with one tag (US-OPS-51)
+
+- **One tag, everything published:** on a `v*` tag, once every CI check has passed (E2E included), the new `release.yml` builds `ghcr.io/haribrothers/spine-api` and `spine-web` natively per platform. It tags them with the version (and `latest` unless it's a pre-release), and creates the GitHub release with the scripts, a Compose file that pulls those images, the Caddyfile, `.env.example` and SHA-256 checksums.
+- **One version:** the root `package.json` carries the product version (`1.0.0-beta.1`), and the tag must match it.
+- **One image for every domain:** the web image is built with `NEXT_PUBLIC_API_URL=/api`, resolved against the page's origin. The web container calls the API inside the stack (`API_URL=http://api:4000`). Before this, a built web image pointed browsers at `localhost:4000`.
+- **Tests:**
+  - `us-ops-51`: script tests run with `pnpm test:scripts`, now also in CI's static job; a web test covers the address;
+  - both images built locally;
+  - actionlint is clean.
+- **QA section 259.**
+
+### 2026-10-23 — Log every request with an id (US-OPS-07)
+
+- **Request ids:** every response carries `X-Request-Id`, exposed to the web app for the error page (US-OPS-13). A plain id sent by a proxy is kept.
+- **Logs:** one logger for the API and Better Auth. It writes JSON lines in production (time, level, request id, context, message), plus one line per request with method, path, status and duration. Elsewhere it writes readable lines; `LOG_FORMAT` and `LOG_REQUESTS` override this.
+- **Nothing secret:** every message and stack is redacted of passwords, tokens, secrets, cookies, IBANs and full card or account numbers. Request bodies and query strings are never logged, and token-like path segments are replaced.
+- **Tests:** `us-ops-07` (unit: redaction, paths and line shapes; integration: headers, levels, and no secrets after sign-in). QA section 258.
+
+### 2026-10-23 — Report health and readiness (US-OPS-05)
+
+- **`GET /health/ready`:** 200 when the database and the job queue answer, each within 3 seconds; otherwise 503, naming what isn't reachable ("The database isn't reachable."). It still reports file storage (US-OPS-31).
+- **Docker Compose:** the `api` service has a healthcheck on `/health/ready`, and `web` starts only once the API is healthy.
+- **Tests:** `us-ops-05` (integration: ok, database down, queue down, both; unit: timeouts and the Compose healthcheck). QA section 257.
+
+### 2026-10-23 — The website and docs move to Cloudflare Pages (D-270)
+
+- **Two projects from the monorepo:** `apps/site`, the home page at `<domain>`, and `apps/docs`, Starlight with the guides, developer docs and API reference at `docs.<domain>`.
+- **Publishing:** Cloudflare builds each project after merges to `main` and gives every branch a preview. It works while the repo is private and uses no Actions minutes.
+- **Supersedes:** D-112's GitHub Pages hosting. US-SITE-01, -02, -04 to -06, -12 and -14, the architecture, the tech stack, the testing doc and CLAUDE.md now name `apps/docs` for the guide.
+
+### 2026-10-23 — Phase 12 plan: a beta for the accountant, then 1.0 (D-262–D-269)
+
+- **Two milestones (D-265):** milestone 1 builds health checks, logs, the release workflow, install, backup, restore and upgrade, the beta itself and the field app for testers, and ends with `v1.0.0-beta.1` on the Owner's server, where an accountant reviews the books. Milestone 2 finishes the phase during the beta; 1.0 needs both and the accountant's sign-off.
+- **New stories:**
+  - US-OPS-50: upgrade with one command; migrations run at start after a snapshot (D-264).
+  - US-OPS-51: publish a release with one tag; images on GHCR (D-262).
+  - US-OPS-52: run a beta for testers.
+  - US-MOB-28: the field app through TestFlight and an APK.
+  - US-MOB-29: the App Store and Play Store after the v1.0 tag (D-266).
+- **Decisions:**
+  - The repo goes public at the v1.0 tag; installs run on Linux and macOS, and on Windows through WSL2 (D-262).
+  - Spine is licensed AGPL-3.0, copyright Hari Prasad (D-263).
+  - The security review is done in-house and signed off by the Owner (D-267).
+  - Web and mobile strings move to i18next in 1.0 (D-268).
+  - The update check reads GitHub Releases (D-269).
+  - Q-01, Q-02 and Q-07 are closed; for Q-15, the Owner buys a domain.
+- **Updated stories:** US-OPS-01 (images, platforms, migrations at start, non-interactive mode), US-OPS-18, US-SITE-04 (guides for banking, AI and agents) and US-SITE-14.
+
+### 2026-10-23 — Phase 12 begins; the field app ships in 1.0 on Expo SDK 57 (D-261)
+
+- **Phase 12 · Packaging & 1.0** starts on `phase-12-packaging`.
+- **Field app in 1.0:** SDK 57.0.30 with Expo's scene switch (D-252). The Owner checked the camera, photo picker and document scanner on an iOS 27 iPhone. The upgrade to SDK 58 moves to v1.1 in the roadmap (R-25); until then, the iOS 27 Search tab label and field placement are a known gap.
+
 ### 2026-10-23 — E2E runs before a release, not on every PR (D-260)
 
 - **CI:** pull requests into `main` run lint, typecheck, unit and integration. The E2E job runs on a `v*` tag (with everything else) or a manual run, with a 60-minute limit, and keeps its Playwright report when it fails or runs out of time. On a pull request it's skipped, which `main`'s branch protection counts as passing.

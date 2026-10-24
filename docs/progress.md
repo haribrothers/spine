@@ -633,15 +633,27 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 
 ## Phase 12 · Packaging & 1.0
 
+### Milestone 1 · Beta (`v1.0.0-beta.1`)
+
+- [x] US-OPS-05 · Report health and readiness
+- [x] US-OPS-07 · Log every request with an id
+- [x] US-OPS-51 · Publish a release with one tag
+- [x] US-OPS-01 · Install Spine with one command
+- [x] US-OPS-03 · Back up everything into one file
+- [x] US-OPS-04 · Restore a backup into a clean install
+- [x] US-OPS-50 · Upgrade Spine with one command
+- [x] US-OPS-52 · Run a beta for testers
+- [x] US-MOB-28 · Give testers the field app through TestFlight and an APK
+
+### Milestone 2 · 1.0 — onboarding & first run
+
 - [ ] US-ONB-09 · Load demo data to explore
 - [ ] US-SET-08 · Remove demo data and keep my real data
-- [ ] US-OPS-01 · Install Spine with one command
 - [ ] US-OPS-02 · Start with demo data from an environment flag
-- [ ] US-OPS-03 · Back up everything into one file
-- [ ] US-OPS-04 · Restore a backup into a clean install
-- [ ] US-OPS-05 · Report health and readiness
+
+### Milestone 2 · system states and the web app on a phone
+
 - [ ] US-OPS-06 · Tell owners a new version is available
-- [ ] US-OPS-07 · Log every request with an id
 - [ ] US-OPS-09 · Respect reduced-motion settings everywhere
 - [ ] US-OPS-11 · Show a helpful page for a missing page
 - [ ] US-OPS-13 · Recover from an unexpected error
@@ -651,6 +663,9 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [ ] US-OPS-17 · Pass an accessibility audit of every screen
 - [ ] US-OPS-18 · Complete a security review before 1.0
 - [ ] US-OPS-19 · Ship the README, licence and contributor guide
+
+### Milestone 2 · website and help
+
 - [ ] US-SITE-01 · Set up the docs site in the monorepo
 - [ ] US-SITE-02 · Show a home page for people discovering Spine
 - [ ] US-SITE-03 · Find any page with search
@@ -665,3 +680,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [ ] US-SITE-12 · Read the guide without internet
 - [ ] US-SITE-13 · Read docs for the version I run
 - [ ] US-SITE-14 · Publish the site after each merge
+
+### After the v1.0 tag
+
+- [ ] US-MOB-29 · Get the field app from the App Store and Play Store

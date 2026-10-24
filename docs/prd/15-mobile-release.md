@@ -8,25 +8,25 @@ The field app is `apps/mobile` (Expo SDK 57, expo-router native tabs, `@expo/ui`
 |---|---|
 | Display name | Spine |
 | Expo slug | `spine-mobile` |
-| iOS bundle id | `com.spine.app` |
-| Android package | `com.spine.app` |
+| iOS bundle id | `com.h4loom.spine` |
+| Android package | `com.h4loom.spine` |
 | URL scheme | `spine` |
 | Orientation | Portrait (phones); iPad runs the phone layout |
 | Minimum OS | iOS 17, Android 10 / API 29 (NFR-COMP-03) |
 | Appearance | Follows the system (light/dark), overridable in Profile |
 
-Bundle ids are placeholders until the owner registers a domain; changing them after the first store upload creates a new app listing.
+The bundle id comes from the domain, `h4loom.com` (D-271). It can't change after the first TestFlight or store upload: that would make a new app listing.
 
 ## Builds and distribution
 
 | Track | Built by | Audience |
 |---|---|---|
-| Development | `eas build --profile development` (dev client) | Developers; required because `@expo/ui` needs native code (no Expo Go) |
-| Preview | `eas build --profile preview` | Internal testers via TestFlight and the Play internal track |
-| Production | `eas build --profile production` on a `v*` tag | Public stores or private distribution (open: [Q-07](13-risks-open-questions.md)) |
+| Development | `pnpm dev:mobile` with a dev client (`expo run:ios` / `run:android`) | Developers; required because `@expo/ui` needs native code (no Expo Go) |
+| Beta | `scripts/mobile/build-beta.sh` on the Owner's Mac, from the beta's tag (US-MOB-28, [D-271](12-decisions.md)): Xcode archives and uploads to App Store Connect; Gradle builds a signed APK (64-bit ARM), attached to the GitHub release with `--upload` | Testers during the beta: iOS through TestFlight, Android as the APK ([D-265](12-decisions.md)) |
+| Production | GitHub's macOS runners with fastlane on the v1.0 tag, once the repo is public (US-MOB-29, D-271) | App Store and Play Store, submitted after the v1.0 tag ([D-266](12-decisions.md)) |
 
-- Signing: EAS-managed credentials (Apple distribution certificate + provisioning profile; Android upload keystore). Credentials never live in the repo.
-- Version: marketing version = product version (`X.Y.Z`); `buildNumber` / `versionCode` auto-increment per upload ([11](11-testing-release.md)).
+- Signing: iOS with Xcode's automatic signing under the Owner's Apple team; Android with the Owner's release keystore (`SPINE_ANDROID_KEYSTORE` and its passwords), which every update must use. Credentials never live in the repo; from 1.0 they're GitHub secrets for the macOS runners.
+- Version: `apps/mobile/app.config.js` takes the product version from the root `package.json`. The stores' version is its `X.Y.Z`, and a beta's full version (`1.0.0-beta.1`) is `extra.spineVersion`, which Profile shows with "Beta" (US-MOB-28). `buildNumber` / `versionCode` come from `SPINE_BUILD_NUMBER`, which `build-beta.sh` sets to the commit count, so each build is newer than the last. The bundle id is `com.h4loom.spine` (overridable with `SPINE_IOS_BUNDLE_ID` / `SPINE_ANDROID_PACKAGE` for a test build).
 - Store review: provide reviewer notes with a hosted demo server address and a Field test account, since sign-in needs a server ([R-11](13-risks-open-questions.md)).
 
 ## Over-the-air updates

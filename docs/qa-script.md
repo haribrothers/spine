@@ -5426,7 +5426,119 @@ Connect Claude Code (section 250) as each role in turn.
 6. Connected as Field: "Summarise a job" (assigned jobs only, no money) and "This week in the business" (their jobs); no chasing.
 7. Regression: tools, the audit log entries and drafts behave as in sections 252–255.
 
+## 257. Report health and readiness (US-OPS-05, Phase 12)
+
+1. With Spine running, open `<API>/health`: `{ "status": "ok", "service": "spine", … }`.
+2. Open `<API>/health/ready` without signing in: 200 with `"database": "ok"`, `"queue": "ok"` and the storage driver.
+3. Stop Postgres (`docker compose stop db`), then open `/health/ready` again: within about 3 seconds it answers 503 with `"database": "unreachable"` and "The database isn't reachable." Start Postgres again: it's back to 200 without restarting the API.
+4. With Docker Compose (`--profile minimal up -d`), run `docker compose ps`: `api` shows `healthy` after start-up, and `web` starts only after that. If the API can't reach the database, `api` turns `unhealthy` and `web` doesn't start.
+5. Regression: the field app's sign-in still finds the server by its address (it reads `/health`), and the storage banner (section on US-OPS-31) still shows when the files volume is nearly full.
+
+## 258. Log every request with an id (US-OPS-07, Phase 12)
+
+1. Run the API image (or the API with `LOG_FORMAT=json`) and follow its logs (`docker compose logs -f api`).
+2. Open any page in the web app: each API request writes one JSON line with `time`, `level`, `requestId`, `method`, `path`, `status` and `durationMs`. A 4xx is `"level":"warn"` and a 5xx is `"level":"error"`.
+3. In the browser's network tab, any API response has an `X-Request-Id` header, and the same id is on that request's log line.
+4. Sign in with a wrong password, then a right one; open a public quote link and a file download. In the logs, search for the password, the quote link's token, `session_token=`, and the file link's `sig=`: none of them appear. Paths show `[token]` where a link's token was.
+5. Without `LOG_FORMAT` and outside production (`pnpm dev`), logs are Nest's readable lines, and request lines read `GET /invoices 200 12ms [<id>]`.
+6. Regression: the API's start-up lines, email worker lines and Better Auth warnings still appear (now through the same logger).
+
+## 259. Publish a release with one tag (US-OPS-51, Phase 12)
+
+1. `node scripts/release/version.mjs v1.0.0-beta.1` prints `version=1.0.0-beta.1` and `prerelease=true`. `node scripts/release/version.mjs v1.0.0` fails, saying the tag doesn't match the root `package.json` version.
+2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api and web services read `image: ghcr.io/haribrothers/spine-api:1.0.0-beta.1` (and `spine-web`), there's no `build:`, and the Caddyfile mounts from `./Caddyfile`.
+3. Build the web image (`docker build -f docker/Dockerfile.web .`) and run the stack: signing in works at `http://localhost`, and in the browser's network tab, API calls go to `http://localhost/api/...`, not port 4000.
+4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `Caddyfile`, `.env.example` and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`).
+5. Regression: pull requests still run only lint, typecheck, unit (now with script tests) and integration; "Release" doesn't appear on a PR.
+
+## 260. Install Spine with one command (US-OPS-01, Phase 12)
+
+Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and nothing of Spine on it. Start a stopwatch.
+
+1. Download the release's files (or clone the repo) and run `./install.sh` (`scripts/install.sh` in a clone). It checks Docker and Compose, asks "The address people will open Spine at [http://localhost]", and creates `.env` with a random `AUTH_SECRET` and database password. `.env` is readable only by you.
+2. It pulls the images and waits until Spine is healthy, then prints "Spine is running at <address> — open it to create the first account." and the commands for logs, backup, upgrade and stop.
+3. Open the address and sign up: the first account is the Primary Owner. Follow onboarding and issue a first invoice. Stop the stopwatch: under 5 minutes from download to issued invoice (NFR-MNT-01).
+4. `docker compose logs api` shows "Applied 133 database migrations" on the first start, and "The database is up to date" after a restart.
+5. Run `./install.sh` again: "Keeping your existing .env — nothing in it is changed.", and Spine starts as before with your data.
+6. `APP_URL=https://spine.example.com ./install.sh` on a fresh folder asks nothing. So does `./install.sh --non-interactive` (address http://localhost).
+7. With Docker stopped: "Docker is installed but isn't running…". Without Docker: "Docker isn't installed. Install Docker 24 or newer…". Both exit with an error.
+8. `docker images`: `spine-api` and `spine-web` are a few hundred MB each, not several GB.
+9. Regression: `pnpm dev` and `pnpm verify` work as before (the API now also applies migrations when it starts; `MIGRATE_ON_START=false` turns that off).
+
+## 261. Back up everything into one file (US-OPS-03, Phase 12)
+
+1. On a running install with some data, including an uploaded logo or receipt, run `./backup.sh` (`scripts/backup.sh` in a clone). It prints each step, then "Backup saved: backups/spine-backup-<YYYYMMDD-HHMMSS>.tar.gz (<size>)" and a reminder that it isn't encrypted. It exits 0.
+2. `ls -l backups`: the file is `-rw-------`. `tar -tzf <file>` lists `manifest.json`, `database.dump` and `files/…`. The manifest has the Spine version, the dump's checksum and each file's checksum.
+3. `./backup.sh --passphrase`: it asks twice, without echoing, and writes `….tar.gz.enc`. Mismatched passphrases stop it with "The two passphrases don't match." With `BACKUP_PASSPHRASE` in `.env`, it encrypts without asking.
+4. Stop the database (`docker compose stop db`) and run `./backup.sh`: it fails with the reason, exits non-zero, and leaves no file in `backups/`. Start the database again.
+5. Set `BACKUP_REMOTE` and its keys for a test bucket (R2 or B2) with no passphrase: it refuses, because only encrypted archives are copied off the machine. Add `BACKUP_PASSPHRASE`: the archive is uploaded. After backups across more than 7 days, at most 7 daily and 4 weekly copies remain.
+6. As an Owner, with the last backup more than 2 days old (or none, on an install older than 2 days), every page shows "Your last backup was <n> days ago. Run a backup to keep your data safe." (or "Spine hasn't been backed up yet…"). It goes after a backup. Staff and Field never see it.
+7. `./backup.sh --help` shows a nightly cron line and how to copy backups off the machine.
+8. Regression: the storage banner (US-OPS-31) still shows alongside it when the files volume is nearly full.
+
+## 262. Restore a backup into a clean install (US-OPS-04, Phase 12)
+
+1. On an install with real data (some issued invoices, an uploaded logo), run `./backup.sh --passphrase`, and copy the archive and `.env` to another machine (or folder).
+2. There: run `./install.sh --non-interactive`, replace its `.env` with the old install's (at least `AUTH_SECRET`), then `./restore.sh <archive>`. It asks for the passphrase, says it's stopping Spine, checks every file, replaces the database, puts the files back and prints "Restored. Spine is running at <address> with the backup's data — sign in as before."
+3. Sign in with your old account: invoices, the trial balance, logos and PDFs are all there and open.
+4. Run `./restore.sh <archive>` again: "This install already has data (1 organisation). Restore into a clean install, or pass --replace…". Nothing changes, and Spine keeps running. `--replace` restores over it.
+5. Restore with the wrong passphrase: "The passphrase doesn't open this backup…", and nothing changes.
+6. On a fresh install with its own new `AUTH_SECRET`: the restore refuses, explaining that two-factor and stored keys need the old secret. With `--new-secret` it restores, and two-factor users set it up again.
+7. A backup from a newer Spine (for example a 1.1 archive on 1.0): "This backup is from Spine 1.1.0, which is newer than this install… Upgrade this install to 1.1.0 or later first". A backup from an older Spine restores, and the API brings it up to date on start ("Applied N database migrations").
+8. `scripts/ci/restore-verify.sh` (with this version's images built) passes: "the trial balance and all <n> files match". CI runs it on every release tag before publishing.
+9. Regression: `./backup.sh` and Spine's start-up behave as before.
+
+## 263. Upgrade Spine with one command (US-OPS-50, Phase 12)
+
+1. On an install of the previous release with data, run `./upgrade.sh --version <new>` (betas need the version; `./upgrade.sh` alone takes the latest release). It backs up ("Backup saved: …"), downloads the new version's files and checks them against `SHA256SUMS`, pulls the images and restarts, then prints "Spine is now <new>. Your backup is <file>."
+2. `.env` keeps everything you set, with `SPINE_VERSION=<new>` added or changed. The old Compose file and scripts are in `.previous/`.
+3. `docker compose logs api`: "Taking a snapshot of the database before <n> migrations…" and "Applied <n> database migrations … The snapshot from before is /data/snapshots/spine-snapshot-<time>-before-<n>-migrations.dump". At most 3 snapshots are kept.
+4. Sign in: everything is there, and the trial balance and documents are unchanged.
+5. `./upgrade.sh --version <the same>`: "Spine is already <version>." `./upgrade.sh --version <older>`: refused ("can't go back a version").
+6. Change a byte in a downloaded file (or use `--files` with a folder whose files don't match `SHA256SUMS`): it stops with "… don't match their checksums, so nothing was changed."
+7. Offline: download the release's files into a folder and run `./upgrade.sh --version <new> --files <folder>`.
+8. From a clone: `git checkout v<new>` first, then `./scripts/upgrade.sh --version <new>`. Without the checkout it says so.
+9. Regression: `./install.sh`, `./backup.sh` and `./restore.sh` work as before. A fresh install takes no snapshot (there's no data yet).
+
+## 264. Run a beta for testers (US-OPS-52, Phase 12)
+
+1. Follow `docs/beta.md` on a fresh VPS: Docker, `docker login ghcr.io` and `gh auth login` with the token, `gh release download v1.0.0-beta.1`, then `./install.sh --app-url https://beta.h4loom.com`. The address opens over HTTPS with a valid certificate.
+2. Sign up first: you're the Owner. A second person who tries to sign up is told Spine is invite-only.
+3. With SMTP set in `.env`, invite a tester from Team › Users. They get the email, join, and sign in.
+4. Settings › Your account › About Spine shows "Spine 1.0.0-beta.1" with a "Beta" label and the note about the beta. Everyone sees it, Field included.
+5. Add the nightly backup line to the crontab. The next morning `backups/` has an encrypted backup, and `backup.log` shows "Backup saved".
+6. When `v1.0.0-beta.2` is tagged, `./upgrade.sh --version 1.0.0-beta.2` keeps everyone's data, and About Spine shows the new version.
+7. Send testers the "Reporting a problem" section. A report with the version and a screenshot is enough to act on.
+8. The accountant has `docs/accounting-review.md`. Their findings go in its table, and their sign-off at the end.
+9. Regression: on a release (not a pre-release), About Spine shows only the version, with no "Beta".
+
+## 265. Give testers the field app through TestFlight and an APK (US-MOB-28, Phase 12)
+
+1. Do the one-time setup in `docs/beta.md` › The phone app:
+   - the tools (Xcode signed in, the Android SDK, JDK 17, `gh`);
+   - the app in App Store Connect with `com.h4loom.spine`;
+   - a release keystore;
+   - a TestFlight external group.
+2. From the beta's tag, with the variables set, run `scripts/mobile/build-beta.sh --upload`. It prints the version and build number, uploads to App Store Connect, and prints "Built: …/spine-<version>.apk" and "Attached to the v<version> release."
+3. iPhone: once the build is processed, add it to the external group. Accept the TestFlight invitation (or open the public link), install Spine, type the beta's address and sign in. Profile shows "Spine 1.0.0-beta.1 (<build>) · Beta".
+4. Android: open the APK link from the release on the phone, allow the install, then sign in the same way. Profile shows the same. The APK is about 55 MB.
+5. Build the next beta the same way: TestFlight offers the update, and the new APK installs over the old one. That works because it's signed with the same keystore and has a higher build number. The signed-in account and anything waiting to send are kept.
+6. Without the keystore variables, or without `SPINE_APPLE_TEAM_ID`, the script stops before building and says which one to set. `--android` and `--ios` build one platform.
+7. Regression: the field app still sends `X-Spine-Client-Version: 1.0.0`, and the server's minimum version check (`MOBILE_MIN_VERSION`) behaves as before. Maestro flows run against the new id `com.h4loom.spine`.
+
+## 266. Run Spine on Coolify (US-OPS-52, Phase 12)
+
+1. On a Coolify v4 server, run `docker login ghcr.io` with a token that can read packages. Add a Docker Compose Empty resource and paste the release's `docker-compose.coolify.yml`.
+2. Give the `caddy` service the domain `https://beta.h4loom.com`. Coolify lists the settings, with `SERVICE_PASSWORD_64_AUTH` and `SERVICE_PASSWORD_POSTGRES` already generated. Fill in SMTP and `BACKUP_PASSPHRASE`, then deploy.
+3. Every service turns healthy. `https://beta.h4loom.com` opens with a valid certificate from Coolify's proxy, sign-up works, and Settings › About Spine shows the version.
+4. Sign in from two different networks, then check Settings › Password & security: each session shows its own address, not the proxy's. Sign-in rate limits apply per visitor.
+5. With `BACKUP_REMOTE` and its keys set, add the scheduled task `node apps/api/dist/scripts/backup.js --remote-only` in the `api` container. Run it now: its log ends "Backup saved: s3://…", the bucket has a `.tar.gz.enc`, and the Owners' backup banner clears. Without `BACKUP_REMOTE` or `BACKUP_PASSPHRASE` it refuses and says which is missing.
+6. Set `SPINE_VERSION` to the next beta and redeploy: the data stays, and About Spine shows the new version.
+7. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
+
 ## Known gaps — don't file these as bugs
+
+- On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
 
 - A Staff member who signs in to the phone app while their Teams close Jobs or Meetings sees that tab's error message, not a no-access screen; sections a Team can open (section 232) are shaped for the web app, and the phone app is built for Field.
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

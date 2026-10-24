@@ -41,7 +41,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | NFR-COMP-01 | Web works in the current and previous major versions of Chrome, Edge, Firefox and Safari | 10 | Playwright projects |
 | NFR-COMP-02 | Every web route is usable at 390×844 with no horizontal page scroll; public quote page and app shell are designed for it | 10 | Playwright at phone viewport |
 | NFR-COMP-03 | Mobile app supports iOS 17+ and Android 10+ (API 29+) | 5 | Store build settings |
-| NFR-COMP-04 | Self-hosting runs on any 64-bit Linux, macOS or Windows host with Docker 24+ and Compose v2 | 10 | Install test on clean VMs |
+| NFR-COMP-04 | Self-hosting runs on any 64-bit (amd64 or arm64) Linux or macOS host with Docker 24+ and Compose v2, and on Windows through WSL2 ([D-262](12-decisions.md)) | 10 | Install test on clean VMs |
 | NFR-COMP-05 | The app boots with only `DATABASE_URL`, `AUTH_SECRET`, `APP_URL` set | 0 | CI boot test |
 
 ## Accessibility

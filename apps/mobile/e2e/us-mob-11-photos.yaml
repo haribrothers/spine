@@ -1,7 +1,7 @@
 # US-MOB-11 / US-MOB-14 — take site photos for a job: the camera explainer,
 # two shots, review with a caption, save; they reach the job. Android only:
 # the iOS Simulator has no camera. Run like us-mob-07-offline.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - tapOn: "Jobs"

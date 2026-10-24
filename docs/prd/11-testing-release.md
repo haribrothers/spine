@@ -37,10 +37,11 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | `unit-and-integration` ("Unit and integration") | after `static` and `integration` | Passes when `static` passed and `integration` passed or was skipped — the required check, keeping its name | Yes |
 | `e2e` ("E2E") | `v*` tag or manual run, after `static`, alongside `integration`; skipped on PRs, which counts as passing ([D-260](12-decisions.md)); files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build (Next.js build cache kept between runs, [D-241](12-decisions.md)) → `@spine/e2e test` (one worker, 60-minute limit), stopping after five failing specs; a failure cancels the run, and the report is kept when it fails or runs out of time | Before a release |
 | `a11y-routes` | `v*` tag or manual run (Phase 12), like E2E ([D-260](12-decisions.md)); locally in `pnpm verify` | Playwright + axe on every route with demo data (US-OPS-17) | Before a release |
-| `restore-verify` | nightly and on `v*` tags (Phase 12) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
+| `self-hosting` ("Self-hosting checks", `self-hosting.yml`): restore-verify | `v*` tags and manual runs (from `ci.yml`, before `release`), and nightly from `nightly.yml` once the repo is public ([D-262](12-decisions.md)) | build this commit's images → install from the release's files → sign up and seed the demo business → wait for issued PDFs → encrypted backup → wipe → install again with the same `.env` → restore (every file's checksum checked as it's written) → compare trial balance and file count (`scripts/ci/restore-verify.sh`, US-OPS-04) | Before a release |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
-| `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
-| `release` | tag `v*` | build images → push to registry → attach `install.sh` + checksums → mobile EAS build | — |
+| Site publishing (Cloudflare Pages, not a GitHub workflow) | push to `main` touching `apps/site/**`, `apps/docs/**` or `apps/api/openapi.json`; a preview for every branch | build (link-checked) → deploy the home page to `h4loom.com` and the docs to `docs.h4loom.com` ([D-270](12-decisions.md)) | — (main is already merged) |
+| `self-hosting`: upgrade-verify | same run, after restore-verify, with the same images | install the previous release from its GitHub release and GHCR images → sign up, seed the demo business, wait for issued PDFs → `upgrade.sh --version <this> --files <this commit's release files>` (backup, checked files, snapshot before migrations) → compare trial balance and file count; nothing to check before the first release (`scripts/ci/upgrade-verify.sh`, US-OPS-50, [D-264](12-decisions.md)) | Before a release |
+| `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api` and `spine-web` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → the field app: a beta's built on the Owner's Mac (`scripts/mobile/build-beta.sh`, D-271) and its APK attached to the release; from 1.0, store builds on GitHub's macOS runners (US-MOB-29) | — |
 
 ## Branches and pull requests
 
@@ -66,7 +67,7 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | One production build (in E2E), timeouts of 15 minutes (lint, typecheck and unit), 30 (integration) and 60 (E2E, which runs only before a release) | Duplicate builds, runaway jobs |
 | Playwright report only when E2E fails or runs out of time, kept 3 days | Artifact storage |
 
-Phase 12 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
+Phase 12 adds the nightly self-hosting checks (`nightly.yml`, once the repo is public); keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
 
 ## Release artifacts
 
@@ -75,7 +76,7 @@ Phase 12 adds the nightly `restore-verify` job; keep it to one run a day, and co
 | `spine-api` and `spine-web` Docker images (amd64 + arm64) | `docker/Dockerfile.api`, `docker/Dockerfile.web` | Container registry, tagged `X.Y.Z` and `latest` |
 | `docker-compose.yml`, `Caddyfile`, `.env.example` | repo root, `docker/` | Release assets |
 | `install.sh`, `backup.sh`, `restore.sh` | `scripts/` | Release assets with SHA-256 checksums |
-| iOS and Android builds | `apps/mobile` via EAS | App Store / Play Store ([15](15-mobile-release.md)) |
+| iOS and Android builds | `apps/mobile`: during the beta `scripts/mobile/build-beta.sh` on the Owner's Mac; from 1.0 GitHub's macOS runners (D-271) | TestFlight and the APK on the release (beta); App Store / Play Store (1.0, [15](15-mobile-release.md)) |
 | Release notes | `CHANGELOG.md` | GitHub release |
 
 ## Versioning
@@ -91,7 +92,7 @@ Phase 12 adds the nightly `restore-verify` job; keep it to one run a day, and co
 3. Any contract change is reflected in [04](04-data-model.md) / [05](05-api.md) in the same change.
 4. New capabilities are enforced in the service layer and reflected in the web UI ([07](07-security.md)).
 5. New or changed UI uses design-system components and tokens, works in light and dark mode, and component changes ship with their doc page and a11y test (both themes).
-6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 12, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
+6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 12, the story's user-guide page in `apps/docs` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
 
 ## Appendix — testing expectations moved verbatim from CLAUDE.md
 

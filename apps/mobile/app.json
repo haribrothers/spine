@@ -9,7 +9,7 @@
     "scheme": "spine",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spine.app",
+      "bundleIdentifier": "com.h4loom.spine",
       "icon": {
         "light": "./assets/icon.png",
         "dark": "./assets/ios-icon-dark.png",
@@ -17,7 +17,7 @@
       }
     },
     "android": {
-      "package": "com.spine.app",
+      "package": "com.h4loom.spine",
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
@@ -71,7 +71,7 @@
     "extra": {
       "storeLinks": {
         "ios": "https://apps.apple.com/app/spine",
-        "android": "https://play.google.com/store/apps/details?id=com.spine.app"
+        "android": "https://play.google.com/store/apps/details?id=com.h4loom.spine"
       }
     }
   }

@@ -1,6 +1,7 @@
 {
   "name": "spine",
   "private": true,
+  "version": "1.0.0-beta.1",
   "engines": {
     "node": ">=22"
   },
@@ -27,7 +28,8 @@
     "db:reset:dev": "pnpm --filter @spine/api db:reset",
     "test:e2e": "pnpm --filter @spine/e2e test",
     "test:e2e:ui": "pnpm --filter @spine/e2e test:ui",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\""
   },
   "devDependencies": {
     "turbo": "^2.3.0",

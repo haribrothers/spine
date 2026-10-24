@@ -32,14 +32,16 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 Legacy: S-10.7
 
 **Acceptance criteria**
-- **Given** a clean machine with Docker, **when** I run `./scripts/install.sh`, **then** it checks Docker and Compose versions, creates `.env` from `.env.example`, generates a random `AUTH_SECRET` of at least 32 bytes, asks for `APP_URL` (default `http://localhost`), and starts the `minimal` profile.
+- **Given** a clean Linux or macOS machine (amd64 or arm64), or Windows through WSL2, with Docker, **when** I run `./scripts/install.sh` (from a clone or downloaded from the release), **then** it checks Docker and Compose versions, creates `.env` from `.env.example`, generates a random `AUTH_SECRET` of at least 32 bytes, asks for `APP_URL` (default `http://localhost`), pulls the release's images and starts the `minimal` profile.
+- **Given** `APP_URL` is already set in the environment, or `--non-interactive` is passed, **when** the script runs, **then** it asks nothing (CI's restore and upgrade checks use this).
+- **Given** a fresh database, **when** the API starts, **then** it applies the migrations before serving requests, and the first account can be created ([D-264](../prd/12-decisions.md)).
 - **Given** the install finishes, **when** it prints its summary, **then** it shows "Spine is running at <APP_URL> — open it to create the first account." and the commands for logs, backup and upgrade.
 - **Given** `.env` already exists, **when** I run the script again, **then** it doesn't overwrite it and just starts the services.
 - **Given** a stopwatch from `git clone` to the first issued invoice on a machine with Docker, **when** a new user follows only the README, **then** it takes under 5 minutes (NFR-MNT-01).
 - **Given** a missing prerequisite, **when** the script runs, **then** it exits non-zero with a message naming what to install.
 
 **Implementation notes**
-- New `scripts/install.sh` (POSIX shell, shellcheck-clean); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).
+- New `scripts/install.sh` (POSIX shell, shellcheck-clean); the published `docker-compose.yml` pulls `ghcr.io/haribrothers/spine-api` and `spine-web` at the release's version ([D-262](../prd/12-decisions.md)); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).
 
 ### US-OPS-02 · Start with demo data from an environment flag
 **Feature:** F-OPS-01 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
@@ -112,7 +114,7 @@ Legacy: PRD F10 · Decision: D-055
 - **Given** the daily check, **when** it runs, **then** it sends no information about the instance.
 
 **Implementation notes**
-- API: `GET /org/update-status` (contract addition); `settings.update_check`.
+- API: `GET /org/update-status` (contract addition); `settings.update_check`. The check reads the GitHub Releases API for the latest release, ignoring pre-releases ([D-269](../prd/12-decisions.md)).
 
 ### US-OPS-07 · Log every request with an id
 **Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
@@ -254,6 +256,7 @@ PRD §10.8 · Decision: D-069
 
 **Implementation notes**
 - English only ships in v1.
+- Library and scope: `i18next` / `react-i18next` with one shared `packages/shared/src/i18n/en.json`; web and field app in 1.0, emails, PDFs and API errors in 1.1 ([D-268](../prd/12-decisions.md)).
 
 ### US-OPS-17 · Pass an accessibility audit of every screen
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
@@ -279,9 +282,11 @@ PRD §10.3
 - **Given** the OWASP Top 10, **when** the review is done, **then** each item has a written finding and fix or acceptance in `docs/security-review.md`.
 - **Given** CI, **when** it runs, **then** `pnpm audit --prod` fails the build on high or critical issues.
 - **Given** the public quote and invitation routes, **when** tested, **then** tokens can't be enumerated and rate limits hold.
+- **Given** the repo and a running install, **when** the review runs, **then** a secret scan (gitleaks) of the whole history and a ZAP baseline scan find nothing high-severity left open.
+- **Given** the write-up, **when** it's complete, **then** the Owner signs it off in `docs/security-review.md`, and `SECURITY.md` says where to report a vulnerability.
 
 **Implementation notes**
-- NFR-SEC-04, NFR-SEC-05.
+- NFR-SEC-04, NFR-SEC-05. In-house, against OWASP ASVS ([D-267](../prd/12-decisions.md)). Before the beta server faces the internet (US-OPS-52), at least the secret scan and `pnpm audit --prod` are clean.
 
 ### US-OPS-19 · Ship the README, licence and contributor guide
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
@@ -792,3 +797,53 @@ Decision: D-238
 
 **Implementation notes**
 - API: `GET /search` accepts `types=<group>,<group>` (unknown → 400 "Choose what to search."), and `limit` up to 20 when `types` is given (5 otherwise). Shared: `SEARCH_SCOPES` maps each area to its groups.
+
+### US-OPS-50 · Upgrade Spine with one command
+**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** `UpgradeNotice`
+**As** a self-hoster, **I want** one command that upgrades Spine safely, **so that** I stay current without risking my data.
+
+Decision: D-264
+
+**Acceptance criteria**
+- **Given** a running install, **when** I run `./scripts/upgrade.sh`, **then** it takes a backup (US-OPS-03), pulls the images for the latest release (or `--version X.Y.Z`), restarts, and prints "Spine is now <version>. Your backup is <file>."
+- **Given** new migrations and a database with data, **when** the API starts, **then** it writes a database snapshot first, applies them, and only then serves requests; the last three snapshots are kept.
+- **Given** a migration fails, **when** the API starts, **then** it stops without serving, and the log names the error and the snapshot to restore.
+- **Given** two API containers starting together, **when** both find migrations to apply, **then** only one applies them and the other waits.
+- **Given** the previous release's install with demo data, **when** CI upgrades it to this version, **then** it starts, and the trial balance and the file count are unchanged (NFR-MNT-02).
+- **Given** a beta install, **when** it's upgraded to the next beta or to 1.0, **then** everyone's data carries over ([D-265](../prd/12-decisions.md)).
+
+**Implementation notes**
+- Drizzle's migrator at boot under a Postgres advisory lock; snapshots are `pg_dump` files in the backups volume. CI job `upgrade-verify` on `v*` tags, using `install.sh --non-interactive`.
+
+### US-OPS-51 · Publish a release with one tag
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
+**As** the maintainer, **I want** pushing a version tag to publish everything, **so that** a release is one step and the same every time.
+
+Decision: D-262
+
+**Acceptance criteria**
+- **Given** a `vX.Y.Z` tag, **when** the full CI run passes (E2E included, [D-260](../prd/12-decisions.md)), **then** the release workflow publishes `ghcr.io/haribrothers/spine-api` and `spine-web` for amd64 and arm64, tagged `X.Y.Z` and `latest`, and a GitHub release with `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile`, `.env.example`, SHA-256 checksums, and that version's release notes.
+- **Given** a pre-release tag (`vX.Y.Z-beta.N` or `-rc.N`), **when** it publishes, **then** the GitHub release is marked as a pre-release and the images are tagged with that version only, never `latest`.
+- **Given** the tag doesn't match the root `package.json` version, **when** the workflow runs, **then** it fails naming both, and publishes nothing.
+- **Given** CI fails, **when** the tag was pushed, **then** nothing is published.
+- **Given** the published `docker-compose.yml`, **when** it starts, **then** it pulls that version's images and builds nothing.
+- **Given** one web image, **when** it runs at any domain, **then** the browser reaches the API at the page's own `/api` and the web server reaches it inside the stack, so no address is baked into the image.
+
+**Implementation notes**
+- CI's `release` job calls `.github/workflows/release.yml` on a `v*` tag once every check passed; `scripts/release/version.mjs` checks the tag and `release-compose.mjs` writes the published Compose file (tests: `pnpm test:scripts`). The web image is built with `NEXT_PUBLIC_API_URL=/api`, resolved against the page's origin for Better Auth's client; Compose gives the web container `API_URL=http://api:4000`. arm64 images build on GitHub's arm64 runners once the repo is public; private pre-releases are amd64 only. Release notes come from `docs/releases/v<version>.md` when it exists. While the repo is private, the images are private and a server pulls them with a read-only token; they become public with the repo at v1.0. `docs/release.md` lists the steps (US-OPS-19).
+
+### US-OPS-52 · Run a beta for testers
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
+**As** the Owner, **I want** to give an accountant and other testers a beta on my own server, **so that** they can check Spine in real use before 1.0.
+
+Decision: D-265
+
+**Acceptance criteria**
+- **Given** `docs/beta.md`, **when** the Owner follows it on a small VPS, **then** they have the beta at `https://beta.h4loom.com` with HTTPS, sign-up closed, backups on, and testers invited by email.
+- **Given** a beta version, **when** anyone opens Settings › About (web) or Profile (field app), **then** it shows the version, with a "Beta" label on a pre-release.
+- **Given** the next beta is tagged, **when** the Owner runs `./scripts/upgrade.sh` on the beta server, **then** testers' data carries over (US-OPS-50).
+- **Given** a tester finds a problem, **when** they read `docs/beta.md`'s "Reporting a problem", **then** it tells them what to send (what they did, what they expected, a screenshot, the version) and where.
+- **Given** the accountant's review, **when** it's done, **then** their sign-off, or what's left to fix, is recorded in `docs/accounting-review.md` before 1.0 is tagged.
+
+**Implementation notes**
+- The review pack in `docs/accounting-review.md`: the chart of accounts, every posting rule with a worked example, and the reports to check, so the accountant knows what to try.
