@@ -22,6 +22,12 @@ fail() {
 }
 
 here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+# A handed-over upgrade (below) runs from a temporary folder; --from names the install.
+prev_arg=
+for arg in "$@"; do
+  case $prev_arg in --from) here=$arg ;; esac
+  prev_arg=$arg
+done
 if [ -f "$here/docker-compose.yml" ]; then
   root=$here
   layout=release
@@ -47,6 +53,9 @@ while [ $# -gt 0 ]; do
     --files)
       [ $# -ge 2 ] || fail "--files needs the folder with the release's files"
       files=$(CDPATH='' cd -- "$2" && pwd) || fail "There's no folder at $2."
+      shift
+      ;;
+    --from)
       shift
       ;;
     -h | --help)
@@ -130,6 +139,14 @@ if [ "$layout" = release ]; then
       fail "Spine $target's files don't match their checksums, so nothing was changed. Download them again."
   fi
   grep -q "spine-api:\${SPINE_VERSION:-$target}" "$staged/docker-compose.yml" || fail "Those files aren't Spine $target's (docker-compose.yml names another version)."
+  # The new version knows best how to upgrade to itself: hand over to its own
+  # upgrade.sh (checked above) with the same files, once.
+  if [ -z "${SPINE_UPGRADE_HANDOFF:-}" ] && [ -f "$staged/upgrade.sh" ] && ! cmp -s "$staged/upgrade.sh" "$0"; then
+    say "Handing over to Spine $target's own upgrade.sh…"
+    handoff=$(mktemp -d)
+    cp "$staged"/* "$handoff"/
+    SPINE_UPGRADE_HANDOFF=1 exec sh "$handoff/upgrade.sh" --version "$target" --files "$handoff" --from "$root"
+  fi
 fi
 
 # --- Back up, then switch ---------------------------------------------------

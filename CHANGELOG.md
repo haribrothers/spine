@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — upgrade.sh hands over to the new version's own script (US-OPS-50)
+
+- **Found by the v1.0.0-beta.2 tag run:** upgrade-verify stopped before publishing anything. It renamed beta.1's `default.env.example` only for files from a local folder, not for files downloaded from GitHub. Behind that was a real problem: a beta.1 install runs beta.1's `upgrade.sh`, which can't take beta.2's renamed `env.example`.
+- **Fix:** once the new release's files are downloaded and checked, `upgrade.sh` hands over, once, to the new version's own `upgrade.sh`, so an older script can't trip over a newer release again. beta.1's script predates this, so from beta.1 you take the new `upgrade.sh` first (one command in `docs/beta.md`); upgrade-verify does the same.
+- **Tests:** a new script test for the hand-over (25 in all). upgrade-verify passes locally from the real beta.1 release files to beta.2, keeping the trial balance and all 35 files.
+
 ### 2026-10-24 — 1.0.0-beta.2: the release's env.example keeps its name
 
 - **What was wrong in 1.0.0-beta.1:** GitHub renames a release file whose name starts with a dot, so `.env.example` was published as `default.env.example`. `install.sh` from a downloaded release then stopped ("env.example is missing"). Workaround for beta.1: `mv default.env.example .env.example`.

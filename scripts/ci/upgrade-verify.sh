@@ -55,11 +55,12 @@ step "Install Spine $previous"
 mkdir "$work/spine"
 if [ -n "${PREVIOUS_FILES_DIR:-}" ]; then
   cp "$PREVIOUS_FILES_DIR"/* "$work/spine/"
-  # 1.0.0-beta.1 published env.example as default.env.example (GitHub renames dot-files).
-  [ ! -f "$work/spine/default.env.example" ] || mv "$work/spine/default.env.example" "$work/spine/.env.example"
 else
   gh release download "v$previous" --repo haribrothers/spine --dir "$work/spine"
 fi
+# 1.0.0-beta.1 published .env.example as default.env.example (GitHub renames
+# files starting with a dot), and its install.sh looks for .env.example.
+[ ! -f "$work/spine/default.env.example" ] || mv "$work/spine/default.env.example" "$work/spine/.env.example"
 chmod +x "$work/spine"/*.sh
 cd "$work/spine"
 ./install.sh --non-interactive
@@ -104,6 +105,9 @@ cp "$repo/docker/Caddyfile" "$repo/scripts/install.sh" "$repo/scripts/backup.sh"
   cp "$repo/.env.example" env.example
   if command -v sha256sum >/dev/null 2>&1; then sha256sum -- * >SHA256SUMS; else shasum -a 256 -- * >SHA256SUMS; fi
 )
+# 1.0.0-beta.1's upgrade.sh predates handing over to the new version's own
+# script (docs/beta.md › A new beta), so from it, take the new one first.
+[ "$previous" != 1.0.0-beta.1 ] || cp "$next/upgrade.sh" ./upgrade.sh
 ./upgrade.sh --version "$version" --files "$next"
 
 step "Compare"
