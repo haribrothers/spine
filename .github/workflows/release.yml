@@ -6,7 +6,8 @@ name: Release
 #   `latest` too unless it's a pre-release (vX.Y.Z-beta.N, -rc.N);
 # - a GitHub release (a pre-release for a suffixed tag) with the install,
 #   backup, restore and upgrade scripts, the Compose file pulling those images,
-#   the Caddyfile, .env.example, the Coolify Compose file and SHA-256 checksums.
+#   the Caddyfile, env.example (GitHub renames a file starting with a dot), the
+#   Coolify Compose file and SHA-256 checksums.
 # arm64 images build on GitHub's arm64 runners, which public repos get free;
 # while the repo is private, pre-releases are amd64 only.
 on:
@@ -151,10 +152,11 @@ jobs:
         run: |
           mkdir dist
           node scripts/release/release-compose.mjs "$VERSION" > dist/docker-compose.yml
-          cp docker/Caddyfile .env.example dist/
+          cp docker/Caddyfile dist/
+          cp .env.example dist/env.example
           cp docker/coolify/docker-compose.yml dist/docker-compose.coolify.yml
           for script in install.sh backup.sh restore.sh upgrade.sh; do cp "scripts/$script" dist/; done
-          (cd dist && sha256sum -- * .env.example > SHA256SUMS)
+          (cd dist && sha256sum -- * > SHA256SUMS)
         env:
           VERSION: ${{ needs.version.outputs.version }}
 
@@ -164,7 +166,7 @@ jobs:
           notes="docs/releases/v$VERSION.md"
           if [ -f "$notes" ]; then notes_args=(--notes-file "$notes"); else notes_args=(--generate-notes); fi
           if [ "$PRERELEASE" = "true" ]; then kind=(--prerelease); else kind=(--latest); fi
-          gh release create "$GITHUB_REF_NAME" dist/* dist/.env.example --title "Spine $VERSION" "${notes_args[@]}" "${kind[@]}" --verify-tag
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Spine $VERSION" "${notes_args[@]}" "${kind[@]}" --verify-tag
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}

@@ -54,7 +54,9 @@ fi
 step "Install Spine $previous"
 mkdir "$work/spine"
 if [ -n "${PREVIOUS_FILES_DIR:-}" ]; then
-  cp "$PREVIOUS_FILES_DIR"/* "$PREVIOUS_FILES_DIR"/.env.example "$work/spine/"
+  cp "$PREVIOUS_FILES_DIR"/* "$work/spine/"
+  # 1.0.0-beta.1 published env.example as default.env.example (GitHub renames dot-files).
+  [ ! -f "$work/spine/default.env.example" ] || mv "$work/spine/default.env.example" "$work/spine/.env.example"
 else
   gh release download "v$previous" --repo haribrothers/spine --dir "$work/spine"
 fi
@@ -96,10 +98,11 @@ step "Upgrade to $version"
 next="$work/next"
 mkdir "$next"
 node "$repo/scripts/release/release-compose.mjs" "$version" >"$next/docker-compose.yml"
-cp "$repo/docker/Caddyfile" "$repo/.env.example" "$repo/scripts/install.sh" "$repo/scripts/backup.sh" "$repo/scripts/restore.sh" "$repo/scripts/upgrade.sh" "$next/"
+cp "$repo/docker/Caddyfile" "$repo/scripts/install.sh" "$repo/scripts/backup.sh" "$repo/scripts/restore.sh" "$repo/scripts/upgrade.sh" "$next/"
 (
   cd "$next"
-  if command -v sha256sum >/dev/null 2>&1; then sha256sum -- * .env.example >SHA256SUMS; else shasum -a 256 -- * .env.example >SHA256SUMS; fi
+  cp "$repo/.env.example" env.example
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum -- * >SHA256SUMS; else shasum -a 256 -- * >SHA256SUMS; fi
 )
 ./upgrade.sh --version "$version" --files "$next"
 

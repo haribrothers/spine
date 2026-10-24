@@ -20,7 +20,7 @@ services:
 
   api:
     # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
-    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.1}
+    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.2}
     build:
       context: .
       dockerfile: docker/Dockerfile.api
@@ -46,7 +46,7 @@ services:
 
   web:
     # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
-    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.1}
+    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.2}
     build:
       context: .
       dockerfile: docker/Dockerfile.web

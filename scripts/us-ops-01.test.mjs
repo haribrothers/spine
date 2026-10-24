@@ -22,7 +22,7 @@ esac
 `;
 
 /** A release's files in a fresh folder (or a clone's layout), and a PATH with the fake docker unless told otherwise. */
-function setup({ layout = "release", docker = true } = {}) {
+function setup({ layout = "release", docker = true, template = layout === "release" ? "env.example" : ".env.example" } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "spine-install-"));
   const bin = join(dir, "bin");
   mkdirSync(bin);
@@ -30,7 +30,8 @@ function setup({ layout = "release", docker = true } = {}) {
   mkdirSync(scriptDir, { recursive: true });
   copyFileSync(join(repo, "scripts/install.sh"), join(scriptDir, "install.sh"));
   copyFileSync(join(repo, "docker-compose.yml"), join(dir, "docker-compose.yml"));
-  copyFileSync(join(repo, ".env.example"), join(dir, ".env.example"));
+  // A release ships env.example (GitHub renames files starting with a dot); a clone has .env.example.
+  copyFileSync(join(repo, ".env.example"), join(dir, template));
   if (docker) {
     writeFileSync(join(bin, "docker"), FAKE_DOCKER);
     chmodSync(join(bin, "docker"), 0o755);
@@ -76,6 +77,14 @@ describe("US-OPS-01 · install Spine with one command", () => {
     assert.match(result.stdout, /Logs: +docker compose logs -f/);
     assert.match(result.stdout, /Back up: +\.\/backup\.sh/);
     assert.match(result.stdout, /Upgrade: +\.\/upgrade\.sh/);
+  });
+
+  it("works from a release's env.example and from a clone's .env.example", () => {
+    for (const template of ["env.example", ".env.example"]) {
+      const { run, env } = setup({ template });
+      assert.equal(run(["--non-interactive"]).status, 0, template);
+      assert.match(value(env(), "AUTH_SECRET"), /^[A-Za-z0-9]{48}$/, template);
+    }
   });
 
   it("two installs never share a secret", () => {
