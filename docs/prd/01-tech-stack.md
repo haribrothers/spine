@@ -48,7 +48,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 
 ## `apps/site` and `apps/docs` — website, user guide and developer docs (Phase 12)
 
-`apps/site` is the home page at `<domain>` (Astro); `apps/docs` is everything people read, at `docs.<domain>` (Astro + Starlight) ([D-270](12-decisions.md)).
+`apps/site` is the home page at `h4loom.com` (Astro); `apps/docs` is everything people read, at `docs.h4loom.com` (Astro + Starlight) ([D-270](12-decisions.md)).
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -57,7 +57,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | API reference | `starlight-openapi`, from the API's OpenAPI document | Generated, so it never drifts from the code |
 | Versions | `starlight-versions`, one per minor release from 1.0 ([D-111](12-decisions.md)) | Self-hosters on older versions read matching docs |
 | Link checks | `starlight-links-validator` | Broken links fail the build |
-| Hosting | Cloudflare Pages: `apps/site` at `<domain>`, `apps/docs` at `docs.<domain>` ([D-270](12-decisions.md), [Q-15](13-risks-open-questions.md)) | Two projects from one repo, each on its own domain; free; works while the repo is private; a preview per branch |
+| Hosting | Cloudflare Pages: `apps/site` at `h4loom.com`, `apps/docs` at `docs.h4loom.com` ([D-270](12-decisions.md), [Q-15](13-risks-open-questions.md)) | Two projects from one repo, each on its own domain; free; works while the repo is private; a preview per branch |
 | In-app copy | The user guide and self-hosting sections are bundled into the web image at `/help` ([D-110](12-decisions.md)) | Help works offline and matches the installed version |
 
 ## `apps/mobile` — the field app (Phase 5)

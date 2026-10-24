@@ -484,13 +484,13 @@ Decision: [D-203](../prd/12-decisions.md)
 Decision: D-265
 
 **Acceptance criteria**
-- **Given** a beta tag, **when** the EAS preview builds finish, **then** iOS testers get it through TestFlight (external testers, by invite or public link) and Android testers through a direct APK download link.
+- **Given** a beta tag, **when** the Owner runs `scripts/mobile/build-beta.sh` on their Mac, **then** iOS testers get it through TestFlight (external testers, by invite or public link) and Android testers through a direct APK download link.
 - **Given** the installed beta app, **when** a tester enters the beta server's address, **then** they sign in and use it like the release app.
 - **Given** Profile, **when** it opens, **then** it shows the app's version with a "Beta" label.
 - **Given** the next beta, **when** it's built, **then** testers get it as an update without reinstalling (TestFlight update; a newer APK installs over the old one).
 
 **Implementation notes**
-- `apps/mobile/eas.json` with `preview` (internal distribution, APK) and `production` profiles; version from the root `package.json`. The Owner's Apple developer account is needed for TestFlight.
+- `scripts/mobile/build-beta.sh` (D-271): `expo prebuild`, then Xcode archives and uploads to App Store Connect (automatic signing, `SPINE_APPLE_TEAM_ID`), and Gradle builds a signed 64-bit ARM APK with the Owner's keystore, attached to the release with `--upload`. Version from the root `package.json` (`app.config.js`); the build number is the commit count. No Expo account. The Owner's Apple developer account is needed for TestFlight.
 
 ### US-MOB-29 · Get the field app from the App Store and Play Store
 **Feature:** F-MOB-11 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
@@ -499,10 +499,10 @@ Decision: D-265
 Decision: D-266
 
 **Acceptance criteria**
-- **Given** the v1.0 tag, **when** the EAS production builds finish, **then** they're submitted to App Store Connect and the Play Console with the final bundle id, set from the domain.
-- **Given** a store reviewer, **when** they follow the reviewer notes, **then** they sign in to `demo.<domain>` as a Field test user and see a day of demo work.
+- **Given** the v1.0 tag, **when** the store builds finish on GitHub's macOS runners (fastlane, D-271), **then** they're submitted to App Store Connect and the Play Console with the final bundle id, set from the domain.
+- **Given** a store reviewer, **when** they follow the reviewer notes, **then** they sign in to `demo.h4loom.com` as a Field test user and see a day of demo work.
 - **Given** the listings, **when** they're published, **then** they have the name, description, screenshots for the required sizes, the privacy details (no tracking; data stays on the business's own server) and a support link to the docs site.
 - **Given** the app is live, **when** "Update Spine to keep going" shows, **then** its link opens the real store listing (`extra.storeLinks`).
 
 **Implementation notes**
-- Submitted after the tag; store review doesn't hold 1.0. `demo.<domain>` runs `SEED_DEMO` and resets nightly.
+- Submitted after the tag; store review doesn't hold 1.0. `demo.h4loom.com` runs `SEED_DEMO` and resets nightly.

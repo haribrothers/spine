@@ -7,7 +7,7 @@
 #     -e DEV_CLIENT_URL='spine://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8081' \
 #     apps/mobile/e2e/us-mob-01-sign-in.yaml                                   (Android emulator)
 # With both running, pick one with `maestro --device <id>`.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - launchApp:
     clearState: true

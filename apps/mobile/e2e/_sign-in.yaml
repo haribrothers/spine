@@ -1,6 +1,6 @@
 # Shared: a clean install, signed in as the demo Field user, on Today.
 # SERVER/EMAIL/PASSWORD as in us-mob-01-sign-in.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - launchApp:
     clearState: true

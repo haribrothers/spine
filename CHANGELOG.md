@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — h4loom.com, Mac-built beta apps, and Spine on Coolify (D-271)
+
+- **Domain and app id:** `h4loom.com` (home page), `docs.h4loom.com`, `beta.h4loom.com` and `demo.h4loom.com`. The field app is `com.h4loom.spine` on iOS and Android, set in `app.json` and the Maestro flows. Q-15 is closed.
+- **Beta apps built on the Owner's Mac, no Expo account:** `scripts/mobile/build-beta.sh` replaces the EAS job. It runs `expo prebuild`, then Xcode archives and uploads to App Store Connect for TestFlight, and Gradle builds a signed 64-bit ARM APK (about 55 MB) attached to the release with `--upload`. The build number is the commit count (`SPINE_BUILD_NUMBER` in `app.config.js`). `eas.json` is gone. The store builds move to GitHub's macOS runners once the repo is public (US-MOB-29).
+- **Found by a real Android build:** Gradle and Xcode start Expo's bundler with plain `node`, so under pnpm Babel couldn't find its presets. The script puts pnpm's hoisted packages on `NODE_PATH`, as pnpm's own launcher does. The iOS half isn't run here: it needs your Apple team.
+- **Spine on Coolify:** `docker/coolify/docker-compose.yml` (published as `docker-compose.coolify.yml`) is the stack for a Coolify server:
+  - Spine's Caddy runs behind Coolify's proxy on port 80, with no published ports;
+  - the domain is set on the `caddy` service;
+  - the settings are explicit environment variables;
+  - Coolify generates `AUTH_SECRET` and the database password;
+  - the Caddyfile is inline.
+
+  The Caddyfile now takes `SITE_ADDRESS` (default `APP_URL`) and `TRUSTED_PROXIES`, so visitors' own addresses reach the API through a proxy. `docs/self-hosting-coolify.md` covers deploying, backups, upgrading, restoring, and other proxied platforms. Tested locally behind a stand-in proxy: health, sign-up and the web app.
+- **Backups for scheduled tasks:** `backup.js --remote-only` names the archive itself, uploads it encrypted to `BACKUP_REMOTE` and keeps no local copy.
+- **Tests:** `us-ops-52` script tests keep the Coolify file in step with the main stack and the Caddyfile. `us-mob-28` checks the build number and the id. QA sections 265 (rewritten) and 266.
+
 ### 2026-10-24 — Backups keep going past a file their storage can't address (US-OPS-03)
 
 - **What failed:** a file record whose key the local driver won't use (an old S3-style key with the file's name in it) stopped the whole backup. Such files are now listed as missing in the manifest, like files that are gone. A real read error (disk or network) still fails the backup.

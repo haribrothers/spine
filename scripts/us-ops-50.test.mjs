@@ -129,7 +129,7 @@ describe("US-OPS-50 · upgrade Spine with one command", () => {
 describe("the self-hosting scripts", () => {
   it("never put a character like … straight after a $variable (macOS's sh reads it as part of the name)", async () => {
     const { readdirSync } = await import("node:fs");
-    const scripts = [...readdirSync(join(repo, "scripts")).filter((f) => f.endsWith(".sh")).map((f) => `scripts/${f}`), ...readdirSync(join(repo, "scripts/ci")).map((f) => `scripts/ci/${f}`)];
+    const scripts = [...readdirSync(join(repo, "scripts")).filter((f) => f.endsWith(".sh")).map((f) => `scripts/${f}`), ...readdirSync(join(repo, "scripts/ci")).map((f) => `scripts/ci/${f}`), ...readdirSync(join(repo, "scripts/mobile")).map((f) => `scripts/mobile/${f}`)];
     for (const file of scripts) {
       const bad = readFileSync(join(repo, file), "utf8")
         .split("\n")

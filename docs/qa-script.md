@@ -5502,7 +5502,7 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 
 ## 264. Run a beta for testers (US-OPS-52, Phase 12)
 
-1. Follow `docs/beta.md` on a fresh VPS: Docker, `docker login ghcr.io` and `gh auth login` with the token, `gh release download v1.0.0-beta.1`, then `./install.sh --app-url https://beta.<domain>`. The address opens over HTTPS with a valid certificate.
+1. Follow `docs/beta.md` on a fresh VPS: Docker, `docker login ghcr.io` and `gh auth login` with the token, `gh release download v1.0.0-beta.1`, then `./install.sh --app-url https://beta.h4loom.com`. The address opens over HTTPS with a valid certificate.
 2. Sign up first: you're the Owner. A second person who tries to sign up is told Spine is invite-only.
 3. With SMTP set in `.env`, invite a tester from Team › Users. They get the email, join, and sign in.
 4. Settings › Your account › About Spine shows "Spine 1.0.0-beta.1" with a "Beta" label and the note about the beta. Everyone sees it, Field included.
@@ -5514,13 +5514,27 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 
 ## 265. Give testers the field app through TestFlight and an APK (US-MOB-28, Phase 12)
 
-1. Do the one-time setup in `docs/beta.md` › The phone app: the bundle id variables, Expo (`EAS_PROJECT_ID`, `EXPO_TOKEN`), App Store Connect and EAS credentials, and a TestFlight external group.
-2. Tag a beta. After "Release", the "Field app beta" job builds iOS (sent to TestFlight) and Android. The GitHub release gains `spine-<version>.apk`.
-3. iPhone: accept the TestFlight invitation (or open the public link), install Spine, type the beta's address and sign in. Profile shows "Spine 1.0.0-beta.1 (<build>) · Beta".
-4. Android: open the APK link on the phone, allow the install, then sign in the same way. Profile shows the same.
-5. Tag the next beta: TestFlight offers the update, and the new APK installs over the old one, keeping the signed-in account and anything waiting to send.
-6. Without the `EXPO_TOKEN` secret, the release still publishes, and the job leaves a notice that the field app wasn't built.
-7. Regression: the field app still sends `X-Spine-Client-Version: 1.0.0`, and the server's minimum version check (`MOBILE_MIN_VERSION`) behaves as before.
+1. Do the one-time setup in `docs/beta.md` › The phone app:
+   - the tools (Xcode signed in, the Android SDK, JDK 17, `gh`);
+   - the app in App Store Connect with `com.h4loom.spine`;
+   - a release keystore;
+   - a TestFlight external group.
+2. From the beta's tag, with the variables set, run `scripts/mobile/build-beta.sh --upload`. It prints the version and build number, uploads to App Store Connect, and prints "Built: …/spine-<version>.apk" and "Attached to the v<version> release."
+3. iPhone: once the build is processed, add it to the external group. Accept the TestFlight invitation (or open the public link), install Spine, type the beta's address and sign in. Profile shows "Spine 1.0.0-beta.1 (<build>) · Beta".
+4. Android: open the APK link from the release on the phone, allow the install, then sign in the same way. Profile shows the same. The APK is about 55 MB.
+5. Build the next beta the same way: TestFlight offers the update, and the new APK installs over the old one. That works because it's signed with the same keystore and has a higher build number. The signed-in account and anything waiting to send are kept.
+6. Without the keystore variables, or without `SPINE_APPLE_TEAM_ID`, the script stops before building and says which one to set. `--android` and `--ios` build one platform.
+7. Regression: the field app still sends `X-Spine-Client-Version: 1.0.0`, and the server's minimum version check (`MOBILE_MIN_VERSION`) behaves as before. Maestro flows run against the new id `com.h4loom.spine`.
+
+## 266. Run Spine on Coolify (US-OPS-52, Phase 12)
+
+1. On a Coolify v4 server, run `docker login ghcr.io` with a token that can read packages. Add a Docker Compose Empty resource and paste the release's `docker-compose.coolify.yml`.
+2. Give the `caddy` service the domain `https://beta.h4loom.com`. Coolify lists the settings, with `SERVICE_PASSWORD_64_AUTH` and `SERVICE_PASSWORD_POSTGRES` already generated. Fill in SMTP and `BACKUP_PASSPHRASE`, then deploy.
+3. Every service turns healthy. `https://beta.h4loom.com` opens with a valid certificate from Coolify's proxy, sign-up works, and Settings › About Spine shows the version.
+4. Sign in from two different networks, then check Settings › Password & security: each session shows its own address, not the proxy's. Sign-in rate limits apply per visitor.
+5. With `BACKUP_REMOTE` and its keys set, add the scheduled task `node apps/api/dist/scripts/backup.js --remote-only` in the `api` container. Run it now: its log ends "Backup saved: s3://…", the bucket has a `.tar.gz.enc`, and the Owners' backup banner clears. Without `BACKUP_REMOTE` or `BACKUP_PASSPHRASE` it refuses and says which is missing.
+6. Set `SPINE_VERSION` to the next beta and redeploy: the data stays, and About Spine shows the new version.
+7. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
 
 ## Known gaps — don't file these as bugs
 

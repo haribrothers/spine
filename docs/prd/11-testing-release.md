@@ -39,9 +39,9 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | `a11y-routes` | `v*` tag or manual run (Phase 12), like E2E ([D-260](12-decisions.md)); locally in `pnpm verify` | Playwright + axe on every route with demo data (US-OPS-17) | Before a release |
 | `self-hosting` ("Self-hosting checks", `self-hosting.yml`): restore-verify | `v*` tags and manual runs (from `ci.yml`, before `release`), and nightly from `nightly.yml` once the repo is public ([D-262](12-decisions.md)) | build this commit's images → install from the release's files → sign up and seed the demo business → wait for issued PDFs → encrypted backup → wipe → install again with the same `.env` → restore (every file's checksum checked as it's written) → compare trial balance and file count (`scripts/ci/restore-verify.sh`, US-OPS-04) | Before a release |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
-| Site publishing (Cloudflare Pages, not a GitHub workflow) | push to `main` touching `apps/site/**`, `apps/docs/**` or `apps/api/openapi.json`; a preview for every branch | build (link-checked) → deploy the home page to `<domain>` and the docs to `docs.<domain>` ([D-270](12-decisions.md)) | — (main is already merged) |
+| Site publishing (Cloudflare Pages, not a GitHub workflow) | push to `main` touching `apps/site/**`, `apps/docs/**` or `apps/api/openapi.json`; a preview for every branch | build (link-checked) → deploy the home page to `h4loom.com` and the docs to `docs.h4loom.com` ([D-270](12-decisions.md)) | — (main is already merged) |
 | `self-hosting`: upgrade-verify | same run, after restore-verify, with the same images | install the previous release from its GitHub release and GHCR images → sign up, seed the demo business, wait for issued PDFs → `upgrade.sh --version <this> --files <this commit's release files>` (backup, checked files, snapshot before migrations) → compare trial balance and file count; nothing to check before the first release (`scripts/ci/upgrade-verify.sh`, US-OPS-50, [D-264](12-decisions.md)) | Before a release |
-| `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api` and `spine-web` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → EAS builds: preview (TestFlight, APK) for a pre-release, production for a release (US-MOB-28, US-MOB-29) | — |
+| `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api` and `spine-web` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → the field app: a beta's built on the Owner's Mac (`scripts/mobile/build-beta.sh`, D-271) and its APK attached to the release; from 1.0, store builds on GitHub's macOS runners (US-MOB-29) | — |
 
 ## Branches and pull requests
 
@@ -76,7 +76,7 @@ Phase 12 adds the nightly self-hosting checks (`nightly.yml`, once the repo is p
 | `spine-api` and `spine-web` Docker images (amd64 + arm64) | `docker/Dockerfile.api`, `docker/Dockerfile.web` | Container registry, tagged `X.Y.Z` and `latest` |
 | `docker-compose.yml`, `Caddyfile`, `.env.example` | repo root, `docker/` | Release assets |
 | `install.sh`, `backup.sh`, `restore.sh` | `scripts/` | Release assets with SHA-256 checksums |
-| iOS and Android builds | `apps/mobile` via EAS | App Store / Play Store ([15](15-mobile-release.md)) |
+| iOS and Android builds | `apps/mobile`: during the beta `scripts/mobile/build-beta.sh` on the Owner's Mac; from 1.0 GitHub's macOS runners (D-271) | TestFlight and the APK on the release (beta); App Store / Play Store (1.0, [15](15-mobile-release.md)) |
 | Release notes | `CHANGELOG.md` | GitHub release |
 
 ## Versioning

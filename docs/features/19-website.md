@@ -1,6 +1,6 @@
 # 19 · Website and help
 
-A public website built with Astro and Starlight that holds everything people read about Spine — the home page at `<domain>` (`apps/site`) and, at `docs.<domain>` (`apps/docs`), a task-based user guide, a self-hosting guide, developer docs and a generated API reference. The same user guide is bundled into every Spine install, so the in-app Help menu works without internet and always matches the running version.
+A public website built with Astro and Starlight that holds everything people read about Spine — the home page at `h4loom.com` (`apps/site`) and, at `docs.h4loom.com` (`apps/docs`), a task-based user guide, a self-hosting guide, developer docs and a generated API reference. The same user guide is bundled into every Spine install, so the in-app Help menu works without internet and always matches the running version.
 
 **Screens:** `SiteHome` (P1), `SiteHomeDark` (P2), `SiteUserGuide` (P1), `SiteUserGuideDark` (P2), `SiteSelfHosting` (P1), `SiteApiReference` (P2), `SiteSearch` (P2), `AppHelpMenu` (P1), `BundledGuide` (P1)
 **Depends on:** 18 Self-hosting (install, backups, storage), 05-api (OpenAPI document), design tokens, `apps/e2e` (screenshot capture).
@@ -25,7 +25,7 @@ A public website built with Astro and Starlight that holds everything people rea
 Decision: D-108
 
 **Acceptance criteria**
-- **Given** the monorepo, **when** I run `pnpm --filter @spine/docs dev`, **then** an Astro + Starlight site starts with the sections "Get started", "User guide", "Self-hosting" and "Developers" in its sidebar; `pnpm --filter @spine/site dev` starts the home page, whose links lead to `docs.<domain>`.
+- **Given** the monorepo, **when** I run `pnpm --filter @spine/docs dev`, **then** an Astro + Starlight site starts with the sections "Get started", "User guide", "Self-hosting" and "Developers" in its sidebar; `pnpm --filter @spine/site dev` starts the home page, whose links lead to `docs.h4loom.com`.
 - **Given** the site, **when** it renders, **then** its accent colour, fonts, radius and logo come from `docs/design/tokens.json` and the Spine wordmark, and it looks like the `SiteUserGuide` design.
 - **Given** a reader's system or the theme menu ("Auto", "Light", "Dark"), **when** they change it, **then** the whole site switches, matching `SiteUserGuideDark` (D-100).
 - **Given** the build, **when** it runs, **then** every internal link is checked and the build fails on a broken one.
@@ -209,7 +209,7 @@ Decision: D-111
 Decision: D-270
 
 **Acceptance criteria**
-- **Given** a merge to `main` that changes `apps/site/**`, `apps/docs/**` or the API's OpenAPI document, **when** Cloudflare Pages sees it, **then** the changed project is built and deployed: the home page at `<domain>`, the docs at `docs.<domain>` (placeholder until the Owner names the domain, Q-15).
+- **Given** a merge to `main` that changes `apps/site/**`, `apps/docs/**` or the API's OpenAPI document, **when** Cloudflare Pages sees it, **then** the changed project is built and deployed: the home page at `h4loom.com`, the docs at `docs.h4loom.com` (placeholder until the Owner names the domain, Q-15).
 - **Given** a branch, **when** it's pushed, **then** each changed project gets a preview address to check before merging.
 - **Given** a merge that doesn't touch the site, **when** it lands, **then** the publish workflow doesn't run.
 - **Given** the build fails (e.g. a broken link), **when** the workflow runs, **then** the live site is left unchanged and the run fails.

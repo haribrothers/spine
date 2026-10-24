@@ -1,7 +1,7 @@
 # US-MOB-23 — Search finds a job the demo Field user is on, opens it in the
 # Jobs tab and remembers the search. On iOS Search is the tab bar's search
 # button; on Android the fourth tab. Run like us-mob-01-sign-in.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - runFlow:

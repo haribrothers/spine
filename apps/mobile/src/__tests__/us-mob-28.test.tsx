@@ -3,7 +3,6 @@ import { versionLine } from "../lib/app-version";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const appConfig = require("../../app.config.js") as (ctx: { config: Record<string, unknown> }) => Record<string, any>;
 const appJson = require("../../app.json") as { expo: Record<string, unknown> };
-const eas = require("../../eas.json") as { build: Record<string, any> };
 const root = require("../../../../package.json") as { version: string };
 
 describe("US-MOB-28 · give testers the field app through TestFlight and an APK", () => {
@@ -19,14 +18,25 @@ describe("US-MOB-28 · give testers the field app through TestFlight and an APK"
     expect(versionLine("1.0.1", null)).toBe("Spine 1.0.1");
   });
 
-  it("a beta build goes to TestFlight on iPhone and is an APK on Android; every build's number goes up so testers get updates", () => {
-    expect(eas.build.beta.ios.distribution).toBe("store");
-    expect(eas.build.beta.android).toMatchObject({ distribution: "internal", buildType: "apk" });
-    expect(eas.build.beta.autoIncrement).toBe(true);
-    expect(eas.build.production.android.buildType).toBe("app-bundle");
+  it("each build's number (the commit count, from build-beta.sh) is iOS's build number and Android's versionCode, so testers get updates", () => {
+    process.env.SPINE_BUILD_NUMBER = "412";
+    try {
+      const config = appConfig({ config: appJson.expo });
+      expect(config.ios.buildNumber).toBe("412");
+      expect(config.android.versionCode).toBe(412);
+    } finally {
+      delete process.env.SPINE_BUILD_NUMBER;
+    }
+    expect(appConfig({ config: appJson.expo }).android.versionCode).toBeUndefined();
   });
 
-  it("the bundle id can be set for the first upload, from the domain", () => {
+  it("the app is com.h4loom.spine (D-271)", () => {
+    const config = appConfig({ config: appJson.expo });
+    expect(config.ios.bundleIdentifier).toBe("com.h4loom.spine");
+    expect(config.android.package).toBe("com.h4loom.spine");
+  });
+
+  it("a test build can use another bundle id", () => {
     process.env.SPINE_IOS_BUNDLE_ID = "com.example.spine";
     process.env.SPINE_ANDROID_PACKAGE = "com.example.spine";
     try {

@@ -4,7 +4,7 @@
 #   maestro --device emulator-5554 test -e SERVER=http://10.0.2.2:4000 \
 #     -e DEV_CLIENT_URL='spine://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8081' \
 #     apps/mobile/e2e/us-mob-07-offline.yaml
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 # Sync starts empty.

@@ -1,13 +1,13 @@
 # Shared by the flows: launches the app, and on a development build (where
 # Expo's dev launcher shows first after a clean state) opens the bundle from
 # Metro. Release and preview builds skip straight past this.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow:
     when:
       visible: "Development servers"
     commands:
-      - openLink: ${DEV_CLIENT_URL || "com.spine.app://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"}
+      - openLink: ${DEV_CLIENT_URL || "com.h4loom.spine://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"}
 - runFlow:
     when:
       visible: "Continue"

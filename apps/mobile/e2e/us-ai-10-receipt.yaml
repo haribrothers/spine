@@ -6,7 +6,7 @@
 #   adb push hp-fuel-receipt.jpg /sdcard/Pictures/ && adb shell am broadcast \
 #     -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/hp-fuel-receipt.jpg
 # Run like us-mob-13-expense.yaml.
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - runFlow: _sign-in.yaml
 - tapOn: "Expenses"

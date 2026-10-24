@@ -839,7 +839,7 @@ Decision: D-262
 Decision: D-265
 
 **Acceptance criteria**
-- **Given** `docs/beta.md`, **when** the Owner follows it on a small VPS, **then** they have the beta at `https://beta.<domain>` with HTTPS, sign-up closed, backups on, and testers invited by email.
+- **Given** `docs/beta.md`, **when** the Owner follows it on a small VPS, **then** they have the beta at `https://beta.h4loom.com` with HTTPS, sign-up closed, backups on, and testers invited by email.
 - **Given** a beta version, **when** anyone opens Settings › About (web) or Profile (field app), **then** it shows the version, with a "Beta" label on a pre-release.
 - **Given** the next beta is tagged, **when** the Owner runs `./scripts/upgrade.sh` on the beta server, **then** testers' data carries over (US-OPS-50).
 - **Given** a tester finds a problem, **when** they read `docs/beta.md`'s "Reporting a problem", **then** it tells them what to send (what they did, what they expected, a screenshot, the version) and where.

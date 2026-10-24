@@ -6,7 +6,7 @@ name: Release
 #   `latest` too unless it's a pre-release (vX.Y.Z-beta.N, -rc.N);
 # - a GitHub release (a pre-release for a suffixed tag) with the install,
 #   backup, restore and upgrade scripts, the Compose file pulling those images,
-#   the Caddyfile, .env.example and SHA-256 checksums.
+#   the Caddyfile, .env.example, the Coolify Compose file and SHA-256 checksums.
 # arm64 images build on GitHub's arm64 runners, which public repos get free;
 # while the repo is private, pre-releases are amd64 only.
 on:
@@ -152,6 +152,7 @@ jobs:
           mkdir dist
           node scripts/release/release-compose.mjs "$VERSION" > dist/docker-compose.yml
           cp docker/Caddyfile .env.example dist/
+          cp docker/coolify/docker-compose.yml dist/docker-compose.coolify.yml
           for script in install.sh backup.sh restore.sh upgrade.sh; do cp "scripts/$script" dist/; done
           (cd dist && sha256sum -- * .env.example > SHA256SUMS)
         env:
@@ -168,74 +169,3 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
           PRERELEASE: ${{ needs.version.outputs.prerelease }}
-
-  # US-MOB-28 (D-265): a beta's field app — iOS to TestFlight, Android as an APK
-  # on the GitHub release. Built on EAS (Expo's build service); needs the
-  # EXPO_TOKEN secret and the one-time setup in docs/beta.md › The phone app,
-  # and is skipped with a notice until then.
-  mobile-beta:
-    name: Field app beta (TestFlight and APK)
-    needs: [version, github-release]
-    if: needs.version.outputs.prerelease == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      SPINE_IOS_BUNDLE_ID: ${{ vars.SPINE_IOS_BUNDLE_ID }}
-      SPINE_ANDROID_PACKAGE: ${{ vars.SPINE_ANDROID_PACKAGE }}
-      EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
-    steps:
-      - name: Is EAS set up?
-        id: eas
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "::notice::There's no EXPO_TOKEN secret, so the field app wasn't built. See docs/beta.md › The phone app."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          fi
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Checkout
-        if: steps.eas.outputs.ready == 'true'
-        uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        if: steps.eas.outputs.ready == 'true'
-        uses: pnpm/action-setup@v4
-
-      - name: Set up Node
-        if: steps.eas.outputs.ready == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        if: steps.eas.outputs.ready == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Set up EAS
-        if: steps.eas.outputs.ready == 'true'
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      # Built and sent to TestFlight by EAS; testers get it once Apple has processed it.
-      - name: Build for TestFlight
-        if: steps.eas.outputs.ready == 'true'
-        working-directory: apps/mobile
-        run: eas build --profile beta --platform ios --non-interactive --no-wait --auto-submit
-
-      - name: Build the APK and attach it to the release
-        if: steps.eas.outputs.ready == 'true'
-        working-directory: apps/mobile
-        run: |
-          eas build --profile beta --platform android --non-interactive --wait --json > build.json
-          url=$(node -p "require('./build.json')[0].artifacts.buildUrl")
-          curl -fsSL -o "spine-$VERSION.apk" "$url"
-          gh release upload "$GITHUB_REF_NAME" "spine-$VERSION.apk" --clobber
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.version.outputs.version }}

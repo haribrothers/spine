@@ -8,7 +8,16 @@
  * archives go off the machine) and prunes old remote copies, then records the
  * time as every organisation's last backup. Exits 1, leaving no partial file,
  * on any failure.
+ *
+ *   node apps/api/dist/scripts/backup.js --remote-only
+ *
+ * names the archive itself, uploads it (BACKUP_REMOTE and BACKUP_PASSPHRASE
+ * are required) and keeps no local copy — for a platform's scheduled task,
+ * such as Coolify's (docs/self-hosting-coolify.md).
  */
+import { rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createDb } from "../db/client";
 import { createStorageDrivers } from "../modules/files/storage/storage-config";
 import { createBackup } from "../ops/backup/backup";
@@ -23,7 +32,9 @@ function arg(name: string): string | undefined {
 const say = (line: string) => process.stderr.write(`${line}\n`);
 
 async function main(): Promise<number> {
-  const output = arg("output");
+  const remoteOnly = process.argv.includes("--remote-only");
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
+  const output = remoteOnly ? join(tmpdir(), `spine-backup-${stamp}.tar.gz.enc`) : arg("output");
   if (!output || !/spine-backup-\d{8}-\d{6}\.tar\.gz(\.enc)?$/.test(output)) {
     say("Usage: backup.js --output <folder>/spine-backup-<YYYYMMDD-HHMMSS>.tar.gz[.enc]");
     return 2;
@@ -33,6 +44,10 @@ async function main(): Promise<number> {
     return 2;
   }
   const passphrase = process.env.BACKUP_PASSPHRASE || undefined;
+  if (remoteOnly && (!process.env.BACKUP_REMOTE || !passphrase)) {
+    say("--remote-only copies the backup off this machine and keeps none here, so it needs BACKUP_REMOTE (and its keys) and BACKUP_PASSPHRASE.");
+    return 1;
+  }
   if (Boolean(passphrase) !== output.endsWith(".enc")) {
     say(passphrase ? "With a passphrase the archive's name ends in .tar.gz.enc." : "Without a passphrase the archive's name ends in .tar.gz.");
     return 2;
@@ -49,8 +64,12 @@ async function main(): Promise<number> {
   say(`Backed up the database and ${result.manifest.files.count} file${result.manifest.files.count === 1 ? "" : "s"}.`);
   if (remote) {
     say(`Copying it to s3://${remote.bucket}/${remote.prefix}…`);
-    const { pruned } = await uploadAndPrune(remote, result.path);
+    const { key, pruned } = await uploadAndPrune(remote, result.path);
     say(`Copied.${pruned ? ` Removed ${pruned} older cop${pruned === 1 ? "y" : "ies"} (7 daily and 4 weekly are kept).` : ""}`);
+    if (remoteOnly) {
+      await rm(result.path, { force: true });
+      say(`Backup saved: s3://${remote.bucket}/${key}`);
+    }
   }
   await recordBackup(db, now);
   return 0;

@@ -1,6 +1,6 @@
 # Shared by the US-AI-10 flows: New expense › "Choose a photo" › the receipt
 # added to the phone's library before the run (QA §243 / us-ai-10-receipt.yaml).
-appId: com.spine.app
+appId: com.h4loom.spine
 ---
 - tapOn:
     id: "receipt-choose"
