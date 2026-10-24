@@ -114,14 +114,14 @@ if [ "$layout" = release ]; then
   staged=$(mktemp -d)
   trap 'rm -rf "$staged"' EXIT
   if [ -n "$files" ]; then
-    for f in docker-compose.yml Caddyfile .env.example install.sh backup.sh restore.sh upgrade.sh SHA256SUMS; do
+    for f in docker-compose.yml Caddyfile env.example install.sh backup.sh restore.sh upgrade.sh SHA256SUMS; do
       [ ! -f "$files/$f" ] || cp "$files/$f" "$staged/$f"
     done
     [ -f "$staged/docker-compose.yml" ] || fail "There's no docker-compose.yml in $files."
   else
     command -v curl >/dev/null 2>&1 || fail "curl isn't installed. Download Spine $target's release files and run ./upgrade.sh --version $target --files <folder>."
     say "Downloading Spine $target's files…"
-    for f in docker-compose.yml Caddyfile .env.example install.sh backup.sh restore.sh upgrade.sh SHA256SUMS; do
+    for f in docker-compose.yml Caddyfile env.example install.sh backup.sh restore.sh upgrade.sh SHA256SUMS; do
       curl -fsSL -o "$staged/$f" "https://github.com/$REPO/releases/download/v$target/$f" || fail "Couldn't download $f for Spine $target. Check the version, or download the files yourself and use --files."
     done
   fi
@@ -141,7 +141,7 @@ backup=$(printf '%s\n' "$backup_out" | sed -n 's/^Backup saved: \(.*\) (.*)$/\1/
 
 if [ -n "$staged" ]; then
   mkdir -p .previous
-  for f in docker-compose.yml Caddyfile .env.example install.sh backup.sh restore.sh upgrade.sh; do
+  for f in docker-compose.yml Caddyfile env.example install.sh backup.sh restore.sh upgrade.sh; do
     [ ! -f "$f" ] || cp -p "$f" ".previous/$f"
     # Renamed into place: this script keeps running from its own copy while upgrade.sh is replaced.
     if [ -f "$staged/$f" ]; then

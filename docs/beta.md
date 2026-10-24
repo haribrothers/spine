@@ -35,10 +35,12 @@ The repo and its images are private until 1.0. So the server needs a GitHub toke
 
    ```sh
    mkdir -p ~/spine && cd ~/spine
-   gh release download v1.0.0-beta.1 --repo haribrothers/spine
+   gh release download v1.0.0-beta.2 --repo haribrothers/spine
    chmod +x *.sh
    ./install.sh --app-url https://beta.h4loom.com
    ```
+
+   With `v1.0.0-beta.1` only, first run `mv default.env.example .env.example`: GitHub renamed that file because its name starts with a dot. Later releases ship it as `env.example`.
 
    It prints "Spine is running at https://beta.h4loom.com — open it to create the first account."
 

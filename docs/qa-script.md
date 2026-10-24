@@ -5448,7 +5448,7 @@ Connect Claude Code (section 250) as each role in turn.
 1. `node scripts/release/version.mjs v1.0.0-beta.1` prints `version=1.0.0-beta.1` and `prerelease=true`. `node scripts/release/version.mjs v1.0.0` fails, saying the tag doesn't match the root `package.json` version.
 2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api and web services read `image: ghcr.io/haribrothers/spine-api:1.0.0-beta.1` (and `spine-web`), there's no `build:`, and the Caddyfile mounts from `./Caddyfile`.
 3. Build the web image (`docker build -f docker/Dockerfile.web .`) and run the stack: signing in works at `http://localhost`, and in the browser's network tab, API calls go to `http://localhost/api/...`, not port 4000.
-4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `Caddyfile`, `.env.example` and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`).
+4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `docker-compose.coolify.yml`, `Caddyfile`, `env.example` (not `default.env.example`) and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`). `./install.sh` works straight from the downloaded files.
 5. Regression: pull requests still run only lint, typecheck, unit (now with script tests) and integration; "Release" doesn't appear on a PR.
 
 ## 260. Install Spine with one command (US-OPS-01, Phase 12)

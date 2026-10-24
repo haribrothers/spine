@@ -47,8 +47,8 @@ function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = 
     writeFileSync(join(files, "docker-compose.yml"), releaseCompose(compose, next));
     for (const f of ["install.sh", "backup.sh", "restore.sh", "upgrade.sh"]) writeFileSync(join(files, f), `#!/bin/sh\n# ${next}\n`);
     copyFileSync(join(repo, "docker/Caddyfile"), join(files, "Caddyfile"));
-    copyFileSync(join(repo, ".env.example"), join(files, ".env.example"));
-    const sums = ["docker-compose.yml", "install.sh", "backup.sh", "restore.sh", "upgrade.sh", "Caddyfile", ".env.example"]
+    copyFileSync(join(repo, ".env.example"), join(files, "env.example"));
+    const sums = ["docker-compose.yml", "install.sh", "backup.sh", "restore.sh", "upgrade.sh", "Caddyfile", "env.example"]
       .map((f) => `${createHash("sha256").update(readFileSync(join(files, f))).digest("hex")}  ${f}`)
       .join("\n");
     writeFileSync(join(files, "SHA256SUMS"), `${sums}\n`);

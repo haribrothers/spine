@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-24 — 1.0.0-beta.2: the release's env.example keeps its name
+
+- **What was wrong in 1.0.0-beta.1:** GitHub renames a release file whose name starts with a dot, so `.env.example` was published as `default.env.example`. `install.sh` from a downloaded release then stopped ("env.example is missing"). Workaround for beta.1: `mv default.env.example .env.example`.
+- **Fix:** releases publish it as `env.example`, and the checksums and `upgrade.sh`'s downloads use that name. `install.sh` takes `.env.example` (a clone) or `env.example` (a release). upgrade-verify renames beta.1's file when it installs beta.1 as the previous release.
+- **Version:** `1.0.0-beta.2`, in the root `package.json` and both Compose files.
+- **Tests:** `us-ops-01` now installs from both names, and `us-ops-50` uses `env.example`.
+
 ### 2026-10-24 — h4loom.com, Mac-built beta apps, and Spine on Coolify (D-271)
 
 - **Domain and app id:** `h4loom.com` (home page), `docs.h4loom.com`, `beta.h4loom.com` and `demo.h4loom.com`. The field app is `com.h4loom.spine` on iOS and Android, set in `app.json` and the Maestro flows. Q-15 is closed.

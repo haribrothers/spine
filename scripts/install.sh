@@ -104,7 +104,10 @@ random() {
 if [ -f .env ]; then
   say "Keeping your existing .env — nothing in it is changed."
 else
-  [ -f .env.example ] || fail ".env.example is missing. Download the release's files again, or run this from a clone."
+  # A clone has .env.example; a release has env.example (GitHub renames files starting with a dot).
+  template=.env.example
+  [ -f "$template" ] || template=env.example
+  [ -f "$template" ] || fail "env.example is missing. Download the release's files again, or run this from a clone."
   if [ "$interactive" -eq 1 ]; then
     printf 'The address people will open Spine at [http://localhost]: '
     read -r app_url || app_url=
@@ -128,7 +131,7 @@ else
     /^POSTGRES_PASSWORD=/ { print "POSTGRES_PASSWORD=" db_password; next }
     /^DATABASE_URL=/ { print "DATABASE_URL=postgres://spine:" db_password "@db:5432/spine"; next }
     { print }
-  ' .env.example >.env
+  ' "$template" >.env
   say "Created .env for $app_url, with a random AUTH_SECRET and database password."
 fi
 
