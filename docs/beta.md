@@ -121,7 +121,13 @@ cd ~/spine
 ./upgrade.sh --version 1.0.0-beta.2
 ```
 
-It backs up first, downloads the new version's files, restarts, and prints "Spine is now 1.0.0-beta.2. Your backup is …". Everyone's data carries over. Testers see the new version under Settings › About Spine.
+It backs up first, downloads the new version's files, checks them, hands over to the new version's own `upgrade.sh`, restarts, and prints "Spine is now 1.0.0-beta.2. Your backup is …".
+
+From `1.0.0-beta.1` only, take the new script first, because beta.1's predates that hand-over:
+
+```sh
+gh release download v1.0.0-beta.2 --repo haribrothers/spine --pattern upgrade.sh --clobber && chmod +x upgrade.sh
+``` Everyone's data carries over. Testers see the new version under Settings › About Spine.
 
 Phones update through TestFlight. On Android, testers install the new APK over the old one.
 

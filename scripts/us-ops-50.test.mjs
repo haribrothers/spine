@@ -28,7 +28,7 @@ echo "Backup saved: backups/spine-backup-20261024-020000.tar.gz (1.4M)"
 `;
 
 /** An installed release (1.0.0-beta.1) and the next one's files in a folder. */
-function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = true } = {}) {
+function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = true, nextUpgrade = null } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "spine-upgrade-"));
   const bin = join(dir, "bin");
   mkdirSync(bin);
@@ -45,7 +45,9 @@ function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = 
   if (nextFiles) {
     mkdirSync(files);
     writeFileSync(join(files, "docker-compose.yml"), releaseCompose(compose, next));
-    for (const f of ["install.sh", "backup.sh", "restore.sh", "upgrade.sh"]) writeFileSync(join(files, f), `#!/bin/sh\n# ${next}\n`);
+    for (const f of ["install.sh", "backup.sh", "restore.sh"]) writeFileSync(join(files, f), `#!/bin/sh\n# ${next}\n`);
+    // The same upgrade.sh as the installed one, unless a test gives the next version its own.
+    writeFileSync(join(files, "upgrade.sh"), nextUpgrade ?? readFileSync(join(repo, "scripts/upgrade.sh"), "utf8"));
     copyFileSync(join(repo, "docker/Caddyfile"), join(files, "Caddyfile"));
     copyFileSync(join(repo, ".env.example"), join(files, "env.example"));
     const sums = ["docker-compose.yml", "install.sh", "backup.sh", "restore.sh", "upgrade.sh", "Caddyfile", "env.example"]
@@ -74,6 +76,20 @@ describe("US-OPS-50 · upgrade Spine with one command", () => {
     assert.match(readFileSync(join(install, ".previous/docker-compose.yml"), "utf8"), /SPINE_VERSION:-1\.0\.0-beta\.1/);
     assert.match(result.calls, /^compose --profile minimal up -d --no-build --wait/m);
     assert.match(result.stdout, /Spine is now 1\.0\.0-beta\.2\. Your backup is backups\/spine-backup-20261024-020000\.tar\.gz\./);
+  });
+
+  it("hands over to the new version's own upgrade.sh, once, so an old script never trips on a new release", () => {
+    const real = readFileSync(join(repo, "scripts/upgrade.sh"), "utf8");
+    const nextUpgrade = real.replace("set -eu\n", 'set -eu\necho "next upgrade.sh: $*" >> "$FAKE_DOCKER_LOG"\n');
+    const { run, files, read } = setup({ nextUpgrade });
+    const result = run(["--version", "1.0.0-beta.2", "--files", files]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Handing over to Spine 1\.0\.0-beta\.2's own upgrade\.sh/);
+    const handed = result.calls.split("\n").filter((l) => l.startsWith("next upgrade.sh:"));
+    assert.equal(handed.length, 1, "handed over once");
+    assert.match(handed[0], /--version 1\.0\.0-beta\.2 --files \S+ --from \S+/);
+    assert.match(read(".env"), /^SPINE_VERSION=1\.0\.0-beta\.2$/m);
+    assert.match(result.stdout, /Spine is now 1\.0\.0-beta\.2\./);
   });
 
   it("does nothing when it's already that version, and never goes back one", () => {
