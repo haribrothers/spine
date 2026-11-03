@@ -648,7 +648,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 ### Milestone 2 · 1.0 — onboarding & first run
 
 - [x] US-ONB-09 · Load demo data to explore
-- [ ] US-SET-08 · Remove demo data and keep my real data
+- [x] US-SET-08 · Remove demo data and keep my real data
 - [ ] US-OPS-02 · Start with demo data from an environment flag
 
 ### Milestone 2 · system states and the web app on a phone

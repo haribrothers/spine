@@ -5552,6 +5552,15 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 6. Settings › Data › Delete all demo data still removes only the demo, including the weekly meeting and every occurrence you changed.
 7. Regression: with storage working, the picker closes as soon as the demo loads, with no message (sections 187 and 208).
 
+## 268. Remove demo data and keep my real data (US-SET-08, Phase 12)
+
+1. With demo data loaded, as an Owner open Settings › Data. It reads "Demo data is loaded", names the demo business, and says "Removing it only deletes demo records — your real data is never touched." with "Delete all demo data".
+2. Add a customer of your own. Press "Delete all demo data": "Delete all demo data?" explains what goes (every demo record and its entries in your books), that your own records stay and the demo people lose access, with "Cancel" and "Delete demo data". Cancel deletes nothing.
+3. Press it again and choose "Delete demo data". The button shows "Deleting…", then a toast says "Demo data deleted · Your own records stay." The pane reads "No demo data is currently loaded." Your customer is still in Contacts, and the demo people (e.g. Sarah Mendes) are gone from Team › Users and can't open the business any more.
+4. If one of your own records used a demo contact, the toast and the pane also say "Kept 1 demo contact that your own records use."
+5. Stop the API and try again: the pane shows what went wrong and keeps "Demo data is loaded".
+6. Regression: Staff and Field never see Settings › Data, and `DELETE /demo-data` gives them 403 (US-OPS-20). Loading demo data from the pane still works (section 187).
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

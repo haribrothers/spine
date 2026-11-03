@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-03 — Remove demo data and keep my real data (US-SET-08)
+
+- **Settings › Data:** "Delete all demo data" now asks with the app's `useConfirm()` (D-218): "Delete all demo data?", what goes, that your own records stay and the demo people lose access, with "Cancel" and "Delete demo data". It then says what happened with the app's toast (D-223), "Demo data deleted · Your own records stay.", in place of Settings' generic "Saved". A failed delete used to fail silently. Now the pane shows the server's message and keeps the demo shown. The button reads "Deleting…" while it works.
+- **Tests:** a `us-set-08` integration test (the demo goes, the demo people's memberships go, the Owner and their own customer stay, the status says so) and a web test of the pane's wording, confirm, toast and error. QA section 268.
+
 ### 2026-11-03 — Load demo data to explore (US-ONB-09)
 
 - **A recurring meeting in every demo business:** each one's internal planning meeting ("Weekly crew scheduling" for Riverstone Builders, "Studio planning" for interior design, and so on) now repeats weekly for 12 weeks. Editing one shows the "This event" / "All events" choice (finding C5). The plans carry `weeklyFor`.
