@@ -110,6 +110,6 @@ export const IT_SERVICES: IndustryPack = {
     { title: "Sprint review — customer portal", slot: "anchor", startInDays: -3, durationHours: 1, atSite: false, description: "Demo of the account pages." },
     { title: "Weekly call — booking engine", slot: "overseas", startInDays: -7, durationHours: 1, atSite: false, description: "Video call with the client's CTO." },
     { title: "Security review — booking app", slot: "institution", startInDays: 3, durationHours: 2, atSite: true, description: null },
-    { title: "Sprint planning", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — next sprint's priorities." },
+    { title: "Sprint planning", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — next sprint's priorities.", weekly: true },
   ],
 };

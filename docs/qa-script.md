@@ -5542,6 +5542,16 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 7. Behind Cloudflare Access with the Bypass application for `api/*`, `.well-known/*` and `quote/*`: `curl <address>/api/health` answers with the version, the phone app signs in, and a quote link opens without Access. The web pages still ask for Access's sign-in first.
 8. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
 
+## 267. Load demo data to explore (US-ONB-09, Phase 12)
+
+1. On a new business, on the welcome screen choose "Just show me around (use defaults)" and load United States, Construction / Contracting. Riverstone Builders loads with contacts, items, leads, quotes in several states, three jobs, invoices with payments and retention, bills, expenses, meetings and the demo people.
+2. Open every report: each shows figures, and the trial balance balances.
+3. Meetings: "Weekly crew scheduling" repeats every week for 12 weeks, starting tomorrow. Edit one occurrence: "This event" / "All events" appears. Move just this event an hour later, and the other weeks stay where they were. Every other demo business has one weekly meeting too (e.g. "Studio planning" for interior design). The other demo meetings don't repeat.
+4. Each demo job's Photos tab shows real photos, not blank tiles.
+5. Storage down: with `STORAGE_DRIVER=s3` pointed at a bucket that doesn't answer, load the demo from Settings › Data. It loads, and the picker says "Riverstone Builders is loaded. Photos skipped — file storage isn't reachable." with Continue. Jobs have no photos, expenses no receipts and the business no logo; everything else is there. Loading doesn't stop on each file: the first failure skips the rest.
+6. Settings › Data › Delete all demo data still removes only the demo, including the weekly meeting and every occurrence you changed.
+7. Regression: with storage working, the picker closes as soon as the demo loads, with no message (sections 187 and 208).
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

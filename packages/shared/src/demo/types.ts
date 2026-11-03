@@ -315,6 +315,8 @@ export interface DemoPlanMeeting {
   durationHours: number;
   location: string | null;
   description: string | null;
+  /** US-ONB-09 (finding C5) — repeats weekly this many times, so editing it asks "This event" or "All events". */
+  weeklyFor?: number;
 }
 
 export interface DemoPlan {

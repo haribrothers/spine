@@ -59,7 +59,7 @@ import {
 import { AuditLogService, type AuditEntityType } from "../audit/audit-log.service";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
-import { DemoSeederService } from "./demo-seeder.service";
+import { DemoSeederService, PHOTOS_SKIPPED_NOTE } from "./demo-seeder.service";
 
 /** `settings.demo_data` — which demo is loaded, and the setup it added (D-192). */
 export const DEMO_DATA_KEY = "demo_data";
@@ -139,7 +139,8 @@ export class DemoDataService {
     }
     const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds, createdBundleIds: result.createdBundleIds, createdCategoryIds: result.createdCategoryIds, defaultedCategoryIds: result.defaultedCategoryIds };
     await this.settingsService.set(orgId, DEMO_DATA_KEY, loaded);
-    return { country, industry, businessName: plan.business.name, ...result.counts };
+    // US-ONB-09: loaded without its files when storage didn't take them, and says so.
+    return { country, industry, businessName: plan.business.name, ...result.counts, notes: result.photosSkipped ? [PHOTOS_SKIPPED_NOTE] : [] };
   }
 
   /**

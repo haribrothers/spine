@@ -110,6 +110,6 @@ export const INTERIOR_DESIGN: IndustryPack = {
     { title: "Finishes sign-off — office fit-out", slot: "anchor", startInDays: -3, durationHours: 1, atSite: true, description: "Approve the laminate and fabric samples." },
     { title: "Concept presentation — villa interiors", slot: "overseas", startInDays: -14, durationHours: 1, atSite: false, description: "Video call to walk through the 3D views." },
     { title: "Lighting mock-up — showroom", slot: "regional", startInDays: 3, durationHours: 2, atSite: true, description: null },
-    { title: "Studio planning", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — installs and deliveries for next week." },
+    { title: "Studio planning", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — installs and deliveries for next week.", weekly: true },
   ],
 };

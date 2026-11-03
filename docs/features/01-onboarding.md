@@ -186,7 +186,7 @@ Legacy: S-12.8
 - Data: `is_demo` columns; demo users' memberships.
 - UI: `WelcomeStep`, `SettingsDemoData`.
 - Edge: seeding twice doesn't duplicate users (memberships are re-pointed).
-- Status: seeding, status and deletion are built (Phase 1); this story stays open for the recurring-meeting and photo criteria (findings C5, C10).
+- Status: seeding, status and deletion are built (Phase 1); the photos are US-JOB-38's (D-215). Phase 12 adds the recurring meeting (each business's internal planning meeting, weekly for 12 weeks, `weeklyFor` in the plan) and loading without files when storage fails: one upload helper in the seeder stops trying after the first 503/507 and the response's `notes` says so; the picker shows it with Continue.
 - Security: seeding and deleting demo data are Owner-only (US-OPS-20).
 
 ### US-ONB-10 · Follow a checklist to my first transaction

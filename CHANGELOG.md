@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-03 — Load demo data to explore (US-ONB-09)
+
+- **A recurring meeting in every demo business:** each one's internal planning meeting ("Weekly crew scheduling" for Riverstone Builders, "Studio planning" for interior design, and so on) now repeats weekly for 12 weeks. Editing one shows the "This event" / "All events" choice (finding C5). The plans carry `weeklyFor`.
+- **Loads when file storage is down:** the demo's logo, job and milestone photos and receipts go through one upload helper. After the first upload storage refuses (503 or 507), it skips the rest, so the demo loads without them instead of failing with every row rolled back. `POST /demo-data/seed` returns `notes` (`"Photos skipped — file storage isn't reachable."`), and the picker shows it with Continue rather than closing. Real photos (finding C10) came with US-JOB-38.
+- **Tests:** `us-onb-09` integration tests (the weekly meeting and editing one occurrence of it, another industry's, storage refusing uploads), a shared test that all 35 demo businesses have one weekly meeting, and a web test of the picker's note. QA section 267.
+
 ### 2026-11-03 — An Android-only beta, and the keystore checked before the build (US-MOB-28, D-272)
 
 - **Android only for now:** the field team uses Android, and TestFlight needs the Apple Developer Program, so the beta can ship just the APK (`build-beta.sh --android`). iPhone joins once the Owner enrols. `docs/beta.md` › The phone app now leads with Android and says how to share the APK while the repo is private: Google Drive or Firebase App Distribution, since testers can't download from a private GitHub release.
