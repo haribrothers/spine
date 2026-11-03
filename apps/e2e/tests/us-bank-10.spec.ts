@@ -12,13 +12,15 @@ test.describe("US-BANK-10", () => {
       expect(res.ok(), await res.text()).toBe(true);
       return (await res.json()) as T;
     };
+    // Dated today: the register opens on "This month", so a fixed date drops out of it once the month turns.
+    const today = new Date().toLocaleDateString("en-CA");
     const bank = ((await (await page.request.get(`${API_URL}/money-accounts`)).json()) as { id: string; code: string }[]).find((a) => a.code === "1010")!;
     const contact = await post<{ id: string }>("/contacts", { type: "customer", name: "Maple Ridge Developments" });
-    const payment = await post<{ id: string; number: string }>("/payments", { contactId: contact.id, date: "2026-10-02", method: "bank_transfer", currency: "USD", amount: "454250", moneyAccountId: bank.id });
+    const payment = await post<{ id: string; number: string }>("/payments", { contactId: contact.id, date: today, method: "bank_transfer", currency: "USD", amount: "454250", moneyAccountId: bank.id });
     const res = await page.request.post(`${API_URL}/money-accounts/${bank.id}/statement-imports`, {
       headers: { "Idempotency-Key": randomUUID() },
       multipart: {
-        file: { name: "statement.csv", mimeType: "text/csv", buffer: Buffer.from("Date,Description,Amount\n2026-10-02,NEFT-MAPLE RIDGE DEV,4542.50\n") },
+        file: { name: "statement.csv", mimeType: "text/csv", buffer: Buffer.from(`Date,Description,Amount\n${today},NEFT-MAPLE RIDGE DEV,4542.50\n`) },
         mapping: JSON.stringify({ date: "Date", dateFormat: "YYYY-MM-DD", description: "Description", amountMode: "single", amount: "Amount" }),
       },
     });
