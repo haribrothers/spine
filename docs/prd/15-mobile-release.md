@@ -22,7 +22,7 @@ The bundle id comes from the domain, `h4loom.com` (D-271). It can't change after
 | Track | Built by | Audience |
 |---|---|---|
 | Development | `pnpm dev:mobile` with a dev client (`expo run:ios` / `run:android`) | Developers; required because `@expo/ui` needs native code (no Expo Go) |
-| Beta | `scripts/mobile/build-beta.sh` on the Owner's Mac, from the beta's tag (US-MOB-28, [D-271](12-decisions.md)): Xcode archives and uploads to App Store Connect; Gradle builds a signed APK (64-bit ARM), attached to the GitHub release with `--upload` | Testers during the beta: iOS through TestFlight, Android as the APK ([D-265](12-decisions.md)) |
+| Beta | `scripts/mobile/build-beta.sh` on the Owner's Mac, from the beta's tag (US-MOB-28, [D-271](12-decisions.md)): Xcode archives and uploads to App Store Connect; Gradle builds a signed APK (64-bit ARM), attached to the GitHub release with `--upload`; the keystore is checked before building | Testers during the beta: Android as the APK, shared by Google Drive or Firebase App Distribution while the repo is private; iOS through TestFlight once the Owner is in the Apple Developer Program ([D-265](12-decisions.md), [D-272](12-decisions.md)) |
 | Production | GitHub's macOS runners with fastlane on the v1.0 tag, once the repo is public (US-MOB-29, D-271) | App Store and Play Store, submitted after the v1.0 tag ([D-266](12-decisions.md)) |
 
 - Signing: iOS with Xcode's automatic signing under the Owner's Apple team; Android with the Owner's release keystore (`SPINE_ANDROID_KEYSTORE` and its passwords), which every update must use. Credentials never live in the repo; from 1.0 they're GitHub secrets for the macOS runners.

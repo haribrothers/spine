@@ -643,7 +643,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-04 · Restore a backup into a clean install
 - [x] US-OPS-50 · Upgrade Spine with one command
 - [x] US-OPS-52 · Run a beta for testers
-- [x] US-MOB-28 · Give testers the field app through TestFlight and an APK
+- [x] US-MOB-28 · Give testers the field app through TestFlight and an APK (Android only for the beta, D-272: TestFlight once the Owner joins the Apple Developer Program)
 
 ### Milestone 2 · 1.0 — onboarding & first run
 

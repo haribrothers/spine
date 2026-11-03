@@ -71,46 +71,55 @@ The repo and its images are private until 1.0. So the server needs a GitHub toke
 
 - **Team › Users › Invite** sends each tester an email to join. Invite people as Staff, or as Field for someone who'll use only the phone app. Nobody is made an Owner at invitation.
 - **The accountant** should see all the books. Once they've joined, either make them an Owner (Team › Users › their row › Change role), or give them a Team with every report and the accounting rights.
-- **The phone app:** send testers the TestFlight invitation (iPhone) and the APK link (Android) from the beta's GitHub release notes. In the app they type the beta's address, `https://beta.h4loom.com`, and sign in with the same account.
+- **The phone app:** send Android testers the APK's link (see [The phone app](#the-phone-app)), and iPhone testers the TestFlight invitation if you build for iPhone. In the app they type the beta's address, `https://beta.h4loom.com`, and sign in with the same account.
 
 The demo business (Settings › Data › Demo data) is a quick way to see Spine full of work. The accountant may prefer to enter a few real-looking transactions of their own, too. "Delete all demo data" removes only the demo.
 
 ## The phone app
 
-Each beta's phone apps are built on your Mac with `scripts/mobile/build-beta.sh` ([D-271](prd/12-decisions.md)): Xcode uploads the iPhone app to TestFlight, and Gradle builds the Android APK, which goes on the GitHub release. No Expo account is needed. After 1.0, once the repo is public, GitHub's macOS runners take over the store builds.
+Each beta's phone app is built on your Mac with `scripts/mobile/build-beta.sh` ([D-271](prd/12-decisions.md)). No Expo account is needed. After 1.0, once the repo is public, GitHub's macOS runners take over the store builds.
+
+The beta can be Android only ([D-272](prd/12-decisions.md)). The Android APK needs no developer account. The iPhone app goes through TestFlight, which needs the Apple Developer Program (a yearly fee), so leave it out until you've joined.
 
 **Once, before the first beta:**
 
 1. **Tools:**
-   - Xcode, signed in to your Apple developer account (Xcode › Settings › Accounts);
    - Android Studio (for the Android SDK);
    - JDK 17 (`brew install openjdk@17`);
-   - `gh`, signed in.
-2. **The app in App Store Connect:** create it with the bundle id `com.h4loom.spine`. That id is final from the first upload. Note your team id (developer.apple.com › Membership).
-3. **An Android release keystore.** Every update must be signed with the same one, so back it and its passwords up somewhere safe:
+   - for iPhone, Xcode, signed in to your Apple developer account (Xcode › Settings › Accounts).
+2. **An Android release keystore.** Every update must be signed with the same one. Without it, testers would have to uninstall the app before installing the next beta. Back it, and its passwords, up somewhere other than your Mac:
 
    ```sh
    keytool -genkeypair -v -storetype JKS -keystore ~/spine-release.jks -alias spine -keyalg RSA -keysize 2048 -validity 10000
    ```
 
-4. **TestFlight:** in App Store Connect › TestFlight, create an external group, then add the testers' emails or turn on a public link. Apple reviews the first build for external testers, which usually takes about a day.
+   When it asks for the key's password, press Return to use the keystore's.
 
-**For each beta**, from its tag:
+3. **For iPhone:**
+   - create the app in App Store Connect with the bundle id `com.h4loom.spine` (final from the first upload), and note your team id (developer.apple.com › Membership);
+   - in App Store Connect › TestFlight, create an external group, then add the testers' emails or turn on a public link. Apple reviews the first build for external testers, which usually takes about a day.
+
+**For each beta**, from its tag (here `v1.0.0-beta.2`):
 
 ```sh
-git checkout v1.0.0-beta.1 && pnpm install
-export SPINE_APPLE_TEAM_ID=<team id>
+git checkout v1.0.0-beta.2 && pnpm install
 export SPINE_ANDROID_KEYSTORE=~/spine-release.jks SPINE_ANDROID_KEY_ALIAS=spine
-export SPINE_ANDROID_KEYSTORE_PASSWORD=… SPINE_ANDROID_KEY_PASSWORD=…
-scripts/mobile/build-beta.sh --upload
+export SPINE_ANDROID_KEYSTORE_PASSWORD='<keystore password>' SPINE_ANDROID_KEY_PASSWORD='<key password>'
+scripts/mobile/build-beta.sh --android
 ```
 
-It takes about 15–30 minutes. When it's done:
+- Keep the single quotes, so a password with `$`, `!` or spaces reaches the script as typed.
+- The script checks the keystore and both passwords before it builds, and says which one is wrong. (From the beta after `1.0.0-beta.2`; earlier tags find out only at the end of the build.)
+- For iPhone as well, also set `SPINE_APPLE_TEAM_ID=<team id>` and leave out `--android`. Once Apple has processed the build, it appears in TestFlight: add it to the external group.
 
-- the iPhone build appears in TestFlight once Apple has processed it; add it to the external group;
-- `spine-1.0.0-beta.1.apk` is attached to the release.
+It takes about 10–30 minutes and prints "Built: …/apps/mobile/build/spine-1.0.0-beta.2.apk".
 
-Android testers open the APK link on their phone and allow the install. Each new APK installs over the last.
+**Give testers the APK.** The GitHub release is private until 1.0, so testers can't download from it. `--upload` still attaches the APK there, as your copy. Share it one of these ways:
+
+- **Google Drive:** upload the APK and share it with the testers (or "Anyone with the link"). They open the link on the phone, download it and tap it to install.
+- **Firebase App Distribution** (free, with a Google account): upload the APK to a Firebase project and add the testers' emails. They get an email and install through the App Tester app, which also tells them about each new beta.
+
+The first time, Android asks to allow installs from the app that opened the APK (Drive, Files or Chrome): allow it. Each new APK installs over the last, keeping the signed-in account.
 
 ## A new beta
 
@@ -127,9 +136,11 @@ From `1.0.0-beta.1` only, take the new script first, because beta.1's predates t
 
 ```sh
 gh release download v1.0.0-beta.2 --repo haribrothers/spine --pattern upgrade.sh --clobber && chmod +x upgrade.sh
-``` Everyone's data carries over. Testers see the new version under Settings › About Spine.
+```
 
-Phones update through TestFlight. On Android, testers install the new APK over the old one.
+Everyone's data carries over. Testers see the new version under Settings › About Spine.
+
+On Android, testers install the new APK over the old one. iPhones update through TestFlight.
 
 ## Reporting a problem
 

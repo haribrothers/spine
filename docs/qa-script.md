@@ -5514,17 +5514,22 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 
 ## 265. Give testers the field app through TestFlight and an APK (US-MOB-28, Phase 12)
 
+Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half of 5 once the Owner is in the Apple Developer Program.
+
 1. Do the one-time setup in `docs/beta.md` › The phone app:
-   - the tools (Xcode signed in, the Android SDK, JDK 17, `gh`);
-   - the app in App Store Connect with `com.h4loom.spine`;
+   - the tools (the Android SDK, JDK 17; Xcode signed in, for iPhone);
    - a release keystore;
-   - a TestFlight external group.
-2. From the beta's tag, with the variables set, run `scripts/mobile/build-beta.sh --upload`. It prints the version and build number, uploads to App Store Connect, and prints "Built: …/spine-<version>.apk" and "Attached to the v<version> release."
+   - for iPhone, the app in App Store Connect with `com.h4loom.spine` and a TestFlight external group.
+2. From the beta's tag, with the variables set (passwords in single quotes), run `scripts/mobile/build-beta.sh --android --upload`. It prints the version and build number, then "Built: …/spine-<version>.apk" and "Attached to the v<version> release." Without `--android`, and with `SPINE_APPLE_TEAM_ID` set, it uploads to App Store Connect first.
 3. iPhone: once the build is processed, add it to the external group. Accept the TestFlight invitation (or open the public link), install Spine, type the beta's address and sign in. Profile shows "Spine 1.0.0-beta.1 (<build>) · Beta".
-4. Android: open the APK link from the release on the phone, allow the install, then sign in the same way. Profile shows the same. The APK is about 55 MB.
-5. Build the next beta the same way: TestFlight offers the update, and the new APK installs over the old one. That works because it's signed with the same keystore and has a higher build number. The signed-in account and anything waiting to send are kept.
-6. Without the keystore variables, or without `SPINE_APPLE_TEAM_ID`, the script stops before building and says which one to set. `--android` and `--ios` build one platform.
-7. Regression: the field app still sends `X-Spine-Client-Version: 1.0.0`, and the server's minimum version check (`MOBILE_MIN_VERSION`) behaves as before. Maestro flows run against the new id `com.h4loom.spine`.
+4. Android: share the APK by Google Drive (or Firebase App Distribution) and open the link on the phone. Allow installs from that app when Android asks, install, then sign in the same way. Profile shows the same. The APK is about 55 MB.
+5. Build the next beta the same way: the new APK installs over the old one, and TestFlight offers the update. That works because it's signed with the same keystore and has a higher build number. The signed-in account and anything waiting to send are kept.
+6. Without the keystore variables, or (for iPhone) without `SPINE_APPLE_TEAM_ID`, the script stops before building and says which one to set. `--android` and `--ios` build one platform.
+7. Wrong keystore details stop it within seconds, before `expo prebuild`, each naming what to fix:
+   - a wrong `SPINE_ANDROID_KEYSTORE_PASSWORD` ("doesn't open …, set it again, in single quotes…");
+   - a `SPINE_ANDROID_KEY_ALIAS` the keystore doesn't have ("There's no key called …");
+   - a wrong `SPINE_ANDROID_KEY_PASSWORD` ("doesn't open the key …").
+8. Regression: the field app still sends `X-Spine-Client-Version: 1.0.0`, and the server's minimum version check (`MOBILE_MIN_VERSION`) behaves as before. Maestro flows run against the new id `com.h4loom.spine`.
 
 ## 266. Run Spine on Coolify (US-OPS-52, Phase 12)
 

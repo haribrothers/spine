@@ -15,8 +15,9 @@
 # - Android: Gradle builds apps/mobile/build/spine-<version>.apk, signed with
 #   your release keystore: SPINE_ANDROID_KEYSTORE (the .jks file),
 #   SPINE_ANDROID_KEYSTORE_PASSWORD, SPINE_ANDROID_KEY_ALIAS,
-#   SPINE_ANDROID_KEY_PASSWORD. Every update must be signed with the same
-#   keystore, so keep it, and its passwords, safe and backed up.
+#   SPINE_ANDROID_KEY_PASSWORD, all checked before anything is built. Every
+#   update must be signed with the same keystore, so keep it, and its
+#   passwords, safe and backed up.
 # The build number is the commit count, so each build is newer than the last.
 set -eu
 
@@ -35,7 +36,7 @@ while [ $# -gt 0 ]; do
     --android) ios=0 ;;
     --upload) upload=1 ;;
     -h | --help)
-      sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) fail "Unknown option: $1 (see --help)" ;;
@@ -76,6 +77,24 @@ if [ "$android" -eq 1 ]; then
     [ -n "$value" ] || fail "Set $var (see --help): the APK is signed with your release keystore."
   done
   [ -f "$SPINE_ANDROID_KEYSTORE" ] || fail "There's no keystore at $SPINE_ANDROID_KEYSTORE."
+  command -v keytool >/dev/null 2>&1 || fail "keytool isn't installed. It comes with JDK 17 (brew install openjdk@17)."
+  # The passwords and alias are checked now, not by Gradle at the end of the build.
+  keystore_info=$(keytool -J-Duser.language=en -list -keystore "$SPINE_ANDROID_KEYSTORE" -storepass:env SPINE_ANDROID_KEYSTORE_PASSWORD 2>&1) ||
+    fail "SPINE_ANDROID_KEYSTORE_PASSWORD doesn't open $SPINE_ANDROID_KEYSTORE. Set it again, in single quotes if it has \$, ! or spaces."
+  keytool -list -keystore "$SPINE_ANDROID_KEYSTORE" -storepass:env SPINE_ANDROID_KEYSTORE_PASSWORD -alias "$SPINE_ANDROID_KEY_ALIAS" >/dev/null 2>&1 ||
+    fail "There's no key called $SPINE_ANDROID_KEY_ALIAS in $SPINE_ANDROID_KEYSTORE. Set SPINE_ANDROID_KEY_ALIAS to one that keytool -list -keystore $SPINE_ANDROID_KEYSTORE shows."
+  case $keystore_info in
+    *"Keystore type: PKCS12"*)
+      # A PKCS12 keystore's key has the keystore's password.
+      [ "$SPINE_ANDROID_KEY_PASSWORD" = "$SPINE_ANDROID_KEYSTORE_PASSWORD" ] ||
+        fail "SPINE_ANDROID_KEY_PASSWORD must be the same as SPINE_ANDROID_KEYSTORE_PASSWORD: in this keystore (PKCS12) the key has the keystore's password."
+      ;;
+    *)
+      keytool -certreq -alias "$SPINE_ANDROID_KEY_ALIAS" -keystore "$SPINE_ANDROID_KEYSTORE" -storepass:env SPINE_ANDROID_KEYSTORE_PASSWORD \
+        -keypass:env SPINE_ANDROID_KEY_PASSWORD -file /dev/null >/dev/null 2>&1 ||
+        fail "SPINE_ANDROID_KEY_PASSWORD doesn't open the key $SPINE_ANDROID_KEY_ALIAS. If you pressed Return when keytool asked for the key's password, it's the keystore's password."
+      ;;
+  esac
 fi
 if [ "$upload" -eq 1 ]; then
   command -v gh >/dev/null 2>&1 || fail "--upload needs the gh tool (brew install gh), signed in."

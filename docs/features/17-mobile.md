@@ -491,6 +491,7 @@ Decision: D-265
 
 **Implementation notes**
 - `scripts/mobile/build-beta.sh` (D-271): `expo prebuild`, then Xcode archives and uploads to App Store Connect (automatic signing, `SPINE_APPLE_TEAM_ID`), and Gradle builds a signed 64-bit ARM APK with the Owner's keystore, attached to the release with `--upload`. Version from the root `package.json` (`app.config.js`); the build number is the commit count. No Expo account. The Owner's Apple developer account is needed for TestFlight.
+- D-272: the beta can be Android only until the Owner joins the Apple Developer Program; the TestFlight criterion waits until then. While the repo is private, the APK's link is a Google Drive or Firebase App Distribution one, not the GitHub release. The script checks the keystore's password, alias and key password before building.
 
 ### US-MOB-29 · Get the field app from the App Store and Play Store
 **Feature:** F-MOB-11 · **Priority:** P1 · **Phase:** 12 · **Screens:** —

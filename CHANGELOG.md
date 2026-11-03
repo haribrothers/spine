@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-03 — An Android-only beta, and the keystore checked before the build (US-MOB-28, D-272)
+
+- **Android only for now:** the field team uses Android, and TestFlight needs the Apple Developer Program, so the beta can ship just the APK (`build-beta.sh --android`). iPhone joins once the Owner enrols. `docs/beta.md` › The phone app now leads with Android and says how to share the APK while the repo is private: Google Drive or Firebase App Distribution, since testers can't download from a private GitHub release.
+- **Found by the first real beta build:** a wrong keystore password failed only at the end of a six-minute Gradle build, as "Keystore was tampered with, or password was incorrect". `build-beta.sh` now checks the keystore's password, the alias and the key's password with `keytool` before `expo prebuild`, and names the variable to fix. The passwords reach keytool through the environment (`-storepass:env`), not its command line. In a PKCS12 keystore the key has the keystore's password, so the script says so if they differ.
+- **Also:** a broken code block in `docs/beta.md` › A new beta, and the build steps name the current tag.
+- **Tests:** `scripts/mobile/us-mob-28.test.mjs` runs the script against real keystores made by keytool (JKS with its own key password, and PKCS12), stopping at a fake `npx`: the right details go on to build; a wrong keystore password, alias or key password stops it first. QA section 265 rewritten for an Android-first beta.
+
 ### 2026-10-24 — upgrade.sh hands over to the new version's own script (US-OPS-50)
 
 - **Found by the v1.0.0-beta.2 tag run:** upgrade-verify stopped before publishing anything. It renamed beta.1's `default.env.example` only for files from a local folder, not for files downloaded from GitHub. Behind that was a real problem: a beta.1 install runs beta.1's `upgrade.sh`, which can't take beta.2's renamed `env.example`.
