@@ -5534,7 +5534,8 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 4. Sign in from two different networks, then check Settings › Password & security: each session shows its own address, not the proxy's. Sign-in rate limits apply per visitor.
 5. With `BACKUP_REMOTE` and its keys set, add the scheduled task `node apps/api/dist/scripts/backup.js --remote-only` in the `api` container. Run it now: its log ends "Backup saved: s3://…", the bucket has a `.tar.gz.enc`, and the Owners' backup banner clears. Without `BACKUP_REMOTE` or `BACKUP_PASSPHRASE` it refuses and says which is missing.
 6. Set `SPINE_VERSION` to the next beta and redeploy: the data stays, and About Spine shows the new version.
-7. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
+7. Behind Cloudflare Access with the Bypass application for `api/*`, `.well-known/*` and `quote/*`: `curl <address>/api/health` answers with the version, the phone app signs in, and a quote link opens without Access. The web pages still ask for Access's sign-in first.
+8. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
 
 ## Known gaps — don't file these as bugs
 

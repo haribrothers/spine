@@ -27,6 +27,18 @@ Coolify's screens change between versions. If a name below doesn't match yours, 
 4. **Deploy.** The API applies its database migrations on the first start, then Coolify shows every service as healthy.
 5. Open `https://beta.h4loom.com` and create your account: you're the Owner, and Spine is invite-only from then on. The rest is as in [beta.md](beta.md): invite testers, then send them the phone apps.
 
+## Behind Cloudflare Access
+
+If you put the domain behind Cloudflare Access (Zero Trust), for an extra sign-in before Spine's own, let Spine's own paths through. Otherwise the phone app, AI agents and customers' quote links get Access's sign-in page, which they can't use.
+
+1. Add another self-hosted Access application for the same hostname, with these paths:
+   - `api/*`: the API, which checks a Spine session on every request;
+   - `.well-known/*`: how AI agents find out how to sign in;
+   - `quote/*`: customers' quote links.
+2. Give it a policy with action **Bypass**, including **Everyone**.
+
+Cloudflare applies the more specific paths first, so everything else stays behind Access. To check from outside: `curl https://<address>/api/health` answers with Spine's version, while the web pages still go to Access's sign-in.
+
 ## Backups
 
 On Coolify, backups go straight to an S3-compatible bucket (Cloudflare R2, Backblaze B2 or AWS S3), encrypted. Nothing is kept on the server, which Coolify can rebuild.
