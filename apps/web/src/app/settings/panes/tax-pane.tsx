@@ -256,7 +256,7 @@ function DefaultTaxPreference({
     <div className="flex flex-col gap-2">
       <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Default tax preference</h3>
       <p className="text-[13px] text-on-surface-muted">New catalogue items start with these. Spine uses the intra-state tax in your state and the inter-state tax elsewhere.</p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label id="default-intra-label">Intra-state</Label>
           <Combobox aria-labelledby="default-intra-label" options={options} value={token(intra)} onValueChange={(v) => void onSave({ defaultIntraTax: choice(v) })} placeholder="No tax" />

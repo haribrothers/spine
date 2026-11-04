@@ -65,7 +65,8 @@ export function KpiRow() {
       .catch(() => setKpis([]));
   }, [basis, ready]);
 
-  const grid = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 wide-plus:grid-cols-2 wide-plus:@[62rem]:grid-cols-4";
+  // US-OPS-14: two per row on a phone.
+  const grid = "grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 wide-plus:grid-cols-2 wide-plus:@[62rem]:grid-cols-4";
 
   if (!kpis || !currency) {
     return (

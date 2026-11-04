@@ -417,7 +417,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
       {editing && (
         <div className="flex flex-col gap-4 rounded-lg border border-border-strong bg-surface p-5">
           <h3 className="text-[14px] font-semibold text-on-surface">Edit contact</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Type" required>
               {(field) => (
                 <Select value={type} onValueChange={(v) => setType(v as ContactType)}>

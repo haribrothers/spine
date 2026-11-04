@@ -228,7 +228,7 @@ export function CatalogForm({
         {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} />}
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField label="Unit" required helperText="e.g. hour, sq ft, each">
           {(field) => (
             <Combobox
@@ -259,7 +259,7 @@ export function CatalogForm({
       </div>
 
       <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Price and tax</h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FormField label="Default price" required>
           {(field) => (
             <MoneyInput {...field} value={priceAmount} onValueChange={setPriceAmount} currency={currency} />
@@ -284,7 +284,7 @@ export function CatalogForm({
       )}
 
       {gst ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField label="Intra-state tax" helperText="Same state as your business.">
             {(field) => (
               <Combobox

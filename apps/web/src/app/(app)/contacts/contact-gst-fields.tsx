@@ -74,7 +74,7 @@ export function ContactGstFields({
           </Select>
         )}
       </FormField>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         <FormField
           label={treatment === "overseas" ? "Tax ID" : "GSTIN"}
           required={gstinRequired(treatment)}

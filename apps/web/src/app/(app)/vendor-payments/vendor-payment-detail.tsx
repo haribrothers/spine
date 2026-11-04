@@ -254,7 +254,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
 
-      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface sm:grid-cols-2" data-testid="vendor-payment-figures">
+      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-2" data-testid="vendor-payment-figures">
         <div className="flex flex-col gap-0.5 px-4 py-3">
           <span className="text-[12px] text-on-surface-muted">Paid</span>
           <span className="text-[20px] font-semibold tabular-nums text-on-surface">{money(payment.amount)}</span>

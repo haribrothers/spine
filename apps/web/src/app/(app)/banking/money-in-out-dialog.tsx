@@ -186,7 +186,7 @@ export function MoneyInOutDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label={isIn ? "Into account" : "From account"} required>
               {(field) => (
                 <Select value={moneyAccountId} onValueChange={setMoneyAccountId} disabled={Boolean(prefill)}>
@@ -244,7 +244,7 @@ export function MoneyInOutDialog({
           </FormField>
           </AiField>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Amount" required helperText={!isIn && taxAmount > 0n ? `Includes ${formatMoney(taxAmount, currency)} tax, which goes to Input Tax Receivable.` : undefined}>
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={Boolean(prefill)} />}
             </FormField>

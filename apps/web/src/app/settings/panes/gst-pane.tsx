@@ -76,7 +76,7 @@ export function GstRegistrationForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         <FormField label="GSTIN" required errorText={gstinMessage ?? undefined}>
           {(field) => <Input {...field} value={gstin} maxLength={15} autoCapitalize="characters" onChange={(e) => changeGstin(e.target.value)} onBlur={() => setTouched(true)} />}
         </FormField>

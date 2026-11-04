@@ -325,7 +325,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
         </Alert>
       )}
 
-      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <FormField label="Title (optional)" className="sm:col-span-2" helperText={title.length > QUOTE_TITLE_MAX - 20 ? `${title.length} of ${QUOTE_TITLE_MAX} characters` : undefined}>
           {(field) => (
             <Input {...field} value={title} maxLength={QUOTE_TITLE_MAX} onChange={(e) => touch(setTitle)(e.target.value)} placeholder="For example, Bathroom refit — 2nd floor" />
@@ -389,7 +389,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       </Card>
 
       <Card id="quote-notes" className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField label="Notes" helperText="Visible to the customer on the quote.">
             {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder="Notes for the customer…" />}
           </FormField>

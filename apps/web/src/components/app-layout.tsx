@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { AppShell, AppShellContent, AppShellSidebar, SpineLogo } from "@spine/ui";
+import { AppShell, AppShellContent, AppShellMobileNav, AppShellSidebar, AppShellTopBar, SpineLogo } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { SearchButton, SearchPalette } from "./search-palette";
@@ -25,6 +25,7 @@ import { SessionExpiredDialog } from "./session-expired-dialog";
 import { ToastHost } from "./toast-host";
 import { SettingsRoute } from "./settings-route";
 import { AccountProvider } from "../lib/account-context";
+import { useIsPhone } from "../lib/use-is-phone";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -109,6 +110,9 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
   const [hydrated, setHydrated] = useState(false);
   // US-OPS-22: the search palette, opened by ⌘K / Ctrl+K or the search button.
   const [searchOpen, setSearchOpen] = useState(false);
+  // US-OPS-14 (D-066): under 768px, a top bar and a slide-over navigation instead of the sidebar.
+  const isPhone = useIsPhone();
+  const [navOpen, setNavOpen] = useState(false);
   const fullWidth = FULL_WIDTH_ROUTES.some((route) => pathname === route || pathname?.startsWith(`${route}/`));
 
   useEffect(() => {
@@ -117,6 +121,16 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
     setHydrated(true);
   }, []);
 
+  // Following a link (or going back) closes the phone navigation.
+  useEffect(() => setNavOpen(false), [pathname]);
+
+  const isActive = (href: string) => pathname === href || pathname?.startsWith(`${href}/`);
+  const renderLink = (item: { href: string; label: string }, content: React.ReactNode) => (
+    <Link href={item.href} aria-label={item.label}>
+      {content}
+    </Link>
+  );
+
   function handleCollapsedChange(next: boolean) {
     setCollapsed(next);
     window.localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
@@ -124,36 +138,71 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
 
   return (
     <AppShell>
-      <AppShellSidebar
-        logo={<AppLogo collapsed={collapsed} />}
-        collapsed={hydrated ? collapsed : false}
-        onCollapsedChange={handleCollapsedChange}
-        sections={sections}
-        isActive={(href) => pathname === href || pathname?.startsWith(`${href}/`)}
-        renderLink={(item, content) => (
-          <Link href={item.href} aria-label={item.label}>
-            {content}
-          </Link>
-        )}
-        search={<SearchButton collapsed={hydrated ? collapsed : false} onClick={() => setSearchOpen(true)} />}
-        userMenu={
-          (hydrated ? collapsed : false) ? (
-            <div className="flex flex-col items-center gap-1">
-              <HelpButton collapsed />
+      <AppShellTopBar
+        logo={<AppLogo collapsed={false} />}
+        onMenuClick={() => setNavOpen(true)}
+        actions={
+          isPhone ? (
+            <>
               <NotificationBell collapsed />
               <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
-            </div>
-          ) : (
+            </>
+          ) : null
+        }
+      />
+      {isPhone ? (
+        <AppShellMobileNav
+          open={navOpen}
+          onOpenChange={setNavOpen}
+          logo={<AppLogo collapsed={false} />}
+          sections={sections}
+          isActive={isActive}
+          renderLink={renderLink}
+          search={
+            <SearchButton
+              onClick={() => {
+                setNavOpen(false);
+                setSearchOpen(true);
+              }}
+            />
+          }
+          footer={
             <div className="flex items-center gap-1">
               <div className="min-w-0 flex-1">
                 <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
               </div>
               <HelpButton collapsed={false} />
-              <NotificationBell collapsed={false} />
             </div>
-          )
-        }
-      />
+          }
+        />
+      ) : (
+        <AppShellSidebar
+          logo={<AppLogo collapsed={collapsed} />}
+          collapsed={hydrated ? collapsed : false}
+          onCollapsedChange={handleCollapsedChange}
+          sections={sections}
+          isActive={isActive}
+          renderLink={renderLink}
+          search={<SearchButton collapsed={hydrated ? collapsed : false} onClick={() => setSearchOpen(true)} />}
+          userMenu={
+            (hydrated ? collapsed : false) ? (
+              <div className="flex flex-col items-center gap-1">
+                <HelpButton collapsed />
+                <NotificationBell collapsed />
+                <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className="min-w-0 flex-1">
+                  <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
+                </div>
+                <HelpButton collapsed={false} />
+                <NotificationBell collapsed={false} />
+              </div>
+            )
+          }
+        />
+      )}
       <AppShellContent fullWidth={fullWidth} banner={
           isOwner ? (
             <>

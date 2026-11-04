@@ -297,7 +297,7 @@ export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string;
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface sm:grid-cols-4" data-testid="expense-figures">
+      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-4" data-testid="expense-figures">
         {figure("Amount", money(expense.amount), labour ? `${workers} ${workers === 1 ? "worker" : "workers"} · ${expense.labourLines!.length} ${expense.labourLines!.length === 1 ? "trade" : "trades"}` : (expense.description ?? expense.categoryName ?? ""), "fig-amount")}
         {figure("Tax", money(expense.taxAmount), taxRateName, "fig-tax")}
         {!isField

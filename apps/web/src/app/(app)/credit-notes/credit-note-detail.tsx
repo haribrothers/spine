@@ -255,7 +255,7 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
       </div>
 
       {figures.length > 0 && (
-        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "sm:grid-cols-4" : figures.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")} data-testid="credit-note-figures">
+        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "md:grid-cols-4" : figures.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2")} data-testid="credit-note-figures">
           {figures}
         </div>
       )}

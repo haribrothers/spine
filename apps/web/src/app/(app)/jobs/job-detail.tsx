@@ -479,7 +479,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </Alert>
       )}
 
-      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 5 ? "sm:grid-cols-5" : figures.length === 3 ? "sm:grid-cols-3" : figures.length === 1 ? "sm:max-w-xs" : "sm:grid-cols-2")} data-testid="job-figures">
+      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 5 ? "md:grid-cols-5" : figures.length === 3 ? "md:grid-cols-3" : figures.length === 1 ? "sm:max-w-xs" : "md:grid-cols-2")} data-testid="job-figures">
         {figures}
       </div>
 
@@ -720,7 +720,7 @@ function EditJobDialog({
               </Select>
             )}
           </FormField>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Start date">{() => <DatePicker value={startDate} onChange={setStartDate} />}</FormField>
             <FormField label="End date">{() => <DatePicker value={endDate} onChange={setEndDate} />}</FormField>
           </div>
@@ -758,7 +758,7 @@ function EditJobDialog({
           {job.costBudgetAmount !== undefined && (
             <div className="flex flex-col gap-3 border-t border-border pt-4">
               <h3 className="text-[13px] font-semibold text-on-surface">Budget and progress</h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField label="Cost budget" helperText="What you expect this job to cost. Leave blank if you don't budget it." errorText={budgetError}>
                   {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="—" />}
                 </FormField>

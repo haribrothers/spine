@@ -317,7 +317,7 @@ function ItemLineFields({
         onChange={(e) => onChange({ description: e.target.value })}
         placeholder="Description (optional)"
       />
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
         <FieldLabel label="Qty">
           <Input
             type="number"

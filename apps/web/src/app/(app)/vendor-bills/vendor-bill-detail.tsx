@@ -312,7 +312,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface sm:grid-cols-4" data-testid="bill-figures">
+      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-4" data-testid="bill-figures">
         {figure("Total", money(bill.totalAmount), `${items.length} ${items.length === 1 ? "line" : "lines"} · tax ${money(bill.taxAmount)}`, "fig-total")}
         {figure("Paid", money(paid), paid > 0n ? "By payment" : "Nothing paid yet", "fig-paid")}
         {figure("Credits applied", money(credited), owed && openCredit > 0n ? `${money(openCredit)} credit to use` : credited > 0n ? `${(bill.creditsApplied ?? []).length} credit${(bill.creditsApplied ?? []).length === 1 ? "" : "s"}` : "None", "fig-credited")}

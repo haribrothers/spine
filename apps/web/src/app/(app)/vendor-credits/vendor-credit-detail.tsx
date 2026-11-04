@@ -297,7 +297,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
       )}
 
       {!isDraft && (
-        <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface sm:grid-cols-4" data-testid="credit-figures">
+        <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-4" data-testid="credit-figures">
           {figure("Total", money(credit.totalAmount), `${count(items.length, "line")} · tax ${money(credit.taxAmount)}`, "fig-total")}
           {figure("Applied to bills", money(applied), allocations.length ? count(allocations.length, "bill") : "Not applied yet", "fig-applied")}
           {figure("Refunded", money(refunded), liveRefunds.length ? count(liveRefunds.length, "refund") : "No refunds", "fig-refunded")}

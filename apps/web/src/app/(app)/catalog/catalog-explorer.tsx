@@ -340,7 +340,7 @@ export function CatalogExplorer({
                   }}
                 >
                   <p className="text-[13px] text-on-surface-muted">Default price, in each item&apos;s own currency.</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div className="flex flex-col gap-1">
                       <Label htmlFor="catalog-price-min">Min</Label>
                       <Input id="catalog-price-min" type="number" inputMode="decimal" min={0} step="0.01" value={priceDraft.min} onChange={(e) => setPriceDraft((d) => ({ ...d, min: e.target.value }))} />

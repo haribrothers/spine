@@ -51,6 +51,7 @@ export default function AlertDialogPage() {
       <DocSection id="features" title="Features">
         <FeatureList
           items={[
+            "Under 768px it fills the screen width with a 16px gutter each side (US-OPS-15).",
             "Focus is trapped and automatically managed.",
             "Can be controlled or uncontrolled.",
             "Requires an explicit AlertDialogAction or AlertDialogCancel choice — the overlay does not close on outside click, unlike Dialog.",

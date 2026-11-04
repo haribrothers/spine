@@ -618,7 +618,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           <DocumentLinesTable doc={quote} testIdPrefix="quote" />
 
           {(quote.notes || quote.termsAndConditions) && (
-            <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Card className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {quote.notes && (
                 <div>
                   <h3 className="text-[12px] font-semibold text-on-surface-muted">Notes</h3>

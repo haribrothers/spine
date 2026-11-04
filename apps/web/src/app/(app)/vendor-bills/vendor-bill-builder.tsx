@@ -472,7 +472,7 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
         </Alert>
       )}
 
-      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {aiShown && <BillAiReader state={readView} pausedUntil={aiStatus?.pausedUntil ?? null} attachedNote="attached to this bill" onChoose={(file) => void readFile(file)} onCancel={cancelRead} onRetry={ai.retry} />}
         {replaceOffer && (
           <Alert variant="info" className="sm:col-span-2 xl:col-span-4" data-testid="ai-replace-offer">

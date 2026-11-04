@@ -36,7 +36,8 @@ const DRAWER_SIZES = {
  * only that middle region scrolls when content is tall.
  */
 const drawerVariants = cva(
-  "fixed z-[var(--z-modal)] flex h-full w-full flex-col border-border bg-surface shadow-overlay focus:outline-none",
+  // US-OPS-15: under 768px it leaves a 16px gutter of the dimmed page on its open side.
+  "fixed z-[var(--z-modal)] flex h-full w-[calc(100%-16px)] flex-col border-border bg-surface shadow-overlay focus:outline-none md:w-full",
   {
     variants: {
       side: DRAWER_SIDES,

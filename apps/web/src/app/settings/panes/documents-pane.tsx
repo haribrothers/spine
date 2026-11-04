@@ -107,7 +107,7 @@ export function DocumentsPane() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex flex-col gap-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             <PaperSizeField value={current.paperSize} onChange={(paperSize) => update({ paperSize })} />
             {gst && (type === "invoice" || type === "credit_note") ? (
               <FormField label="Title" helperText="Set by your GST settings">
@@ -158,7 +158,7 @@ export function DocumentsPane() {
           {LINE_DOCUMENT_TYPES.includes(type) && (
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Columns</legend>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {COLUMN_LABELS.filter((c) => (!c.gstOnly || gst) && !(c.key === "discount" && type === "credit_note")).map((c) => (
                   <label key={c.key} className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
                     <Checkbox checked={current.columns[c.key]} onCheckedChange={(v) => update({ columns: { ...current.columns, [c.key]: v === true } })} />

@@ -290,7 +290,7 @@ export function VendorBillLineEditor({
                       onChange={(e) => updateLine(index, { description: e.target.value })}
                       placeholder="Description (optional)"
                     />
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                       <FieldLabel label="Qty">
                         <Input
                           type="number"
@@ -310,7 +310,7 @@ export function VendorBillLineEditor({
                         </div>
                       </FieldLabel>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                       <FieldLabel label="Expense/COGS account">
                         <Combobox
                           options={accountOptions}
@@ -329,7 +329,7 @@ export function VendorBillLineEditor({
                     </label>
                     {flaggedKeys?.has(line.key) && <LineTaxWarning />}
                     {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
-                      <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
+                      <div className={showHsn ? "grid grid-cols-1 items-start gap-2 md:grid-cols-2" : "flex flex-col"}>
                         {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => updateLine(index, { hsnSac })} />}
                         {showsSupplyType(line.supplyClass, taxPercent) && (
                           <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => updateLine(index, { supplyClass })} />

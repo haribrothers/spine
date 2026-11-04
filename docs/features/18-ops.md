@@ -235,6 +235,7 @@ Finding: C19 · Decision: D-066
 
 **Implementation notes**
 - `@spine/ui` `AppShell` responsive mode.
+- Built: `AppShellTopBar` and `AppShellMobileNav` in `@spine/ui`. The web layout renders them instead of the sidebar while `useIsPhone()` matches, so notifications and the account menu aren't mounted twice. `AppShellHeader`'s actions wrap under the title. The Tailwind preset gives every control a 44px minimum under 768px (`:where()`, so components keep their sizes above it). Links in running text keep their line height, and checkboxes, radios and switches get a 44px tap area drawn around them. The dashboard's key figures are two per row, and content padding is 16px.
 
 ### US-OPS-15 · Keep wide tables usable on small screens
 **Feature:** F-OPS-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** `AppShellPhone`
@@ -247,6 +248,7 @@ Finding: C19 · Decision: D-066
 
 **Implementation notes**
 - Playwright checks at 390×844 for every route (NFR-COMP-02).
+- Built: `Table` already scrolls inside its card, and `main` is `min-w-0`. `DialogContent` (md, lg) and `AlertDialogContent` are `calc(100% - 32px)` wide under 768px; xl stays full-screen (D-236). `DrawerContent` is `calc(100% - 16px)`. Form grids that went to two columns at `sm:` now wait for `md:`, and the bare two- to four-column grids in the line editors, catalogue form and job dates stack. `us-ops-15.spec.ts` checks 19 routes at 390×844.
 
 ### US-OPS-16 · Move every user-facing string into translation files
 **Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 12 · **Screens:** —

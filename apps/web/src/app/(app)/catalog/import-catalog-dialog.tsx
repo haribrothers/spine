@@ -199,7 +199,7 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
               <p className="text-[14px] text-on-surface">
                 {fileName} · {data.length} {data.length === 1 ? "row" : "rows"}. Match each field to a column; only Name is required.
               </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {CATALOG_IMPORT_FIELDS.map((f) => (
                   <div key={f} className="flex flex-col gap-1.5">
                     <span className="text-[13px] font-medium text-on-surface" id={`map-${f}`}>

@@ -262,7 +262,7 @@ function OpeningInvoiceDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Customer" required>
               {(field) => (
                 <Select value={contactId || undefined} onValueChange={setContactId}>
@@ -497,7 +497,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
                 />
               </div>
               {fileName && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {FIELDS.map((f) => (
                     <FormField key={f.key} label={f.label} required={f.required}>
                       {(field) => (

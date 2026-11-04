@@ -209,7 +209,7 @@ export function JournalDetail({ journalId }: { journalId: string }) {
                 <AlertDescription>{reverseError}</AlertDescription>
               </Alert>
             )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField label="Reversal date" required>
                 {() => <DatePicker value={reverseDate} onChange={(d) => d && setReverseDate(d)} />}
               </FormField>

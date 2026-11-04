@@ -274,7 +274,7 @@ export function RecurringBillDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Name" errorText={problems.name}>
               {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Office rent" />}
             </FormField>
@@ -282,7 +282,7 @@ export function RecurringBillDialog({
               {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
             </FormField>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <FormField label="Repeat">
               {(field) => (
                 <Select value={frequency} onValueChange={(v) => changeFrequency(v as RecurringFrequency)}>
@@ -319,7 +319,7 @@ export function RecurringBillDialog({
               {() => <DatePicker value={startsOn} onChange={setStartsOn} />}
             </FormField>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-2">
               <FormField label="Ends" errorText={ends === "never" ? undefined : problems.ends}>
                 {(field) => (

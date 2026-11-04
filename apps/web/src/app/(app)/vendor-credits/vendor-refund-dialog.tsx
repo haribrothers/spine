@@ -86,7 +86,7 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Amount" required>
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={credit.currency} />}
             </FormField>

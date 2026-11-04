@@ -5606,6 +5606,22 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 4. "Go to dashboard" opens the dashboard.
 5. Regression: a refused action still shows the permission toast, and a dropped connection still shows the page's own message, not this page.
 
+## 274. Use the web app on a phone (US-OPS-14, Phase 12)
+
+1. On a phone (or the browser's device toolbar at 390×844), sign in and open the dashboard. A top bar shows ☰, the Spine logo, the bell and your initials; there's no sidebar.
+2. Tap ☰: the navigation slides in from the left over a dimmed page, with your current page marked, search at the top and your name and help at the bottom. Tap the dimmed area: it closes. Open it again and tap ✕: it closes. Open it and tap Invoices: Invoices opens and the menu closes.
+3. The dashboard shows the key figures two per row and each chart on its own row; nothing runs off the right edge and the page doesn't scroll sideways.
+4. Every button, link and field is easy to tap (at least a fingertip, 44px). The bell and your initials open their menus.
+5. Turn the phone to landscape, or widen the window past 768px: the sidebar comes back and the top bar goes.
+6. Regression, at desktop width: the sidebar, collapsing it, search (⌘K), notifications and the account menu work as before; page headers keep their actions on the right.
+
+## 275. Keep wide tables usable on small screens (US-OPS-15, Phase 12)
+
+1. At 390×844, open Invoices, Contacts, Payments and Reports › Profit & loss. A table wider than the screen scrolls sideways inside its own box; the page itself never scrolls sideways.
+2. Open Payments › Record payment: the dialog fills the width with a 16px gap each side. Open Jobs › New job: the drawer leaves a 16px strip of the dimmed page.
+3. Open Catalogue › Add item, a new invoice and a new vendor bill: fields are one under another, including Qty, Unit and Price on each line. Settings opens full-screen, as before.
+4. Regression, at desktop width: dialogs, drawers and forms keep their widths and two-column layouts.
+
 ## Known gaps — don't file these as bugs
 
 - While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).

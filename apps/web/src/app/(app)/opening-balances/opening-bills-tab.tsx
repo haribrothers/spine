@@ -83,7 +83,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <StatCard label="Opening bills" value={rows ? String(rows.length) : "—"} />
         <StatCard label="Amount due" value={money(total)} />
       </div>
@@ -209,7 +209,7 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField label="Vendor" required>
               {(field) => (
                 <Select value={contactId || undefined} onValueChange={setContactId}>
@@ -413,7 +413,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
                 />
               </div>
               {fileName && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {FIELDS.map((f) => (
                     <FormField key={f.key} label={f.label} required>
                       {(field) => (

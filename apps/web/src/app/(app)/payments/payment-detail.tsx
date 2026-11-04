@@ -276,7 +276,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
       </div>
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
-      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3")} data-testid="payment-figures">
+      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3")} data-testid="payment-figures">
         {figures}
       </div>
 

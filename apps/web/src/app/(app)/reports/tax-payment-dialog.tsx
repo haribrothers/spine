@@ -192,7 +192,7 @@ export function TaxPaymentDialog({
             </Alert>
           )}
           {mode === "payment" && (
-            <div className="grid grid-cols-1 overflow-hidden rounded-md border border-border sm:grid-cols-3" data-testid="tax-payment-figures">
+            <div className="grid grid-cols-1 overflow-hidden rounded-md border border-border md:grid-cols-3" data-testid="tax-payment-figures">
               {[
                 { label: "Tax collected", value: collected },
                 { label: "Input tax available", value: available },
@@ -205,7 +205,7 @@ export function TaxPaymentDialog({
               ))}
             </div>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {mode === "payment" && (
               <FormField label="Period" required>
                 {(field) => (

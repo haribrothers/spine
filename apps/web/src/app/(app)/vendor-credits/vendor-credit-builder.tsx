@@ -275,7 +275,7 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <FormField label="Vendor" required>
           {() => <ContactPicker value={contactId} onValueChange={touch(setContactId)} />}
         </FormField>

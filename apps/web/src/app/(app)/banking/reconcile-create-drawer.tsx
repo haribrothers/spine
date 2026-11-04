@@ -237,7 +237,7 @@ export function ReconcileCreateDrawer({
               </div>
             )}
             {kind === "expense" && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField label="Amount" required>
                   {(field) => <Input {...field} value={prefill ? formatMoney(prefill.amount, currency) : ""} disabled className="text-right tabular-nums" />}
                 </FormField>

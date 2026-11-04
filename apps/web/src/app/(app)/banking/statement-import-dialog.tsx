@@ -289,7 +289,7 @@ export function StatementImportDialog({
                       <Label htmlFor="amount-split">Separate money in and money out columns</Label>
                     </div>
                   </RadioGroup>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {columnSelect("Date", "date")}
                     <FormField label="Date format" required>
                       {(field) => (

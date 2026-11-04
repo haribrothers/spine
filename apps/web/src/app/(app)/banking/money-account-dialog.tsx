@@ -120,7 +120,7 @@ export function MoneyAccountDialog({
           </FormField>
 
           {hasBankDetails && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField label="Bank name">
                 {(field) => <Input {...field} value={bankName} onChange={(e) => setBankName(e.target.value)} maxLength={120} />}
               </FormField>

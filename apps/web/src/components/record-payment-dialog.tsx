@@ -340,7 +340,7 @@ export function RecordPaymentDialog({
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <AiField suggested={!presetContactId && Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
             <FormField label="Customer" required>
               {() =>

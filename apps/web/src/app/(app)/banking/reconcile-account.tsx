@@ -408,7 +408,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="reconcile-cards">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="reconcile-cards">
                 <StatCard label="Statement closing balance" value={money(rec.statementClosingBalance)} trend={{ direction: "neutral", label: formatDay(rec.statementEndDate) }} />
                 <StatCard label="Cleared in Spine" value={money(rec.clearedBalance)} trend={{ direction: "neutral", label: `opening ${money(rec.openingBalance)} + ${rec.matchedCount} matched` }} />
                 <div className="rounded-lg border border-border bg-surface p-5" data-testid="reconcile-difference">

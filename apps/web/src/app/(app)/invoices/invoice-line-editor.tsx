@@ -350,7 +350,7 @@ function ItemLineFields({
         onChange={(e) => onChange({ description: e.target.value })}
         placeholder="Description (optional)"
       />
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
         <FieldLabel label="Qty">
           <Input
             type="number"
@@ -391,7 +391,7 @@ function ItemLineFields({
         </label>
       </div>
       {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
-        <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
+        <div className={showHsn ? "grid grid-cols-1 items-start gap-2 md:grid-cols-2" : "flex flex-col"}>
           {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => onChange({ hsnSac })} />}
           {showsSupplyType(line.supplyClass, taxPercent) && (
             <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />

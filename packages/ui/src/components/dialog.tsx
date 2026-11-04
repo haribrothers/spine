@@ -39,7 +39,7 @@ const DIALOG_SIZES = {
   md: "max-w-md max-h-[85vh]",
   lg: "max-w-4xl h-[min(720px,85vh)]",
   // US-SET-32 (D-236): roomy on large screens (up to 1152 × 960, 90% of the window, 24px margin), the whole screen on a phone.
-  xl: "max-w-[min(1152px,calc(100vw-48px))] h-[min(960px,90vh)] max-md:h-dvh max-md:max-w-none max-md:rounded-none max-md:border-0",
+  xl: "max-w-[min(1152px,calc(100vw-48px))] h-[min(960px,90vh)] max-md:h-dvh max-md:w-full max-md:max-w-none max-md:rounded-none max-md:border-0",
 } as const;
 
 export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
@@ -60,7 +60,8 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-surface shadow-overlay focus:outline-none",
+          // US-OPS-15: under 768px a 16px gutter each side (xl is the whole screen there, D-236).
+          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-surface shadow-overlay focus:outline-none md:w-full",
           DIALOG_SIZES[size],
           className,
         )}

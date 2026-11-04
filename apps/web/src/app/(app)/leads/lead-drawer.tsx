@@ -242,7 +242,7 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
         </DrawerHeader>
 
         <DrawerBody className="flex flex-col gap-0 divide-y divide-border py-0">
-          <section aria-label="Details" className="grid grid-cols-1 gap-x-3.5 gap-y-3 py-4 sm:grid-cols-2">
+          <section aria-label="Details" className="grid grid-cols-1 gap-x-3.5 gap-y-3 py-4 md:grid-cols-2">
             <FormField label="Title" className="sm:col-span-2">
               {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} disabled={!editable} />}
             </FormField>

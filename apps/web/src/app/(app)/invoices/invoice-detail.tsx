@@ -655,7 +655,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {invoice.emailStatus === "failed" && <EmailFailedAlert error={invoice.emailError} recordId={invoice.id} />}
 
       {figures.length > 0 && (
-        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3")} data-testid="invoice-figures">
+        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")} data-testid="invoice-figures">
           {figures}
         </div>
       )}
@@ -675,7 +675,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           )}
 
           {(invoice.notes || invoice.termsAndConditions) && (
-            <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Card className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {invoice.notes && (
                 <div>
                   <h3 className="text-[12px] font-semibold text-on-surface-muted">Notes</h3>

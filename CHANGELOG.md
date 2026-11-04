@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-04 — The web app on a phone (US-OPS-14, US-OPS-15, finding C19, D-066)
+
+- **Phone layout:** under 768px a top bar shows the menu button, the logo, notifications and your avatar, in place of the sidebar. The menu button slides the full navigation in from the left over a dimmed page, with search, a close button, and your name and help at the bottom. Tapping the dimmed area, Escape or a link closes it. New `@spine/ui` parts: `AppShellTopBar` and `AppShellMobileNav`, documented on the AppShell page.
+- **Tap targets:** every control is at least 44×44px under 768px, set once in the Tailwind preset. Checkboxes, radios and switches keep their size with a 44px tap area around them.
+- **Fits the screen:** page headers wrap their actions under the title. The dashboard's key figures are two per row and charts one per row. Content padding is 16px. Tables scroll inside their card, and no page scrolls sideways. Dialogs fill the width with a 16px gutter (Settings stays full-screen, D-236), drawers leave 16px, and form fields stack in one column below 768px (54 form grids moved from `sm:` to `md:`).
+- **Tests:** `us-ops-14` (top bar, opening and closing the navigation, the dashboard at 390px, 44px controls) and `us-ops-15` (19 routes at 390×844 with no sideways scroll and tables scrolling in their box; dialog, drawer and form widths) E2E specs, and an AppShell a11y test for the phone parts. QA sections 274 and 275.
+
 ### 2026-11-04 — A helpful page for a missing page, and for an unexpected error (US-OPS-11, US-OPS-13, finding G8)
 
 - **404:** an unknown address, a record id that can't be one, or a record that isn't in your organisation shows "404", "We can't find that page" and that financial documents are never deleted, inside the app shell, with "Go to dashboard" and "Go back". Signed out, an unknown address goes to the login page first and comes back after. Record pages use a new `useLoadFailure(id)` hook. Before, they showed only an error line (or a 500 for a malformed id).

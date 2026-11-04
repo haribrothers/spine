@@ -255,7 +255,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
         </Alert>
       )}
 
-      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <FormField label="Contact" required>
           {(field) => <ContactPicker id={field.id} aria-describedby={field["aria-describedby"]} aria-invalid={field["aria-invalid"]} aria-required={field["aria-required"]} value={contactId} onValueChange={touch(setContactId)} />}
         </FormField>
@@ -326,7 +326,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       </Card>
 
       <Card id="invoice-notes" className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField label="Notes" helperText="Visible to the customer on the invoice.">
             {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder="Notes for the customer…" />}
           </FormField>
