@@ -13,15 +13,46 @@ the owner never has to think in debits and credits. See
 [`docs/README.md`](docs/README.md) for the full product spec, and
 [`CLAUDE.md`](CLAUDE.md) for the architecture rules that govern implementation.
 
+## What it does
+
+- **Sales:** contacts, a lead pipeline, meetings, a catalogue, and quotes your customers accept online.
+- **Jobs:** turn an accepted quote into a job with milestones, variations, crew and costs, and invoice it as you go, retention included.
+- **Billing:** invoices, credit notes, payments, reminders and statements, with tax per line (GST in India).
+- **Purchases:** vendor bills, expenses with receipts and approvals, and vendor payments.
+- **Books:** every document posts its own balanced entries, so the profit and loss, balance sheet, cash flow, aging and job profitability are always up to date. Exports to Tally.
+- **Field app:** crews see their jobs, mark milestones done, and send photos and expenses, offline too (Android and iPhone).
+- **Your server, your data:** it runs on your own machine with Docker. Nothing calls home, and backups, restores and upgrades are one command each.
+
+## Install in 5 minutes
+
+You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
+
+```bash
+./install.sh --app-url https://spine.example.com
+```
+
+It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
+
+## Back up and restore
+
+```bash
+./backup.sh --passphrase        # one encrypted file with the database and every attachment
+./restore.sh backups/spine-backup-<date>.tar.gz.enc
+```
+
+`./backup.sh --help` shows how to run it nightly and keep a copy off the machine (`BACKUP_REMOTE`). Owners see a banner when the last backup is more than two days old.
+
+## Update
+
+Owners see "Spine <version> is available" when a new release is out. `./upgrade.sh` backs up, pulls the new version and restarts; the database is migrated automatically after a snapshot. See [Updating](#updating).
+
+## Help
+
+The user guide and the self-hosting guide are at [docs.h4loom.com](https://docs.h4loom.com), and in the app (the **?** button). Found a bug or want something? [Open an issue](https://github.com/haribrothers/spine/issues/new/choose). Found a security problem? Please report it privately, as [SECURITY.md](SECURITY.md) explains.
+
 ## Status
 
-Phase 0 (Foundation) is complete — monorepo scaffold, auth, the `@spine/ui`
-component library and its docs app, the ledger/money/tax core, onboarding,
-Settings, and Files. Phase 1 (Sales Spine) is underway: Contacts & CRM,
-Catalogue, and Quotes (including PDF rendering, email sending, and the
-public accept/reject link) are complete, plus an in-app notification centre
-and browser push notifications. See [`CHANGELOG.md`](CHANGELOG.md) for the
-full phase-by-phase breakdown of what's landed vs. planned.
+Spine is at 1.0 beta: every module above is built and in use, and the 1.0 release is being finished (packaging, the docs site, translations). [`CHANGELOG.md`](CHANGELOG.md) lists what landed in each phase, and [`docs/progress.md`](docs/progress.md) what's open.
 
 ## Tech stack
 
@@ -70,7 +101,7 @@ below instead — that path never requires Node or pnpm on the host.)
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 22+ and pnpm 9
 - [pnpm](https://pnpm.io/installation) (`corepack enable` is the easiest way to get the pinned version)
 - Docker (for Postgres and MailDev — you do not need either installed locally)
 
@@ -241,24 +272,20 @@ pnpm db:seed:dev
 
 ## Production / self-hosting
 
-The production path uses `docker-compose.yml`, which builds `api` and `web`
-as containers and serves everything behind Caddy — no Node or pnpm needed on
-the host.
-
-```bash
-cp .env.example .env      # edit the 3 required values
-docker compose --profile minimal up -d
-docker compose exec api pnpm --filter @spine/api db:migrate
-```
+The release's `docker-compose.yml` runs the published images
+(`ghcr.io/haribrothers/spine-api` and `spine-web`) behind Caddy, so the host
+needs only Docker. `install.sh` sets it up (see [Install in 5 minutes](#install-in-5-minutes));
+from a clone it's `./scripts/install.sh`, with the same published images.
 
 The app boots with only three required environment variables
-(`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`) — see `docs/prd/01-tech-stack.md`.
-Attachments work out of the box: the API stores them on the `spine_files`
-volume (`STORAGE_DRIVER=local`). `docker compose down -v` deletes that
-volume along with the database, so don't use `-v` unless you mean it. To
-keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and the `S3_*`
-values; add `--profile rustfs` to run a self-hosted S3 store. Use the
-`full` profile instead of `minimal` to add the Cloudflare Tunnel sidecar.
+(`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`); everything else in
+[`.env.example`](.env.example) is optional and degrades gracefully. The API
+applies database migrations when it starts. Attachments live on the API's
+`spine_files` volume (`STORAGE_DRIVER=local`); `docker compose down -v`
+deletes that volume along with the database, so don't use `-v` unless you
+mean it. To keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and
+the `S3_*` values; add `--profile rustfs` to run a self-hosted S3 store. Use
+`--profile full` to add the Cloudflare Tunnel sidecar.
 
 ### Updating
 
@@ -317,9 +344,13 @@ list:
   time. Corrections are reversing entries.
 - **Money is `bigint` minor units + currency code.** Never floats.
 
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up, the rules every change follows, and signing off your commits (Developer Certificate of Origin). Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). How releases are made: [docs/release.md](docs/release.md).
+
 ## License
 
-Not yet decided.
+Spine is free software under the [GNU Affero General Public License v3.0 only](LICENSE) (AGPL-3.0-only), copyright (C) 2026 Hari Prasad. You can self-host it, change it and share it; if you run a modified copy as a service for others, you must offer them its source.
 
 ### Artwork
 

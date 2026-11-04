@@ -1,0 +1,13 @@
+# Secret-scan findings reviewed and accepted in docs/security-review.md (US-OPS-18):
+# test passwords and session cookies in integration tests, a test push-subscription key,
+# and the S3 driver reading its key from the environment. None is a real secret.
+7ccd6607b053800eec115979b41d6c1f656a38aa:apps/api/src/common/logging/us-ops-07.http.integration.test.ts:generic-api-key:70
+7ccd6607b053800eec115979b41d6c1f656a38aa:apps/api/src/common/logging/us-ops-07.http.integration.test.ts:generic-api-key:74
+7ccd6607b053800eec115979b41d6c1f656a38aa:apps/api/src/common/logging/us-ops-07.test.ts:generic-api-key:11
+9db148df502fcc1d6a503f2377ed161c070bef9f:apps/api/src/modules/demo-data/us-onb-35.http.integration.test.ts:generic-api-key:82
+86454f9d575f85309abd0e93d3ce4d2b276ba614:apps/api/src/modules/notifications/us-ntf-12.http.integration.test.ts:generic-api-key:24
+9ab2cb4132623f01c929a9bbcc99a055fbb1ffdb:apps/api/src/auth/us-auth-10.http.integration.test.ts:generic-api-key:75
+9ab2cb4132623f01c929a9bbcc99a055fbb1ffdb:apps/api/src/auth/us-auth-10.http.integration.test.ts:generic-api-key:83
+162e162f0b0b1da89c5e4552e5a4c639a6b40c84:apps/api/src/modules/files/storage/s3-storage.driver.ts:generic-api-key:30
+72cf956ad57e6c670ff288d4b988977af004d3f3:apps/design-system/src/app/components/calendar/page.tsx:generic-api-key:629
+72cf956ad57e6c670ff288d4b988977af004d3f3:apps/design-system/src/app/components/calendar/page.tsx:generic-api-key:630

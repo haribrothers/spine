@@ -4,6 +4,8 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { installBigIntJsonSerialization } from "./common/bigint-json";
 import { requestLogging } from "./common/logging/request-logging";
+import { trustProxy } from "./common/trust-proxy";
+import { securityHeaders } from "./common/security-headers";
 import { spineLogger } from "./common/logging/spine-logger";
 import { MigrationError, migrateOnStart } from "./db/migrate-on-start";
 
@@ -30,6 +32,8 @@ async function bootstrap() {
 
   // US-OPS-07: JSON logs in production, every line redacted; each request gets an id and one line when it finishes.
   const app = await NestFactory.create(AppModule, { bodyParser: false, logger: spineLogger });
+  trustProxy(app);
+  app.use(securityHeaders());
   app.use(requestLogging());
   app.enableCors({
     origin: process.env.APP_URL,
