@@ -38,6 +38,7 @@ import { VendorPaymentActivity } from "./vendor-payment-activity";
 import { PAYMENT_METHOD_LABELS, type VendorPaymentDetailData } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 /**
  * A vendor payment's page (US-PUR-49, US-PUR-50, US-PUR-54, D-229),
  * replacing the drawer. The number is the title, with the vendor, date,
@@ -51,6 +52,7 @@ import { SectionLink } from "../../../components/section-link";
  * `?action=email|delete` (from a row's menu) opens that dialog.
  */
 export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
+  const loadFailed = useLoadFailure(paymentId);
   const router = useRouter();
   const showToast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -74,7 +76,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
     apiClient
       .get<VendorPaymentDetailData>(`/vendor-payments/${paymentId}`)
       .then(setPayment)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this payment."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this payment."));
   }, [paymentId]);
 
   useEffect(() => {

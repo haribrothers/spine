@@ -39,6 +39,8 @@ import { VendorCreditActivity } from "./vendor-credit-activity";
 import { CREDIT_STATE_CLASS, CREDIT_STATE_LABELS, creditRecordedToast, creditState, creditUse, hasCreditLeft } from "./vendor-credit-state";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
+
 /** A credit's state in words — never colour alone (US-PUR-37). */
 export function CreditStateBadge({ credit, testId }: { credit: Pick<VendorCredit, "status" | "totalAmount" | "balanceAmount">; testId?: string }) {
   const state = creditState(credit);
@@ -60,6 +62,7 @@ export function CreditStateBadge({ credit, testId }: { credit: Pick<VendorCredit
  * Activity. Every major action asks first, and every action toasts.
  */
 export function VendorCreditDetail({ creditId }: { creditId: string }) {
+  const loadFailed = useLoadFailure(creditId);
   const router = useRouter();
   const [credit, setCredit] = useState<VendorCredit | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         setCredit(c);
         setRefreshKey((k) => k + 1);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this vendor credit."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this vendor credit."));
   }, [creditId]);
 
   useEffect(() => {

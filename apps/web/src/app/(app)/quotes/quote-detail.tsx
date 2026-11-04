@@ -49,6 +49,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { AttachmentsSection } from "../../../components/attachments-section";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
  * `quote_conversion_guard` setting is "warn" and this quote already has a
@@ -102,6 +103,7 @@ function quotePdfUrl(quoteId: string): string {
  * workflow, per the task brief's own scope note.
  */
 export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; currentUserId: string | null }) {
+  const loadFailed = useLoadFailure(quoteId);
   const router = useRouter();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -136,7 +138,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     apiClient
       .get<Quote>(`/quotes/${quoteId}`)
       .then(setQuote)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load quote."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Could not load quote."));
   }, [quoteId]);
 
   useEffect(() => {

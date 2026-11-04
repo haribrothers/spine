@@ -48,6 +48,7 @@ import { initials, lastActiveLabel, shortDate } from "../../users/users-list-sta
 import { TeamDialog, type TeamDialogMode } from "../team-dialog";
 import { leftWithoutTeam, peopleLabel } from "../teams-state";
 import { TeamPermissions } from "./team-permissions";
+import { useLoadFailure } from "../../../../../lib/use-load-failure";
 
 type Tab = "members" | "permissions" | "history";
 const TABS: Tab[] = ["members", "permissions", "history"];
@@ -64,6 +65,7 @@ function names(list: string[]): string {
  * unsaved changes asks first.
  */
 export function TeamPage({ teamId }: { teamId: string }) {
+  const loadFailed = useLoadFailure(teamId);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -90,9 +92,10 @@ export function TeamPage({ teamId }: { teamId: string }) {
       setMembers(m);
       setHistoryKey((k) => k + 1);
     } catch (err) {
+      if (loadFailed(err)) return;
       setLoadError(err instanceof Error ? err.message : "Couldn't load this Team. Go back to Teams and try again.");
     }
-  }, [teamId]);
+  }, [teamId, loadFailed]);
 
   useEffect(() => {
     void load();

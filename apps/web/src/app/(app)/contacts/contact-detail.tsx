@@ -50,6 +50,7 @@ import { StatementDialog } from "./statement-dialog";
 import { CustomerRefundDialog, refundToast } from "../../../components/customer-refund-dialog";
 import { loadCustomerCredit } from "../../../lib/customer-credit";
 import { AttachmentsSection } from "../../../components/attachments-section";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
   customer: "Customer",
@@ -84,6 +85,7 @@ const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
  * "or skip a redundant Overview tab — your call" allowance.
  */
 export function ContactDetail({ contactId }: { contactId: string }) {
+  const loadFailed = useLoadFailure(contactId);
   const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
   const [leads, setLeads] = useState<Lead[] | null>(null);
@@ -140,6 +142,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
       const row = await apiClient.get<Contact>(`/contacts/${contactId}`);
       setContact(row);
     } catch (err) {
+      if (loadFailed(err)) return;
       setError(err instanceof Error ? err.message : "Could not load contact.");
     }
   }

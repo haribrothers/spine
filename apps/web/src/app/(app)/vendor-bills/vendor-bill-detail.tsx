@@ -40,6 +40,7 @@ import { BILL_STATE_CLASS, BILL_STATE_LABELS, billRecordedToast, billState, late
 import type { VendorBill } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 /**
  * US-PUR-32/US-PUR-33 (D-225) — a vendor bill's page, laid out like a
  * payment's (D-221): the bill number as the title with its state in words,
@@ -51,6 +52,7 @@ import { SectionLink } from "../../../components/section-link";
  * attachments; Activity. Every major action asks first and toasts.
  */
 export function VendorBillDetail({ billId }: { billId: string }) {
+  const loadFailed = useLoadFailure(billId);
   const router = useRouter();
   const [bill, setBill] = useState<VendorBill | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         setBill(b);
         setRefreshKey((k) => k + 1);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load vendor bill."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Could not load vendor bill."));
   }, [billId]);
 
   useEffect(() => {

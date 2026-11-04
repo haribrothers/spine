@@ -61,6 +61,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { calendarDate } from "../quotes/quotes-list-state";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
  * always JSON-parses responses, so this opens the route directly in a new
@@ -83,6 +84,7 @@ function invoicePdfUrl(invoiceId: string): string {
  * issue") opens that step; `?duplicated=` is handled by the builder.
  */
 export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
+  const loadFailed = useLoadFailure(invoiceId);
   const router = useRouter();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +122,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     apiClient
       .get<Invoice>(`/invoices/${invoiceId}`)
       .then(setInvoice)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load invoice."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Could not load invoice."));
   }, [invoiceId]);
 
   useEffect(() => {

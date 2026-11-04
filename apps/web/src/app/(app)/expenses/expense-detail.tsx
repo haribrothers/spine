@@ -37,6 +37,7 @@ import { EXPENSE_STATE_CLASS, EXPENSE_STATE_LABELS, canReviewThis, expenseState,
 import type { Expense } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 /**
  * US-PUR-43/US-PUR-45 (D-227) — an expense on its own page, laid out like a
  * bill's (D-225): its number (or "Expense" before approval) as the title,
@@ -48,6 +49,7 @@ import { SectionLink } from "../../../components/section-link";
  * details (or the labour rows); attachments; Activity.
  */
 export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string; currentUserId: string | null }) {
+  const loadFailed = useLoadFailure(expenseId);
   const router = useRouter();
   const role = useMyRole();
   const isOwner = role === "owner";
@@ -76,7 +78,7 @@ export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string;
         setExpense(e);
         setRefreshKey((k) => k + 1);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this expense."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this expense."));
   }, [expenseId]);
 
   useEffect(() => {

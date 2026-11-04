@@ -5589,6 +5589,23 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 5. On iPhone, Settings › Accessibility › Motion › Reduce Motion; on Android, Settings › Accessibility › Remove animations. In the field app, change tabs and open a form with floating labels: the selection and the labels move without animating, and the selected tab is still clearly marked.
 6. Regression: with reduced motion off, dialogs, toasts, the palette and the field app's tabs look as before (section 99 for the palette, section 215 for toasts).
 
+## 272. Show a helpful page for a missing page (US-OPS-11, Phase 12)
+
+1. Signed in, open `/no-such-page`. The page says "404", "We can't find that page" and that financial documents are never deleted, with the sidebar still there.
+2. "Go back" returns to the page before; "Go to dashboard" opens the dashboard.
+3. Open an invoice, then change its address to a different id (e.g. change the last character), and to `/invoices/abc`: both show the same page. Do the same for a contact, a job and a vendor bill.
+4. As Field, open another person's expense by its address: the same 404 page (the API answers 404 for records they can't see).
+5. Sign out and open `/no-such-page`: the login page opens; after logging in you're back on the 404 page.
+6. Regression: every list and record page still opens normally, and a record you can open but not change still shows its own messages.
+
+## 273. Recover from an unexpected error (US-OPS-13, Phase 12)
+
+1. Stop the API (`docker compose stop api`) while signed in, then open an invoice: the page shows "Something went wrong on our side", that nothing saved was lost, and an error reference. (If the browser can't reach the API at all, the record page says so instead; this check needs the API to answer with an error, e.g. while the database is stopped: `docker compose stop db`.)
+2. The reference is a request id that `docker compose logs api` shows next to the error.
+3. Start it again and press "Try again": the page reloads and the invoice shows.
+4. "Go to dashboard" opens the dashboard.
+5. Regression: a refused action still shows the permission toast, and a dropped connection still shows the page's own message, not this page.
+
 ## Known gaps — don't file these as bugs
 
 - While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).

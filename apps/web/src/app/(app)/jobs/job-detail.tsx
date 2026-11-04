@@ -70,6 +70,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { BUDGET_NOT_NEGATIVE, PERCENT_COMPLETE_RANGE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
 
@@ -105,6 +106,7 @@ function mapLink(address: string): string {
  * every mutating request.
  */
 export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: string; currentUserId: string | null }) {
+  const loadFailed = useLoadFailure(jobId);
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -155,7 +157,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
     apiClient
       .get<Job>(`/jobs/${jobId}?include=billing`)
       .then(setJob)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load job."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Could not load job."));
     apiClient
       .get<Milestone[]>(`/jobs/${jobId}/milestones`)
       .then(setMilestones)

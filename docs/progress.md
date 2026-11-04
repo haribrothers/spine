@@ -655,8 +655,8 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 
 - [x] US-OPS-06 · Tell owners a new version is available
 - [x] US-OPS-09 · Respect reduced-motion settings everywhere
-- [ ] US-OPS-11 · Show a helpful page for a missing page
-- [ ] US-OPS-13 · Recover from an unexpected error
+- [x] US-OPS-11 · Show a helpful page for a missing page
+- [x] US-OPS-13 · Recover from an unexpected error
 - [ ] US-OPS-14 · Use the web app on a phone
 - [ ] US-OPS-15 · Keep wide tables usable on small screens
 - [ ] US-OPS-16 · Move every user-facing string into translation files

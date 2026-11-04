@@ -35,6 +35,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { CREDIT_NOTE_STATE_LABELS, creditNoteState } from "./credit-notes-list-state";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
@@ -55,6 +56,7 @@ const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
  * row's menu) opens that dialog.
  */
 export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
+  const loadFailed = useLoadFailure(creditNoteId);
   const router = useRouter();
   const [note, setNote] = useState<CreditNote | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
     apiClient
       .get<CreditNote>(`/credit-notes/${creditNoteId}`)
       .then(setNote)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this credit note."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this credit note."));
   }, [creditNoteId]);
 
   useEffect(() => {

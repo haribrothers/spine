@@ -29,12 +29,14 @@ import { formatMoney } from "../../../lib/money";
 import { HistorySection } from "../../../components/history-section";
 import { useMyRole } from "../../../lib/role-context";
 import { JournalDialog } from "./journal-dialog";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
 /** US-RPT-20, US-RPT-21 — `ManualJournalDetail`: the journal's lines and, once reversed, the reversal. */
 export function JournalDetail({ journalId }: { journalId: string }) {
+  const loadFailed = useLoadFailure(journalId);
   const [journal, setJournal] = useState<ManualJournal | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [error, setError] = useState<string | null>(null);
@@ -65,8 +67,8 @@ export function JournalDetail({ journalId }: { journalId: string }) {
     apiClient
       .get<ManualJournal>(`/manual-journals/${journalId}`)
       .then(setJournal)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this journal."));
-  }, [journalId]);
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this journal."));
+  }, [journalId, loadFailed]);
 
   useEffect(() => {
     load();

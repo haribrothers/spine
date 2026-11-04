@@ -189,6 +189,7 @@ Finding: G8
 
 **Implementation notes**
 - Next.js `not-found.tsx` under `(app)`.
+- Built: a catch-all `(app)/[...missing]` sends signed-out visitors to `/login?next=…` and otherwise shows the 404 inside the shell. Record pages load in the browser, so `useLoadFailure(id)` (`apps/web/src/lib/use-load-failure.ts`) shows the 404 for an id that isn't a UUID, without calling the API, and for an API 404. It shows US-OPS-13's error page for a 5xx. The 13 record pages use it: contacts, quotes, invoices, credit notes, payments, jobs, expenses, vendor bills, vendor credits, vendor payments, journals, bank accounts and Teams.
 
 ### US-OPS-12 · Explain why I can't open a page
 **Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 6 · **Screens:** `NoAccess`
@@ -218,6 +219,7 @@ Finding: G8
 
 **Implementation notes**
 - Next.js `error.tsx`; request id from US-OPS-07.
+- Built: `app/error.tsx` (outside the shell, as drawn) and `global-error.tsx` for a failing root layout. The reference is the API's `X-Request-Id`, which `ApiError.requestId` now carries. Without one, it's Next.js's digest (logged with the server error), or else the time. "Try again" reloads the page; "Go to dashboard" is a full page load.
 
 ### US-OPS-14 · Use the web app on a phone
 **Feature:** F-OPS-06 · **Priority:** P1 · **Phase:** 12 · **Screens:** `AppShellPhone`, `AppShellPhoneNav`

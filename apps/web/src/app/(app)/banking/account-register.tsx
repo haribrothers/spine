@@ -60,6 +60,7 @@ import { MoneyInOutDialog } from "./money-in-out-dialog";
 import { TransferDialog } from "./transfer-dialog";
 import { RegisterEntryDrawer, type DrawerEntry } from "./register-entry-drawer";
 import { REGISTER_RANGES, REGISTER_RANGE_LABELS, opensDrawer, parseRegisterState, rangeDates, registerQuery, sourceHref, type RegisterRange, type RegisterState } from "./register-state";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 
 const TABLE_COLUMNS = [
   { key: "date", header: "Date", width: "w-24" },
@@ -82,6 +83,7 @@ const ALL = "__all__";
  * card reads "Paid off", "Spent" and "Owed".
  */
 export function AccountRegisterView({ accountId }: { accountId: string }) {
+  const loadFailed = useLoadFailure(accountId);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -123,6 +125,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         setUpdatedAt(Date.now());
         setNow(Date.now());
       } catch (err) {
+        if (loadFailed(err)) return;
         setError(err instanceof Error ? err.message : "Couldn't load this account. Refresh to try again.");
       } finally {
         loading.current = false;

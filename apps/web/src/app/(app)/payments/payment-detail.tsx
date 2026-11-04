@@ -45,6 +45,7 @@ import { PAYMENT_METHOD_LABELS, type PaymentDetailData } from "./types";
 import { ActionError } from "../../../components/action-error";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type PaymentState = "applied" | "credit" | "refunded";
@@ -70,6 +71,7 @@ export function paymentState(p: { unallocatedAmount: string; refundedAmount?: st
  * opens that dialog.
  */
 export function PaymentDetail({ paymentId }: { paymentId: string }) {
+  const loadFailed = useLoadFailure(paymentId);
   const router = useRouter();
   const [payment, setPayment] = useState<PaymentDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
     apiClient
       .get<PaymentDetailData>(`/payments/${paymentId}`)
       .then(setPayment)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this payment."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this payment."));
   }, [paymentId]);
 
   useEffect(() => {

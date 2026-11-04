@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-04 — A helpful page for a missing page, and for an unexpected error (US-OPS-11, US-OPS-13, finding G8)
+
+- **404:** an unknown address, a record id that can't be one, or a record that isn't in your organisation shows "404", "We can't find that page" and that financial documents are never deleted, inside the app shell, with "Go to dashboard" and "Go back". Signed out, an unknown address goes to the login page first and comes back after. Record pages use a new `useLoadFailure(id)` hook. Before, they showed only an error line (or a 500 for a malformed id).
+- **Error page:** a page that fails on the server shows "Something went wrong on our side", that nothing saved was lost, and "Error reference: <request id>" with "Try again" (reloads) and "Go to dashboard". `ApiError` carries the API's `X-Request-Id`.
+- **Tests:** `us-ops-11` and `us-ops-13` web tests and E2E specs (an unknown address, a missing and a malformed record, signed out; a stubbed 500 with its request id, Try again recovering, Go to dashboard). QA sections 272 and 273.
+
 ### 2026-11-04 — Respect reduced-motion settings everywhere (US-OPS-09, finding C25)
 
 - **Web:** with `prefers-reduced-motion: reduce`, the Tailwind preset collapses the `--duration-*` tokens and ends every transition and animation at once (0.01ms, so code waiting for `transitionend` still runs). Dialogs, drawers, menus, popovers, toasts and the sidebar appear in their final state. Spinners keep turning, as the only sign that work is going on.

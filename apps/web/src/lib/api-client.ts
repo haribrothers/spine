@@ -44,6 +44,8 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly body: unknown,
+    /** US-OPS-13 — the API's `X-Request-Id` (US-OPS-07), the error page's reference. */
+    public readonly requestId?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -77,6 +79,7 @@ async function request<T>(
   });
 
   if (!res.ok) {
+    const requestId = res.headers.get("X-Request-Id") ?? undefined;
     let message = `Request failed (${res.status})`;
     let data: unknown;
     try {
@@ -89,7 +92,7 @@ async function request<T>(
     // US-TEAM-24: an Owner set this password — choose your own first.
     if (res.status === 403 && (data as { error?: string } | undefined)?.error === PASSWORD_CHANGE_REQUIRED_ERROR) {
       sendToChoosePassword();
-      throw new ApiError(message, res.status, data);
+      throw new ApiError(message, res.status, data, requestId);
     }
     // US-SET-24, US-AI-03: a switched-off module or AI feature isn't a permission problem — its own message says what to do.
     const refusal = (data as { error?: string } | undefined)?.error;
@@ -104,7 +107,7 @@ async function request<T>(
       if (method !== "GET") message = SESSION_EXPIRED_MESSAGE;
       signalSessionExpired(method !== "GET");
     }
-    throw new ApiError(message, res.status, data);
+    throw new ApiError(message, res.status, data, requestId);
   }
 
   if (res.status === 204) {
