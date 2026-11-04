@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-04 — Respect reduced-motion settings everywhere (US-OPS-09, finding C25)
+
+- **Web:** with `prefers-reduced-motion: reduce`, the Tailwind preset collapses the `--duration-*` tokens and ends every transition and animation at once (0.01ms, so code waiting for `transitionend` still runs). Dialogs, drawers, menus, popovers, toasts and the sidebar appear in their final state. Spinners keep turning, as the only sign that work is going on.
+- **Phone:** `@spine/ui-native` has `useReduceMotion()` and `isReduceMotionEnabled()`. With Reduce Motion (iOS) or Remove animations (Android) on, `GaugeIndicator` shows its value without the spring, `FloatingTabBar`'s highlight snaps to the new tab and `FloatingLabelField`'s label moves without animating. `Skeleton` and `Carousel` already held still. The field app's native tabs follow the setting themselves.
+- **Docs:** `motion.md` says how it's built in place of the C25 gap. The motion page in the design system and the gauge and floating label demos say what happens.
+- **Tests:** a `us-ops-09` E2E (the palette, a menu, a toast and the sidebar with reduced motion, and a toast still animating without it) and a `us-ops-09` native test (gauge, tab highlight, floating label). QA section 271.
+
 ### 2026-11-04 — Tell owners a new version is available (US-OPS-06, D-055, D-269)
 
 - **Daily check:** once a day (04:17), and at start-up if the last result is missing or a day old, the API asks GitHub Releases for Spine's latest release. Drafts and pre-releases don't count. The request carries only `Accept` and `User-Agent: Spine`: no version, address or business. A failed check is logged and keeps the last result. `UPDATE_CHECK=off` schedules nothing, so no request is made. Tests and CI set it off.

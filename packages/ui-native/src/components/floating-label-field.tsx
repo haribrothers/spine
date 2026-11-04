@@ -3,6 +3,7 @@ import { Animated, Platform, View, type TextInput, type TextInputProps } from "r
 import { TextField } from "./text-field";
 import { NativeTextField, type NativeTextFieldProps } from "./native-text-field";
 import { useNativeColors } from "../theme/use-native-colors";
+import { useReduceMotion } from "../hooks/use-reduce-motion";
 
 export interface FloatingLabelFieldProps {
   label: string;
@@ -154,14 +155,20 @@ export function FloatingLabelField({
   const [isFocused, setIsFocused] = useState(false);
   const isFloating = isFocused || value.length > 0;
   const animatedProgress = useRef(new Animated.Value(isFloating ? 1 : 0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    // US-OPS-09: with Reduce Motion on, the label moves without animating.
+    if (reduceMotion) {
+      animatedProgress.setValue(isFloating ? 1 : 0);
+      return;
+    }
     Animated.timing(animatedProgress, {
       toValue: isFloating ? 1 : 0,
       duration: 150,
       useNativeDriver: true,
     }).start();
-  }, [isFloating, animatedProgress]);
+  }, [isFloating, animatedProgress, reduceMotion]);
 
   const labelColor = error ? colors.overdue : colors.onSurfaceMuted;
   const labelText = required ? `${label} *` : label;

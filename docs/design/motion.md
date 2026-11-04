@@ -35,7 +35,7 @@ When the user asks for reduced motion (`prefers-reduced-motion: reduce` on web; 
 - Nothing that carries meaning is lost: a state change is still visible as a final state.
 - Auto-advancing content (carousel) stops.
 
-**Current state (finding C25):** only `Carousel` checks reduced motion today. The preset does not collapse the duration variables, and the native springs (`FloatingTabBar`, `GaugeIndicator`) don't check `AccessibilityInfo.isReduceMotionEnabled`. The rule above is the target; the gap is tracked as a story.
+**How it's built (US-OPS-09, finding C25):** on web, `packages/config/tailwind-preset.css` collapses the `--duration-*` tokens to 0.01ms under `prefers-reduced-motion: reduce` and ends every transition and animation at once, so dialogs, drawers, menus, popovers and toasts appear in their final state. Spinners (`animate-spin`) keep turning: they're the only sign that work is going on. Native components read the setting with `useReduceMotion()` (or `isReduceMotionEnabled()` for a one-shot animation on mount) from `@spine/ui-native`: `GaugeIndicator`, `FloatingTabBar` and `FloatingLabelField` set the final value instead of springing or timing, `Skeleton` holds still and `Carousel` stops advancing. The field app's native tabs and sheets are system-owned and follow the setting themselves; its own Reanimated motion uses `useReducedMotion()`.
 
 ## Don'ts
 

@@ -5580,6 +5580,15 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 5. Set `UPDATE_CHECK=off` and restart: the banner doesn't show, and `docker compose logs api` has no "Update check" lines.
 6. Regression: the storage and backup banners still show for Owners when they apply, above or beside this one; Settings › About Spine still shows the version.
 
+## 271. Respect reduced-motion settings everywhere (US-OPS-09, Phase 12)
+
+1. Turn on reduced motion: macOS System Settings › Accessibility › Display › Reduce motion (Windows: Settings › Accessibility › Visual effects › Animation effects off). Reload Spine.
+2. Open the search palette (⌘K), the account menu, a dialog (Payments › Record payment) and a menu on a list row; cause a toast (save a setting). Each appears in its final position at once, with no fade, scale or slide. Close each: it goes at once.
+3. Collapse and expand the sidebar: it changes width at once. A loading spinner (e.g. while a report loads) still turns.
+4. Turn reduced motion off and reload: the palette scales in and toasts slide in again.
+5. On iPhone, Settings › Accessibility › Motion › Reduce Motion; on Android, Settings › Accessibility › Remove animations. In the field app, change tabs and open a form with floating labels: the selection and the labels move without animating, and the selected tab is still clearly marked.
+6. Regression: with reduced motion off, dialogs, toasts, the palette and the field app's tabs look as before (section 99 for the palette, section 215 for toasts).
+
 ## Known gaps — don't file these as bugs
 
 - While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).

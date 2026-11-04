@@ -346,6 +346,30 @@
   }
 }
 
+/* US-OPS-09 (finding C25) — with reduced motion asked for, the duration
+   tokens collapse and every transition and animation ends at once, so
+   dialogs, drawers, toasts and popovers appear in their final state. 0.01ms
+   rather than 0 keeps transitionend/animationend firing for code waiting on
+   them. Spinners keep turning: they're the only sign that work is going on. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* US-SET-10 — a preview of a customer document (Settings › Branding) stays
    light in both themes, like the PDFs and emails it stands for. */
 [data-surface="document"] {

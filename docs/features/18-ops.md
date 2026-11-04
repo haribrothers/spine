@@ -159,6 +159,7 @@ Finding: C25
 
 **Implementation notes**
 - Collapse `--duration-*` in the Tailwind preset under the media query; check `AccessibilityInfo.isReduceMotionEnabled` in native springs ([motion.md](../design/motion.md)).
+- Built: the preset also ends every transition and animation at 0.01ms (not 0, so `transitionend` still fires), except `animate-spin`, because a spinner is the only sign that work is going on. `@spine/ui-native` exports `useReduceMotion()` and `isReduceMotionEnabled()`. `GaugeIndicator`, `FloatingTabBar` and `FloatingLabelField` set the final value instead of animating. The field app's native tabs are system-owned and already follow the setting.
 
 ### US-OPS-10 · Style confirmations by what they do
 **Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** 6 · **Screens:** `MeetingScopeChoice`, `ExpenseBillToCustomer`

@@ -34,3 +34,4 @@ export { SpineUIProvider } from "./theme/spine-ui-provider";
 export { useNativeColors, useNativeHostTheme } from "./theme/use-native-colors";
 export { useUnsavedChangesGuard, type UnsavedChangesNavigation, type UnsavedChangesGuardOptions } from "./hooks/use-unsaved-changes-guard";
 export { useScrollToFocusedInput } from "./hooks/use-scroll-to-focused-input";
+export { useReduceMotion, isReduceMotionEnabled } from "./hooks/use-reduce-motion";
