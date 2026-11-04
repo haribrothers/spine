@@ -260,6 +260,28 @@ keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and the `S3_*`
 values; add `--profile rustfs` to run a self-hosted S3 store. Use the
 `full` profile instead of `minimal` to add the Cloudflare Tunnel sidecar.
 
+### Updating
+
+When a new version is out, Owners see "Spine <version> is available" at the
+top of every page (the server checks GitHub Releases once a day and sends
+nothing about your install; set `UPDATE_CHECK=off` in `.env` to turn that
+off). To update, from the folder with your `.env`:
+
+```bash
+./upgrade.sh                    # to the latest release
+./upgrade.sh --version 1.0.1    # to a given version
+```
+
+(In a clone of this repo it's `./scripts/upgrade.sh`, after checking out the
+version's tag.)
+
+It backs up first, pulls the new version's images and restarts. The API
+takes a database snapshot, then applies the new version's migrations before
+it serves anyone; if a migration fails it stops and names the snapshot to
+restore. Your `.env` is kept, apart from `SPINE_VERSION`. On Coolify, see
+[the Coolify guide](docs/self-hosting-coolify.md#upgrading-to-a-new-beta).
+Settings › About Spine shows the version you're on.
+
 ### Upgrading an install that used MinIO
 
 Spine now stores files on the API's own volume (`STORAGE_DRIVER=local`,
@@ -279,14 +301,6 @@ MinIO. You can either:
 - **Keep MinIO.** Set `STORAGE_DRIVER=s3`, keep your `S3_*` settings, and
   run MinIO yourself, for example from your old compose file or as its own
   service. Spine works unchanged.
-
-The `db:migrate` step is currently manual (run it once after the first
-`up`, and again after pulling any update that adds a migration) — a
-one-command install script (S-10.7) and automatic migrate-on-upgrade
-(S-10.9) are planned for Phase 6, once the rest of the product exists to
-install. `scripts/backup.sh`/`restore.sh` (S-10.8) don't exist yet either;
-until Phase 6, back up by running `pg_dump` against the `db` container and
-copying the `spine_files` volume (or your S3 bucket) yourself.
 
 ## Architecture notes worth knowing before contributing
 

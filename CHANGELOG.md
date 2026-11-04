@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-04 — Tell owners a new version is available (US-OPS-06, D-055, D-269)
+
+- **Daily check:** once a day (04:17), and at start-up if the last result is missing or a day old, the API asks GitHub Releases for Spine's latest release. Drafts and pre-releases don't count. The request carries only `Accept` and `User-Agent: Spine`: no version, address or business. A failed check is logged and keeps the last result. `UPDATE_CHECK=off` schedules nothing, so no request is made. Tests and CI set it off.
+- **`GET /org/update-status`** (Owners only) returns `{ current, latest?, releaseUrl?, checkedAt? }`. The result is stored as the `update_check` setting, which the generic settings routes no longer read or write.
+- **Banner:** Owners see "Spine <new> is available. You're on <current>. Updating runs database migrations automatically and takes a backup first." with "What's new" (the release's notes), "How to update" (the README's new Updating section) and a close button. Closing it hides it in that browser until the next version. Staff and Field never get it. Versions compare the semantic-version way, so 1.0.0 is newer than 1.0.0-beta.2.
+- **Tests:** `us-ops-06` tests in the API (what the request sends, Owner-only access, failures and pre-releases kept out, `UPDATE_CHECK=off`), the web (the banner, closing it, the next version) and shared (version order). QA section 270.
+
 ### 2026-11-03 — Start with demo data from an environment flag (US-OPS-02, D-086)
 
 - **`SEED_DEMO` works:** it was in `.env.example` but nothing read it. On first start, into an empty database only, `true` loads Riverstone Builders and `<country>:<industry>` (e.g. `IN:interior_design`) loads that demo business. The API logs "Demo data loaded — the first person to sign up becomes its owner." On a database with data it logs that seeding was skipped. An unknown value logs what it takes. A failure is logged and never stops the API.

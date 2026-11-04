@@ -116,6 +116,7 @@ Legacy: PRD F10 · Decision: D-055
 
 **Implementation notes**
 - API: `GET /org/update-status` (contract addition); `settings.update_check`. The check reads the GitHub Releases API for the latest release, ignoring pre-releases ([D-269](../prd/12-decisions.md)).
+- Built: `UpdateCheckWorker` runs at 04:17 server time, and at start-up when the last result is missing or a day old. The request is `GET https://api.github.com/repos/haribrothers/spine/releases/latest` with only `Accept` and `User-Agent: Spine`. A failed check keeps the last result. `UPDATE_CHECK=off` schedules nothing. Versions compare the semantic-version way, so a beta is older than its release. The banner sits with the storage and backup banners. Closing it saves the version in that browser, so it shows again for the next version. "How to update" opens the README's Updating section until the docs site ships (Q-15).
 
 ### US-OPS-07 · Log every request with an id
 **Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 12 · **Screens:** —

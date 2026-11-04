@@ -11,6 +11,7 @@ import { RecentVisits } from "../lib/recent-visits";
 import { NotificationBell } from "./notification-bell";
 import { StorageBanner } from "./storage-banner";
 import { BackupBanner } from "./backup-banner";
+import { UpdateBanner } from "./update-banner";
 import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
 import { ModulesProvider, useModules } from "../lib/modules-context";
 import { ModuleOff } from "./module-off";
@@ -158,6 +159,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
             <>
               <StorageBanner />
               <BackupBanner />
+              <UpdateBanner />
             </>
           ) : null
         }>

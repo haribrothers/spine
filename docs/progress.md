@@ -653,7 +653,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 
 ### Milestone 2 · system states and the web app on a phone
 
-- [ ] US-OPS-06 · Tell owners a new version is available
+- [x] US-OPS-06 · Tell owners a new version is available
 - [ ] US-OPS-09 · Respect reduced-motion settings everywhere
 - [ ] US-OPS-11 · Show a helpful page for a missing page
 - [ ] US-OPS-13 · Recover from an unexpected error

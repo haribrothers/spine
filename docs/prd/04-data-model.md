@@ -52,7 +52,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `leads` | `stage_id uuid not null → lead_stages (restrict)` replaces the `lead_stage` enum column: migration `0063` maps new/qualified/proposal/won/lost to the seeded stages at the same position, `0064` makes it not null and drops the old column and enum; index (`org_id`, `stage_id`) | US-CRM-19 |
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
 | `quotes` | `signature_file_id uuid → files (set null)` and `accepted_signer_name text` (on-site acceptance stores what it captured; migration `0110`). An on-site decline (US-MOB-16) also sets `acceptance_method = in_person` and `accepted_by_user_id` (who recorded the answer) | US-QUO-19, US-MOB-16 |
-| `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
+| `settings` key `update_check` | `{ latestVersion, releaseUrl, checkedAt }` written for every business by the daily check; read only through `/org/update-status`, never the generic settings routes | US-OPS-06 |
 | `leads` | `stage_changed_at timestamptz not null default now()` (set whenever `stage_id` changes; backfilled from `updated_at`) | US-CRM-25 |
 | `leads` | `lost_reason text` (`price`, `timing`, `competitor`, `no_response`, `other`; null unless the stage is a Lost stage) and `lost_note text` | US-CRM-26 |
 | `quotes` | `title text?` (≤ 120 characters; copied by duplicate and revise; shown on the PDF and the customer's page; migration `0112`) | US-QUO-30 |

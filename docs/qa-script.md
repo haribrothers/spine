@@ -5571,7 +5571,18 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 6. Settings › Data › Delete all demo data then removes the demo and keeps your account and the business.
 7. Regression: with `SEED_DEMO` unset or `false`, a new install starts empty and the first sign-up makes its own business, as before (US-AUTH-08). An invited person still joins by their invitation.
 
+## 270. Tell owners a new version is available (US-OPS-06, Phase 12)
+
+1. Sign in as an Owner on a server running an older version than the latest public release (or set `SPINE_VERSION` to an older one). Within a minute of start-up, every page shows "Spine <latest> is available. You're on <current>. Updating runs database migrations automatically and takes a backup first."
+2. "What's new" opens that release's notes on GitHub. "How to update" opens the README's Updating section.
+3. Close the banner and reload: it stays hidden. It comes back only when a newer release than that one is out.
+4. Sign in as Staff and as Field: no banner, on any page.
+5. Set `UPDATE_CHECK=off` and restart: the banner doesn't show, and `docker compose logs api` has no "Update check" lines.
+6. Regression: the storage and backup banners still show for Owners when they apply, above or beside this one; Settings › About Spine still shows the version.
+
 ## Known gaps — don't file these as bugs
+
+- While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
 
