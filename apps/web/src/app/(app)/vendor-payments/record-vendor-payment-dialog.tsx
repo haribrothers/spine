@@ -292,7 +292,7 @@ export function RecordVendorPaymentDialog({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <AiField suggested={Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
                 <FormField label="Vendor" required>
-                  {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+                  {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={setContactId} />}
                 </FormField>
               </AiField>
               <FormField label="Amount" required>

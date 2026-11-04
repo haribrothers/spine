@@ -249,7 +249,7 @@ export function RecurringInvoiceDialog({
               {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Monthly maintenance — Hotel lobby" />}
             </FormField>
             <FormField label="Customer" errorText={problems.contact}>
-              {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+              {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={setContactId} />}
             </FormField>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

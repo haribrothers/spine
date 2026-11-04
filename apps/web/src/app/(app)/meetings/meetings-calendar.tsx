@@ -728,7 +728,7 @@ export function MeetingsCalendar() {
 
           <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
             <div className="flex items-center gap-2">
-              <Checkbox checked={allOrganizersVisible} onCheckedChange={(v) => toggleAllOrganizers(v === true)} />
+              <Checkbox checked={allOrganizersVisible} onCheckedChange={(v) => toggleAllOrganizers(v === true)} aria-label="Show every calendar" />
               <CollapsibleTrigger className="flex flex-1 items-center justify-between text-[13px] font-semibold text-on-surface">
                 Calendars
                 <ChevronDown size={14} className={calendarsOpen ? "rotate-180 transition-transform" : "transition-transform"} />

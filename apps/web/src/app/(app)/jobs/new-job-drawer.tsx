@@ -303,7 +303,7 @@ export function NewJobDrawer({
                 )}
               </FormField>
               <FormField label="Currency" required>
-                {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} aria-label="Currency" />}
+                {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={setCurrency} aria-label="Currency" />}
               </FormField>
               <FormField label="Contract value" errorText={errors.contractValue || undefined}>
                 {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={contractValue} onChange={(e) => setContractValue(e.target.value)} placeholder="0.00" />}

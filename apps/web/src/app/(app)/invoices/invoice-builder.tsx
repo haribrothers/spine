@@ -274,7 +274,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
           )}
         </FormField>
         <FormField label="Currency" required>
-          {() => <Combobox options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
+          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
         </FormField>
         {pos.active ? (
           <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />

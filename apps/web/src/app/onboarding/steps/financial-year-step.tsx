@@ -44,7 +44,7 @@ export function FinancialYearStep({ initialValue, onSave, onSkip, saveLabel = "C
         {() => (
           <div className="flex gap-2">
             <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label="Month">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -56,7 +56,7 @@ export function FinancialYearStep({ initialValue, onSave, onSkip, saveLabel = "C
               </SelectContent>
             </Select>
             <Select value={String(day)} onValueChange={(v) => setDay(Number(v))}>
-              <SelectTrigger className="w-24">
+              <SelectTrigger className="w-24" aria-label="Day">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

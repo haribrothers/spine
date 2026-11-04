@@ -52,7 +52,7 @@ export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "
         {(field) => (
           <div className="flex gap-2">
             <Select value={COMMON_CURRENCIES.includes(code) ? code : undefined} onValueChange={setCode}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label="Common currencies">
                 <SelectValue placeholder="Choose…" />
               </SelectTrigger>
               <SelectContent>
@@ -78,7 +78,7 @@ export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "
         {(field) => (
           <div className="flex gap-2">
             <Select value={COMMON_LOCALES.includes(locale) ? locale : undefined} onValueChange={setLocale}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label="Common locales">
                 <SelectValue placeholder="Choose…" />
               </SelectTrigger>
               <SelectContent>

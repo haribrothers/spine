@@ -277,16 +277,16 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
       )}
       <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <FormField label="Vendor" required>
-          {() => <ContactPicker value={contactId} onValueChange={touch(setContactId)} />}
+          {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={touch(setContactId)} />}
         </FormField>
         <FormField label="Vendor's credit note number" required helperText="The vendor's own number.">
           {(field) => <Input {...field} value={vendorReference} onChange={(e) => touch(setVendorReference)(e.target.value)} placeholder="e.g. CN-4471" />}
         </FormField>
         <FormField label="Against bill" helperText="Copies its lines to edit down.">
-          {() => <Combobox aria-label="Against bill" options={billOptions} value={billId} onValueChange={(v) => void chooseBill(v)} disabled={!contactId} />}
+          {(field) => <Combobox id={field.id} aria-label="Against bill" options={billOptions} value={billId} onValueChange={(v) => void chooseBill(v)} disabled={!contactId} />}
         </FormField>
         <FormField label="Currency" required>
-          {() => <Combobox options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
+          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
         </FormField>
         {dup && (
           <Alert variant="warning" className="sm:col-span-2 xl:col-span-4" data-testid="credit-duplicate-warning">
@@ -307,7 +307,7 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
         {/* US-SET-24: no jobs while Jobs & field is switched off. */}
         {jobsOn && (
           <FormField label="Job" helperText="Lowers this job's cost once recorded.">
-            {() => <Combobox options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label="Job" />}
+            {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label="Job" />}
           </FormField>
         )}
         {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}

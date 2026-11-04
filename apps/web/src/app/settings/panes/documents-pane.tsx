@@ -98,7 +98,7 @@ export function DocumentsPane() {
       <Tabs value={type} onValueChange={(v) => setType(v as DocumentType)}>
         <TabsList aria-label="Document type">
           {DOCUMENT_TYPES.map((t) => (
-            <TabsTrigger key={t} value={t}>
+            <TabsTrigger key={t} value={t} aria-controls={undefined}>
               {DOCUMENT_TYPE_LABELS[t]}
             </TabsTrigger>
           ))}

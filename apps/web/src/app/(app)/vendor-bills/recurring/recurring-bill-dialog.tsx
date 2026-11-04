@@ -279,7 +279,7 @@ export function RecurringBillDialog({
               {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Office rent" />}
             </FormField>
             <FormField label="Vendor" errorText={problems.contact}>
-              {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+              {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={setContactId} />}
             </FormField>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

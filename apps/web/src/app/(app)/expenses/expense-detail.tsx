@@ -382,13 +382,14 @@ export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string;
                     </dd>
                   </div>
                 )}
-                {!expense.receiptFileId && (
-                  <div className="flex items-center gap-2 text-on-surface-muted">
-                    <Paperclip size={14} aria-hidden />
-                    {labour ? "No receipt — a labour day doesn't need one. Add a muster sheet or site photo below if you have one." : "No receipt attached. Add one by editing the expense, or attach files below."}
-                  </div>
-                )}
               </dl>
+              {/* US-OPS-17: a note, not a term and its value, so it sits after the list. */}
+              {!expense.receiptFileId && (
+                <p className="mt-3 flex items-center gap-2 text-[13px] text-on-surface-muted">
+                  <Paperclip size={14} aria-hidden />
+                  {labour ? "No receipt — a labour day doesn't need one. Add a muster sheet or site photo below if you have one." : "No receipt attached. Add one by editing the expense, or attach files below."}
+                </p>
+              )}
             </div>
           </Card>
 

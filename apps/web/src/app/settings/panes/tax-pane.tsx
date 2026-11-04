@@ -131,12 +131,13 @@ export function TaxPane() {
 
       <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface p-3">
         <div>
-          <p className="text-[14px] font-medium text-on-surface">Prices include tax by default</p>
+          <p id="prices-include-tax-label" className="text-[14px] font-medium text-on-surface">Prices include tax by default</p>
           <p className="text-[13px] text-on-surface-muted">
             New quote/invoice lines default to tax-inclusive pricing. Each line can still override this.
           </p>
         </div>
         <Switch
+          aria-labelledby="prices-include-tax-label"
           checked={inclusive.inclusive}
           onCheckedChange={async (checked) => {
             const next = { inclusive: checked };

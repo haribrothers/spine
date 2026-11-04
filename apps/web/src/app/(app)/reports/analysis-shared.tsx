@@ -45,7 +45,8 @@ export function ReportTabs({ value, tabs }: { value: string; tabs: { value: stri
     <Tabs value={value} onValueChange={(v) => router.push(tabs.find((t) => t.value === v)!.href)}>
       <TabsList>
         {visible.map((t) => (
-          <TabsTrigger key={t.value} value={t.value}>
+          // US-OPS-17: these tabs open pages; there is no tab panel for aria-controls to name.
+          <TabsTrigger key={t.value} value={t.value} aria-controls={undefined}>
             {t.label}
           </TabsTrigger>
         ))}

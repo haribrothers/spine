@@ -73,6 +73,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
                     {(field) => (
                       <Input
                         {...field}
+                        aria-label={`${DOCUMENT_TYPE_LABELS[row.documentType] ?? row.documentType} prefix`}
                         value={row.prefix}
                         onChange={(e) => updateRow(row.documentType, { prefix: e.target.value.toUpperCase() })}
                         className="w-24"
@@ -88,6 +89,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
                         type="number"
                         min={1}
                         max={8}
+                        aria-label={`${DOCUMENT_TYPE_LABELS[row.documentType] ?? row.documentType} padding`}
                         value={row.padding}
                         onChange={(e) => updateRow(row.documentType, { padding: Number(e.target.value) || 1 })}
                         className="w-20"
@@ -102,6 +104,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
                         {...field}
                         type="number"
                         min={1}
+                        aria-label={`${DOCUMENT_TYPE_LABELS[row.documentType] ?? row.documentType} starting number`}
                         value={row.nextValue}
                         onChange={(e) => updateRow(row.documentType, { nextValue: Number(e.target.value) || 1 })}
                         className="w-24"

@@ -356,7 +356,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
           </div>
         </div>
         <FormField label="Currency" required>
-          {() => <Combobox options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} />}
+          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} />}
         </FormField>
         {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         {linkedLead && (

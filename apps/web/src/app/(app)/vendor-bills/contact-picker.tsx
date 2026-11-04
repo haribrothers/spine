@@ -16,10 +16,13 @@ import type { ContactOption } from "./types";
  * same way across invoices/payments/quotes).
  */
 export function ContactPicker({
+  id,
   value,
   onValueChange,
   refreshKey = 0,
 }: {
+  /** US-OPS-17 — the field's id, so its label names the picker. */
+  id?: string;
   value: string;
   onValueChange: (contactId: string) => void;
   /** US-AI-08 — bump to read the vendors again (one was just added). */
@@ -39,5 +42,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a vendor…" />;
+  return <Combobox id={id} options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a vendor…" />;
 }

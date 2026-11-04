@@ -486,7 +486,7 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
         )}
         <AiField suggested={aiFields.has("vendor")}>
           <FormField label="Vendor" required helperText={aiFields.has("vendor") && contactId ? "Matched to your vendor." : undefined}>
-            {() => <ContactPicker value={contactId} onValueChange={mine("vendor", setContactId)} refreshKey={vendorsVersion} />}
+            {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={mine("vendor", setContactId)} refreshKey={vendorsVersion} />}
           </FormField>
           {newVendor && (
             <p className="mt-1.5 text-[12.5px] text-on-surface-muted" data-testid="ai-new-vendor">
@@ -510,12 +510,12 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
         {/* US-SET-24: no jobs while Jobs & field is switched off. */}
         {jobsOn && (
           <FormField label="Job" helperText="Flows into job costing once recorded.">
-            {() => <Combobox options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label="Job" />}
+            {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label="Job" />}
           </FormField>
         )}
         <AiField suggested={aiFields.has("currency")}>
           <FormField label="Currency" required>
-            {() => <Combobox options={currencyOptions} value={currency} onValueChange={mine("currency", setCurrency)} aria-label="Currency" />}
+            {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={mine("currency", setCurrency)} aria-label="Currency" />}
           </FormField>
         </AiField>
         {totalDiffers && (

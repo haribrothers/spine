@@ -661,8 +661,9 @@ export function ExpenseForm({
                     : (categoryNote ?? chosenCategory?.description ?? undefined)
                 }
               >
-                {() => (
+                {(field) => (
                   <Combobox
+                    id={field.id}
                     options={categoryOptions}
                     value={categoryId}
                     onValueChange={(id) => {
@@ -677,7 +678,7 @@ export function ExpenseForm({
             {/* US-SET-24: no jobs while Jobs & field is switched off. */}
             {jobsOn && (
               <FormField label="Job" required={entryMode === "labour"} helperText={entryMode === "labour" ? "Labour is always for a job." : "Optional — flows into job costing once approved."}>
-                {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
+                {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={setJobId} />}
               </FormField>
             )}
             <AiField suggested={aiFields.has("date")}>
@@ -695,8 +696,9 @@ export function ExpenseForm({
             </AiField>
             <AiField suggested={aiFields.has("currency")}>
               <FormField label="Currency" required>
-                {() => (
+                {(field) => (
                   <Combobox
+                    id={field.id}
                     options={currencyOptions}
                     value={currency}
                     onValueChange={(v) => {
@@ -728,8 +730,9 @@ export function ExpenseForm({
             )}
             <AiField suggested={aiFields.has("taxRate")}>
               <FormField label="Tax rate" helperText={rateFromCategory && taxRateSelection ? `${possessive(rateFromCategory)} usual rate — change it if this receipt differs.` : undefined}>
-                {() => (
+                {(field) => (
                   <Combobox
+                    id={field.id}
                     options={taxOptions}
                     value={taxRateSelection}
                     onValueChange={(v) => {

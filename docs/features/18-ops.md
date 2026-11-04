@@ -278,6 +278,7 @@ PRD §10.8
 
 **Implementation notes**
 - Extends `apps/e2e`; results recorded in `docs/qa-script.md`.
+- Built: `us-ops-17.spec.ts` runs axe (WCAG 2.1 A/AA) in light and dark mode on 54 pages, one demo record of each of 9 kinds and 27 Settings panes, and fails on any violation. `us-ops-17-keyboard.spec.ts` takes an accepted quote to a paid invoice with Tab and Enter alone and checks every control passed on the way shows a focus ring. The field app's `us-ops-17.test.ts` checks every touchable has a role and a label or text. VoiceOver and TalkBack are QA section 276. First run's fixes: panel-less tabs (Reports, Documents, credit-note mode) dropped `aria-controls`. Comboboxes and contact pickers in labelled fields take the field's id. The onboarding steps' paired selects, the Meetings "all calendars" checkbox and the prices-include-tax switch got names. The numbering table's inputs are named per document. The calendar's event time is full strength (it was 3.7:1). The expense detail's receipt note moved out of its `<dl>`.
 
 ### US-OPS-18 · Complete a security review before 1.0
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —

@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-04 — Pass an accessibility audit of every screen (US-OPS-17, PRD §10.8)
+
+- **Audit:** a new E2E runs axe-core (WCAG 2.1 A and AA) with demo data on every web page: 54 pages, a demo record of each of 9 kinds and 27 Settings panes, in light and dark mode. It now passes with no violations.
+- **Fixed on the way:** the report tabs, the Documents pane's document tabs and the credit-note mode tabs named tab panels that don't exist. Currency, job, vendor and customer pickers inside a labelled field weren't named by it. The financial-year and currency/locale dropdowns, the Meetings "show every calendar" checkbox and the "Prices include tax by default" switch had no name. The numbering table's inputs had none. The calendar's event times were at 3.7:1 contrast. The expense page's receipt note sat inside a definition list.
+- **Keyboard:** an E2E takes an accepted quote to a paid invoice with Tab and Enter alone and checks that every control on the way shows a focus ring.
+- **Field app:** a test checks every touchable has a role and a label or visible text. The VoiceOver and TalkBack walkthrough is QA section 276.
+
 ### 2026-11-04 — The web app on a phone (US-OPS-14, US-OPS-15, finding C19, D-066)
 
 - **Phone layout:** under 768px a top bar shows the menu button, the logo, notifications and your avatar, in place of the sidebar. The menu button slides the full navigation in from the left over a dimmed page, with search, a close button, and your name and help at the bottom. Tapping the dimmed area, Escape or a link closes it. New `@spine/ui` parts: `AppShellTopBar` and `AppShellMobileNav`, documented on the AppShell page.

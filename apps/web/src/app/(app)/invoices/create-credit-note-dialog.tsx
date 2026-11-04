@@ -187,8 +187,8 @@ export function CreateCreditNoteDialog({
             <>
               <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
                 <TabsList aria-label="How to credit">
-                  <TabsTrigger value="lines">Credit lines</TabsTrigger>
-                  <TabsTrigger value="amount">Credit an amount</TabsTrigger>
+                  <TabsTrigger value="lines" aria-controls={undefined}>Credit lines</TabsTrigger>
+                  <TabsTrigger value="amount" aria-controls={undefined}>Credit an amount</TabsTrigger>
                 </TabsList>
               </Tabs>
 

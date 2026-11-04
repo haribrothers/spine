@@ -5622,6 +5622,17 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 3. Open Catalogue › Add item, a new invoice and a new vendor bill: fields are one under another, including Qty, Unit and Price on each line. Settings opens full-screen, as before.
 4. Regression, at desktop width: dialogs, drawers and forms keep their widths and two-column layouts.
 
+## 276. Pass an accessibility audit of every screen (US-OPS-17, Phase 12)
+
+Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and Settings pane, light and dark), `us-ops-17-keyboard.spec.ts` (quote → invoice → payment by keyboard) and the field app's `us-ops-17.test.ts`. Record the results of the manual steps below with the date and device.
+
+1. Keyboard only, on the web: from the dashboard, Tab through the sidebar, open a quote, convert it, issue the invoice and record its payment without the mouse. Every focused control shows a ring; Escape closes each dialog; focus returns to the button that opened it.
+2. With VoiceOver on a Mac (⌘F5), open Invoices, an invoice and Record payment: each button, field, tab and table header is read with its name and role; the toast after recording is announced.
+3. iPhone, VoiceOver on (Settings › Accessibility › VoiceOver): in the field app, swipe through Today, a job, Mark complete, New expense (with the receipt camera), Notifications and Profile. Every control is read with a label and a role ("button", "switch", "text field"…); decorative illustrations are skipped; the job's status is read in words.
+4. Android, TalkBack on: the same walkthrough. Tab changes, sheets and the camera's buttons are announced.
+5. Note any control read only as "button" or "unlabelled" and file it.
+6. Regression: the axe run stays clean after every screen change (the E2E fails otherwise).
+
 ## Known gaps — don't file these as bugs
 
 - While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).

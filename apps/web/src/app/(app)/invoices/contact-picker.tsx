@@ -14,9 +14,12 @@ import type { ContactOption } from "./types";
  * created against a contact the org has archived).
  */
 export function ContactPicker({
+  id,
   value,
   onValueChange,
 }: {
+  /** US-OPS-17 — the field's id, so its label names the picker. */
+  id?: string;
   value: string;
   onValueChange: (contactId: string) => void;
 }) {
@@ -34,5 +37,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
+  return <Combobox id={id} options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
 }

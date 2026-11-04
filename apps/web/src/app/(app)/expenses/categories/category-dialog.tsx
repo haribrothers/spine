@@ -159,7 +159,7 @@ export function ExpenseCategoryDialog({
             )}
           </FormField>
           <FormField label="Posts to">
-            {() => <Combobox options={accountOptions} value={accountId} onValueChange={setAccountId} aria-label="Posts to" />}
+            {(field) => <Combobox id={field.id} options={accountOptions} value={accountId} onValueChange={setAccountId} aria-label="Posts to" />}
           </FormField>
           {accountChanged && (
             <div className="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2 text-[12.5px] text-on-surface" data-testid="category-account-note">
@@ -170,7 +170,7 @@ export function ExpenseCategoryDialog({
             </div>
           )}
           <FormField label="Default tax rate" helperText="Filled in on the expense form when this category is chosen — people can still change it.">
-            {() => <Combobox options={rateOptions} value={rateId} onValueChange={setRateId} aria-label="Default tax rate" />}
+            {(field) => <Combobox id={field.id} options={rateOptions} value={rateId} onValueChange={setRateId} aria-label="Default tax rate" />}
           </FormField>
         </DialogBody>
         <DialogFooter>

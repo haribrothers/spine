@@ -1265,7 +1265,8 @@ function TimeGridEvent({
         {instance.event.recurrence && <Repeat size={10} className="shrink-0" />}
         <span className="truncate">{instance.event.title}</span>
       </div>
-      {height > 32 && <span className="block truncate opacity-80">{format(instance.occurrenceStart, "h:mm a")}</span>}
+      {/* US-OPS-17: full-strength text; opacity-80 fell to 3.7:1 on the event colour. */}
+      {height > 32 && <span className="block truncate">{format(instance.occurrenceStart, "h:mm a")}</span>}
 
       {!disableDragResize && (
         <>
