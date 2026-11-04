@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware, getIP, getSessionFromCtx } from "better-auth/api";
 import { isCommonPassword, linkInUse, linkUploadFirst, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
 import { assertLinkable } from "../modules/files/files.service";
-import { assertSignupAllowed } from "./signup-policy";
+import { assertSignupAllowed, claimDemoBusiness } from "./signup-policy";
 import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, SlidingWindowLimiter, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
@@ -370,9 +370,13 @@ export const auth = betterAuth({
           if (pendingInvitation) {
             return;
           }
-
           let createdOrgId: string | undefined;
           try {
+            // US-OPS-02 (D-086): on a SEED_DEMO instance, the first sign-up owns the demo business instead of a new one.
+            if (await claimDemoBusiness(db, user.id)) {
+              return;
+            }
+
             const org = await auth.api.createOrganization({
               body: {
                 name: `${user.name}'s Organisation`,

@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-03 — Start with demo data from an environment flag (US-OPS-02, D-086)
+
+- **`SEED_DEMO` works:** it was in `.env.example` but nothing read it. On first start, into an empty database only, `true` loads Riverstone Builders and `<country>:<industry>` (e.g. `IN:interior_design`) loads that demo business. The API logs "Demo data loaded — the first person to sign up becomes its owner." On a database with data it logs that seeding was skipped. An unknown value logs what it takes. A failure is logged and never stops the API.
+- **No owner account:** the demo is loaded as a placeholder Owner with no password, and the business carries a `demo_awaiting_owner` setting. Sign-up stays open while it waits. The first sign-up takes the marker under a row lock, becomes the business's Primary Owner in place of the placeholder, and lands on the dashboard with onboarding marked skipped. Sign-up is invite-only after that. Two sign-ups at once can't both own it. `07-security.md` › Sign-up and `04-data-model.md` are updated.
+- **Tests:** `us-ops-02` boots the app on a database of its own, made and migrated by the test, because first start needs an empty one: unset and unknown values, loading with no owner, the first sign-up becoming Primary Owner, sign-up closing, a restart skipping, and two claims at once. QA section 269.
+
 ### 2026-11-03 — Remove demo data and keep my real data (US-SET-08)
 
 - **Settings › Data:** "Delete all demo data" now asks with the app's `useConfirm()` (D-218): "Delete all demo data?", what goes, that your own records stay and the demo people lose access, with "Cancel" and "Delete demo data". It then says what happened with the app's toast (D-223), "Demo data deleted · Your own records stay.", in place of Settings' generic "Saved". A failed delete used to fail silently. Now the pane shows the server's message and keeps the demo shown. The button reads "Deleting…" while it works.

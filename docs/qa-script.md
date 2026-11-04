@@ -5561,6 +5561,16 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 5. Stop the API and try again: the pane shows what went wrong and keeps "Demo data is loaded".
 6. Regression: Staff and Field never see Settings › Data, and `DELETE /demo-data` gives them 403 (US-OPS-20). Loading demo data from the pane still works (section 187).
 
+## 269. Start with demo data from an environment flag (US-OPS-02, Phase 12)
+
+1. On a clean install (`./install.sh`, no account yet), set `SEED_DEMO=true` in `.env` and restart (`docker compose --profile minimal up -d`). `docker compose logs api` shows "Demo data loaded — the first person to sign up becomes its owner."
+2. Open the address: the welcome page offers to create the first account. Sign up. You land on the dashboard, not onboarding, in Riverstone Builders with the demo's data. Team › Users shows you as the Primary Owner and the demo people; there's no "Spine demo" user.
+3. Sign out and try to sign up again with another email: "This Spine is invite-only".
+4. Restart the API with `SEED_DEMO=true` still set: the log shows "Demo seeding skipped — the database already has data…", and nothing changes.
+5. On another clean install, `SEED_DEMO=IN:interior_design` loads that demo business instead. `SEED_DEMO=maybe` logs that it isn't a value SEED_DEMO takes and loads nothing; sign-up works as on any new install.
+6. Settings › Data › Delete all demo data then removes the demo and keeps your account and the business.
+7. Regression: with `SEED_DEMO` unset or `false`, a new install starts empty and the first sign-up makes its own business, as before (US-AUTH-08). An invited person still joins by their invitation.
+
 ## Known gaps — don't file these as bugs
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).

@@ -57,7 +57,8 @@ Legacy: S-10.10
 - **Given** `SEED_DEMO=IN:interior_design` (a country and an industry from D-192), **when** the API starts on an empty database, **then** it loads that demo business; `SEED_DEMO=true` loads the default (United States, Construction / Contracting).
 
 **Implementation notes**
-- Today `SEED_DEMO` is in `.env.example` but not read by any code.
+- `DemoBootstrapService` (`apps/api/src/modules/demo-data`) runs on application bootstrap, after migrations. With no users and no organisations it creates the business as sign-up does (chart of accounts, default Team, pipeline stages) with a placeholder Owner (`Spine demo`, no password), sets `demo_awaiting_owner`, loads the demo through `DemoDataService.seed`, then marks onboarding skipped. Values: unset/`false` off, `true` the default, `<country>:<industry>`; anything else logs a warning and loads nothing. A failure is logged and never stops the API; the business stays claimable, without the demo.
+- Sign-up (`signup-policy.ts`): open while there are no users or a demo is waiting; `claimDemoBusiness` in `user.create.after` takes the marker under a row lock, replaces the placeholder's membership with the new Primary Owner's and returns, so no second organisation is made. See `07-security.md` › Sign-up.
 
 ### US-OPS-03 · Back up everything into one file
 **Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
