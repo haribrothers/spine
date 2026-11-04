@@ -1,0 +1,11 @@
+{
+  "common": {
+    "notFound": {
+      "code": "404",
+      "title": "We can't find that page",
+      "message": "The link may be wrong, or the record may have been deleted. Financial documents are never deleted — if you followed a link to an invoice, check its number in Invoices.",
+      "goToDashboard": "Go to dashboard",
+      "goBack": "Go back"
+    }
+  }
+}

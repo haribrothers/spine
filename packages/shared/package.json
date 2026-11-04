@@ -11,7 +11,8 @@
     "./tax": "./dist/tax/index.js",
     "./schemas": "./dist/schemas/index.js",
     "./mobile": "./dist/mobile.js",
-    "./password": "./dist/password.js"
+    "./password": "./dist/password.js",
+    "./i18n": "./dist/i18n/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -20,7 +21,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "i18next": "26.5.3"
   },
   "devDependencies": {
     "@spine/config": "workspace:*",
