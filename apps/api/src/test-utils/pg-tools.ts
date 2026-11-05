@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 /**
- * pg_dump / pg_restore for tests: the ones on the PATH (CI's runner has
- * PostgreSQL 16's), or else the local Docker database's own, run inside its
+ * pg_dump / pg_restore for tests: the ones on the PATH (CI puts PostgreSQL
+ * 16's first, the database's own version), or else the local Docker database's own, run inside its
  * container (`pnpm dev:infra:up` names it spine-dev-db-1).
  */
 export function pgTool(name: "pg_dump" | "pg_restore"): string {
