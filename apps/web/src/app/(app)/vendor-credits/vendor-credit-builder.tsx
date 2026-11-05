@@ -12,6 +12,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { useToast } from "../../../components/toast-host";
+import { useT } from "../../../lib/i18n";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { AttachmentsSection, attachPending, type PendingAttachment } from "../../../components/attachments-section";
@@ -67,6 +68,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
  * US-PUR-40: `fromBill` opens it filled from a bill's More menu.
  */
 export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredit; fromBill?: VendorBill }) {
+  const t = useT();
   const router = useRouter();
   const jobsOn = useModule("jobsField");
   const canRecord = useCapability("vendor_credits.record");
@@ -144,10 +146,15 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
     if (hasEntered(lines)) {
       const entered = lines.filter((l) => l.name.trim() || l.unitPriceAmount > 0n).length;
       const ok = await confirm({
-        title: `Replace your lines with ${bill.billNumber}'s?`,
-        description: `The ${entered === 1 ? "line" : `${entered} lines`} you've entered ${entered === 1 ? "is" : "are"} replaced by ${bill.billNumber}'s ${bill.lines.length === 1 ? "line" : `${bill.lines.length} lines`}, for you to edit down. Keep yours to leave the lines as they are.`,
-        confirmLabel: "Replace lines",
-        cancelLabel: "Keep my lines",
+        title: t("vendorCredits.builder.replaceTitle", { number: bill.billNumber }),
+        description: t("vendorCredits.builder.replaceDescription", {
+          count: entered,
+          yours: t("vendorCredits.builder.yourLines", { count: entered }),
+          number: bill.billNumber,
+          theirs: t("vendorCredits.builder.yourLines", { count: bill.lines.length }),
+        }),
+        confirmLabel: t("vendorCredits.builder.replaceLines"),
+        cancelLabel: t("vendorCredits.builder.keepMyLines"),
       });
       if (!ok) return;
     }
@@ -171,19 +178,19 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
 
   const locale = orgLocaleTag();
   const today = new Date();
-  const billOptions = [{ value: NO_BILL, label: "No bill" }, ...bills.map((b) => ({ value: b.id, label: `${b.billNumber} · ${calendarDate(b.date.slice(0, 10), today, locale)}` }))];
+  const billOptions = [{ value: NO_BILL, label: t("vendorCredits.builder.noBill") }, ...bills.map((b) => ({ value: b.id, label: `${b.billNumber} · ${calendarDate(b.date.slice(0, 10), today, locale)}` }))];
   if (fromBill && !bills.some((b) => b.id === fromBill.id)) billOptions.push({ value: fromBill.id, label: `${fromBill.billNumber} · ${calendarDate(fromBill.date.slice(0, 10), today, locale)}` });
-  const jobOptions = [{ value: NO_JOB, label: "No job" }, ...jobs.map((j) => ({ value: j.id, label: j.name }))];
+  const jobOptions = [{ value: NO_JOB, label: t("vendorCredits.builder.noJob") }, ...jobs.map((j) => ({ value: j.id, label: j.name }))];
   const currencyOptions = (COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES]).map((c) => ({ value: c, label: c }));
 
   function validate(): boolean {
     setError(null);
     if (!contactId) {
-      setError("Choose the vendor.");
+      setError(t("vendorCredits.builder.chooseVendor"));
       return false;
     }
     if (!vendorReference.trim()) {
-      setError("Enter the vendor's credit note number.");
+      setError(t("vendorCredits.builder.enterReference"));
       return false;
     }
     return true;
@@ -231,7 +238,7 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
       markSaved();
       router.push(`/vendor-credits/${saved.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save this vendor credit.");
+      setError(err instanceof Error ? err.message : t("vendorCredits.builder.saveFailed"));
       setSaving(false);
     }
   }
@@ -240,9 +247,9 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
   async function handleSaveAndRecord() {
     if (!validate()) return;
     const ok = await confirm({
-      title: "Record this vendor credit?",
-      description: `${formatMoney(totals.total, currency)} from ${contactName ?? "the vendor"} is saved and posted to your books, lowering what you owe them. After that it can't be edited — only voided.`,
-      confirmLabel: "Save and record",
+      title: t("vendorCredits.builder.saveRecordTitle"),
+      description: t("vendorCredits.builder.saveRecordDescription", { amount: formatMoney(totals.total, currency), vendor: contactName ?? t("vendorCredits.builder.theVendor") }),
+      confirmLabel: t("vendorCredits.builder.saveAndRecord"),
     });
     if (!ok) return;
     setSaving(true);
@@ -254,8 +261,8 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
       markSaved();
       router.push(`/vendor-credits/${saved.id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Try again.";
-      setError(saved ? `Saved as a draft, but it couldn't be recorded: ${message}` : message);
+      const message = err instanceof Error ? err.message : t("vendorCredits.builder.tryAgain");
+      setError(saved ? t("vendorCredits.builder.savedNotRecorded", { message }) : message);
       setSaving(false);
     }
   }
@@ -276,38 +283,43 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
         </Alert>
       )}
       <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <FormField label="Vendor" required>
+        <FormField label={t("vendorCredits.builder.vendor")} required>
           {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={touch(setContactId)} />}
         </FormField>
-        <FormField label="Vendor's credit note number" required helperText="The vendor's own number.">
-          {(field) => <Input {...field} value={vendorReference} onChange={(e) => touch(setVendorReference)(e.target.value)} placeholder="e.g. CN-4471" />}
+        <FormField label={t("vendorCredits.builder.reference")} required helperText={t("vendorCredits.builder.referenceHelper")}>
+          {(field) => <Input {...field} value={vendorReference} onChange={(e) => touch(setVendorReference)(e.target.value)} placeholder={t("vendorCredits.builder.referencePlaceholder")} />}
         </FormField>
-        <FormField label="Against bill" helperText="Copies its lines to edit down.">
-          {(field) => <Combobox id={field.id} aria-label="Against bill" options={billOptions} value={billId} onValueChange={(v) => void chooseBill(v)} disabled={!contactId} />}
+        <FormField label={t("vendorCredits.builder.againstBill")} helperText={t("vendorCredits.builder.againstBillHelper")}>
+          {(field) => <Combobox id={field.id} aria-label={t("vendorCredits.builder.againstBill")} options={billOptions} value={billId} onValueChange={(v) => void chooseBill(v)} disabled={!contactId} />}
         </FormField>
-        <FormField label="Currency" required>
-          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
+        <FormField label={t("vendorCredits.builder.currency")} required>
+          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label={t("vendorCredits.builder.currency")} />}
         </FormField>
         {dup && (
           <Alert variant="warning" className="sm:col-span-2 xl:col-span-4" data-testid="credit-duplicate-warning">
             <AlertDescription className="flex flex-wrap items-center gap-x-1">
               <span className="font-semibold">
-                {contactName ?? "This vendor"} already has credit note {dup.vendorReference}
+                {t("vendorCredits.builder.duplicateLead", { vendor: contactName ?? t("vendorCredits.builder.thisVendor"), reference: dup.vendorReference })}
               </span>
-              — {dup.number ?? "a draft"}, {calendarDate(dup.date, today, locale)}, {formatMoney(BigInt(dup.totalAmount), dup.currency)}, {CREDIT_STATE_LABELS[dup.status === "void" ? "void" : creditState({ status: dup.status, totalAmount: dup.totalAmount, balanceAmount: dup.totalAmount })].toLowerCase()}. Check it isn&apos;t the same credit note before you save.{" "}
+              {t("vendorCredits.builder.duplicateBody", {
+                number: dup.number ?? t("vendorCredits.builder.aDraft"),
+                date: calendarDate(dup.date, today, locale),
+                amount: formatMoney(BigInt(dup.totalAmount), dup.currency),
+                state: CREDIT_STATE_LABELS[dup.status === "void" ? "void" : creditState({ status: dup.status, totalAmount: dup.totalAmount, balanceAmount: dup.totalAmount })].toLowerCase(),
+              })}{" "}
               <Link href={`/vendor-credits/${dup.id}`} target="_blank" className="font-medium text-primary hover:underline">
-                Open {dup.number ?? dup.vendorReference}
+                {t("vendorCredits.builder.openCredit", { number: dup.number ?? dup.vendorReference })}
               </Link>
             </AlertDescription>
           </Alert>
         )}
-        <FormField label="Date" required>
-          {() => <DatePicker value={date} onChange={touch(setDate)} aria-label="Date" />}
+        <FormField label={t("vendorCredits.builder.date")} required>
+          {() => <DatePicker value={date} onChange={touch(setDate)} aria-label={t("vendorCredits.builder.date")} />}
         </FormField>
         {/* US-SET-24: no jobs while Jobs & field is switched off. */}
         {jobsOn && (
-          <FormField label="Job" helperText="Lowers this job's cost once recorded.">
-            {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label="Job" />}
+          <FormField label={t("vendorCredits.builder.job")} helperText={t("vendorCredits.builder.jobHelper")}>
+            {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label={t("vendorCredits.builder.job")} />}
           </FormField>
         )}
         {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
@@ -317,34 +329,34 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
 
       <Card className="flex flex-col gap-0 overflow-hidden p-0">
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
-          <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+          <h2 className="text-[15px] font-semibold text-on-surface">{t("vendorCredits.builder.lines")}</h2>
           <a href="#credit-notes" className="text-[12.5px] font-medium text-primary hover:underline">
-            Notes and attachments ↓
+            {t("vendorCredits.builder.notesAndAttachments")}
           </a>
         </div>
         <VendorBillLines lines={lines} onChange={touch(setLines)} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card id="credit-notes" className="flex flex-col gap-4">
-        <FormField label="Notes" helperText="For your team; the vendor never sees them.">
-          {(field) => <Textarea {...field} value={notes} onChange={(e) => touch(setNotes)(e.target.value)} placeholder="Internal notes…" />}
+        <FormField label={t("vendorCredits.builder.notes")} helperText={t("vendorCredits.builder.notesHelper")}>
+          {(field) => <Textarea {...field} value={notes} onChange={(e) => touch(setNotes)(e.target.value)} placeholder={t("vendorCredits.builder.notesPlaceholder")} />}
         </FormField>
       </Card>
 
       <AttachmentsSection entityType="vendor_credit" entityId={credit?.id ?? null} pending={pendingFiles} onPendingChange={touch(setPendingFiles)} />
 
       {/* US-PUR-39: totals and actions stay in view, as on bills. */}
-      <DocumentBuilderBar totals={{ ...totals }} currency={currency} taxLabel={pos.active ? "GST" : "Tax"} dirty={dirty} testIdPrefix="credit">
+      <DocumentBuilderBar totals={{ ...totals }} currency={currency} taxLabel={pos.active ? "GST" : t("vendorCredits.builder.tax")} dirty={dirty} testIdPrefix="credit">
         <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
-          Cancel
+          {t("vendorCredits.builder.cancel")}
         </Button>
         <Button type="button" variant={canRecord ? "secondary" : "primary"} onClick={() => void handleSaveDraft()} disabled={saving}>
-          {saving ? <Spinner size="sm" /> : credit ? "Save draft" : "Save as draft"}
+          {saving ? <Spinner size="sm" /> : credit ? t("vendorCredits.builder.saveDraft") : t("vendorCredits.builder.saveAsDraft")}
         </Button>
         {canRecord && (
           <Button type="button" onClick={() => void handleSaveAndRecord()} disabled={saving}>
             <FileCheck size={14} aria-hidden />
-            Save and record
+            {t("vendorCredits.builder.saveAndRecord")}
           </Button>
         )}
       </DocumentBuilderBar>
@@ -357,13 +369,14 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
 
 /** Loads a draft for editing; a recorded credit can't be edited. */
 export function VendorCreditEditLoader({ creditId }: { creditId: string }) {
+  const t = useT();
   const [credit, setCredit] = useState<VendorCredit | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     apiClient
       .get<VendorCredit>(`/vendor-credits/${creditId}`)
-      .then((c) => (c.status === "draft" ? setCredit(c) : setError("A recorded vendor credit can't be edited. Void it and record a new one.")))
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this vendor credit."));
+      .then((c) => (c.status === "draft" ? setCredit(c) : setError(t("vendorCredits.builder.notDraft"))))
+      .catch((err) => setError(err instanceof Error ? err.message : t("vendorCredits.builder.loadFailed")));
   }, [creditId]);
   if (error)
     return (
@@ -382,6 +395,7 @@ export function VendorCreditEditLoader({ creditId }: { creditId: string }) {
 
 /** US-PUR-40 — `/vendor-credits/new?billId=<id>` opens the builder filled from that bill; without it, an empty one. */
 export function VendorCreditNewLoader({ billId }: { billId?: string }) {
+  const t = useT();
   const [bill, setBill] = useState<VendorBill | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -389,7 +403,7 @@ export function VendorCreditNewLoader({ billId }: { billId?: string }) {
     apiClient
       .get<VendorBill>(`/vendor-bills/${billId}?picker=1`)
       .then(setBill)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't open the bill."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("vendorCredits.builder.billLoadFailed")));
   }, [billId]);
   if (!billId) return <VendorCreditBuilder />;
   if (error)

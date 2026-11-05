@@ -19,12 +19,13 @@ import { PickerSheet } from "../../components/picker-sheet";
 import { CameraPermissionGate } from "./camera-permission";
 import { PhotoReview } from "./photo-review";
 import { useAndroidBack } from "../../lib/use-android-back";
+import { t as translate, useT } from "../../lib/i18n";
 
 export type CameraMode = "photos" | "milestone" | "receipt";
 
 /** "2 taken · saved on this phone". */
 export function takenLabel(count: number): string {
-  return `${count} taken · saved on this phone`;
+  return translate("mobileWork.camera.taken", { n: count });
 }
 
 export { useCameraInk };
@@ -48,6 +49,7 @@ function GlassButton({ label, onPress, children, testID }: { label: string; onPr
  * Mark complete. `receipt`: one photo inside a frame, or one from the phone.
  */
 export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: CameraMode; jobId?: string; request?: string }) {
+  const t = useT();
   const router = useRouter();
   const { ink, onInk, glass, base, primary, onPrimary } = useCameraInk();
   const insets = useSafeAreaInsets();
@@ -73,10 +75,10 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
       router.back();
       return;
     }
-    Alert.alert(`Discard ${photos.length} ${photos.length === 1 ? "photo" : "photos"}?`, "They haven't been saved to the job.", [
-      { text: "Keep taking", style: "cancel" },
+    Alert.alert(t("mobileWork.camera.discardTitle", { count: photos.length }), t("mobileWork.camera.discardMessage"), [
+      { text: t("mobileWork.camera.keepTaking"), style: "cancel" },
       {
-        text: "Discard",
+        text: t("mobileWork.camera.discard"),
         style: "destructive",
         onPress: () => {
           photos.forEach((p) => outbox.discardPhoto(p));
@@ -125,42 +127,42 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
         <View className="absolute left-0 right-0 flex-row items-center justify-between px-4" style={{ top: insets.top + 8 }}>
           {receipt && !android ? (
             <Pressable onPress={close} accessibilityRole="button" className="min-h-[44px] justify-center rounded-full px-4" style={{ backgroundColor: glass }}>
-              <Text className="text-[16px] font-medium" style={{ color: ink }}>Cancel</Text>
+              <Text className="text-[16px] font-medium" style={{ color: ink }}>{t("mobileWork.common.cancel")}</Text>
             </Pressable>
           ) : receipt ? (
             // US-MOB-20 · `MobReceiptCaptureAndroid`: ✕ with the title beside it.
             <View className="flex-1 flex-row items-center gap-4">
-              <GlassButton testID="camera-close" label="Close" onPress={close}>
+              <GlassButton testID="camera-close" label={t("mobileWork.common.close")} onPress={close}>
                 <X size={22} color={ink} />
               </GlassButton>
               <Text accessibilityRole="header" className="text-[20px]" style={{ color: ink }}>
-                Receipt
+                {t("mobileWork.camera.receipt")}
               </Text>
             </View>
           ) : (
-            <GlassButton testID="camera-close" label="Close" onPress={close}>
+            <GlassButton testID="camera-close" label={t("mobileWork.common.close")} onPress={close}>
               <X size={22} color={ink} />
             </GlassButton>
           )}
           {receipt && android ? null : receipt ? (
-            <Text accessibilityRole="header" className="text-[17px] font-semibold" style={{ color: ink }}>Receipt</Text>
+            <Text accessibilityRole="header" className="text-[17px] font-semibold" style={{ color: ink }}>{t("mobileWork.camera.receipt")}</Text>
           ) : (
             <Pressable
               testID="camera-job"
               disabled={mode !== "photos"}
               onPress={() => setChoosingJob(true)}
               accessibilityRole="button"
-              accessibilityLabel={`Job: ${job?.name ?? "choose a job"}${mode === "photos" ? ". Change job" : ""}`}
+              accessibilityLabel={t(mode === "photos" ? "mobileWork.camera.jobA11yChange" : "mobileWork.camera.jobA11y", { name: job?.name ?? t("mobileWork.camera.chooseAJobLower") })}
               className="max-w-[60%] min-h-[44px] flex-row items-center gap-2 rounded-full px-4"
               style={{ backgroundColor: glass }}
             >
               <Text numberOfLines={1} className="flex-shrink text-[16px] font-semibold" style={{ color: ink }}>
-                {job?.name ?? "Choose a job"}
+                {job?.name ?? t("mobileWork.common.chooseAJob")}
               </Text>
               {mode === "photos" ? <ChevronDown size={18} color={ink} /> : null}
             </Pressable>
           )}
-          <GlassButton testID="camera-flash" label={flash === "on" ? "Flash on" : "Flash off"} onPress={() => setFlash((f) => (f === "on" ? "off" : "on"))}>
+          <GlassButton testID="camera-flash" label={flash === "on" ? t("mobileWork.camera.flashOn") : t("mobileWork.camera.flashOff")} onPress={() => setFlash((f) => (f === "on" ? "off" : "on"))}>
             {flash === "on" ? <Zap size={22} color={ink} /> : <ZapOff size={22} color={ink} />}
           </GlassButton>
         </View>
@@ -170,7 +172,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
             <View className="h-[60%] w-[72%] rounded-2xl border-2" style={{ borderColor: ink }} />
             <View className="rounded-full px-4 py-2" style={{ backgroundColor: glass }}>
               <Text className="text-[15px] font-medium" style={{ color: ink }}>
-                Fit the whole receipt inside the frame
+                {t("mobileWork.camera.fitReceipt")}
               </Text>
             </View>
           </View>
@@ -190,7 +192,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
             {receipt ? (
               <GlassButton
                 testID="camera-gallery"
-                label="Choose a photo"
+                label={t("mobileWork.camera.choosePhoto")}
                 onPress={async () => {
                   const picked = await pickPhoto("library");
                   if (picked) finish([picked]);
@@ -199,7 +201,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
                 <ImageIcon size={22} color={ink} />
               </GlassButton>
             ) : photos.length ? (
-              <View accessible accessibilityLabel={`${photos.length} photos taken`} className="h-14 w-14">
+              <View accessible accessibilityLabel={t("mobileWork.camera.photosTaken", { n: photos.length })} className="h-14 w-14">
                 <Image source={{ uri: photos[photos.length - 1]!.uri }} className="h-14 w-14 rounded-lg border-2" style={{ borderColor: ink }} />
                 <View className="absolute -right-2 -top-2 h-6 min-w-[24px] items-center justify-center rounded-full px-1" style={{ backgroundColor: primary }}>
                   <Text className="text-[13px] font-bold" style={{ color: onPrimary }}>
@@ -215,7 +217,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
               onPress={() => void shoot()}
               disabled={busy || (mode === "photos" && !job)}
               accessibilityRole="button"
-              accessibilityLabel="Take photo"
+              accessibilityLabel={t("mobileWork.camera.takePhoto")}
               className="h-20 w-20 items-center justify-center rounded-full border-4"
               style={{ opacity: busy ? 0.6 : 1, borderColor: ink }}
             >
@@ -234,7 +236,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
                 style={{ opacity: photos.length ? 1 : 0.5, backgroundColor: ink }}
               >
                 <Text className="text-[16px] font-semibold" style={{ color: onInk }}>
-                  Done
+                  {t("mobileWork.common.done")}
                 </Text>
               </Pressable>
             )}
@@ -243,7 +245,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
         <PickerSheet
           testID="camera-job-picker"
           visible={choosingJob}
-          title="Photos for"
+          title={t("mobileWork.camera.photosFor")}
           value={jobId}
           options={jobs.map((j) => ({ value: j.id, label: j.name, detail: j.contactName }))}
           onPick={setJobId}

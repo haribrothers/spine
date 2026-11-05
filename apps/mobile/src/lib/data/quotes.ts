@@ -7,6 +7,7 @@ import { newIdempotencyKey } from "../api/idempotency";
 import { useSession } from "../session/session-provider";
 import { encodePng, rasterize, type Stroke } from "../signature/png";
 import { quotesKey, type QuoteToPresent } from "./jobs";
+import { t } from "../i18n";
 
 /** A quote as it's presented to the customer (US-MOB-16: `GET /quotes/:id`). */
 export interface PresentedQuote {
@@ -63,7 +64,7 @@ export function useLiveQuote(id: string): LiveQuote & { retry: () => void } {
       if (live.current) setState({ status: "ready", quote });
     } catch (error) {
       if (!live.current) return;
-      setState(error instanceof OfflineError ? { status: "offline" } : { status: "error", message: error instanceof Error ? error.message : "Couldn't load the quote." });
+      setState(error instanceof OfflineError ? { status: "offline" } : { status: "error", message: error instanceof Error ? error.message : t("mobileApp.quote.loadFailed") });
     }
   }, [id, request]);
 

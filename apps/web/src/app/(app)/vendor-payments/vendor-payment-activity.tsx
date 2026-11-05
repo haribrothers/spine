@@ -7,6 +7,7 @@ import type { VendorPaymentActivityEntry } from "@spine/shared";
 import { ArrowRightLeft, HandCoins, MailCheck } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
 
 function when(iso: string): string {
@@ -21,12 +22,17 @@ export function vendorPaymentActivityText(item: VendorPaymentActivityEntry, curr
   switch (item.type) {
     case "recorded": {
       const method = item.method ? (PAYMENT_METHOD_LABELS[item.method as PaymentMethod] ?? item.method).toLowerCase() : null;
-      return { text: ["Recorded", [money(item.amount), method ? `by ${method}` : null, item.account ? `from ${item.account}` : null].filter(Boolean).join(" ")].join(" · ") };
+      return {
+        text: [
+          t("vendorPayments.activity.recorded"),
+          [money(item.amount), method ? t("vendorPayments.activity.byMethod", { method }) : null, item.account ? t("vendorPayments.activity.fromAccount", { account: item.account }) : null].filter(Boolean).join(" "),
+        ].join(" · "),
+      };
     }
     case "applied":
-      return { text: `Paid ${money(item.amount)} on`, link: item.linkId ? { label: item.detail ?? "a bill", href: `/vendor-bills/${item.linkId}` } : undefined };
+      return { text: t("vendorPayments.activity.paidOn", { amount: money(item.amount) }), link: item.linkId ? { label: item.detail ?? t("vendorPayments.activity.aBill"), href: `/vendor-bills/${item.linkId}` } : undefined };
     case "remittance_emailed":
-      return { text: item.detail ? `Remittance advice emailed to ${item.detail}` : "Remittance advice emailed" };
+      return { text: item.detail ? t("vendorPayments.activity.remittanceEmailedTo", { to: item.detail }) : t("vendorPayments.activity.remittanceEmailed") };
   }
 }
 
@@ -38,6 +44,7 @@ const ICONS: Record<VendorPaymentActivityEntry["type"], React.ComponentType<{ si
 
 /** US-PUR-49 (D-229) — the payment's story, newest first: recorded, each bill it paid, remittance advice emailed. */
 export function VendorPaymentActivity({ paymentId, currency, refreshKey, onViewHistory }: { paymentId: string; currency: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<VendorPaymentActivityEntry[] | null>(null);
 
   useEffect(() => {
@@ -50,9 +57,9 @@ export function VendorPaymentActivity({ paymentId, currency, refreshKey, onViewH
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="vendor-payment-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("vendorPayments.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("vendorPayments.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">

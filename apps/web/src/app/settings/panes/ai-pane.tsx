@@ -31,6 +31,8 @@ import { useModules } from "../../../lib/modules-context";
 import { useSettingsSaved } from "../../../lib/settings-dirty";
 import { useToast } from "../../../components/toast-host";
 import { AccountCard, AccountPaneHeader } from "./account-card";
+import { useT } from "../../../lib/i18n";
+import { orgLocaleTag } from "../../../lib/money";
 
 type Driver = "openai-compatible" | "anthropic";
 interface Draft {
@@ -45,7 +47,9 @@ interface Draft {
 
 const fromSaved = (s: AiSettings): Draft => ({ driver: s.driver === "none" ? null : s.driver, baseUrl: s.baseUrl ?? "", model: s.model ?? "", apiKey: "", budget: s.monthlyTokenBudget === null ? "" : String(s.monthlyTokenBudget) });
 const FEATURE_ICON: Record<AiFeatureKey, typeof Mail> = { readDocuments: ScanText, draftEmails: Mail, draftQuoteLines: ListPlus, bankSuggestions: Landmark };
-const fmt = (n: number) => n.toLocaleString();
+const fmt = (n: number) => n.toLocaleString(orgLocaleTag());
+/** A sample address, not copy. */
+const SAMPLE_SERVER_URL = "http://192.168.1.20:11434/v1";
 /** "2,000,000" → 2000000; "" → null; anything else → NaN. */
 const parseBudget = (text: string): number | null => (text.trim() === "" ? null : /^[\d,\s]+$/.test(text.trim()) ? Number(text.replace(/[,\s]/g, "")) : NaN);
 
@@ -78,6 +82,7 @@ function WhatsSent() {
  * pane, and the API).
  */
 export function AiPane() {
+  const t = useT();
   const toast = useToast();
   const markSaved = useSettingsSaved();
   const { refresh } = useModules();
@@ -99,7 +104,7 @@ export function AiPane() {
         setSaved(s);
         setDraft(fromSaved(s));
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "The AI settings didn't load. Try again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("settings.ai.loadError")));
     apiClient
       .get<AiUsage>("/org/ai/usage")
       .then(setUsage)
@@ -153,17 +158,17 @@ export function AiPane() {
       return;
     }
     if (on && !saved!.local) {
-      if (!(await confirm({ title: "Turn on AI?", description: <>{aiTurnOnMessage(saved!.providerHost!)}<WhatsSent /></>, confirmLabel: "Turn on AI" }))) return;
+      if (!(await confirm({ title: t("settings.ai.turnOnConfirm.title"), description: <>{aiTurnOnMessage(saved!.providerHost!)}<WhatsSent /></>, confirmLabel: t("settings.ai.turnOnConfirm.confirm") }))) return;
     }
-    if (!on && !(await confirm({ title: "Turn off AI?", description: "AI buttons disappear for everyone. Nothing already saved changes.", confirmLabel: "Turn off AI" }))) return;
+    if (!on && !(await confirm({ title: t("settings.ai.turnOffConfirm.title"), description: t("settings.ai.turnOffConfirm.description"), confirmLabel: t("settings.ai.turnOffConfirm.confirm") }))) return;
     setBusy("switch");
     try {
       await put({ enabled: on, ...(on && !saved!.local ? { acknowledged: true } : {}) });
       refresh();
       if (!dirty) markSaved();
-      toast(on ? AI_ON_TOAST : AI_OFF_TOAST, on ? "People with the right to use AI see it in the forms they can work on." : "AI is gone from every screen until it's switched back on.");
+      toast(on ? AI_ON_TOAST : AI_OFF_TOAST, on ? t("settings.ai.onDescription") : t("settings.ai.offDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "AI wasn't switched. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.ai.switchError"));
     } finally {
       setBusy(null);
     }
@@ -176,9 +181,9 @@ export function AiPane() {
       await put({ features: { [key]: on } });
       if (!dirty) markSaved();
       const label = AI_FEATURES.find((f) => f.key === key)!.label;
-      toast(`${label} is ${on ? "on" : "off"}`, on ? "It shows for people who can use AI." : "It's gone from every screen.");
+      toast(on ? t("settings.ai.featureOn", { label }) : t("settings.ai.featureOff", { label }), on ? t("settings.ai.featureOnDescription") : t("settings.ai.featureOffDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That feature wasn't switched. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.ai.featureError"));
     } finally {
       setBusy(null);
     }
@@ -189,7 +194,7 @@ export function AiPane() {
     setError(null);
     const budget = parseBudget(draft!.budget);
     if (Number.isNaN(budget)) {
-      setError("Enter the budget as a whole number of tokens, or leave it empty for no limit.");
+      setError(t("settings.ai.budgetInvalid"));
       return;
     }
     setBusy("save");
@@ -211,17 +216,17 @@ export function AiPane() {
       } catch (err) {
         // D-164: moving a switched-on assistant to a provider outside the local network asks first.
         if (!(err instanceof Error) || !draftHost || err.message !== aiAcknowledgeFirst(draftHost)) throw err;
-        if (!(await confirm({ title: "Send AI requests here?", description: <>{aiTurnOnMessage(draftHost)}<WhatsSent /></>, confirmLabel: "Use this provider" }))) return;
+        if (!(await confirm({ title: t("settings.ai.moveConfirm.title"), description: <>{aiTurnOnMessage(draftHost)}<WhatsSent /></>, confirmLabel: t("settings.ai.moveConfirm.confirm") }))) return;
         next = await put({ ...body, acknowledged: true });
       }
       setDraft(fromSaved(next));
       setReplacingKey(false);
       markSaved();
-      if (providerDirty) toast("AI provider saved", next.enabled ? "AI requests go to the new provider from now on." : "Switch AI on when you're ready.");
-      else toast("Monthly budget saved", next.monthlyTokenBudget === null ? "AI has no monthly limit." : `AI pauses for everyone at ${fmt(next.monthlyTokenBudget)} tokens this month.`);
+      if (providerDirty) toast(t("settings.ai.providerSaved"), next.enabled ? t("settings.ai.providerSavedOn") : t("settings.ai.providerSavedOff"));
+      else toast(t("settings.ai.budgetSaved"), next.monthlyTokenBudget === null ? t("settings.ai.budgetNone") : t("settings.ai.budgetPauses", { tokens: fmt(next.monthlyTokenBudget) }));
       if (budgetDirty) apiClient.get<AiUsage>("/org/ai/usage").then(setUsage).catch(() => {});
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The provider wasn't saved. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.ai.saveError"));
     } finally {
       setBusy(null);
     }
@@ -237,7 +242,7 @@ export function AiPane() {
       setTest(result);
       if (result.models.length) setModels(result.models);
     } catch (err) {
-      setTest({ ok: false, model: null, supportsImages: null, models: [], error: err instanceof Error ? err.message : "The test didn't run. Try again." });
+      setTest({ ok: false, model: null, supportsImages: null, models: [], error: err instanceof Error ? err.message : t("settings.ai.testError") });
     } finally {
       setBusy(null);
     }
@@ -254,8 +259,8 @@ export function AiPane() {
 
   const status: { ok: boolean; text: string } | null = test
     ? test.ok
-      ? { ok: true, text: test.model ? aiConnected(test.model, test.supportsImages) : `Connected · ${test.models.length} models — choose one` }
-      : { ok: false, text: test.error ?? "Couldn't connect." }
+      ? { ok: true, text: test.model ? aiConnected(test.model, test.supportsImages) : t("settings.ai.connectedModels", { models: test.models.length }) }
+      : { ok: false, text: test.error ?? t("settings.ai.couldNotConnect") }
     : !dirty && saved.model && saved.supportsImages !== null
       ? { ok: true, text: aiConnected(saved.model, saved.supportsImages) }
       : null;
@@ -264,11 +269,11 @@ export function AiPane() {
     <div className="flex flex-col gap-4" data-testid="ai-pane">
       <div className="flex items-start gap-4 pr-8">
         <div className="min-w-0 flex-1">
-          <AccountPaneHeader title="AI assistant" description={AI_PANE_INTRO} />
+          <AccountPaneHeader title={t("settings.ai.title")} description={AI_PANE_INTRO} />
         </div>
         <label className="flex shrink-0 items-center gap-2.5 pt-1 text-[13.5px] font-semibold text-on-surface">
-          {saved.enabled ? "On" : "Off"}
-          <Switch aria-label="AI assistant" checked={saved.enabled} disabled={busy === "switch"} onCheckedChange={(on) => void switchTo(on)} />
+          {saved.enabled ? t("settings.ai.on") : t("settings.ai.off")}
+          <Switch aria-label={t("settings.ai.title")} checked={saved.enabled} disabled={busy === "switch"} onCheckedChange={(on) => void switchTo(on)} />
         </label>
       </div>
       {error && (
@@ -280,20 +285,20 @@ export function AiPane() {
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
       <AccountCard
-        title="Provider"
+        title={t("settings.ai.provider")}
         description={
           !draft.driver
-            ? "Where AI requests go: a model on your own network, or a service with your own key."
+            ? t("settings.ai.providerNone")
             : draftLocal
-              ? "This server is on your own network, so nothing leaves it."
+              ? t("settings.ai.providerLocal")
               : draftHost
-                ? `Business data goes to ${draftHost} when people use AI features.`
-                : "Where AI requests go."
+                ? t("settings.ai.providerHost", { host: draftHost })
+                : t("settings.ai.providerUnknown")
         }
       >
         <div className="flex flex-col gap-4">
           <RadioGroup
-            aria-label="Provider"
+            aria-label={t("settings.ai.provider")}
             value={draft.driver ?? ""}
             onValueChange={(v) => {
               set({ driver: v as Driver, baseUrl: v === saved.driver ? savedDraft.baseUrl : "", model: v === saved.driver ? savedDraft.model : "", apiKey: "" });
@@ -304,8 +309,10 @@ export function AiPane() {
           >
             {(
               [
-                ["openai-compatible", "Local or OpenAI-compatible", "A model on your own network (Ollama, vLLM) or any OpenAI-compatible service"],
-                ["anthropic", "Anthropic Claude", "Claude, with your business's own API key"],
+                // eslint-disable-next-line i18next/no-literal-string -- a driver id, not copy
+                ["openai-compatible", t("settings.ai.drivers.openai.label"), t("settings.ai.drivers.openai.hint")],
+                // eslint-disable-next-line i18next/no-literal-string -- a driver id, not copy
+                ["anthropic", t("settings.ai.drivers.anthropic.label"), t("settings.ai.drivers.anthropic.hint")],
               ] as const
             ).map(([value, label, hint]) => (
               <label key={value} className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-info-bg">
@@ -319,13 +326,13 @@ export function AiPane() {
           </RadioGroup>
 
           {draft.driver === "openai-compatible" && (
-            <FormField label="Server address" helperText="For example http://192.168.1.20:11434/v1">
-              {(field) => <Input {...field} value={draft.baseUrl} onChange={(e) => set({ baseUrl: e.target.value })} placeholder="http://192.168.1.20:11434/v1" inputMode="url" />}
+            <FormField label={t("settings.ai.serverAddress")} helperText={t("settings.ai.serverAddressHelp", { url: SAMPLE_SERVER_URL })}>
+              {(field) => <Input {...field} value={draft.baseUrl} onChange={(e) => set({ baseUrl: e.target.value })} placeholder={SAMPLE_SERVER_URL} inputMode="url" />}
             </FormField>
           )}
 
           {draft.driver && (
-            <FormField label="Model" helperText={`From the models ${draft.driver === "anthropic" ? "Anthropic" : "this server"} lists, or type one.`}>
+            <FormField label={t("settings.ai.model")} helperText={draft.driver === "anthropic" ? t("settings.ai.modelHelpAnthropic") : t("settings.ai.modelHelpServer")}>
               {(field) => (
                 <Combobox
                   {...field}
@@ -334,8 +341,8 @@ export function AiPane() {
                   onValueChange={(model) => set({ model })}
                   onFocus={loadModels}
                   onClick={loadModels}
-                  placeholder="Choose or type a model"
-                  emptyText="Type the model's name."
+                  placeholder={t("settings.ai.modelPlaceholder")}
+                  emptyText={t("settings.ai.modelEmpty")}
                   allowCreate
                 />
               )}
@@ -343,19 +350,19 @@ export function AiPane() {
           )}
 
           {draft.driver && !showKeyInput && (
-            <FormField label="API key" helperText="Stored encrypted. It's never shown again, logged or exported.">
+            <FormField label={t("settings.ai.apiKey")} helperText={t("settings.ai.apiKeyHelp")}>
               {(field) => (
                 <div className="flex gap-2">
                   <Input {...field} value={maskedKey(saved.apiKeyHint)} readOnly className="flex-1" />
                   <Button variant="secondary" onClick={() => setReplacingKey(true)}>
-                    Replace key
+                    {t("settings.ai.replaceKey")}
                   </Button>
                 </div>
               )}
             </FormField>
           )}
           {showKeyInput && (
-            <FormField label={draft.driver === "anthropic" ? "API key" : "API key (optional)"} helperText={draft.driver === "anthropic" ? "Stored encrypted. It's never shown again, logged or exported." : "Only if your server asks for one. Stored encrypted."}>
+            <FormField label={draft.driver === "anthropic" ? t("settings.ai.apiKey") : t("settings.ai.apiKeyOptional")} helperText={draft.driver === "anthropic" ? t("settings.ai.apiKeyHelp") : t("settings.ai.apiKeyOptionalHelp")}>
               {(field) => <PasswordInput {...field} value={draft.apiKey} onChange={(e) => set({ apiKey: e.target.value })} autoComplete="new-password" />}
             </FormField>
           )}
@@ -364,7 +371,7 @@ export function AiPane() {
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="secondary" size="sm" onClick={() => void runTest()} disabled={busy === "test" || (draft.driver === "openai-compatible" && !draft.baseUrl.trim())}>
                 {busy === "test" ? <Spinner size="sm" /> : <PlugZap size={15} aria-hidden />}
-                Test connection
+                {t("settings.ai.testConnection")}
               </Button>
               {status && (
                 <span role="status" data-testid="ai-connection" className={`flex items-center gap-1.5 text-[13px] font-medium ${status.ok ? "text-on-surface" : "text-overdue"}`}>
@@ -377,7 +384,7 @@ export function AiPane() {
         </div>
       </AccountCard>
       {saved.enabled && (
-        <AccountCard title="Features" description="Each one only fills in a form someone has open. Switch off what you're not comfortable with.">
+        <AccountCard title={t("settings.ai.features")} description={t("settings.ai.featuresDescription")}>
           <ul className="flex flex-col" data-testid="ai-features">
             {AI_FEATURES.map((f) => {
               const Icon = FEATURE_ICON[f.key];
@@ -405,12 +412,12 @@ export function AiPane() {
                       aria-controls={`${id}-sent`}
                       onClick={() => setOpenSent(openSent === f.key ? null : f.key)}
                     >
-                      What&apos;s sent
+                      {t("settings.ai.whatsSent")}
                       {openSent === f.key ? <ChevronUp size={14} aria-hidden /> : <ChevronDown size={14} aria-hidden />}
                     </button>
                     {openSent === f.key && (
                       <div id={`${id}-sent`} className="mt-2 rounded-md bg-surface-sunken p-3 text-[12.5px] text-on-surface">
-                        <b className="font-semibold">Sent:</b> {f.sends}
+                        <b className="font-semibold">{t("settings.ai.sent")}</b> {f.sends}
                         <p className="mt-1.5 flex items-start gap-1.5 text-on-surface-muted">
                           <ShieldCheck size={14} aria-hidden className="mt-0.5 shrink-0" />
                           {AI_NEVER_SENT}
@@ -428,23 +435,23 @@ export function AiPane() {
       </div>
 
       {saved.enabled && (
-        <AccountCard title="Monthly budget" description="AI pauses for everyone when this month's tokens are used up. Owners hear at 80%.">
+        <AccountCard title={t("settings.ai.budget")} description={t("settings.ai.budgetDescription")}>
           <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]" data-testid="ai-budget">
-            <FormField label="Tokens a month" helperText="Empty means no limit.">
-              {(field) => <Input {...field} value={draft.budget} onChange={(e) => set({ budget: e.target.value })} inputMode="numeric" placeholder="No limit" />}
+            <FormField label={t("settings.ai.tokensAMonth")} helperText={t("settings.ai.tokensAMonthHelp")}>
+              {(field) => <Input {...field} value={draft.budget} onChange={(e) => set({ budget: e.target.value })} inputMode="numeric" placeholder={t("settings.ai.noLimit")} />}
             </FormField>
             <div className="flex flex-col gap-2">
-              <p className="text-[12px] font-semibold text-on-surface-muted">This month</p>
+              <p className="text-[12px] font-semibold text-on-surface-muted">{t("settings.ai.thisMonth")}</p>
               {usage ? (
                 <>
                   <p className="flex items-baseline justify-between gap-2 text-[13px] text-on-surface-muted" data-testid="ai-usage">
                     <span>
                       <b className="text-[15px] font-semibold text-on-surface">{fmt(usage.used)}</b>
-                      {usage.budget !== null ? ` of ${fmt(usage.budget)} tokens · ${usage.percent}%` : " tokens"}
+                      {usage.budget !== null ? t("settings.ai.usageOf", { budget: fmt(usage.budget), percent: usage.percent }) : t("settings.ai.usageTokens")}
                     </span>
-                    <span>{usage.requests === 1 ? "1 request" : `${fmt(usage.requests)} requests`}</span>
+                    <span>{t("settings.ai.requests", { count: usage.requests, formatted: fmt(usage.requests) })}</span>
                   </p>
-                  {usage.budget !== null && <Progress value={usage.percent ?? 0} aria-label={`${usage.percent}% of this month's budget used`} />}
+                  {usage.budget !== null && <Progress value={usage.percent ?? 0} aria-label={t("settings.ai.budgetUsed", { percent: usage.percent })} />}
                   {usage.pausedUntil && (
                     <p role="status" className="flex items-center gap-1.5 text-[12.5px] font-medium text-overdue">
                       <CircleAlert size={14} aria-hidden />
@@ -453,19 +460,19 @@ export function AiPane() {
                   )}
                 </>
               ) : (
-                <p className="text-[13px] text-on-surface-muted">No AI requests yet this month.</p>
+                <p className="text-[13px] text-on-surface-muted">{t("settings.ai.noRequests")}</p>
               )}
             </div>
             {(
               [
-                ["Top features", (usage?.byFeature ?? []).map((r) => ({ key: r.feature, name: AI_FEATURES.find((f) => f.key === r.feature)!.label, percent: r.percent }))],
-                ["Top people", (usage?.byUser ?? []).map((r) => ({ key: r.userId, name: r.name, percent: r.percent }))],
+                [t("settings.ai.topFeatures"), (usage?.byFeature ?? []).map((r) => ({ key: r.feature, name: AI_FEATURES.find((f) => f.key === r.feature)!.label, percent: r.percent }))],
+                [t("settings.ai.topPeople"), (usage?.byUser ?? []).map((r) => ({ key: r.userId, name: r.name, percent: r.percent }))],
               ] as const
             ).map(([title, rows]) => (
               <div key={title} className="flex flex-col gap-1.5">
                 <p className="text-[12px] font-semibold text-on-surface-muted">{title}</p>
                 {rows.length === 0 ? (
-                  <p className="text-[12.5px] text-on-surface-muted">None yet</p>
+                  <p className="text-[12.5px] text-on-surface-muted">{t("settings.ai.noneYet")}</p>
                 ) : (
                   rows.map((r) => (
                     <p key={r.key} className="flex justify-between gap-2 text-[12.5px] text-on-surface tabular-nums">
@@ -481,7 +488,7 @@ export function AiPane() {
       )}
 
       <div className="flex items-center justify-end gap-2">
-        {dirty && <span className="text-[12.5px] text-on-surface-muted">Unsaved changes</span>}
+        {dirty && <span className="text-[12.5px] text-on-surface-muted">{t("settings.ai.unsaved")}</span>}
         {dirty && (
           <Button
             variant="secondary"
@@ -492,11 +499,11 @@ export function AiPane() {
               markSaved();
             }}
           >
-            Discard
+            {t("settings.ai.discard")}
           </Button>
         )}
         <Button onClick={() => void save()} disabled={!dirty || busy === "save" || !draft.driver}>
-          {busy === "save" ? <Spinner size="sm" /> : "Save"}
+          {busy === "save" ? <Spinner size="sm" /> : t("settings.common.save")}
         </Button>
       </div>
       {dialog}

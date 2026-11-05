@@ -10,6 +10,7 @@ import { useDashboardBasis } from "./dashboard-basis";
 import { useDashboardCurrency } from "./dashboard-currency";
 import { KpiSkeleton } from "./dashboard-skeleton";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 /** Where each card opens (US-DASH-14). */
 const KPI_HREF: Record<KpiKey, string> = {
@@ -52,6 +53,7 @@ function figureSize(text: string): string {
  * its own line with the trend under it.
  */
 export function KpiRow() {
+  const t = useT();
   const [kpis, setKpis] = useState<Kpi[] | null>(null);
   const currency = useDashboardCurrency();
   const { basis, ready } = useDashboardBasis();
@@ -96,7 +98,7 @@ export function KpiRow() {
             key={kpi.key}
             href={KPI_HREF[kpi.key]}
             className="group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${kpi.label}: ${value}. ${noData ? "No data yet" : change.text}`}
+            aria-label={t("dashboard.kpi.ariaLabel", { label: kpi.label, value, change: noData ? t("dashboard.kpi.noData") : change.text })}
           >
             <Card
               className={cn("@container flex h-full flex-col gap-1.5 p-4 transition-colors group-hover:border-border-strong", look.card)}
@@ -134,29 +136,27 @@ export function KpiRow() {
               >
                 {/* US-DASH-26 — says which basis profit is on when it's cash. */}
                 {kpi.key === "profit" && kpi.basis === "cash" && (
-                  <span className="text-on-surface-muted">cash basis · </span>
+                  <span className="text-on-surface-muted">{t("dashboard.kpi.cashBasis")}</span>
                 )}
-                {noData ? "No data yet" : change.text}
+                {noData ? t("dashboard.kpi.noData") : change.text}
               </span>
               {kpi.key === "receivables" && kpi.detail && !noData && (
                 <span className="text-[12px] text-on-surface-muted">
-                  Current {money(kpi.detail.current ?? "0")} · overdue{" "}
-                  {money(kpi.detail.overdue ?? "0")}
+                  {t("dashboard.kpi.receivablesDetail", { current: money(kpi.detail.current ?? "0"), overdue: money(kpi.detail.overdue ?? "0") })}
                 </span>
               )}
               {kpi.key === "quotes_won" &&
                 kpi.detail?.amount !== undefined &&
                 BigInt(kpi.detail.amount) > 0n && (
                   <span className="text-[12px] text-on-surface-muted">
-                    {money(kpi.detail.amount)} accepted
+                    {t("dashboard.kpi.quotesAccepted", { amount: money(kpi.detail.amount) })}
                   </span>
                 )}
               {kpi.key === "overdue" &&
                 kpi.detail?.count !== undefined &&
                 kpi.detail.count > 0 && (
                   <span className="text-[12px] text-on-surface-muted">
-                    {kpi.detail.count}{" "}
-                    {kpi.detail.count === 1 ? "invoice" : "invoices"}
+                    {t("dashboard.kpi.overdueInvoices", { count: kpi.detail.count })}
                   </span>
                 )}
             </Card>

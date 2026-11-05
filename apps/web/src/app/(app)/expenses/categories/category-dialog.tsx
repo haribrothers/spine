@@ -6,6 +6,7 @@ import { Check, Info, Plus } from "lucide-react";
 import { EXPENSE_CATEGORY_DESCRIPTION_MAX } from "@spine/shared";
 import { ApiError, apiClient } from "../../../../lib/api-client";
 import type { ExpenseCategory } from "../types";
+import { t as translate, useT } from "../../../../lib/i18n";
 
 export interface AccountOption {
   id: string;
@@ -21,7 +22,7 @@ export interface TaxRateOption {
 const DEFAULT_ACCOUNT = "";
 const NO_RATE = "";
 /** The account a category without one posts to (the posting rule's fallback). */
-export const FALLBACK_ACCOUNT_LABEL = "6900 Other Expenses · default";
+export const FALLBACK_ACCOUNT_LABEL = translate("expenses.categories.fallbackAccountDefault");
 
 interface NameTaken {
   message: string;
@@ -53,6 +54,7 @@ export function ExpenseCategoryDialog({
   onSaved: (saved: ExpenseCategory, mode: "created" | "updated") => void;
   onRestored: (id: string, name: string) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [accountId, setAccountId] = useState(DEFAULT_ACCOUNT);
@@ -76,12 +78,12 @@ export function ExpenseCategoryDialog({
   const accountOptions = useMemo(() => [{ value: DEFAULT_ACCOUNT, label: FALLBACK_ACCOUNT_LABEL }, ...accounts.map((a) => ({ value: a.id, label: `${a.code} ${a.name}` }))], [accounts]);
   // A rate saved before it was archived still shows; only active ones can be newly chosen.
   const rateOptions = useMemo(() => {
-    const options = [{ value: NO_RATE, label: "None" }, ...taxRates.map((r) => ({ value: r.id, label: r.name }))];
-    if (category?.defaultTaxRateId && !taxRates.some((r) => r.id === category.defaultTaxRateId)) options.push({ value: category.defaultTaxRateId, label: category.defaultTaxRateName ?? "Archived rate" });
+    const options = [{ value: NO_RATE, label: t("expenses.categories.none") }, ...taxRates.map((r) => ({ value: r.id, label: r.name }))];
+    if (category?.defaultTaxRateId && !taxRates.some((r) => r.id === category.defaultTaxRateId)) options.push({ value: category.defaultTaxRateId, label: category.defaultTaxRateName ?? t("expenses.categories.archivedRate") });
     return options;
-  }, [taxRates, category]);
+  }, [taxRates, category, t]);
 
-  const label = (id: string | null) => (id ? (accounts.find((a) => a.id === id) ? `${accounts.find((a) => a.id === id)!.code} ${accounts.find((a) => a.id === id)!.name}` : "its account") : "6900 Other Expenses");
+  const label = (id: string | null) => (id ? (accounts.find((a) => a.id === id) ? `${accounts.find((a) => a.id === id)!.code} ${accounts.find((a) => a.id === id)!.name}` : t("expenses.categories.itsAccount")) : t("expenses.categories.fallbackAccount"));
   const accountChanged = category !== null && (category.accountId ?? DEFAULT_ACCOUNT) !== accountId;
 
   async function save() {
@@ -89,7 +91,7 @@ export function ExpenseCategoryDialog({
     setNameError(null);
     setTaken(null);
     if (!name.trim()) {
-      setNameError("Give the category a name.");
+      setNameError(t("expenses.categories.nameRequired"));
       return;
     }
     setSaving(true);
@@ -101,9 +103,9 @@ export function ExpenseCategoryDialog({
       if (err instanceof ApiError && err.status === 409) {
         const body = err.body as NameTaken;
         setTaken(body);
-        setNameError(body.archived ? `${body.message.replace(/\.$/, "")} — it's archived.` : body.message);
+        setNameError(body.archived ? t("expenses.categories.nameArchived", { message: body.message.replace(/\.$/, "") }) : body.message);
       } else {
-        setError(err instanceof Error ? err.message : "Couldn't save the category. Try again.");
+        setError(err instanceof Error ? err.message : t("expenses.categories.saveFailed"));
       }
     } finally {
       setSaving(false);
@@ -117,7 +119,7 @@ export function ExpenseCategoryDialog({
       await apiClient.post(`/expense-categories/${taken.existingId}/restore`);
       onRestored(taken.existingId, taken.message.replace(/ is already a category\.$/, ""));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't restore it. Try again.");
+      setError(err instanceof Error ? err.message : t("expenses.categories.restoreItFailed"));
     } finally {
       setSaving(false);
     }
@@ -127,8 +129,8 @@ export function ExpenseCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{category ? "Edit category" : "Add category"}</DialogTitle>
-          {!category && <DialogDescription>Name it, say what it&apos;s for, and choose where it posts.</DialogDescription>}
+          <DialogTitle>{category ? t("expenses.categories.editTitle") : t("expenses.categories.addTitle")}</DialogTitle>
+          {!category && <DialogDescription>{t("expenses.categories.addDescription")}</DialogDescription>}
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -137,16 +139,16 @@ export function ExpenseCategoryDialog({
             </Alert>
           )}
           <div className="flex flex-col gap-1">
-            <FormField label="Name" required errorText={nameError ?? undefined}>
-              {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Fuel & freight" />}
+            <FormField label={t("expenses.categories.name")} required errorText={nameError ?? undefined}>
+              {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("expenses.categories.namePlaceholder")} />}
             </FormField>
             {taken?.archived && (
               <Button variant="ghost" size="sm" className="self-start px-1 text-primary hover:underline" disabled={saving} onClick={() => void restoreTaken()}>
-                Restore it
+                {t("expenses.categories.restoreIt")}
               </Button>
             )}
           </div>
-          <FormField label="What it's for" helperText={`Shown under the name when people pick a category. ${description.trim().length} / ${EXPENSE_CATEGORY_DESCRIPTION_MAX}`}>
+          <FormField label={t("expenses.categories.whatFor")} helperText={t("expenses.categories.whatForHelper", { length: description.trim().length, max: EXPENSE_CATEGORY_DESCRIPTION_MAX })}>
             {(field) => (
               <Textarea
                 {...field}
@@ -154,32 +156,32 @@ export function ExpenseCategoryDialog({
                 maxLength={EXPENSE_CATEGORY_DESCRIPTION_MAX}
                 rows={2}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Diesel, petrol, tolls and parking for site vehicles"
+                placeholder={t("expenses.categories.whatForPlaceholder")}
               />
             )}
           </FormField>
-          <FormField label="Posts to">
-            {(field) => <Combobox id={field.id} options={accountOptions} value={accountId} onValueChange={setAccountId} aria-label="Posts to" />}
+          <FormField label={t("expenses.categories.postsTo")}>
+            {(field) => <Combobox id={field.id} options={accountOptions} value={accountId} onValueChange={setAccountId} aria-label={t("expenses.categories.postsTo")} />}
           </FormField>
           {accountChanged && (
             <div className="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2 text-[12.5px] text-on-surface" data-testid="category-account-note">
               <Info size={14} aria-hidden className="mt-0.5 shrink-0 text-primary" />
               <span>
-                Expenses already approved stay in {label(category!.accountId)}. Expenses approved from now on post to {label(accountId || null)}.
+                {t("expenses.categories.accountChanged", { before: label(category!.accountId), after: label(accountId || null) })}
               </span>
             </div>
           )}
-          <FormField label="Default tax rate" helperText="Filled in on the expense form when this category is chosen — people can still change it.">
-            {(field) => <Combobox id={field.id} options={rateOptions} value={rateId} onValueChange={setRateId} aria-label="Default tax rate" />}
+          <FormField label={t("expenses.categories.defaultTaxRate")} helperText={t("expenses.categories.defaultTaxRateHelper")}>
+            {(field) => <Combobox id={field.id} options={rateOptions} value={rateId} onValueChange={setRateId} aria-label={t("expenses.categories.defaultTaxRate")} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("expenses.common.cancel")}
           </Button>
           <Button onClick={() => void save()} disabled={saving}>
             {saving ? <Spinner size="sm" /> : category ? <Check size={14} aria-hidden /> : <Plus size={14} aria-hidden />}
-            {category ? "Save changes" : "Add category"}
+            {category ? t("expenses.common.saveChanges") : t("expenses.categories.addTitle")}
           </Button>
         </DialogFooter>
       </DialogContent>

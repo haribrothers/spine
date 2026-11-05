@@ -25,6 +25,7 @@ import { FileCheck, X } from "lucide-react";
 import { JOB_END_BEFORE_START, fromDecimalString } from "@spine/shared";
 import { ApiError, apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import { ContactPicker } from "../quotes/contact-picker";
 import type { Quote } from "../quotes/types";
 import type { Address } from "../contacts/types";
@@ -71,6 +72,7 @@ export function NewJobDrawer({
   /** Quotes that already have a job, left out of "Start from an accepted quote". */
   convertedQuoteIds: Set<string>;
 }) {
+  const t = useT();
   const router = useRouter();
   const showToast = useToast();
   const [mode, setMode] = useState<"blank" | "quote">("blank");
@@ -120,8 +122,8 @@ export function NewJobDrawer({
 
   const acceptedQuotes = useMemo(() => (quotes ?? []).filter((q) => q.status === "accepted" && !q.isSuperseded && !convertedQuoteIds.has(q.id)), [quotes, convertedQuoteIds]);
   const quoteOptions = useMemo(
-    () => acceptedQuotes.map((q) => ({ value: q.id, label: `${q.number ?? "Quote"} · ${q.title ?? q.contactName ?? ""} · ${formatMoney(BigInt(q.totalAmount), q.currency)}` })),
-    [acceptedQuotes],
+    () => acceptedQuotes.map((q) => ({ value: q.id, label: `${q.number ?? t("jobs.newJob.quoteFallback")} · ${q.title ?? q.contactName ?? ""} · ${formatMoney(BigInt(q.totalAmount), q.currency)}` })),
+    [acceptedQuotes, t],
   );
   const chosenQuote = acceptedQuotes.find((q) => q.id === quoteId);
   const currencyOptions = useMemo(() => (COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES]).map((code) => ({ value: code, label: code })), [currency]);
@@ -150,8 +152,8 @@ export function NewJobDrawer({
 
   async function createFromQuote(confirm = false) {
     const retentionPct = retentionNumber();
-    if (!quoteId) return setErrors({ quoteId: "Choose an accepted quote." });
-    if (retentionPct === null) return setErrors({ retention: "Enter a percentage from 0 to 100." });
+    if (!quoteId) return setErrors({ quoteId: t("jobs.newJob.chooseQuoteError") });
+    if (retentionPct === null) return setErrors({ retention: t("jobs.newJob.retentionError") });
     setSaving(true);
     setError(null);
     try {
@@ -159,19 +161,19 @@ export function NewJobDrawer({
       opened(job);
     } catch (err) {
       if (isConversionGuardConflict(err)) setConflict(err.body);
-      else setError(err instanceof Error ? err.message : "Couldn't create the job. Try again.");
+      else setError(err instanceof Error ? err.message : t("jobs.newJob.createFailed"));
       setSaving(false);
     }
   }
 
   async function create() {
     const next: Record<string, string> = {};
-    if (!contactId) next.contactId = "Choose who the job is for.";
-    if (!name.trim()) next.name = "Give the job a name.";
+    if (!contactId) next.contactId = t("jobs.newJob.contactError");
+    if (!name.trim()) next.name = t("jobs.newJob.nameError");
     const amount = contractValue.trim() ? fromDecimalString(contractValue.replace(/,/g, "").trim(), currency) : 0n;
-    if (amount === null || amount < 0n) next.contractValue = "Enter a contract value of zero or more.";
+    if (amount === null || amount < 0n) next.contractValue = t("jobs.newJob.contractValueError");
     const retentionPct = retentionNumber();
-    if (retentionPct === null) next.retention = "Enter a percentage from 0 to 100.";
+    if (retentionPct === null) next.retention = t("jobs.newJob.retentionError");
     if (startDate && endDate && endDate < startDate) next.endDate = JOB_END_BEFORE_START;
     setErrors(next);
     if (Object.values(next).some(Boolean)) return;
@@ -191,7 +193,7 @@ export function NewJobDrawer({
       });
       opened(job);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't create the job. Try again.");
+      setError(err instanceof Error ? err.message : t("jobs.newJob.createFailed"));
       setSaving(false);
     }
   }
@@ -200,7 +202,7 @@ export function NewJobDrawer({
   function opened(job: { id: string; number: string | null }) {
     onOpenChange(false);
     setSaving(false);
-    showToast(job.number ? `Job ${job.number} created` : "Job created", "Add its milestones to bill it as the work is done.");
+    showToast(job.number ? t("jobs.newJob.createdNumbered", { number: job.number }) : t("jobs.newJob.created"), t("jobs.newJob.createdDescription"));
     router.push(`/jobs/${job.id}?tab=milestones`);
   }
 
@@ -208,8 +210,8 @@ export function NewJobDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent data-testid="new-job-drawer">
         <DrawerHeader>
-          <DrawerTitle>New job</DrawerTitle>
-          <DrawerDescription>Track work, billing and costs for a customer. You can start from an accepted quote or fill it in yourself.</DrawerDescription>
+          <DrawerTitle>{t("jobs.newJob.title")}</DrawerTitle>
+          <DrawerDescription>{t("jobs.newJob.description")}</DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="flex flex-col gap-4">
           {error && (
@@ -222,44 +224,44 @@ export function NewJobDrawer({
             <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-surface-sunken px-3.5 py-3">
               <FileCheck size={18} className="shrink-0 text-primary" aria-hidden />
               <div className="min-w-0 flex-1 text-[12.5px] text-on-surface-muted">
-                <p className="text-[13px] font-semibold text-on-surface">Start from an accepted quote</p>
-                Fills in the contact, name and contract value, and links the quote.
+                <p className="text-[13px] font-semibold text-on-surface">{t("jobs.newJob.fromQuoteTitle")}</p>
+                {t("jobs.newJob.fromQuoteHint")}
               </div>
               <Button variant="secondary" size="sm" onClick={() => setMode("quote")}>
-                Choose a quote
+                {t("jobs.newJob.chooseQuote")}
               </Button>
             </div>
           ) : (
             <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-sunken px-3.5 py-3" data-testid="new-job-from-quote">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[13px] font-semibold text-on-surface">Start from an accepted quote</p>
+                <p className="text-[13px] font-semibold text-on-surface">{t("jobs.newJob.fromQuoteTitle")}</p>
                 <Button variant="ghost" size="sm" onClick={() => setMode("blank")}>
                   <X size={14} aria-hidden />
-                  Fill it in myself
+                  {t("jobs.newJob.fillMyself")}
                 </Button>
               </div>
               {quotes === null ? (
                 <Spinner size="sm" />
               ) : acceptedQuotes.length === 0 ? (
-                <p className="text-[13px] text-on-surface-muted">No accepted quotes are waiting for a job. Fill the job in yourself, or accept a quote first.</p>
+                <p className="text-[13px] text-on-surface-muted">{t("jobs.newJob.noAcceptedQuotes")}</p>
               ) : (
-                <FormField label="Accepted quote" required errorText={errors.quoteId || undefined}>
-                  {(field) => <Combobox {...field} options={quoteOptions} value={quoteId || undefined} onValueChange={(v) => { setQuoteId(v); setConflict(null); }} placeholder="Choose a quote…" />}
+                <FormField label={t("jobs.newJob.acceptedQuote")} required errorText={errors.quoteId || undefined}>
+                  {(field) => <Combobox {...field} options={quoteOptions} value={quoteId || undefined} onValueChange={(v) => { setQuoteId(v); setConflict(null); }} placeholder={t("jobs.newJob.chooseQuotePlaceholder")} />}
                 </FormField>
               )}
               {chosenQuote && (
                 <p className="text-[12.5px] text-on-surface-muted">
-                  For {chosenQuote.contactName ?? "the customer"} · contract value {formatMoney(BigInt(chosenQuote.totalAmount), chosenQuote.currency)}. The job is named after the quote&apos;s first item.
+                  {t("jobs.newJob.chosenQuote", { name: chosenQuote.contactName ?? t("jobs.newJob.theCustomer"), value: formatMoney(BigInt(chosenQuote.totalAmount), chosenQuote.currency) })}
                 </p>
               )}
-              <FormField label="Retention %" helperText="Held back from each progress invoice until you release it." errorText={errors.retention || undefined}>
+              <FormField label={t("jobs.newJob.retention")} helperText={t("jobs.newJob.retentionHelperQuote")} errorText={errors.retention || undefined}>
                 {(field) => <Input {...field} inputMode="decimal" value={retention} onChange={(e) => setRetention(e.target.value)} placeholder="0" className="w-28" />}
               </FormField>
               {conflict && (
                 <Alert variant="warning" data-testid="new-job-conflict">
                   <AlertDescription className="flex flex-col gap-1.5">
-                    <span className="font-medium">This quote has already been converted before.</span>
-                    <span>Converting again creates a separate job; the amount isn&apos;t split between them.</span>
+                    <span className="font-medium">{t("jobs.newJob.convertedBefore")}</span>
+                    <span>{t("jobs.newJob.convertAgain")}</span>
                     <span className="flex flex-wrap gap-x-3">
                       {conflict.existing.jobs.map((j) => (
                         <Link key={j.id} href={`/jobs/${j.id}`} className="text-primary hover:underline">
@@ -268,7 +270,7 @@ export function NewJobDrawer({
                       ))}
                       {conflict.existing.invoices.map((i) => (
                         <SectionLink key={i.id} href={`/invoices/${i.id}`} className="text-primary hover:underline">
-                          {i.number ?? "Draft invoice"}
+                          {i.number ?? t("jobs.newJob.draftInvoice")}
                         </SectionLink>
                       ))}
                     </span>
@@ -280,16 +282,16 @@ export function NewJobDrawer({
 
           {mode === "blank" && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="Contact" required className="sm:col-span-2" errorText={errors.contactId || undefined}>
+              <FormField label={t("jobs.newJob.contact")} required className="sm:col-span-2" errorText={errors.contactId || undefined}>
                 {(field) => <ContactPicker {...field} value={contactId} onValueChange={(id) => void chooseContact(id)} />}
               </FormField>
-              <FormField label="Job name" required className="sm:col-span-2" errorText={errors.name || undefined}>
-                {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Bathroom refit — 2nd floor" />}
+              <FormField label={t("jobs.newJob.jobName")} required className="sm:col-span-2" errorText={errors.name || undefined}>
+                {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("jobs.newJob.jobNamePlaceholder")} />}
               </FormField>
               <FormField
-                label="Site address"
+                label={t("jobs.newJob.siteAddress")}
                 className="sm:col-span-2"
-                helperText={siteFrom ? `From ${siteFrom}'s address — change it if the work is elsewhere.` : "Where the work happens."}
+                helperText={siteFrom ? t("jobs.newJob.siteFrom", { name: siteFrom }) : t("jobs.newJob.siteHelper")}
               >
                 {(field) => (
                   <Input
@@ -302,21 +304,21 @@ export function NewJobDrawer({
                   />
                 )}
               </FormField>
-              <FormField label="Currency" required>
-                {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={setCurrency} aria-label="Currency" />}
+              <FormField label={t("jobs.newJob.currency")} required>
+                {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={setCurrency} aria-label={t("jobs.newJob.currency")} />}
               </FormField>
-              <FormField label="Contract value" errorText={errors.contractValue || undefined}>
+              <FormField label={t("jobs.newJob.contractValue")} errorText={errors.contractValue || undefined}>
                 {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={contractValue} onChange={(e) => setContractValue(e.target.value)} placeholder="0.00" />}
               </FormField>
-              <FormField label="Retention %" helperText="Held back from each progress invoice." errorText={errors.retention || undefined}>
+              <FormField label={t("jobs.newJob.retention")} helperText={t("jobs.newJob.retentionHelper")} errorText={errors.retention || undefined}>
                 {(field) => <Input {...field} inputMode="decimal" value={retention} onChange={(e) => setRetention(e.target.value)} placeholder="0" />}
               </FormField>
               <div className="hidden sm:block" />
-              <FormField label="Start date">{() => <DatePicker value={startDate} onChange={setStartDate} aria-label="Start date" />}</FormField>
-              <FormField label="End date" errorText={errors.endDate || undefined}>
-                {() => <DatePicker value={endDate} onChange={setEndDate} aria-label="End date" />}
+              <FormField label={t("jobs.newJob.startDate")}>{() => <DatePicker value={startDate} onChange={setStartDate} aria-label={t("jobs.newJob.startDate")} />}</FormField>
+              <FormField label={t("jobs.newJob.endDate")} errorText={errors.endDate || undefined}>
+                {() => <DatePicker value={endDate} onChange={setEndDate} aria-label={t("jobs.newJob.endDate")} />}
               </FormField>
-              <FormField label="Notes" className="sm:col-span-2">
+              <FormField label={t("jobs.newJob.notes")} className="sm:col-span-2">
                 {(field) => <Textarea {...field} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />}
               </FormField>
             </div>
@@ -324,15 +326,15 @@ export function NewJobDrawer({
         </DrawerBody>
         <DrawerFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("jobs.newJob.cancel")}
           </Button>
           {mode === "quote" ? (
             <Button onClick={() => void createFromQuote(conflict !== null)} disabled={saving || !quoteId}>
-              {saving ? <Spinner size="sm" /> : conflict ? "Create another job" : "Create job"}
+              {saving ? <Spinner size="sm" /> : conflict ? t("jobs.newJob.createAnother") : t("jobs.newJob.create")}
             </Button>
           ) : (
             <Button onClick={() => void create()} disabled={saving}>
-              {saving ? <Spinner size="sm" /> : "Create job"}
+              {saving ? <Spinner size="sm" /> : t("jobs.newJob.create")}
             </Button>
           )}
         </DrawerFooter>

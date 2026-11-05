@@ -1,4 +1,5 @@
 import type { Member } from "./session/sign-in";
+import { t } from "./i18n";
 
 /** "Marcus Webb" → "MW"; falls back to the email's first letter. */
 export function initials(member: Pick<Member, "name" | "email">): string {
@@ -8,7 +9,7 @@ export function initials(member: Pick<Member, "name" | "email">): string {
   return letters.toUpperCase();
 }
 
-const ROLE_LABEL: Record<string, string> = { owner: "Owner", staff: "Staff", field: "Field" };
+const ROLE_LABEL: Record<string, string> = { owner: t("mobileApp.roles.owner"), staff: t("mobileApp.roles.staff"), field: t("mobileApp.roles.field") };
 
 /** "Field · Riverstone Builders" (US-MOB-02). */
 export function roleLine(member: Pick<Member, "role" | "organizationName">): string {
@@ -20,5 +21,5 @@ export function greeting(member: Pick<Member, "name">, now: Date = new Date()): 
   const hour = now.getHours();
   const part = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
   const first = member.name.trim().split(/\s+/)[0];
-  return first ? `Good ${part}, ${first}` : `Good ${part}`;
+  return first ? t(`mobileApp.greeting.${part}Name`, { name: first }) : t(`mobileApp.greeting.${part}`);
 }

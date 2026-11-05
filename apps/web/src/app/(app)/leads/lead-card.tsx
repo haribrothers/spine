@@ -20,12 +20,18 @@ import {
 import { LOST_REASON_LABELS, type LeadStage } from "@spine/shared";
 import { Calendar, Check, Ellipsis, Hourglass, ListTodo, MapPin, NotebookPen, Phone } from "lucide-react";
 import type { ActivityType, Lead } from "../contacts/types";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t as translate, useT } from "../../../lib/i18n";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { coldDays, daysInStage, daysLabel, initials, isOverdue } from "./pipeline-state";
 
 const FOLLOW_UP_ICON: Record<ActivityType, typeof Phone> = { call: Phone, meeting: MapPin, note: NotebookPen, task: ListTodo };
-const FOLLOW_UP_LABEL: Record<ActivityType, string> = { call: "Call", meeting: "Meeting", note: "Note", task: "Task" };
+const FOLLOW_UP_LABEL: Record<ActivityType, string> = {
+  call: translate("leads.card.followUpType.call"),
+  meeting: translate("leads.card.followUpType.meeting"),
+  note: translate("leads.card.followUpType.note"),
+  task: translate("leads.card.followUpType.task"),
+};
 
 /** "Tomorrow 10:00", "Fri 16 Oct" — the follow-up's day, with its time when it has one. */
 export function followUpWhen(dueAt: string, now: number): string {
@@ -34,14 +40,14 @@ export function followUpWhen(dueAt: string, now: number): string {
   const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const dayDiff = Math.round((startOf(due) - startOf(today)) / 86_400_000);
   const hasTime = due.getHours() !== 0 || due.getMinutes() !== 0;
-  const time = hasTime ? ` ${due.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false })}` : "";
-  if (dayDiff === 0) return `Today${time}`;
-  if (dayDiff === 1) return `Tomorrow${time}`;
-  return due.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const time = hasTime ? ` ${due.toLocaleTimeString(orgLocaleTag(), { hour: "2-digit", minute: "2-digit", hour12: false })}` : "";
+  if (dayDiff === 0) return translate("leads.card.today", { time });
+  if (dayDiff === 1) return translate("leads.card.tomorrow", { time });
+  return due.toLocaleDateString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short" });
 }
 
 export function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" });
 }
 
 export interface LeadCardProps {
@@ -69,20 +75,21 @@ export interface LeadCardProps {
  * and touch) or deletes it.
  */
 export function LeadCard({ lead, contactName, ownerName, stages, now, showValue, showSource, canDelete, canMove, menuOpen, onMenuOpenChange, onOpen, onMove, onDelete }: LeadCardProps) {
-  const title = lead.title || contactName || "Untitled lead";
+  const t = useT();
+  const title = lead.title || contactName || t("leads.card.untitled");
   const showContact = Boolean(lead.title && contactName);
   const cold = coldDays(lead, now);
   const overdue = isOverdue(lead, now);
   const followUp = lead.stageKind === "open" ? lead.nextFollowUp : null;
   const FollowUpIcon = followUp ? FOLLOW_UP_ICON[followUp.type] : Calendar;
   const days = daysInStage(lead, now);
-  const meta = lead.stageKind === "won" ? `Won ${shortDate(lead.stageChangedAt)}` : lead.stageKind === "lost" ? `Lost ${shortDate(lead.stageChangedAt)}` : daysLabel(days);
+  const meta = lead.stageKind === "won" ? t("leads.card.wonOn", { date: shortDate(lead.stageChangedAt) }) : lead.stageKind === "lost" ? t("leads.card.lostOn", { date: shortDate(lead.stageChangedAt) }) : daysLabel(days);
 
   return (
     <KanbanCard
       id={lead.id}
       data-lead={lead.id}
-      label={`${title}${showContact ? `, ${contactName}` : ""}. ${meta}. ${ownerName ? `Owner ${ownerName}` : "Unassigned"}`}
+      label={`${title}${showContact ? `, ${contactName}` : ""}. ${meta}. ${ownerName ? t("leads.card.owner", { name: ownerName }) : t("leads.card.unassigned")}`}
       onOpen={onOpen}
       onMenuKey={() => onMenuOpenChange(true)}
       className="gap-1.5 border-border"
@@ -92,22 +99,22 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onSelect={onOpen}>
               <MENU_ICONS.openDrawer aria-hidden />
-              Open
+              {t("leads.card.open")}
             </DropdownMenuItem>
             {canMove && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <MENU_ICONS.moveTo aria-hidden />
-                  Move to…
+                  {t("leads.card.moveToMenu")}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-44">
-                  <DropdownMenuLabel>Move to</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("leads.card.moveTo")}</DropdownMenuLabel>
                   {stages.map((stage) => {
                     const current = stage.id === lead.stageId;
                     return (
                       <DropdownMenuItem key={stage.id} disabled={current} onSelect={() => onMove(stage)}>
                         {stage.name}
-                        {current && <Check size={14} aria-label="Current stage" className="ml-auto" />}
+                        {current && <Check size={14} aria-label={t("leads.card.currentStage")} className="ml-auto" />}
                       </DropdownMenuItem>
                     );
                   })}
@@ -119,7 +126,7 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
                 <DropdownMenuSeparator />
                 <DropdownMenuItem destructive onSelect={onDelete}>
                   <MENU_ICONS.delete aria-hidden />
-                  Delete
+                  {t("leads.card.delete")}
                 </DropdownMenuItem>
               </>
             )}
@@ -141,14 +148,14 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
         <span className={cn("flex items-center gap-1.5 border-t border-border pt-1.5 text-[11.5px] font-medium", overdue ? "text-overdue" : "text-on-surface")} data-testid="lead-follow-up">
           <FollowUpIcon size={13} aria-hidden className={overdue ? "text-overdue" : "text-on-surface-muted"} />
           <span>
-            <b className="font-semibold">{FOLLOW_UP_LABEL[followUp.type]}</b> · {overdue ? `Overdue · ${shortDate(followUp.dueAt)}` : followUpWhen(followUp.dueAt, now)}
+            <b className="font-semibold">{FOLLOW_UP_LABEL[followUp.type]}</b> · {overdue ? t("leads.card.overdueOn", { date: shortDate(followUp.dueAt) }) : followUpWhen(followUp.dueAt, now)}
           </span>
         </span>
       )}
       {cold !== null && (
         <span className="flex items-center gap-1.5 self-start rounded-md bg-due-soon-bg px-1.5 py-0.5 text-[11.5px] font-medium text-due-soon" data-testid="lead-cold">
           <Hourglass size={12} aria-hidden />
-          No activity for {cold} days
+          {t("leads.card.noActivity", { days: cold })}
         </span>
       )}
       {lead.stageKind === "lost" && lead.lostReason && (
@@ -162,6 +169,7 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
 
 /** The owner's initials, with their name on hover; a dashed "—" when unassigned. */
 function OwnerChip({ name }: { name: string | null }) {
+  const t = useT();
   const chip = (
     <span
       className={cn(
@@ -176,16 +184,17 @@ function OwnerChip({ name }: { name: string | null }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{chip}</TooltipTrigger>
-      <TooltipContent>{name ?? "Unassigned"}</TooltipContent>
+      <TooltipContent>{name ?? t("leads.card.unassigned")}</TooltipContent>
     </Tooltip>
   );
 }
 
 /** The card's "⋯" button. */
 function CardMenuTrigger({ lead }: { lead: string }) {
+  const t = useT();
   return (
     <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-on-surface-muted data-[state=open]:bg-surface-sunken data-[state=open]:text-on-surface" aria-label={`Actions for ${lead}`}>
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-on-surface-muted data-[state=open]:bg-surface-sunken data-[state=open]:text-on-surface" aria-label={t("leads.card.actionsFor", { lead })}>
         <Ellipsis size={15} aria-hidden />
       </Button>
     </DropdownMenuTrigger>

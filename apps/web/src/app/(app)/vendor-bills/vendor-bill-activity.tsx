@@ -7,6 +7,7 @@ import type { VendorBillActivityEntry } from "@spine/shared";
 import { Ban, Banknote, FileCheck, FilePlus, ArrowRightLeft, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
 import { AiFilledMark } from "../../../components/ai-filled-mark";
 import { AgentMark } from "../../../components/agent-mark";
 
@@ -21,18 +22,20 @@ export function billActivityText(item: VendorBillActivityEntry, currency: string
   const money = (v?: string | null) => (v ? formatMoney(BigInt(v), currency) : "");
   switch (item.type) {
     case "created":
-      return { text: "Created as a draft" };
+      return { text: t("vendorBills.activity.created") };
     case "recorded":
-      return { text: `Recorded · posted ${money(item.amount)} to Accounts Payable` };
+      return { text: t("vendorBills.activity.recorded", { amount: money(item.amount) }) };
     case "paid":
       // US-PUR-49: the payment's own page; a deleted one is named without a link.
-      return item.linkId ? { text: `Paid ${money(item.amount)} by`, link: { label: item.detail ?? "a payment", href: `/vendor-payments/${item.linkId}` } } : { text: `Paid ${money(item.amount)} by ${item.detail ?? "a payment"}` };
+      return item.linkId
+        ? { text: t("vendorBills.activity.paidBy", { amount: money(item.amount) }), link: { label: item.detail ?? t("vendorBills.activity.aPayment"), href: `/vendor-payments/${item.linkId}` } }
+        : { text: t("vendorBills.activity.paidByNamed", { amount: money(item.amount), payment: item.detail ?? t("vendorBills.activity.aPayment") }) };
     case "credit_applied":
-      return { text: `Credit applied ${money(item.amount)} from`, link: item.linkId ? { label: item.detail ?? "a credit", href: `/vendor-credits/${item.linkId}` } : undefined };
+      return { text: t("vendorBills.activity.creditAppliedFrom", { amount: money(item.amount) }), link: item.linkId ? { label: item.detail ?? t("vendorBills.activity.aCredit"), href: `/vendor-credits/${item.linkId}` } : undefined };
     case "voided":
-      return { text: "Voided", after: item.detail ?? undefined };
+      return { text: t("vendorBills.activity.voided"), after: item.detail ?? undefined };
     case "payment_deleted":
-      return { text: `Payment ${item.detail ?? ""} deleted · owes ${money(item.amount)} again`.replace("  ", " ") };
+      return { text: t("vendorBills.activity.paymentDeleted", { payment: item.detail ?? "", amount: money(item.amount) }).replace("  ", " ") };
   }
 }
 
@@ -53,6 +56,7 @@ const SHOWN = 6;
  * when. "View history" keeps the field-level changes.
  */
 export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory }: { billId: string; currency: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<VendorBillActivityEntry[] | null>(null);
   const [all, setAll] = useState(false);
 
@@ -68,9 +72,9 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="bill-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("vendorBills.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("vendorBills.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -80,7 +84,7 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
             <Skeleton className="h-4 w-1/2" />
           </li>
         )}
-        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">Nothing has happened yet.</li>}
+        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">{t("vendorBills.activity.nothingYet")}</li>}
         {shown?.map((item, i) => {
           const Icon = ICONS[item.type];
           const { text, link, after } = billActivityText(item, currency);
@@ -107,7 +111,7 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
                       </Link>
                     </>
                   )}
-                  {after && <> · “{after}”</>}
+                  {after && <>{t("vendorBills.activity.afterQuote", { text: after })}</>}
                   {item.aiAssisted && <AiFilledMark />}
                   {item.via && <AgentMark agent={item.via} person={item.actorName} />}
                 </p>
@@ -119,7 +123,7 @@ export function VendorBillActivity({ billId, currency, refreshKey, onViewHistory
         {items && !all && items.length > SHOWN && (
           <li>
             <button type="button" onClick={() => setAll(true)} className="mt-1 text-[12.5px] font-medium text-primary hover:underline">
-              Show {items.length - SHOWN} earlier
+              {t("vendorBills.activity.showEarlier", { count: items.length - SHOWN })}
             </button>
           </li>
         )}

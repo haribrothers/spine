@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, cn, DatePicker, ReportFilter } from "@spine/ui";
 import { apiClient, ApiError } from "../../../lib/api-client";
+import { t, useT } from "../../../lib/i18n";
 
 /**
  * US-RPT-40 — the pieces every report page is built from, in page order:
@@ -12,10 +13,10 @@ import { apiClient, ApiError } from "../../../lib/api-client";
 
 /** P&L, Balance Sheet, Trial Balance and Cash Flow share one set of tabs. */
 export const STATEMENT_TABS = [
-  { value: "profit-and-loss", label: "Profit & Loss", href: "/reports/profit-and-loss" },
-  { value: "balance-sheet", label: "Balance Sheet", href: "/reports/balance-sheet" },
-  { value: "trial-balance", label: "Trial Balance", href: "/reports/trial-balance" },
-  { value: "cash-flow", label: "Cash Flow", href: "/reports/cash-flow" },
+  { value: "profit-and-loss", label: t("reports.statementTabs.profitAndLoss"), href: "/reports/profit-and-loss" },
+  { value: "balance-sheet", label: t("reports.statementTabs.balanceSheet"), href: "/reports/balance-sheet" },
+  { value: "trial-balance", label: t("reports.statementTabs.trialBalance"), href: "/reports/trial-balance" },
+  { value: "cash-flow", label: t("reports.statementTabs.cashFlow"), href: "/reports/cash-flow" },
 ];
 
 /**
@@ -36,7 +37,7 @@ export function useReport<T>(url: string | null, refused?: string) {
         live &&
         setState({
           data: null,
-          error: err instanceof ApiError && err.status === 403 && refused ? refused : err instanceof Error ? err.message : "This report didn't load. Try again.",
+          error: err instanceof ApiError && err.status === 403 && refused ? refused : err instanceof Error ? err.message : t("reports.common.loadFailed"),
           loading: false,
         }),
     );
@@ -49,12 +50,13 @@ export function useReport<T>(url: string | null, refused?: string) {
 
 /** From and To, labelled, for a `ReportToolbar`. */
 export function RangeFilters({ from, to, onFrom, onTo }: { from: Date; to: Date; onFrom: (d: Date) => void; onTo: (d: Date) => void }) {
+  const t = useT();
   return (
     <>
-      <ReportFilter label="From">
+      <ReportFilter label={t("reports.common.from")}>
         <DatePicker value={from} onChange={(d) => d && onFrom(d)} />
       </ReportFilter>
-      <ReportFilter label="To">
+      <ReportFilter label={t("reports.common.to")}>
         <DatePicker value={to} onChange={(d) => d && onTo(d)} />
       </ReportFilter>
     </>

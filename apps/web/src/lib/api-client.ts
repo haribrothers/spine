@@ -1,6 +1,7 @@
 "use client";
 
 import { AI_FEATURE_OFF_ERROR, MODULE_OFF_ERROR, PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared";
+import { t } from "./i18n";
 
 /**
  * Thin browser-side fetch wrapper for `/org/*` endpoints — first of its
@@ -25,7 +26,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
  */
 /** Fired on `window` when the API refuses an action (403); `PermissionToast` listens for it. */
 export const FORBIDDEN_EVENT = "spine:forbidden";
-export const FORBIDDEN_MESSAGE = "You don't have permission to do that. If you need to, ask an owner.";
+export const FORBIDDEN_MESSAGE = t("common.apiErrors.forbidden");
 
 /**
  * Fired on `window` when the API answers 401 (the session ended);
@@ -33,7 +34,7 @@ export const FORBIDDEN_MESSAGE = "You don't have permission to do that. If you n
  * create, change or delete, which is never retried automatically.
  */
 export const SESSION_EXPIRED_EVENT = "spine:session-expired";
-export const SESSION_EXPIRED_MESSAGE = "You've been signed out. Log in again to save this change.";
+export const SESSION_EXPIRED_MESSAGE = t("common.apiErrors.sessionExpired");
 
 function signalSessionExpired(mutation: boolean) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { mutation } }));
@@ -80,7 +81,7 @@ async function request<T>(
 
   if (!res.ok) {
     const requestId = res.headers.get("X-Request-Id") ?? undefined;
-    let message = `Request failed (${res.status})`;
+    let message = t("common.apiErrors.requestFailed", { status: res.status });
     let data: unknown;
     try {
       data = await res.json();
@@ -138,7 +139,7 @@ async function upload<T>(path: string, file: File, fields?: Record<string, strin
   });
 
   if (!res.ok) {
-    let message = `Upload failed (${res.status})`;
+    let message = t("common.apiErrors.uploadFailed", { status: res.status });
     try {
       const data = await res.json();
       message = data?.message ?? message;
@@ -171,7 +172,7 @@ async function download(path: string, body?: unknown): Promise<{ blob: Blob; hea
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    let message = `Download failed (${res.status})`;
+    let message = t("common.apiErrors.downloadFailed", { status: res.status });
     try {
       const data = await res.json();
       message = data?.message ?? message;

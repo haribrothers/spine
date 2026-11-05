@@ -1,16 +1,17 @@
 import { isRegisterType, type RegisterType } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 import { toIsoDate } from "./dates";
 
 export const REGISTER_RANGES = ["this_month", "last_month", "this_quarter", "last_90", "this_year", "custom"] as const;
 export type RegisterRange = (typeof REGISTER_RANGES)[number];
 
 export const REGISTER_RANGE_LABELS: Record<RegisterRange, string> = {
-  this_month: "This month",
-  last_month: "Last month",
-  this_quarter: "This quarter",
-  last_90: "Last 90 days",
-  this_year: "This year",
-  custom: "Custom range",
+  this_month: t("banking.register.ranges.thisMonth"),
+  last_month: t("banking.register.ranges.lastMonth"),
+  this_quarter: t("banking.register.ranges.thisQuarter"),
+  last_90: t("banking.register.ranges.last90"),
+  this_year: t("banking.register.ranges.thisYear"),
+  custom: t("banking.register.ranges.custom"),
 };
 
 /** US-BANK-14 (D-210, D-231) — what an account's register shows, kept in the address. */

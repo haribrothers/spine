@@ -6,6 +6,7 @@ import { Card, Skeleton, cn } from "@spine/ui";
 import type { JobActivityEntry } from "@spine/shared";
 import { Check, Flag, GitBranch, Image as ImageIcon, LockOpen, ListChecks, MessageSquare, Pencil, Plus, Receipt, RefreshCw, UserMinus, Users } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { t as translate, useT } from "../../../../lib/i18n";
 import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { groupJobActivity, type JobActivityItem } from "../job-page-state";
 import { JOB_STATUS_LABELS, type JobStatus } from "../types";
@@ -21,37 +22,37 @@ export function jobActivityText(item: JobActivityItem, currency: string): { titl
   const d = item.detail;
   switch (item.type) {
     case "created":
-      return { title: "Created", rest: null };
+      return { title: translate("jobs.activity.created"), rest: null };
     case "created_from_quote":
-      return { title: "Created", rest: d ? `from ${d}` : "from a quote" };
+      return { title: translate("jobs.activity.created"), rest: d ? translate("jobs.activity.fromSource", { source: d }) : translate("jobs.activity.fromQuote") };
     case "status_changed":
-      return { title: "Status changed", rest: `to ${JOB_STATUS_LABELS[d as JobStatus] ?? d}` };
+      return { title: translate("jobs.activity.statusChanged"), rest: translate("jobs.activity.toStatus", { status: JOB_STATUS_LABELS[d as JobStatus] ?? d }) };
     case "updated":
-      return { title: "Job details edited", rest: null };
+      return { title: translate("jobs.activity.updated"), rest: null };
     case "milestones_set":
-      return { title: "Milestones set", rest: d ? `· ${d} ${d === "1" ? "milestone" : "milestones"}` : null };
+      return { title: translate("jobs.activity.milestonesSet"), rest: d ? translate("jobs.activity.milestoneCount", { count: Number(d) }) : null };
     case "milestone_completed":
-      return { title: "Milestone completed", rest: d ? `· ${d}` : null };
+      return { title: translate("jobs.activity.milestoneCompleted"), rest: d ? `· ${d}` : null };
     case "milestone_invoiced":
-      return { title: "Milestone invoiced", rest: d ? `· ${d}` : null };
+      return { title: translate("jobs.activity.milestoneInvoiced"), rest: d ? `· ${d}` : null };
     case "variation_order_created":
-      return { title: "Variation raised", rest: d ? `· ${d}` : null };
+      return { title: translate("jobs.activity.variationRaised"), rest: d ? `· ${d}` : null };
     case "variation_order_applied": {
       const delta = d ? BigInt(d) : null;
-      return { title: "Variation applied", rest: delta === null ? null : `· ${delta >= 0n ? "+" : "−"}${formatMoney(delta >= 0n ? delta : -delta, currency)}` };
+      return { title: translate("jobs.activity.variationApplied"), rest: delta === null ? null : `· ${delta >= 0n ? "+" : "−"}${formatMoney(delta >= 0n ? delta : -delta, currency)}` };
     }
     case "photo_added": {
       const n = item.photos ?? 1;
-      return { title: n > 1 ? `${n} photos added` : "Photo added", rest: d ? `with ${d}` : null };
+      return { title: translate("jobs.activity.photosAdded", { count: n }), rest: d ? translate("jobs.activity.withDetail", { detail: d }) : null };
     }
     case "note_added":
-      return { title: "Note added", rest: null };
+      return { title: translate("jobs.activity.noteAdded"), rest: null };
     case "crew_assigned":
-      return { title: "Crew assigned", rest: d ? `· ${d}` : null };
+      return { title: translate("jobs.activity.crewAssigned"), rest: d ? `· ${d}` : null };
     case "crew_unassigned":
-      return { title: "Removed from crew", rest: d ? `· ${d}` : null };
+      return { title: translate("jobs.activity.crewUnassigned"), rest: d ? `· ${d}` : null };
     case "retention_released":
-      return { title: "Retention released", rest: d ? `· ${d}` : null };
+      return { title: translate("jobs.activity.retentionReleased"), rest: d ? `· ${d}` : null };
   }
 }
 
@@ -89,6 +90,7 @@ const SHOWN = 8;
  * keeps the field-level changes. Never shown to Field users.
  */
 export function JobActivity({ jobId, currency, refreshKey, onViewHistory }: { jobId: string; currency: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<JobActivityItem[] | null>(null);
   const [all, setAll] = useState(false);
 
@@ -104,9 +106,9 @@ export function JobActivity({ jobId, currency, refreshKey, onViewHistory }: { jo
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="job-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("jobs.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("jobs.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -116,7 +118,7 @@ export function JobActivity({ jobId, currency, refreshKey, onViewHistory }: { jo
             <Skeleton className="h-4 w-1/2" />
           </li>
         )}
-        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">Nothing has happened on this job yet.</li>}
+        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">{t("jobs.activity.empty")}</li>}
         {shown?.map((item, i) => {
           const Icon = item.type === "status_changed" && item.detail === "completed" ? Check : ICONS[item.type];
           const href = linkFor(item);
@@ -153,7 +155,7 @@ export function JobActivity({ jobId, currency, refreshKey, onViewHistory }: { jo
         {items && !all && items.length > SHOWN && (
           <li>
             <button type="button" onClick={() => setAll(true)} className="mt-1 text-[12.5px] font-medium text-primary hover:underline">
-              Show {items.length - SHOWN} earlier
+              {t("jobs.activity.showEarlier", { count: items.length - SHOWN })}
             </button>
           </li>
         )}

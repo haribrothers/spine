@@ -25,6 +25,8 @@ import { CalendarPlus, NotebookPen, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { Activity, ActivityType } from "./types";
+import { t as translate, useT } from "../../../lib/i18n";
+import { orgLocaleTag } from "../../../lib/money";
 
 const TYPE_OPTIONS: ActivityType[] = ["call", "meeting", "note", "task"];
 
@@ -41,7 +43,7 @@ const TYPE_OPTIONS: ActivityType[] = ["call", "meeting", "note", "task"];
 export function ActivitiesSection({
   contactId,
   leadId,
-  heading = "Activities",
+  heading = translate("contacts.activities.heading"),
   followUps = false,
   activities,
   onChanged,
@@ -55,6 +57,7 @@ export function ActivitiesSection({
   onChanged: () => void;
   onCreated?: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [asFollowUp, setAsFollowUp] = useState(false);
@@ -127,11 +130,11 @@ export function ActivitiesSection({
           <div className="flex gap-1.5">
             <Button size="sm" variant="secondary" onClick={() => openAddDialog()}>
               <NotebookPen size={14} aria-hidden />
-              Log activity
+              {t("contacts.activities.log")}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => openAddDialog(true)}>
               <CalendarPlus size={14} aria-hidden />
-              Add follow-up
+              {t("contacts.activities.addFollowUp")}
             </Button>
           </div>
         )}
@@ -151,49 +154,49 @@ export function ActivitiesSection({
           ))}
         </ul>
       ) : (
-        <p className="text-[13px] text-on-surface-muted">{followUps ? "No follow-ups or activities yet." : "No activities logged."}</p>
+        <p className="text-[13px] text-on-surface-muted">{followUps ? t("contacts.activities.noFollowUps") : t("contacts.activities.noActivities")}</p>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         {canCreate && !followUps && (
           <Button size="sm" variant="secondary" className="self-start" onClick={() => openAddDialog()}>
-            Log activity
+            {t("contacts.activities.log")}
           </Button>
         )}
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit activity" : asFollowUp ? "Add follow-up" : "Log activity"}</DialogTitle>
+            <DialogTitle>{editingId ? t("contacts.activities.edit") : asFollowUp ? t("contacts.activities.addFollowUp") : t("contacts.activities.log")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-3">
-            <FormField label="Type">
+            <FormField label={t("contacts.activities.type")}>
               {(field) => (
                 <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
                   <SelectTrigger {...field} className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TYPE_OPTIONS.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        <span className="capitalize">{t}</span>
+                    {TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        <span className="capitalize">{t(`contacts.activities.types.${option}`)}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             </FormField>
-            <FormField label="Notes">
+            <FormField label={t("contacts.activities.notes")}>
               {(field) => <Textarea {...field} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />}
             </FormField>
-            <FormField label="Follow-up date" helperText={asFollowUp ? "When to follow up." : "Leave blank if there's nothing to follow up on."}>
+            <FormField label={t("contacts.activities.followUpDate")} helperText={asFollowUp ? t("contacts.activities.followUpHelper") : t("contacts.activities.followUpBlankHelper")}>
               {(field) => <Input {...field} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />}
             </FormField>
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
+              {t("contacts.common.cancel")}
             </Button>
             <Button disabled={saving || (asFollowUp && !dueAt)} onClick={handleSave}>
-              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : asFollowUp ? "Add follow-up" : "Log activity"}
+              {saving ? <Spinner size="sm" /> : editingId ? t("contacts.activities.saveChanges") : asFollowUp ? t("contacts.activities.addFollowUp") : t("contacts.activities.log")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -221,6 +224,7 @@ function ActivityRow({
   onEdit: (activity: Activity) => void;
   toggling: boolean;
 }) {
+  const t = useT();
   const canEdit = useCanEditOwnership(activity.createdByUserId, { own: "activities.edit_own", others: "activities.edit_others" });
   const overdue = !activity.doneAt && activity.dueAt && new Date(activity.dueAt) < new Date();
 
@@ -232,15 +236,15 @@ function ActivityRow({
         disabled={!canEdit || toggling}
       />
       <div className="flex-1">
-        <span className="font-medium capitalize text-on-surface">{activity.type}</span>
+        <span className="font-medium capitalize text-on-surface">{t(`contacts.activities.types.${activity.type}`)}</span>
         {activity.notes && <span className="text-on-surface-muted"> · {activity.notes}</span>}
-        {activity.dueAt && <span className="text-on-surface-muted"> · due {new Date(activity.dueAt).toLocaleDateString()}</span>}
+        {activity.dueAt && <span className="text-on-surface-muted">{t("contacts.activities.due", { date: new Date(activity.dueAt).toLocaleDateString(orgLocaleTag()) })}</span>}
       </div>
-      {overdue && <Badge>Overdue</Badge>}
+      {overdue && <Badge>{t("contacts.activities.overdue")}</Badge>}
       {canEdit && (
         <button
           type="button"
-          aria-label="Edit activity"
+          aria-label={t("contacts.activities.edit")}
           onClick={() => onEdit(activity)}
           className="text-on-surface-muted transition-colors hover:text-on-surface"
         >

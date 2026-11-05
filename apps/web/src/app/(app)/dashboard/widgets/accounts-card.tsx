@@ -6,18 +6,19 @@ import { Banknote, CreditCard, Landmark } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import type { MoneyAccount } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
+import { t as translate, useT } from "../../../../lib/i18n";
 
 const KIND_ICON = { bank: Landmark, cash: Banknote, card: CreditCard } as const;
-const KIND_LABEL = { bank: "Bank account", cash: "Cash", card: "Card" } as const;
+const KIND_LABEL = { bank: translate("dashboard.accounts.bank"), cash: translate("dashboard.accounts.cash"), card: translate("dashboard.accounts.card") } as const;
 
 /** "Sep 30", or "Sep 30, 2025" outside this year. */
 function shortDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString(undefined, sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString(orgLocaleTag(), sameYear ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
 }
 
 /**
@@ -27,6 +28,7 @@ function shortDate(iso: string): string {
  * without `banking.view`.
  */
 export function AccountsCard() {
+  const t = useT();
   const [rows, setRows] = useState<MoneyAccount[] | null>(null);
   const orgCurrency = useDashboardCurrency();
   const currency = orgCurrency ?? "USD";
@@ -45,9 +47,9 @@ export function AccountsCard() {
     <Card data-testid="accounts-card">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Accounts
+          {t("dashboard.widgets.accounts")}
           <Link href="/banking" className="text-[13px] font-normal text-primary hover:underline">
-            Banking
+            {t("dashboard.accounts.banking")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -55,7 +57,7 @@ export function AccountsCard() {
         {!rows || !orgCurrency ? (
           <WidgetSkeleton kind="rows" rows={2} />
         ) : rows.length === 0 ? (
-          <p className="py-6 text-center text-[14px] text-on-surface-muted">No money accounts yet.</p>
+          <p className="py-6 text-center text-[14px] text-on-surface-muted">{t("dashboard.accounts.empty")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border">
             {rows.map((a) => {
@@ -69,12 +71,12 @@ export function AccountsCard() {
                       <Link href={`/banking/${a.id}`} className="block truncate text-[14px] text-primary hover:underline">
                         {a.name}
                       </Link>
-                      <p className="text-[12px] text-on-surface-muted">{a.lastReconciledOn ? `Reconciled to ${shortDate(a.lastReconciledOn)}` : "Not reconciled"}</p>
+                      <p className="text-[12px] text-on-surface-muted">{a.lastReconciledOn ? t("dashboard.accounts.reconciledTo", { date: shortDate(a.lastReconciledOn) }) : t("dashboard.accounts.notReconciled")}</p>
                     </div>
                   </div>
                   <span className="whitespace-nowrap text-[14px] font-semibold tabular-nums text-on-surface">
                     {formatMoney(balance, currency)}
-                    {a.kind === "card" && " owed"}
+                    {a.kind === "card" && t("dashboard.accounts.owed")}
                   </span>
                 </li>
               );

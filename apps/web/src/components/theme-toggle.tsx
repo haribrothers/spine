@@ -3,9 +3,11 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useT } from "../lib/i18n";
 
 /** `inline` sits in a page's own top bar (AuthFrame, D-207); `floating` stays bottom-right. */
 export function ThemeToggle({ placement = "floating" }: { placement?: "floating" | "inline" } = {}) {
+  const t = useT();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -14,7 +16,7 @@ export function ThemeToggle({ placement = "floating" }: { placement?: "floating"
   return (
     <button
       type="button"
-      aria-label="Toggle theme"
+      aria-label={t("common.themeToggle.label")}
       className={
         placement === "inline"
           ? "flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"

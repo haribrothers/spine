@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import X from "lucide-react-native/icons/x";
+import { useT } from "../lib/i18n";
 import { lightColors } from "../tokens";
 
 export interface ToastMessage {
@@ -36,6 +37,7 @@ export interface ToastProps extends ToastMessage {
  * directly, bypassing the theme switch entirely.
  */
 export function Toast({ title, description, onDismiss }: ToastProps) {
+  const t = useT();
   return (
     <View
       style={{ backgroundColor: lightColors.neutral900 }}
@@ -51,7 +53,7 @@ export function Toast({ title, description, onDismiss }: ToastProps) {
           </Text>
         ) : null}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={onDismiss} hitSlop={8}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t("uiNative.toast.dismiss")} onPress={onDismiss} hitSlop={8}>
         <X size={14} color={lightColors.neutral300} />
       </Pressable>
     </View>

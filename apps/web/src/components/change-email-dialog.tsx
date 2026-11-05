@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, PasswordInput, Spinner } from "@spine/ui";
 import { ApiError, apiClient } from "../lib/api-client";
 import type { Account } from "../lib/account-context";
+import { useT } from "../lib/i18n";
 
 /**
  * US-AUTH-18 (D-236) — a new sign-in email needs the current password; the
  * old address is told. Errors land under the field they're about.
  */
 export function ChangeEmailDialog({ open, onOpenChange, onChanged }: { open: boolean; onOpenChange: (open: boolean) => void; onChanged: (account: Account) => void }) {
+  const t = useT();
   const [newEmail, setNewEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ newEmail?: string; currentPassword?: string; other?: string }>({});
@@ -32,7 +34,7 @@ export function ChangeEmailDialog({ open, onOpenChange, onChanged }: { open: boo
       onChanged(account);
     } catch (err) {
       const field = err instanceof ApiError ? (err.body as { field?: string } | undefined)?.field : undefined;
-      const message = err instanceof Error ? err.message : "Couldn't change your email. Try again.";
+      const message = err instanceof Error ? err.message : t("common.changeEmail.failed");
       setErrors(field === "newEmail" || field === "currentPassword" ? { [field]: message } : { other: message });
     } finally {
       setSaving(false);
@@ -44,14 +46,14 @@ export function ChangeEmailDialog({ open, onOpenChange, onChanged }: { open: boo
       <DialogContent>
         <form onSubmit={submit} className="flex min-h-0 flex-col">
           <DialogHeader>
-            <DialogTitle>Change your sign-in email</DialogTitle>
-            <DialogDescription>You&apos;ll sign in with the new address from now on. We&apos;ll tell your current address it changed.</DialogDescription>
+            <DialogTitle>{t("common.changeEmail.title")}</DialogTitle>
+            <DialogDescription>{t("common.changeEmail.description")}</DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
-            <FormField label="New email" errorText={errors.newEmail}>
+            <FormField label={t("common.changeEmail.newEmail")} errorText={errors.newEmail}>
               {(field) => <Input {...field} type="email" autoComplete="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />}
             </FormField>
-            <FormField label="Current password" errorText={errors.currentPassword}>
+            <FormField label={t("common.changeEmail.currentPassword")} errorText={errors.currentPassword}>
               {(field) => <PasswordInput {...field} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}
             </FormField>
             {errors.other && (
@@ -62,11 +64,11 @@ export function ChangeEmailDialog({ open, onOpenChange, onChanged }: { open: boo
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.actions.cancel")}
             </Button>
             <Button type="submit" disabled={saving || !newEmail.trim() || !password}>
               {saving ? <Spinner size="sm" /> : null}
-              Change email
+              {t("common.changeEmail.submit")}
             </Button>
           </DialogFooter>
         </form>

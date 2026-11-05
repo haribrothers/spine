@@ -25,6 +25,7 @@ import {
 } from "@spine/ui";
 import type { OpeningVendorCredit } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 
 /**
@@ -33,6 +34,7 @@ import { formatMoney } from "../../../lib/money";
  * apply to their bills or have refunded (P20).
  */
 export function VendorCreditTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
+  const t = useT();
   const [rows, setRows] = useState<OpeningVendorCredit[] | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
@@ -64,7 +66,7 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
       load();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't add this vendor credit.");
+      setError(err instanceof Error ? err.message : t("openingBalances.vendorCredit.addError"));
     } finally {
       setBusy(false);
     }
@@ -77,7 +79,7 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
       load();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove this credit.");
+      setError(err instanceof Error ? err.message : t("openingBalances.common.removeCreditError"));
     }
   }
 
@@ -86,7 +88,7 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[13px] text-on-surface-muted">Credit notes from vendors you hadn&apos;t used on the cutover date. Apply them to the vendor&apos;s bills or record the refund they pay.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("openingBalances.vendorCredit.intro")}</p>
         {!locked && (
           <Button
             onClick={() => {
@@ -97,7 +99,7 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
               setAdding(true);
             }}
           >
-            Add credit
+            {t("openingBalances.common.addCredit")}
           </Button>
         )}
       </div>
@@ -110,18 +112,18 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
         <table className="w-full text-[14px]" data-testid="opening-vendor-credits">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
-              <th className="px-4 py-3 font-medium">Vendor</th>
-              <th className="px-4 py-3 font-medium">Number</th>
-              <th className="px-4 py-3 text-right font-medium">Credit</th>
-              <th className="px-4 py-3 text-right font-medium">Still to use</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.vendorCredit.colVendor")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.vendorCredit.colNumber")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.colCredit")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.stillToUse")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {rows?.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-[13px] text-on-surface-muted">
-                  No opening vendor credits.
+                  {t("openingBalances.vendorCredit.empty")}
                 </td>
               </tr>
             )}
@@ -130,16 +132,16 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
                 <td className="px-4 py-3 text-on-surface">{r.contactName}</td>
                 <td className="px-4 py-3 text-on-surface">
                   {r.number}
-                  {r.vendorReference ? <span className="text-on-surface-muted"> · their {r.vendorReference}</span> : null}
+                  {r.vendorReference ? <span className="text-on-surface-muted">{t("openingBalances.vendorCredit.theirReference", { reference: r.vendorReference })}</span> : null}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">{money(r.amount)}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{money(r.available)}</td>
                 <td className="px-4 py-3 text-right">
                   {!locked && r.available === r.amount && (
-                    <Button variant="ghost" size="sm" aria-label={`Remove ${r.number ?? r.contactName}`} onClick={async () => {
-                      if (await confirm({ title: `Remove opening credit ${r.number ?? r.contactName}?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r.id);
+                    <Button variant="ghost" size="sm" aria-label={t("openingBalances.vendorCredit.removeAria", { name: r.number ?? r.contactName })} onClick={async () => {
+                      if (await confirm({ title: t("openingBalances.vendorCredit.removeTitle", { name: r.number ?? r.contactName }), description: t("openingBalances.common.removeBody"), confirmLabel: t("openingBalances.common.remove"), danger: true })) void remove(r.id);
                     }}>
-                      Remove
+                      {t("openingBalances.common.remove")}
                     </Button>
                   )}
                 </td>
@@ -151,8 +153,8 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent size="md">
           <DialogHeader>
-            <DialogTitle>Add opening vendor credit</DialogTitle>
-            <DialogDescription>A vendor's credit note you hadn't used on the cutover date.</DialogDescription>
+            <DialogTitle>{t("openingBalances.vendorCredit.dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("openingBalances.vendorCredit.dialogBody")}</DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
             {error && (
@@ -160,11 +162,11 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <FormField label="Vendor" required>
+            <FormField label={t("openingBalances.vendorCredit.vendor")} required>
               {(field) => (
                 <Select value={contactId || undefined} onValueChange={setContactId}>
                   <SelectTrigger id={field.id}>
-                    <SelectValue placeholder="Choose a vendor" />
+                    <SelectValue placeholder={t("openingBalances.vendorCredit.chooseVendor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {vendors.map((c) => (
@@ -176,19 +178,19 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
                 </Select>
               )}
             </FormField>
-            <FormField label="Amount" required>
+            <FormField label={t("openingBalances.common.amount")} required>
               {(field) => <MoneyInput id={field.id} value={amount} onValueChange={setAmount} currency={currency} />}
             </FormField>
-            <FormField label="Vendor's credit note number">
-              {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={60} placeholder="Optional" />}
+            <FormField label={t("openingBalances.vendorCredit.referenceLabel")}>
+              {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={60} placeholder={t("openingBalances.common.optional")} />}
             </FormField>
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setAdding(false)} disabled={busy}>
-              Cancel
+              {t("openingBalances.common.cancel")}
             </Button>
             <Button onClick={add} disabled={busy || !contactId || amount <= 0n}>
-              {busy ? <Spinner size="sm" /> : "Add credit"}
+              {busy ? <Spinner size="sm" /> : t("openingBalances.common.addCredit")}
             </Button>
           </DialogFooter>
         </DialogContent>

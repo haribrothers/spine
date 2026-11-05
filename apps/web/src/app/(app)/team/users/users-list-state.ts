@@ -1,5 +1,6 @@
 import type { InvitationRow } from "../../../../lib/invitations";
 import type { MemberRow } from "../../../../lib/members";
+import { t } from "../../../../lib/i18n";
 import { orgLocaleTag } from "../../../../lib/money";
 
 export type UsersTab = "active" | "deactivated" | "invites";
@@ -15,7 +16,7 @@ export interface UsersListState {
 }
 
 const ROLES: readonly UsersRole[] = ["owner", "staff", "field"];
-export const ROLE_LABELS: Record<string, string> = { owner: "Owner", staff: "Staff", field: "Field" };
+export const ROLE_LABELS: Record<string, string> = { owner: t("team.roles.owner"), staff: t("team.roles.staff"), field: t("team.roles.field") };
 
 /** `?tab=invites&role=staff&card=no-team&q=`. */
 export function parseUsersState(params: URLSearchParams): UsersListState {
@@ -60,8 +61,6 @@ export function filterInvites(rows: InvitationRow[], state: UsersListState): Inv
   return rows.filter((i) => (!state.role || i.role === state.role) && (!q || i.email.toLowerCase().includes(q)));
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 export const isExpired = (invite: Pick<InvitationRow, "expiresAt">, now = Date.now()) => new Date(invite.expiresAt).getTime() <= now;
 
 /** The cards' figures: People (by role), Staff without a Team and Pending invites (with how many expired). */
@@ -71,10 +70,10 @@ export function usersTotals(members: MemberRow[], invites: InvitationRow[], now 
   const expired = invites.filter((i) => isExpired(i, now)).length;
   return {
     people: active.length,
-    peopleLabel: `${plural(count("owner"), "owner", "owners")} · ${count("staff")} staff · ${count("field")} field`,
+    peopleLabel: t("team.users.peopleLabel", { count: count("owner"), staff: count("staff"), field: count("field") }),
     noTeam: active.filter(isWithoutTeam).length,
     invites: invites.length,
-    invitesLabel: expired > 0 ? `${expired} expired · open Invites` : "Open Invites",
+    invitesLabel: expired > 0 ? t("team.users.invitesExpired", { n: expired }) : t("team.users.openInvites"),
   };
 }
 
@@ -89,36 +88,36 @@ export function shortDate(value: string | Date, now = Date.now()): string {
 
 /** "Just now", "5 minutes ago", "2 hours ago", "Yesterday", "3 days ago", then the date; "Never signed in" without a session. */
 export function lastActiveLabel(value: string | null | undefined, now = Date.now()): string {
-  if (!value) return "Never signed in";
+  if (!value) return t("team.users.lastActive.never");
   const ms = now - new Date(value).getTime();
   const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${plural(minutes, "minute", "minutes")} ago`;
+  if (minutes < 1) return t("team.users.lastActive.justNow");
+  if (minutes < 60) return t("team.users.lastActive.minutesAgo", { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${plural(hours, "hour", "hours")} ago`;
+  if (hours < 24) return t("team.users.lastActive.hoursAgo", { count: hours });
   const days = Math.floor(ms / DAY);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
+  if (days === 1) return t("team.users.lastActive.yesterday");
+  if (days < 7) return t("team.users.lastActive.daysAgo", { days });
   return shortDate(value, now);
 }
 
 /** "Expires in 5 days", "Expires tomorrow", "Expires today" or "Expired" — by calendar day, so a new 7-day invite reads 7. */
 export function expiresLabel(expiresAt: string, now = Date.now()): string {
   const expires = new Date(expiresAt);
-  if (expires.getTime() <= now) return "Expired";
+  if (expires.getTime() <= now) return t("team.users.expires.expired");
   const midnight = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const days = Math.round((midnight(expires) - midnight(new Date(now))) / DAY);
-  if (days === 0) return "Expires today";
-  if (days === 1) return "Expires tomorrow";
-  return `Expires in ${days} days`;
+  if (days === 0) return t("team.users.expires.today");
+  if (days === 1) return t("team.users.expires.tomorrow");
+  return t("team.users.expires.inDays", { days });
 }
 
 /** "Sarah Mendes is on General Staff and Accounts", or "… is on no Team — they can't open anything". */
 export function teamsSentence(name: string, teams: { name: string }[]): string {
-  if (teams.length === 0) return `${name} is on no Team — they can't open anything`;
-  const names = teams.map((t) => t.name);
-  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-  return `${name} is on ${list}`;
+  if (teams.length === 0) return t("team.users.teamsSentence.noTeam", { name });
+  const names = teams.map((team) => team.name);
+  const list = names.length === 1 ? names[0]! : t("team.common.andList", { items: names.slice(0, -1).join(", "), last: names[names.length - 1]! });
+  return t("team.users.teamsSentence.onTeams", { name, list });
 }
 
 export function initials(name: string): string {

@@ -2,6 +2,7 @@ import { AccessRemovedError, ApiError, OfflineError, ServerUnreachableError, Ses
 import type { RequestOptions, Method } from "../api/request";
 import { MAX_UPLOAD_BYTES, type LocalPhoto, type OutboxItem } from "./types";
 import { outbox } from "./outbox";
+import { t } from "../i18n";
 
 /** How the outbox reaches the API: the signed-in session's `request`. */
 export type Transport = <T>(method: Method, path: string, options?: Omit<RequestOptions, "token">) => Promise<T>;
@@ -32,11 +33,10 @@ const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`);
 
 /** "Didn't send: the receipt photo is over 10 MB." */
 export function rejectionMessage(item: OutboxItem, error: unknown): string {
-  const tooBig = item.kind === "expense" ? "the receipt photo is over 10 MB" : "a photo is over 10 MB";
-  if (error instanceof ApiError && error.status === 413) return `Didn't send: ${tooBig}.`;
-  if (error instanceof ApiError && error.status === 404 && item.kind !== "expense") return "Didn't send: this job isn't on your list any more.";
-  const message = error instanceof Error && error.message ? error.message : "the server refused it";
-  return `Didn't send: ${sentence(lowerFirst(message))}`;
+  if (error instanceof ApiError && error.status === 413) return item.kind === "expense" ? t("mobileApp.outbox.receiptTooBig") : t("mobileApp.outbox.photoTooBig");
+  if (error instanceof ApiError && error.status === 404 && item.kind !== "expense") return t("mobileApp.outbox.jobGone");
+  const message = error instanceof Error && error.message ? error.message : t("mobileApp.outbox.serverRefused");
+  return t("mobileApp.outbox.didntSend", { reason: sentence(lowerFirst(message)) });
 }
 
 /**
@@ -60,8 +60,8 @@ const UPLOAD_TIMEOUT_MS = 120_000;
  */
 export async function uploadReceipt(transport: Transport, photo: LocalPhoto, key: string, signal?: AbortSignal): Promise<LocalPhoto> {
   if (photo.fileId) return photo;
-  if (photo.size > MAX_UPLOAD_BYTES) throw new RejectedError("This photo is over 10 MB. Retake it closer, or choose a smaller one.");
-  if (!outbox.hasFile(photo)) throw new RejectedError("The receipt photo is no longer on this phone. Take it again.");
+  if (photo.size > MAX_UPLOAD_BYTES) throw new RejectedError(t("mobileApp.receipt.tooBig"));
+  if (!outbox.hasFile(photo)) throw new RejectedError(t("mobileApp.receipt.missing"));
   const file = await transport<{ id: string }>("POST", "/files", { formData: outbox.formData(photo), idempotencyKey: key, timeoutMs: UPLOAD_TIMEOUT_MS, signal });
   return { ...photo, fileId: file.id };
 }
@@ -69,7 +69,7 @@ export async function uploadReceipt(transport: Transport, photo: LocalPhoto, key
 async function upload(transport: Transport, item: OutboxItem, photo: LocalPhoto, key: string): Promise<string> {
   if (photo.size > MAX_UPLOAD_BYTES) throw new RejectedError(rejectionMessage(item, new ApiError("too large", 413)));
   // A copy the phone lost would otherwise look like a network error and retry for ever.
-  if (!outbox.hasFile(photo)) throw new RejectedError(`Didn't send: ${item.kind === "expense" ? "the receipt photo" : "a photo"} is no longer on this phone. Take it again or remove it.`);
+  if (!outbox.hasFile(photo)) throw new RejectedError(item.kind === "expense" ? t("mobileApp.outbox.receiptMissing") : t("mobileApp.outbox.photoMissing"));
   const file = await transport<{ id: string }>("POST", "/files", { formData: outbox.formData(photo), idempotencyKey: key, timeoutMs: UPLOAD_TIMEOUT_MS });
   return file.id;
 }

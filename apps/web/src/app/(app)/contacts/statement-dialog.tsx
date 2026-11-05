@@ -36,8 +36,9 @@ import {
 import { apiClient } from "../../../lib/api-client";
 import { AiField } from "../../../components/ai-suggested-tag";
 import { EmailAiDraftBar, emailMessageHelp, useEmailAiDraft } from "../../../components/email-ai-draft";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { filenameFrom, saveBlob } from "../../../lib/save-file";
+import { useT } from "../../../lib/i18n";
 
 /** A local calendar date as `YYYY-MM-DD`. */
 function toIsoDate(date: Date): string {
@@ -45,7 +46,7 @@ function toIsoDate(date: Date): string {
 }
 
 function shortDate(value: string): string {
-  return new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10))).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10))).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric" });
 }
 
 /**
@@ -67,6 +68,7 @@ export function StatementDialog({
   contactEmail: string | null;
   onSent: (email: string) => void;
 }) {
+  const t = useT();
   const [period, setPeriod] = useState<StatementPeriod>("last_90");
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>(new Date());
@@ -140,11 +142,11 @@ export function StatementDialog({
     apiClient
       .get<Statement>(`/contacts/${contactId}/statement?${query}`)
       .then((s) => current && setStatement(s))
-      .catch((err) => current && setError(err instanceof Error ? err.message : "Couldn't work out the statement."));
+      .catch((err) => current && setError(err instanceof Error ? err.message : t("contacts.statement.loadError")));
     return () => {
       current = false;
     };
-  }, [open, contactId, query]);
+  }, [open, contactId, query, t]);
 
   async function download() {
     if (!query) return;
@@ -154,7 +156,7 @@ export function StatementDialog({
       const { blob, headers } = await apiClient.download(`/contacts/${contactId}/statement.pdf?${query}`);
       saveBlob(blob, filenameFrom(headers, "statement.pdf"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't download the statement.");
+      setError(err instanceof Error ? err.message : t("contacts.statement.downloadError"));
     } finally {
       setBusy(null);
     }
@@ -168,7 +170,7 @@ export function StatementDialog({
       const result = await apiClient.post<{ sentTo: string }>(`/contacts/${contactId}/statement/send`, { ...range, mode, email: email.trim(), subject: subject.trim() || null, message: emailBodyText(message) ? message : null });
       onSent(result.sentTo);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send the statement.");
+      setError(err instanceof Error ? err.message : t("contacts.statement.sendError"));
     } finally {
       setBusy(null);
     }
@@ -181,8 +183,8 @@ export function StatementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Send a statement</DialogTitle>
-          <DialogDescription>A statement lists every invoice, payment and credit for this customer in the period, with the balance due.</DialogDescription>
+          <DialogTitle>{t("contacts.statement.title")}</DialogTitle>
+          <DialogDescription>{t("contacts.statement.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -191,7 +193,7 @@ export function StatementDialog({
             </Alert>
           )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField label="Period">
+            <FormField label={t("contacts.statement.period")}>
               {(field) => (
                 <Select value={period} onValueChange={(v) => setPeriod(v as StatementPeriod)}>
                   <SelectTrigger {...field}>
@@ -207,7 +209,7 @@ export function StatementDialog({
                 </Select>
               )}
             </FormField>
-            <FormField label="Show">
+            <FormField label={t("contacts.statement.show")}>
               {(field) => (
                 <Select value={mode} onValueChange={(v) => setMode(v as StatementMode)}>
                   <SelectTrigger {...field}>
@@ -225,29 +227,29 @@ export function StatementDialog({
             </FormField>
             {period === "custom" && (
               <>
-                <FormField label="From">{() => <DatePicker value={customFrom} onChange={setCustomFrom} />}</FormField>
-                <FormField label="To date">{() => <DatePicker value={customTo} onChange={setCustomTo} />}</FormField>
+                <FormField label={t("contacts.statement.from")}>{() => <DatePicker value={customFrom} onChange={setCustomFrom} />}</FormField>
+                <FormField label={t("contacts.statement.toDate")}>{() => <DatePicker value={customTo} onChange={setCustomTo} />}</FormField>
               </>
             )}
           </div>
 
-          <dl aria-label="Statement summary" className="flex flex-col gap-1.5 rounded-md border border-border bg-surface-sunken px-4 py-3 text-[14px]">
+          <dl aria-label={t("contacts.statement.summaryLabel")} className="flex flex-col gap-1.5 rounded-md border border-border bg-surface-sunken px-4 py-3 text-[14px]">
             {!statement ? (
-              <div className="flex justify-center py-3">{range ? <Spinner size="sm" /> : <span className="text-on-surface-muted">Pick both dates.</span>}</div>
+              <div className="flex justify-center py-3">{range ? <Spinner size="sm" /> : <span className="text-on-surface-muted">{t("contacts.statement.pickDates")}</span>}</div>
             ) : (
               <>
-                <SummaryRow label={`Opening balance (${shortDate(statement.from)})`} value={money(statement.openingBalance)} />
-                <SummaryRow label="Invoiced" value={money(statement.invoiced)} />
-                <SummaryRow label="Paid and credited" value={money(statement.paidAndCredited)} />
-                <SummaryRow label="Balance due" value={money(statement.balanceDue)} />
+                <SummaryRow label={t("contacts.statement.openingBalance", { date: shortDate(statement.from) })} value={money(statement.openingBalance)} />
+                <SummaryRow label={t("contacts.statement.invoiced")} value={money(statement.invoiced)} />
+                <SummaryRow label={t("contacts.statement.paidAndCredited")} value={money(statement.paidAndCredited)} />
+                <SummaryRow label={t("contacts.statement.balanceDue")} value={money(statement.balanceDue)} />
               </>
             )}
           </dl>
 
-          <FormField label="To">{(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />}</FormField>
+          <FormField label={t("contacts.statement.to")}>{(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("contacts.statement.emailPlaceholder")} />}</FormField>
           <EmailAiDraftBar state={ai} type="statement" />
-          <AiField suggested={ai.subjectDrafted} label="Drafted by AI">
-            <FormField label="Subject" errorText={subjectError}>
+          <AiField suggested={ai.subjectDrafted} label={t("contacts.statement.draftedByAi")}>
+            <FormField label={t("contacts.statement.subject")} errorText={subjectError}>
               {(field) => (
                 <Input
                   {...field}
@@ -261,14 +263,15 @@ export function StatementDialog({
               )}
             </FormField>
           </AiField>
-          <AiField suggested={ai.messageDrafted} label="Drafted by AI">
-            <FormField label="Message" helperText={emailMessageHelp("statement")} errorText={messageError}>
+          <AiField suggested={ai.messageDrafted} label={t("contacts.statement.draftedByAi")}>
+            {/* eslint-disable-next-line i18next/no-literal-string -- "statement" is the email type, not copy */}
+            <FormField label={t("contacts.statement.message")} helperText={emailMessageHelp("statement")} errorText={messageError}>
               {(field) => (
                 <RichTextEditor
                   id={field.id}
                   aria-describedby={field["aria-describedby"]}
                   aria-invalid={field["aria-invalid"]}
-                  aria-label="Message"
+                  aria-label={t("contacts.statement.message")}
                   value={message}
                   onValueChange={(html) => {
                     setMessage(html);
@@ -283,13 +286,13 @@ export function StatementDialog({
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={download} disabled={!statement || busy !== null}>
-            {busy === "download" ? <Spinner size="sm" /> : "Download PDF"}
+            {busy === "download" ? <Spinner size="sm" /> : t("contacts.statement.downloadPdf")}
           </Button>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={busy !== null}>
-            Cancel
+            {t("contacts.common.cancel")}
           </Button>
           <Button type="button" onClick={send} disabled={!statement || noInvoices || !email.trim() || Boolean(subjectError || messageError) || busy !== null}>
-            {busy === "send" ? <Spinner size="sm" /> : "Send statement"}
+            {busy === "send" ? <Spinner size="sm" /> : t("contacts.statement.send")}
           </Button>
         </DialogFooter>
       </DialogContent>

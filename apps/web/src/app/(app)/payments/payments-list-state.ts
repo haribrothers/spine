@@ -1,16 +1,17 @@
 import type { TableSort } from "@spine/ui";
 import type { CustomerRefund } from "@spine/shared";
 import { PAYMENT_METHOD_LABELS, type Payment, type PaymentMethod } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-PAY-22 — how far back the list goes. */
 export const PAYMENT_RANGES = ["all", "this_month", "last_month", "90", "fy"] as const;
 export type PaymentRange = (typeof PAYMENT_RANGES)[number];
 export const PAYMENT_RANGE_LABELS: Record<PaymentRange, string> = {
-  all: "All time",
-  this_month: "This month",
-  last_month: "Last month",
-  "90": "Last 90 days",
-  fy: "This financial year",
+  all: t("payments.range.all"),
+  this_month: t("payments.range.thisMonth"),
+  last_month: t("payments.range.lastMonth"),
+  "90": t("payments.range.last90"),
+  fy: t("payments.range.fy"),
 };
 
 const METHODS = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
@@ -164,6 +165,6 @@ export function paymentRefundsThisMonth(refunds: CustomerRefund[], currency: str
 /** The contacts that have a payment, for the Contact filter. */
 export function paymentContacts(list: Payment[]): { value: string; label: string }[] {
   const seen = new Map<string, string>();
-  for (const p of list) if (!seen.has(p.contactId)) seen.set(p.contactId, p.contactName ?? "Unknown contact");
+  for (const p of list) if (!seen.has(p.contactId)) seen.set(p.contactId, p.contactName ?? t("payments.list.unknownContact"));
   return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }

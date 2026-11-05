@@ -1,10 +1,11 @@
 import type { TableSort } from "@spine/ui";
 import { EMAIL_KINDS, EMAIL_KIND_LABELS, EMAIL_LOG_STATUSES, type EmailKind, type EmailLogEntry, type EmailLogStatus } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 
 /** How far back the list goes; the log keeps 180 days. */
 export const EMAIL_RANGES = ["7", "30", "90", "180"] as const;
 export type EmailRange = (typeof EMAIL_RANGES)[number];
-export const EMAIL_RANGE_LABELS: Record<EmailRange, string> = { "7": "Last 7 days", "30": "Last 30 days", "90": "Last 90 days", "180": "Last 180 days" };
+export const EMAIL_RANGE_LABELS: Record<EmailRange, string> = { "7": t("emails.ranges.last7"), "30": t("emails.ranges.last30"), "90": t("emails.ranges.last90"), "180": t("emails.ranges.last180") };
 
 /** US-SET-27 (D-210, D-220) — what the email log shows, kept in the address. */
 export interface EmailsListState {
@@ -111,15 +112,15 @@ export function filterEmails(list: EmailLogEntry[], state: EmailsListState, now:
 /** The line under a subject: why it failed, when it's retried, or who cancelled it. */
 export function emailNote(email: EmailLogEntry, locale?: string): { text: string; error: boolean } | null {
   const time = (iso: string) => new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
-  if (email.waitingForSetup) return { text: "Waiting for email to be set up", error: false };
-  if (email.status === "retrying") return { text: [email.nextAttemptAt ? `Retrying at ${time(email.nextAttemptAt)}` : "Retrying soon", email.lastError].filter(Boolean).join(" · "), error: true };
-  if (email.status === "failed") return { text: email.lastError ?? "Couldn't be sent", error: true };
-  if (email.status === "cancelled") return { text: email.cancelledByName ? `Cancelled by ${email.cancelledByName}` : "Cancelled", error: false };
+  if (email.waitingForSetup) return { text: t("emails.note.waitingForSetup"), error: false };
+  if (email.status === "retrying") return { text: [email.nextAttemptAt ? t("emails.note.retryingAt", { time: time(email.nextAttemptAt) }) : t("emails.note.retryingSoon"), email.lastError].filter(Boolean).join(" · "), error: true };
+  if (email.status === "failed") return { text: email.lastError ?? t("emails.note.couldntSend"), error: true };
+  if (email.status === "cancelled") return { text: email.cancelledByName ? t("emails.note.cancelledBy", { name: email.cancelledByName }) : t("emails.note.cancelled"), error: false };
   return null;
 }
 
 /** "Payment reminder for INV-0039" — how the confirmations name an email. */
 export function emailDescription(email: EmailLogEntry): string {
-  const kind = email.kind === "invoice_reminder" ? "payment reminder" : EMAIL_KIND_LABELS[email.kind].toLowerCase();
-  return email.recordLabel ? `The ${kind} for ${email.recordLabel}` : `“${email.subject}”`;
+  const kind = email.kind === "invoice_reminder" ? t("emails.describe.paymentReminder") : EMAIL_KIND_LABELS[email.kind].toLowerCase();
+  return email.recordLabel ? t("emails.describe.forRecord", { kind, record: email.recordLabel }) : t("emails.describe.quotedSubject", { subject: email.subject });
 }

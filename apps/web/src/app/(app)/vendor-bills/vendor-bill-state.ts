@@ -1,17 +1,18 @@
 import type { TableSort } from "@spine/ui";
 import { formatMoney } from "../../../lib/money";
+import { t } from "../../../lib/i18n";
 import type { VendorBill } from "./types";
 
 /** US-PUR-32/34 (D-225) — where a bill stands, in words; worked out from its status, balance and due date, never stored. */
 export type BillState = "draft" | "unpaid" | "partly" | "paid" | "overdue" | "void";
 
 export const BILL_STATE_LABELS: Record<BillState, string> = {
-  draft: "Draft",
-  unpaid: "Unpaid",
-  partly: "Partly paid",
-  paid: "Paid",
-  overdue: "Overdue",
-  void: "Void",
+  draft: t("vendorBills.billStates.draft"),
+  unpaid: t("vendorBills.billStates.unpaid"),
+  partly: t("vendorBills.billStates.partly"),
+  paid: t("vendorBills.billStates.paid"),
+  overdue: t("vendorBills.billStates.overdue"),
+  void: t("vendorBills.billStates.void"),
 };
 
 export const BILL_STATE_CLASS: Record<BillState, string> = {
@@ -50,16 +51,14 @@ export function owes(bill: BillFigures): boolean {
   return bill.status === "recorded" && BigInt(bill.balanceDue) > 0n;
 }
 
-const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
-
 /** "12 days late", "Due today", "Due in 5 days" — only while money is owed; otherwise nothing. */
 export function lateLabel(bill: BillFigures, today: Date): string | null {
   if (!owes(bill)) return null;
   const late = daysLate(bill.dueDate, today);
   if (late === null) return null;
-  if (late > 0) return `${plural(late, "day")} late`;
-  if (late === 0) return "Due today";
-  return `Due in ${plural(-late, "day")}`;
+  if (late > 0) return t("vendorBills.state.daysLate", { count: late });
+  if (late === 0) return t("vendorBills.state.dueToday");
+  return t("vendorBills.state.dueInDays", { count: -late });
 }
 
 // ---------- The list (US-PUR-34, D-210) ----------
@@ -178,5 +177,8 @@ export function suggestedDueDays(bills: Pick<VendorBill, "date" | "dueDate" | "c
 
 /** US-PUR-32 — the toast when a bill is recorded, from its page, a row or "Save and record". */
 export function billRecordedToast(bill: Pick<VendorBill, "billNumber" | "totalAmount" | "currency" | "contactName">): [string, string] {
-  return [`${bill.billNumber} recorded`, `${formatMoney(BigInt(bill.totalAmount), bill.currency)} is posted to your books as owed to ${bill.contactName ?? "the vendor"}.`];
+  return [
+    t("vendorBills.state.recordedToastTitle", { number: bill.billNumber }),
+    t("vendorBills.state.recordedToastDescription", { amount: formatMoney(BigInt(bill.totalAmount), bill.currency), vendor: bill.contactName ?? t("vendorBills.state.theVendor") }),
+  ];
 }

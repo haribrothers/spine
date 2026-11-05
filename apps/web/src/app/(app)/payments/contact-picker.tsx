@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import type { ContactOption } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /** Duplicated from invoices/quotes' own contact-picker.tsx, matching that file's own stated precedent (each feature folder owns a small copy rather than importing across folders). */
 export function ContactPicker({
@@ -13,6 +14,7 @@ export function ContactPicker({
   value: string;
   onValueChange: (contactId: string) => void;
 }) {
+  const t = useT();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
@@ -27,5 +29,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
+  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder={t("payments.contactPicker.placeholder")} />;
 }

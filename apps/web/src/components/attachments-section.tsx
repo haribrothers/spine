@@ -33,6 +33,8 @@ import {
 import { apiClient } from "../lib/api-client";
 import { PHOTO_OR_PDF_ACCEPT } from "../lib/upload-types";
 import { useToast } from "./toast-host";
+import { t as translate, useT } from "../lib/i18n";
+import { orgLocaleTag } from "../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -68,18 +70,18 @@ function FileBadge({ contentType, fileId, name }: { contentType: string; fileId?
 
 /** How a locked record is named in the remove dialog: "This bill is recorded, …". */
 const LOCKED_AS: Partial<Record<AttachmentEntityType, [noun: string, state: string]>> = {
-  quote: ["quote", "sent"],
-  invoice: ["invoice", "issued"],
-  credit_note: ["credit note", "issued"],
-  payment: ["payment", "recorded"],
-  vendor_bill: ["bill", "recorded"],
-  vendor_credit: ["vendor credit", "recorded"],
-  vendor_payment: ["vendor payment", "recorded"],
-  expense: ["expense", "reviewed"],
-  bank_transaction: ["entry", "recorded"],
+  quote: [translate("common.attachments.nouns.quote"), translate("common.attachments.states.sent")],
+  invoice: [translate("common.attachments.nouns.invoice"), translate("common.attachments.states.issued")],
+  credit_note: [translate("common.attachments.nouns.creditNote"), translate("common.attachments.states.issued")],
+  payment: [translate("common.attachments.nouns.payment"), translate("common.attachments.states.recorded")],
+  vendor_bill: [translate("common.attachments.nouns.bill"), translate("common.attachments.states.recorded")],
+  vendor_credit: [translate("common.attachments.nouns.vendorCredit"), translate("common.attachments.states.recorded")],
+  vendor_payment: [translate("common.attachments.nouns.vendorPayment"), translate("common.attachments.states.recorded")],
+  expense: [translate("common.attachments.nouns.expense"), translate("common.attachments.states.reviewed")],
+  bank_transaction: [translate("common.attachments.nouns.entry"), translate("common.attachments.states.recorded")],
 };
 
-const when = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const when = (iso: string) => new Date(iso).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric" });
 
 /**
  * US-OPS-33 (D-156) — "Attachments" on a record: the files kept with it,
@@ -109,6 +111,7 @@ export function AttachmentsSection({
   /** An AI read is running: "Read" waits for it. */
   readBusy?: boolean;
 }) {
+  const t = useT();
   const [data, setData] = useState<AttachmentList | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +165,7 @@ export function AttachmentsSection({
       if (isPending) onPendingChange?.([...(pending ?? []), ...added]);
       else load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't add this file. Try again.");
+      setError(err instanceof Error ? err.message : t("common.attachments.addFailed"));
       if (!isPending) load();
     } finally {
       setUploading(false);
@@ -172,7 +175,7 @@ export function AttachmentsSection({
 
   const withReason = !isPending && Boolean(data?.canRemoveWithReason);
   const canRemove = isPending || Boolean(data?.canRemove) || withReason;
-  const [noun, state] = LOCKED_AS[entityType] ?? ["record", "locked"];
+  const [noun, state] = LOCKED_AS[entityType] ?? [t("common.attachments.nouns.record"), t("common.attachments.states.locked")];
 
   function startRemove(id: string, name: string) {
     setError(null);
@@ -189,11 +192,11 @@ export function AttachmentsSection({
     setBusy(true);
     try {
       await apiClient.delete(`/attachments/${removing.id}`, withReason ? { reason: reason.trim() } : {});
-      showToast("Attachment removed", `${removing.name} is no longer attached.`);
+      showToast(t("common.attachments.removedTitle"), t("common.attachments.removedDescription", { name: removing.name }));
       setRemoving(null);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove this file. Try again.");
+      setError(err instanceof Error ? err.message : t("common.attachments.removeFailed"));
       setRemoving(null);
     } finally {
       setBusy(false);
@@ -204,24 +207,24 @@ export function AttachmentsSection({
   if (!isPending && data && !data.canAdd && data.attachments.length === 0) return null;
 
   const rows = isPending
-    ? (pending ?? []).map((p) => ({ key: p.fileId, removeId: p.fileId, fileId: p.fileId, name: p.name, contentType: p.contentType, meta: `${formatFileSize(p.size)} · added when you save` }))
+    ? (pending ?? []).map((p) => ({ key: p.fileId, removeId: p.fileId, fileId: p.fileId, name: p.name, contentType: p.contentType, meta: t("common.attachments.metaPending", { size: formatFileSize(p.size) }) }))
     : (data?.attachments ?? []).map((a) => ({
         key: a.id,
         removeId: a.id,
         fileId: a.file.id,
         name: a.file.name,
         contentType: a.file.contentType,
-        meta: `${formatFileSize(a.file.size)} · added by ${a.createdBy?.name ?? "someone"} · ${when(a.createdAt)}`,
+        meta: t("common.attachments.metaAdded", { size: formatFileSize(a.file.size), name: a.createdBy?.name ?? t("common.attachments.someone"), date: when(a.createdAt) }),
       }));
 
   return (
     <Card className="flex flex-col gap-3" data-testid="attachments">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[16px] font-semibold text-on-surface">Attachments</h2>
+        <h2 className="text-[16px] font-semibold text-on-surface">{t("common.attachments.heading")}</h2>
         {canAdd && (
           <Button variant="secondary" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading || count >= MAX_ATTACHMENTS_PER_RECORD}>
             {uploading ? <Spinner size="sm" /> : <Plus size={14} aria-hidden="true" />}
-            Add files
+            {t("common.attachments.addFiles")}
           </Button>
         )}
       </div>
@@ -255,15 +258,15 @@ export function AttachmentsSection({
                   disabled={readBusy}
                   onClick={() => onRead({ fileId: row.fileId, name: row.name })}
                   className="inline-flex min-h-11 items-center gap-1 px-2 text-[13px] font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 sm:min-h-0"
-                  aria-label={`Read ${row.name} with AI`}
+                  aria-label={t("common.attachments.readLabel", { name: row.name })}
                 >
                   <Sparkles size={13} aria-hidden="true" />
-                  Read
+                  {t("common.attachments.read")}
                 </button>
               )}
               {!isPending && (
-                <a href={fileUrl(row.fileId, true)} className="inline-flex min-h-11 items-center px-2 text-[13px] font-medium text-primary hover:underline sm:min-h-0" aria-label={`Download ${row.name}`}>
-                  Download
+                <a href={fileUrl(row.fileId, true)} className="inline-flex min-h-11 items-center px-2 text-[13px] font-medium text-primary hover:underline sm:min-h-0" aria-label={t("common.attachments.downloadLabel", { name: row.name })}>
+                  {t("common.attachments.download")}
                 </a>
               )}
               {canRemove && (
@@ -271,9 +274,9 @@ export function AttachmentsSection({
                   type="button"
                   onClick={() => startRemove(row.removeId, row.name)}
                   className="inline-flex min-h-11 items-center px-2 text-[13px] font-medium text-overdue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0"
-                  aria-label={`Remove ${row.name}`}
+                  aria-label={t("common.attachments.removeLabel", { name: row.name })}
                 >
-                  Remove
+                  {t("common.attachments.remove")}
                 </button>
               )}
             </li>
@@ -302,28 +305,30 @@ export function AttachmentsSection({
         >
           <Paperclip size={14} aria-hidden="true" />
           <span>
-            Drop files here or <span className="font-medium text-primary">add files</span> · PDF, JPEG, PNG, WebP or HEIC, up to 10 MB each, 10 per record
+            {t("common.attachments.dropBefore")}
+            <span className="font-medium text-primary">{t("common.attachments.dropLink")}</span>
+            {t("common.attachments.dropAfter")}
           </span>
-          <input ref={inputRef} type="file" multiple accept={PHOTO_OR_PDF_ACCEPT} className="sr-only" aria-label="Choose files to attach" onChange={(e) => e.target.files && void addFiles(e.target.files)} />
+          <input ref={inputRef} type="file" multiple accept={PHOTO_OR_PDF_ACCEPT} className="sr-only" aria-label={t("common.attachments.chooseFiles")} onChange={(e) => e.target.files && void addFiles(e.target.files)} />
         </label>
       )}
       <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {removing?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("common.attachments.removeTitle", { name: removing?.name ?? "" })}</AlertDialogTitle>
             <AlertDialogDescription>
               {withReason
-                ? `This ${noun} is ${state}, so only an owner can remove its files, with a reason. The ${noun}'s history records it.`
-                : "The file is deleted from Spine. The record's history notes that it was removed."}
+                ? t("common.attachments.removeLocked", { noun, state })
+                : t("common.attachments.removeUnlocked")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {withReason && (
-            <FormField label="Reason" required>
+            <FormField label={t("common.attachments.reason")} required>
               {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} autoFocus />}
             </FormField>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.actions.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               variant="danger"
               disabled={busy || (withReason && !reason.trim())}
@@ -332,7 +337,7 @@ export function AttachmentsSection({
                 void confirmRemove();
               }}
             >
-              Remove attachment
+              {t("common.attachments.removeConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -343,8 +348,9 @@ export function AttachmentsSection({
 
 /** The paperclip on list rows: "3 attachments". */
 export function AttachmentCount({ count }: { count: number | undefined }) {
+  const t = useT();
   if (!count) return null;
-  const label = `${count} ${count === 1 ? "attachment" : "attachments"}`;
+  const label = t("common.attachments.count", { count });
   return (
     <span className="inline-flex items-center gap-0.5 text-[12px] text-on-surface-muted" aria-label={label} title={label}>
       <Paperclip size={12} aria-hidden="true" />

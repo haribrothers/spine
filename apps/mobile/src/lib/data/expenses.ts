@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 /** One of my expenses (`GET /expenses?mine=true`; Field only ever gets their own). */
 export interface MyExpense {
   id: string;
@@ -18,7 +20,7 @@ export const MY_EXPENSES_PATH = "/expenses?mine=true";
 export const expenseKey = (id: string) => `expense:${id}`;
 
 export const EXPENSE_STATUS: Record<MyExpense["status"], { label: string; status: "paid" | "due-soon" | "overdue" | "draft" }> = {
-  submitted: { label: "Submitted", status: "due-soon" },
-  approved: { label: "Approved", status: "paid" },
-  rejected: { label: "Rejected", status: "overdue" },
+  submitted: { label: t("mobileApp.expenseStatus.submitted"), status: "due-soon" },
+  approved: { label: t("mobileApp.expenseStatus.approved"), status: "paid" },
+  rejected: { label: t("mobileApp.expenseStatus.rejected"), status: "overdue" },
 };

@@ -6,6 +6,7 @@ import { ArrowRightLeft } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
+import { useT } from "../../../lib/i18n";
 import { lateLabel } from "../vendor-bills/vendor-bill-state";
 import type { VendorBill } from "../vendor-bills/types";
 import { fillBills } from "./vendor-credit-state";
@@ -30,6 +31,7 @@ export function ApplyVendorCreditDialog({
   credit: VendorCredit;
   onApplied: (total: bigint, bills: number) => void;
 }) {
+  const t = useT();
   const [bills, setBills] = useState<VendorBill[] | null>(null);
   const [amounts, setAmounts] = useState<Record<string, bigint>>({});
   const [saving, setSaving] = useState(false);
@@ -53,7 +55,7 @@ export function ApplyVendorCreditDialog({
       })
       .catch((err) => {
         setBills([]);
-        setError(err instanceof Error ? err.message : "Couldn't load the vendor's bills.");
+        setError(err instanceof Error ? err.message : t("vendorCredits.applyDialog.loadFailed"));
       });
   }, [open, credit.contactId, credit.currency, credit.billId, balance]);
 
@@ -75,17 +77,17 @@ export function ApplyVendorCreditDialog({
     for (const b of bills ?? []) {
       const due = BigInt(b.balanceDue ?? "0");
       if ((amounts[b.id] ?? 0n) > due) {
-        setError(`You can apply up to ${money(due)} to bill ${b.billNumber}.`);
+        setError(t("vendorCredits.applyDialog.upTo", { amount: money(due), number: b.billNumber }));
         return;
       }
     }
     if (total > balance) {
-      setError(`This credit has ${money(balance)} left to apply.`);
+      setError(t("vendorCredits.applyDialog.creditLeft", { amount: money(balance) }));
       return;
     }
     const allocations = (bills ?? []).filter((b) => (amounts[b.id] ?? 0n) > 0n).map((b) => ({ billId: b.id, amount: amounts[b.id]!.toString() }));
     if (!allocations.length) {
-      setError("Enter an amount for at least one bill.");
+      setError(t("vendorCredits.applyDialog.enterAmount"));
       return;
     }
     setSaving(true);
@@ -94,7 +96,7 @@ export function ApplyVendorCreditDialog({
       onOpenChange(false);
       onApplied(total, allocations.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't apply the credit.");
+      setError(err instanceof Error ? err.message : t("vendorCredits.applyDialog.applyFailed"));
     } finally {
       setSaving(false);
     }
@@ -104,8 +106,8 @@ export function ApplyVendorCreditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Apply {credit.number} to bills</DialogTitle>
-          <DialogDescription>{money(balance)} left to use. Nothing is posted; what you owe on each bill drops.</DialogDescription>
+          <DialogTitle>{t("vendorCredits.applyDialog.title", { number: credit.number })}</DialogTitle>
+          <DialogDescription>{t("vendorCredits.applyDialog.description", { amount: money(balance) })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           {error && (
@@ -118,19 +120,21 @@ export function ApplyVendorCreditDialog({
               <Spinner size="sm" />
             </div>
           ) : bills.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">{credit.contactName ?? "This vendor"} has no open bills in this credit's currency.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("vendorCredits.applyDialog.noOpenBills", { vendor: credit.contactName ?? t("vendorCredits.applyDialog.thisVendor") })}</p>
           ) : (
             <>
               <p className="text-[12.5px] font-medium text-on-surface">
-                {credit.contactName ?? "The vendor"}&apos;s open bills — {credit.billId && bills[0]?.id === credit.billId ? "the one it's against first, then oldest first" : "oldest first"}
+                {credit.billId && bills[0]?.id === credit.billId
+                  ? t("vendorCredits.applyDialog.openBillsAgainstFirst", { vendor: credit.contactName ?? t("vendorCredits.applyDialog.theVendor") })
+                  : t("vendorCredits.applyDialog.openBillsOldestFirst", { vendor: credit.contactName ?? t("vendorCredits.applyDialog.theVendor") })}
               </p>
               <div className="overflow-hidden rounded-lg border border-border">
                 <div className="hidden grid-cols-[28px_minmax(0,1fr)_140px_120px_140px] items-center gap-3 bg-surface-sunken px-3 py-2 text-[12px] font-medium text-on-surface-muted sm:grid" aria-hidden>
                   <span />
-                  <span>Bill</span>
-                  <span>Due</span>
-                  <span className="text-right">Balance</span>
-                  <span className="text-right">Apply</span>
+                  <span>{t("vendorCredits.applyDialog.bill")}</span>
+                  <span>{t("vendorCredits.applyDialog.due")}</span>
+                  <span className="text-right">{t("vendorCredits.applyDialog.balance")}</span>
+                  <span className="text-right">{t("vendorCredits.applyDialog.apply")}</span>
                 </div>
                 {bills.map((b) => {
                   const against = b.id === credit.billId;
@@ -142,31 +146,33 @@ export function ApplyVendorCreditDialog({
                       className={cn("grid grid-cols-[28px_minmax(0,1fr)_140px] items-center gap-3 border-t border-border px-3 py-2.5 text-[13px] sm:grid-cols-[28px_minmax(0,1fr)_140px_120px_140px]", against && "bg-info-bg/40")}
                       data-testid="bill-to-apply"
                     >
-                      <Checkbox aria-label={`Apply to bill ${b.billNumber}`} checked={(amounts[b.id] ?? 0n) > 0n} onCheckedChange={(v) => toggle(b, v === true)} />
+                      <Checkbox aria-label={t("vendorCredits.applyDialog.applyToBill", { number: b.billNumber })} checked={(amounts[b.id] ?? 0n) > 0n} onCheckedChange={(v) => toggle(b, v === true)} />
                       <div className="min-w-0">
                         <p className="flex flex-wrap items-center gap-2 font-semibold text-on-surface">
                           {b.billNumber}
-                          {against && <span className="rounded-full bg-info-bg px-2 py-0.5 text-[11px] font-medium text-primary">Against this credit</span>}
+                          {against && <span className="rounded-full bg-info-bg px-2 py-0.5 text-[11px] font-medium text-primary">{t("vendorCredits.applyDialog.againstThisCredit")}</span>}
                         </p>
-                        <p className="text-[12px] text-on-surface-muted">Bill date {calendarDate(b.date.slice(0, 10), today, locale)}</p>
+                        <p className="text-[12px] text-on-surface-muted">{t("vendorCredits.applyDialog.billDate", { date: calendarDate(b.date.slice(0, 10), today, locale) })}</p>
                       </div>
                       <div className="hidden sm:block">
-                        <p className="text-on-surface">{b.dueDate ? calendarDate(b.dueDate.slice(0, 10), today, locale) : "No due date"}</p>
+                        <p className="text-on-surface">{b.dueDate ? calendarDate(b.dueDate.slice(0, 10), today, locale) : t("vendorCredits.applyDialog.noDueDate")}</p>
                         {late && <p className={cn("text-[12px]", overdue ? "text-overdue" : "text-on-surface-muted")}>{late}</p>}
                       </div>
                       <span className="hidden text-right tabular-nums text-on-surface sm:block">{money(BigInt(b.balanceDue ?? "0"))}</span>
-                      <MoneyInput aria-label={`Amount to apply to bill ${b.billNumber}`} value={amounts[b.id] ?? 0n} onValueChange={(v) => setAmounts((prev) => ({ ...prev, [b.id]: v }))} currency={credit.currency} />
+                      <MoneyInput aria-label={t("vendorCredits.applyDialog.amountToApply", { number: b.billNumber })} value={amounts[b.id] ?? 0n} onValueChange={(v) => setAmounts((prev) => ({ ...prev, [b.id]: v }))} currency={credit.currency} />
                     </div>
                   );
                 })}
               </div>
               <div className="flex flex-wrap justify-between gap-2 rounded-md bg-surface-sunken px-3 py-2.5 text-[13px] text-on-surface-muted" data-testid="apply-summary" aria-live="polite">
                 <span>
-                  Applying <b className="tabular-nums text-on-surface">{money(total)}</b>
+                  {t("vendorCredits.applyDialog.applying")}
+                  <b className="tabular-nums text-on-surface">{money(total)}</b>
                 </span>
                 <span className={cn(left < 0n && "text-overdue")}>
-                  <b className="tabular-nums text-on-surface">{money(left < 0n ? 0n : left)}</b> left on {credit.number}
-                  {left < 0n && ` · ${money(-left)} more than it has`}
+                  <b className="tabular-nums text-on-surface">{money(left < 0n ? 0n : left)}</b>
+                  {t("vendorCredits.applyDialog.leftOn", { number: credit.number })}
+                  {left < 0n && t("vendorCredits.applyDialog.moreThanItHas", { amount: money(-left) })}
                 </span>
               </div>
             </>
@@ -174,11 +180,11 @@ export function ApplyVendorCreditDialog({
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("vendorCredits.applyDialog.cancel")}
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving || !bills?.length || total <= 0n}>
             {saving ? <Spinner size="sm" /> : <ArrowRightLeft size={14} aria-hidden />}
-            Apply {money(total)}
+            {t("vendorCredits.applyDialog.applyAmount", { amount: money(total) })}
           </Button>
         </DialogFooter>
       </DialogContent>

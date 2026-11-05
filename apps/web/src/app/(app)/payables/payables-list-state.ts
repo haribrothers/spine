@@ -1,5 +1,6 @@
 import type { TableSort } from "@spine/ui";
 import { inPayablesAge, parsePayablesAge, PAYABLES_AGE_LABELS, type PayablesAge } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 import type { PayablesBillRow, PayablesVendorRow } from "./types";
 
 export type PayablesTab = "vendor" | "bill";
@@ -84,19 +85,19 @@ export function vendorView(vendors: PayablesVendorRow[], bills: PayablesBillRow[
 
 /** "Nothing 31–60 days late." — what an empty age says. */
 export function emptyAge(age: PayablesAge): string {
-  if (age === "current") return "Nothing that isn't due yet.";
-  if (age === "overdue") return "Nothing overdue.";
-  if (age === "due7") return "Nothing due in the next 7 days.";
-  return `Nothing ${PAYABLES_AGE_LABELS[age]} late.`;
+  if (age === "current") return t("payables.state.emptyCurrent");
+  if (age === "overdue") return t("payables.state.emptyOverdue");
+  if (age === "due7") return t("payables.state.emptyDue7");
+  return t("payables.state.emptyAge", { age: PAYABLES_AGE_LABELS[age] });
 }
 
 /** US-PUR-58 — why the ticked bills can't be paid together, or null when they can (one vendor). */
 export function payBlocked(bills: Pick<PayablesBillRow, "contactId">[]): string | null {
-  return new Set(bills.map((b) => b.contactId)).size > 1 ? "Pick bills from one vendor — a payment is for one vendor." : null;
+  return new Set(bills.map((b) => b.contactId)).size > 1 ? t("payables.state.payBlocked") : null;
 }
 
 /** US-PUR-60 — "2 draft bills (₹18,400.00) aren't counted here — record them to include them." */
 export function draftsNote(drafts: { count: number }, amount: string): string | null {
   if (drafts.count === 0) return null;
-  return `${drafts.count} draft ${drafts.count === 1 ? "bill" : "bills"} (${amount}) ${drafts.count === 1 ? "isn't" : "aren't"} counted here — record ${drafts.count === 1 ? "it" : "them"} to include ${drafts.count === 1 ? "it" : "them"}.`;
+  return t("payables.state.draftsNote", { count: drafts.count, amount });
 }

@@ -7,9 +7,11 @@ import { Mail } from "lucide-react";
 import { Alert, AlertDescription, Button } from "@spine/ui";
 import { AuthFrame, AuthHeading } from "../../../components/auth-frame";
 import { formatCountdown, readResetRequest, requestResetLink, RESEND_AFTER_SECONDS, type ResetRequest } from "../../../lib/password-reset";
+import { useT } from "../../../lib/i18n";
 
 /** US-AUTH-09 — "Check your email", with a resend button that waits 60 seconds. */
 export default function ForgotPasswordSentPage() {
+  const t = useT();
   const router = useRouter();
   const [request, setRequest] = useState<ResetRequest | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -55,9 +57,10 @@ export default function ForgotPasswordSentPage() {
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-info-bg text-info" aria-hidden="true">
           <Mail size={18} />
         </span>
-        <AuthHeading title="Check your email">
-          If an account exists for <strong className="font-semibold text-on-surface">{request.email}</strong>, we&apos;ve sent a link to reset its
-          password. The link works once and expires in 1 hour.
+        <AuthHeading title={t("auth.forgotPasswordSent.title")}>
+          {t("auth.forgotPasswordSent.bodyBefore")}
+          <strong className="font-semibold text-on-surface">{request.email}</strong>
+          {t("auth.forgotPasswordSent.bodyAfter")}
         </AuthHeading>
         {error && (
           <Alert variant="critical">
@@ -65,11 +68,11 @@ export default function ForgotPasswordSentPage() {
           </Alert>
         )}
         <Button variant="secondary" size="touch" disabled={waiting || sending} onClick={resend}>
-          {waiting ? `Resend link in ${formatCountdown(remaining)}` : "Resend link"}
+          {waiting ? t("auth.forgotPasswordSent.resendIn", { time: formatCountdown(remaining) }) : t("auth.forgotPasswordSent.resend")}
         </Button>
         <p className="text-center text-[13px]">
           <Link href="/login" className="text-primary hover:underline">
-            Back to log in
+            {t("auth.actions.backToLogIn")}
           </Link>
         </p>
       </div>

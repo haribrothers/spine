@@ -16,8 +16,9 @@ import { calendarDay, weekdayDayMonth } from "../../lib/format";
 import { SectionHeader } from "../../components/section-header";
 import { useCameraInk } from "../../lib/camera/ink";
 import { useAndroidBack } from "../../lib/use-android-back";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const COMPLETE_NOTE = "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online.";
+export const COMPLETE_NOTE = translate("mobileWork.milestoneComplete.note");
 
 /**
  * US-MOB-15 · `MobMilestoneComplete` (and Android) — marks a milestone done
@@ -27,6 +28,7 @@ export const COMPLETE_NOTE = "Your office is told straight away so they can bill
  * completed it first, Sync says "Already completed by <name>".
  */
 export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string; milestoneId: string }) {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const { ink } = useCameraInk();
@@ -52,15 +54,15 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
     await outbox.addCompletion({ jobId, jobName: job?.name ?? "", milestoneId, milestoneName: milestone.name, completionNotes: note.trim() || null, photos });
     router.back();
   };
-  const subtitle = [job?.name, milestone?.dueDate ? `due ${weekdayDayMonth(calendarDay(milestone.dueDate), locale)}` : null].filter(Boolean).join(" · ");
+  const subtitle = [job?.name, milestone?.dueDate ? t("mobileWork.milestoneComplete.due", { date: weekdayDayMonth(calendarDay(milestone.dueDate), locale) }) : null].filter(Boolean).join(" · ");
 
   return (
     <ScrollView testID="milestone-complete" keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" className="flex-1 bg-surface dark:bg-surface-dark" contentContainerClassName="gap-5 px-5 pb-12 pt-4">
       <Stack.Screen
         options={
           android
-            ? { title: "Mark complete?" }
-            : { title: "Mark complete", unstable_headerLeftItems: () => [{ type: "button" as const, label: "Cancel", onPress: cancel }] }
+            ? { title: t("mobileWork.milestoneComplete.titleAndroid") }
+            : { title: t("mobileWork.milestoneComplete.title"), unstable_headerLeftItems: () => [{ type: "button" as const, label: t("mobileWork.common.cancel"), onPress: cancel }] }
         }
       />
       <View className="gap-1">
@@ -69,18 +71,18 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
       </View>
 
       <View className="gap-2">
-        <SectionHeader title="Photos of the finished work" />
+        <SectionHeader title={t("mobileWork.milestoneComplete.photosHeader")} />
         <View className="flex-row flex-wrap gap-2">
           {photos.map((photo) => (
             <View key={photo.uri} className="h-[84px] w-[84px] overflow-hidden rounded-lg">
-              <Image source={{ uri: photo.uri }} accessibilityLabel="Photo of the finished work" className="h-full w-full" />
+              <Image source={{ uri: photo.uri }} accessibilityLabel={t("mobileWork.milestoneComplete.photoA11y")} className="h-full w-full" />
               <Pressable
                 onPress={() => {
                   outbox.discardPhoto(photo);
                   setPhotos((prev) => prev.filter((p) => p.uri !== photo.uri));
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Remove photo"
+                accessibilityLabel={t("mobileWork.milestoneComplete.removePhoto")}
                 hitSlop={10}
                 className="absolute right-1 top-1 h-7 w-7 items-center justify-center rounded-full"
                 style={{ backgroundColor: colors.scrim }}
@@ -93,11 +95,11 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
             testID="milestone-add-photo"
             onPress={() => router.push(`/camera?mode=milestone&jobId=${jobId}&request=${request}`)}
             accessibilityRole="button"
-            accessibilityLabel="Add a photo"
+            accessibilityLabel={t("mobileWork.milestoneComplete.addAPhoto")}
             className="h-[84px] w-[84px] items-center justify-center gap-1 rounded-lg border border-dashed border-border-strong dark:border-border-strong-dark"
           >
             <Camera size={20} color={colors.primary} />
-            <Text className="text-[13px] font-semibold text-primary dark:text-primary-dark">Add</Text>
+            <Text className="text-[13px] font-semibold text-primary dark:text-primary-dark">{t("mobileWork.milestoneComplete.add")}</Text>
           </Pressable>
         </View>
       </View>
@@ -106,8 +108,8 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
         // `MobMilestoneCompleteAndroid`: a Material outlined note on the sheet's surface.
         <OutlinedTextField
           testID="milestone-note"
-          label="Note for the office (optional)"
-          placeholder="What's done, anything they should know"
+          label={t("mobileWork.milestoneComplete.noteLabel")}
+          placeholder={t("mobileWork.milestoneComplete.notePlaceholder")}
           value={note}
           onChangeText={setNote}
           multiline
@@ -115,14 +117,14 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
         />
       ) : (
         <View className="gap-2">
-          <SectionHeader title="Note for the office (optional)" />
+          <SectionHeader title={t("mobileWork.milestoneComplete.noteLabel")} />
           <TextInput
             testID="milestone-note"
             value={note}
             onChangeText={setNote}
             multiline
-            accessibilityLabel="Note for the office (optional)"
-            placeholder="What's done, anything they should know"
+            accessibilityLabel={t("mobileWork.milestoneComplete.noteLabel")}
+            placeholder={t("mobileWork.milestoneComplete.notePlaceholder")}
             placeholderTextColor={colors.onSurfaceMuted}
             className="min-h-[88px] rounded-xl border border-border-strong bg-background px-4 py-3 text-[16px] text-on-surface dark:border-border-strong-dark dark:bg-background-dark dark:text-on-surface-dark"
             style={{ textAlignVertical: "top" }}
@@ -134,7 +136,7 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
       <View className={`pt-2 ${android ? "flex-row items-center justify-end gap-6" : ""}`}>
         {android ? (
           <Pressable onPress={cancel} accessibilityRole="button" className="min-h-[48px] justify-center">
-            <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Cancel</Text>
+            <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{t("mobileWork.common.cancel")}</Text>
           </Pressable>
         ) : null}
         <Pressable
@@ -146,7 +148,7 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
           style={{ opacity: saving || !milestone ? 0.6 : 1 }}
         >
           {android ? null : <Check size={20} color={colors.onPrimary} />}
-          <Text className="text-[17px] font-semibold text-on-primary dark:text-on-primary-dark">Mark complete</Text>
+          <Text className="text-[17px] font-semibold text-on-primary dark:text-on-primary-dark">{t("mobileWork.milestoneComplete.title")}</Text>
         </Pressable>
       </View>
     </ScrollView>

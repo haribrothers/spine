@@ -4,6 +4,7 @@ import Bell from "lucide-react-native/icons/bell";
 import { useNativeColors } from "@spine/ui-native";
 import { badgeText, UNREAD_KEY, UNREAD_PATH } from "../lib/data/notifications";
 import { useCachedQuery } from "../lib/data/use-cached-query";
+import { useT } from "../lib/i18n";
 
 /**
  * US-MOB-22 — the bell on Today with the unread count ("9+" above nine);
@@ -11,6 +12,7 @@ import { useCachedQuery } from "../lib/data/use-cached-query";
  * foreground (no push in 1.0, D-200).
  */
 export function BellButton() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const { data } = useCachedQuery<{ count: number }>(UNREAD_KEY, UNREAD_PATH, { refreshOnForeground: true });
@@ -22,7 +24,7 @@ export function BellButton() {
       onPress={() => router.push("/notifications")}
       hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
+      accessibilityLabel={count > 0 ? t("mobileApp.bellButton.labelUnread", { n: count }) : t("mobileApp.bellButton.label")}
       className="h-11 w-11 items-center justify-center"
     >
       <Bell size={22} color={colors.onSurface} />

@@ -6,6 +6,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useT } from "../../../lib/i18n";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { AgeCell } from "../receivables/receivables-table";
 import type { PayablesBillRow } from "./types";
@@ -47,13 +48,14 @@ export function PayablesBillsTable({
   onSelectedChange?: (next: Set<string>) => void;
   actions: BillActions;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const date = (iso: string | null) => (iso ? calendarDate(iso, now, locale) : "—");
   const money = (row: PayablesBillRow, v: string) => <span className="tabular-nums">{formatMoney(BigInt(v), row.currency)}</span>;
   const columns: TableColumn<PayablesBillRow>[] = [
     {
       key: "billNumber",
-      header: "Bill",
+      header: t("payables.columns.bill"),
       render: (row) => (
         <div className="flex max-w-[14rem] flex-col">
           <SectionLink href={`/vendor-bills/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
@@ -66,7 +68,7 @@ export function PayablesBillsTable({
     },
     {
       key: "contact",
-      header: "Vendor",
+      header: t("payables.columns.vendor"),
       render: (row) => (
         <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -74,12 +76,12 @@ export function PayablesBillsTable({
       ),
       sortValue: (row) => row.contactName ?? "",
     },
-    { key: "dueDate", header: "Due", render: (row) => <span className="whitespace-nowrap">{date(row.dueDate)}</span>, sortValue: (row) => row.dueDate ?? "" },
-    { key: "late", header: "How late", render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue },
-    { key: "date", header: "Bill date", render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => row.date },
-    { key: "totalAmount", header: "Bill total", align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
-    { key: "paidAmount", header: "Paid so far", align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
-    { key: "balanceDue", header: "Balance due", align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
+    { key: "dueDate", header: t("payables.columns.due"), render: (row) => <span className="whitespace-nowrap">{date(row.dueDate)}</span>, sortValue: (row) => row.dueDate ?? "" },
+    { key: "late", header: t("payables.columns.howLate"), render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue },
+    { key: "date", header: t("payables.columns.billDate"), render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => row.date },
+    { key: "totalAmount", header: t("payables.columns.billTotal"), align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "paidAmount", header: t("payables.columns.paidSoFar"), align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
+    { key: "balanceDue", header: t("payables.columns.balanceDue"), align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
     {
       key: "actions",
       header: "",
@@ -112,6 +114,7 @@ export function PayablesBillsTable({
 
 /** US-PUR-58 — Pay bill, Apply credit (while the vendor has credit) and Open bill, each with its right. */
 function BillRowMenu({ row, actions }: { row: PayablesBillRow; actions: BillActions }) {
+  const t = useT();
   const router = useRouter();
   const canPay = useCapability("vendor_payments.edit_own");
   const canApply = useCapability("vendor_credits.apply");
@@ -120,7 +123,7 @@ function BillRowMenu({ row, actions }: { row: PayablesBillRow; actions: BillActi
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for ${row.billNumber}`}
+          aria-label={t("payables.billsTable.actionsFor", { name: row.billNumber })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -130,18 +133,18 @@ function BillRowMenu({ row, actions }: { row: PayablesBillRow; actions: BillActi
         {canPay && (
           <DropdownMenuItem onSelect={() => actions.onPay(row)}>
             <MENU_ICONS.recordPayment aria-hidden />
-            Pay bill
+            {t("payables.billsTable.payBill")}
           </DropdownMenuItem>
         )}
         {canApply && actions.hasCredit(row.contactId) && (
           <DropdownMenuItem onSelect={() => actions.onApplyCredit(row)}>
             <MENU_ICONS.applyCredit aria-hidden />
-            Apply credit
+            {t("payables.billsTable.applyCredit")}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/${row.id}`)}>
           <MENU_ICONS.open aria-hidden />
-          Open bill
+          {t("payables.billsTable.openBill")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,6 +1,7 @@
 import type { TableSort } from "@spine/ui";
 import { calendarDate, daysUntil } from "../quotes/quotes-list-state";
 import type { Job, JobStatus } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-JOB-31 — the cards that filter the list. */
 export type JobCard = "" | "active" | "ready" | "budget";
@@ -127,26 +128,26 @@ export function filterJobs(jobs: Job[], state: JobsListState): Job[] {
 /** The contacts that have a job, for the Contact filter. */
 export function jobContacts(jobs: Job[]): { value: string; label: string }[] {
   const seen = new Map<string, string>();
-  for (const job of jobs) if (!seen.has(job.contactId)) seen.set(job.contactId, job.contactName ?? "Unknown contact");
+  for (const job of jobs) if (!seen.has(job.contactId)) seen.set(job.contactId, job.contactName ?? t("jobs.list.unknownContact"));
   return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 /** "Due 14 Oct", "Due in 3 days", "Due today", "Overdue 2 days" — a milestone's due state (US-JOB-33, US-JOB-35). */
 export function dueNote(dueDate: string | null, now: Date, locale?: string): { text: string; tone: "" | "soon" | "over" } {
-  if (!dueDate) return { text: "No due date", tone: "" };
+  if (!dueDate) return { text: t("jobs.due.noDueDate"), tone: "" };
   const days = daysUntil(dueDate, now);
-  if (days < 0) return { text: `Overdue ${-days} ${-days === 1 ? "day" : "days"}`, tone: "over" };
-  if (days === 0) return { text: "Due today", tone: "soon" };
-  if (days <= 7) return { text: `Due in ${days} ${days === 1 ? "day" : "days"}`, tone: "soon" };
-  return { text: `Due ${calendarDate(dueDate, now, locale)}`, tone: "" };
+  if (days < 0) return { text: t("jobs.due.overdue", { count: -days }), tone: "over" };
+  if (days === 0) return { text: t("jobs.due.today"), tone: "soon" };
+  if (days <= 7) return { text: t("jobs.due.in", { count: days }), tone: "soon" };
+  return { text: t("jobs.due.on", { date: calendarDate(dueDate, now, locale) }), tone: "" };
 }
 
 /** US-JOB-33 — what the Next milestone column says. */
 export function nextMilestoneNote(job: Job, now: Date, locale?: string): { name: string; text: string; tone: "" | "soon" | "over" } {
   if (job.nextMilestone) return { name: job.nextMilestone.name, ...dueNote(job.nextMilestone.dueDate, now, locale) };
-  if (!job.milestoneCounts?.total) return { name: "No milestones yet", text: "", tone: "" };
-  if (isReadyToBill(job)) return { name: "Ready to bill", text: `${job.readyToBillCount} to invoice`, tone: "soon" };
-  return { name: "All billed", text: "", tone: "" };
+  if (!job.milestoneCounts?.total) return { name: t("jobs.next.noMilestones"), text: "", tone: "" };
+  if (isReadyToBill(job)) return { name: t("jobs.next.readyToBill"), text: t("jobs.next.toInvoice", { count: job.readyToBillCount ?? 0 }), tone: "soon" };
+  return { name: t("jobs.next.allBilled"), text: "", tone: "" };
 }
 
 /** US-JOB-33 — the owner's % complete, else the share of milestones done; null without either. */

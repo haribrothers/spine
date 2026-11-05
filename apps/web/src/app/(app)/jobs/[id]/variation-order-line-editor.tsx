@@ -7,6 +7,7 @@ import { LineTaxWarning } from "../../../../components/place-of-supply";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import type { TaxGroupOption, TaxRateOption, VariationOrderCatalogItemOption } from "../types";
 import { formatMoney } from "../../../../lib/money";
 
@@ -119,6 +120,7 @@ export function VariationOrderLineEditor({
   exportUnderLut?: boolean;
   flaggedKeys?: Set<string>;
 }) {
+  const t = useT();
   const [catalogItems, setCatalogItems] = useState<VariationOrderCatalogItemOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
@@ -145,13 +147,13 @@ export function VariationOrderLineEditor({
 
   const taxOptions = useMemo(
     () => [
-      { value: "", label: "No tax" },
+      { value: "", label: t("jobs.lineEditor.noTax") },
       ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
       ...taxGroups
         .filter((g) => !g.archivedAt)
         .map((g) => ({ value: `group:${g.id}`, label: `${g.name} (${g.taxRates.map((r) => `${r.rate}%`).join("+")})` })),
     ],
-    [taxRates, taxGroups],
+    [taxRates, taxGroups, t],
   );
 
   function updateLine(index: number, patch: Partial<EditableVariationLine>) {
@@ -202,7 +204,7 @@ export function VariationOrderLineEditor({
               <div className="flex flex-col gap-1 pt-1">
                 <button
                   type="button"
-                  aria-label="Move line up"
+                  aria-label={t("jobs.lineEditor.moveUp")}
                   disabled={index === 0}
                   onClick={() => moveLine(index, -1)}
                   className="flex h-6 w-6 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface disabled:opacity-30"
@@ -211,7 +213,7 @@ export function VariationOrderLineEditor({
                 </button>
                 <button
                   type="button"
-                  aria-label="Move line down"
+                  aria-label={t("jobs.lineEditor.moveDown")}
                   disabled={index === lines.length - 1}
                   onClick={() => moveLine(index, 1)}
                   className="flex h-6 w-6 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface disabled:opacity-30"
@@ -240,7 +242,7 @@ export function VariationOrderLineEditor({
 
               <button
                 type="button"
-                aria-label="Remove line"
+                aria-label={t("jobs.lineEditor.remove")}
                 onClick={() => removeLine(index)}
                 className="mt-1 flex h-7 w-7 items-center justify-center rounded-sm text-on-surface-muted hover:bg-overdue-bg hover:text-overdue"
               >
@@ -253,13 +255,13 @@ export function VariationOrderLineEditor({
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={() => addLine("item")}>
-          <Plus size={14} /> Add item
+          <Plus size={14} /> {t("jobs.lineEditor.addItem")}
         </Button>
         <Button type="button" variant="secondary" size="sm" onClick={() => addLine("heading")}>
-          <Plus size={14} /> Add heading
+          <Plus size={14} /> {t("jobs.lineEditor.addHeading")}
         </Button>
         <Button type="button" variant="secondary" size="sm" onClick={() => addLine("text")}>
-          <Plus size={14} /> Add text line
+          <Plus size={14} /> {t("jobs.lineEditor.addText")}
         </Button>
       </div>
     </div>
@@ -285,6 +287,7 @@ function ItemLineFields({
   onApplyCatalogItem: (id: string) => void;
   onChange: (patch: Partial<EditableVariationLine>) => void;
 }) {
+  const t = useT();
   const preview = computeVariationLinePreview(line, currency, taxRates, taxGroups);
   const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
   const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
@@ -302,23 +305,23 @@ function ItemLineFields({
   return (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-[1fr_auto] gap-2">
-        <Input value={line.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="Item name" required />
+        <Input value={line.name} onChange={(e) => onChange({ name: e.target.value })} placeholder={t("jobs.lineEditor.itemName")} required />
         <div className="w-48">
           <Combobox
             options={catalogOptions}
             value={line.catalogItemId ?? undefined}
             onValueChange={onApplyCatalogItem}
-            placeholder="Prefill from catalogue…"
+            placeholder={t("jobs.lineEditor.prefill")}
           />
         </div>
       </div>
       <Input
         value={line.description}
         onChange={(e) => onChange({ description: e.target.value })}
-        placeholder="Description (optional)"
+        placeholder={t("jobs.lineEditor.description")}
       />
       <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-        <FieldLabel label="Qty">
+        <FieldLabel label={t("jobs.lineEditor.qty")}>
           <Input
             type="number"
             inputMode="decimal"
@@ -328,10 +331,10 @@ function ItemLineFields({
             onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
           />
         </FieldLabel>
-        <FieldLabel label="Unit price">
+        <FieldLabel label={t("jobs.lineEditor.unitPrice")}>
           <MoneyInput value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
         </FieldLabel>
-        <FieldLabel label="Discount %">
+        <FieldLabel label={t("jobs.lineEditor.discount")}>
           <Input
             type="number"
             inputMode="decimal"
@@ -342,19 +345,19 @@ function ItemLineFields({
             onChange={(e) => onChange({ discountPercentage: Number(e.target.value) || 0 })}
           />
         </FieldLabel>
-        <FieldLabel label="Line total">
+        <FieldLabel label={t("jobs.lineEditor.lineTotal")}>
           <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 text-[14px] tabular-nums">
             {formatMoney(preview.total, currency)}
           </div>
         </FieldLabel>
       </div>
       <div className="grid grid-cols-[1fr_auto] items-end gap-2">
-        <FieldLabel label="Tax">
-          <Combobox options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
+        <FieldLabel label={t("jobs.lineEditor.tax")}>
+          <Combobox options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder={t("jobs.lineEditor.noTax")} />
         </FieldLabel>
         <label className="flex h-10 cursor-pointer items-center gap-2 pb-0.5">
           <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })} />
-          <span className="text-[13px] text-on-surface">Price includes tax</span>
+          <span className="text-[13px] text-on-surface">{t("jobs.lineEditor.inclusive")}</span>
         </label>
       </div>
       {showsSupplyType(line.supplyClass, taxPercent) && (
@@ -371,6 +374,7 @@ function NonItemLineFields({
   line: EditableVariationLine;
   onChange: (patch: Partial<EditableVariationLine>) => void;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
@@ -380,15 +384,15 @@ function NonItemLineFields({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="heading">Heading</SelectItem>
-              <SelectItem value="text">Text</SelectItem>
+              <SelectItem value="heading">{t("jobs.lineEditor.heading")}</SelectItem>
+              <SelectItem value="text">{t("jobs.lineEditor.text")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <Input
           value={line.name}
           onChange={(e) => onChange({ name: e.target.value })}
-          placeholder={line.type === "heading" ? "Section heading" : "Free text"}
+          placeholder={line.type === "heading" ? t("jobs.lineEditor.sectionHeading") : t("jobs.lineEditor.freeText")}
           className="flex-1 font-medium"
           required
         />
@@ -397,7 +401,7 @@ function NonItemLineFields({
         <Input
           value={line.description}
           onChange={(e) => onChange({ description: e.target.value })}
-          placeholder="Additional detail (optional)"
+          placeholder={t("jobs.lineEditor.additionalDetail")}
         />
       )}
     </div>

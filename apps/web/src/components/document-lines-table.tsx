@@ -4,6 +4,7 @@ import { SUPPLY_CLASS_LABELS } from "@spine/shared";
 import { Card, cn } from "@spine/ui";
 import type { SupplyClass } from "@spine/shared";
 import { formatMoney } from "../lib/money";
+import { useT } from "../lib/i18n";
 
 /** What the table reads from a quote or an invoice. */
 export interface DocumentLinesSource {
@@ -48,6 +49,7 @@ export interface AfterTotalRow {
  * Balance due).
  */
 export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { doc: DocumentLinesSource; testIdPrefix: string; after?: AfterTotalRow[] }) {
+  const t = useT();
   const lines = (quote.lines ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
   const items = lines.filter((l) => l.type === "item");
   const showDiscount = items.some((l) => l.discountPercentage > 0);
@@ -55,21 +57,21 @@ export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { d
   const money = (v: string) => formatMoney(BigInt(v), quote.currency);
   const cols = 3 + (showDiscount ? 1 : 0) + (showTax ? 1 : 0);
   const discount = BigInt(quote.discountAmount);
-  const taxLines = quote.taxLines?.length ? quote.taxLines : [{ label: "Tax", amount: quote.taxAmount }];
+  const taxLines = quote.taxLines?.length ? quote.taxLines : [{ label: t("invoices.linesTable.tax"), amount: quote.taxAmount }];
 
   return (
     <Card className="overflow-hidden p-0" data-testid={`${testIdPrefix}-lines`}>
-      <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">Lines</h3>
+      <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("invoices.linesTable.lines")}</h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-[13.5px]">
           <thead>
             <tr className="bg-surface-sunken text-left text-[12px] font-medium text-on-surface-muted">
-              <th scope="col" className="px-4 py-2 font-medium">Item</th>
-              <th scope="col" className="w-20 px-2 py-2 text-right font-medium">Qty</th>
-              <th scope="col" className="w-28 px-2 py-2 text-right font-medium">Rate</th>
-              {showDiscount && <th scope="col" className="w-16 px-2 py-2 text-right font-medium">Disc.</th>}
-              {showTax && <th scope="col" className="w-16 px-2 py-2 text-right font-medium">Tax</th>}
-              <th scope="col" className="w-32 px-4 py-2 text-right font-medium">Amount</th>
+              <th scope="col" className="px-4 py-2 font-medium">{t("invoices.linesTable.item")}</th>
+              <th scope="col" className="w-20 px-2 py-2 text-right font-medium">{t("invoices.linesTable.qty")}</th>
+              <th scope="col" className="w-28 px-2 py-2 text-right font-medium">{t("invoices.linesTable.rate")}</th>
+              {showDiscount && <th scope="col" className="w-16 px-2 py-2 text-right font-medium">{t("invoices.linesTable.disc")}</th>}
+              {showTax && <th scope="col" className="w-16 px-2 py-2 text-right font-medium">{t("invoices.linesTable.tax")}</th>}
+              <th scope="col" className="w-32 px-4 py-2 text-right font-medium">{t("invoices.linesTable.amount")}</th>
             </tr>
           </thead>
           <tbody>
@@ -101,21 +103,21 @@ export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { d
         </table>
       </div>
       <dl className="ml-auto grid w-full max-w-xs grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 text-[13px]" data-testid={`${testIdPrefix}-totals`}>
-        <dt className="text-on-surface-muted">Subtotal</dt>
+        <dt className="text-on-surface-muted">{t("invoices.linesTable.subtotal")}</dt>
         <dd className="text-right tabular-nums">{money(quote.subtotalAmount)}</dd>
         {discount > 0n && (
           <>
-            <dt className="text-on-surface-muted">Discount</dt>
+            <dt className="text-on-surface-muted">{t("invoices.linesTable.discount")}</dt>
             <dd className="text-right tabular-nums">{formatMoney(-discount, quote.currency)}</dd>
           </>
         )}
-        {taxLines.map((t) => (
-          <div key={t.label} className="contents">
-            <dt className="text-on-surface-muted">{t.label}</dt>
-            <dd className="text-right tabular-nums">{money(t.amount)}</dd>
+        {taxLines.map((taxLine) => (
+          <div key={taxLine.label} className="contents">
+            <dt className="text-on-surface-muted">{taxLine.label}</dt>
+            <dd className="text-right tabular-nums">{money(taxLine.amount)}</dd>
           </div>
         ))}
-        <dt className="mt-1 border-t border-border pt-2 text-[14px] font-semibold text-on-surface">Total</dt>
+        <dt className="mt-1 border-t border-border pt-2 text-[14px] font-semibold text-on-surface">{t("invoices.linesTable.total")}</dt>
         <dd className="mt-1 border-t border-border pt-2 text-right text-[15px] font-bold tabular-nums text-on-surface">{money(quote.totalAmount)}</dd>
         {after.map((row) => (
           <div key={row.label} className="contents">

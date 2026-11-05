@@ -6,6 +6,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useCapability } from "../../../lib/capabilities-context";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { CreditNoteRow } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -17,6 +18,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
  * refunded or emailed from one click (D-218).
  */
 export function CreditNoteRowActions({ note }: { note: CreditNoteRow }) {
+  const t = useT();
   const router = useRouter();
   const canApply = useCapability("payments.apply_credit");
   const canRefund = useCapability("payments.refund");
@@ -30,7 +32,7 @@ export function CreditNoteRowActions({ note }: { note: CreditNoteRow }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for ${note.number ?? "this draft credit note"}`}
+          aria-label={t("creditNotes.rowActions.actionsFor", { number: note.number ?? t("creditNotes.rowActions.thisDraft") })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -39,30 +41,30 @@ export function CreditNoteRowActions({ note }: { note: CreditNoteRow }) {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => open()}>
           <MENU_ICONS.view aria-hidden />
-          View
+          {t("creditNotes.rowActions.view")}
         </DropdownMenuItem>
         {issued && left && canApply && (
           <DropdownMenuItem onSelect={() => open("apply")}>
             <MENU_ICONS.applyCredit aria-hidden />
-            Apply credit
+            {t("creditNotes.rowActions.applyCredit")}
           </DropdownMenuItem>
         )}
         {issued && left && canRefund && (
           <DropdownMenuItem onSelect={() => open("refund")}>
             <MENU_ICONS.refund aria-hidden />
-            Refund
+            {t("creditNotes.rowActions.refund")}
           </DropdownMenuItem>
         )}
         {issued && canSend && (
           <DropdownMenuItem onSelect={() => open("email")}>
             <MENU_ICONS.email aria-hidden />
-            Email credit note
+            {t("creditNotes.rowActions.email")}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
           <a href={`${API_URL}/credit-notes/${note.id}/pdf`} target="_blank" rel="noreferrer">
             <MENU_ICONS.download aria-hidden />
-            {issued ? "Download PDF" : "Preview PDF"}
+            {issued ? t("creditNotes.rowActions.downloadPdf") : t("creditNotes.rowActions.previewPdf")}
           </a>
         </DropdownMenuItem>
       </DropdownMenuContent>

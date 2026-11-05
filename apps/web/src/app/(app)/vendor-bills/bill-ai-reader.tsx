@@ -7,6 +7,7 @@ import { aiPausedMessage } from "@spine/shared";
 import { AiActionButton } from "../../../components/ai-action-button";
 import { AiUnavailableNotice } from "../../../components/ai-unavailable-notice";
 import { PHOTO_OR_PDF_ACCEPT } from "../../../lib/upload-types";
+import { useT } from "../../../lib/i18n";
 
 export type BillReadState =
   | { status: "idle" }
@@ -37,6 +38,7 @@ export function BillAiReader({
   onCancel: () => void;
   onRetry: () => void;
 }) {
+  const t = useT();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const choose = () => input.current?.click();
@@ -45,18 +47,18 @@ export function BillAiReader({
   if (state.status === "failed" && state.canRetry) {
     return (
       <div className="sm:col-span-2 xl:col-span-4">
-        <AiUnavailableNotice message={state.message} detail={state.fileName ? `${state.fileName} is attached either way.` : undefined} onRetry={onRetry} />
+        <AiUnavailableNotice message={state.message} detail={state.fileName ? t("vendorBills.aiReader.attachedEitherWay", { fileName: state.fileName }) : undefined} onRetry={onRetry} />
       </div>
     );
   }
 
   const done = state.status === "done";
-  const title = done ? state.fileName : working ? `Reading ${state.fileName}…` : "Read the vendor's bill with AI";
+  const title = done ? state.fileName : working ? t("vendorBills.aiReader.reading", { fileName: state.fileName }) : t("vendorBills.aiReader.readWithAi");
   const meta = done
-    ? `Read by AI in ${Math.max(1, Math.round(state.readMs / 1000))} ${Math.round(state.readMs / 1000) <= 1 ? "second" : "seconds"} · ${attachedNote} · check what it filled in before you save`
+    ? t("vendorBills.aiReader.readMeta", { count: Math.max(1, Math.round(state.readMs / 1000)), attachedNote })
     : working
-      ? "This can take up to 30 seconds. You can keep working on the bill."
-      : "Choose or drop the vendor's PDF or photo. It's attached to the bill, and the fields below fill in for you to check.";
+      ? t("vendorBills.aiReader.workingMeta")
+      : t("vendorBills.aiReader.idleMeta");
   const Icon = done ? (state.asImage ? ImageIcon : FileText) : ScanText;
 
   return (
@@ -88,10 +90,10 @@ export function BillAiReader({
         {done ? (
           <Button type="button" variant="secondary" size="sm" onClick={choose}>
             <ScanText size={14} aria-hidden />
-            Read another document
+            {t("vendorBills.aiReader.readAnother")}
           </Button>
         ) : (
-          <AiActionButton label="Read from document" workingLabel="Reading…" working={working} disabled={Boolean(pausedUntil)} onClick={choose} onCancel={onCancel} />
+          <AiActionButton label={t("vendorBills.aiReader.readFromDocument")} workingLabel={t("vendorBills.aiReader.readingButton")} working={working} disabled={Boolean(pausedUntil)} onClick={choose} onCancel={onCancel} />
         )}
         <input
           ref={input}
@@ -99,7 +101,7 @@ export function BillAiReader({
           accept={PHOTO_OR_PDF_ACCEPT}
           className="sr-only"
           tabIndex={-1}
-          aria-label="Choose the vendor's bill to read"
+          aria-label={t("vendorBills.aiReader.chooseFile")}
           onChange={(e) => {
             const file = e.target.files?.[0];
             e.target.value = "";

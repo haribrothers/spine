@@ -55,7 +55,7 @@ test.describe("US-ONB-22", () => {
     await expect(page.getByTestId("onboarding-position")).toHaveText("Stage 2 of 4 · Money · Step 1 of 3");
     await expect(rail.getByText("About 5 min left")).toBeVisible();
     await page.getByLabel("Currency").fill("INR");
-    await page.getByLabel("Locale").fill("en-IN");
+    await page.getByLabel("Locale", { exact: true }).fill("en-IN");
     await expect(preview).toContainText("₹1,25,000.00");
     await continueButton(page).click();
     await continueButton(page).click();

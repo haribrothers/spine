@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, AppShellHeader, Button, Card, Spinner, StatCard, useConfirm } from "@spine/ui";
 import type { ReconciliationEntry, ReconciliationView } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
@@ -32,6 +33,7 @@ export function reconciliationSummary(view: Pick<ReconciliationView, "outstandin
  * with Download report and, for the newest, Undo (asks first).
  */
 export function ReconciliationReport({ accountId, reconciliationId }: { accountId: string; reconciliationId: string }) {
+  const t = useT();
   const router = useRouter();
   const canReconcile = useCapability("banking.reconcile");
   const [view, setView] = useState<ReconciliationView | null>(null);
@@ -51,7 +53,7 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
       setView(rec);
       if (settings.value?.code) setCurrency(settings.value.code);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't load this reconciliation. Refresh to try again.");
+      setError(err instanceof Error ? err.message : t("banking.reconcile.loadError"));
     }
   }, [reconciliationId]);
 
@@ -59,12 +61,12 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
     if (canReconcile) void load();
   }, [canReconcile, load]);
 
-  if (!canReconcile) return <NoAccess pageName="Reconciliation" />;
+  if (!canReconcile) return <NoAccess pageName={t("banking.report.pageName")} />;
 
   const money = (v: string | bigint) => formatMoney(BigInt(v), currency);
   const signed = (v: bigint) => (v > 0n ? `+${money(v)}` : money(v));
   const sense = view?.moneyAccount.kind === "card" ? -1n : 1n;
-  const name = view?.moneyAccount.name ?? "Account";
+  const name = view?.moneyAccount.name ?? t("banking.register.breadcrumbAccount");
   const end = view ? formatDay(view.statementEndDate) : "";
 
   async function download() {
@@ -73,7 +75,7 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
       const { blob, headers } = await apiClient.download(`/bank-reconciliations/${reconciliationId}/report.pdf`);
       saveBlob(blob, filenameFrom(headers, `reconciliation-${view?.statementEndDate ?? "report"}.pdf`));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't download the report. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.history.downloadError"));
     } finally {
       setBusy(false);
     }
@@ -82,20 +84,20 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
   async function undo() {
     if (!view) return;
     const ok = await confirm({
-      title: "Undo this reconciliation?",
-      description: `Statement to ${end} · ${view.entriesMatched} entries. Its entries go back to unreconciled; nothing is deleted. Its statement lines go back to unmatched.`,
-      confirmLabel: "Undo reconciliation",
-      cancelLabel: "Go back",
+      title: t("banking.history.undoConfirmTitle"),
+      description: t("banking.history.undoConfirmSummary", { date: end, n: view.entriesMatched }) + t("banking.history.undoConfirmBody"),
+      confirmLabel: t("banking.history.undoReconciliation"),
+      cancelLabel: t("banking.explorer.goBack"),
       danger: true,
     });
     if (!ok) return;
     setBusy(true);
     try {
       await apiClient.post(`/bank-reconciliations/${reconciliationId}/undo`);
-      showToast("Reconciliation undone", `Entries to ${end} are unreconciled again.`);
+      showToast(t("banking.history.undoneTitle"), t("banking.history.undoneBody", { date: end }));
       router.push(`/banking/${accountId}/reconciliations`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't undo this reconciliation. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.history.undoError"));
       setBusy(false);
     }
   }
@@ -103,16 +105,26 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
   const header = (
     <AppShellHeader
       breadcrumb={[
-        { label: "Money" },
-        { label: "Banking", href: "/banking" },
+        { label: t("banking.page.breadcrumbMoney") },
+        { label: t("banking.page.title"), href: "/banking" },
         { label: name, href: `/banking/${accountId}` },
-        { label: "Reconciliations", href: `/banking/${accountId}/reconciliations` },
-        { label: end || "Reconciliation" },
+        { label: t("banking.history.title"), href: `/banking/${accountId}/reconciliations` },
+        { label: end || t("banking.report.pageName") },
       ]}
-      title={view ? `Reconciliation to ${end}` : "Reconciliation"}
+      title={view ? t("banking.report.title", { date: end }) : t("banking.report.pageName")}
       description={
         view
-          ? [name, view.finishedBy ? `Finished by ${view.finishedBy.name}${view.finishedAt ? ` · ${formatDay(view.finishedAt.slice(0, 10))}` : ""}` : view.status === "in_progress" ? "In progress" : null, view.fileNames.join(", ") || null].filter(Boolean).join(" · ")
+          ? [
+              name,
+              view.finishedBy
+                ? `${t("banking.report.finishedBy", { name: view.finishedBy.name })}${view.finishedAt ? ` · ${formatDay(view.finishedAt.slice(0, 10))}` : ""}`
+                : view.status === "in_progress"
+                  ? t("banking.report.inProgress")
+                  : null,
+              view.fileNames.join(", ") || null,
+            ]
+              .filter(Boolean)
+              .join(" · ")
           : undefined
       }
       action={
@@ -121,12 +133,12 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
             {view.status === "finished" && view.isLatest && (
               <Button variant="secondary" onClick={() => void undo()} disabled={busy}>
                 <MENU_ICONS.moveOff size={14} aria-hidden />
-                Undo
+                {t("banking.history.undo")}
               </Button>
             )}
             <Button onClick={() => void download()} disabled={busy}>
               <MENU_ICONS.download size={14} aria-hidden />
-              Download report
+              {t("banking.history.downloadReport")}
             </Button>
           </div>
         ) : undefined
@@ -180,38 +192,56 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
           </Alert>
         )}
         <Card className="flex flex-wrap items-center gap-x-5 gap-y-3" data-testid="reconciliation-summary">
-          <Figure label="Statement closing balance" value={money(view.statementClosingBalance)} />
+          <Figure label={t("banking.report.statementClosing")} value={money(view.statementClosingBalance)} />
           <Op>+</Op>
-          <Figure label="Deposits not yet on the statement" value={money(deposits)} />
+          <Figure label={t("banking.report.depositsOutstanding")} value={money(deposits)} />
+          {/* eslint-disable-next-line i18next/no-literal-string -- a maths symbol, hidden from screen readers */}
           <Op>−</Op>
-          <Figure label="Payments not yet on the statement" value={money(payments)} />
+          <Figure label={t("banking.report.paymentsOutstanding")} value={money(payments)} />
           {excluded !== 0n && (
             <>
+              {/* eslint-disable-next-line i18next/no-literal-string -- a maths symbol, hidden from screen readers */}
               <Op>−</Op>
-              <Figure label="Statement lines excluded from the books" value={money(excluded)} />
+              <Figure label={t("banking.report.excludedFromBooks")} value={money(excluded)} />
             </>
           )}
           <Op>=</Op>
-          <Figure label={`Balance in Spine on ${end}`} value={money(view.spineBalance)} strong />
+          <Figure label={t("banking.report.balanceOn", { date: end })} value={money(view.spineBalance)} strong />
         </Card>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Opening balance" value={money(view.openingBalance)} trend={{ direction: "neutral", label: view.lastReconciledOn && view.lastReconciledOn !== view.statementEndDate ? `Reconciled to ${formatDay(view.lastReconciledOn)}` : view.broughtForwardBefore ? `Brought forward before ${formatDay(view.broughtForwardBefore)}` : "—" }} />
-          <StatCard label="Cleared in Spine" value={money(view.clearedBalance)} trend={{ direction: "neutral", label: `${matchedLines.length} ${matchedLines.length === 1 ? "line" : "lines"} matched` }} />
-          <StatCard label="Excluded" value={`${excludedLines.length} ${excludedLines.length === 1 ? "line" : "lines"}`} trend={{ direction: "neutral", label: excludedLines.length ? "with your notes" : "none" }} />
+          <StatCard
+            label={t("banking.report.openingBalance")}
+            value={money(view.openingBalance)}
+            trend={{
+              direction: "neutral",
+              label:
+                view.lastReconciledOn && view.lastReconciledOn !== view.statementEndDate
+                  ? t("banking.report.reconciledTo", { date: formatDay(view.lastReconciledOn) })
+                  : view.broughtForwardBefore
+                    ? t("banking.report.broughtForward", { date: formatDay(view.broughtForwardBefore) })
+                    : "—",
+            }}
+          />
+          <StatCard label={t("banking.reconcile.clearedCard")} value={money(view.clearedBalance)} trend={{ direction: "neutral", label: t("banking.reconcile.matchedToast", { count: matchedLines.length }) }} />
+          <StatCard
+            label={t("banking.report.excluded")}
+            value={t("banking.report.lineCount", { count: excludedLines.length })}
+            trend={{ direction: "neutral", label: excludedLines.length ? t("banking.report.withNotes") : t("banking.report.none") }}
+          />
         </div>
 
-        <Section title="What's outstanding" testId="reconciliation-outstanding">
+        <Section title={t("banking.report.outstanding")} testId="reconciliation-outstanding">
           {view.outstanding.length === 0 ? (
-            <p className="px-4 py-3 text-[13.5px] text-on-surface-muted">Nothing — every entry up to {end} is on the statement.</p>
+            <p className="px-4 py-3 text-[13.5px] text-on-surface-muted">{t("banking.report.nothingOutstanding", { date: end })}</p>
           ) : (
             <table className="w-full">
               <thead className="bg-surface-sunken">
                 <tr>
-                  <th className={th}>Date</th>
-                  <th className={th}>Entry</th>
-                  <th className={th}>Contact</th>
-                  <th className={`${th} text-right`}>Amount</th>
+                  <th className={th}>{t("banking.report.colDate")}</th>
+                  <th className={th}>{t("banking.report.colEntry")}</th>
+                  <th className={th}>{t("banking.report.colContact")}</th>
+                  <th className={`${th} text-right`}>{t("banking.report.colAmount")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -221,7 +251,7 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
                     <tr key={e.journalLineId} className="border-t border-border">
                       <td className={td}>{formatDay(e.date)}</td>
                       <td className={td}>
-                        {entryLink(e)} <span className="text-[12.5px] text-on-surface-muted">· {amount > 0n ? "deposit" : "payment"} not yet on the statement</span>
+                        {entryLink(e)} <span className="text-[12.5px] text-on-surface-muted">{amount > 0n ? t("banking.report.depositNotYet") : t("banking.report.paymentNotYet")}</span>
                       </td>
                       <td className={td}>{e.contact?.name ?? "—"}</td>
                       <td className={`${td} text-right tabular-nums`}>{signed(amount)}</td>
@@ -233,14 +263,14 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
           )}
         </Section>
 
-        <Section title="Matched lines" testId="reconciliation-matched">
+        <Section title={t("banking.report.matchedLines")} testId="reconciliation-matched">
           <table className="w-full">
             <thead className="bg-surface-sunken">
               <tr>
-                <th className={th}>Date</th>
-                <th className={th}>Statement line</th>
-                <th className={th}>Matched to</th>
-                <th className={`${th} text-right`}>Amount</th>
+                <th className={th}>{t("banking.report.colDate")}</th>
+                <th className={th}>{t("banking.report.colStatementLine")}</th>
+                <th className={th}>{t("banking.report.colMatchedTo")}</th>
+                <th className={`${th} text-right`}>{t("banking.report.colAmount")}</th>
               </tr>
             </thead>
             <tbody>
@@ -266,20 +296,20 @@ export function ReconciliationReport({ accountId, reconciliationId }: { accountI
           </table>
           {matchedLines.length > 10 && !showAll && (
             <button type="button" className="w-full border-t border-border px-4 py-2.5 text-left text-[13px] font-medium text-primary hover:underline" onClick={() => setShowAll(true)}>
-              Show all {matchedLines.length} matched lines
+              {t("banking.report.showAll", { n: matchedLines.length })}
             </button>
           )}
         </Section>
 
         {excludedLines.length > 0 && (
-          <Section title="Excluded" testId="reconciliation-excluded">
+          <Section title={t("banking.report.excluded")} testId="reconciliation-excluded">
             <table className="w-full">
               <thead className="bg-surface-sunken">
                 <tr>
-                  <th className={th}>Date</th>
-                  <th className={th}>Statement line</th>
-                  <th className={th}>Note</th>
-                  <th className={`${th} text-right`}>Amount</th>
+                  <th className={th}>{t("banking.report.colDate")}</th>
+                  <th className={th}>{t("banking.report.colStatementLine")}</th>
+                  <th className={th}>{t("banking.report.colNote")}</th>
+                  <th className={`${th} text-right`}>{t("banking.report.colAmount")}</th>
                 </tr>
               </thead>
               <tbody>

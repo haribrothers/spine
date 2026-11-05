@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Alert, AlertDescription, Button, FormField, Input, Spinner, Textarea } from "@spine/ui";
 import { BusinessLogoUpload } from "./business-logo-upload";
+import { useT } from "../../../lib/i18n";
 
 export interface BusinessProfileValue {
   name: string;
@@ -34,7 +35,8 @@ export interface BusinessProfileStepProps {
  * the uploaded file), so the `business_profile` settings shape is
  * unchanged from when it was a hand-typed URL field.
  */
-export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: BusinessProfileStepProps) {
+export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel, onChange }: BusinessProfileStepProps) {
+  const t = useT();
   const [name, setName] = useState(initialValue.name ?? "");
   const [logoUrl, setLogoUrl] = useState(initialValue.logoUrl ?? "");
   const [address, setAddress] = useState(initialValue.address ?? "");
@@ -65,7 +67,7 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
         industry: industry || undefined,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save business profile.");
+      setError(err instanceof Error ? err.message : t("onboarding.businessProfile.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -79,7 +81,7 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
         </Alert>
       )}
 
-      <FormField label="Business name" required>
+      <FormField label={t("onboarding.businessProfile.name")} required>
         {(field) => (
           <Input
             {...field}
@@ -94,14 +96,14 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
         )}
       </FormField>
 
-      <FormField label="Logo">
+      <FormField label={t("onboarding.businessProfile.logo")}>
         {() => <BusinessLogoUpload logoUrl={logoUrl || undefined} onChange={(url) => {
               setLogoUrl(url ?? "");
               emit({ logoUrl: url ?? "" });
             }} />}
       </FormField>
 
-      <FormField label="Address">
+      <FormField label={t("onboarding.businessProfile.address")}>
         {(field) => (
           <Textarea
             {...field}
@@ -116,32 +118,32 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Business email" helperText="Shown to customers who need to reach you.">
+        <FormField label={t("onboarding.businessProfile.email")} helperText={t("onboarding.businessProfile.emailHelper")}>
           {(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />}
         </FormField>
-        <FormField label="Business phone">
+        <FormField label={t("onboarding.businessProfile.phone")}>
           {(field) => <Input {...field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />}
         </FormField>
       </div>
 
       {/* US-OPS-21: "the next step" only means something in the wizard. */}
       <FormField
-        label="Industry"
-        helperText={onSkip ? "Free text — the next step picks a template that pre-configures the app." : "What your business does, in your own words."}
+        label={t("onboarding.businessProfile.industry")}
+        helperText={onSkip ? t("onboarding.businessProfile.industryHelperWizard") : t("onboarding.businessProfile.industryHelperSettings")}
       >
         {(field) => (
-          <Input {...field} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Electrical contracting" />
+          <Input {...field} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder={t("onboarding.businessProfile.industryPlaceholder")} />
         )}
       </FormField>
 
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button type="submit" disabled={saving || !name} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : saveLabel}
+          {saving ? <Spinner size="sm" /> : (saveLabel ?? t("onboarding.common.continue"))}
         </Button>
       </div>
     </form>

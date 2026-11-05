@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { i18n } from "@spine/shared/i18n";
 
-export { i18n, t } from "@spine/shared/i18n";
+export { formatLocale, i18n, setFormatLocale, t } from "@spine/shared/i18n";
 
 /**
  * US-OPS-16 — in a component: `const t = useT();`. Outside one (a label

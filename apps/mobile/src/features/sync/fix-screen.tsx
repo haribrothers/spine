@@ -14,9 +14,10 @@ import { pickPhoto } from "../../lib/outbox/pick-photo";
 import { MAX_UPLOAD_BYTES, type LocalPhoto, type OutboxItem } from "../../lib/outbox/types";
 import { useBusinessFormat } from "../../lib/data/business";
 import { calendarDay, money, weekdayDayMonth } from "../../lib/format";
+import { t as translate, useT } from "../../lib/i18n";
 
-const DELETE_LABEL: Record<OutboxItem["kind"], string> = { expense: "Delete this expense", photos: "Delete these photos", completion: "Delete this update" };
-const TITLE: Record<OutboxItem["kind"], string> = { expense: "Fix expense", photos: "Fix photos", completion: "Fix milestone update" };
+const DELETE_LABEL: Record<OutboxItem["kind"], string> = { expense: translate("mobileApp.fix.deleteExpense"), photos: translate("mobileApp.fix.deletePhotos"), completion: translate("mobileApp.fix.deleteUpdate") };
+const TITLE: Record<OutboxItem["kind"], string> = { expense: translate("mobileApp.newExpense.fixTitle"), photos: translate("mobileApp.fix.fixPhotos"), completion: translate("mobileApp.fix.fixUpdate") };
 
 function DetailRow({ label, value, first }: { label: string; value: string; first?: boolean }) {
   return (
@@ -28,6 +29,7 @@ function DetailRow({ label, value, first }: { label: string; value: string; firs
 }
 
 function PhotoCard({ photo, onRemove }: { photo: LocalPhoto; onRemove?: () => void }) {
+  const t = useT();
   const colors = useNativeColors();
   const tooBig = photo.size > MAX_UPLOAD_BYTES;
   return (
@@ -37,11 +39,11 @@ function PhotoCard({ photo, onRemove }: { photo: LocalPhoto; onRemove?: () => vo
         <Text numberOfLines={1} className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{photo.name}</Text>
         <Text testID="fix-photo-size" className={`text-[14px] ${tooBig ? "text-overdue dark:text-overdue-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark"}`}>
           {formatBytes(photo.size)}
-          {tooBig ? " · over the 10 MB limit" : ""}
+          {tooBig ? ` · ${t("mobileApp.fix.overLimit")}` : ""}
         </Text>
       </View>
       {onRemove ? (
-        <Pressable onPress={onRemove} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Remove ${photo.name}`} className="h-11 w-11 items-center justify-center">
+        <Pressable onPress={onRemove} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("mobileApp.fix.removePhotoNamed", { name: photo.name })} className="h-11 w-11 items-center justify-center">
           <X size={20} color={colors.onSurfaceMuted} />
         </Pressable>
       ) : null}
@@ -77,6 +79,7 @@ function ActionButton({ label, icon: Icon, tone, onPress, testID }: { label: str
  * be sent again, or be deleted.
  */
 export function FixScreen({ id }: { id: string }) {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const format = useBusinessFormat();
@@ -86,7 +89,7 @@ export function FixScreen({ id }: { id: string }) {
   if (!item || item.status !== "failed") {
     return (
       <View className="flex-1 justify-center bg-background p-4 dark:bg-background-dark">
-        <EmptyState title="Nothing to fix" description="This item was sent or deleted." />
+        <EmptyState title={t("mobileApp.fix.nothingTitle")} description={t("mobileApp.fix.nothingMessage")} />
       </View>
     );
   }
@@ -96,10 +99,10 @@ export function FixScreen({ id }: { id: string }) {
     await syncEngine.resend(item.id);
   };
   const confirmDelete = () =>
-    Alert.alert(`${DELETE_LABEL[item.kind]}?`, "It's removed from this phone and never reaches your office.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("mobileApp.fix.deleteConfirmTitle", { label: DELETE_LABEL[item.kind] }), t("mobileApp.fix.deleteConfirmMessage"), [
+      { text: t("mobileApp.common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("mobileApp.fix.delete"),
         style: "destructive",
         onPress: () => {
           router.back();
@@ -136,28 +139,28 @@ export function FixScreen({ id }: { id: string }) {
       <View className={`overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark ${android ? "border border-border dark:border-border-dark" : ""}`}>
         {item.kind === "expense" ? (
           <>
-            <DetailRow first label="Category" value={item.payload.categoryName} />
-            <DetailRow label="Amount" value={money(item.payload.amount, { currency: item.payload.currency, locale: format.locale })} />
-            {item.payload.jobName ? <DetailRow label="Job" value={item.payload.jobName} /> : null}
-            <DetailRow label="Date" value={weekdayDayMonth(calendarDay(item.payload.date), format.locale)} />
+            <DetailRow first label={t("mobileApp.expense.category")} value={item.payload.categoryName} />
+            <DetailRow label={t("mobileApp.newExpense.modeAmount")} value={money(item.payload.amount, { currency: item.payload.currency, locale: format.locale })} />
+            {item.payload.jobName ? <DetailRow label={t("mobileApp.expense.job")} value={item.payload.jobName} /> : null}
+            <DetailRow label={t("mobileApp.expense.date")} value={weekdayDayMonth(calendarDay(item.payload.date), format.locale)} />
           </>
         ) : item.kind === "completion" ? (
           <>
-            <DetailRow first label="Milestone" value={item.payload.milestoneName} />
-            <DetailRow label="Job" value={item.payload.jobName} />
+            <DetailRow first label={t("mobileApp.fix.milestone")} value={item.payload.milestoneName} />
+            <DetailRow label={t("mobileApp.expense.job")} value={item.payload.jobName} />
           </>
         ) : (
-          <DetailRow first label="Job" value={item.payload.jobName} />
+          <DetailRow first label={t("mobileApp.expense.job")} value={item.payload.jobName} />
         )}
       </View>
 
       {item.kind === "expense" ? (
         <>
-          {item.payload.receipt ? <PhotoCard photo={item.payload.receipt} /> : <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No receipt photo.</Text>}
+          {item.payload.receipt ? <PhotoCard photo={item.payload.receipt} /> : <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileApp.fix.noReceipt")}</Text>}
           <View className="gap-3">
-            <ActionButton testID="fix-retake" label={item.payload.receipt ? "Retake photo" : "Take photo"} icon={Camera} tone="soft" onPress={() => void replaceReceipt("camera")} />
-            <ActionButton testID="fix-choose" label={item.payload.receipt ? "Choose a different photo" : "Choose a photo"} icon={ImagePlus} tone={android ? "outline" : "soft"} onPress={() => void replaceReceipt("library")} />
-            {item.payload.receipt ? <ActionButton testID="fix-remove-photo" label="Remove photo" icon={Trash2} tone={android ? "danger-text" : "danger"} onPress={() => void outbox.setReceipt(item.id, null)} /> : null}
+            <ActionButton testID="fix-retake" label={item.payload.receipt ? t("mobileApp.fix.retakePhoto") : t("mobileApp.fix.takePhoto")} icon={Camera} tone="soft" onPress={() => void replaceReceipt("camera")} />
+            <ActionButton testID="fix-choose" label={item.payload.receipt ? t("mobileApp.fix.chooseDifferent") : t("mobileApp.newExpense.choosePhoto")} icon={ImagePlus} tone={android ? "outline" : "soft"} onPress={() => void replaceReceipt("library")} />
+            {item.payload.receipt ? <ActionButton testID="fix-remove-photo" label={t("mobileApp.fix.removePhoto")} icon={Trash2} tone={android ? "danger-text" : "danger"} onPress={() => void outbox.setReceipt(item.id, null)} /> : null}
           </View>
         </>
       ) : (
@@ -168,10 +171,10 @@ export function FixScreen({ id }: { id: string }) {
         </View>
       )}
 
-      {item.kind === "expense" ? <ActionButton testID="fix-edit" label="Edit expense" tone={android ? "outline" : "soft"} onPress={() => router.push(`/expense-new?edit=${item.id}`)} /> : null}
-      <ActionButton testID="fix-send-again" label="Send again" tone="primary" onPress={() => void sendAgain()} />
+      {item.kind === "expense" ? <ActionButton testID="fix-edit" label={t("mobileApp.fix.editExpense")} tone={android ? "outline" : "soft"} onPress={() => router.push(`/expense-new?edit=${item.id}`)} /> : null}
+      <ActionButton testID="fix-send-again" label={t("mobileApp.fix.sendAgain")} tone="primary" onPress={() => void sendAgain()} />
       {android ? (
-        <Text className="px-1 text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{`“${DELETE_LABEL[item.kind]}” is the bin icon at the top. It removes it from this phone.`}</Text>
+        <Text className="px-1 text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileApp.fix.binHint", { label: DELETE_LABEL[item.kind] })}</Text>
       ) : (
         <ActionButton testID="fix-delete" label={DELETE_LABEL[item.kind]} tone="danger-text" onPress={confirmDelete} />
       )}

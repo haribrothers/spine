@@ -39,6 +39,7 @@ import {
 import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { AiField } from "../../../components/ai-suggested-tag";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
 
@@ -86,6 +87,7 @@ export function MoneyInOutDialog({
   /** US-BANK-15 — opened from an account (its row or its register): that account is chosen. */
   initialAccountId?: string;
 }) {
+  const t = useT();
   const isIn = direction === "in";
   const [moneyAccountId, setMoneyAccountId] = useState("");
   const [date, setDate] = useState<Date>(new Date());
@@ -134,22 +136,28 @@ export function MoneyInOutDialog({
   async function handleSubmit() {
     setError(null);
     if (!moneyAccountId || !categoryId) {
-      setError(isIn ? "Choose the account the money went into and a category." : "Choose the account the money came out of and a category.");
+      setError(isIn ? t("banking.moneyInOut.chooseIn") : t("banking.moneyInOut.chooseOut"));
       return;
     }
     if (amount <= 0n) {
-      setError("Enter an amount greater than zero.");
+      setError(t("banking.moneyInOut.amountRequired"));
       return;
     }
     // US-BANK-15 (D-218): recording asks first, saying what posts where.
-    const accountName = accounts.find((a) => a.id === moneyAccountId)?.name ?? "the account";
-    const categoryName = categories.find((a) => a.id === categoryId)?.name ?? "the category";
+    const accountName = accounts.find((a) => a.id === moneyAccountId)?.name ?? t("banking.moneyInOut.theAccount");
+    const categoryName = categories.find((a) => a.id === categoryId)?.name ?? t("banking.moneyInOut.theCategory");
     const amountText = formatMoney(amount, currency);
     const ok = await confirm({
-      title: isIn ? "Record money in?" : "Record money out?",
-      description: `${isIn ? `${amountText} into ${accountName} from ${categoryName}` : `${amountText} from ${accountName} to ${categoryName}`} on ${formatDay(toIsoDate(date))}${taxAmount > 0n ? `, including ${formatMoney(taxAmount, currency)} tax` : ""}. It's posted to your books.`,
-      confirmLabel: "Record",
-      cancelLabel: "Go back",
+      title: isIn ? t("banking.moneyInOut.confirmInTitle") : t("banking.moneyInOut.confirmOutTitle"),
+      description: t(isIn ? "banking.moneyInOut.confirmInBody" : "banking.moneyInOut.confirmOutBody", {
+        amount: amountText,
+        account: accountName,
+        category: categoryName,
+        date: formatDay(toIsoDate(date)),
+        tax: taxAmount > 0n ? t("banking.moneyInOut.confirmTax", { amount: formatMoney(taxAmount, currency) }) : "",
+      }),
+      confirmLabel: t("banking.moneyInOut.record"),
+      cancelLabel: t("banking.explorer.goBack"),
     });
     if (!ok) return;
     setSaving(true);
@@ -167,7 +175,7 @@ export function MoneyInOutDialog({
       onOpenChange(false);
       onRecorded(entry);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.moneyInOut.error"));
     } finally {
       setSaving(false);
     }
@@ -177,8 +185,8 @@ export function MoneyInOutDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>{isIn ? "Money in" : "Money out"}</DialogTitle>
-          <DialogDescription>{isIn ? "Money that came into an account without an invoice or payment." : "Money that left an account without a bill or expense."}</DialogDescription>
+          <DialogTitle>{isIn ? t("banking.moneyInOut.titleIn") : t("banking.moneyInOut.titleOut")}</DialogTitle>
+          <DialogDescription>{isIn ? t("banking.moneyInOut.descriptionIn") : t("banking.moneyInOut.descriptionOut")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -187,11 +195,11 @@ export function MoneyInOutDialog({
             </Alert>
           )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField label={isIn ? "Into account" : "From account"} required>
+            <FormField label={isIn ? t("banking.moneyInOut.intoAccount") : t("banking.moneyInOut.fromAccount")} required>
               {(field) => (
                 <Select value={moneyAccountId} onValueChange={setMoneyAccountId} disabled={Boolean(prefill)}>
                   <SelectTrigger id={field.id}>
-                    <SelectValue placeholder="Choose an account" />
+                    <SelectValue placeholder={t("banking.moneyInOut.chooseAccount")} />
                   </SelectTrigger>
                   <SelectContent>
                     {accounts.map((a) => (
@@ -203,17 +211,17 @@ export function MoneyInOutDialog({
                 </Select>
               )}
             </FormField>
-            <FormField label="Date" required>
+            <FormField label={t("banking.moneyInOut.date")} required>
               {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
           </div>
 
           <AiField suggested={Boolean(prefill?.ai?.categoryAccountId) && categoryId === prefill?.ai?.categoryAccountId}>
-          <FormField label="Category" required helperText={`Or pick any account. Receivables, payables, tax and customer advances aren't offered — ${CONTROL_ACCOUNT_HINT.toLowerCase()}`}>
+          <FormField label={t("banking.moneyInOut.category")} required helperText={t("banking.moneyInOut.categoryHelp", { hint: CONTROL_ACCOUNT_HINT.toLowerCase() })}>
             {(field) => (
               <div className="flex flex-col gap-2">
                 {shortcuts.length > 0 && (
-                  <div className="flex flex-wrap gap-2" role="group" aria-label="Category shortcuts">
+                  <div className="flex flex-wrap gap-2" role="group" aria-label={t("banking.moneyInOut.categoryShortcuts")}>
                     {shortcuts.map((s) => (
                       <button
                         key={s.label}
@@ -236,8 +244,8 @@ export function MoneyInOutDialog({
                   options={categories.map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))}
                   value={categoryId || undefined}
                   onValueChange={setCategoryId}
-                  placeholder="Choose a category…"
-                  emptyText={`No matching account. ${CONTROL_ACCOUNT_HINT}`}
+                  placeholder={t("banking.moneyInOut.chooseCategory")}
+                  emptyText={t("banking.moneyInOut.noMatchingAccount", { hint: CONTROL_ACCOUNT_HINT })}
                 />
               </div>
             )}
@@ -245,18 +253,22 @@ export function MoneyInOutDialog({
           </AiField>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField label="Amount" required helperText={!isIn && taxAmount > 0n ? `Includes ${formatMoney(taxAmount, currency)} tax, which goes to Input Tax Receivable.` : undefined}>
+            <FormField
+              label={t("banking.moneyInOut.amount")}
+              required
+              helperText={!isIn && taxAmount > 0n ? t("banking.moneyInOut.includesTax", { amount: formatMoney(taxAmount, currency) }) : undefined}
+            >
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={Boolean(prefill)} />}
             </FormField>
             {!isIn && (
-              <FormField label="Tax">
+              <FormField label={t("banking.moneyInOut.tax")}>
                 {(field) => (
                   <Select value={taxRateId} onValueChange={setTaxRateId}>
                     <SelectTrigger id={field.id}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NO_TAX}>No tax</SelectItem>
+                      <SelectItem value={NO_TAX}>{t("banking.moneyInOut.noTax")}</SelectItem>
                       {taxRates
                         .filter((r) => !r.archivedAt)
                         .map((r) => (
@@ -270,14 +282,14 @@ export function MoneyInOutDialog({
               </FormField>
             )}
             <AiField suggested={Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
-            <FormField label="Contact">
+            <FormField label={t("banking.moneyInOut.contact")}>
               {(field) => (
                 <Select value={contactId} onValueChange={setContactId}>
                   <SelectTrigger id={field.id}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NO_CONTACT}>No contact</SelectItem>
+                    <SelectItem value={NO_CONTACT}>{t("banking.moneyInOut.noContact")}</SelectItem>
                     {contacts
                       .filter((c) => !c.archivedAt)
                       .map((c) => (
@@ -290,17 +302,17 @@ export function MoneyInOutDialog({
               )}
             </FormField>
             </AiField>
-            <FormField label="Description">
-              {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional" maxLength={500} />}
+            <FormField label={t("banking.moneyInOut.description")}>
+              {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("banking.moneyInOut.optional")} maxLength={500} />}
             </FormField>
           </div>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("banking.moneyInOut.cancel")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : isIn ? "Record money in" : "Record money out"}
+            {saving ? <Spinner size="sm" /> : isIn ? t("banking.moneyInOut.recordIn") : t("banking.moneyInOut.recordOut")}
           </Button>
         </DialogFooter>
       </DialogContent>

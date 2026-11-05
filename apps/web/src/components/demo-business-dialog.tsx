@@ -33,6 +33,7 @@ import {
   type DemoIndustry,
 } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
+import { useT } from "../lib/i18n";
 
 /** The browser's time zone, for the first guess at a country (US-ONB-18). */
 function browserTimeZone(): string | undefined {
@@ -61,6 +62,7 @@ export function DemoBusinessDialog({
   onOpenChange: (open: boolean) => void;
   onLoaded: () => void | Promise<void>;
 }) {
+  const t = useT();
   const [status, setStatus] = useState<DemoDataStatus | null>(null);
   const [country, setCountry] = useState<DemoCountry>("US");
   const [industry, setIndustry] = useState<DemoIndustry>("construction");
@@ -83,10 +85,10 @@ export function DemoBusinessDialog({
         setError(
           err instanceof Error
             ? err.message
-            : "The demo choices didn't load. Try again.",
+            : t("common.demoBusiness.statusFailed"),
         ),
       );
-  }, [open]);
+  }, [open, t]);
 
   async function load() {
     setLoading(true);
@@ -106,7 +108,7 @@ export function DemoBusinessDialog({
       setError(
         err instanceof Error
           ? err.message
-          : "The demo business didn't load. Try again.",
+          : t("common.demoBusiness.loadFailed"),
       );
     } finally {
       setLoading(false);
@@ -131,11 +133,9 @@ export function DemoBusinessDialog({
     >
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Explore a demo business</DialogTitle>
+          <DialogTitle>{t("common.demoBusiness.title")}</DialogTitle>
           <DialogDescription>
-            A sample business with six months of quotes, invoices, payments,
-            bills and expenses. Delete it any time in Settings › Data — your own
-            records stay.
+            {t("common.demoBusiness.description")}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
@@ -147,7 +147,7 @@ export function DemoBusinessDialog({
           {notes.length > 0 ? (
             <Alert variant="warning">
               <AlertDescription>
-                {`${demoBusinessName(country, industry)} is loaded. `}
+                {t("common.demoBusiness.loaded", { name: demoBusinessName(country, industry) })}
                 {notes.join(" ")}
               </AlertDescription>
             </Alert>
@@ -158,13 +158,13 @@ export function DemoBusinessDialog({
           ) : status ? (
             <>
               <FormField
-                label="Country"
+                label={t("common.demoBusiness.country")}
                 helperText={
                   locked && status.country
                     ? demoCountryFixedNote(status.country)
                     : locked
                       ? demoCountryFixedNote("US")
-                      : "Your tax country, currency and industry template change to the demo's. You can change them back in Settings."
+                      : t("common.demoBusiness.countryHint")
                 }
               >
                 {(field) => (
@@ -187,8 +187,8 @@ export function DemoBusinessDialog({
                 )}
               </FormField>
               <FormField
-                label="Industry"
-                helperText={`You'll see ${demoBusinessName(country, industry)}.`}
+                label={t("common.demoBusiness.industry")}
+                helperText={t("common.demoBusiness.youllSee", { name: demoBusinessName(country, industry) })}
               >
                 {(field) => (
                   <Select
@@ -213,7 +213,7 @@ export function DemoBusinessDialog({
         </DialogBody>
         <DialogFooter>
           {notes.length > 0 ? (
-            <Button onClick={() => void finish()}>Continue</Button>
+            <Button onClick={() => void finish()}>{t("common.demoBusiness.continue")}</Button>
           ) : (
             <>
               <Button
@@ -221,15 +221,15 @@ export function DemoBusinessDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
               <Button onClick={() => void load()} disabled={!status || loading}>
                 {loading ? (
                   <>
-                    <Spinner size="sm" /> Loading…
+                    <Spinner size="sm" /> {t("common.demoBusiness.loading")}
                   </>
                 ) : (
-                  "Load demo business"
+                  t("common.demoBusiness.load")
                 )}
               </Button>
             </>

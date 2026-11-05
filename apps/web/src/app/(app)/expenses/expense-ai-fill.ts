@@ -1,4 +1,5 @@
 import type { ReceiptSuggestion } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 
 /** The expense form's fields AI can fill (US-AI-09). */
 export type ExpenseField = "category" | "date" | "currency" | "amount" | "taxRate" | "taxAmount" | "description";
@@ -58,5 +59,5 @@ export function planExpenseFill(current: ExpenseValues, entered: ReadonlySet<Exp
 
 /** "From the receipt: CGST ₹369.92 + SGST ₹369.91." */
 export function receiptTaxNote(suggestion: ReceiptSuggestion, format: (amount: bigint) => string): string {
-  return suggestion.taxLines.length ? `From the receipt: ${suggestion.taxLines.map((l) => `${l.name} ${format(BigInt(l.amount))}`).join(" + ")}.` : "From the receipt.";
+  return suggestion.taxLines.length ? t("expenses.aiFill.taxNote", { lines: suggestion.taxLines.map((l) => `${l.name} ${format(BigInt(l.amount))}`).join(" + ") }) : t("expenses.aiFill.taxNoteEmpty");
 }

@@ -8,6 +8,7 @@ import { apiClient } from "../../../lib/api-client";
 import { BundlesView } from "./bundles-view";
 import { CatalogExplorer } from "./catalog-explorer";
 import type { CatalogItem } from "./types";
+import { useT } from "../../../lib/i18n";
 
 function Count({ n }: { n: number | null }) {
   if (n === null) return null;
@@ -19,6 +20,7 @@ function Count({ n }: { n: number | null }) {
  * second. US-CAT-14 (D-213): each tab shows its count of active entries.
  */
 export function CatalogTabs({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
+  const t = useT();
   const router = useRouter();
   const tab = useSearchParams().get("tab") === "bundles" ? "bundles" : "items";
   const [itemCount, setItemCount] = useState<number | null>(null);
@@ -42,12 +44,12 @@ export function CatalogTabs({ initialDrawerOpen }: { initialDrawerOpen: boolean 
   return (
     <Tabs value={tab} onValueChange={(next) => router.replace(next === "bundles" ? "/catalog?tab=bundles" : "/catalog")}>
       <TabsList className="mb-4">
-        <TabsTrigger value="items" className="group" aria-label={itemCount === null ? "Items" : `Items, ${itemCount}`}>
-          Items
+        <TabsTrigger value="items" className="group" aria-label={itemCount === null ? t("catalog.tabs.items") : t("catalog.tabs.itemsCount", { count: itemCount })}>
+          {t("catalog.tabs.items")}
           <Count n={itemCount} />
         </TabsTrigger>
-        <TabsTrigger value="bundles" className="group" aria-label={bundleCount === null ? "Bundles" : `Bundles, ${bundleCount}`}>
-          Bundles
+        <TabsTrigger value="bundles" className="group" aria-label={bundleCount === null ? t("catalog.tabs.bundles") : t("catalog.tabs.bundlesCount", { count: bundleCount })}>
+          {t("catalog.tabs.bundles")}
           <Count n={bundleCount} />
         </TabsTrigger>
       </TabsList>

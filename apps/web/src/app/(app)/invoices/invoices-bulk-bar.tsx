@@ -8,6 +8,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { filenameFrom, saveBlob } from "../../../lib/save-file";
 import type { Invoice } from "./types";
+import { t, useT } from "../../../lib/i18n";
 
 /** US-INV-23 — an invoice the bulk reminder will act on: issued, with a balance, not reminded today. */
 export function canBulkRemind(invoice: Invoice): boolean {
@@ -16,7 +17,7 @@ export function canBulkRemind(invoice: Invoice): boolean {
 
 /** "INV-0012: Already reminded today. · INV-0009: Nothing is owed on it." */
 export function describeSkipped(skipped: BulkResult["skipped"]): string {
-  return skipped.map((s) => `${s.label ?? "Draft invoice"}: ${s.reason}`).join(" · ");
+  return skipped.map((s) => t("invoices.bulk.skippedItem", { label: s.label ?? t("invoices.bulk.draftInvoice"), reason: s.reason })).join(" · ");
 }
 
 /**
@@ -39,6 +40,7 @@ export function InvoicesBulkBar({
   /** It didn't: shown above the list, the selection kept (US-OPS-38). */
   onFailed: (title: string, message: string) => void;
 }) {
+  const t = useT();
   const canSendReminder = useCapability("invoices.send_reminder");
   const [busy, setBusy] = useState(false);
   const [confirmSend, setConfirmSend] = useState(false);
@@ -51,7 +53,7 @@ export function InvoicesBulkBar({
 
   async function downloadPdfs() {
     if (selected.length > BULK_MAX) {
-      onFailed("Too many invoices.", `Select ${BULK_MAX} or fewer invoices.`);
+      onFailed(t("invoices.bulk.tooManyTitle"), t("invoices.bulk.tooManyMessage", { max: BULK_MAX }));
       return;
     }
     setBusy(true);
@@ -66,9 +68,9 @@ export function InvoicesBulkBar({
       }
       saveBlob(blob, filename);
       const count = selected.length - skipped.length;
-      onFinished(`Downloaded ${count} ${count === 1 ? "PDF" : "PDFs"}`, skipped.length ? `${filename}. Skipped — ${describeSkipped(skipped)}` : filename);
+      onFinished(t("invoices.bulk.downloadedPdfs", { count }), skipped.length ? t("invoices.bulk.downloadedSkipped", { filename, skipped: describeSkipped(skipped) }) : filename);
     } catch (err) {
-      onFailed("Couldn't download the PDFs.", err instanceof Error ? err.message : "Try again.");
+      onFailed(t("invoices.bulk.downloadFailed"), err instanceof Error ? err.message : t("invoices.bulk.tryAgain"));
     } finally {
       setBusy(false);
     }
@@ -79,48 +81,48 @@ export function InvoicesBulkBar({
     setBusy(true);
     try {
       const result = await apiClient.post<BulkResult>("/invoices/bulk/send-reminders", { ids: selected.map((i) => i.id) });
-      const title = result.done.length ? `${result.done.length} ${result.done.length === 1 ? "reminder" : "reminders"} sent` : "No reminders sent";
-      onFinished(title, result.skipped.length ? `Skipped — ${describeSkipped(result.skipped)}` : "Each customer gets the reminder email with the invoice attached.");
+      const title = result.done.length ? t("invoices.bulk.remindersSent", { count: result.done.length }) : t("invoices.bulk.noRemindersSent");
+      onFinished(title, result.skipped.length ? t("invoices.bulk.skipped", { skipped: describeSkipped(result.skipped) }) : t("invoices.bulk.eachCustomerGets"));
     } catch (err) {
-      onFailed("Couldn't send the reminders.", err instanceof Error ? err.message : "Try again.");
+      onFailed(t("invoices.bulk.sendFailed"), err instanceof Error ? err.message : t("invoices.bulk.tryAgain"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div role="region" aria-label="Selected invoices" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-inverse-surface px-4 py-3">
+    <div role="region" aria-label={t("invoices.bulk.regionLabel")} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-inverse-surface px-4 py-3">
       <p className="text-[14px] text-inverse-on-surface">
-        <span className="font-semibold">{selected.length} selected</span>
-        <span className="text-inverse-on-surface-muted"> · {formatMoney(outstanding, currency)} outstanding</span>
+        <span className="font-semibold">{t("invoices.bulk.selectedCount", { n: selected.length })}</span>
+        <span className="text-inverse-on-surface-muted">{t("invoices.bulk.outstanding", { amount: formatMoney(outstanding, currency) })}</span>
       </p>
       <div className="flex flex-wrap items-center gap-2">
         {canSendReminder && (
           <Button onClick={() => setConfirmSend(true)} disabled={busy || eligible.length === 0}>
-            {busy ? <Spinner size="sm" /> : `Send reminders (${eligible.length})`}
+            {busy ? <Spinner size="sm" /> : t("invoices.bulk.sendRemindersCount", { n: eligible.length })}
           </Button>
         )}
         <Button variant="secondary" onClick={downloadPdfs} disabled={busy}>
-          Download PDFs
+          {t("invoices.bulk.downloadPdfs")}
         </Button>
         <Button variant="ghost" onClick={onClear} className="text-inverse-on-surface hover:bg-inverse-on-surface/10">
-          Clear
+          {t("invoices.bulk.clear")}
         </Button>
       </div>
       <AlertDialog open={confirmSend} onOpenChange={setConfirmSend}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Send {eligible.length} payment {eligible.length === 1 ? "reminder" : "reminders"}?
+              {t("invoices.bulk.confirmTitle", { count: eligible.length })}
             </AlertDialogTitle>
             <AlertDialogDescription data-testid="confirm-reminders">
-              {customers === 1 ? "The customer gets" : `${customers} customers get`} the reminder email with the invoice attached, straight away.
-              {skipped > 0 && ` ${skipped} of the selected ${skipped === 1 ? "invoice is" : "invoices are"} skipped — paid, void, a draft or already reminded today.`}
+              {t("invoices.bulk.confirmCustomers", { count: customers })}
+              {skipped > 0 && t("invoices.bulk.confirmSkipped", { count: skipped })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Go back</AlertDialogCancel>
-            <Button onClick={() => void sendReminders()}>Send {eligible.length === 1 ? "reminder" : "reminders"}</Button>
+            <AlertDialogCancel>{t("invoices.bulk.goBack")}</AlertDialogCancel>
+            <Button onClick={() => void sendReminders()}>{t("invoices.bulk.sendButton", { count: eligible.length })}</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -2,6 +2,7 @@
 
 import * as RechartsPrimitive from "recharts";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./chart";
 
 export interface TrendBarChartPoint {
@@ -40,17 +41,18 @@ export interface TrendBarChartProps {
  * codebase's own no-speculative-abstraction convention.
  */
 export function TrendBarChart({ data, orientation = "vertical", color = "var(--color-primary)", emptyState, className }: TrendBarChartProps) {
+  const t = useT();
   const hasData = data.some((d) => d.value > 0);
 
   if (!hasData) {
     return (
       <div className={cn("flex h-40 items-center justify-center text-[13px] text-on-surface-muted", className)}>
-        {emptyState ?? "No data yet."}
+        {emptyState ?? t("ui.chart.noDataYet")}
       </div>
     );
   }
 
-  const config: ChartConfig = { value: { label: "Value", color } };
+  const config: ChartConfig = { value: { label: t("ui.chart.value"), color } };
   const tooltipContent = (props: Parameters<typeof ChartTooltipContent>[0]) => (
     <ChartTooltipContent {...props} payload={props.payload?.map((p) => ({ ...p, value: data.find((d) => d.key === p.payload?.key)?.formattedValue ?? p.value }))} />
   );

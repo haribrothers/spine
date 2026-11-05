@@ -20,11 +20,12 @@ import { apiClient } from "../../../lib/api-client";
 import { ContactLogo } from "./contact-logo";
 import type { Contact, ContactType, SpineFile } from "./types";
 import { useToast } from "../../../components/toast-host";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
-  { value: "customer", label: "Customer" },
-  { value: "vendor", label: "Vendor" },
-  { value: "both", label: "Customer & vendor" },
+  { value: "customer", label: translate("contacts.common.typeCustomer") },
+  { value: "vendor", label: translate("contacts.common.typeVendor") },
+  { value: "both", label: translate("contacts.common.typeBoth") },
 ];
 
 /**
@@ -48,6 +49,7 @@ const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
  * not attached via a follow-up PUT the way an existing contact's logo is.
  */
 export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId: string; onSubmittingChange?: (saving: boolean) => void; onSuccess?: (contact: Contact) => void }) {
+  const t = useT();
   const router = useRouter();
   const showToast = useToast();
   const [type, setType] = useState<ContactType>("customer");
@@ -91,10 +93,10 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
         return;
       }
       // The app's toast host stays mounted, so it shows on the contact's page (D-223).
-      showToast("Contact created", `${contact.name} has been added to your contacts.`);
+      showToast(t("contacts.form.createdTitle"), t("contacts.form.createdDescription", { name: contact.name }));
       router.push(`/contacts/${contact.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create contact.");
+      setError(err instanceof Error ? err.message : t("contacts.form.createError"));
       onSubmittingChange?.(false);
     }
   }
@@ -108,13 +110,13 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
       )}
 
       <ContactLogo
-        name={name || "New contact"}
+        name={name || t("contacts.form.newContact")}
         fileId={logoFileId}
         editable
         onUploaded={(file: SpineFile) => setLogoFileId(file.id)}
       />
 
-      <FormField label="Type" required>
+      <FormField label={t("contacts.common.type")} required>
         {(field) => (
           <Select value={type} onValueChange={(v) => setType(v as ContactType)}>
             <SelectTrigger {...field} className="w-full">
@@ -133,18 +135,18 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
 
       <label className="flex items-center gap-2 text-[13px] text-on-surface">
         <Checkbox checked={isCompany} onCheckedChange={(v) => setIsCompany(v === true)} />
-        This is a company, not an individual
+        {t("contacts.form.isCompany")}
       </label>
 
-      <FormField label={isCompany ? "Company name" : "Full name"} required>
+      <FormField label={isCompany ? t("contacts.form.companyName") : t("contacts.form.fullName")} required>
         {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} required />}
       </FormField>
 
-      <FormField label="Email">
+      <FormField label={t("contacts.common.email")}>
         {(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
       </FormField>
 
-      <FormField label="Phone">
+      <FormField label={t("contacts.common.phone")}>
         {(field) => <Input {...field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />}
       </FormField>
 
@@ -159,12 +161,13 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
                 showErrors={showGstErrors}
               />
       ) : (
-        <FormField label="Tax ID" helperText="Useful for invoicing a business contact.">
+        <FormField label={t("contacts.gst.taxId")} helperText={t("contacts.form.taxIdHelper")}>
           {(field) => <Input {...field} value={taxId} onChange={(e) => setTaxId(e.target.value)} />}
         </FormField>
       )}
 
-      <FormField label="Website">
+      <FormField label={t("contacts.form.website")}>
+        {/* eslint-disable-next-line i18next/no-literal-string -- a URL scheme hint, not copy */}
         {(field) => <Input {...field} type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" />}
       </FormField>
     </form>

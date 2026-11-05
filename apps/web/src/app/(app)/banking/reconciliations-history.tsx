@@ -31,13 +31,14 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { filenameFrom, saveBlob } from "../../../lib/save-file";
 import type { MoneyAccount, ReconciliationSummary } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { useCapability } from "../../../lib/capabilities-context";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { NoAccess } from "../../../components/no-access";
 import { formatDay } from "./dates";
 import { useToast } from "../../../components/toast-host";
 
-const finishedAt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+const finishedAt = (iso: string) => new Date(iso).toLocaleString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 
 /**
  * US-BANK-11 — `ReconciliationsHistory`: every finished reconciliation of an
@@ -45,6 +46,7 @@ const finishedAt = (iso: string) => new Date(iso).toLocaleString(undefined, { mo
  * tick off its entries and unmatches its statement lines, and deletes nothing.
  */
 export function ReconciliationsHistory({ accountId }: { accountId: string }) {
+  const t = useT();
   const canReconcile = useCapability("banking.reconcile");
   const [account, setAccount] = useState<MoneyAccount | null>(null);
   const [rows, setRows] = useState<ReconciliationSummary[] | null>(null);
@@ -61,7 +63,7 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
       const { blob, headers } = await apiClient.download(`/bank-reconciliations/${r.id}/report.pdf`);
       saveBlob(blob, filenameFrom(headers, `reconciliation-${r.statementEndDate}.pdf`));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't download the report. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.history.downloadError"));
     }
   }
 
@@ -76,7 +78,7 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
       setRows(list);
       if (settings.value?.code) setCurrency(settings.value.code);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't load the reconciliations. Refresh to try again.");
+      setError(err instanceof Error ? err.message : t("banking.history.loadError"));
     }
   }, [accountId]);
 
@@ -90,20 +92,20 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
     setError(null);
     try {
       await apiClient.post(`/bank-reconciliations/${undoing.id}/undo`);
-      showToast("Reconciliation undone", `Entries to ${formatDay(undoing.statementEndDate)} are unreconciled again.`);
+      showToast(t("banking.history.undoneTitle"), t("banking.history.undoneBody", { date: formatDay(undoing.statementEndDate) }));
       setUndoing(null);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't undo this reconciliation. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.history.undoError"));
       setUndoing(null);
     } finally {
       setBusy(false);
     }
   }
 
-  if (!canReconcile) return <NoAccess pageName="Reconciliations" />;
+  if (!canReconcile) return <NoAccess pageName={t("banking.history.title")} />;
 
-  const name = account?.name ?? "Account";
+  const name = account?.name ?? t("banking.register.breadcrumbAccount");
   const latest = rows?.[0];
   const totalMatched = (rows ?? []).reduce((sum, r) => sum + r.entriesMatched, 0);
   const oldest = rows?.length ? rows[rows.length - 1]! : null;
@@ -111,7 +113,7 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
   const columns: TableColumn<ReconciliationSummary>[] = [
     {
       key: "end",
-      header: "Statement end date",
+      header: t("banking.history.colEnd"),
       render: (r) => (
         <Link href={`/banking/${accountId}/reconciliations/${r.id}`} className="font-medium text-primary hover:underline">
           {formatDay(r.statementEndDate)}
@@ -119,11 +121,15 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
       ),
       sortValue: (r) => r.statementEndDate,
     },
-    { key: "closing", header: "Closing balance", align: "right", render: (r) => <span className="tabular-nums">{formatMoney(BigInt(r.statementClosingBalance), currency)}</span> },
-    { key: "matched", header: "Entries matched", align: "right", render: (r) => <span className="tabular-nums">{r.entriesMatched}</span> },
-    { key: "by", header: "Finished by", render: (r) => r.finishedBy?.name ?? <span className="text-on-surface-muted">—</span> },
-    { key: "at", header: "Finished", render: (r) => (r.finishedAt ? finishedAt(r.finishedAt) : "—") },
-    { key: "status", header: "Status", render: (r) => (r.isLatest ? <Badge className="bg-primary/10 text-primary">Latest</Badge> : <StatusChip status="paid">Finished</StatusChip>) },
+    { key: "closing", header: t("banking.history.colClosing"), align: "right", render: (r) => <span className="tabular-nums">{formatMoney(BigInt(r.statementClosingBalance), currency)}</span> },
+    { key: "matched", header: t("banking.history.colMatched"), align: "right", render: (r) => <span className="tabular-nums">{r.entriesMatched}</span> },
+    { key: "by", header: t("banking.history.colBy"), render: (r) => r.finishedBy?.name ?? <span className="text-on-surface-muted">—</span> },
+    { key: "at", header: t("banking.history.colAt"), render: (r) => (r.finishedAt ? finishedAt(r.finishedAt) : "—") },
+    {
+      key: "status",
+      header: t("banking.history.colStatus"),
+      render: (r) => (r.isLatest ? <Badge className="bg-primary/10 text-primary">{t("banking.history.latest")}</Badge> : <StatusChip status="paid">{t("banking.history.finished")}</StatusChip>),
+    },
     {
       key: "actions",
       header: "",
@@ -133,7 +139,7 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label={`Actions for the reconciliation to ${formatDay(r.statementEndDate)}`}
+                aria-label={t("banking.history.actionsFor", { date: formatDay(r.statementEndDate) })}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
               >
                 <MoreHorizontal size={16} />
@@ -142,17 +148,17 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
             <DropdownMenuContent align="end" className="min-w-52">
               <DropdownMenuItem onSelect={() => router.push(`/banking/${accountId}/reconciliations/${r.id}`)}>
                 <MENU_ICONS.view aria-hidden />
-                View
+                {t("banking.history.view")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void download(r)}>
                 <MENU_ICONS.download aria-hidden />
-                Download report
+                {t("banking.history.downloadReport")}
               </DropdownMenuItem>
               <DropdownMenuItem disabled={!r.isLatest} onSelect={() => setUndoing(r)}>
                 <MENU_ICONS.moveOff aria-hidden />
                 <span className="flex flex-1 flex-col">
-                  Undo
-                  {!r.isLatest && <span className="text-[11.5px] text-on-surface-muted">Undo the later reconciliations first.</span>}
+                  {t("banking.history.undo")}
+                  {!r.isLatest && <span className="text-[11.5px] text-on-surface-muted">{t("banking.history.undoLaterFirst")}</span>}
                 </span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -165,9 +171,14 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Money" }, { label: "Banking", href: "/banking" }, { label: name, href: `/banking/${accountId}` }, { label: "Reconciliations" }]}
-        title="Reconciliations"
-        description={`Every finished reconciliation of ${name}. Only the latest can be undone.`}
+        breadcrumb={[
+          { label: t("banking.page.breadcrumbMoney") },
+          { label: t("banking.page.title"), href: "/banking" },
+          { label: name, href: `/banking/${accountId}` },
+          { label: t("banking.history.title") },
+        ]}
+        title={t("banking.history.title")}
+        description={t("banking.history.description", { name })}
       />
       <div className="flex flex-col gap-6">
         {error && (
@@ -176,29 +187,34 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
           </Alert>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Reconciled to" value={latest ? formatDay(latest.statementEndDate) : "Never"} trend={{ direction: "neutral", label: latest ? `closing ${formatMoney(BigInt(latest.statementClosingBalance), currency)}` : "no reconciliation yet" }} />
-          <StatCard label="Reconciliations" value={rows ? String(rows.length) : "—"} trend={{ direction: "neutral", label: oldest ? `since ${formatDay(oldest.statementEndDate)}` : "—" }} />
-          <StatCard label="Entries matched" value={rows ? String(totalMatched) : "—"} trend={{ direction: "neutral", label: "across all reconciliations" }} />
+          <StatCard
+            label={t("banking.history.reconciledTo")}
+            value={latest ? formatDay(latest.statementEndDate) : t("banking.explorer.never")}
+            trend={{ direction: "neutral", label: latest ? t("banking.history.closing", { amount: formatMoney(BigInt(latest.statementClosingBalance), currency) }) : t("banking.history.noneYet") }}
+          />
+          <StatCard label={t("banking.history.title")} value={rows ? String(rows.length) : "—"} trend={{ direction: "neutral", label: oldest ? t("banking.history.since", { date: formatDay(oldest.statementEndDate) }) : "—" }} />
+          <StatCard label={t("banking.history.colMatched")} value={rows ? String(totalMatched) : "—"} trend={{ direction: "neutral", label: t("banking.history.acrossAll") }} />
         </div>
         {rows && rows.length === 0 ? (
           <div className="rounded-lg border border-border bg-surface">
-            <EmptyState icon={<History />} title="No reconciliations yet" description={`Reconcile ${name} against its bank statement and it's listed here.`} />
+            <EmptyState icon={<History />} title={t("banking.history.emptyTitle")} description={t("banking.history.emptyBody", { name })} />
           </div>
         ) : (
-          rows && <DataTable columns={columns} data={rows} rowKey={(r) => r.id} searchPlaceholder="Search reconciliations" searchKey={(r) => `${r.statementEndDate} ${r.finishedBy?.name ?? ""}`} configurablePageSize />
+          rows && <DataTable columns={columns} data={rows} rowKey={(r) => r.id} searchPlaceholder={t("banking.history.searchPlaceholder")} searchKey={(r) => `${r.statementEndDate} ${r.finishedBy?.name ?? ""}`} configurablePageSize />
         )}
       </div>
       <AlertDialog open={undoing !== null} onOpenChange={(open) => !open && setUndoing(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Undo this reconciliation?</AlertDialogTitle>
+            <AlertDialogTitle>{t("banking.history.undoConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {undoing ? `Statement to ${formatDay(undoing.statementEndDate)} · ${undoing.entriesMatched} entries. ` : ""}Its entries go back to unreconciled; nothing is deleted. Its statement lines go back to unmatched.
+              {undoing ? t("banking.history.undoConfirmSummary", { date: formatDay(undoing.statementEndDate), n: undoing.entriesMatched }) : ""}
+              {t("banking.history.undoConfirmBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <p className="text-[13px] text-on-surface-muted">Only the most recent reconciliation of an account can be undone.</p>
+          <p className="text-[13px] text-on-surface-muted">{t("banking.history.undoOnlyLatest")}</p>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{t("banking.reconcile.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               variant="danger"
               disabled={busy}
@@ -207,7 +223,7 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
                 void undo();
               }}
             >
-              Undo reconciliation
+              {t("banking.history.undoReconciliation")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

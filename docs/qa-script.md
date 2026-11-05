@@ -5633,7 +5633,16 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 5. Note any control read only as "button" or "unlabelled" and file it.
 6. Regression: the axe run stays clean after every screen change (the E2E fails otherwise).
 
+## 277. Every user-facing string in translation files (US-OPS-16, Phase 12)
+
+1. Click through the web app (dashboard, a quote, an invoice, a report, Settings) and the field app (Today, a job, New expense, Profile). Every screen reads exactly as before, and no raw key such as `invoices.detail.issue` shows anywhere, including dialogs, toasts, empty states, tooltips and error messages.
+2. Set the business's locale to English (India) or German in Settings › Currency & locale, then reload. Dates on the dashboard, lists, record pages, reports and the field app follow it, e.g. "4 Nov 2026" and "04.11.2026". Money follows it as before.
+3. Developers: add `<p>Hello</p>` to any component and run `pnpm lint`: it fails with "User-facing text comes from @spine/shared/i18n". `t("nope.key")` fails `pnpm typecheck`.
+4. Regression: server-rendered pages (reports, the 404 page, the error page) open without errors.
+
 ## Known gaps — don't file these as bugs
+
+- Status, payment-method, capability and report labels that `@spine/shared` exports are still English in code; they move with emails, PDFs and API errors in 1.1 (US-OPS-16, D-268).
 
 - While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).
 

@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { Stack } from "expo-router";
 import { useNativeColors } from "@spine/ui-native";
+import { useT } from "../../src/lib/i18n";
 
 /**
  * Presenting a quote (US-MOB-16 to US-MOB-18): the quote, then Accept and
@@ -8,6 +9,7 @@ import { useNativeColors } from "@spine/ui-native";
  * one full-screen modal over the job.
  */
 export default function QuoteLayout() {
+  const t = useT();
   const colors = useNativeColors();
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
@@ -22,7 +24,7 @@ export default function QuoteLayout() {
           sheetAllowedDetents: [Platform.OS === "ios" ? 0.62 : 0.66],
           sheetGrabberVisible: true,
           headerShown: Platform.OS === "ios",
-          title: "Decline quote",
+          title: t("mobileWork.nav.declineQuote"),
           headerStyle: { backgroundColor: colors.surface },
           headerTitleStyle: { color: colors.onSurface },
           contentStyle: { backgroundColor: colors.surface },

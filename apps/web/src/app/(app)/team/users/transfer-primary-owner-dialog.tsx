@@ -19,6 +19,7 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
+import { useT } from "../../../../lib/i18n";
 import type { MemberRow as MemberRowData } from "../../../../lib/members";
 
 /**
@@ -39,6 +40,7 @@ export function TransferPrimaryOwnerDialog({
   owners: MemberRowData[];
   onTransfer: (newPrimaryOwnerMemberId: string) => Promise<void>;
 }) {
+  const t = useT();
   const [selected, setSelected] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export function TransferPrimaryOwnerDialog({
       onOpenChange(false);
       setSelected("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not transfer primary ownership.");
+      setError(err instanceof Error ? err.message : t("team.transferDialog.failed"));
     } finally {
       setBusy(false);
     }
@@ -62,12 +64,8 @@ export function TransferPrimaryOwnerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transfer primary ownership</DialogTitle>
-          <DialogDescription>
-            The Primary Owner is this instance&apos;s super-admin and can&apos;t be demoted or removed by anyone
-            else. Transferring hands that status to another Owner — you&apos;ll become a regular Owner afterward,
-            demotable by others going forward.
-          </DialogDescription>
+          <DialogTitle>{t("team.transferDialog.title")}</DialogTitle>
+          <DialogDescription>{t("team.transferDialog.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
           {error && (
@@ -76,14 +74,11 @@ export function TransferPrimaryOwnerDialog({
             </Alert>
           )}
           {owners.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">
-              There are no other Owners yet. Promote a Staff member to Owner first, then you can transfer primary
-              ownership to them.
-            </p>
+            <p className="text-[13px] text-on-surface-muted">{t("team.transferDialog.noOwners")}</p>
           ) : (
             <Select value={selected} onValueChange={setSelected}>
               <SelectTrigger>
-                <SelectValue placeholder="Select an owner" />
+                <SelectValue placeholder={t("team.transferDialog.selectOwner")} />
               </SelectTrigger>
               <SelectContent>
                 {owners.map((owner) => (
@@ -97,10 +92,10 @@ export function TransferPrimaryOwnerDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-            Cancel
+            {t("team.common.cancel")}
           </Button>
           <Button onClick={handleTransfer} disabled={busy || !selected}>
-            {busy ? <Spinner size="sm" /> : "Transfer"}
+            {busy ? <Spinner size="sm" /> : t("team.transferDialog.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

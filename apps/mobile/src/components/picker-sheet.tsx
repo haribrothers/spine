@@ -1,6 +1,7 @@
 import { FlatList, Modal, Platform, Pressable, Text, View } from "react-native";
 import Check from "lucide-react-native/icons/check";
 import { useNativeColors } from "@spine/ui-native";
+import { useT } from "../lib/i18n";
 
 export interface PickerOption {
   value: string;
@@ -13,6 +14,7 @@ export interface PickerOption {
  * iOS, a full-height sheet on Android, with the current choice ticked.
  */
 export function PickerSheet({ visible, title, options, value, onPick, onClose, testID }: { visible: boolean; title: string; options: PickerOption[]; value: string | null; onPick: (value: string) => void; onClose: () => void; testID?: string }) {
+  const t = useT();
   const colors = useNativeColors();
   return (
     <Modal visible={visible} animationType="slide" presentationStyle={Platform.OS === "ios" ? "pageSheet" : undefined} onRequestClose={onClose}>
@@ -20,7 +22,7 @@ export function PickerSheet({ visible, title, options, value, onPick, onClose, t
         <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
           <Text accessibilityRole="header" className="text-[20px] font-semibold text-on-surface dark:text-on-surface-dark">{title}</Text>
           <Pressable onPress={onClose} accessibilityRole="button" hitSlop={10} className="min-h-[44px] justify-center">
-            <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Cancel</Text>
+            <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{t("mobileApp.common.cancel")}</Text>
           </Pressable>
         </View>
         <FlatList

@@ -1,16 +1,18 @@
 /** Mirrors apps/api/src/db/schema/purchases.ts's `expenses`/`expenseCategories` row shapes — hand-written to match the API's JSON response, following vendor-bills/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
+import { t } from "../../../lib/i18n";
+
 export type ExpenseStatus = "submitted" | "approved" | "rejected";
 export type ExpensePaidBy = "company" | "employee";
 
 export const EXPENSE_STATUS_LABELS: Record<ExpenseStatus, string> = {
-  submitted: "Submitted",
-  approved: "Approved",
-  rejected: "Rejected",
+  submitted: t("expenses.status.submitted"),
+  approved: t("expenses.status.approved"),
+  rejected: t("expenses.status.rejected"),
 };
 
 export const EXPENSE_PAID_BY_LABELS: Record<ExpensePaidBy, string> = {
-  company: "Company",
-  employee: "Employee (reimbursable)",
+  company: t("expenses.paidBy.company"),
+  employee: t("expenses.paidBy.employee"),
 };
 
 export interface Expense {

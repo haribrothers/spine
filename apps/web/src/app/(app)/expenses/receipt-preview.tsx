@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Maximize2 } from "lucide-react";
 import { cn } from "@spine/ui";
+import { useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -15,7 +16,9 @@ export const fileUrl = (fileId: string) => `${API_URL}/files/${fileId}`;
  * tab. `mimeType` when known (just uploaded); otherwise it tries the image
  * and falls back to the PDF view.
  */
-export function ReceiptPreview({ fileId, mimeType, label = "Receipt", className }: { fileId: string; mimeType?: string | null; label?: string; className?: string }) {
+export function ReceiptPreview({ fileId, mimeType, label: labelProp, className }: { fileId: string; mimeType?: string | null; label?: string; className?: string }) {
+  const t = useT();
+  const label = labelProp ?? t("expenses.receipt.label");
   const [asPdf, setAsPdf] = useState(mimeType === "application/pdf");
   const src = fileUrl(fileId);
   return (
@@ -29,7 +32,7 @@ export function ReceiptPreview({ fileId, mimeType, label = "Receipt", className 
         href={src}
         target="_blank"
         rel="noreferrer"
-        aria-label={`Open the ${label.toLowerCase()} full size`}
+        aria-label={t("expenses.receipt.openFull", { label: label.toLowerCase() })}
         className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-on-surface-muted hover:text-on-surface"
       >
         <Maximize2 size={14} aria-hidden />

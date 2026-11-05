@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Spinner } from "@spine/ui";
+import { useT } from "../../../../lib/i18n";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import type { MemberRow } from "../../../../lib/members";
 import { TeamChecklist, type TeamOption } from "./team-checklist";
@@ -23,13 +24,14 @@ export function ManageTeamsDialog({
   onOpenChange: (open: boolean) => void;
   onSave: (member: MemberRow, teamIds: string[]) => Promise<void>;
 }) {
+  const t = useT();
   const [value, setValue] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!member) return;
-    setValue(member.teams?.map((t) => t.id) ?? []);
+    setValue(member.teams?.map((team) => team.id) ?? []);
     setError(null);
   }, [member]);
 
@@ -40,7 +42,7 @@ export function ManageTeamsDialog({
     try {
       await onSave(member, value);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save their Teams. Try again.");
+      setError(err instanceof Error ? err.message : t("team.manageTeamsDialog.failed"));
     } finally {
       setSaving(false);
     }
@@ -51,10 +53,8 @@ export function ManageTeamsDialog({
     <Dialog open={member !== null} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Manage Teams — {member?.name}</DialogTitle>
-          <DialogDescription>
-            {first} can open what their Teams allow, together. Without a Team, they can&apos;t open anything.
-          </DialogDescription>
+          <DialogTitle>{t("team.manageTeamsDialog.title", { name: member?.name ?? "" })}</DialogTitle>
+          <DialogDescription>{t("team.manageTeamsDialog.description", { first })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           {error && (
@@ -62,22 +62,22 @@ export function ManageTeamsDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <TeamChecklist teams={teams} value={value} onChange={setValue} label="Teams" />
+          <TeamChecklist teams={teams} value={value} onChange={setValue} label={t("team.common.teams")} />
           <p className="text-[12.5px] text-on-surface-muted">
-            Change what a Team allows on its own page under{" "}
+            {t("team.manageTeamsDialog.changeOnPage")}{" "}
             <Link href="/team/teams" className="font-medium text-primary hover:underline">
-              Teams
+              {t("team.common.teams")}
             </Link>
             .
           </p>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("team.common.cancel")}
           </Button>
           <Button onClick={() => void save()} disabled={saving}>
             {saving ? <Spinner size="sm" /> : <MENU_ICONS.approve size={14} aria-hidden />}
-            Save Teams
+            {t("team.manageTeamsDialog.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

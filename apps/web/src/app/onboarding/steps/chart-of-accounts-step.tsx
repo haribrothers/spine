@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button, Input, Spinner } from "@spine/ui";
+import { t as translate, useT } from "../../../lib/i18n";
 
 export interface AccountRow {
   id: string;
@@ -14,11 +15,11 @@ export interface AccountRow {
 export type AccountsByType = Record<string, AccountRow[]>;
 
 const TYPE_LABELS: Record<string, string> = {
-  asset: "Assets",
-  liability: "Liabilities",
-  equity: "Equity",
-  income: "Income",
-  expense: "Expenses",
+  asset: translate("onboarding.accountTypes.asset"),
+  liability: translate("onboarding.accountTypes.liability"),
+  equity: translate("onboarding.accountTypes.equity"),
+  income: translate("onboarding.accountTypes.income"),
+  expense: translate("onboarding.accountTypes.expense"),
 };
 
 const TYPE_ORDER = ["asset", "liability", "equity", "income", "expense"];
@@ -40,7 +41,8 @@ export interface ChartOfAccountsStepProps {
  * read-only with a "System" badge; non-system accounts get an inline
  * rename. Nothing here can be hidden or deleted in this pass.
  */
-export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, saveLabel = "Continue" }: ChartOfAccountsStepProps) {
+export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, saveLabel }: ChartOfAccountsStepProps) {
+  const t = useT();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -81,17 +83,17 @@ export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, sa
                         autoFocus
                       />
                       <Button size="sm" onClick={() => commitRename(account.id)} disabled={savingId === account.id}>
-                        {savingId === account.id ? <Spinner size="sm" /> : "Save"}
+                        {savingId === account.id ? <Spinner size="sm" /> : t("onboarding.common.save")}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                        Cancel
+                        {t("onboarding.common.cancel")}
                       </Button>
                     </div>
                   ) : (
                     <>
                       <span className="flex-1 text-on-surface">{account.name}</span>
                       {account.isSystem ? (
-                        <Badge>System</Badge>
+                        <Badge>{t("onboarding.accounts.system")}</Badge>
                       ) : (
                         <Button
                           size="sm"
@@ -101,7 +103,7 @@ export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, sa
                             setDraftName(account.name);
                           }}
                         >
-                          Rename
+                          {t("onboarding.accounts.rename")}
                         </Button>
                       )}
                     </>
@@ -116,11 +118,11 @@ export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, sa
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button onClick={onContinue} className="ml-auto">
-          {saveLabel}
+          {saveLabel ?? t("onboarding.common.continue")}
         </Button>
       </div>
     </div>

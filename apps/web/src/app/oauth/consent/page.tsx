@@ -10,6 +10,7 @@ import { apiClient } from "../../../lib/api-client";
 import { authClient } from "../../../lib/auth-client";
 import { AuthFrame, AuthHeading } from "../../../components/auth-frame";
 import { AgentScene } from "../agent-scene";
+import { t as translate, useT } from "../../../lib/i18n";
 
 export default function AgentConsentPage() {
   return (
@@ -19,7 +20,7 @@ export default function AgentConsentPage() {
   );
 }
 
-const ROLE_LABEL = { owner: "Owner", staff: "Staff", field: "Field" } as const;
+const ROLE_LABEL = { owner: translate("oauth.roles.owner"), staff: translate("oauth.roles.staff"), field: translate("oauth.roles.field") } as const;
 
 /**
  * US-MCP-03 (D-256, D-258) — "<Agent> wants to use Spine as you". Better
@@ -29,6 +30,7 @@ const ROLE_LABEL = { owner: "Owner", staff: "Staff", field: "Field" } as const;
  * answer Better Auth, which sends the browser back to the agent.
  */
 function Consent() {
+  const t = useT();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
   const [info, setInfo] = useState<AgentConsentInfo | null>(null);
@@ -40,7 +42,7 @@ function Consent() {
     apiClient
       .get<AgentConsentInfo>(`/agent-consent?${query}`)
       .then(setInfo)
-      .catch((err) => setError(err instanceof Error ? err.message : "This request has expired. Go back to your agent and connect again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("oauth.consent.expired")));
   }, [query]);
 
   async function answer(accept: boolean) {
@@ -51,7 +53,7 @@ function Consent() {
     const { data, error: consentError } = await authClient.$fetch<{ redirect?: boolean; url?: string }>("/oauth2/consent", { method: "POST", body: accept ? { accept, scope } : { accept } });
     if (consentError || !data?.url) {
       setBusy(null);
-      setError(consentError?.message ?? "Spine couldn't answer the agent. Go back to it and connect again.");
+      setError(consentError?.message ?? t("oauth.consent.answerFailed"));
       return;
     }
     window.location.assign(data.url);
@@ -67,7 +69,7 @@ function Consent() {
       <AuthFrame scene="login">
         {error ? (
           <>
-            <AuthHeading title="This request can't be used">{error}</AuthHeading>
+            <AuthHeading title={t("oauth.consent.cantUseTitle")}>{error}</AuthHeading>
           </>
         ) : (
           <div className="flex justify-center py-12">
@@ -81,7 +83,7 @@ function Consent() {
   if (info.off) {
     return (
       <AuthFrame scene="login">
-        <AuthHeading title="Connected agents are off">{agentsOffMessage(info.business)}</AuthHeading>
+        <AuthHeading title={t("oauth.consent.offTitle")}>{agentsOffMessage(info.business)}</AuthHeading>
       </AuthFrame>
     );
   }
@@ -90,11 +92,11 @@ function Consent() {
   const allowDrafts = info.draftsOffered && drafts;
   const scene = {
     name: info.person.name,
-    detail: `${info.business} · ${ROLE_LABEL[info.person.role]}`,
+    detail: t("oauth.consent.businessRole", { business: info.business, role: ROLE_LABEL[info.person.role] }),
     lines: [
-      { text: info.person.role === "field" ? `Reads ${info.person.name.split(" ")[0]}'s assigned jobs` : `Reads what ${info.person.name.split(" ")[0]} can see`, ok: true },
-      ...(allowDrafts ? [{ text: info.person.role === "field" ? "Adds notes to them" : "Creates drafts to check", ok: true }] : []),
-      { text: info.person.role === "field" ? "No money, no reports" : "Never issues, sends or records", ok: false },
+      { text: info.person.role === "field" ? t("oauth.consent.readsAssignedJobs", { name: info.person.name.split(" ")[0] }) : t("oauth.consent.readsWhatTheyCanSee", { name: info.person.name.split(" ")[0] }), ok: true },
+      ...(allowDrafts ? [{ text: info.person.role === "field" ? t("oauth.consent.addsNotes") : t("oauth.consent.createsDrafts"), ok: true }] : []),
+      { text: info.person.role === "field" ? t("oauth.consent.noMoney") : t("oauth.consent.neverIssues"), ok: false },
     ],
   };
 
@@ -119,15 +121,15 @@ function Consent() {
               {info.agent.host}
               <span className="inline-flex items-center gap-1 text-[12px] font-medium text-on-surface-muted">
                 <CircleCheck size={13} aria-hidden className="text-paid" />
-                Verified address
+                {t("oauth.consent.verifiedAddress")}
               </span>
             </>
           ) : (
             <>
-              Calls itself “{info.agent.name}”
+              {t("oauth.consent.callsItself", { name: info.agent.name })}
               <span className="inline-flex items-center gap-1 rounded-full bg-due-soon-bg px-2 py-0.5 text-[11px] font-semibold text-due-soon">
                 <TriangleAlert size={11} aria-hidden />
-                Unverified name
+                {t("oauth.consent.unverifiedName")}
               </span>
             </>
           )}
@@ -139,12 +141,13 @@ function Consent() {
             <AvatarFallback>{initials(info.person.name)}</AvatarFallback>
           </Avatar>
           <span className="min-w-0 flex-1">
-            Signed in as <b className="font-semibold text-on-surface">{info.person.name}</b>
+            {t("oauth.consent.signedInAs")}
+            <b className="font-semibold text-on-surface">{info.person.name}</b>
             <br />
-            {info.business} · {ROLE_LABEL[info.person.role]}
+            {t("oauth.consent.businessRole", { business: info.business, role: ROLE_LABEL[info.person.role] })}
           </span>
           <button type="button" className="font-medium text-primary hover:underline" onClick={() => void notYou()}>
-            Not you?
+            {t("oauth.consent.notYou")}
           </button>
         </div>
 
@@ -181,10 +184,10 @@ function Consent() {
         )}
         <div className="mt-5 grid grid-cols-2 gap-2.5">
           <Button variant="secondary" size="touch" disabled={busy !== null} onClick={() => void answer(false)}>
-            {busy === "cancel" ? "Cancelling…" : "Cancel"}
+            {busy === "cancel" ? t("oauth.consent.cancelling") : t("oauth.consent.cancel")}
           </Button>
           <Button size="touch" disabled={busy !== null} onClick={() => void answer(true)}>
-            {busy === "allow" ? "Allowing…" : "Allow"}
+            {busy === "allow" ? t("oauth.consent.allowing") : t("oauth.consent.allow")}
           </Button>
         </div>
       </div>

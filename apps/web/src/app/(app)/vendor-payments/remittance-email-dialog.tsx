@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, Spinner, Textarea } from "@spine/ui";
 import { FileText, Send } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,6 +28,7 @@ export function RemittanceEmailDialog({
   vendorName: string;
   onSent: (to: string) => void;
 }) {
+  const t = useT();
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -47,11 +49,11 @@ export function RemittanceEmailDialog({
         setSubject(d.subject);
         setBody(d.body);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "The email didn't load. Try again."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("vendorPayments.remittance.loadFailed")))
       .finally(() => setLoading(false));
   }, [open, paymentId]);
 
-  const toError = !to.trim() ? "Enter an email address." : EMAIL.test(to.trim()) ? undefined : "Enter an email address like name@example.com.";
+  const toError = !to.trim() ? t("vendorPayments.remittance.enterEmail") : EMAIL.test(to.trim()) ? undefined : t("vendorPayments.remittance.invalidEmail");
 
   async function send() {
     setTouched(true);
@@ -63,7 +65,7 @@ export function RemittanceEmailDialog({
       onOpenChange(false);
       onSent(to.trim());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send it. Try again.");
+      setError(err instanceof Error ? err.message : t("vendorPayments.remittance.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -73,9 +75,9 @@ export function RemittanceEmailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Email remittance advice</DialogTitle>
+          <DialogTitle>{t("vendorPayments.remittance.title")}</DialogTitle>
           <DialogDescription>
-            Tells {vendorName} what {number} paid, bill by bill. Sent from your business email.
+            {t("vendorPayments.remittance.description", { vendor: vendorName, number })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
@@ -90,29 +92,30 @@ export function RemittanceEmailDialog({
             </div>
           ) : (
             <>
-              <FormField label="To" required errorText={touched ? toError : undefined}>
+              <FormField label={t("vendorPayments.remittance.to")} required errorText={touched ? toError : undefined}>
                 {(field) => <Input {...field} type="email" value={to} onChange={(e) => setTo(e.target.value)} />}
               </FormField>
-              <FormField label="Subject" required errorText={touched && !subject.trim() ? "Enter a subject." : undefined}>
+              <FormField label={t("vendorPayments.remittance.subject")} required errorText={touched && !subject.trim() ? t("vendorPayments.remittance.enterSubject") : undefined}>
                 {(field) => <Input {...field} value={subject} onChange={(e) => setSubject(e.target.value)} />}
               </FormField>
-              <FormField label="Message" required errorText={touched && !body.trim() ? "Write a short message." : undefined}>
+              <FormField label={t("vendorPayments.remittance.message")} required errorText={touched && !body.trim() ? t("vendorPayments.remittance.writeMessage") : undefined}>
                 {(field) => <Textarea {...field} value={body} rows={8} onChange={(e) => setBody(e.target.value)} />}
               </FormField>
               <span className="inline-flex items-center gap-2 self-start rounded-md border border-border bg-surface-sunken px-2.5 py-1.5 text-[12.5px] font-medium text-on-surface" data-testid="remittance-attachment">
                 <FileText size={14} aria-hidden className="text-overdue" />
-                remittance-{number}.pdf
+                {/* The attachment's file name, not copy. */}
+                {`remittance-${number}.pdf`}
               </span>
             </>
           )}
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={sending}>
-            Cancel
+            {t("vendorPayments.remittance.cancel")}
           </Button>
           <Button onClick={() => void send()} disabled={sending || loading}>
             {sending ? <Spinner size="sm" /> : <Send size={14} aria-hidden />}
-            Send
+            {t("vendorPayments.remittance.send")}
           </Button>
         </DialogFooter>
       </DialogContent>

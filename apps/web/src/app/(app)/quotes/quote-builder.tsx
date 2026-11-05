@@ -26,6 +26,7 @@ import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine 
 import type { Quote, TaxGroupOption, TaxRateOption } from "./types";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
+import { useT } from "../../../lib/i18n";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -127,6 +128,7 @@ interface QuoteLead {
 }
 
 export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string }) {
+  const t = useT();
   const router = useRouter();
   const canSend = useCapability("quotes.send");
   // US-QUO-35: changes since the page opened; leaving asks first.
@@ -262,7 +264,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   async function preview() {
     setError(null);
     if (!contactId) {
-      setError("Select a contact to preview the quote.");
+      setError(t("quotes.builder.previewNeedsContact"));
       return;
     }
     // Opened before the request so the browser doesn't block it as a pop-up.
@@ -275,7 +277,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       else window.open(url, "_blank");
     } catch (err) {
       tab?.close();
-      setError(err instanceof Error ? err.message : "Couldn't make the preview. Try again.");
+      setError(err instanceof Error ? err.message : t("quotes.builder.previewFailed"));
     } finally {
       setPreviewing(false);
     }
@@ -285,11 +287,11 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   async function save(then: "view" | "send" = "view") {
     setError(null);
     if (!contactId) {
-      setError("Select a contact before saving.");
+      setError(t("quotes.builder.saveNeedsContact"));
       return;
     }
     if (title.trim().length > QUOTE_TITLE_MAX) {
-      setError("Keep the title under 120 characters.");
+      setError(t("quotes.builder.titleTooLong"));
       return;
     }
     setSaving(true);
@@ -305,7 +307,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       const sendNow = then === "send" && !saved.discountRequiresApproval;
       router.push(`/quotes/${saved.id}${sendNow ? "?action=send" : ""}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save quote.");
+      setError(err instanceof Error ? err.message : t("quotes.builder.saveFailed"));
       setSaving(false);
     }
   }
@@ -326,19 +328,19 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       )}
 
       <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <FormField label="Title (optional)" className="sm:col-span-2" helperText={title.length > QUOTE_TITLE_MAX - 20 ? `${title.length} of ${QUOTE_TITLE_MAX} characters` : undefined}>
+        <FormField label={t("quotes.builder.titleLabel")} className="sm:col-span-2" helperText={title.length > QUOTE_TITLE_MAX - 20 ? t("quotes.builder.titleCount", { length: title.length, max: QUOTE_TITLE_MAX }) : undefined}>
           {(field) => (
-            <Input {...field} value={title} maxLength={QUOTE_TITLE_MAX} onChange={(e) => touch(setTitle)(e.target.value)} placeholder="For example, Bathroom refit — 2nd floor" />
+            <Input {...field} value={title} maxLength={QUOTE_TITLE_MAX} onChange={(e) => touch(setTitle)(e.target.value)} placeholder={t("quotes.builder.titlePlaceholder")} />
           )}
         </FormField>
-        <FormField label="Contact" required>
+        <FormField label={t("quotes.builder.contact")} required>
           {(field) => <ContactPicker id={field.id} aria-describedby={field["aria-describedby"]} aria-invalid={field["aria-invalid"]} aria-required={field["aria-required"]} value={contactId} onValueChange={touch(setContactId)} />}
         </FormField>
         <div className="flex flex-col gap-1.5">
-          <FormField label="Valid until" helperText="Quote shows as expired after this date.">
+          <FormField label={t("quotes.builder.validUntil")} helperText={t("quotes.builder.validUntilHelp")}>
             {() => <DatePicker value={validUntil} onChange={touch(setValidUntil)} />}
           </FormField>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Valid for">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("quotes.builder.validFor")}>
             {VALIDITY_PICKS.map((days) => (
               <button
                 key={days}
@@ -350,18 +352,20 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
                   picked === days ? "border-primary bg-info-bg text-primary" : "border-border bg-surface-sunken text-on-surface hover:border-border-strong",
                 )}
               >
-                +{days} days
+                {t("quotes.builder.plusDays", { days })}
               </button>
             ))}
           </div>
         </div>
-        <FormField label="Currency" required>
+        <FormField label={t("quotes.builder.currency")} required>
           {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} />}
         </FormField>
         {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         {linkedLead && (
           <p className="self-end text-[13px] text-on-surface-muted sm:col-span-2" data-testid="quote-lead">
-            For lead <span className="font-medium text-on-surface">{linkedLead.title || "Untitled lead"}</span>. It&apos;s linked to the lead, so it shows in the lead&apos;s Quotes.
+            {t("quotes.builder.forLead")}
+            <span className="font-medium text-on-surface">{linkedLead.title || t("quotes.builder.untitledLead")}</span>
+            {t("quotes.builder.forLeadLinked")}
           </p>
         )}
       </Card>
@@ -370,9 +374,9 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
 
       <Card className="flex flex-col gap-0 overflow-hidden p-0">
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
-          <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+          <h2 className="text-[15px] font-semibold text-on-surface">{t("quotes.builder.lines")}</h2>
           <a href="#quote-notes" className="text-[12.5px] font-medium text-primary hover:underline">
-            Notes and terms ↓
+            {t("quotes.builder.notesAndTerms")}
           </a>
         </div>
         <QuoteLineEditor
@@ -390,11 +394,11 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
 
       <Card id="quote-notes" className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField label="Notes" helperText="Visible to the customer on the quote.">
-            {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder="Notes for the customer…" />}
+          <FormField label={t("quotes.builder.notes")} helperText={t("quotes.builder.notesHelp")}>
+            {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder={t("quotes.builder.notesPlaceholder")} />}
           </FormField>
-          <FormField label="Terms & conditions">
-            {(field) => <RichTextEditor {...field} value={terms} onValueChange={touch(setTerms)} placeholder="Payment terms, validity, etc…" />}
+          <FormField label={t("quotes.builder.terms")}>
+            {(field) => <RichTextEditor {...field} value={terms} onValueChange={touch(setTerms)} placeholder={t("quotes.builder.termsPlaceholder")} />}
           </FormField>
         </div>
       </Card>
@@ -402,19 +406,19 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       {/* US-QUO-35: totals and actions stay in view. */}
       <DocumentBuilderBar totals={totals} currency={currency} dirty={dirty} testIdPrefix="quote">
           <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
-            Cancel
+            {t("quotes.builder.cancel")}
           </Button>
           <Button type="button" variant="secondary" onClick={() => void preview()} disabled={saving || previewing} aria-busy={previewing}>
             {previewing ? <Spinner size="sm" /> : <Eye size={14} aria-hidden />}
-            Preview PDF
+            {t("quotes.builder.previewPdf")}
           </Button>
           <Button type="button" variant={canSend ? "secondary" : "primary"} onClick={() => void save("view")} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : quote ? "Save draft" : "Save as draft"}
+            {saving ? <Spinner size="sm" /> : quote ? t("quotes.builder.saveDraft") : t("quotes.builder.saveAsDraft")}
           </Button>
           {canSend && (
             <Button type="button" onClick={() => void save("send")} disabled={saving}>
               <Send size={14} aria-hidden />
-              Save and send
+              {t("quotes.builder.saveAndSend")}
             </Button>
           )}
       </DocumentBuilderBar>

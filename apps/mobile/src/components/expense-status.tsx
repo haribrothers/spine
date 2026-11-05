@@ -1,12 +1,13 @@
 import { Text, View } from "react-native";
 import type { MyExpense } from "../lib/data/expenses";
+import { t } from "../lib/i18n";
 
 /** "Submitted" (info blue), "Approved" (paid green), "Rejected" (overdue red), as drawn. */
 const STYLE: Record<MyExpense["status"] | "waiting", { label: string; box: string; text: string }> = {
-  submitted: { label: "Submitted", box: "bg-info-bg dark:bg-info-bg-dark", text: "text-primary dark:text-primary-dark" },
-  approved: { label: "Approved", box: "bg-paid-bg dark:bg-paid-bg-dark", text: "text-paid dark:text-paid-dark" },
-  rejected: { label: "Rejected", box: "bg-overdue-bg dark:bg-overdue-bg-dark", text: "text-overdue dark:text-overdue-dark" },
-  waiting: { label: "Waiting", box: "bg-draft-bg dark:bg-draft-bg-dark", text: "text-on-surface-muted dark:text-on-surface-muted-dark" },
+  submitted: { label: t("mobileApp.expenseStatus.submitted"), box: "bg-info-bg dark:bg-info-bg-dark", text: "text-primary dark:text-primary-dark" },
+  approved: { label: t("mobileApp.expenseStatus.approved"), box: "bg-paid-bg dark:bg-paid-bg-dark", text: "text-paid dark:text-paid-dark" },
+  rejected: { label: t("mobileApp.expenseStatus.rejected"), box: "bg-overdue-bg dark:bg-overdue-bg-dark", text: "text-overdue dark:text-overdue-dark" },
+  waiting: { label: t("mobileApp.expenseStatus.waiting"), box: "bg-draft-bg dark:bg-draft-bg-dark", text: "text-on-surface-muted dark:text-on-surface-muted-dark" },
 };
 
 export function expenseStatusLabel(status: keyof typeof STYLE): string {

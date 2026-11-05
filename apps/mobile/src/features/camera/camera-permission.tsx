@@ -8,11 +8,12 @@ import ReceiptText from "lucide-react-native/icons/receipt-text";
 import X from "lucide-react-native/icons/x";
 import { FullWidthButton, Spinner, useNativeColors } from "@spine/ui-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const CAMERA_TITLE = "Allow camera access";
-export const CAMERA_MESSAGE = "Spine uses the camera for site photos and receipt pictures. Photos go only to your company's Spine server — never anywhere else.";
-export const CAMERA_REASONS = ["Progress photos tagged to the job", "Receipts attached to your expenses", "Works with no signal — uploads later"];
-export const SETTINGS_HINT = { ios: "Said no before? Turn it on in Settings › Spine › Camera.", android: "Said no before? Turn it on in Settings › Apps › Spine › Permissions." };
+export const CAMERA_TITLE = translate("mobileWork.cameraPermission.title");
+export const CAMERA_MESSAGE = translate("mobileWork.cameraPermission.message");
+export const CAMERA_REASONS = [translate("mobileWork.cameraPermission.reasonProgress"), translate("mobileWork.cameraPermission.reasonReceipts"), translate("mobileWork.cameraPermission.reasonOffline")];
+export const SETTINGS_HINT = { ios: translate("mobileWork.cameraPermission.settingsHintIos"), android: translate("mobileWork.cameraPermission.settingsHintAndroid") };
 
 /**
  * US-MOB-14 · `MobCameraPermission` (and Android) — before the system asks,
@@ -21,6 +22,7 @@ export const SETTINGS_HINT = { ios: "Said no before? Turn it on in Settings › 
  * now" goes back. The camera shows only once it's allowed.
  */
 export function CameraPermissionGate({ children }: { children: React.ReactNode }) {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const [permission, request] = useCameraPermissions();
@@ -45,7 +47,7 @@ export function CameraPermissionGate({ children }: { children: React.ReactNode }
       contentContainerClassName="flex-grow gap-6 px-6"
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }}
     >
-      <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} className="h-11 w-11 items-center justify-center rounded-full bg-surface dark:bg-surface-dark">
+      <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t("mobileWork.common.close")} hitSlop={10} className="h-11 w-11 items-center justify-center rounded-full bg-surface dark:bg-surface-dark">
         <X size={22} color={colors.onSurface} />
       </Pressable>
       <View className="gap-4">
@@ -72,14 +74,14 @@ export function CameraPermissionGate({ children }: { children: React.ReactNode }
       <View className="gap-2">
         <FullWidthButton
           testID="camera-permission-continue"
-          label={refused && !permission.canAskAgain ? "Open Settings" : "Continue"}
+          label={refused && !permission.canAskAgain ? t("mobileWork.cameraPermission.openSettings") : t("mobileWork.cameraPermission.continue")}
           onPress={() => {
             if (!permission.canAskAgain) void Linking.openSettings();
             else void request();
           }}
         />
         <Pressable testID="camera-permission-not-now" onPress={() => router.back()} accessibilityRole="button" className="min-h-[48px] items-center justify-center">
-          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Not now</Text>
+          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{t("mobileWork.cameraPermission.notNow")}</Text>
         </Pressable>
         <Text testID="camera-permission-hint" className="text-center text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
           {Platform.OS === "android" ? SETTINGS_HINT.android : SETTINGS_HINT.ios}

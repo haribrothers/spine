@@ -39,6 +39,7 @@ import {
   actionMatches,
   matchesWordStarts,
 } from "./search-actions";
+import { t as translate, useT } from "../lib/i18n";
 
 /** Wait this long after the last keystroke before asking the server. */
 const DEBOUNCE_MS = 150;
@@ -79,7 +80,7 @@ function resultItem(r: SearchResult, id: string): CommandPaletteItem {
 
 /** "contacts, leads, meetings and expenses". */
 function listOf(parts: string[]): string {
-  return parts.length < 2 ? (parts[0] ?? "") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return parts.length < 2 ? (parts[0] ?? "") : translate("common.search.listAnd", { items: parts.slice(0, -1).join(", "), last: parts[parts.length - 1] });
 }
 
 /**
@@ -103,6 +104,7 @@ export function SearchPalette({
   sections: AppShellNavSection[];
   isOwner: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const role = useMyRole();
   const field = role === "field";
@@ -168,7 +170,7 @@ export function SearchPalette({
   // Areas (and groups) this person can search: those whose page is in their sidebar.
   const pages = useMemo(() => new Set(sections.flatMap((s) => s.items.map((i) => i.href))), [sections]);
   const searchable = (type: SearchGroupType) => pages.has(SEARCH_GROUP_PAGE[type]);
-  const scopes = (Object.keys(SEARCH_SCOPES) as SearchScope[]).filter((s) => SEARCH_SCOPES[s].some((t) => searchable(t)));
+  const scopes = (Object.keys(SEARCH_SCOPES) as SearchScope[]).filter((s) => SEARCH_SCOPES[s].some((type) => searchable(type)));
   const archivable = searchable("contacts") || searchable("catalog_items");
   const q = query.trim();
 
@@ -225,7 +227,7 @@ export function SearchPalette({
     const searches = recent?.searches ?? [];
     if (items.length) {
       groups.push({
-        heading: "Recent",
+        heading: t("common.search.headings.recent"),
         items: items.map((r) => {
           const id = `recent:${r.type}:${r.id}`;
           handlers.set(id, () => go(id, r.href));
@@ -235,7 +237,7 @@ export function SearchPalette({
     }
     if (searches.length) {
       groups.push({
-        heading: "Recent searches",
+        heading: t("common.search.headings.recentSearches"),
         items: searches.map((s, i) => {
           const id = `recent-search:${i}`;
           handlers.set(id, () => setQuery(s));
@@ -249,7 +251,7 @@ export function SearchPalette({
         setRecent({ items: [], searches: [] });
         apiClient.delete("/search/recent").catch(() => {});
       });
-      groups[groups.length - 1]!.items.push({ id: "clear-recent", title: "Clear recent", icon: <X />, variant: "link" });
+      groups[groups.length - 1]!.items.push({ id: "clear-recent", title: t("common.search.clearRecent"), icon: <X />, variant: "link" });
     }
   } else {
     const local: CommandPaletteGroup[] = [];
@@ -263,7 +265,7 @@ export function SearchPalette({
       const acts = SEARCH_ACTIONS.filter((a) => can(a) && actionMatches(a, q)).slice(0, LOCAL_MAX);
       if (acts.length) {
         local.push({
-          heading: "Actions",
+          heading: t("common.search.headings.actions"),
           items: acts.map((a) => {
             const id = `action:${a.key}`;
             handlers.set(id, () => go(id, a.href));
@@ -277,13 +279,13 @@ export function SearchPalette({
       );
       const reportPages = REPORTS.filter(
         (r) => r.href.startsWith("/reports/") && canOpenReport(r, role, capabilities) && (!r.country || r.country === country) && !ownedByOffModule(modules, "reports", r.slug),
-      ).map((r) => ({ href: r.href, title: r.label, area: `Reports · ${r.group}`, icon: <BarChart3 />, keywords: r.keywords ?? "" }));
+      ).map((r) => ({ href: r.href, title: r.label, area: t("common.search.reportArea", { group: r.group }), icon: <BarChart3 />, keywords: r.keywords ?? "" }));
       const found = [...sidebarPages, ...reportPages]
         .filter((p) => matchesWordStarts(`${p.title} ${p.keywords}`, q))
         .slice(0, LOCAL_MAX);
       if (found.length) {
         local.push({
-          heading: "Pages",
+          heading: t("common.search.headings.pages"),
           items: found.map((p) => {
             const id = `page:${p.href}`;
             handlers.set(id, () => go(id, p.href));
@@ -299,12 +301,12 @@ export function SearchPalette({
       const settings = searchSettings(panes, q).slice(0, LOCAL_MAX);
       if (settings.length) {
         local.push({
-          heading: "Settings",
+          heading: t("common.search.headings.settings"),
           items: settings.map(({ section, matches }) => {
             const id = `settings:${section.key}`;
             const Icon = section.icon;
             handlers.set(id, () => (section.href ? go(id, section.href) : navigate(id, () => openSettings(section.key))));
-            const group = SETTINGS_GROUPS.find((g) => g.key === section.group)?.label ?? "Settings";
+            const group = SETTINGS_GROUPS.find((g) => g.key === section.group)?.label ?? t("common.search.headings.settings");
             return { id, title: section.label, subtitle: matches.length ? `${group} · ${matches.join(", ")}` : group, icon: <Icon /> };
           }),
         });
@@ -328,7 +330,7 @@ export function SearchPalette({
           remember();
           go(id, `${list}?q=${encodeURIComponent(q)}`);
         });
-        items.push({ id, title: `See all ${SEARCH_GROUP_NOUNS[g.type]} matching “${q}”`, icon: <ArrowRight />, variant: "link" as const } as CommandPaletteItem);
+        items.push({ id, title: t("common.search.seeAll", { noun: SEARCH_GROUP_NOUNS[g.type], query: q }), icon: <ArrowRight />, variant: "link" as const } as CommandPaletteItem);
       }
       return { heading: g.label, items };
     });
@@ -337,18 +339,19 @@ export function SearchPalette({
   }
   actions.current = handlers;
 
-  const areas = (Object.keys(SEARCH_GROUP_PAGE) as SearchGroupType[]).filter(searchable).map((t) => SEARCH_GROUP_NOUNS[t].replace("catalogue items", "the catalogue"));
+  const areas = (Object.keys(SEARCH_GROUP_PAGE) as SearchGroupType[]).filter(searchable).map((type) => (type === "catalog_items" ? t("common.search.theCatalogue") : SEARCH_GROUP_NOUNS[type]));
   const hint = (
     <span className="flex flex-col gap-1.5">
-      <span className="font-medium text-on-surface">Type a name, a number like INV-0010 or an amount like 2,389.50.</span>
-      {areas.length > 0 && <span>{field ? `You can search your ${listOf(areas)}.` : `You can search ${listOf(areas)}.`}</span>}
+      <span className="font-medium text-on-surface">{t("common.search.hint")}</span>
+      {areas.length > 0 && <span>{field ? t("common.search.canSearchYour", { areas: listOf(areas) }) : t("common.search.canSearch", { areas: listOf(areas) })}</span>}
     </span>
   );
   const empty = (
     <span className="flex flex-col gap-1.5">
-      <span className="font-medium text-on-surface">No results for “{q}”</span>
+      <span className="font-medium text-on-surface">{t("common.search.noResults", { query: q })}</span>
       <span>
-        Check the spelling, or try part of a name, a number or an amount.{archivable && !archived ? " Or turn on Include archived." : ""}
+        {t("common.search.noResultsHint")}
+        {archivable && !archived ? t("common.search.noResultsArchived") : ""}
       </span>
     </span>
   );
@@ -357,10 +360,10 @@ export function SearchPalette({
     <CommandPalette
       open={open}
       onOpenChange={onOpenChange}
-      label="Search"
+      label={t("common.search.label")}
       query={query}
       onQueryChange={setQuery}
-      placeholder="Search records, pages and settings"
+      placeholder={t("common.search.placeholder")}
       groups={groups}
       loading={loading}
       highlight={q.length >= SEARCH_MIN_LENGTH ? q : undefined}
@@ -375,13 +378,13 @@ export function SearchPalette({
         scopes.length > 1 ? (
           <ToggleGroup
             type="single"
-            aria-label="Search in"
+            aria-label={t("common.search.searchIn")}
             value={scope}
             onValueChange={(v) => v && setScope(v as Scope)}
             className="max-w-full overflow-x-auto"
           >
             <ToggleGroupItem value="all" size="sm" tooltip={false}>
-              All
+              {t("common.search.all")}
             </ToggleGroupItem>
             {scopes.map((s) => (
               <ToggleGroupItem key={s} value={s} size="sm" tooltip={false}>
@@ -393,9 +396,9 @@ export function SearchPalette({
       }
       footer={
         <>
-          <span>↑↓ to move</span>
-          <span>Enter to open</span>
-          <span>Esc to close</span>
+          <span>{t("common.search.footerMove")}</span>
+          <span>{t("common.search.footerOpen")}</span>
+          <span>{t("common.search.footerClose")}</span>
           {archivable && (
             <label className="ml-auto flex cursor-pointer items-center gap-2 font-medium text-on-surface">
               <Checkbox
@@ -410,7 +413,7 @@ export function SearchPalette({
                   }
                 }}
               />
-              Include archived
+              {t("common.search.includeArchived")}
             </label>
           )}
         </>
@@ -425,6 +428,7 @@ export function SearchPalette({
  * collapsed.
  */
 export function SearchButton({ onClick, collapsed = false }: { onClick: () => void; collapsed?: boolean }) {
+  const t = useT();
   const [mac, setMac] = useState(true);
   useEffect(() => {
     setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
@@ -435,8 +439,8 @@ export function SearchButton({ onClick, collapsed = false }: { onClick: () => vo
       <button
         type="button"
         onClick={onClick}
-        aria-label="Search"
-        title={`Search (${shortcut})`}
+        aria-label={t("common.search.label")}
+        title={t("common.search.buttonTitle", { shortcut })}
         aria-keyshortcuts="Meta+K Control+K"
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-background text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
@@ -448,12 +452,12 @@ export function SearchButton({ onClick, collapsed = false }: { onClick: () => vo
     <button
       type="button"
       onClick={onClick}
-      aria-label="Search"
+      aria-label={t("common.search.label")}
       aria-keyshortcuts="Meta+K Control+K"
       className="flex h-8.5 w-full items-center gap-2 rounded-md border border-border bg-background pl-2.5 pr-2 text-[13px] text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     >
       <Search size={15} aria-hidden />
-      <span className="flex-1 text-left">Search…</span>
+      <span className="flex-1 text-left">{t("common.search.button")}</span>
       <kbd className="rounded-sm border border-border bg-surface px-1.5 text-[11px] font-medium text-on-surface-muted">{shortcut}</kbd>
     </button>
   );

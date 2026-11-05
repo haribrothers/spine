@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { VendorBillBuilder } from "./vendor-bill-builder";
 import type { VendorBill } from "./types";
 
 /** US-PUR-35 — `/vendor-bills/new?from=<id>` (Duplicate) opens the builder filled from that bill; without `from`, an empty one. */
 export function VendorBillNewLoader({ from }: { from?: string }) {
+  const t = useT();
   const [source, setSource] = useState<VendorBill | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +18,7 @@ export function VendorBillNewLoader({ from }: { from?: string }) {
     apiClient
       .get<VendorBill>(`/vendor-bills/${from}`)
       .then(setSource)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't open the bill to copy."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("vendorBills.newLoader.loadFailed")));
   }, [from]);
 
   if (!from) return <VendorBillBuilder />;

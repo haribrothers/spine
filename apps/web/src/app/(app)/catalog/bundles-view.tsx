@@ -42,10 +42,11 @@ import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { useToast } from "../../../components/toast-host";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
+  { value: "active", label: translate("catalog.common.active") },
+  { value: "archived", label: translate("catalog.common.archived") },
 ];
 
 /**
@@ -55,6 +56,7 @@ const STATUS_OPTIONS = [
  * same rules the API applies.
  */
 export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: () => void; onCountChange?: (active: number) => void } = {}) {
+  const t = useT();
   const [bundles, setBundles] = useState<CatalogBundle[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
@@ -68,7 +70,7 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
         setBundles(rows);
         onCountChange?.(rows.filter((b) => !b.archivedAt).length);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load bundles."));
+      .catch((err) => setError(err instanceof Error ? err.message : translate("catalog.bundles.loadError")));
   }, [onCountChange]);
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
   const columns: TableColumn<CatalogBundle>[] = [
     {
       key: "name",
-      header: "Bundle",
+      header: t("catalog.bundles.columnBundle"),
       render: (b) => (
         <div className="flex flex-col">
           <span className="font-medium text-on-surface">{b.name}</span>
@@ -94,33 +96,33 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
     },
     {
       key: "lines",
-      header: "Lines",
+      header: t("catalog.bundles.columnLines"),
       render: (b) => {
         const items = b.lines.filter((l) => l.type === "item");
         return (
           <span className="text-on-surface-muted">
-            {items.length} {items.length === 1 ? "line" : "lines"}: {items.map((l) => l.name).join(", ")}
+            {t("catalog.bundles.linesSummary", { count: items.length, names: items.map((l) => l.name).join(", ") })}
           </span>
         );
       },
     },
     {
       key: "total",
-      header: "Total",
+      header: t("catalog.common.total"),
       align: "right",
       render: (b) => <span className="tabular-nums">{formatMoney(BigInt(b.totalAmount), b.currency)}</span>,
       sortValue: (b) => BigInt(b.totalAmount),
     },
     {
       key: "status",
-      header: "Status",
-      render: (b) => (b.archivedAt ? <Badge>Archived</Badge> : <Badge className="bg-paid-bg text-paid">Active</Badge>),
+      header: t("catalog.common.status"),
+      render: (b) => (b.archivedAt ? <Badge>{t("catalog.common.archived")}</Badge> : <Badge className="bg-paid-bg text-paid">{t("catalog.common.active")}</Badge>),
     },
     {
       key: "actions",
       header: "",
       align: "right",
-      render: (b) => <BundleRowActions bundle={b} onEdit={setEditing} onChanged={(verb) => (showToast(`Bundle ${verb}`, `“${b.name}” was ${verb}.`), load())} />,
+      render: (b) => <BundleRowActions bundle={b} onEdit={setEditing} onChanged={(verb) => (showToast(t(`catalog.bundles.changed.${verb}.title`), t(`catalog.bundles.changed.${verb}.description`, { name: b.name })), load())} />,
     },
   ];
 
@@ -140,13 +142,13 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
         <div className="rounded-lg border border-border bg-surface" data-testid="bundles-empty">
           <EmptyState
             icon={<PackagePlus />}
-            title="No bundles yet"
-            description="Group what you quote together. Select items and choose Make a bundle, or save a quote's lines from its More menu."
+            title={t("catalog.bundles.emptyTitle")}
+            description={t("catalog.bundles.emptyDescription")}
             action={
               onChooseItems ? (
                 <Button onClick={onChooseItems}>
                   <ListChecks size={14} aria-hidden />
-                  Choose items
+                  {t("catalog.common.chooseItems")}
                 </Button>
               ) : undefined
             }
@@ -155,17 +157,18 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
       ) : (
         <>
           <div className="w-56">
-            <MultiSelect options={STATUS_OPTIONS} value={statusFilter} onValueChange={setStatusFilter} placeholder="All statuses" aria-label="Filter by status" />
+            <MultiSelect options={STATUS_OPTIONS} value={statusFilter} onValueChange={setStatusFilter} placeholder={t("catalog.common.allStatuses")} aria-label={t("catalog.common.filterByStatus")} />
           </div>
-          <DataTable columns={columns} data={shown} rowKey={(b) => b.id} searchPlaceholder="Search bundles" searchKey={(b) => `${b.name} ${b.description ?? ""}`} />
+          <DataTable columns={columns} data={shown} rowKey={(b) => b.id} searchPlaceholder={t("catalog.bundles.searchPlaceholder")} searchKey={(b) => `${b.name} ${b.description ?? ""}`} />
         </>
       )}
-      <EditBundleDialog bundle={editing} onClose={() => setEditing(null)} onSaved={() => (showToast("Bundle saved", "Your changes have been saved."), load())} />
+      <EditBundleDialog bundle={editing} onClose={() => setEditing(null)} onSaved={() => (showToast(t("catalog.bundles.savedTitle"), t("catalog.bundles.savedDescription")), load())} />
     </div>
   );
 }
 
 function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle; onEdit: (b: CatalogBundle) => void; onChanged: (verb: "archived" | "restored" | "deleted") => void }) {
+  const t = useT();
   const canEdit = useCanEditOwnership(bundle.createdByUserId, { own: "catalog.edit_own", others: "catalog.edit_others" });
   const canDelete = useCanEditOwnership(bundle.createdByUserId, { own: "catalog.delete_own", others: "catalog.delete_others" });
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -197,7 +200,7 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={`Actions for ${bundle.name}`} disabled={busy}>
+          <Button variant="ghost" size="icon" aria-label={t("catalog.common.actionsFor", { name: bundle.name })} disabled={busy}>
             <MoreHorizontal size={16} />
           </Button>
         </DropdownMenuTrigger>
@@ -205,13 +208,13 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
           {canEdit && (
             <DropdownMenuItem onSelect={() => onEdit(bundle)}>
               <MENU_ICONS.edit aria-hidden />
-              Edit
+              {t("catalog.common.edit")}
             </DropdownMenuItem>
           )}
           {canDelete && (
             <DropdownMenuItem onSelect={toggleArchived}>
               {bundle.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
-              {bundle.archivedAt ? "Restore" : "Archive"}
+              {bundle.archivedAt ? t("catalog.common.restore") : t("catalog.common.archive")}
             </DropdownMenuItem>
           )}
           {canDelete && (
@@ -219,7 +222,7 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
                 <MENU_ICONS.delete aria-hidden />
-                Delete
+                {t("catalog.common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -228,13 +231,13 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{bundle.name}”?</AlertDialogTitle>
-            <AlertDialogDescription>The bundle is removed from the catalogue and the item picker. Quotes and invoices that used it keep their lines.</AlertDialogDescription>
+            <AlertDialogTitle>{t("catalog.bundles.deleteConfirmTitle", { name: bundle.name })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("catalog.bundles.deleteConfirmDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("catalog.common.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" onClick={remove} disabled={busy}>
-              Delete bundle
+              {t("catalog.bundles.deleteButton")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -244,6 +247,7 @@ function BundleRowActions({ bundle, onEdit, onChanged }: { bundle: CatalogBundle
 }
 
 function EditBundleDialog({ bundle, onClose, onSaved }: { bundle: CatalogBundle | null; onClose: () => void; onSaved: () => void }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState<string | undefined>();
@@ -270,7 +274,7 @@ function EditBundleDialog({ bundle, onClose, onSaved }: { bundle: CatalogBundle 
       onSaved();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save the bundle.");
+      setError(err instanceof Error ? err.message : t("catalog.bundles.saveError"));
     } finally {
       setSaving(false);
     }
@@ -280,7 +284,7 @@ function EditBundleDialog({ bundle, onClose, onSaved }: { bundle: CatalogBundle 
     <Dialog open={!!bundle} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit bundle</DialogTitle>
+          <DialogTitle>{t("catalog.bundles.editTitle")}</DialogTitle>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           {error && (
@@ -288,19 +292,19 @@ function EditBundleDialog({ bundle, onClose, onSaved }: { bundle: CatalogBundle 
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Bundle name" errorText={nameError}>
+          <FormField label={t("catalog.bundles.nameLabel")} errorText={nameError}>
             {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} />}
           </FormField>
-          <FormField label="Description" helperText="Its lines stay as they were saved; save a quote's lines again to make a new version.">
+          <FormField label={t("catalog.common.description")} helperText={t("catalog.bundles.descriptionHelper")}>
             {(field) => <Textarea {...field} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t("catalog.common.cancel")}
           </Button>
           <Button onClick={save} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save"}
+            {saving ? <Spinner size="sm" /> : t("catalog.common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

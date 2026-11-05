@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import type { ContactOption } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * Contact picker for the quote builder — reuses `Combobox` (search-as-you-
@@ -24,6 +25,7 @@ export function ContactPicker({
   "aria-invalid"?: boolean;
   "aria-required"?: boolean;
 }) {
+  const t = useT();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
@@ -38,5 +40,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox {...field} options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
+  return <Combobox {...field} options={options} value={value || undefined} onValueChange={onValueChange} placeholder={t("quotes.contactPicker.placeholder")} />;
 }

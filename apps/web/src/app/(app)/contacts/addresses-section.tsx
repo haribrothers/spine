@@ -33,6 +33,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import type { Address, AddressType, Contact } from "./types";
 import { GST_STATES, gstState, gstStateLabel } from "@spine/shared";
 import { useTaxCountry } from "./contact-gst-fields";
+import { useT } from "../../../lib/i18n";
 
 const TYPE_OPTIONS: AddressType[] = ["billing", "shipping", "site", "other"];
 
@@ -71,6 +72,7 @@ export function AddressesSection({
   onSaved: () => void;
   onCreated?: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [type, setType] = useState<AddressType>("billing");
@@ -133,13 +135,13 @@ export function AddressesSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-[14px] font-semibold text-on-surface">Addresses</h3>
+      <h3 className="text-[14px] font-semibold text-on-surface">{t("contacts.addresses.heading")}</h3>
       {addresses.length > 0 && (
         <ul className="flex flex-col gap-2">
           {addresses.map((address) => (
             <li key={address.id} className="flex items-center justify-between rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
               <div>
-                <span className="font-medium capitalize text-on-surface">{address.type}</span>
+                <span className="font-medium capitalize text-on-surface">{t(`contacts.addresses.types.${address.type}`)}</span>
                 <span className="text-on-surface-muted">
                   {" "}
                   · {address.line1}
@@ -151,7 +153,7 @@ export function AddressesSection({
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    aria-label="Edit address"
+                    aria-label={t("contacts.addresses.edit")}
                     disabled={saving}
                     onClick={() => openEditDialog(address)}
                     className="text-on-surface-muted transition-colors hover:text-on-surface"
@@ -162,7 +164,7 @@ export function AddressesSection({
                     <AlertDialogTrigger asChild>
                       <button
                         type="button"
-                        aria-label="Remove address"
+                        aria-label={t("contacts.addresses.remove")}
                         disabled={saving}
                         className="text-on-surface-muted transition-colors hover:text-overdue"
                       >
@@ -171,12 +173,12 @@ export function AddressesSection({
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Remove this address?</AlertDialogTitle>
-                        <AlertDialogDescription>This removes the address from this contact. This cannot be undone.</AlertDialogDescription>
+                        <AlertDialogTitle>{t("contacts.addresses.removeTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("contacts.addresses.removeDescription")}</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction variant="danger" onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
+                        <AlertDialogCancel>{t("contacts.common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction variant="danger" onClick={() => handleRemove(address.id)}>{t("contacts.common.remove")}</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -190,42 +192,42 @@ export function AddressesSection({
       <Dialog open={open} onOpenChange={setOpen}>
         {canManage && (
           <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-            Add address
+            {t("contacts.addresses.add")}
           </Button>
         )}
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit address" : "Add address"}</DialogTitle>
+            <DialogTitle>{editingId ? t("contacts.addresses.edit") : t("contacts.addresses.add")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-3">
-            <FormField label="Type">
+            <FormField label={t("contacts.addresses.type")}>
               {(field) => (
                 <Select value={type} onValueChange={(v) => setType(v as AddressType)}>
                   <SelectTrigger {...field} className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TYPE_OPTIONS.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        <span className="capitalize">{t}</span>
+                    {TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        <span className="capitalize">{t(`contacts.addresses.types.${option}`)}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             </FormField>
-            <FormField label="Address line" required>
+            <FormField label={t("contacts.addresses.line")} required>
               {(field) => <Input {...field} value={line1} onChange={(e) => setLine1(e.target.value)} />}
             </FormField>
-            <FormField label="City">
+            <FormField label={t("contacts.addresses.city")}>
               {(field) => <Input {...field} value={city} onChange={(e) => setCity(e.target.value)} />}
             </FormField>
             {taxCountry === "IN" && (
-              <FormField label="State" helperText="The site or shipping address's state is the place of supply.">
+              <FormField label={t("contacts.addresses.state")} helperText={t("contacts.addresses.stateHelper")}>
                 {(field) => (
                   <Select value={stateCode} onValueChange={setStateCode}>
                     <SelectTrigger {...field} className="w-full">
-                      <SelectValue placeholder="Choose a state" />
+                      <SelectValue placeholder={t("contacts.common.choosePlaceholderState")} />
                     </SelectTrigger>
                     <SelectContent>
                       {GST_STATES.map((st) => (
@@ -241,10 +243,10 @@ export function AddressesSection({
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
+              {t("contacts.common.cancel")}
             </Button>
             <Button disabled={!line1 || saving} onClick={handleSave}>
-              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Add"}
+              {saving ? <Spinner size="sm" /> : editingId ? t("contacts.common.saveChanges") : t("contacts.common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>

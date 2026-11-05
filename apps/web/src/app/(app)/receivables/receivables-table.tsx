@@ -21,6 +21,7 @@ import { howLate, reminderBlocked } from "./receivables-list-state";
 import { AGING_BUCKET_LABELS, type AgingBucket, type ReceivablesInvoiceRow } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useT } from "../../../lib/i18n";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
@@ -79,23 +80,24 @@ export function ReceivablesTable({
   onSelectedChange?: (next: Set<string>) => void;
   actions: InvoiceActions;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const date = (iso: string | null) => (iso ? calendarDate(iso, now, locale) : "—");
   const money = (row: ReceivablesInvoiceRow, v: string) => <span className="tabular-nums">{formatMoney(BigInt(v), row.currency)}</span>;
   const columns: TableColumn<ReceivablesInvoiceRow>[] = [
     {
       key: "number",
-      header: "Invoice",
+      header: t("receivables.table.invoice"),
       render: (row) => (
         <div className="flex max-w-[14rem] flex-col">
           <SectionLink href={`/invoices/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
-            {row.number ?? "Invoice"}
+            {row.number ?? t("receivables.table.invoice")}
           </SectionLink>
           {(row.jobName || row.type === "advance") && (
             <span className="truncate text-[12px] text-on-surface-muted">
               {row.jobName}
               {row.jobName && row.type === "advance" && " · "}
-              {row.type === "advance" && <span className="font-medium text-primary">Deposit</span>}
+              {row.type === "advance" && <span className="font-medium text-primary">{t("receivables.table.deposit")}</span>}
             </span>
           )}
         </div>
@@ -104,7 +106,7 @@ export function ReceivablesTable({
     },
     {
       key: "contact",
-      header: "Customer",
+      header: t("receivables.table.customer"),
       render: (row) => (
         <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -114,22 +116,22 @@ export function ReceivablesTable({
     },
     {
       key: "dueDate",
-      header: "Due",
+      header: t("receivables.table.due"),
       render: (row) => (
         <div className="flex flex-col whitespace-nowrap">
           <span>{date(row.dueDate)}</span>
           <span className="text-[12px] text-on-surface-muted" data-testid="receivable-reminded">
-            {row.lastReminderOn ? `Last reminded ${date(row.lastReminderOn)}` : "Never reminded"}
+            {row.lastReminderOn ? t("receivables.table.lastReminded", { date: date(row.lastReminderOn) }) : t("receivables.table.neverReminded")}
           </span>
         </div>
       ),
       sortValue: (row) => row.dueDate ?? "",
     },
-    { key: "late", header: "How late", render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue },
-    { key: "issueDate", header: "Issued", render: (row) => <span className="whitespace-nowrap">{date(row.issueDate)}</span>, sortValue: (row) => row.issueDate ?? "" },
-    { key: "totalAmount", header: "Invoice total", align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
-    { key: "paidAmount", header: "Paid so far", align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
-    { key: "balanceDue", header: "Balance due", align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
+    { key: "late", header: t("receivables.table.howLate"), render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue },
+    { key: "issueDate", header: t("receivables.table.issued"), render: (row) => <span className="whitespace-nowrap">{date(row.issueDate)}</span>, sortValue: (row) => row.issueDate ?? "" },
+    { key: "totalAmount", header: t("receivables.table.invoiceTotal"), align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "paidAmount", header: t("receivables.table.paidSoFar"), align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
+    { key: "balanceDue", header: t("receivables.table.balanceDue"), align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
     {
       key: "actions",
       header: "",
@@ -154,7 +156,7 @@ export function ReceivablesTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
-      selectLabel={(row) => row.number ?? "invoice"}
+      selectLabel={(row) => row.number ?? t("receivables.table.selectLabel")}
       defaultHidden={["issueDate", "totalAmount", "paidAmount"]}
     />
   );
@@ -162,18 +164,19 @@ export function ReceivablesTable({
 
 /** US-PAY-28 — Record payment, Apply credit (with credit to use), Send reminder (or why not), Download PDF and Open invoice, each with its right. */
 function InvoiceRowMenu({ row, actions }: { row: ReceivablesInvoiceRow; actions: InvoiceActions }) {
+  const t = useT();
   const router = useRouter();
   const canRecord = useCapability("payments.edit_own");
   const canApply = useCapability("payments.apply_credit");
   const canRemind = useCapability("invoices.send_reminder");
   const blocked = reminderBlocked(row);
-  const label = row.number ?? "this invoice";
+  const label = row.number ?? t("receivables.table.thisInvoice");
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for ${label}`}
+          aria-label={t("receivables.table.actionsFor", { label })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -183,20 +186,20 @@ function InvoiceRowMenu({ row, actions }: { row: ReceivablesInvoiceRow; actions:
         {canRecord && (
           <DropdownMenuItem onSelect={() => actions.onRecordPayment(row)}>
             <MENU_ICONS.recordPayment aria-hidden />
-            Record payment
+            {t("receivables.table.recordPayment")}
           </DropdownMenuItem>
         )}
         {canApply && row.type !== "advance" && actions.hasCredit(row.contactId) && (
           <DropdownMenuItem onSelect={() => actions.onApplyCredit(row)}>
             <MENU_ICONS.applyCredit aria-hidden />
-            Apply credit
+            {t("receivables.table.applyCredit")}
           </DropdownMenuItem>
         )}
         {canRemind && (
           <DropdownMenuItem disabled={Boolean(blocked)} onSelect={() => actions.onSendReminder(row)}>
             <MENU_ICONS.remind aria-hidden />
             <span className="flex flex-1 flex-col">
-              Send reminder
+              {t("receivables.table.sendReminder")}
               {blocked && <span className="text-[11.5px] text-on-surface-muted">{blocked}</span>}
             </span>
           </DropdownMenuItem>
@@ -204,12 +207,12 @@ function InvoiceRowMenu({ row, actions }: { row: ReceivablesInvoiceRow; actions:
         <DropdownMenuItem asChild>
           <a href={`${API_URL}/invoices/${row.id}/pdf`} target="_blank" rel="noreferrer">
             <MENU_ICONS.download aria-hidden />
-            Download PDF
+            {t("receivables.table.downloadPdf")}
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => router.push(`/invoices/${row.id}`)}>
           <MENU_ICONS.open aria-hidden />
-          Open invoice
+          {t("receivables.table.openInvoice")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

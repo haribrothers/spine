@@ -1,4 +1,5 @@
 import { formatMoney as formatWithLocale, formatMoneyCompact as formatCompactWithLocale } from "@spine/shared";
+import { setFormatLocale } from "@spine/shared/i18n";
 
 /**
  * US-OPS-24 (D-089) — every amount in the web app goes through
@@ -11,6 +12,8 @@ let orgLocale = "en-US";
 
 export function setMoneyLocale(locale: string | null | undefined): void {
   orgLocale = locale || "en-US";
+  // US-OPS-16: dates and numbers in the component libraries follow it too.
+  setFormatLocale(orgLocale);
 }
 
 /** US-QUO-29 — the organisation's locale, for dates shown beside money ("12 Oct" vs "Oct 12"). */

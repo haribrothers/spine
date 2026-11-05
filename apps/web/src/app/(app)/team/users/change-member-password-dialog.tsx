@@ -20,6 +20,7 @@ import {
 } from "@spine/ui";
 import { generatePassword, passwordProblem } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import type { MemberRow } from "../../../../lib/members";
 
@@ -40,6 +41,7 @@ export function ChangeMemberPasswordDialog({
   onOpenChange: (open: boolean) => void;
   onChanged: (member: MemberRow) => void;
 }) {
+  const t = useT();
   const [password, setPassword] = useState("");
   const [shown, setShown] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -78,7 +80,7 @@ export function ChangeMemberPasswordDialog({
       await apiClient.put(`/org/members/${member.id}/password`, { newPassword: password });
       onChanged(member);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't change the password. Try again.");
+      setError(err instanceof Error ? err.message : t("team.passwordDialog.failed"));
     } finally {
       setSaving(false);
     }
@@ -89,8 +91,8 @@ export function ChangeMemberPasswordDialog({
     <Dialog open={member !== null} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Change {member?.name}&rsquo;s password</DialogTitle>
-          <DialogDescription>Set a new password for {first}. Their current one stops working at once.</DialogDescription>
+          <DialogTitle>{t("team.passwordDialog.title", { name: member?.name ?? "" })}</DialogTitle>
+          <DialogDescription>{t("team.passwordDialog.description", { first })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -98,7 +100,7 @@ export function ChangeMemberPasswordDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="New password" errorText={fieldError} required>
+          <FormField label={t("team.passwordDialog.newPassword")} errorText={fieldError} required>
             {(field) => (
               <div className="flex flex-col gap-2">
                 <div className="relative">
@@ -117,10 +119,10 @@ export function ChangeMemberPasswordDialog({
                     className="pr-20 font-mono"
                   />
                   <div className="absolute inset-y-0 right-1 flex items-center">
-                    <Button type="button" variant="ghost" size="icon" aria-label={copied ? "Password copied" : "Copy password"} onClick={() => void copy()}>
+                    <Button type="button" variant="ghost" size="icon" aria-label={copied ? t("team.passwordDialog.passwordCopied") : t("team.passwordDialog.copyPassword")} onClick={() => void copy()}>
                       <Copy size={15} aria-hidden />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" aria-label={shown ? "Hide password" : "Show password"} aria-pressed={!shown} onClick={() => setShown((s) => !s)}>
+                    <Button type="button" variant="ghost" size="icon" aria-label={shown ? t("team.passwordDialog.hidePassword") : t("team.passwordDialog.showPassword")} aria-pressed={!shown} onClick={() => setShown((s) => !s)}>
                       {shown ? <EyeOff size={15} aria-hidden /> : <Eye size={15} aria-hidden />}
                     </Button>
                   </div>
@@ -137,10 +139,10 @@ export function ChangeMemberPasswordDialog({
                     }}
                   >
                     <RefreshCw size={13} aria-hidden />
-                    Generate another
+                    {t("team.passwordDialog.generateAnother")}
                   </button>
                   <span className="text-on-surface-muted" aria-live="polite">
-                    {copied ? "Copied" : shown ? "Shown so you can pass it on" : ""}
+                    {copied ? t("team.passwordDialog.copied") : shown ? t("team.passwordDialog.shownToPassOn") : ""}
                   </span>
                 </div>
                 <PasswordStrengthMeter id="member-password-strength" password={password} />
@@ -148,30 +150,30 @@ export function ChangeMemberPasswordDialog({
             )}
           </FormField>
           <div className="rounded-lg border border-due-soon-bg bg-due-soon-bg/50 px-3 py-2.5 text-[13px] text-on-surface" data-testid="password-what-happens">
-            <p className="mb-1.5 font-semibold">What happens</p>
+            <p className="mb-1.5 font-semibold">{t("team.passwordDialog.whatHappens")}</p>
             <ul className="flex flex-col gap-1.5">
               <li className="flex items-start gap-2">
                 <LogOut size={15} aria-hidden className="mt-0.5 shrink-0 text-on-surface-muted" />
-                {first} is signed out on every device, web and phone.
+                {t("team.passwordDialog.signedOut", { first })}
               </li>
               <li className="flex items-start gap-2">
                 <Mail size={15} aria-hidden className="mt-0.5 shrink-0 text-on-surface-muted" />
-                We email {first} that an owner changed their password — never the password itself.
+                {t("team.passwordDialog.weEmail", { first })}
               </li>
               <li className="flex items-start gap-2">
                 <MessageCircle size={15} aria-hidden className="mt-0.5 shrink-0 text-on-surface-muted" />
-                Give them the new password yourself, in person or by phone. When they sign in with it, they choose their own.
+                {t("team.passwordDialog.giveThem")}
               </li>
             </ul>
           </div>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("team.common.cancel")}
           </Button>
           <Button onClick={() => void save()} disabled={saving || !password}>
             {saving ? <Spinner size="sm" /> : <MENU_ICONS.changePassword size={14} aria-hidden />}
-            Change password
+            {t("team.passwordDialog.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

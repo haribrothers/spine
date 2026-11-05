@@ -14,6 +14,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { cropAndResizeImage } from "./crop-and-resize-image";
+import { useT } from "./i18n";
 
 /**
  * A focused, one-off crop step between "user picked a file" and "upload
@@ -40,6 +41,7 @@ export function LogoCropDialog({
   /** Receives the cropped + resized File, ready to upload. */
   onConfirm: (file: File) => Promise<void> | void;
 }) {
+  const t = useT();
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -69,7 +71,7 @@ export function LogoCropDialog({
       setZoom(1);
       setCroppedAreaPixels(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not crop image.");
+      setError(err instanceof Error ? err.message : t("common.logoCrop.cropFailed"));
     } finally {
       setSaving(false);
     }
@@ -79,7 +81,7 @@ export function LogoCropDialog({
     <Dialog open={open} onOpenChange={(next) => !next && !saving && resetAndCancel()}>
       <DialogContent size="md" className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Crop logo</DialogTitle>
+          <DialogTitle>{t("common.logoCrop.title")}</DialogTitle>
         </DialogHeader>
 
         <DialogBody>
@@ -100,14 +102,14 @@ export function LogoCropDialog({
           )}
 
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-[12px] text-on-surface-muted">Zoom</span>
+            <span className="text-[12px] text-on-surface-muted">{t("common.logoCrop.zoom")}</span>
             <Slider
               value={[zoom]}
               onValueChange={([value]) => setZoom(value ?? 1)}
               min={1}
               max={3}
               step={0.01}
-              aria-label="Zoom"
+              aria-label={t("common.logoCrop.zoom")}
               className="flex-1"
             />
           </div>
@@ -117,16 +119,16 @@ export function LogoCropDialog({
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={resetAndCancel} disabled={saving}>
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving || !croppedAreaPixels}>
             {saving ? (
               <>
                 <Spinner size="sm" className="mr-2" />
-                Saving…
+                {t("common.logoCrop.saving")}
               </>
             ) : (
-              "Save"
+              t("common.logoCrop.save")
             )}
           </Button>
         </DialogFooter>

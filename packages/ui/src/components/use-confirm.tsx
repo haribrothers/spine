@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useT } from "../lib/i18n";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./alert-dialog";
 
 export interface ConfirmOptions {
@@ -27,6 +28,7 @@ export interface ConfirmOptions {
  *   if (!(await confirm({ title: "Record this bill?", description: "…", confirmLabel: "Record bill" }))) return;
  */
 export function useConfirm() {
+  const t = useT();
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
   const resolver = useRef<((ok: boolean) => void) | null>(null);
 
@@ -54,7 +56,7 @@ export function useConfirm() {
           <AlertDialogDescription data-testid="confirm-description">{options?.description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{options?.cancelLabel ?? "Go back"}</AlertDialogCancel>
+          <AlertDialogCancel>{options?.cancelLabel ?? t("ui.confirm.goBack")}</AlertDialogCancel>
           <AlertDialogAction variant={options?.danger ? "danger" : "primary"} onClick={() => close(true)}>
             {options?.confirmLabel}
           </AlertDialogAction>

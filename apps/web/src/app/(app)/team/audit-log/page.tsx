@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getMyMembership } from "../../../../lib/get-my-membership";
 import { NoAccess } from "../../../../components/no-access";
+import { t } from "../../../../lib/i18n";
 import { AuditLogExplorer } from "./audit-log-explorer";
 
 /**
@@ -10,7 +11,7 @@ import { AuditLogExplorer } from "./audit-log-explorer";
  */
 export default async function AuditLogPage() {
   const membership = await getMyMembership();
-  if (membership?.role !== "owner") return <NoAccess pageName="Audit log" ownerOnly />;
+  if (membership?.role !== "owner") return <NoAccess pageName={t("team.auditLog.title")} ownerOnly />;
   return (
     <Suspense>
       <AuditLogExplorer />

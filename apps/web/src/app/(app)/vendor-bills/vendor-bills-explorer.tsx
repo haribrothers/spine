@@ -11,6 +11,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { useToast } from "../../../components/toast-host";
+import { useT } from "../../../lib/i18n";
 import { ActionError } from "../../../components/action-error";
 import { JobFilter, JobFilterNote, useJobFilter } from "../../../components/job-filter";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
@@ -46,6 +47,7 @@ const STATE_OPTIONS = BILL_STATES.map((s) => ({ value: s, label: BILL_STATE_LABE
  * Rows act through their menu; ticked drafts can be recorded together.
  */
 export function VendorBillsExplorer() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canCreate = useCapability("vendor_bills.edit_own");
@@ -91,9 +93,9 @@ export function VendorBillsExplorer() {
         setRefreshFailed(false);
         setUpdatedAt(Date.now());
         setNow(Date.now());
-        if (mode === "refresh") setAnnouncement("Vendor bills updated");
+        if (mode === "refresh") setAnnouncement(t("vendorBills.explorer.updated"));
       } catch (err) {
-        if (mode === "first") setError(err instanceof Error ? err.message : "Could not load vendor bills.");
+        if (mode === "first") setError(err instanceof Error ? err.message : t("vendorBills.explorer.loadFailed"));
         else setRefreshFailed(true);
       } finally {
         loading.current = false;
@@ -144,7 +146,7 @@ export function VendorBillsExplorer() {
     return state.sort ? shown : [...shown].sort((a, b) => `${b.date.slice(0, 10)}${b.createdAt}`.localeCompare(`${a.date.slice(0, 10)}${a.createdAt}`));
   }, [bills, state, today]);
   const selectedBills = useMemo(() => (bills ?? []).filter((b) => selected.has(b.id)), [bills, selected]);
-  const contactOptions = useMemo(() => [{ value: ALL_VENDORS, label: "All vendors" }, ...contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name }))], [contacts]);
+  const contactOptions = useMemo(() => [{ value: ALL_VENDORS, label: t("vendorBills.explorer.allVendors") }, ...contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name }))], [contacts]);
 
   /** After an action: what happened (D-223), and the list again. */
   function done(title: string, description: string) {
@@ -168,7 +170,7 @@ export function VendorBillsExplorer() {
   }
 
   const money = (v: bigint) => formatMoney(v, orgCurrency);
-  const countOf = (n: number) => `${n} ${n === 1 ? "bill" : "bills"}`;
+  const countOf = (n: number) => t("vendorBills.explorer.billCount", { count: n });
   const by = stats ? stats.due7.by.toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" }) : "";
   const card = (key: Exclude<BillCard, "">, label: string, value: string, hint: string, tone: "default" | "critical" = "default") => {
     const on = state.card === key;
@@ -176,7 +178,7 @@ export function VendorBillsExplorer() {
       <button
         type="button"
         aria-pressed={on}
-        aria-label={`Show ${label.toLowerCase()} only`}
+        aria-label={t("vendorBills.explorer.showOnly", { label: label.toLowerCase() })}
         onClick={() => update({ card: on ? "" : key })}
         className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
@@ -184,7 +186,7 @@ export function VendorBillsExplorer() {
           label={label}
           value={value}
           tone={tone}
-          trend={{ direction: "neutral", label: on ? "Showing these · press again to clear" : hint }}
+          trend={{ direction: "neutral", label: on ? t("vendorBills.explorer.showingThese") : hint }}
           className={cn("h-full transition-colors hover:border-border-strong", on && "border-primary bg-info-bg/60 ring-1 ring-primary")}
         />
         <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", on ? "text-primary" : "text-on-surface-muted")} />
@@ -195,7 +197,7 @@ export function VendorBillsExplorer() {
   const search = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search bill numbers, vendors or jobs" aria-label="Search vendor bills" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("vendorBills.explorer.searchPlaceholder")} aria-label={t("vendorBills.explorer.searchLabel")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
   const filtersOn = hasBillFilters(state) || job.filtering;
@@ -207,45 +209,52 @@ export function VendorBillsExplorer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="bill-stats">
-        <StatCard label="To pay" value={stats ? money(stats.toPay.amount) : "—"} trend={{ direction: "neutral", label: stats ? `${countOf(stats.toPay.count)} recorded and owed` : "Recorded and owed" }} className="h-full" />
-        {card("overdue", "Overdue", stats ? money(stats.overdue.amount) : "—", stats ? countOf(stats.overdue.count) : "", stats && stats.overdue.amount > 0n ? "critical" : "default")}
-        {card("due7", "Due in 7 days", stats ? money(stats.due7.amount) : "—", stats ? `${countOf(stats.due7.count)} · by ${by}` : "")}
-        {card("drafts", "Drafts to record", stats ? String(stats.drafts.count) : "—", stats ? `${money(stats.drafts.amount)} in all` : "")}
+        <StatCard
+          label={t("vendorBills.explorer.toPay")}
+          value={stats ? money(stats.toPay.amount) : "—"}
+          trend={{ direction: "neutral", label: stats ? t("vendorBills.explorer.toPayTrend", { bills: countOf(stats.toPay.count) }) : t("vendorBills.explorer.recordedAndOwed") }}
+          className="h-full"
+        />
+        {/* eslint-disable i18next/no-literal-string -- card keys and tones, not copy */}
+        {card("overdue", t("vendorBills.explorer.overdue"), stats ? money(stats.overdue.amount) : "—", stats ? countOf(stats.overdue.count) : "", stats && stats.overdue.amount > 0n ? "critical" : "default")}
+        {card("due7", t("vendorBills.explorer.due7"), stats ? money(stats.due7.amount) : "—", stats ? t("vendorBills.explorer.due7Trend", { bills: countOf(stats.due7.count), date: by }) : "")}
+        {card("drafts", t("vendorBills.explorer.draftsToRecord"), stats ? String(stats.drafts.count) : "—", stats ? t("vendorBills.explorer.inAll", { amount: money(stats.drafts.amount) }) : "")}
+        {/* eslint-enable i18next/no-literal-string */}
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as BillState[] })} placeholder="State" aria-label="Filter by state" className="w-40" />
-            <Combobox options={contactOptions} value={state.vendor || ALL_VENDORS} onValueChange={(v) => update({ vendor: v === ALL_VENDORS ? "" : v })} placeholder="All vendors" aria-label="Filter by vendor" className="w-56" />
+            <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as BillState[] })} placeholder={t("vendorBills.explorer.statePlaceholder")} aria-label={t("vendorBills.explorer.filterByState")} className="w-40" />
+            <Combobox options={contactOptions} value={state.vendor || ALL_VENDORS} onValueChange={(v) => update({ vendor: v === ALL_VENDORS ? "" : v })} placeholder={t("vendorBills.explorer.allVendors")} aria-label={t("vendorBills.explorer.filterByVendor")} className="w-56" />
             {/* US-SET-24 */}
             {jobsOn && <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />}
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("vendorBills.explorer.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="bills-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("vendorBills.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !bills} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("vendorBills.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !bills} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("vendorBills.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             {/* US-PUR-29 — hidden without vendor_bills.manage_recurring, which every /recurring-bills route also checks. */}
             {canManageRecurring && (
               <Button asChild variant="secondary">
                 <Link href="/vendor-bills/recurring">
                   <Repeat size={14} aria-hidden />
-                  Recurring bills
+                  {t("vendorBills.explorer.recurringBills")}
                 </Link>
               </Button>
             )}
@@ -253,7 +262,7 @@ export function VendorBillsExplorer() {
               <Button asChild>
                 <Link href="/vendor-bills/new">
                   <Plus size={14} aria-hidden />
-                  New vendor bill
+                  {t("vendorBills.explorer.newVendorBill")}
                 </Link>
               </Button>
             )}
@@ -265,9 +274,9 @@ export function VendorBillsExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("vendorBills.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("vendorBills.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -286,23 +295,23 @@ export function VendorBillsExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<ClipboardList />}
-                title={job.filtering && !hasBillFilters(state) ? "No vendor bills on this job" : "No vendor bills match these filters"}
-                description={job.filtering && !hasBillFilters(state) ? "Bills tagged to this job show up here." : "Try adjusting or clearing the filters above."}
+                title={job.filtering && !hasBillFilters(state) ? t("vendorBills.explorer.noBillsOnJob") : t("vendorBills.explorer.noBillsMatch")}
+                description={job.filtering && !hasBillFilters(state) ? t("vendorBills.explorer.jobBillsShowHere") : t("vendorBills.explorer.tryAdjusting")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("vendorBills.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<ClipboardList />}
-                title="No vendor bills yet"
-                description="Record a bill from a vendor — save it as a draft, then record it when it's ready to post to the ledger."
+                title={t("vendorBills.explorer.emptyTitle")}
+                description={t("vendorBills.explorer.emptyDescription")}
                 action={
                   canCreate ? (
                     <Button asChild>
-                      <Link href="/vendor-bills/new">New vendor bill</Link>
+                      <Link href="/vendor-bills/new">{t("vendorBills.explorer.newVendorBill")}</Link>
                     </Button>
                   ) : undefined
                 }
@@ -347,7 +356,7 @@ export function VendorBillsExplorer() {
           const number = payment.number;
           const bill = paying;
           setPaying(null);
-          done(number ? `${number} recorded` : "Payment recorded", bill ? `${bill.billNumber}'s balance has been updated.` : "The bill's balance has been updated.");
+          done(number ? t("vendorBills.explorer.paymentNumberRecorded", { number }) : t("vendorBills.explorer.paymentRecorded"), bill ? t("vendorBills.explorer.balanceUpdated", { number: bill.billNumber }) : t("vendorBills.explorer.theBillsBalanceUpdated"));
         }}
       />
       {voiding && (
@@ -357,7 +366,7 @@ export function VendorBillsExplorer() {
           onOpenChange={(open) => !open && setVoiding(null)}
           onVoided={(updated) => {
             setVoiding(null);
-            done(`${updated.billNumber} voided`, "A reversing entry took it off your books.");
+            done(t("vendorBills.explorer.voidedTitle", { number: updated.billNumber }), t("vendorBills.explorer.voidedDescription"));
           }}
         />
       )}

@@ -11,10 +11,11 @@ import { callNumber, openDirections } from "../../lib/linking";
 import { PillButton } from "../../components/pill-button";
 import { WaitingChip } from "../../components/waiting-chip";
 import { CARD } from "../../lib/card";
+import { t as translate, useT } from "../../lib/i18n";
 
 /** "Call Alan Reyes" on iOS, "Call Alan" on Android (US-MOB-03). */
 export function callLabel(name: string, os: typeof Platform.OS = Platform.OS): string {
-  return `Call ${os === "android" ? (name.trim().split(/\s+/)[0] ?? name) : name}`;
+  return translate("mobileWork.common.callName", { name: os === "android" ? (name.trim().split(/\s+/)[0] ?? name) : name });
 }
 
 /**
@@ -23,6 +24,7 @@ export function callLabel(name: string, os: typeof Platform.OS = Platform.OS): s
  * "Directions". Tapping the card opens the job.
  */
 export function TodayJobCard({ job, locale, onOpen, now, waiting = [] }: { job: FieldJob; locale: string; onOpen: () => void; now?: Date; waiting?: string[] }) {
+  const t = useT();
   const colors = useNativeColors();
   const next = job.nextMilestone;
   const chip = next?.dueDate ? dueChip(next.dueDate, locale, now) : null;
@@ -55,7 +57,7 @@ export function TodayJobCard({ job, locale, onOpen, now, waiting = [] }: { job: 
               <View className="flex-shrink flex-row items-center gap-1.5">
                 <Flag size={14} color={colors.onSurfaceMuted} />
                 <Text numberOfLines={1} className="flex-shrink text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-                  Next: {next.name}
+                  {t("mobileWork.jobCard.next", { name: next.name })}
                 </Text>
               </View>
             )}
@@ -72,8 +74,8 @@ export function TodayJobCard({ job, locale, onOpen, now, waiting = [] }: { job: 
               testID={`today-job-directions-${job.id}`}
               grow
               outlined={Platform.OS === "android"}
-              label="Directions"
-              accessibilityLabel={`Directions to ${oneLine(job.siteAddress)}`}
+              label={t("mobileWork.common.directions")}
+              accessibilityLabel={t("mobileWork.common.directionsTo", { address: oneLine(job.siteAddress) })}
               icon={Navigation}
               onPress={() => void openDirections(job.siteAddress!)}
             />

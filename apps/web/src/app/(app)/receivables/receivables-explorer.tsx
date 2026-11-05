@@ -47,13 +47,15 @@ import { customerView, filterInvoices, parseReceivablesState, receivablesQuery, 
 import type { ReceivablesInvoiceRow, ReceivablesReport } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { t, useT } from "../../../lib/i18n";
 const ALL_AGES = "__all__";
+const AGE_OPTIONS = ["overdue", "current", "0-30", "31-60", "61-90", "90+"] as const satisfies readonly (typeof RECEIVABLES_AGES)[number][];
 
 /** "Nothing 31–60 days late." — what an empty age says. */
 function emptyAge(age: ReceivablesAge): string {
-  if (age === "current") return "Nothing that isn't due yet.";
-  if (age === "overdue") return "Nothing overdue.";
-  return `Nothing ${RECEIVABLES_AGE_LABELS[age]} late.`;
+  if (age === "current") return t("receivables.explorer.emptyCurrent");
+  if (age === "overdue") return t("receivables.explorer.emptyOverdue");
+  return t("receivables.explorer.emptyAge", { age: RECEIVABLES_AGE_LABELS[age] });
 }
 
 type Dialog =
@@ -73,6 +75,7 @@ type Dialog =
  * aging adds up issued invoices' balances; retention held is a note.
  */
 export function ReceivablesExplorer() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canRemind = useCapability("invoices.send_reminder");
@@ -109,9 +112,9 @@ export function ReceivablesExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Receivables updated");
+      if (mode === "refresh") setAnnouncement(t("receivables.explorer.updatedAnnouncement"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load receivables.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("receivables.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -156,9 +159,9 @@ export function ReceivablesExplorer() {
   async function sendReminder(row: ReceivablesInvoiceRow, email: EmailOverride) {
     try {
       await apiClient.post(`/invoices/${row.id}/send-reminder`, email);
-      done("Reminder sent", row.contactName ? `A reminder for ${row.number} has been queued to ${row.contactName}.` : `A reminder for ${row.number} has been queued.`);
+      done(t("receivables.explorer.reminderSentTitle"), row.contactName ? t("receivables.explorer.reminderQueuedTo", { number: row.number, name: row.contactName }) : t("receivables.explorer.reminderQueued", { number: row.number }));
     } catch (err) {
-      setActionError({ title: "Couldn't send the reminder.", message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("receivables.explorer.reminderFailed"), message: err instanceof Error ? err.message : t("receivables.explorer.tryAgainShort") });
       setDialog(null);
     }
   }
@@ -168,9 +171,9 @@ export function ReceivablesExplorer() {
   const header = (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Billing" }, { label: "Receivables" }]}
-        title="Receivables"
-        description={`What customers owe you, by how late it is${asOf ? ` · as of ${asOf}` : ""}`}
+        breadcrumb={[{ label: t("receivables.explorer.breadcrumbBilling") }, { label: t("receivables.explorer.breadcrumbReceivables") }]}
+        title={t("receivables.explorer.title")}
+        description={asOf ? t("receivables.explorer.descriptionAsOf", { date: asOf }) : t("receivables.explorer.description")}
       />
       <PrintHeader />
     </>
@@ -195,8 +198,8 @@ export function ReceivablesExplorer() {
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
       <Input
         type="search"
-        placeholder={state.tab === "customer" ? "Search customers" : "Search invoices or customers"}
-        aria-label="Search receivables"
+        placeholder={state.tab === "customer" ? t("receivables.explorer.searchCustomers") : t("receivables.explorer.searchInvoices")}
+        aria-label={t("receivables.explorer.searchAria")}
         value={state.q}
         onChange={(e) => update({ q: e.target.value })}
         className="pl-9"
@@ -208,7 +211,7 @@ export function ReceivablesExplorer() {
     <div className="flex flex-col gap-3">
       <div className="flex">{search}</div>
       <div className="rounded-lg border border-border bg-surface">
-        <EmptyState icon={<Inbox />} title={message} description="Every other age is still on the cards and the bar above." action={<Button variant="secondary" onClick={clear}>{label}</Button>} />
+        <EmptyState icon={<Inbox />} title={message} description={t("receivables.explorer.emptyDescription")} action={<Button variant="secondary" onClick={clear}>{label}</Button>} />
       </div>
     </div>
   );
@@ -223,7 +226,7 @@ export function ReceivablesExplorer() {
         overdueCount={overdueCount}
         noun="invoice"
         currency={currency}
-        totalDetail={`${report.invoices.length} ${report.invoices.length === 1 ? "invoice" : "invoices"} · ${report.customers.length} ${report.customers.length === 1 ? "customer" : "customers"}`}
+        totalDetail={`${t("receivables.customersTable.invoiceCount", { count: report.invoices.length })} · ${t("receivables.customersTable.customerCount", { count: report.customers.length })}`}
         age={state.age}
         // Receivables has no "Due in 7 days" card, so the age is always one of its own.
         onAgeChange={(age) => update({ age: age as ReceivablesAge | null })}
@@ -231,9 +234,9 @@ export function ReceivablesExplorer() {
           retention && (
             <span className="flex flex-wrap items-center gap-2" data-testid="retention-note">
               <Info size={15} aria-hidden />
-              {formatMoney(BigInt(retention.held), currency)} retention held on {retention.jobCount} {retention.jobCount === 1 ? "job" : "jobs"} isn&apos;t counted here — it&apos;s owed once you release it on the job.
+              {t("receivables.explorer.retentionNote", { amount: formatMoney(BigInt(retention.held), currency), count: retention.jobCount })}
               <SectionLink href="/jobs" className="font-medium text-primary hover:underline">
-                See jobs
+                {t("receivables.explorer.seeJobs")}
               </SectionLink>
             </span>
           )
@@ -243,12 +246,12 @@ export function ReceivablesExplorer() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
           <Select value={state.age ?? ALL_AGES} onValueChange={(v) => update({ age: v === ALL_AGES ? null : (v as ReceivablesAge) })}>
-            <SelectTrigger aria-label="Show by age" className="w-44">
+            <SelectTrigger aria-label={t("receivables.explorer.showByAge")} className="w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_AGES}>All ages</SelectItem>
-              {(["overdue", "current", "0-30", "31-60", "61-90", "90+"] as const satisfies readonly (typeof RECEIVABLES_AGES)[number][]).map((a) => (
+              <SelectItem value={ALL_AGES}>{t("receivables.explorer.allAges")}</SelectItem>
+              {AGE_OPTIONS.map((a) => (
                 <SelectItem key={a} value={a}>
                   {RECEIVABLES_AGE_LABELS[a]}
                 </SelectItem>
@@ -258,16 +261,16 @@ export function ReceivablesExplorer() {
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="receivables-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("receivables.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("receivables.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("receivables.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             <ReportExportMenu path={`/reports/receivables${ageQuery}`} csvPath={`/reports/receivables/export.csv${ageQuery}`} search={state.q} />
           </div>
@@ -278,9 +281,9 @@ export function ReceivablesExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("receivables.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("receivables.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -290,11 +293,11 @@ export function ReceivablesExplorer() {
 
       {report.invoices.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
-          <EmptyState icon={<Inbox />} title="Nothing outstanding" description="Every issued invoice has been paid in full." />
+          <EmptyState icon={<Inbox />} title={t("receivables.explorer.nothingOutstanding")} description={t("receivables.explorer.allPaid")} />
         </div>
       ) : state.tab === "customer" ? (
         customers!.length === 0 ? (
-          state.q.trim() ? empty("No customers match your search", () => update({ q: "" }), "Clear search") : empty(emptyAge(state.age!), () => update({ age: null }), "Show all")
+          state.q.trim() ? empty(t("receivables.explorer.noCustomersMatch"), () => update({ q: "" }), t("receivables.explorer.clearSearch")) : empty(emptyAge(state.age!), () => update({ age: null }), t("receivables.explorer.showAll"))
         ) : (
           <ReceivablesCustomersTable
             customers={customers!}
@@ -312,7 +315,7 @@ export function ReceivablesExplorer() {
           />
         )
       ) : invoices!.length === 0 ? (
-        state.q.trim() ? empty("No invoices match your search", () => update({ q: "" }), "Clear search") : empty(emptyAge(state.age!), () => update({ age: null }), "Show all")
+        state.q.trim() ? empty(t("receivables.explorer.noInvoicesMatch"), () => update({ q: "" }), t("receivables.explorer.clearSearch")) : empty(emptyAge(state.age!), () => update({ age: null }), t("receivables.explorer.showAll"))
       ) : (
         <div className="flex flex-col gap-3">
           {canRemind && selectedRows.length > 0 && (
@@ -353,12 +356,12 @@ export function ReceivablesExplorer() {
       {header}
       <Tabs value={state.tab} onValueChange={(tab) => update({ tab: tab as ReceivablesTab, sort: null })}>
         <TabsList className="mb-4" data-print="hide">
-          <TabsTrigger value="customer" className="group" aria-label={report ? `By customer, ${report.customers.length}` : "By customer"}>
-            By customer
+          <TabsTrigger value="customer" className="group" aria-label={report ? t("receivables.explorer.byCustomerCount", { n: report.customers.length }) : t("receivables.explorer.byCustomer")}>
+            {t("receivables.explorer.byCustomer")}
             {report && <Count n={report.customers.length} />}
           </TabsTrigger>
-          <TabsTrigger value="invoice" className="group" aria-label={report ? `By invoice, ${report.invoices.length}` : "By invoice"}>
-            By invoice
+          <TabsTrigger value="invoice" className="group" aria-label={report ? t("receivables.explorer.byInvoiceCount", { n: report.invoices.length }) : t("receivables.explorer.byInvoice")}>
+            {t("receivables.explorer.byInvoice")}
             {report && <Count n={report.invoices.length} />}
           </TabsTrigger>
         </TabsList>
@@ -386,18 +389,18 @@ export function ReceivablesExplorer() {
           contactId={dialog.row.contactId}
           currency={dialog.row.currency}
           balanceDue={BigInt(dialog.row.balanceDue)}
-          onApplied={(total) => done("Credit applied", `${formatMoney(total, dialog.row.currency)} of credit now counts against ${dialog.row.number ?? "the invoice"}.`)}
+          onApplied={(total) => done(t("receivables.explorer.creditAppliedTitle"), t("receivables.explorer.creditAppliedBody", { amount: formatMoney(total, dialog.row.currency), number: dialog.row.number ?? t("receivables.explorer.theInvoice") }))}
         />
       )}
       {dialog?.kind === "remind" && (
         <SendEmailDialog
           open
           onOpenChange={(open) => !open && setDialog(null)}
-          title={`Send payment reminder — ${dialog.row.number ?? ""}`}
-          description={`${dialog.row.contactName ?? "Customer"} · ${formatMoney(BigInt(dialog.row.balanceDue), dialog.row.currency)} due`}
+          title={t("receivables.explorer.reminderDialogTitle", { number: dialog.row.number ?? "" })}
+          description={t("receivables.explorer.reminderDialogDescription", { name: dialog.row.contactName ?? t("receivables.explorer.customer"), amount: formatMoney(BigInt(dialog.row.balanceDue), dialog.row.currency) })}
           draftPath={`/email-drafts/reminder/${dialog.row.id}`}
-          sendLabel="Send reminder"
-          pdfLabel="Attach the invoice PDF"
+          sendLabel={t("receivables.explorer.sendReminder")}
+          pdfLabel={t("receivables.explorer.attachPdf")}
           onSend={(email) => sendReminder(dialog.row, email)}
         />
       )}
@@ -407,7 +410,7 @@ export function ReceivablesExplorer() {
           onOpenChange={(open) => !open && setDialog(null)}
           contactId={dialog.contactId}
           contactEmail={dialog.email}
-          onSent={(sentTo) => done("Statement sent", `Statement sent to ${sentTo}`)}
+          onSent={(sentTo) => done(t("receivables.explorer.statementSentTitle"), t("receivables.explorer.statementSentBody", { to: sentTo }))}
         />
       )}
     </>

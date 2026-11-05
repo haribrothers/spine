@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
 import { OTHER_COUNTRY_LABEL, TAX_PRESETS, type TaxCountry } from "@spine/shared";
+import { useT } from "../../../lib/i18n";
 
 const CHOICES: { value: TaxCountry; title: string; description?: string }[] = [
   ...TAX_PRESETS.map((p) => ({ value: p.country, title: p.label, description: p.description })),
@@ -30,6 +31,7 @@ export interface TaxCountryStepProps {
  * single-rate step as before (US-ONB-06).
  */
 export function TaxCountryStep({ initialValue, onSave, onSkip, onChange }: TaxCountryStepProps) {
+  const t = useT();
   const [value, setValue] = useState<TaxCountry>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -47,7 +49,7 @@ export function TaxCountryStep({ initialValue, onSave, onSkip, onChange }: TaxCo
       <RadioGroup value={value} onValueChange={(v) => {
           setValue(v as TaxCountry);
           onChange?.(v as TaxCountry);
-        }} className="gap-3" aria-label="Tax country">
+        }} className="gap-3" aria-label={t("onboarding.taxCountry.label")}>
         {CHOICES.map((choice) => (
           <label
             key={choice.value}
@@ -69,11 +71,11 @@ export function TaxCountryStep({ initialValue, onSave, onSkip, onChange }: TaxCo
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : "Continue"}
+          {saving ? <Spinner size="sm" /> : t("onboarding.common.continue")}
         </Button>
       </div>
     </div>

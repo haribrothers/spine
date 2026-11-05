@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import type { VendorBill } from "./types";
 
 /**
@@ -12,6 +13,7 @@ import type { VendorBill } from "./types";
  * bill's page and a row's menu.
  */
 export function VoidBillDialog({ bill, open, onOpenChange, onVoided }: { bill: VendorBill; open: boolean; onOpenChange: (open: boolean) => void; onVoided: (bill: VendorBill) => void }) {
+  const t = useT();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,7 +27,7 @@ export function VoidBillDialog({ bill, open, onOpenChange, onVoided }: { bill: V
 
   async function submit() {
     if (!reason.trim()) {
-      setError("Give a reason for voiding this bill.");
+      setError(t("vendorBills.voidDialog.reasonRequired"));
       return;
     }
     setBusy(true);
@@ -35,7 +37,7 @@ export function VoidBillDialog({ bill, open, onOpenChange, onVoided }: { bill: V
       onOpenChange(false);
       onVoided(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not void this vendor bill.");
+      setError(err instanceof Error ? err.message : t("vendorBills.voidDialog.voidFailed"));
     } finally {
       setBusy(false);
     }
@@ -45,9 +47,9 @@ export function VoidBillDialog({ bill, open, onOpenChange, onVoided }: { bill: V
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Void {bill.billNumber}?</DialogTitle>
+          <DialogTitle>{t("vendorBills.voidDialog.title", { number: bill.billNumber })}</DialogTitle>
           <DialogDescription>
-            {formatMoney(BigInt(bill.totalAmount), bill.currency)} owed to {bill.contactName ?? "the vendor"} comes off your books with a reversing entry. The bill stays, marked void. This can&apos;t be undone.
+            {t("vendorBills.voidDialog.description", { amount: formatMoney(BigInt(bill.totalAmount), bill.currency), vendor: bill.contactName ?? t("vendorBills.voidDialog.theVendor") })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
@@ -56,16 +58,16 @@ export function VoidBillDialog({ bill, open, onOpenChange, onVoided }: { bill: V
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Reason" required>
-            {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is this bill being voided?" />}
+          <FormField label={t("vendorBills.voidDialog.reason")} required>
+            {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("vendorBills.voidDialog.reasonPlaceholder")} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-            Go back
+            {t("vendorBills.voidDialog.goBack")}
           </Button>
           <Button type="button" variant="danger" onClick={() => void submit()} disabled={busy}>
-            {busy ? <Spinner size="sm" /> : "Void bill"}
+            {busy ? <Spinner size="sm" /> : t("vendorBills.voidDialog.voidBill")}
           </Button>
         </DialogFooter>
       </DialogContent>

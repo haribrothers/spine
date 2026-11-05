@@ -11,6 +11,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { useTaxCountry } from "../contacts/contact-gst-fields";
+import { useT } from "../../../lib/i18n";
 
 /** US-DASH-14's old `?tab=` links, now pages of their own. */
 const OLD_TABS: Record<string, string> = {
@@ -27,6 +28,7 @@ const OLD_TABS: Record<string, string> = {
  * them to every device).
  */
 export function ReportsCenter() {
+  const t = useT();
   const router = useRouter();
   const tab = useSearchParams().get("tab");
   const role = useMyRole();
@@ -70,12 +72,12 @@ export function ReportsCenter() {
     <div className="flex flex-col gap-6">
       <div className="relative w-full max-w-sm">
         <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-        <Input aria-label="Search reports" placeholder="Search reports" value={query} onChange={(e) => setQuery(e.target.value)} className="pl-9" />
+        <Input aria-label={t("reports.center.search")} placeholder={t("reports.center.search")} value={query} onChange={(e) => setQuery(e.target.value)} className="pl-9" />
       </div>
 
       {favouriteReports.length > 0 && (
         <Card className="flex flex-col gap-3" data-testid="report-favourites">
-          <h2 className="text-[15px] font-semibold text-on-surface">Favourites</h2>
+          <h2 className="text-[15px] font-semibold text-on-surface">{t("reports.center.favourites")}</h2>
           <div className="flex flex-wrap gap-2">
             {favouriteReports.map((r) => (
               <Link key={r.slug} href={r.href} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[14px] font-medium text-primary hover:bg-primary/15">
@@ -88,7 +90,7 @@ export function ReportsCenter() {
       )}
 
       {shown.length === 0 ? (
-        <p className="text-[14px] text-on-surface-muted">No reports match &ldquo;{query}&rdquo;.</p>
+        <p className="text-[14px] text-on-surface-muted">{t("reports.center.noMatch", { query })}</p>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {REPORT_GROUPS.map((group) => {
@@ -108,7 +110,7 @@ export function ReportsCenter() {
                         <button
                           type="button"
                           aria-pressed={starred}
-                          aria-label={starred ? `Remove ${r.label} from favourites` : `Add ${r.label} to favourites`}
+                          aria-label={starred ? t("reports.center.removeFavourite", { name: r.label }) : t("reports.center.addFavourite", { name: r.label })}
                           onClick={() => toggle(r.slug)}
                           className="flex h-8 w-8 items-center justify-center rounded-sm text-on-surface-muted hover:text-due-soon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >

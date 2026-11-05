@@ -6,17 +6,18 @@ import { BookOpen } from "lucide-react";
 import { Alert, AlertDescription, EmptyState, MultiSelect, PaginationBar, ReportFilter, ReportFilterCheckbox, ReportToolbar, StatCard, StatementTable } from "@spine/ui";
 import type { GeneralLedgerAccount, GeneralLedgerReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
 import { RangeFilters, ReportKpis, useReport } from "../report-kit";
+import { t, useT } from "../../../../lib/i18n";
 
-const shortDay = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const shortDay = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric" });
 
 /** The general ledger and the day book are siblings: tabs switch between them. */
 export const LEDGER_TABS = [
-  { value: "general-ledger", label: "General ledger", href: "/reports/general-ledger" },
-  { value: "day-book", label: "Day book", href: "/reports/day-book" },
+  { value: "general-ledger", label: t("reports.generalLedger.tabGeneralLedger"), href: "/reports/general-ledger" },
+  { value: "day-book", label: t("reports.generalLedger.tabDayBook"), href: "/reports/day-book" },
 ];
 
 /**
@@ -25,6 +26,7 @@ export const LEDGER_TABS = [
  * account; a row's source opens its document.
  */
 export function GeneralLedger() {
+  const t = useT();
   const currency = useCurrency();
   const [from, setFrom] = useState<Date>(quarterStart);
   const [to, setTo] = useState<Date>(() => new Date());
@@ -61,7 +63,7 @@ export function GeneralLedger() {
   const drCr = (v: string) => {
     const n = BigInt(v);
     if (n === 0n) return formatMoney(0n, currency);
-    return `${formatMoney(n < 0n ? -n : n, currency)} ${n < 0n ? "Cr" : "Dr"}`;
+    return `${formatMoney(n < 0n ? -n : n, currency)} ${n < 0n ? t("reports.common.creditSide") : t("reports.common.debitSide")}`;
   };
   const amount = (v: string) => (BigInt(v) === 0n ? "" : formatMoney(v, currency));
 
@@ -73,10 +75,10 @@ export function GeneralLedger() {
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={refilter(setFrom)} onTo={refilter(setTo)} />
-            <ReportFilter label="Accounts" className="w-72">
-              {(id) => <MultiSelect aria-labelledby={id} options={options} value={accountIds} onValueChange={refilter(setAccountIds)} placeholder={hideInactive ? "All accounts with activity" : "All accounts"} />}
+            <ReportFilter label={t("reports.common.accounts")} className="w-72">
+              {(id) => <MultiSelect aria-labelledby={id} options={options} value={accountIds} onValueChange={refilter(setAccountIds)} placeholder={hideInactive ? t("reports.generalLedger.allAccountsWithActivity") : t("reports.common.allAccounts")} />}
             </ReportFilter>
-            <ReportFilterCheckbox label="Hide accounts with no activity" checked={hideInactive} onCheckedChange={refilter(setHideInactive)} />
+            <ReportFilterCheckbox label={t("reports.generalLedger.hideInactive")} checked={hideInactive} onCheckedChange={refilter(setHideInactive)} />
           </>
         }
         actions={!error && <ReportExportMenu path={`/reports/general-ledger?${filters}`} />}
@@ -90,16 +92,16 @@ export function GeneralLedger() {
 
       {report && !error && (
         <ReportKpis count={4} data-testid="gl-cards">
-          <StatCard label="Accounts" value={String(report.totalAccounts)} />
-          <StatCard label="Lines" value={String(report.totals.lines)} />
-          <StatCard label="Total debits" value={formatMoney(report.totals.debit, currency)} />
-          <StatCard label="Total credits" value={formatMoney(report.totals.credit, currency)} />
+          <StatCard label={t("reports.common.accounts")} value={String(report.totalAccounts)} />
+          <StatCard label={t("reports.generalLedger.lines")} value={String(report.totals.lines)} />
+          <StatCard label={t("reports.common.totalDebits")} value={formatMoney(report.totals.debit, currency)} />
+          <StatCard label={t("reports.common.totalCredits")} value={formatMoney(report.totals.credit, currency)} />
         </ReportKpis>
       )}
 
       {report && !error && report.accounts.length === 0 && (
         <div className="rounded-lg border border-border bg-surface">
-          <EmptyState icon={<BookOpen />} title="Nothing posted in this period" description="Pick other dates, or untick “Hide accounts with no activity” to see every account." />
+          <EmptyState icon={<BookOpen />} title={t("reports.generalLedger.emptyTitle")} description={t("reports.generalLedger.emptyDescription")} />
         </div>
       )}
 
@@ -122,25 +124,26 @@ export function GeneralLedger() {
 }
 
 function AccountLedger({ ledger, drCr, amount }: { ledger: GeneralLedgerAccount; drCr: (v: string) => string; amount: (v: string) => string }) {
+  const t = useT();
   const title = `${ledger.account.code} — ${ledger.account.name}`;
   return (
     <section className="flex flex-col gap-3" aria-label={title} data-testid={`gl-account-${ledger.account.code}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-semibold text-on-surface">{title}</h2>
-        <p className="text-[13px] tabular-nums text-on-surface-muted">Opening balance {drCr(ledger.openingBalance)}</p>
+        <p className="text-[13px] tabular-nums text-on-surface-muted">{t("reports.generalLedger.openingBalance", { amount: drCr(ledger.openingBalance) })}</p>
       </div>
       <StatementTable
         columns={[
-          { key: "date", header: "Date" },
-          { key: "source", header: "Source" },
-          { key: "detail", header: "Contact · description" },
-          { key: "job", header: "Job" },
-          { key: "debit", header: "Debit", align: "right" },
-          { key: "credit", header: "Credit", align: "right" },
-          { key: "balance", header: "Balance", align: "right" },
+          { key: "date", header: t("reports.common.date") },
+          { key: "source", header: t("reports.common.source") },
+          { key: "detail", header: t("reports.generalLedger.detail") },
+          { key: "job", header: t("reports.common.job") },
+          { key: "debit", header: t("reports.common.debit"), align: "right" },
+          { key: "credit", header: t("reports.common.credit"), align: "right" },
+          { key: "balance", header: t("reports.generalLedger.balance"), align: "right" },
         ]}
         rows={[
-          ...(ledger.rows.length === 0 ? [{ kind: "empty" as const, key: "none", label: "No entries in this period." }] : []),
+          ...(ledger.rows.length === 0 ? [{ kind: "empty" as const, key: "none", label: t("reports.generalLedger.noEntries") }] : []),
           ...ledger.rows.map((r) => ({
             kind: "line" as const,
             key: r.journalLineId,
@@ -160,7 +163,7 @@ function AccountLedger({ ledger, drCr, amount }: { ledger: GeneralLedgerAccount;
               balance: drCr(r.balance),
             },
           })),
-          { kind: "total" as const, key: "closing", cells: { date: "Closing balance", balance: <span data-testid="gl-closing">{drCr(ledger.closingBalance)}</span> } },
+          { kind: "total" as const, key: "closing", cells: { date: t("reports.generalLedger.closingBalance"), balance: <span data-testid="gl-closing">{drCr(ledger.closingBalance)}</span> } },
         ]}
       />
     </section>

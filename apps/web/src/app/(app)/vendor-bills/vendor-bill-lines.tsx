@@ -24,6 +24,7 @@ import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } fro
 import { apiClient } from "../../../lib/api-client";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import { AiSuggestedTag } from "../../../components/ai-suggested-tag";
 import { blankLine, computeLinePreview, resolveLineTaxRates, type EditableVendorBillLine } from "./vendor-bill-line-editor";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
@@ -68,6 +69,7 @@ export function VendorBillLines({
   /** US-AI-08 — where AI's accounts and rates came from, in place of the keyboard hint. */
   footerNote?: string;
 }) {
+  const t = useT();
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
@@ -86,7 +88,7 @@ export function VendorBillLines({
   const accountOptions = useMemo(() => expenseAccounts.map((a) => ({ value: a.id, label: `${a.code} ${a.name}` })), [expenseAccounts]);
   const taxOptions = useMemo(
     () => [
-      { value: "", label: "No tax" },
+      { value: "", label: t("vendorBills.lines.noTax") },
       ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
       ...taxGroups
         .filter((g) => !g.archivedAt)
@@ -139,7 +141,7 @@ export function VendorBillLines({
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved!);
     onChange(next);
-    setAnnouncement(`Moved to position ${to + 1} of ${lines.length}`);
+    setAnnouncement(t("vendorBills.lines.moved", { position: to + 1, count: lines.length }));
   }
 
   function dropOn(targetKey: string, before: boolean) {
@@ -150,7 +152,7 @@ export function VendorBillLines({
     if (to === -1 || from === -1) return;
     if (!before) to += 1;
     onChange([...without.slice(0, to), lines[from]!, ...without.slice(to)]);
-    setAnnouncement(`Moved to position ${to + 1} of ${lines.length}`);
+    setAnnouncement(t("vendorBills.lines.moved", { position: to + 1, count: lines.length }));
   }
 
   function addAndFocus() {
@@ -163,12 +165,12 @@ export function VendorBillLines({
     <div className="flex flex-col">
       <div className={cn(ROW_GRID, "hidden border-b border-border bg-surface-sunken px-3 py-2 text-[12px] font-medium text-on-surface-muted lg:grid")} aria-hidden>
         <span />
-        <span>Item</span>
-        <span className="text-right">Qty</span>
-        <span className="text-right">Rate</span>
-        <span>Tax</span>
-        <span>Account</span>
-        <span className="text-right">Amount</span>
+        <span>{t("vendorBills.lines.item")}</span>
+        <span className="text-right">{t("vendorBills.lines.qty")}</span>
+        <span className="text-right">{t("vendorBills.lines.rate")}</span>
+        <span>{t("vendorBills.lines.tax")}</span>
+        <span>{t("vendorBills.lines.account")}</span>
+        <span className="text-right">{t("vendorBills.lines.amount")}</span>
         <span />
       </div>
       <div className="flex flex-col" data-testid="bill-lines">
@@ -176,7 +178,7 @@ export function VendorBillLines({
           <div
             key={line.key}
             data-line-key={line.key}
-            aria-label={`Line ${index + 1} of ${lines.length}`}
+            aria-label={t("vendorBills.lines.lineOf", { index: index + 1, count: lines.length })}
             role="group"
             onDragOver={(e) => {
               if (!dragKey || dragKey === line.key) return;
@@ -236,7 +238,7 @@ export function VendorBillLines({
 
       <div className="flex flex-wrap items-center gap-2 px-3 py-3">
         <Button type="button" variant="secondary" size="sm" onClick={addAndFocus}>
-          <Plus size={14} /> Add item
+          <Plus size={14} /> {t("vendorBills.lines.addItem")}
         </Button>
         {footerNote ? (
           <span className="ml-auto text-[12px] text-on-surface-muted" data-testid="bill-lines-note">
@@ -244,7 +246,10 @@ export function VendorBillLines({
           </span>
         ) : (
           <span className="ml-auto hidden text-[12px] text-on-surface-muted lg:inline">
-            Enter adds a row · <Kbd>Alt</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd> moves it
+            {t("vendorBills.lines.hintEnter")}
+            {/* eslint-disable-next-line i18next/no-literal-string -- arrow key symbols, not copy */}
+            <Kbd>{t("vendorBills.lines.keyAlt")}</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd>
+            {t("vendorBills.lines.hintMoves")}
           </span>
         )}
       </div>
@@ -291,6 +296,7 @@ function BillLineRow({
   onDragEnd: () => void;
   onEnterLast?: () => void;
 }) {
+  const t = useT();
   const [details, setDetails] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
   const preview = computeLinePreview(line, currency, taxRates, taxGroups);
@@ -312,7 +318,7 @@ function BillLineRow({
           draggable
           role="button"
           tabIndex={-1}
-          aria-label={`Drag line ${index + 1}`}
+          aria-label={t("vendorBills.lines.dragLine", { index: index + 1 })}
           onDragStart={(e) => {
             e.dataTransfer.effectAllowed = "move";
             e.dataTransfer.setData("text/plain", line.key);
@@ -338,7 +344,7 @@ function BillLineRow({
           />
         </div>
         <Input
-          aria-label="Quantity"
+          aria-label={t("vendorBills.lines.quantity")}
           type="number"
           inputMode="decimal"
           min={0}
@@ -347,8 +353,8 @@ function BillLineRow({
           onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
           className="col-start-2 text-right tabular-nums lg:col-start-auto"
         />
-        <MoneyInput aria-label="Unit price" value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
-        <Combobox aria-label="Tax" options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
+        <MoneyInput aria-label={t("vendorBills.lines.unitPrice")} value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
+        <Combobox aria-label={t("vendorBills.lines.tax")} options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder={t("vendorBills.lines.noTax")} />
         <div
           onKeyDown={(e) => {
             if (e.key === "Enter" && onEnterLast) {
@@ -357,7 +363,7 @@ function BillLineRow({
             }
           }}
         >
-          <Combobox aria-label="Account" options={accountOptions} value={line.accountId ?? undefined} onValueChange={(id) => onChange({ accountId: id })} placeholder="Account" />
+          <Combobox aria-label={t("vendorBills.lines.account")} options={accountOptions} value={line.accountId ?? undefined} onValueChange={(id) => onChange({ accountId: id })} placeholder={t("vendorBills.lines.account")} />
         </div>
         <span className="text-right text-[13.5px] font-medium tabular-nums text-on-surface" data-testid="line-amount">
           {formatMoney(preview.total, currency)}
@@ -365,26 +371,26 @@ function BillLineRow({
         <span className="row-start-1 col-start-7 lg:row-start-auto lg:col-start-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" aria-label={`Actions for line ${index + 1}`} className="flex h-9 w-8 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+              <button type="button" aria-label={t("vendorBills.lines.actionsForLine", { index: index + 1 })} className="flex h-9 w-8 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
                 <EllipsisVertical size={16} aria-hidden />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(index - 1)}>
                 <MENU_ICONS.moveUp aria-hidden />
-                Move up
+                {t("vendorBills.lines.moveUp")}
               </DropdownMenuItem>
               <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(index + 1)}>
                 <MENU_ICONS.moveDown aria-hidden />
-                Move down
+                {t("vendorBills.lines.moveDown")}
               </DropdownMenuItem>
               <DropdownMenuCheckboxItem checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })}>
-                Price includes tax
+                {t("vendorBills.lines.priceIncludesTax")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={onRemove}>
                 <MENU_ICONS.delete aria-hidden />
-                Remove line
+                {t("vendorBills.lines.removeLine")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -394,10 +400,10 @@ function BillLineRow({
         // The details row shares the line's grid — description under Item to Rate, HSN/SAC under Tax, supply type beside it.
         <div className={cn(ROW_GRID, "items-start")}>
           <Input
-            aria-label="Description"
+            aria-label={t("vendorBills.lines.description")}
             value={line.description}
             onChange={(e) => onChange({ description: e.target.value })}
-            placeholder="Description (optional)"
+            placeholder={t("vendorBills.lines.descriptionPlaceholder")}
             className="col-[2/span_5] h-8 text-[13px] lg:col-[2/span_3]"
           />
           {showHsn && (
@@ -419,7 +425,7 @@ function BillLineRow({
       ) : (
         <div className={ROW_GRID}>
           <button type="button" onClick={() => setDetails(true)} className="col-[2/span_5] flex w-fit items-center gap-1 text-[12.5px] font-medium text-primary hover:underline lg:col-[2/span_3]">
-            <Plus size={13} aria-hidden /> Add description
+            <Plus size={13} aria-hidden /> {t("vendorBills.lines.addDescription")}
           </button>
         </div>
       )}

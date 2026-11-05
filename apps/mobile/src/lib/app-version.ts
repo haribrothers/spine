@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 import { isPrerelease } from "@spine/shared";
+import { t } from "./i18n";
 
 /** The marketing version sent as `X-Spine-Client-Version` (D-071): `X.Y.Z`, as the stores take it. */
 export const APP_VERSION: string = Constants.expoConfig?.version ?? "1.0.0";
@@ -13,5 +14,5 @@ export const APP_BUILD: string | null =
 
 /** Profile's version line: "Spine 1.0.0-beta.1 (12) · Beta". */
 export function versionLine(version: string = SPINE_VERSION, build: string | null = APP_BUILD): string {
-  return `Spine ${version}${build ? ` (${build})` : ""}${isPrerelease(version) ? " · Beta" : ""}`;
+  return `Spine ${version}${build ? ` (${build})` : ""}${isPrerelease(version) ? ` · ${t("mobileApp.version.beta")}` : ""}`;
 }

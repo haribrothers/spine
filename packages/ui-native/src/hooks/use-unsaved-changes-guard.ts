@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { Alert } from "react-native";
+import { t } from "../lib/i18n";
 
 /**
  * The exact shape this hook actually calls on a React Navigation
@@ -60,13 +61,13 @@ export interface UnsavedChangesGuardOptions {
  */
 export function useUnsavedChangesGuard(
   navigation: UnsavedChangesNavigation,
-  { isDirty, bypass = false, title = "Discard changes?", message = "You have unsaved changes. Discard them?", keepEditingLabel = "Keep editing", discardLabel = "Discard" }: UnsavedChangesGuardOptions,
+  { isDirty, bypass = false, title, message, keepEditingLabel, discardLabel }: UnsavedChangesGuardOptions,
 ) {
   const confirmDiscard = useCallback(
     (onDiscard: () => void) => {
-      Alert.alert(title, message, [
-        { text: keepEditingLabel, style: "cancel" },
-        { text: discardLabel, style: "destructive", onPress: onDiscard },
+      Alert.alert(title ?? t("uiNative.unsavedChanges.title"), message ?? t("uiNative.unsavedChanges.message"), [
+        { text: keepEditingLabel ?? t("uiNative.unsavedChanges.keepEditing"), style: "cancel" },
+        { text: discardLabel ?? t("uiNative.unsavedChanges.discard"), style: "destructive", onPress: onDiscard },
       ]);
     },
     [title, message, keepEditingLabel, discardLabel],

@@ -27,6 +27,7 @@ import { WaitingChip } from "../../components/waiting-chip";
 import type { OutboxItem } from "../../lib/outbox/types";
 import { CardRowsSkeleton, HeadingSkeleton, ListRowsSkeleton, PhotoGridSkeleton } from "../../components/skeletons";
 import { useCameraInk } from "../../lib/camera/ink";
+import { useT } from "../../lib/i18n";
 
 const PREVIEW_PHOTOS = 4;
 
@@ -35,6 +36,7 @@ export function jobSubtitle(job: Pick<FieldJob, "number" | "contactName">): stri
 }
 
 function MilestoneRow({ milestone, primary, first, locale, waiting, onComplete }: { milestone: FieldMilestone; primary: boolean; first: boolean; locale: string; waiting: boolean; onComplete: () => void }) {
+  const t = useT();
   const colors = useNativeColors();
   const done = milestone.status !== "pending";
   const due = milestone.dueDate ? calendarDay(milestone.dueDate) : null;
@@ -48,30 +50,30 @@ function MilestoneRow({ milestone, primary, first, locale, waiting, onComplete }
       <View className="flex-1 gap-0.5">
         <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{milestone.name}</Text>
         {done ? (
-          <Text className="text-[14px] text-paid dark:text-paid-dark">Completed{milestone.completedAt ? ` ${dayMonth(new Date(milestone.completedAt), locale)}` : ""}</Text>
+          <Text className="text-[14px] text-paid dark:text-paid-dark">{milestone.completedAt ? t("mobileWork.jobDetail.completedOn", { date: dayMonth(new Date(milestone.completedAt), locale) }) : t("mobileWork.common.completed")}</Text>
         ) : due ? (
-          <Text className={`text-[14px] ${dueClass}`}>Due {weekdayDayMonth(due, locale)}</Text>
+          <Text className={`text-[14px] ${dueClass}`}>{t("mobileWork.jobDetail.due", { date: weekdayDayMonth(due, locale) })}</Text>
         ) : (
-          <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No due date</Text>
+          <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.jobDetail.noDueDate")}</Text>
         )}
       </View>
       {done ? (
-        <View accessible accessibilityLabel="Completed" className="flex-row items-center gap-1.5">
+        <View accessible accessibilityLabel={t("mobileWork.common.completed")} className="flex-row items-center gap-1.5">
           <CircleCheck size={20} color={colors.paid} />
-          <Text className="text-[15px] font-medium text-paid dark:text-paid-dark">Completed</Text>
+          <Text className="text-[15px] font-medium text-paid dark:text-paid-dark">{t("mobileWork.common.completed")}</Text>
         </View>
       ) : waiting ? (
         // US-MOB-07: completed on this phone, not yet at the office.
-        <WaitingChip label="Completion waiting" testID={`milestone-waiting-${milestone.id}`} />
+        <WaitingChip label={t("mobileWork.jobDetail.completionWaiting")} testID={`milestone-waiting-${milestone.id}`} />
       ) : (
         <Pressable
           testID={`milestone-complete-${milestone.id}`}
           onPress={onComplete}
           accessibilityRole="button"
-          accessibilityLabel={`Mark ${milestone.name} complete`}
+          accessibilityLabel={t("mobileWork.jobDetail.markNameComplete", { name: milestone.name })}
           className={`min-h-[44px] items-center justify-center rounded-full px-4 active:opacity-70 ${primary ? "bg-primary dark:bg-primary-dark" : tonal}`}
         >
-          <Text className={`text-[15px] font-semibold ${primary ? "text-on-primary dark:text-on-primary-dark" : tonalText}`}>Mark complete</Text>
+          <Text className={`text-[15px] font-semibold ${primary ? "text-on-primary dark:text-on-primary-dark" : tonalText}`}>{t("mobileWork.jobDetail.markComplete")}</Text>
         </Pressable>
       )}
     </View>
@@ -86,6 +88,7 @@ export function tileKey(tile: TilePhoto): string {
 }
 
 export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: string; size?: number }) {
+  const t = useT();
   const sent = useFileUri(tile.kind === "sent" ? tile.photo.fileId : "");
   const ink = useCameraInk();
   const waiting = tile.kind === "waiting";
@@ -94,7 +97,7 @@ export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: 
     <View testID={waiting ? "photo-waiting" : undefined} className="overflow-hidden rounded-md bg-surface-sunken dark:bg-surface-sunken-dark" style={size ? { width: size, height: size } : { flex: 1, aspectRatio: 1 }}>
       <Image
         source={uri ? { uri } : undefined}
-        accessibilityLabel={tile.kind === "sent" ? (tile.photo.caption ?? "Site photo") : "Site photo, waiting to sync"}
+        accessibilityLabel={tile.kind === "sent" ? (tile.photo.caption ?? t("mobileWork.jobDetail.sitePhoto")) : t("mobileWork.jobDetail.sitePhotoWaiting")}
         style={{ width: "100%", height: "100%" }}
         resizeMode="cover"
       />
@@ -109,7 +112,7 @@ export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: 
       ) : null}
       {waiting ? (
         <View className="absolute bottom-2 left-2 rounded-full bg-due-soon-bg px-2 py-0.5 dark:bg-due-soon-bg-dark">
-          <Text className="text-[12px] font-medium text-due-soon dark:text-due-soon-dark">Waiting</Text>
+          <Text className="text-[12px] font-medium text-due-soon dark:text-due-soon-dark">{t("mobileWork.jobDetail.waiting")}</Text>
         </View>
       ) : null}
     </View>
@@ -117,6 +120,7 @@ export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: 
 }
 
 function QuoteRow({ quote, first, locale, onPresent }: { quote: QuoteToPresent; first: boolean; locale: string; onPresent: () => void }) {
+  const t = useT();
   const colors = useNativeColors();
   const title = [quote.number, quote.title].filter(Boolean).join(" · ");
   return (
@@ -127,10 +131,10 @@ function QuoteRow({ quote, first, locale, onPresent }: { quote: QuoteToPresent; 
       <View className="flex-1 gap-0.5">
         <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{title}</Text>
         <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-          {quote.sentAt ? `Sent ${dayMonth(new Date(quote.sentAt), locale)} · ` : ""}waiting for the customer
+          {quote.sentAt ? t("mobileWork.jobDetail.quoteSentWaiting", { date: dayMonth(new Date(quote.sentAt), locale) }) : t("mobileWork.jobDetail.quoteWaiting")}
         </Text>
       </View>
-      <PillButton testID={`quote-present-${quote.id}`} label="Present" accessibilityLabel={`Present ${quote.number ?? "quote"}`} onPress={onPresent} />
+      <PillButton testID={`quote-present-${quote.id}`} label={t("mobileWork.jobDetail.present")} accessibilityLabel={t("mobileWork.jobDetail.presentQuote", { number: quote.number ?? t("mobileWork.common.quote") })} onPress={onPresent} />
     </View>
   );
 }
@@ -160,6 +164,7 @@ function Group({ children, testID, list = false }: { children: React.ReactNode; 
  * the API never sends them to Field.
  */
 export function JobDetailScreen({ id }: { id: string }) {
+  const t = useT();
   const router = useRouter();
   // US-MOB-16/18: Present opens the quote live; offline, Android says so over the job (iOS shows it full screen).
   const present = (quoteId: string) => {
@@ -194,7 +199,7 @@ export function JobDetailScreen({ id }: { id: string }) {
           ? { title: job?.name ?? "" }
           : {
               title: "",
-              unstable_headerRightItems: () => [{ type: "button" as const, label: "Add photos", icon: { type: "sfSymbol" as const, name: "camera" as const }, accessibilityLabel: "Add photos", onPress: addPhotos }],
+              unstable_headerRightItems: () => [{ type: "button" as const, label: t("mobileWork.common.addPhotos"), icon: { type: "sfSymbol" as const, name: "camera" as const }, accessibilityLabel: t("mobileWork.common.addPhotos"), onPress: addPhotos }],
             }
       }
     />
@@ -206,12 +211,12 @@ export function JobDetailScreen({ id }: { id: string }) {
       <View className="flex-1 bg-background p-4 dark:bg-background-dark">
         {header}
         {gone ? (
-          <EmptyState title="This job isn't on your list" description="Your office may have taken you off its crew. Pull down on Jobs to refresh." />
+          <EmptyState title={t("mobileWork.jobDetail.notOnListTitle")} description={t("mobileWork.jobDetail.notOnListDescription")} />
         ) : (
           <View className="gap-5 pt-24">
-            <HeadingSkeleton label="Loading the job" />
-            <CardRowsSkeleton rows={2} label="Loading the site and contact" />
-            <ListRowsSkeleton label="Loading milestones" rows={3} trailing="pill" grouped />
+            <HeadingSkeleton label={t("mobileWork.jobDetail.loadingJob")} />
+            <CardRowsSkeleton rows={2} label={t("mobileWork.jobDetail.loadingSite")} />
+            <ListRowsSkeleton label={t("mobileWork.jobDetail.loadingMilestones")} rows={3} trailing="pill" grouped />
           </View>
         )}
       </View>
@@ -255,11 +260,11 @@ export function JobDetailScreen({ id }: { id: string }) {
                 <MapPin size={20} color={colors.onSurfaceMuted} />
                 <Text className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark">{oneLine(job.siteAddress)}</Text>
                 {android ? (
-                  <Pressable onPress={() => void openDirections(job.siteAddress!)} accessibilityRole="button" accessibilityLabel={`Directions to ${oneLine(job.siteAddress)}`} className="min-h-[44px] justify-center px-2">
-                    <Text className="text-[15px] font-semibold text-primary dark:text-primary-dark">Directions</Text>
+                  <Pressable onPress={() => void openDirections(job.siteAddress!)} accessibilityRole="button" accessibilityLabel={t("mobileWork.common.directionsTo", { address: oneLine(job.siteAddress) })} className="min-h-[44px] justify-center px-2">
+                    <Text className="text-[15px] font-semibold text-primary dark:text-primary-dark">{t("mobileWork.common.directions")}</Text>
                   </Pressable>
                 ) : (
-                  <PillButton testID="job-directions" label="Directions" icon={Navigation} accessibilityLabel={`Directions to ${oneLine(job.siteAddress)}`} onPress={() => void openDirections(job.siteAddress!)} />
+                  <PillButton testID="job-directions" label={t("mobileWork.common.directions")} icon={Navigation} accessibilityLabel={t("mobileWork.common.directionsTo", { address: oneLine(job.siteAddress) })} onPress={() => void openDirections(job.siteAddress!)} />
                 )}
               </View>
             ) : null}
@@ -275,7 +280,7 @@ export function JobDetailScreen({ id }: { id: string }) {
                     testID="job-call"
                     onPress={() => void callNumber(contact.phone!)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Call ${contact.name}`}
+                    accessibilityLabel={t("mobileWork.common.callName", { name: contact.name })}
                     className="h-11 w-11 items-center justify-center rounded-full bg-paid-bg active:opacity-70 dark:bg-paid-bg-dark"
                   >
                     <Phone size={20} color={colors.paid} />
@@ -287,7 +292,7 @@ export function JobDetailScreen({ id }: { id: string }) {
         ) : null}
 
         <View className="gap-2">
-          <SectionHeader title="Milestones" testID="job-milestones-header" />
+          <SectionHeader title={t("mobileWork.jobDetail.milestones")} testID="job-milestones-header" />
           {ordered.length ? (
             <Group testID="job-milestones" list>
               {ordered.map((milestone, index) => (
@@ -303,18 +308,18 @@ export function JobDetailScreen({ id }: { id: string }) {
               ))}
             </Group>
           ) : milestones.loading ? (
-            <ListRowsSkeleton label="Loading milestones" testID="skeleton-milestones" rows={3} trailing="pill" grouped />
+            <ListRowsSkeleton label={t("mobileWork.jobDetail.loadingMilestones")} testID="skeleton-milestones" rows={3} trailing="pill" grouped />
           ) : (
-            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No milestones on this job yet.</Text>
+            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.jobDetail.noMilestones")}</Text>
           )}
         </View>
 
         <View className="gap-2">
           <SectionHeader
-            title="Photos"
+            title={t("mobileWork.common.photos")}
             count={photos.loading && !waiting.photos.length ? undefined : photoList.length}
             testID="job-photos-header"
-            action={photoList.length ? { label: "See all", onPress: () => router.push(`/jobs/${id}/photos`) } : undefined}
+            action={photoList.length ? { label: t("mobileWork.jobDetail.seeAll"), onPress: () => router.push(`/jobs/${id}/photos`) } : undefined}
           />
           {photoList.length ? (
             <View className="flex-row gap-1">
@@ -328,12 +333,12 @@ export function JobDetailScreen({ id }: { id: string }) {
           ) : photos.loading ? (
             <PhotoGridSkeleton />
           ) : (
-            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No photos yet.</Text>
+            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.jobDetail.noPhotos")}</Text>
           )}
         </View>
 
         <View className="gap-2">
-          <SectionHeader title="Quotes to present" testID="job-quotes-header" />
+          <SectionHeader title={t("mobileWork.jobDetail.quotesToPresent")} testID="job-quotes-header" />
           {(quotes.data ?? []).length ? (
             <Group testID="job-quotes" list>
               {quotes.data!.map((quote, index) => (
@@ -341,14 +346,14 @@ export function JobDetailScreen({ id }: { id: string }) {
               ))}
             </Group>
           ) : quotes.loading ? (
-            <ListRowsSkeleton label="Loading quotes to present" testID="skeleton-quotes" rows={1} leading trailing="pill" grouped />
+            <ListRowsSkeleton label={t("mobileWork.jobDetail.loadingQuotes")} testID="skeleton-quotes" rows={1} leading trailing="pill" grouped />
           ) : (
-            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Nothing waiting for the customer.</Text>
+            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.jobDetail.nothingWaiting")}</Text>
           )}
         </View>
       </ScrollView>
       {android ? (
-        <Fab testID="job-add-photos" label="Add photos" icon={Camera} onPress={addPhotos} />
+        <Fab testID="job-add-photos" label={t("mobileWork.common.addPhotos")} icon={Camera} onPress={addPhotos} />
       ) : null}
     </View>
   );

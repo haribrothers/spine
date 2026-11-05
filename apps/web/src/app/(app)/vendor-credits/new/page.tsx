@@ -1,4 +1,5 @@
 import { AppShellHeader } from "@spine/ui";
+import { t } from "../../../../lib/i18n";
 import { VendorCreditNewLoader } from "../vendor-credit-builder";
 
 export default async function NewVendorCreditPage({ searchParams }: { searchParams: Promise<{ billId?: string }> }) {
@@ -6,9 +7,9 @@ export default async function NewVendorCreditPage({ searchParams }: { searchPara
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Purchases" }, { label: "Vendor credits", href: "/vendor-credits" }, { label: "New" }]}
-        title="New vendor credit"
-        description={billId ? "A credit against a bill — its lines are copied for you to edit down." : "Record a vendor's credit note. It saves as a draft until you record it."}
+        breadcrumb={[{ label: t("vendorCredits.page.breadcrumbPurchases") }, { label: t("vendorCredits.page.title"), href: "/vendor-credits" }, { label: t("vendorCredits.newPage.breadcrumbNew") }]}
+        title={t("vendorCredits.newPage.title")}
+        description={billId ? t("vendorCredits.newPage.descriptionFromBill") : t("vendorCredits.newPage.description")}
       />
       <VendorCreditNewLoader billId={billId} />
     </>

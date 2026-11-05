@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 
 export interface StepperStepDef {
   key: string;
@@ -23,7 +24,7 @@ export interface StepperProps extends React.HTMLAttributes<HTMLOListElement> {
 export function Stepper({ steps, currentIndex, className, ...props }: StepperProps) {
   return (
     <ol
-      aria-label="Progress"
+      aria-label={t("ui.stepper.label")}
       className={cn("flex flex-wrap items-center gap-x-1 gap-y-2 text-[12px]", className)}
       {...props}
     >

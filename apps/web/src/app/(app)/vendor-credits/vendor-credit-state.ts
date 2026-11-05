@@ -1,5 +1,6 @@
 import type { TableSort } from "@spine/ui";
 import { formatMoney } from "../../../lib/money";
+import { t } from "../../../lib/i18n";
 import type { VendorCredit } from "./types";
 
 /**
@@ -10,11 +11,11 @@ import type { VendorCredit } from "./types";
 export type CreditState = "draft" | "open" | "partly" | "used" | "void";
 
 export const CREDIT_STATE_LABELS: Record<CreditState, string> = {
-  draft: "Draft",
-  open: "Open",
-  partly: "Partly used",
-  used: "Used",
-  void: "Void",
+  draft: t("vendorCredits.creditStates.draft"),
+  open: t("vendorCredits.creditStates.open"),
+  partly: t("vendorCredits.creditStates.partly"),
+  used: t("vendorCredits.creditStates.used"),
+  void: t("vendorCredits.creditStates.void"),
 };
 
 export const CREDIT_STATE_CLASS: Record<CreditState, string> = {
@@ -167,7 +168,10 @@ export function creditUse(credit: Pick<VendorCredit, "allocations" | "refunds">)
 
 /** US-PUR-37 — the toast when a credit is recorded, from its page, a row or "Save and record". */
 export function creditRecordedToast(credit: Pick<VendorCredit, "number" | "totalAmount" | "currency" | "contactName">): [string, string] {
-  return [`${credit.number ?? "Vendor credit"} recorded`, `${formatMoney(BigInt(credit.totalAmount), credit.currency)} is off what you owe ${credit.contactName ?? "the vendor"}.`];
+  return [
+    t("vendorCredits.state.recordedToastTitle", { number: credit.number ?? t("vendorCredits.state.vendorCredit") }),
+    t("vendorCredits.state.recordedToastDescription", { amount: formatMoney(BigInt(credit.totalAmount), credit.currency), vendor: credit.contactName ?? t("vendorCredits.state.theVendor") }),
+  ];
 }
 
 /**

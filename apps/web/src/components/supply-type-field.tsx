@@ -3,6 +3,7 @@
 import { useId } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, supplyClassTaxError, type SupplyClass } from "@spine/shared";
+import { t as translate } from "../lib/i18n";
 
 /** The rate a line's chosen taxes add up to, for deciding whether it's taxed. */
 export function lineTaxPercent(rates: readonly { percent: number | string }[]): number {
@@ -52,7 +53,7 @@ export function SupplyTypeField({
   value,
   taxPercent,
   onChange,
-  label = "Supply type",
+  label = translate("catalog.supplyTypeField.label"),
   labelClassName = "text-[11px] font-medium text-on-surface-muted",
   compact = false,
 }: {

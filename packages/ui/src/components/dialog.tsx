@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { forwardRef } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -54,7 +55,9 @@ export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeo
 }
 
 export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DialogContentProps>(
-  ({ className, children, size = "md", ...props }, ref) => (
+  ({ className, children, size = "md", ...props }, ref) => {
+    const t = useT();
+    return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
       <DialogPrimitive.Content
@@ -69,14 +72,15 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
       >
         {children}
         <DialogPrimitive.Close
-          aria-label="Close"
+          aria-label={t("ui.dialog.close")}
           className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X size={16} />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
-  ),
+    );
+  },
 );
 DialogContent.displayName = "DialogContent";
 

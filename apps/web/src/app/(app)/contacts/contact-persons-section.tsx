@@ -30,6 +30,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { ContactLogo } from "./contact-logo";
 import type { Contact, ContactPerson } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -83,6 +84,7 @@ export function ContactPersonsSection({
   onSaved: () => void;
   onCreated?: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -143,7 +145,7 @@ export function ContactPersonsSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-[14px] font-semibold text-on-surface">Contact persons</h3>
+      <h3 className="text-[14px] font-semibold text-on-surface">{t("contacts.persons.heading")}</h3>
       {people.length > 0 && (
         <ul className="flex flex-col gap-2">
           {people.map((person) => (
@@ -163,7 +165,7 @@ export function ContactPersonsSection({
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    aria-label={`Edit ${person.name}`}
+                    aria-label={t("contacts.persons.editAria", { name: person.name })}
                     disabled={saving}
                     onClick={() => openEditDialog(person)}
                     className="text-on-surface-muted transition-colors hover:text-on-surface"
@@ -174,7 +176,7 @@ export function ContactPersonsSection({
                     <AlertDialogTrigger asChild>
                       <button
                         type="button"
-                        aria-label={`Remove ${person.name}`}
+                        aria-label={t("contacts.persons.removeAria", { name: person.name })}
                         disabled={saving}
                         className="text-on-surface-muted transition-colors hover:text-overdue"
                       >
@@ -183,12 +185,12 @@ export function ContactPersonsSection({
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Remove {person.name}?</AlertDialogTitle>
-                        <AlertDialogDescription>This removes the contact person from this contact. This cannot be undone.</AlertDialogDescription>
+                        <AlertDialogTitle>{t("contacts.persons.removeTitle", { name: person.name })}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("contacts.persons.removeDescription")}</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction variant="danger" onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
+                        <AlertDialogCancel>{t("contacts.common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction variant="danger" onClick={() => handleRemove(person.id)}>{t("contacts.common.remove")}</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -202,31 +204,31 @@ export function ContactPersonsSection({
       <Dialog open={open} onOpenChange={setOpen}>
         {canManage && (
           <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-            Add contact person
+            {t("contacts.persons.add")}
           </Button>
         )}
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit contact person" : "Add contact person"}</DialogTitle>
+            <DialogTitle>{editingId ? t("contacts.persons.edit") : t("contacts.persons.add")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-3">
             <ContactLogo name={name || "?"} fileId={logoFileId} editable onUploaded={(file) => setLogoFileId(file.id)} />
-            <FormField label="Name" required>
+            <FormField label={t("contacts.common.name")} required>
               {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} />}
             </FormField>
-            <FormField label="Title">
+            <FormField label={t("contacts.persons.title")}>
               {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} />}
             </FormField>
-            <FormField label="Email">
+            <FormField label={t("contacts.common.email")}>
               {(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
             </FormField>
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
+              {t("contacts.common.cancel")}
             </Button>
             <Button disabled={!name || saving} onClick={handleSave}>
-              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Add"}
+              {saving ? <Spinner size="sm" /> : editingId ? t("contacts.common.saveChanges") : t("contacts.common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>

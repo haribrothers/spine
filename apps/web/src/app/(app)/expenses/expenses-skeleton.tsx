@@ -1,13 +1,14 @@
 import { Skeleton, TableSkeleton } from "@spine/ui";
+import { t } from "../../../lib/i18n";
 
 /** Mirrors ExpensesTable's own `columns` (header text, order, alignment) so the loading state never drifts out of sync with the real table. */
 const TABLE_COLUMNS = [
-  { key: "date", header: "Date", width: "w-24" },
-  { key: "category", header: "Category", width: "w-28" },
-  { key: "job", header: "Job", width: "w-28" },
-  { key: "amount", header: "Amount", width: "w-24" },
-  { key: "status", header: "Status", width: "w-20" },
-  { key: "submittedBy", header: "Submitted by", width: "w-24" },
+  { key: "date", header: t("expenses.columns.date"), width: "w-24" },
+  { key: "category", header: t("expenses.columns.category"), width: "w-28" },
+  { key: "job", header: t("expenses.columns.job"), width: "w-28" },
+  { key: "amount", header: t("expenses.columns.amount"), width: "w-24" },
+  { key: "status", header: t("expenses.columns.status"), width: "w-20" },
+  { key: "submittedBy", header: t("expenses.columns.submittedBy"), width: "w-24" },
   { key: "actions", header: "", width: "w-6", align: "right" as const },
 ];
 

@@ -27,6 +27,7 @@ import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, ReportTabs, useCurrency } from "../analysis-shared";
 import { RangeFilters, ReportKpis, useReport } from "../report-kit";
 import { LEDGER_TABS } from "../general-ledger/general-ledger";
+import { useT } from "../../../../lib/i18n";
 
 const searchText = (e: DayBookEntry) => `${e.label} ${e.contact?.name ?? ""} ${e.narration ?? ""} ${e.lines.map((l) => `${l.account.code} ${l.account.name}`).join(" ")}`.toLowerCase();
 
@@ -36,6 +37,7 @@ const searchText = (e: DayBookEntry) => `${e.label} ${e.contact?.name ?? ""} ${e
  * opens its document.
  */
 export function DayBook() {
+  const t = useT();
   const currency = useCurrency();
   const [from, setFrom] = useState<Date>(() => new Date());
   const [to, setTo] = useState<Date>(() => new Date());
@@ -59,7 +61,7 @@ export function DayBook() {
   // Print shows every entry, not just this page (US-RPT-34).
   const printing = usePrintMode();
   const shown = printing ? filtered : filtered.slice((page - 1) * pageSize, page * pageSize);
-  const totals = filtered.reduce((t, e) => e.lines.reduce((s, l) => ({ debit: s.debit + BigInt(l.debit), credit: s.credit + BigInt(l.credit) }), t), { debit: 0n, credit: 0n });
+  const totals = filtered.reduce((acc, e) => e.lines.reduce((s, l) => ({ debit: s.debit + BigInt(l.debit), credit: s.credit + BigInt(l.credit) }), acc), { debit: 0n, credit: 0n });
   const amount = (v: string | bigint) => (BigInt(v) === 0n ? "" : formatMoney(v, currency));
 
   const rows: StatementRow[] = [
@@ -92,7 +94,7 @@ export function DayBook() {
       kind: "total",
       key: "totals",
       cells: {
-        date: "Totals",
+        date: t("reports.dayBook.totals"),
         debit: <span data-testid="day-book-total-debit">{formatMoney(totals.debit, currency)}</span>,
         credit: <span data-testid="day-book-total-credit">{formatMoney(totals.credit, currency)}</span>,
       },
@@ -107,14 +109,14 @@ export function DayBook() {
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={refilter(setFrom)} onTo={refilter(setTo)} />
-            <ReportFilter label="Source">
+            <ReportFilter label={t("reports.common.source")}>
               {(id) => (
                 <Select value={sourceType} onValueChange={refilter(setSourceType)}>
                   <SelectTrigger className="w-56" aria-labelledby={id}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All sources</SelectItem>
+                    <SelectItem value="all">{t("reports.dayBook.allSources")}</SelectItem>
                     {LEDGER_SOURCE_KINDS.map((k) => (
                       <SelectItem key={k.key} value={k.key}>
                         {k.label}
@@ -138,17 +140,17 @@ export function DayBook() {
       {report && !error && (
         <>
           <ReportKpis count={3} data-testid="day-book-cards">
-            <StatCard label="Entries" value={String(filtered.length)} />
-            <StatCard label="Total debits" value={formatMoney(totals.debit, currency)} />
-            <StatCard label="Total credits" value={formatMoney(totals.credit, currency)} />
+            <StatCard label={t("reports.dayBook.entries")} value={String(filtered.length)} />
+            <StatCard label={t("reports.common.totalDebits")} value={formatMoney(totals.debit, currency)} />
+            <StatCard label={t("reports.common.totalCredits")} value={formatMoney(totals.credit, currency)} />
           </ReportKpis>
 
           <div className="flex flex-col gap-3">
             <div data-print="hide">
               <Input
                 className="w-64"
-                placeholder="Search entries"
-                aria-label="Search entries"
+                placeholder={t("reports.dayBook.search")}
+                aria-label={t("reports.dayBook.search")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -158,19 +160,19 @@ export function DayBook() {
             </div>
             {filtered.length === 0 ? (
               <div className="rounded-lg border border-border bg-surface">
-                <EmptyState icon={<BookOpen />} title={search ? "No entries match your search" : "Nothing posted on these dates"} description={search ? "Clear the search or try other words." : "Pick other dates or another source."} />
+                <EmptyState icon={<BookOpen />} title={search ? t("reports.dayBook.emptySearchTitle") : t("reports.dayBook.emptyTitle")} description={search ? t("reports.dayBook.emptySearchDescription") : t("reports.dayBook.emptyDescription")} />
               </div>
             ) : (
               <>
                 <StatementTable
                   data-testid="day-book-table"
                   columns={[
-                    { key: "date", header: "Date" },
-                    { key: "source", header: "Source" },
-                    { key: "detail", header: "Contact · narration" },
-                    { key: "account", header: "Account" },
-                    { key: "debit", header: "Debit", align: "right" },
-                    { key: "credit", header: "Credit", align: "right" },
+                    { key: "date", header: t("reports.common.date") },
+                    { key: "source", header: t("reports.common.source") },
+                    { key: "detail", header: t("reports.dayBook.detail") },
+                    { key: "account", header: t("reports.common.account") },
+                    { key: "debit", header: t("reports.common.debit"), align: "right" },
+                    { key: "credit", header: t("reports.common.credit"), align: "right" },
                   ]}
                   rows={rows}
                 />

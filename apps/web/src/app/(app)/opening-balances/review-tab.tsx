@@ -18,9 +18,10 @@ import {
 } from "@spine/ui";
 import type { OpeningBalancesView, OpeningBill, OpeningCustomerCredit, OpeningInvoice, OpeningVendorCredit } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
-import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 
-const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 
 interface TrialBalance {
   lines: { accountId: string; code: string; name: string; debit: string; credit: string }[];
@@ -35,6 +36,7 @@ interface TrialBalance {
  * both are audited.
  */
 export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalancesView; currency: string; onChanged: (view: OpeningBalancesView) => void }) {
+  const t = useT();
   const [tb, setTb] = useState<TrialBalance | null>(null);
   const [docs, setDocs] = useState<{ invoices: OpeningInvoice[]; bills: OpeningBill[]; credits: OpeningCustomerCredit[]; vendorCredits: OpeningVendorCredit[] } | null>(null);
   const [confirm, setConfirm] = useState<"lock" | "unlock" | null>(null);
@@ -69,7 +71,7 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
       onChanged(await apiClient.post<OpeningBalancesView>(`/opening-balances/${kind}`));
       setConfirm(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't work. Try again.");
+      setError(err instanceof Error ? err.message : t("openingBalances.review.error"));
       setConfirm(null);
     } finally {
       setBusy(false);
@@ -85,35 +87,43 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Opening invoices"
+          label={t("openingBalances.review.openingInvoices")}
           value={money(sum(docs?.invoices, (r) => r.amountDue))}
-          trend={{ direction: "neutral", label: `${docs?.invoices.length ?? 0} invoices · ${money(sum(docs?.invoices, (r) => r.retentionHeld))} retention` }}
+          trend={{ direction: "neutral", label: t("openingBalances.review.invoicesTrend", { n: docs?.invoices.length ?? 0, retention: money(sum(docs?.invoices, (r) => r.retentionHeld)) }) }}
         />
-        <StatCard label="Opening bills" value={money(sum(docs?.bills, (r) => r.amountDue))} trend={{ direction: "neutral", label: `${docs?.bills.length ?? 0} bills` }} />
         <StatCard
-          label="Credits"
+          label={t("openingBalances.review.openingBills")}
+          value={money(sum(docs?.bills, (r) => r.amountDue))}
+          trend={{ direction: "neutral", label: t("openingBalances.review.billsTrend", { n: docs?.bills.length ?? 0 }) }}
+        />
+        <StatCard
+          label={t("openingBalances.review.credits")}
           value={money(sum(docs?.credits, (r) => r.amount) + sum(docs?.vendorCredits, (r) => r.amount))}
-          trend={{ direction: "neutral", label: `customers ${money(sum(docs?.credits, (r) => r.amount))} · vendors ${money(sum(docs?.vendorCredits, (r) => r.amount))}` }}
+          trend={{ direction: "neutral", label: t("openingBalances.review.creditsTrend", { customers: money(sum(docs?.credits, (r) => r.amount)), vendors: money(sum(docs?.vendorCredits, (r) => r.amount)) }) }}
         />
         <div className={`rounded-lg border p-5 ${adjustment === 0n ? "border-border bg-surface" : "border-due-soon bg-due-soon-bg"}`} data-testid="review-adjustment">
-          <p className="text-[14px] font-medium text-on-surface">Opening Balance Adjustments</p>
+          <p className="text-[14px] font-medium text-on-surface">{t("openingBalances.common.adjustments")}</p>
           <p className={`mt-2 text-[28px] font-semibold tabular-nums ${adjustment === 0n ? "text-paid" : "text-due-soon"}`}>{money(abs)}</p>
-          <p className="mt-1 text-[13px] text-on-surface-muted">{adjustment === 0n ? "nothing left to explain" : "your old books don't balance yet"}</p>
+          <p className="mt-1 text-[13px] text-on-surface-muted">{adjustment === 0n ? t("openingBalances.common.nothingLeft") : t("openingBalances.common.notBalanced")}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-on-surface">Trial balance on {day(view.balancesAsOf)}</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("openingBalances.review.trialBalanceOn", { date: day(view.balancesAsOf) })}</h2>
         {locked ? (
           <div className="flex items-center gap-2">
-            <StatusChip status="paid">Locked{view.lockedAt ? ` on ${new Date(view.lockedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}</StatusChip>
+            <StatusChip status="paid">
+              {view.lockedAt
+                ? t("openingBalances.review.lockedOn", { date: new Date(view.lockedAt).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" }) })
+                : t("openingBalances.common.locked")}
+            </StatusChip>
             <Button variant="secondary" onClick={() => setConfirm("unlock")}>
-              Unlock
+              {t("openingBalances.review.unlock")}
             </Button>
           </div>
         ) : (
           <Button onClick={() => setConfirm("lock")} disabled={view.status === "not_started"}>
-            Lock opening balances
+            {t("openingBalances.review.lock")}
           </Button>
         )}
       </div>
@@ -127,10 +137,10 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
         <table className="w-full text-[14px]" data-testid="review-trial-balance">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
-              <th className="px-4 py-3 font-medium">Code</th>
-              <th className="px-4 py-3 font-medium">Account</th>
-              <th className="px-4 py-3 text-right font-medium">Debit</th>
-              <th className="px-4 py-3 text-right font-medium">Credit</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.colCode")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.colAccount")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.colDebit")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.colCredit")}</th>
             </tr>
           </thead>
           <tbody>
@@ -147,7 +157,7 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
             <tfoot>
               <tr className="border-t border-border-strong font-semibold text-on-surface">
                 <td />
-                <td className="px-4 py-3">Totals</td>
+                <td className="px-4 py-3">{t("openingBalances.common.totals")}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{money(tb.totalDebit)}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{money(tb.totalCredit)}</td>
               </tr>
@@ -159,22 +169,22 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
       <AlertDialog open={confirm !== null} onOpenChange={(open) => !open && setConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{confirm === "unlock" ? "Unlock opening balances?" : "Lock opening balances?"}</AlertDialogTitle>
+            <AlertDialogTitle>{confirm === "unlock" ? t("openingBalances.review.unlockTitle") : t("openingBalances.review.lockTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {confirm === "unlock"
-                ? `Everything up to ${day(view.balancesAsOf)} opens again so the opening balances can be changed. This is recorded in the audit log.`
-                : `Spine closes everything up to ${day(view.balancesAsOf)} so nobody changes your starting point. An owner can unlock it later; both are recorded in the audit log.`}
+                ? t("openingBalances.review.unlockBody", { date: day(view.balancesAsOf) })
+                : t("openingBalances.review.lockBody", { date: day(view.balancesAsOf) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {confirm === "lock" && adjustment !== 0n && (
             <Alert variant="warning">
-              <AlertDescription>Opening Balance Adjustments still holds {money(abs)}. Lock anyway?</AlertDescription>
+              <AlertDescription>{t("openingBalances.review.stillHolds", { amount: money(abs) })}</AlertDescription>
             </Alert>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>{confirm === "lock" && adjustment !== 0n ? "Go back" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{confirm === "lock" && adjustment !== 0n ? t("openingBalances.common.goBack") : t("openingBalances.common.cancel")}</AlertDialogCancel>
             <AlertDialogAction disabled={busy} onClick={onConfirm}>
-              {confirm === "unlock" ? "Unlock" : adjustment !== 0n ? "Lock anyway" : "Lock opening balances"}
+              {confirm === "unlock" ? t("openingBalances.review.unlock") : adjustment !== 0n ? t("openingBalances.review.lockAnyway") : t("openingBalances.review.lock")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

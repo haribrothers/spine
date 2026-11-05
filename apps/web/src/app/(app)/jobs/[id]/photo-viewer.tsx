@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@spine/ui";
 import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { orgLocaleTag } from "../../../../lib/money";
+import { useT } from "../../../../lib/i18n";
 import type { JobPhoto } from "../types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -38,6 +39,7 @@ export function PhotoViewer({
   onIndexChange: (index: number) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const open = index !== null && photos[index] !== undefined;
   const photo = open ? photos[index] : null;
   const count = photos.length;
@@ -67,25 +69,25 @@ export function PhotoViewer({
           <div className="flex h-full flex-col">
             <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
               <DialogTitle className="text-[13px] font-medium text-inverse-on-surface">
-                {groupLabel} · {index + 1} of {count}
+                {t("jobs.photoViewer.position", { group: groupLabel, index: index + 1, total: count })}
               </DialogTitle>
               <span className="flex-1" />
               <a href={photoUrl(photo.fileId, true)} className={barButton}>
                 <Download size={15} aria-hidden />
-                Download
+                {t("jobs.photoViewer.download")}
               </a>
               <DialogClose className={barButton}>
                 <X size={15} aria-hidden />
-                Close
+                {t("jobs.photoViewer.close")}
               </DialogClose>
             </div>
             <div className="flex min-h-0 flex-1 items-center justify-center gap-3 px-2 sm:gap-6 sm:px-6">
-              <button type="button" className={navClass} aria-label="Previous photo" disabled={index === 0} onClick={() => onIndexChange(index - 1)}>
+              <button type="button" className={navClass} aria-label={t("jobs.photoViewer.previous")} disabled={index === 0} onClick={() => onIndexChange(index - 1)}>
                 <ChevronLeft size={20} aria-hidden />
               </button>
               {/* A file served by our own API, not a Next-optimizable asset. */}
-              <img src={photoUrl(photo.fileId)} alt={photo.caption ?? "Job photo"} className="max-h-full min-w-0 max-w-full rounded-md object-contain" />
-              <button type="button" className={navClass} aria-label="Next photo" disabled={index === count - 1} onClick={() => onIndexChange(index + 1)}>
+              <img src={photoUrl(photo.fileId)} alt={photo.caption ?? t("jobs.photoViewer.alt")} className="max-h-full min-w-0 max-w-full rounded-md object-contain" />
+              <button type="button" className={navClass} aria-label={t("jobs.photoViewer.next")} disabled={index === count - 1} onClick={() => onIndexChange(index + 1)}>
                 <ChevronRight size={20} aria-hidden />
               </button>
             </div>
@@ -93,9 +95,9 @@ export function PhotoViewer({
               <div className="px-4 pb-5 pt-3 text-center text-[13px] text-inverse-on-surface-muted sm:px-6">
                 {photo.caption && <p className="mb-1 text-[14px] font-semibold text-inverse-on-surface">{photo.caption}</p>}
                 <p>
-                  Added {photo.uploadedByName ? `by ${photo.uploadedByName} ` : ""}
-                  {groupLabel !== "Site photos" ? `with “${groupLabel}” ` : ""}· {when(photo.createdAt)}
-                  <span className="hidden sm:inline"> · ← → to move, Esc to close</span>
+                  {t("jobs.photoViewer.added")} {photo.uploadedByName ? t("jobs.photoViewer.by", { name: photo.uploadedByName }) : ""}
+                  {groupLabel !== t("jobs.photos.sitePhotos") ? t("jobs.photoViewer.with", { group: groupLabel }) : ""}· {when(photo.createdAt)}
+                  <span className="hidden sm:inline">{t("jobs.photoViewer.moveHint")}</span>
                 </p>
               </div>
             </DialogDescription>

@@ -40,6 +40,7 @@ import {
 } from "@spine/ui";
 import type { InviteMembersResult } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { t, useT } from "../../../../lib/i18n";
 import type { InvitationRow } from "../../../../lib/invitations";
 import type { MemberRow } from "../../../../lib/members";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
@@ -72,11 +73,11 @@ import {
 } from "./users-list-state";
 
 const MEMBER_COLUMNS = [
-  { key: "person", header: "Person", width: "w-56" },
-  { key: "role", header: "Role", width: "w-20" },
-  { key: "teams", header: "Teams", width: "w-48" },
-  { key: "lastActive", header: "Last active", width: "w-28" },
-  { key: "joined", header: "Joined", width: "w-24" },
+  { key: "person", header: t("team.users.columns.person"), width: "w-56" },
+  { key: "role", header: t("team.users.columns.role"), width: "w-20" },
+  { key: "teams", header: t("team.users.columns.teams"), width: "w-48" },
+  { key: "lastActive", header: t("team.users.columns.lastActive"), width: "w-28" },
+  { key: "joined", header: t("team.users.columns.joined"), width: "w-24" },
 ];
 
 const ALL_ROLES = "__all__";
@@ -91,13 +92,14 @@ const ALL_ROLES = "__all__";
  * first and saying what happened.
  */
 export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [state, setState] = useState<UsersListState>(() => parseUsersState(new URLSearchParams(searchParams.toString())));
   const [members, setMembers] = useState<MemberRow[] | null>(null);
   const [invites, setInvites] = useState<InvitationRow[] | null>(null);
   const [teams, setTeams] = useState<TeamOption[]>([]);
-  const [businessName, setBusinessName] = useState("your business");
+  const [businessName, setBusinessName] = useState(() => t("team.users.yourBusiness"));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,7 +133,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
       setUpdatedAt(Date.now());
       setNow(Date.now());
     } catch (err) {
-      if (mode === "first") setLoadError(err instanceof Error ? err.message : "Couldn't load your people. Refresh to try again.");
+      if (mode === "first") setLoadError(err instanceof Error ? err.message : t("team.users.loadFailed"));
     } finally {
       loading.current = false;
       setRefreshing(false);
@@ -178,61 +180,61 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
       await load();
       return true;
     } catch (err) {
-      setActionError(`${failure} ${err instanceof Error ? err.message : "Try again."}`);
+      setActionError(`${failure} ${err instanceof Error ? err.message : t("team.common.tryAgain")}`);
       return false;
     }
   }
 
   async function deactivate(member: MemberRow) {
     const ok = await confirm({
-      title: `Deactivate ${member.name}?`,
-      description: `They can't sign in or open anything in ${businessName} from now on. Their records, history and Teams stay, and you can reactivate them from Deactivated.${member.isDemo ? " They're demo data, so they go when the demo data is deleted." : ""}`,
-      confirmLabel: "Deactivate",
-      cancelLabel: "Go back",
+      title: t("team.users.deactivateConfirm.title", { name: member.name }),
+      description: `${t("team.users.deactivateConfirm.description", { business: businessName })}${member.isDemo ? t("team.users.deactivateConfirm.demoNote") : ""}`,
+      confirmLabel: t("team.users.deactivateConfirm.confirm"),
+      cancelLabel: t("team.common.goBack"),
       danger: true,
     });
     if (!ok) return;
-    await act(() => apiClient.put(`/org/members/${member.id}/deactivate`), [`${member.name} deactivated`, "They can't sign in now. They're under Deactivated."], `Couldn't deactivate ${member.name}.`);
+    await act(() => apiClient.put(`/org/members/${member.id}/deactivate`), [t("team.users.deactivateToast.title", { name: member.name }), t("team.users.deactivateToast.description")], t("team.users.deactivateFailed", { name: member.name }));
   }
 
   async function reactivate(member: MemberRow) {
     const ok = await confirm({
-      title: `Reactivate ${member.name}?`,
-      description: `They get their previous role (${ROLE_LABELS[member.role] ?? member.role}) and Teams back, and can sign in to ${businessName} again.`,
-      confirmLabel: "Reactivate",
-      cancelLabel: "Go back",
+      title: t("team.users.reactivateConfirm.title", { name: member.name }),
+      description: t("team.users.reactivateConfirm.description", { role: ROLE_LABELS[member.role] ?? member.role, business: businessName }),
+      confirmLabel: t("team.users.reactivateConfirm.confirm"),
+      cancelLabel: t("team.common.goBack"),
     });
     if (!ok) return;
-    await act(() => apiClient.put(`/org/members/${member.id}/reactivate`), [`${member.name} reactivated`, "They can sign in again."], `Couldn't reactivate ${member.name}.`);
+    await act(() => apiClient.put(`/org/members/${member.id}/reactivate`), [t("team.users.reactivateToast.title", { name: member.name }), t("team.users.reactivateToast.description")], t("team.users.reactivateFailed", { name: member.name }));
   }
 
   async function promote(member: MemberRow) {
     // US-TEAM-16 (D-059): granting full access is confirmed first; a primary, not danger, action (D-058).
     const ok = await confirm({
-      title: `Make ${member.name} an owner?`,
-      description: `Owners have full access to everything in ${businessName} — every record and report, plus Users, Teams and Settings. Team permissions no longer apply to ${member.name}. Any owner can change them back to Staff later.`,
-      confirmLabel: "Make owner",
-      cancelLabel: "Cancel",
+      title: t("team.users.promoteConfirm.title", { name: member.name }),
+      description: t("team.users.promoteConfirm.description", { business: businessName, name: member.name }),
+      confirmLabel: t("team.users.promoteConfirm.confirm"),
+      cancelLabel: t("team.common.cancel"),
     });
     if (!ok) return;
-    await act(() => apiClient.put(`/org/members/${member.id}/promote`), [`${member.name} is an owner`, "They can open everything now."], `Couldn't make ${member.name} an owner.`);
+    await act(() => apiClient.put(`/org/members/${member.id}/promote`), [t("team.users.promoteToast.title", { name: member.name }), t("team.users.promoteToast.description")], t("team.users.promoteFailed", { name: member.name }));
   }
 
   async function demote(member: MemberRow) {
     const ok = await confirm({
-      title: `Demote ${member.name} to Staff?`,
-      description: "They lose Owner access at once. They keep any Teams they're on — with none, they can't open anything until you add them to one.",
-      confirmLabel: "Demote",
-      cancelLabel: "Cancel",
+      title: t("team.users.demoteConfirm.title", { name: member.name }),
+      description: t("team.users.demoteConfirm.description"),
+      confirmLabel: t("team.users.demoteConfirm.confirm"),
+      cancelLabel: t("team.common.cancel"),
     });
     if (!ok) return;
-    await act(() => apiClient.put(`/org/members/${member.id}/demote`), [`${member.name} is Staff`, "Their Teams decide what they can open."], `Couldn't demote ${member.name}.`);
+    await act(() => apiClient.put(`/org/members/${member.id}/demote`), [t("team.users.isRole", { name: member.name, role: t("team.roles.staff") }), t("team.users.teamsDecide")], t("team.users.demoteFailed", { name: member.name }));
   }
 
   async function saveTeams(member: MemberRow, teamIds: string[]) {
     const updated = await apiClient.put<MemberRow>(`/org/members/${member.id}/teams`, { teamIds });
     setManaging(null);
-    showToast("Teams saved", teamsSentence(member.name, updated.teams ?? []));
+    showToast(t("team.users.teamsSaved"), teamsSentence(member.name, updated.teams ?? []));
     void load();
   }
 
@@ -240,8 +242,8 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     setChangingRole(null);
     await act(
       () => apiClient.put(`/org/members/${member.id}/role`, role === "staff" ? { role, teamIds } : { role }),
-      [`${member.name} is ${role === "staff" ? "Staff" : "Field"}`, role === "staff" ? "Their Teams decide what they can open." : "They see the jobs they're assigned to, without money."],
-      `Couldn't change ${member.name}'s role.`,
+      [t("team.users.isRole", { name: member.name, role: role === "staff" ? t("team.roles.staff") : t("team.roles.field") }), role === "staff" ? t("team.users.teamsDecide") : t("team.users.fieldSees")],
+      t("team.users.changeRoleFailed", { name: member.name }),
     );
   }
 
@@ -249,8 +251,8 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     void load();
     if (result.invited.length > 0) {
       showToast(
-        result.invited.length === 1 ? `Invite sent to ${result.invited[0]!.email}` : `${result.invited.length} invites sent`,
-        result.skipped.length > 0 ? `${result.skipped.length} weren't invited — see why in the dialog.` : "They'll appear under Users once they accept.",
+        result.invited.length === 1 ? t("team.users.inviteSentTo", { email: result.invited[0]!.email }) : t("team.users.invitesSent", { n: result.invited.length }),
+        result.skipped.length > 0 ? t("team.users.invitesSkipped", { n: result.skipped.length }) : t("team.users.invitesAppear"),
       );
     }
   }
@@ -259,32 +261,32 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     if (!invite.acceptUrl) return;
     try {
       await navigator.clipboard.writeText(invite.acceptUrl);
-      showToast("Invite link copied", `Only ${invite.email} can use it, signed in with that address.`);
+      showToast(t("team.users.linkCopied"), t("team.users.linkCopiedDescription", { email: invite.email }));
     } catch {
-      showToast("Here's the invite link", invite.acceptUrl);
+      showToast(t("team.users.hereIsLink"), invite.acceptUrl);
     }
   }
 
   async function resend(invite: InvitationRow) {
-    await act(() => apiClient.post(`/org/invitations/${invite.id}/resend`), [`Invite sent again to ${invite.email}`, "Same link — its time limit starts over."], `Couldn't resend the invite to ${invite.email}.`);
+    await act(() => apiClient.post(`/org/invitations/${invite.id}/resend`), [t("team.users.resentToast.title", { email: invite.email }), t("team.users.resentToast.description")], t("team.users.resendFailed", { email: invite.email }));
   }
 
   async function cancelInvite(invite: InvitationRow) {
     const ok = await confirm({
-      title: "Cancel this invitation?",
-      description: `The link sent to ${invite.email} stops working, so they can't join. You can invite them again.`,
-      confirmLabel: "Cancel invitation",
-      cancelLabel: "Keep invitation",
+      title: t("team.users.cancelInviteConfirm.title"),
+      description: t("team.users.cancelInviteConfirm.description", { email: invite.email }),
+      confirmLabel: t("team.users.cancelInviteConfirm.confirm"),
+      cancelLabel: t("team.users.cancelInviteConfirm.cancel"),
       danger: true,
     });
     if (!ok) return;
-    await act(() => apiClient.delete(`/org/invitations/${invite.id}`), ["Invitation cancelled", `The link sent to ${invite.email} no longer works.`], "Couldn't cancel the invitation.");
+    await act(() => apiClient.delete(`/org/invitations/${invite.id}`), [t("team.users.cancelInviteToast.title"), t("team.users.cancelInviteToast.description", { email: invite.email })], t("team.users.cancelInviteFailed"));
   }
 
   const memberColumns: TableColumn<MemberRow>[] = [
     {
       key: "person",
-      header: "Person",
+      header: t("team.users.columns.person"),
       render: (m) => (
         <span className="flex min-w-0 items-center gap-3">
           <Avatar className="shrink-0">
@@ -293,10 +295,10 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
           <span className="flex min-w-0 flex-col">
             <span className="flex flex-wrap items-center gap-1.5">
               <span className="font-semibold text-on-surface">{m.name}</span>
-              {m.id === currentMemberId && <Badge className="bg-primary/10 text-primary">You</Badge>}
-              {m.isPrimaryOwner && <Badge className="bg-paid-bg text-paid">Primary Owner</Badge>}
-              {m.isDemo && <Badge className="bg-due-soon-bg text-due-soon">Demo</Badge>}
-              {!m.isActive && <Badge>Deactivated</Badge>}
+              {m.id === currentMemberId && <Badge className="bg-primary/10 text-primary">{t("team.users.badges.you")}</Badge>}
+              {m.isPrimaryOwner && <Badge className="bg-paid-bg text-paid">{t("team.users.badges.primaryOwner")}</Badge>}
+              {m.isDemo && <Badge className="bg-due-soon-bg text-due-soon">{t("team.common.demo")}</Badge>}
+              {!m.isActive && <Badge>{t("team.users.badges.deactivated")}</Badge>}
             </span>
             <span className="truncate text-[12.5px] text-on-surface-muted">{m.email}</span>
           </span>
@@ -306,43 +308,43 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     },
     {
       key: "role",
-      header: "Role",
+      header: t("team.users.columns.role"),
       render: (m) => ROLE_LABELS[m.role] ?? m.role,
       sortValue: (m) => m.role,
     },
     {
       key: "teams",
-      header: "Teams",
+      header: t("team.users.columns.teams"),
       render: (m) =>
         m.role === "owner" ? (
-          <span className="text-on-surface-muted">Everything</span>
+          <span className="text-on-surface-muted">{t("team.users.everything")}</span>
         ) : m.role === "field" ? (
-          <span className="text-on-surface-muted">Field access</span>
+          <span className="text-on-surface-muted">{t("team.users.fieldAccess")}</span>
         ) : (m.teams?.length ?? 0) === 0 ? (
           <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-due-soon">
             <TriangleAlert size={14} aria-hidden />
-            No Team — can&apos;t open anything
+            {t("team.users.noTeamWarning")}
           </span>
         ) : (
           <span className="flex flex-wrap gap-1.5">
-            {m.teams!.map((t) => (
-              <Link key={t.id} href={`/team/teams/${t.id}`} className="rounded-full border border-border bg-surface px-2 py-0.5 text-[12px] font-medium text-on-surface hover:border-primary hover:text-primary">
-                {t.name}
+            {m.teams!.map((team) => (
+              <Link key={team.id} href={`/team/teams/${team.id}`} className="rounded-full border border-border bg-surface px-2 py-0.5 text-[12px] font-medium text-on-surface hover:border-primary hover:text-primary">
+                {team.name}
               </Link>
             ))}
           </span>
         ),
-      sortValue: (m) => (m.teams ?? []).map((t) => t.name).join(", "),
+      sortValue: (m) => (m.teams ?? []).map((team) => team.name).join(", "),
     },
     {
       key: "lastActive",
-      header: "Last active",
+      header: t("team.users.columns.lastActive"),
       render: (m) => <span className={cn("whitespace-nowrap", !m.lastActiveAt && "text-on-surface-muted")}>{lastActiveLabel(m.lastActiveAt, now)}</span>,
       sortValue: (m) => m.lastActiveAt ?? "",
     },
     {
       key: "joined",
-      header: "Joined",
+      header: t("team.users.columns.joined"),
       render: (m) => <span className="whitespace-nowrap">{shortDate(m.createdAt, now)}</span>,
       sortValue: (m) => m.createdAt,
     },
@@ -373,25 +375,25 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
   const inviteColumns: TableColumn<InvitationRow>[] = [
     {
       key: "email",
-      header: "Email",
+      header: t("team.users.columns.email"),
       render: (i) => <span className="font-semibold text-on-surface">{i.email}</span>,
       sortValue: (i) => i.email,
     },
     {
       key: "role",
-      header: "Role",
+      header: t("team.users.columns.role"),
       render: (i) => ROLE_LABELS[i.role] ?? i.role,
       sortValue: (i) => i.role,
     },
     {
       key: "teams",
-      header: "Teams on joining",
+      header: t("team.users.columns.teamsOnJoining"),
       render: (i) =>
         i.teams && i.teams.length > 0 ? (
           <span className="flex flex-wrap gap-1.5">
-            {i.teams.map((t) => (
-              <span key={t.id} className="rounded-full border border-border bg-surface px-2 py-0.5 text-[12px] font-medium text-on-surface">
-                {t.name}
+            {i.teams.map((team) => (
+              <span key={team.id} className="rounded-full border border-border bg-surface px-2 py-0.5 text-[12px] font-medium text-on-surface">
+                {team.name}
               </span>
             ))}
           </span>
@@ -401,13 +403,13 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     },
     {
       key: "invited",
-      header: "Invited",
+      header: t("team.users.columns.invited"),
       render: (i) => <span className="whitespace-nowrap">{[i.inviterName, i.createdAt ? shortDate(i.createdAt, now) : null].filter(Boolean).join(" · ")}</span>,
       sortValue: (i) => i.createdAt ?? "",
     },
     {
       key: "expires",
-      header: "Expires",
+      header: t("team.users.columns.expires"),
       render: (i) => <span className={cn("whitespace-nowrap", isExpired(i, now) && "font-medium text-overdue")}>{expiresLabel(i.expiresAt, now)}</span>,
       sortValue: (i) => i.expiresAt,
     },
@@ -420,7 +422,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label={`Actions for the invite to ${i.email}`}
+                aria-label={t("team.users.inviteActionsFor", { email: i.email })}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
               >
                 <MoreHorizontal size={16} />
@@ -430,17 +432,17 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
               {!isExpired(i, now) && (
                 <DropdownMenuItem onSelect={() => void copyLink(i)}>
                   <MENU_ICONS.copyLink aria-hidden />
-                  Copy invite link
+                  {t("team.users.copyInviteLink")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onSelect={() => void resend(i)}>
                 <MENU_ICONS.send aria-hidden />
-                Resend
+                {t("team.users.resend")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => void cancelInvite(i)}>
                 <MENU_ICONS.cancel aria-hidden />
-                Cancel invite
+                {t("team.users.cancelInvite")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -451,13 +453,13 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
 
   const header = (
     <AppShellHeader
-      breadcrumb={[{ label: "Team" }, { label: "Users" }]}
-      title="Users"
-      description={`Everyone with access to ${businessName}, and the invites on their way.`}
+      breadcrumb={[{ label: t("team.common.breadcrumbTeam") }, { label: t("team.users.title") }]}
+      title={t("team.users.title")}
+      description={t("team.users.description", { business: businessName })}
       action={
         <Button onClick={() => setInviting(true)}>
           <UserPlus size={14} aria-hidden />
-          Invite people
+          {t("team.users.invitePeople")}
         </Button>
       }
     />
@@ -480,8 +482,8 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
       <Input
         type="search"
-        placeholder={onInvites ? "Search emails" : "Search names or emails"}
-        aria-label={onInvites ? "Search emails" : "Search names or emails"}
+        placeholder={onInvites ? t("team.users.searchEmails") : t("team.users.searchNamesOrEmails")}
+        aria-label={onInvites ? t("team.users.searchEmails") : t("team.users.searchNamesOrEmails")}
         value={state.q}
         onChange={(e) => update({ q: e.target.value })}
         className="pl-9"
@@ -491,7 +493,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
   const filtered = Boolean(state.q.trim() || state.role || state.noTeam);
   const clear = (
     <Button variant="secondary" onClick={() => update({ role: null, noTeam: false, q: "" })}>
-      Clear filters
+      {t("team.common.clearFilters")}
     </Button>
   );
 
@@ -509,16 +511,16 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
         className="flex flex-col gap-6"
       >
         <TabsList>
-          <TabsTrigger value="active" className="group" aria-label={members ? `Active, ${activeCount}` : "Active"}>
-            Active
+          <TabsTrigger value="active" className="group" aria-label={members ? t("team.users.tabs.activeCount", { n: activeCount }) : t("team.users.tabs.active")}>
+            {t("team.users.tabs.active")}
             {members && <Count n={activeCount} />}
           </TabsTrigger>
-          <TabsTrigger value="deactivated" className="group" aria-label={members ? `Deactivated, ${deactivatedCount}` : "Deactivated"}>
-            Deactivated
+          <TabsTrigger value="deactivated" className="group" aria-label={members ? t("team.users.tabs.deactivatedCount", { n: deactivatedCount }) : t("team.users.tabs.deactivated")}>
+            {t("team.users.tabs.deactivated")}
             {members && <Count n={deactivatedCount} />}
           </TabsTrigger>
-          <TabsTrigger value="invites" className="group" aria-label={invites ? `Invites, ${invites.length}` : "Invites"}>
-            Invites
+          <TabsTrigger value="invites" className="group" aria-label={invites ? t("team.users.tabs.invitesCount", { n: invites.length }) : t("team.users.tabs.invites")}>
+            {t("team.users.tabs.invites")}
             {invites && <Count n={invites.length} />}
           </TabsTrigger>
         </TabsList>
@@ -526,21 +528,21 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
         {/* The tab's panel holds the cards, filters and list, so the active tab controls something real (WCAG 4.1.2). */}
         <TabsContent value={state.tab} className="flex flex-col gap-6 pt-0">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="users-cards">
-            <StatCard label="People" value={totals ? String(totals.people) : "—"} trend={totals ? { direction: "neutral", label: totals.peopleLabel } : undefined} className="h-full" />
+            <StatCard label={t("team.users.cards.people")} value={totals ? String(totals.people) : "—"} trend={totals ? { direction: "neutral", label: totals.peopleLabel } : undefined} className="h-full" />
             <button
               type="button"
               aria-pressed={state.noTeam}
-              aria-label="Show Staff without a Team only"
+              aria-label={t("team.users.cards.showNoTeamOnly")}
               onClick={() => update({ noTeam: !state.noTeam, tab: "active" })}
               className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <StatCard
-                label="Staff without a Team"
+                label={t("team.users.cards.staffWithoutTeam")}
                 value={totals ? String(totals.noTeam) : "—"}
                 tone={totals && totals.noTeam > 0 ? "warning" : "default"}
                 trend={{
                   direction: "neutral",
-                  label: state.noTeam ? "Showing these · press again to clear" : totals && totals.noTeam > 0 ? "can't open anything yet" : "everyone can work",
+                  label: state.noTeam ? t("team.common.showingThese") : totals && totals.noTeam > 0 ? t("team.users.cards.cantOpenYet") : t("team.common.everyoneCanWork"),
                 }}
                 className={cn("h-full transition-colors hover:border-border-strong", state.noTeam && "border-primary bg-info-bg/60 ring-1 ring-primary")}
               />
@@ -548,12 +550,12 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
             </button>
             <button
               type="button"
-              aria-label="Open Invites"
+              aria-label={t("team.users.openInvites")}
               onClick={() => update({ tab: "invites", noTeam: false })}
               className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <StatCard
-                label="Pending invites"
+                label={t("team.users.cards.pendingInvites")}
                 value={totals ? String(totals.invites) : "—"}
                 trend={totals ? { direction: "neutral", label: totals.invitesLabel } : undefined}
                 className="h-full transition-colors hover:border-border-strong"
@@ -564,29 +566,29 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Select value={state.role ?? ALL_ROLES} onValueChange={(v) => update({ role: v === ALL_ROLES ? null : (v as UsersRole) })}>
-              <SelectTrigger aria-label="Filter by role" className="w-44">
+              <SelectTrigger aria-label={t("team.users.filterByRole")} className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_ROLES}>All roles</SelectItem>
-                <SelectItem value="owner">Owner</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="field">Field</SelectItem>
+                <SelectItem value={ALL_ROLES}>{t("team.users.allRoles")}</SelectItem>
+                <SelectItem value="owner">{t("team.roles.owner")}</SelectItem>
+                <SelectItem value="staff">{t("team.roles.staff")}</SelectItem>
+                <SelectItem value="field">{t("team.roles.field")}</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
               {updatedAt !== null && (
                 <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="users-updated">
-                  {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                  {refreshing ? t("team.common.updating") : updatedLabel(updatedAt, now)}
                 </span>
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
+                  <Button variant="secondary" size="icon" aria-label={t("team.common.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
                     <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Refresh list</TooltipContent>
+                <TooltipContent>{t("team.common.refreshList")}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -605,16 +607,16 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
                 <div className="flex">{search}</div>
                 <div className="rounded-lg border border-border bg-surface">
                   {filtered ? (
-                    <EmptyState icon={<Users />} title="No invites match" description="Clear the filters to see every invite." action={clear} />
+                    <EmptyState icon={<Users />} title={t("team.users.empty.invitesFilteredTitle")} description={t("team.users.empty.invitesFilteredDescription")} action={clear} />
                   ) : (
                     <EmptyState
                       icon={<UserPlus />}
-                      title="No invites waiting"
-                      description="Invite people to give them their own sign-in."
+                      title={t("team.users.empty.invitesTitle")}
+                      description={t("team.users.empty.invitesDescription")}
                       action={
                         <Button onClick={() => setInviting(true)}>
                           <UserPlus size={14} aria-hidden />
-                          Invite people
+                          {t("team.users.invitePeople")}
                         </Button>
                       }
                     />
@@ -633,11 +635,11 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
               <div className="flex">{search}</div>
               <div className="rounded-lg border border-border bg-surface">
                 {state.tab === "deactivated" && !filtered ? (
-                  <EmptyState icon={<Users />} title="Nobody is deactivated" description="People you deactivate appear here, and can be reactivated." />
+                  <EmptyState icon={<Users />} title={t("team.users.empty.deactivatedTitle")} description={t("team.users.empty.deactivatedDescription")} />
                 ) : state.noTeam && !state.q.trim() && !state.role ? (
-                  <EmptyState icon={<Users />} title="Every Staff member is on a Team" description="Everyone can open what their Teams allow." action={clear} />
+                  <EmptyState icon={<Users />} title={t("team.users.empty.noTeamTitle")} description={t("team.users.empty.noTeamDescription")} action={clear} />
                 ) : (
-                  <EmptyState icon={<Users />} title="No one matches" description="Clear the filters to see everyone." action={clear} />
+                  <EmptyState icon={<Users />} title={t("team.users.empty.filteredTitle")} description={t("team.users.empty.filteredDescription")} action={clear} />
                 )}
               </div>
             </div>
@@ -656,7 +658,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
         onOpenChange={(open) => !open && setSettingPassword(null)}
         onChanged={(m) => {
           setSettingPassword(null);
-          showToast(`${m.name}'s password changed`, "They're signed out everywhere and we've emailed them. Give them the new password yourself.");
+          showToast(t("team.users.passwordChangedToast.title", { name: m.name }), t("team.users.passwordChangedToast.description"));
           void load();
         }}
       />
@@ -680,8 +682,8 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
               apiClient.post("/org/members/transfer-primary-owner", {
                 newPrimaryOwnerMemberId,
               }),
-            ["Primary ownership transferred", `${to?.name ?? "They"} is the Primary Owner now.`],
-            "Couldn't transfer primary ownership.",
+            [t("team.users.transferToast.title"), t("team.users.transferToast.description", { name: to?.name ?? t("team.users.transferToast.they") })],
+            t("team.users.transferFailed"),
           );
         }}
       />
@@ -722,6 +724,7 @@ function MemberMenu({
   onDeactivate: () => void;
   onReactivate: () => void;
 }) {
+  const t = useT();
   const active = member.isActive;
   const staff = member.role === "staff";
   const field = member.role === "field";
@@ -732,7 +735,7 @@ function MemberMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for ${member.name}`}
+          aria-label={t("team.common.actionsFor", { name: member.name })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -741,36 +744,36 @@ function MemberMenu({
       <DropdownMenuContent align="end" className="min-w-56">
         <DropdownMenuItem onSelect={onView}>
           <MENU_ICONS.view aria-hidden />
-          What they can open
+          {t("team.common.whatTheyCanOpen")}
         </DropdownMenuItem>
         {active && staff && (
           <DropdownMenuItem onSelect={onManageTeams}>
             <MENU_ICONS.manageTeams aria-hidden />
-            Manage Teams
+            {t("team.common.manageTeams")}
           </DropdownMenuItem>
         )}
         {active && (staff || field) && (
           <DropdownMenuItem onSelect={onChangeRole}>
             <MENU_ICONS.changeRole aria-hidden />
-            {staff ? "Change to Field" : "Change to Staff"}
+            {t("team.common.changeToRole", { role: staff ? t("team.roles.field") : t("team.roles.staff") })}
           </DropdownMenuItem>
         )}
         {active && staff && (
           <DropdownMenuItem onSelect={onPromote}>
             <MENU_ICONS.promote aria-hidden />
-            Promote to Owner
+            {t("team.users.menu.promote")}
           </DropdownMenuItem>
         )}
         {active && canDemote && (
           <DropdownMenuItem onSelect={onDemote}>
             <MENU_ICONS.demote aria-hidden />
-            Demote to Staff
+            {t("team.users.menu.demote")}
           </DropdownMenuItem>
         )}
         {active && (staff || field) && !isMe && (
           <DropdownMenuItem onSelect={onChangePassword}>
             <MENU_ICONS.changePassword aria-hidden />
-            Change password
+            {t("team.users.menu.changePassword")}
           </DropdownMenuItem>
         )}
         {member.isPrimaryOwner && !isMe && (
@@ -779,27 +782,27 @@ function MemberMenu({
             {/* US-TEAM-24 (D-233): nobody sets the Primary Owner's password. */}
             <p className="flex max-w-64 items-start gap-1.5 px-2 py-1.5 text-[12px] text-on-surface-muted" data-testid="primary-owner-password-note">
               <Lock size={13} aria-hidden className="mt-0.5 shrink-0" />
-              Only {member.name.split(" ")[0]} can change their own password, from Profile.
+              {t("team.users.menu.primaryOwnerPasswordNote", { first: member.name.split(" ")[0] ?? "" })}
             </p>
           </>
         )}
         {canTransfer && (
           <DropdownMenuItem onSelect={onTransfer}>
             <MENU_ICONS.transferOwnership aria-hidden />
-            Transfer primary ownership…
+            {t("team.users.menu.transfer")}
           </DropdownMenuItem>
         )}
         {(canDeactivate || !active) && <DropdownMenuSeparator />}
         {canDeactivate && (
           <DropdownMenuItem onSelect={onDeactivate}>
             <MENU_ICONS.deactivate aria-hidden />
-            Deactivate
+            {t("team.users.menu.deactivate")}
           </DropdownMenuItem>
         )}
         {!active && (
           <DropdownMenuItem onSelect={onReactivate}>
             <MENU_ICONS.reactivate aria-hidden />
-            Reactivate
+            {t("team.users.menu.reactivate")}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

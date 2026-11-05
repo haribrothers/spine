@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription, Button, Card, Spinner, cn } from "@spine/ui";
 import { ImagePlus, TriangleAlert, Upload, X } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { orgLocaleTag } from "../../../../lib/money";
 import { PHOTO_ACCEPT } from "../../../../lib/upload-types";
@@ -25,6 +26,7 @@ interface Upload {
  * PhotoViewer. Uploads go to `POST /files`, then `POST /jobs/:id/photos`.
  */
 export function PhotosSection({ job, milestones, onChanged }: { job: Job; milestones: Milestone[]; onChanged?: () => void }) {
+  const t = useT();
   const canUpload = useCapability("job_photos.edit_own");
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<JobPhoto[] | null>(null);
@@ -38,8 +40,8 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
     apiClient
       .get<JobPhoto[]>(`/jobs/${job.id}/photos`)
       .then(setPhotos)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load photos."));
-  }, [job.id]);
+      .catch((err) => setError(err instanceof Error ? err.message : t("jobs.photosSection.loadFailed")));
+  }, [job.id, t]);
 
   useEffect(() => {
     load();
@@ -51,7 +53,7 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
   async function uploadAll(files: File[]) {
     const images = files.filter((f) => f.type.startsWith("image/") || /\.heic$/i.test(f.name));
     if (!images.length) {
-      setError("Choose photos (JPEG, PNG, HEIC or WebP) to add.");
+      setError(t("jobs.photosSection.chooseImages"));
       return;
     }
     setError(null);
@@ -64,7 +66,7 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
           await apiClient.post(`/jobs/${job.id}/photos`, { fileId: uploaded.id });
           setUploads((current) => current.filter((u) => u.key !== key));
         } catch (err) {
-          const why = err instanceof Error ? err.message : "It couldn't be uploaded.";
+          const why = err instanceof Error ? err.message : t("jobs.photosSection.uploadFailed");
           setUploads((current) => current.map((u) => (u.key === key ? { ...u, error: why } : u)));
         }
       }),
@@ -108,12 +110,12 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
           <span>{u.error}</span>
           <button type="button" className="inline-flex items-center gap-1 font-medium underline" onClick={() => setUploads((c) => c.filter((x) => x.key !== u.key))}>
             <X size={12} aria-hidden />
-            Dismiss
+            {t("jobs.photosSection.dismiss")}
           </button>
         </>
       ) : (
         <>
-          <span className="sr-only">Uploading</span>
+          <span className="sr-only">{t("jobs.photosSection.uploading")}</span>
           <span className="h-1 w-3/4 overflow-hidden rounded-full bg-border" aria-hidden>
             <span className="block h-full w-1/2 rounded-full bg-primary motion-safe:animate-pulse" />
           </span>
@@ -126,14 +128,14 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
     <Card className={cn("flex flex-col gap-4 transition-colors", dragging && "border-primary bg-info-bg/40")} {...dropProps} data-testid="job-photos">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-[14px] font-semibold text-on-surface">Photos</h3>
-          {canUpload && <p className="text-[12.5px] text-on-surface-muted">Add several at once, or drop them here.</p>}
+          <h3 className="text-[14px] font-semibold text-on-surface">{t("jobs.photosSection.title")}</h3>
+          {canUpload && <p className="text-[12.5px] text-on-surface-muted">{t("jobs.photosSection.hint")}</p>}
         </div>
         {canUpload && (
           <>
             <Button onClick={() => inputRef.current?.click()}>
               <ImagePlus size={15} aria-hidden />
-              Add photos
+              {t("jobs.photosSection.addPhotos")}
             </Button>
             <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} multiple className="hidden" onChange={onFiles} data-testid="photo-input" />
           </>
@@ -151,7 +153,7 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
           <Spinner />
         </div>
       ) : groups.length === 0 && uploads.length === 0 ? (
-        <p className="text-[13px] text-on-surface-muted">No photos yet. Photos taken when a milestone is completed show here too.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("jobs.photosSection.empty")}</p>
       ) : (
         <div className="flex flex-col gap-5">
           {uploads.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{uploadTiles}</div>}
@@ -170,7 +172,7 @@ export function PhotosSection({ job, milestones, onChanged }: { job: Job; milest
                     type="button"
                     onClick={() => setOpen({ group: group.key, index })}
                     className="group relative aspect-4/3 overflow-hidden rounded-md border border-border bg-surface-sunken text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    aria-label={`Open ${photo.caption ?? "photo"} full size`}
+                    aria-label={t("jobs.photosSection.openAria", { name: photo.caption ?? t("jobs.photosSection.photo") })}
                   >
                     {/* A file served by our own API, not a Next-optimizable asset. */}
                     <img src={photoUrl(photo.fileId)} alt="" className="h-full w-full object-cover transition-transform motion-safe:group-hover:scale-105" />

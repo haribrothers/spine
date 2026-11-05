@@ -1,9 +1,11 @@
+import { t } from "../i18n";
+
 export type TodayPeriod = "week" | "month" | "year";
 
 export const PERIODS: { value: TodayPeriod; label: string }[] = [
-  { value: "week", label: "This week" },
-  { value: "month", label: "This month" },
-  { value: "year", label: "This year" },
+  { value: "week", label: t("mobileApp.periods.week") },
+  { value: "month", label: t("mobileApp.periods.month") },
+  { value: "year", label: t("mobileApp.periods.year") },
 ];
 
 /** `GET /mobile/today?period=` (US-MOB-03). Job figures are null while Jobs & field is off. */

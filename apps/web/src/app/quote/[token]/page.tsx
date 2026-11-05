@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { PublicQuoteView } from "./public-quote-view";
+import { t } from "../../../lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Quote",
+  title: t("publicQuote.metaTitle"),
   // Public quote links contain a customer's own quote data — kept out of
   // search engine indexes, matching a "shared, not published" access model.
   robots: { index: false, follow: false },

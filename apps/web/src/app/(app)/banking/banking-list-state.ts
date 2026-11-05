@@ -1,4 +1,5 @@
 import type { MoneyAccount, MoneyAccountKind } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 
 export type BankingTab = "active" | "archived";
 
@@ -51,8 +52,6 @@ export function bankLine(account: Pick<MoneyAccount, "bankName" | "last4">): str
   return [account.bankName, account.last4 ? `••${account.last4}` : null].filter(Boolean).join(" · ");
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 /** The cards' figures over the active accounts. */
 export function bankingTotals(rows: MoneyAccount[]) {
   const active = rows.filter((r) => !r.archivedAt);
@@ -62,11 +61,11 @@ export function bankingTotals(rows: MoneyAccount[]) {
   const last = active.filter((r) => r.lastReconciledOn).sort((a, b) => b.lastReconciledOn!.localeCompare(a.lastReconciledOn!))[0] ?? null;
   return {
     cash: cash.reduce((sum, r) => sum + BigInt(r.balance ?? "0"), 0n),
-    cashLabel: plural(cash.length, "account", "accounts"),
+    cashLabel: t("banking.list.accountCount", { count: cash.length }),
     owed: cards.reduce((sum, r) => sum + BigInt(r.balance ?? "0"), 0n),
-    cardLabel: plural(cards.length, "card", "cards"),
+    cardLabel: t("banking.list.cardCount", { count: cards.length }),
     unreconciled: active.reduce((sum, r) => sum + (r.unreconciledCount ?? 0), 0),
-    unreconciledLabel: `entries across ${plural(withEntries.length, "account", "accounts")}`,
+    unreconciledLabel: t("banking.list.entriesAcross", { count: withEntries.length }),
     lastReconciled: last,
   };
 }

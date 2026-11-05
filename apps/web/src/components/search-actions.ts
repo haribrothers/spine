@@ -1,5 +1,6 @@
 import { Banknote, CalendarDays, ClipboardList, FileMinus, FileText, HandCoins, HardHat, Package, Receipt, ReceiptText, Target, Undo2, Users, type LucideIcon } from "lucide-react";
 import { SEARCH_SCOPES, type Capability, type SearchGroupType, type SearchScope } from "@spine/shared";
+import { t } from "../lib/i18n";
 
 /** US-OPS-47 — each group's icon is its section's icon in the sidebar (`lib/nav-sections.tsx`). */
 export const SEARCH_GROUP_ICONS: Record<SearchGroupType, LucideIcon> = {
@@ -37,19 +38,19 @@ export const SEARCH_GROUP_PAGE: Record<SearchGroupType, string> = {
 
 /** What "See all … matching" and "You can search …" call each group. */
 export const SEARCH_GROUP_NOUNS: Record<SearchGroupType, string> = {
-  contacts: "contacts",
-  leads: "leads",
-  meetings: "meetings",
-  catalog_items: "catalogue items",
-  quotes: "quotes",
-  jobs: "jobs",
-  invoices: "invoices",
-  credit_notes: "credit notes",
-  payments: "payments",
-  vendor_bills: "vendor bills",
-  vendor_credits: "vendor credits",
-  vendor_payments: "vendor payments",
-  expenses: "expenses",
+  contacts: t("common.search.nouns.contacts"),
+  leads: t("common.search.nouns.leads"),
+  meetings: t("common.search.nouns.meetings"),
+  catalog_items: t("common.search.nouns.catalogItems"),
+  quotes: t("common.search.nouns.quotes"),
+  jobs: t("common.search.nouns.jobs"),
+  invoices: t("common.search.nouns.invoices"),
+  credit_notes: t("common.search.nouns.creditNotes"),
+  payments: t("common.search.nouns.payments"),
+  vendor_bills: t("common.search.nouns.vendorBills"),
+  vendor_credits: t("common.search.nouns.vendorCredits"),
+  vendor_payments: t("common.search.nouns.vendorPayments"),
+  expenses: t("common.search.nouns.expenses"),
 };
 
 /** US-OPS-49 — the area each group belongs to. */
@@ -98,18 +99,18 @@ export interface SearchAction {
 
 /** US-OPS-42 — "new" actions, in the sidebar's order. */
 export const SEARCH_ACTIONS: SearchAction[] = [
-  { key: "contact", label: "Add contact", area: "Sales", href: "/contacts?new=1", capability: "contacts.edit_own", words: "new create customer vendor" },
-  { key: "lead", label: "Add lead", area: "Sales", href: "/leads?new=1", capability: "leads.edit_own", words: "new create deal opportunity pipeline" },
-  { key: "meeting", label: "New meeting", area: "Sales", href: "/meetings?new=1", capability: "meetings.edit_own", words: "add create schedule appointment" },
-  { key: "item", label: "Add catalogue item", area: "Sales", href: "/catalog?new=1", capability: "catalog.edit_own", words: "new create product service" },
-  { key: "quote", label: "New quote", area: "Sales", href: "/quotes/new", capability: "quotes.edit_own", words: "add create estimate" },
-  { key: "job", label: "New job", area: "Jobs", href: "/jobs?new=1", capability: "jobs.edit_own", words: "add create project" },
-  { key: "invoice", label: "New invoice", area: "Billing", href: "/invoices/new", capability: "invoices.edit_own", words: "add create raise" },
-  { key: "payment", label: "Record payment", area: "Billing", href: "/payments?new=1", capability: "payments.edit_own", words: "new add receive receipt" },
-  { key: "vendor-bill", label: "New vendor bill", area: "Purchases", href: "/vendor-bills/new", capability: "vendor_bills.edit_own", words: "add create record bill" },
-  { key: "vendor-credit", label: "New vendor credit", area: "Purchases", href: "/vendor-credits/new", capability: "vendor_credits.edit_own", words: "add create record" },
-  { key: "vendor-payment", label: "Record vendor payment", area: "Purchases", href: "/vendor-payments?new=1", capability: "vendor_payments.edit_own", words: "new add pay bill" },
-  { key: "expense", label: "Submit expense", area: "Purchases", href: "/expenses?new=1", capability: "expenses.edit_own", words: "new add create claim receipt" },
+  { key: "contact", label: t("common.search.actions.contact"), area: t("common.nav.sections.sales"), href: "/contacts?new=1", capability: "contacts.edit_own", words: "new create customer vendor" },
+  { key: "lead", label: t("common.search.actions.lead"), area: t("common.nav.sections.sales"), href: "/leads?new=1", capability: "leads.edit_own", words: "new create deal opportunity pipeline" },
+  { key: "meeting", label: t("common.search.actions.meeting"), area: t("common.nav.sections.sales"), href: "/meetings?new=1", capability: "meetings.edit_own", words: "add create schedule appointment" },
+  { key: "item", label: t("common.search.actions.item"), area: t("common.nav.sections.sales"), href: "/catalog?new=1", capability: "catalog.edit_own", words: "new create product service" },
+  { key: "quote", label: t("common.search.actions.quote"), area: t("common.nav.sections.sales"), href: "/quotes/new", capability: "quotes.edit_own", words: "add create estimate" },
+  { key: "job", label: t("common.search.actions.job"), area: t("common.nav.sections.jobs"), href: "/jobs?new=1", capability: "jobs.edit_own", words: "add create project" },
+  { key: "invoice", label: t("common.search.actions.invoice"), area: t("common.nav.sections.billing"), href: "/invoices/new", capability: "invoices.edit_own", words: "add create raise" },
+  { key: "payment", label: t("common.search.actions.payment"), area: t("common.nav.sections.billing"), href: "/payments?new=1", capability: "payments.edit_own", words: "new add receive receipt" },
+  { key: "vendor-bill", label: t("common.search.actions.vendorBill"), area: t("common.nav.sections.purchases"), href: "/vendor-bills/new", capability: "vendor_bills.edit_own", words: "add create record bill" },
+  { key: "vendor-credit", label: t("common.search.actions.vendorCredit"), area: t("common.nav.sections.purchases"), href: "/vendor-credits/new", capability: "vendor_credits.edit_own", words: "add create record" },
+  { key: "vendor-payment", label: t("common.search.actions.vendorPayment"), area: t("common.nav.sections.purchases"), href: "/vendor-payments?new=1", capability: "vendor_payments.edit_own", words: "new add pay bill" },
+  { key: "expense", label: t("common.search.actions.expense"), area: t("common.nav.sections.purchases"), href: "/expenses?new=1", capability: "expenses.edit_own", words: "new add create claim receipt" },
 ];
 
 /** The words in a phrase: "Record vendor payment" → ["record", "vendor", "payment"]. */

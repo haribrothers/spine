@@ -46,6 +46,7 @@ import {
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
 
 interface TaxRate {
   id: string;
@@ -81,6 +82,7 @@ interface PricesIncludeTaxSetting {
  * `taxGroupId`).
  */
 export function TaxPane() {
+  const t = useT();
   const [rates, setRates] = useState<TaxRate[] | null>(null);
   const [groups, setGroups] = useState<TaxGroup[] | null>(null);
   const [inclusive, setInclusive] = useState<PricesIncludeTaxSetting | null>(null);
@@ -122,18 +124,17 @@ export function TaxPane() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Tax</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.tax.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Named tax rates, combined into groups for split taxes (e.g. CGST + SGST). A quote, invoice, or catalogue
-          item picks one rate or one group per line.
+          {t("settings.tax.description")}
         </p>
       </div>
 
       <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface p-3">
         <div>
-          <p id="prices-include-tax-label" className="text-[14px] font-medium text-on-surface">Prices include tax by default</p>
+          <p id="prices-include-tax-label" className="text-[14px] font-medium text-on-surface">{t("settings.tax.pricesInclude")}</p>
           <p className="text-[13px] text-on-surface-muted">
-            New quote/invoice lines default to tax-inclusive pricing. Each line can still override this.
+            {t("settings.tax.pricesIncludeHelp")}
           </p>
         </div>
         <Switch
@@ -150,7 +151,7 @@ export function TaxPane() {
 
       <div className="flex flex-col gap-2">
         <h3 id="tax-country-label" className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">
-          Country
+          {t("settings.tax.country")}
         </h3>
         <Select
           value={country}
@@ -174,19 +175,19 @@ export function TaxPane() {
           </SelectContent>
         </Select>
         <p id="tax-country-help" className="text-[12px] text-on-surface-muted">
-          Changing country adds that country&apos;s rates. Existing rates are never changed or deleted.
+          {t("settings.tax.countryHelp")}
         </p>
         {added !== null && added > 0 && (
-          <Alert variant="success">Added {added} rates. Your existing rates are unchanged — archive the ones you no longer use.</Alert>
+          <Alert variant="success">{t("settings.tax.added", { added })}</Alert>
         )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-strong bg-surface p-3">
         <div>
           <p className="text-[14px] font-medium text-on-surface" id="return-period-label">
-            Return period
+            {t("settings.tax.returnPeriod")}
           </p>
-          <p className="text-[13px] text-on-surface-muted">How often you file tax returns. The dashboard&apos;s &quot;Tax this period&quot; covers this month or this quarter.</p>
+          <p className="text-[13px] text-on-surface-muted">{t("settings.tax.returnPeriodHelp")}</p>
         </div>
         <Select
           value={taxProfile.returnPeriod ?? "monthly"}
@@ -201,8 +202,8 @@ export function TaxPane() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="quarterly">Quarterly</SelectItem>
+            <SelectItem value="monthly">{t("settings.tax.monthly")}</SelectItem>
+            <SelectItem value="quarterly">{t("settings.tax.quarterly")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -246,25 +247,26 @@ function DefaultTaxPreference({
   inter: TaxChoice | null;
   onSave: (patch: { defaultIntraTax?: TaxChoice; defaultInterTax?: TaxChoice }) => Promise<void>;
 }) {
+  const t = useT();
   const options = [
-    { value: "", label: "No tax" },
+    { value: "", label: t("settings.tax.noTax") },
     ...groups.map((g) => ({ value: `group:${g.id}`, label: g.name })),
     ...rates.map((r) => ({ value: `rate:${r.id}`, label: r.name })),
   ];
-  const token = (t: TaxChoice | null) => (t?.taxRateId ? `rate:${t.taxRateId}` : t?.taxGroupId ? `group:${t.taxGroupId}` : "");
+  const token = (c: TaxChoice | null) => (c?.taxRateId ? `rate:${c.taxRateId}` : c?.taxGroupId ? `group:${c.taxGroupId}` : "");
   const choice = (value: string): TaxChoice => ({ taxRateId: value.startsWith("rate:") ? value.slice(5) : null, taxGroupId: value.startsWith("group:") ? value.slice(6) : null });
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Default tax preference</h3>
-      <p className="text-[13px] text-on-surface-muted">New catalogue items start with these. Spine uses the intra-state tax in your state and the inter-state tax elsewhere.</p>
+      <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("settings.tax.defaultPreference")}</h3>
+      <p className="text-[13px] text-on-surface-muted">{t("settings.tax.defaultPreferenceHelp")}</p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label id="default-intra-label">Intra-state</Label>
-          <Combobox aria-labelledby="default-intra-label" options={options} value={token(intra)} onValueChange={(v) => void onSave({ defaultIntraTax: choice(v) })} placeholder="No tax" />
+          <Label id="default-intra-label">{t("settings.tax.intraState")}</Label>
+          <Combobox aria-labelledby="default-intra-label" options={options} value={token(intra)} onValueChange={(v) => void onSave({ defaultIntraTax: choice(v) })} placeholder={t("settings.tax.noTax")} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label id="default-inter-label">Inter-state</Label>
-          <Combobox aria-labelledby="default-inter-label" options={options} value={token(inter)} onValueChange={(v) => void onSave({ defaultInterTax: choice(v) })} placeholder="No tax" />
+          <Label id="default-inter-label">{t("settings.tax.interState")}</Label>
+          <Combobox aria-labelledby="default-inter-label" options={options} value={token(inter)} onValueChange={(v) => void onSave({ defaultInterTax: choice(v) })} placeholder={t("settings.tax.noTax")} />
         </div>
       </div>
     </div>
@@ -282,18 +284,19 @@ function TaxRatesSection({
   onChanged: () => Promise<void>;
   onSaved: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState<TaxRate | "new" | null>(null);
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Tax rates</h3>
+        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("settings.tax.rates")}</h3>
         <Button variant="ghost" size="sm" onClick={() => setEditing("new")} className="gap-1">
-          <Plus size={14} /> Add rate
+          <Plus size={14} /> {t("settings.tax.addRate")}
         </Button>
       </div>
 
-      {rates.length === 0 && <p className="text-[13px] text-on-surface-muted">No tax rates yet.</p>}
+      {rates.length === 0 && <p className="text-[13px] text-on-surface-muted">{t("settings.tax.noRates")}</p>}
 
       <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong bg-surface">
         {rates.map((rate) => (
@@ -326,6 +329,7 @@ function TaxRatesSection({
 }
 
 function TaxRateRow({ rate, onEdit, onChanged }: { rate: TaxRate; onEdit: () => void; onChanged: () => Promise<void> }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
 
   async function handleArchiveOrRestore() {
@@ -343,28 +347,28 @@ function TaxRateRow({ rate, onEdit, onChanged }: { rate: TaxRate; onEdit: () => 
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-[13px] font-medium text-on-surface">
           {rate.name}
-          {rate.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">Archived</span>}
+          {rate.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">{t("settings.tax.archived")}</span>}
         </span>
         <span className="text-[12px] text-on-surface-muted">
           {rate.rate}% · {TAX_TYPE_LABELS[rate.taxType]}
           {rate.rate === 0 && rate.supplyClass && ` · ${SUPPLY_CLASS_LABELS[rate.supplyClass]}`}
-          {rate.isCompound && " · compound"}
+          {rate.isCompound && t("settings.tax.compoundSuffix")}
         </span>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${rate.name}`}
+            aria-label={t("settings.tax.actionsFor", { name: rate.name })}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
             <MoreHorizontal size={16} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onEdit}>{t("settings.tax.edit")}</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
-            {rate.archivedAt ? "Restore" : "Archive"}
+            {rate.archivedAt ? t("settings.tax.restore") : t("settings.tax.archive")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -396,6 +400,7 @@ function TaxRateDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const t = useT();
   const [name, setName] = useState(rate?.name ?? "");
   const [rateValue, setRateValue] = useState(rate ? String(rate.rate) : "");
   const [isCompound, setIsCompound] = useState(rate?.isCompound ?? false);
@@ -416,7 +421,7 @@ function TaxRateDialog({
       }
       await onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save tax rate.");
+      setError(err instanceof Error ? err.message : t("settings.tax.rateSaveError"));
     } finally {
       setSaving(false);
     }
@@ -426,15 +431,15 @@ function TaxRateDialog({
     <AlertDialog open onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{rate ? "Edit tax rate" : "Add tax rate"}</AlertDialogTitle>
+          <AlertDialogTitle>{rate ? t("settings.tax.editRate") : t("settings.tax.addRateTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
             <div className="flex flex-col gap-3 pt-2 text-left">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tax-rate-name">Name</Label>
-                <Input id="tax-rate-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. GST" />
+                <Label htmlFor="tax-rate-name">{t("settings.tax.name")}</Label>
+                <Input id="tax-rate-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("settings.tax.ratePlaceholder")} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tax-rate-percentage">Rate (%)</Label>
+                <Label htmlFor="tax-rate-percentage">{t("settings.tax.ratePercent")}</Label>
                 <Input
                   id="tax-rate-percentage"
                   type="number"
@@ -446,33 +451,34 @@ function TaxRateDialog({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label id="tax-rate-type-label">Tax type</Label>
+                <Label id="tax-rate-type-label">{t("settings.tax.taxType")}</Label>
                 <Select value={taxType} onValueChange={(v) => setTaxType(v as TaxType)}>
                   <SelectTrigger aria-labelledby="tax-rate-type-label" aria-describedby="tax-rate-type-help">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {taxTypeOptions(country, rate?.taxType).map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {TAX_TYPE_LABELS[t]}
+                    {taxTypeOptions(country, rate?.taxType).map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {TAX_TYPE_LABELS[option]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p id="tax-rate-type-help" className="text-[12px] text-on-surface-muted">
                   {country === "IN"
-                    ? "Reports and GSTR-1 split tax by type: CGST, SGST, UTGST, IGST, cess."
-                    : "Reports split tax by type."}
+                    ? t("settings.tax.taxTypeHelpIndia")
+                    : t("settings.tax.taxTypeHelp")}
                 </p>
               </div>
               {rateValue !== "" && Number(rateValue) === 0 && (
                 <div className="flex flex-col gap-1.5">
-                  <Label id="tax-rate-supply-label">Lines with this rate are</Label>
+                  <Label id="tax-rate-supply-label">{t("settings.tax.supplyLabel")}</Label>
                   <Select value={supplyClass} onValueChange={(v) => setSupplyClass(v as SupplyClass)}>
                     <SelectTrigger aria-labelledby="tax-rate-supply-label" aria-describedby="tax-rate-supply-help">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      {/* eslint-disable-next-line i18next/no-literal-string -- supply class ids, not copy */}
                       {(["zero_rated", "exempt", "non_taxable"] as const).map((c) => (
                         <SelectItem key={c} value={c}>
                           {SUPPLY_CLASS_LABELS[c]}
@@ -481,14 +487,14 @@ function TaxRateDialog({
                     </SelectContent>
                   </Select>
                   <p id="tax-rate-supply-help" className="text-[12px] text-on-surface-muted">
-                    Picking this rate on a line gives the line this supply type.
+                    {t("settings.tax.supplyHelp")}
                   </p>
                 </div>
               )}
               <label htmlFor="tax-rate-compound" className="flex cursor-pointer items-center gap-2">
                 <Checkbox id="tax-rate-compound" checked={isCompound} onCheckedChange={(v) => setIsCompound(v === true)} />
                 <span className="text-[13px] text-on-surface">
-                  Compound — tax this rate on top of prior rates already applied to the line, not just the base amount.
+                  {t("settings.tax.compound")}
                 </span>
               </label>
               {error && <p className="text-[13px] text-overdue">{error}</p>}
@@ -496,7 +502,7 @@ function TaxRateDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose}>{t("settings.tax.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             disabled={saving || !name || rateValue === ""}
             onClick={(e) => {
@@ -505,7 +511,7 @@ function TaxRateDialog({
               handleSave();
             }}
           >
-            {saving ? <Spinner size="sm" /> : "Save"}
+            {saving ? <Spinner size="sm" /> : t("settings.common.save")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -524,12 +530,13 @@ function TaxGroupsSection({
   onChanged: () => Promise<void>;
   onSaved: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState<TaxGroup | "new" | null>(null);
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Tax groups</h3>
+        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("settings.tax.groups")}</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -537,14 +544,14 @@ function TaxGroupsSection({
           disabled={rates.length === 0}
           className="gap-1"
         >
-          <Plus size={14} /> Add group
+          <Plus size={14} /> {t("settings.tax.addGroup")}
         </Button>
       </div>
 
       {rates.length === 0 && (
-        <p className="text-[13px] text-on-surface-muted">Add at least one tax rate before creating a group.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.tax.groupNeedsRate")}</p>
       )}
-      {rates.length > 0 && groups.length === 0 && <p className="text-[13px] text-on-surface-muted">No tax groups yet.</p>}
+      {rates.length > 0 && groups.length === 0 && <p className="text-[13px] text-on-surface-muted">{t("settings.tax.noGroups")}</p>}
 
       <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong bg-surface">
         {groups.map((group) => (
@@ -577,6 +584,7 @@ function TaxGroupsSection({
 }
 
 function TaxGroupRow({ group, onEdit, onChanged }: { group: TaxGroup; onEdit: () => void; onChanged: () => Promise<void> }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
 
   async function handleArchiveOrRestore() {
@@ -594,27 +602,27 @@ function TaxGroupRow({ group, onEdit, onChanged }: { group: TaxGroup; onEdit: ()
       <div className="flex min-w-0 flex-col">
         <span className="truncate text-[13px] font-medium text-on-surface">
           {group.name}
-          {group.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">Archived</span>}
+          {group.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">{t("settings.tax.archived")}</span>}
         </span>
         <span className="text-[12px] text-on-surface-muted">
-          {group.taxRates.map((r) => `${INDIA_TAX_TYPES.includes(r.taxType) ? TAX_TYPE_LABELS[r.taxType] : r.name} (${r.rate}%)`).join(" + ") || "No rates"}
-          {group.scope !== "any" && ` · ${group.scope === "intra" ? "Intra-state" : "Inter-state"}`}
+          {group.taxRates.map((r) => `${INDIA_TAX_TYPES.includes(r.taxType) ? TAX_TYPE_LABELS[r.taxType] : r.name} (${r.rate}%)`).join(" + ") || t("settings.tax.noRatesInGroup")}
+          {group.scope !== "any" && ` · ${group.scope === "intra" ? t("settings.tax.intraState") : t("settings.tax.interState")}`}
         </span>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${group.name}`}
+            aria-label={t("settings.tax.actionsFor", { name: group.name })}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
             <MoreHorizontal size={16} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onEdit}>{t("settings.tax.edit")}</DropdownMenuItem>
           <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
-            {group.archivedAt ? "Restore" : "Archive"}
+            {group.archivedAt ? t("settings.tax.restore") : t("settings.tax.archive")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -633,6 +641,7 @@ function TaxGroupDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const t = useT();
   const [name, setName] = useState(group?.name ?? "");
   const [taxRateIds, setTaxRateIds] = useState<string[]>(group?.taxRates.map((r) => r.id) ?? []);
   const [saving, setSaving] = useState(false);
@@ -650,7 +659,7 @@ function TaxGroupDialog({
       }
       await onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save tax group.");
+      setError(err instanceof Error ? err.message : t("settings.tax.groupSaveError"));
     } finally {
       setSaving(false);
     }
@@ -660,21 +669,21 @@ function TaxGroupDialog({
     <AlertDialog open onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{group ? "Edit tax group" : "Add tax group"}</AlertDialogTitle>
+          <AlertDialogTitle>{group ? t("settings.tax.editGroup") : t("settings.tax.addGroupTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
             <div className="flex flex-col gap-3 pt-2 text-left">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tax-group-name">Name</Label>
-                <Input id="tax-group-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. CGST + SGST" />
+                <Label htmlFor="tax-group-name">{t("settings.tax.name")}</Label>
+                <Input id="tax-group-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("settings.tax.groupPlaceholder")} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="tax-group-rates">Rates</Label>
+                <Label htmlFor="tax-group-rates">{t("settings.tax.groupRates")}</Label>
                 <MultiSelect
                   options={rates.map((r) => ({ value: r.id, label: `${r.name} (${r.rate}%)` }))}
                   value={taxRateIds}
                   onValueChange={setTaxRateIds}
-                  placeholder="Select rates…"
-                  aria-label="Rates"
+                  placeholder={t("settings.tax.selectRates")}
+                  aria-label={t("settings.tax.groupRates")}
                 />
               </div>
               {error && <p className="text-[13px] text-overdue">{error}</p>}
@@ -682,7 +691,7 @@ function TaxGroupDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose}>{t("settings.tax.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             disabled={saving || !name || taxRateIds.length === 0}
             onClick={(e) => {
@@ -691,7 +700,7 @@ function TaxGroupDialog({
               handleSave();
             }}
           >
-            {saving ? <Spinner size="sm" /> : "Save"}
+            {saving ? <Spinner size="sm" /> : t("settings.common.save")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

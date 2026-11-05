@@ -7,6 +7,7 @@ import type { VendorCreditActivityEntry } from "@spine/shared";
 import { ArrowRightLeft, Ban, Banknote, FileCheck, FilePlus, Undo2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -19,19 +20,19 @@ export function creditActivityText(item: VendorCreditActivityEntry, currency: st
   const money = (v?: string | null) => (v ? formatMoney(BigInt(v), currency) : "");
   switch (item.type) {
     case "created":
-      return { text: "Created as a draft" };
+      return { text: t("vendorCredits.activity.created") };
     case "recorded":
-      return { text: `Recorded · ${money(item.amount)} off what you owe ${vendor}` };
+      return { text: t("vendorCredits.activity.recorded", { amount: money(item.amount), vendor }) };
     case "applied":
-      return { text: `Applied ${money(item.amount)} to`, link: item.linkId ? { label: item.detail ?? "a bill", href: `/vendor-bills/${item.linkId}` } : undefined };
+      return { text: t("vendorCredits.activity.appliedTo", { amount: money(item.amount) }), link: item.linkId ? { label: item.detail ?? t("vendorCredits.activity.aBill"), href: `/vendor-bills/${item.linkId}` } : undefined };
     case "unapplied":
-      return { text: `Removed ${money(item.amount)} from ${item.detail ?? "a bill"}` };
+      return { text: t("vendorCredits.activity.removed", { amount: money(item.amount), bill: item.detail ?? t("vendorCredits.activity.aBill") }) };
     case "refunded":
-      return { text: `Refunded ${money(item.amount)} by ${vendor}` };
+      return { text: t("vendorCredits.activity.refunded", { amount: money(item.amount), vendor }) };
     case "refund_deleted":
-      return { text: `Refund of ${money(item.amount)} deleted` };
+      return { text: t("vendorCredits.activity.refundDeleted", { amount: money(item.amount) }) };
     case "voided":
-      return { text: "Voided", after: item.detail ?? undefined };
+      return { text: t("vendorCredits.activity.voided"), after: item.detail ?? undefined };
   }
 }
 
@@ -54,6 +55,7 @@ const SHOWN = 6;
  * field-level changes.
  */
 export function VendorCreditActivity({ creditId, currency, vendor, refreshKey, onViewHistory }: { creditId: string; currency: string; vendor: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<VendorCreditActivityEntry[] | null>(null);
   const [all, setAll] = useState(false);
 
@@ -69,9 +71,9 @@ export function VendorCreditActivity({ creditId, currency, vendor, refreshKey, o
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="credit-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("vendorCredits.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("vendorCredits.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -81,7 +83,7 @@ export function VendorCreditActivity({ creditId, currency, vendor, refreshKey, o
             <Skeleton className="h-4 w-1/2" />
           </li>
         )}
-        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">Nothing has happened yet.</li>}
+        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">{t("vendorCredits.activity.nothingYet")}</li>}
         {shown?.map((item, i) => {
           const Icon = ICONS[item.type];
           const { text, link, after } = creditActivityText(item, currency, vendor);
@@ -108,7 +110,7 @@ export function VendorCreditActivity({ creditId, currency, vendor, refreshKey, o
                       </Link>
                     </>
                   )}
-                  {after && <> · “{after}”</>}
+                  {after && <>{t("vendorCredits.activity.afterQuote", { text: after })}</>}
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{[item.actorName, when(item.at)].filter(Boolean).join(" · ")}</p>
               </div>
@@ -118,7 +120,7 @@ export function VendorCreditActivity({ creditId, currency, vendor, refreshKey, o
         {items && !all && items.length > SHOWN && (
           <li>
             <button type="button" onClick={() => setAll(true)} className="mt-1 text-[12.5px] font-medium text-primary hover:underline">
-              Show {items.length - SHOWN} earlier
+              {t("vendorCredits.activity.showEarlier", { count: items.length - SHOWN })}
             </button>
           </li>
         )}

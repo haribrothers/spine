@@ -38,6 +38,7 @@ import {
 } from "@spine/ui";
 import type { TeamHistoryEntry } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
+import { t, useT } from "../../../../../lib/i18n";
 import type { MemberRow } from "../../../../../lib/members";
 import { MENU_ICONS } from "../../../../../lib/menu-icons";
 import { replaceQuery } from "../../../../../lib/replace-query";
@@ -46,16 +47,19 @@ import { useToast } from "../../../../../components/toast-host";
 import { UserAccessDrawer } from "../../users/user-access-drawer";
 import { initials, lastActiveLabel, shortDate } from "../../users/users-list-state";
 import { TeamDialog, type TeamDialogMode } from "../team-dialog";
-import { leftWithoutTeam, peopleLabel } from "../teams-state";
+import { leftWithoutTeam } from "../teams-state";
 import { TeamPermissions } from "./team-permissions";
 import { useLoadFailure } from "../../../../../lib/use-load-failure";
+import { orgLocaleTag } from "../../../../../lib/money";
 
 type Tab = "members" | "permissions" | "history";
 const TABS: Tab[] = ["members", "permissions", "history"];
+/** A history entry's time, e.g. "10:42 AM". */
+const TIME_FORMAT: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
 
 /** "Arun Shah and Neha Kapoor", "A, B and C". */
 function names(list: string[]): string {
-  return list.length <= 1 ? (list[0] ?? "") : `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+  return list.length <= 1 ? (list[0] ?? "") : t("team.common.andList", { items: list.slice(0, -1).join(", "), last: list[list.length - 1]! });
 }
 
 /**
@@ -65,6 +69,7 @@ function names(list: string[]): string {
  * unsaved changes asks first.
  */
 export function TeamPage({ teamId }: { teamId: string }) {
+  const t = useT();
   const loadFailed = useLoadFailure(teamId);
   const router = useRouter();
   const pathname = usePathname();
@@ -93,7 +98,7 @@ export function TeamPage({ teamId }: { teamId: string }) {
       setHistoryKey((k) => k + 1);
     } catch (err) {
       if (loadFailed(err)) return;
-      setLoadError(err instanceof Error ? err.message : "Couldn't load this Team. Go back to Teams and try again.");
+      setLoadError(err instanceof Error ? err.message : t("team.teamPage.loadFailed"));
     }
   }, [teamId, loadFailed]);
 
@@ -112,10 +117,10 @@ export function TeamPage({ teamId }: { teamId: string }) {
   async function leaveDraft(): Promise<boolean> {
     if (!dirty) return true;
     return confirm({
-      title: `Discard ${dirty === 1 ? "1 unsaved change" : `${dirty} unsaved changes`}?`,
-      description: "The permissions you switched haven't been saved. Nothing changes for anyone if you leave now.",
-      confirmLabel: "Discard changes",
-      cancelLabel: "Keep editing",
+      title: t("team.teamPage.discardConfirm.title", { count: dirty }),
+      description: t("team.teamPage.discardConfirm.description"),
+      confirmLabel: t("team.teamPage.discardConfirm.confirm"),
+      cancelLabel: t("team.teamPage.discardConfirm.cancel"),
       danger: true,
     });
   }
@@ -148,30 +153,30 @@ export function TeamPage({ teamId }: { teamId: string }) {
   async function removeMember(m: MemberRow) {
     if (!detail) return;
     const only = leftWithoutTeam(teamId, [m.id], teams).length > 0;
-    const first = m.name.split(" ")[0];
+    const first = m.name.split(" ")[0] ?? "";
     const ok = await confirm({
-      title: `Remove ${m.name} from ${detail.name}?`,
+      title: t("team.teamPage.removeConfirm.title", { name: m.name, team: detail.name }),
       description: (
         <>
-          They lose what {detail.name} allowed at their next request.
+          {t("team.teamPage.removeConfirm.description", { team: detail.name })}
           {only && (
             <span className="mt-2 block rounded-md bg-due-soon-bg px-3 py-2 text-on-surface" data-testid="remove-only-team">
-              This is their only Team — {first} will be on no Team and can&apos;t open anything until you add them to one.
+              {t("team.teamPage.removeConfirm.onlyTeam", { first })}
             </span>
           )}
         </>
       ),
-      confirmLabel: "Remove",
-      cancelLabel: "Go back",
+      confirmLabel: t("team.teamPage.removeConfirm.confirm"),
+      cancelLabel: t("team.common.goBack"),
       danger: true,
     });
     if (!ok) return;
     setActionError(null);
     try {
       await setMemberIds(detail.members.map((x) => x.memberId).filter((id) => id !== m.id));
-      showToast(`${m.name} removed from ${detail.name}`, only ? `${first} is on no Team now — they can't open anything.` : `They keep what their other Teams allow.`);
+      showToast(t("team.teamPage.removedToast.title", { name: m.name, team: detail.name }), only ? t("team.teamPage.removedToast.onlyTeam", { first }) : t("team.teamPage.removedToast.otherTeams"));
     } catch (err) {
-      setActionError(`Couldn't remove ${m.name}. ${err instanceof Error ? err.message : "Try again."}`);
+      setActionError(`${t("team.teamPage.removeFailed", { name: m.name })} ${err instanceof Error ? err.message : t("team.common.tryAgain")}`);
     }
   }
 
@@ -179,29 +184,31 @@ export function TeamPage({ teamId }: { teamId: string }) {
     if (!detail) return;
     const stranded = leftWithoutTeam(teamId, detail.members.map((m) => m.memberId), teams).map((id) => detail.members.find((m) => m.memberId === id)!.name);
     const ok = await confirm({
-      title: `Delete ${detail.name}?`,
+      title: t("team.teams.deleteConfirm.title", { name: detail.name }),
       description: (
         <>
-          {detail.members.length ? `Its ${peopleLabel(detail.members.length)} ${detail.members.length === 1 ? "loses" : "lose"} what it allowed.` : "No one is on it."} Its permissions and history go; nobody&apos;s login does.
+          {detail.members.length ? t("team.teams.deleteConfirm.membersLose", { count: detail.members.length }) : t("team.teams.deleteConfirm.noOne")}
+          {t("team.teams.deleteConfirm.permissionsGo")}
           {stranded.length > 0 && (
             <span className="mt-2 block rounded-md bg-due-soon-bg px-3 py-2 text-on-surface">
-              {names(stranded)} will be on no Team — they can&apos;t open anything until you add them to one.
+              {t("team.teams.deleteConfirm.stranded", { names: names(stranded) })}
+              {t("team.teams.deleteConfirm.strandedAfter")}
             </span>
           )}
         </>
       ),
-      confirmLabel: "Delete Team",
-      cancelLabel: "Go back",
+      confirmLabel: t("team.teams.deleteConfirm.confirm"),
+      cancelLabel: t("team.common.goBack"),
       danger: true,
     });
     if (!ok) return;
     try {
       await apiClient.delete(`/org/teams/${teamId}`);
-      showToast(`${detail.name} deleted`, detail.members.length ? `${peopleLabel(detail.members.length)} lost what it allowed.` : "No one was on it.");
+      showToast(t("team.teams.deletedToast.title", { name: detail.name }), detail.members.length ? t("team.teams.deletedToast.lost", { count: detail.members.length }) : t("team.teams.deletedToast.noOne"));
       setDirty(0);
       router.push("/team/teams");
     } catch (err) {
-      setActionError(`Couldn't delete ${detail.name}. ${err instanceof Error ? err.message : "Try again."}`);
+      setActionError(`${t("team.teams.deleteFailed", { name: detail.name })} ${err instanceof Error ? err.message : t("team.common.tryAgain")}`);
     }
   }
 
@@ -223,40 +230,40 @@ export function TeamPage({ teamId }: { teamId: string }) {
   const canDelete = !detail.isDefault && teams.length > 1;
   const header = (
     <AppShellHeader
-      breadcrumb={[{ label: "Team" }, { label: "Teams", href: "/team/teams" }, { label: detail.name }]}
+      breadcrumb={[{ label: t("team.common.breadcrumbTeam") }, { label: t("team.teams.title"), href: "/team/teams" }, { label: detail.name }]}
       title={detail.name}
       description={detail.description ?? undefined}
       action={
         <div className="flex items-center gap-2">
-          {detail.isDefault && <Badge className="bg-paid-bg text-paid">Default</Badge>}
-          {detail.isDemo && <Badge className="bg-due-soon-bg text-due-soon">Demo</Badge>}
+          {detail.isDefault && <Badge className="bg-paid-bg text-paid">{t("team.common.default")}</Badge>}
+          {detail.isDemo && <Badge className="bg-due-soon-bg text-due-soon">{t("team.common.demo")}</Badge>}
           {tab === "members" && (
             <Button onClick={() => setAdding(true)}>
               <UserPlus size={14} aria-hidden />
-              Add people
+              {t("team.teamPage.addPeople")}
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" aria-label={`Actions for ${detail.name}`}>
+              <Button variant="secondary" size="icon" aria-label={t("team.common.actionsFor", { name: detail.name })}>
                 <MoreHorizontal size={16} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-44">
               <DropdownMenuItem onSelect={() => summary && setDialog({ kind: "rename", team: summary })}>
                 <MENU_ICONS.edit aria-hidden />
-                Rename
+                {t("team.common.rename")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => summary && setDialog({ kind: "create", from: summary })}>
                 <MENU_ICONS.duplicate aria-hidden />
-                Duplicate
+                {t("team.common.duplicate")}
               </DropdownMenuItem>
               {canDelete && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => void deleteTeam()}>
                     <MENU_ICONS.delete aria-hidden />
-                    Delete
+                    {t("team.common.delete")}
                   </DropdownMenuItem>
                 </>
               )}
@@ -270,7 +277,7 @@ export function TeamPage({ teamId }: { teamId: string }) {
   const memberColumns: TableColumn<MemberRow>[] = [
     {
       key: "person",
-      header: "Person",
+      header: t("team.users.columns.person"),
       render: (m) => (
         <span className="flex min-w-0 items-center gap-3">
           <Avatar className="shrink-0">
@@ -286,23 +293,23 @@ export function TeamPage({ teamId }: { teamId: string }) {
     },
     {
       key: "also",
-      header: "Also on",
+      header: t("team.teamPage.alsoOn"),
       render: (m) => {
-        const other = (m.teams ?? []).filter((t) => t.id !== teamId);
+        const other = (m.teams ?? []).filter((team) => team.id !== teamId);
         return other.length ? (
           <span className="flex flex-wrap gap-1.5">
-            {other.map((t) => (
-              <Link key={t.id} href={`/team/teams/${t.id}`} className="rounded-full border border-border bg-surface px-2 py-0.5 text-[12px] font-medium text-on-surface hover:border-primary hover:text-primary">
-                {t.name}
+            {other.map((team) => (
+              <Link key={team.id} href={`/team/teams/${team.id}`} className="rounded-full border border-border bg-surface px-2 py-0.5 text-[12px] font-medium text-on-surface hover:border-primary hover:text-primary">
+                {team.name}
               </Link>
             ))}
           </span>
         ) : (
-          <span className="text-on-surface-muted">Only this Team</span>
+          <span className="text-on-surface-muted">{t("team.teamPage.onlyThisTeam")}</span>
         );
       },
     },
-    { key: "lastActive", header: "Last active", render: (m) => <span className="whitespace-nowrap">{lastActiveLabel(m.lastActiveAt)}</span>, sortValue: (m) => m.lastActiveAt ?? "" },
+    { key: "lastActive", header: t("team.users.columns.lastActive"), render: (m) => <span className="whitespace-nowrap">{lastActiveLabel(m.lastActiveAt)}</span>, sortValue: (m) => m.lastActiveAt ?? "" },
     {
       key: "actions",
       header: "",
@@ -310,19 +317,19 @@ export function TeamPage({ teamId }: { teamId: string }) {
         <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" aria-label={`Actions for ${m.name}`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface">
+              <button type="button" aria-label={t("team.common.actionsFor", { name: m.name })} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface">
                 <MoreHorizontal size={16} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-52">
               <DropdownMenuItem onSelect={() => setViewing(m)}>
                 <MENU_ICONS.view aria-hidden />
-                What they can open
+                {t("team.common.whatTheyCanOpen")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => void removeMember(m)}>
                 <MENU_ICONS.removeMember aria-hidden />
-                Remove from {detail.name}
+                {t("team.teamPage.removeFrom", { team: detail.name })}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -341,12 +348,12 @@ export function TeamPage({ teamId }: { teamId: string }) {
       )}
       <Tabs value={tab} onValueChange={(v) => void changeTab(v as Tab)} className="flex flex-col gap-6">
         <TabsList>
-          <TabsTrigger value="members" aria-label={`Members, ${detail.members.length}`} className="group">
-            Members
+          <TabsTrigger value="members" aria-label={t("team.teamPage.tabs.membersCount", { n: detail.members.length })} className="group">
+            {t("team.teamPage.tabs.members")}
             <span className="ml-1.5 rounded-full border border-border bg-surface-sunken px-1.5 text-[11px] font-semibold tabular-nums text-on-surface-muted group-data-[state=active]:border-transparent group-data-[state=active]:bg-info-bg group-data-[state=active]:text-primary">{detail.members.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="permissions">{t("team.teamPage.tabs.permissions")}</TabsTrigger>
+          <TabsTrigger value="history">{t("team.teamPage.tabs.history")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="members" className="flex flex-col gap-3 pt-0">
@@ -354,12 +361,12 @@ export function TeamPage({ teamId }: { teamId: string }) {
             <div className="rounded-lg border border-border bg-surface">
               <EmptyState
                 icon={<UserPlus />}
-                title="No one on this Team yet"
-                description="Add Staff to give them what it allows."
+                title={t("team.teamPage.empty.title")}
+                description={t("team.teamPage.empty.description")}
                 action={
                   <Button onClick={() => setAdding(true)}>
                     <UserPlus size={14} aria-hidden />
-                    Add people
+                    {t("team.teamPage.addPeople")}
                   </Button>
                 }
               />
@@ -371,7 +378,7 @@ export function TeamPage({ teamId }: { teamId: string }) {
           )}
           <p className="flex items-center gap-1.5 text-[12.5px] text-on-surface-muted">
             <Info size={13} aria-hidden />
-            Only Staff are on Teams. Owners can open everything; Field access is fixed.
+            {t("team.teamPage.onlyStaffNote")}
           </p>
         </TabsContent>
 
@@ -382,7 +389,7 @@ export function TeamPage({ teamId }: { teamId: string }) {
             onDirtyChange={setDirty}
             onSaved={async (count) => {
               await load();
-              showToast(`${detail.name} saved`, `${count === 1 ? "1 permission" : `${count} permissions`} changed${teamMembers.length ? ` — ${names(teamMembers.map((m) => m.name))} get${teamMembers.length === 1 ? "s" : ""} them at their next request` : ""}.`);
+              showToast(t("team.teamPage.savedToast.title", { name: detail.name }), `${t("team.teamPage.savedToast.changed", { count })}${teamMembers.length ? t("team.teamPage.savedToast.membersGet", { count: teamMembers.length, names: names(teamMembers.map((m) => m.name)) }) : ""}.`);
             }}
           />
         </TabsContent>
@@ -400,7 +407,7 @@ export function TeamPage({ teamId }: { teamId: string }) {
         onAdd={async (picked) => {
           await setMemberIds([...detail.members.map((m) => m.memberId), ...picked.map((m) => m.id)]);
           setAdding(false);
-          showToast(`Added ${names(picked.map((m) => m.name))} to ${detail.name}`, "They can open what it allows at their next request.");
+          showToast(t("team.teamPage.addedToast.title", { names: names(picked.map((m) => m.name)), team: detail.name }), t("team.teamPage.addedToast.description"));
         }}
       />
       <TeamDialog
@@ -410,10 +417,10 @@ export function TeamPage({ teamId }: { teamId: string }) {
         onSaved={(team, mode) => {
           setDialog(null);
           if (mode.kind === "rename") {
-            showToast("Team saved", `${team.name} is up to date.`);
+            showToast(t("team.teams.savedToast.title"), t("team.teams.savedToast.description", { name: team.name }));
             void load();
           } else {
-            showToast(`${team.name} created`, "Check what it allows, then add people.");
+            showToast(t("team.teams.createdToast.title", { name: team.name }), t("team.teams.createdToast.description"));
             void go(`/team/teams/${team.id}?tab=permissions`);
           }
         }}
@@ -426,6 +433,7 @@ export function TeamPage({ teamId }: { teamId: string }) {
 
 /** US-TEAM-27 · `AddTeamMembersDialog` — tick several Staff not on this Team, with their current Teams. */
 function AddPeopleDialog({ open, team, candidates, onOpenChange, onAdd }: { open: boolean; team: TeamDetail; candidates: MemberRow[]; onOpenChange: (open: boolean) => void; onAdd: (picked: MemberRow[]) => Promise<void> }) {
+  const t = useT();
   const [picked, setPicked] = useState<string[]>([]);
   const [q, setQ] = useState("");
   const [saving, setSaving] = useState(false);
@@ -446,7 +454,7 @@ function AddPeopleDialog({ open, team, candidates, onOpenChange, onAdd }: { open
     try {
       await onAdd(candidates.filter((m) => picked.includes(m.id)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't add them. Try again.");
+      setError(err instanceof Error ? err.message : t("team.addPeopleDialog.failed"));
     } finally {
       setSaving(false);
     }
@@ -455,8 +463,8 @@ function AddPeopleDialog({ open, team, candidates, onOpenChange, onAdd }: { open
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Add people to {team.name}</DialogTitle>
-          <DialogDescription>They can open what {team.name} allows, on top of their other Teams.</DialogDescription>
+          <DialogTitle>{t("team.addPeopleDialog.title", { team: team.name })}</DialogTitle>
+          <DialogDescription>{t("team.addPeopleDialog.description", { team: team.name })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           {error && (
@@ -465,37 +473,37 @@ function AddPeopleDialog({ open, team, candidates, onOpenChange, onAdd }: { open
             </Alert>
           )}
           {candidates.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">Every Staff member is already on {team.name}.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("team.addPeopleDialog.everyoneOn", { team: team.name })}</p>
           ) : (
             <>
               <div className="relative">
                 <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-                <Input type="search" aria-label="Search Staff" placeholder="Search Staff" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+                <Input type="search" aria-label={t("team.addPeopleDialog.searchStaff")} placeholder={t("team.addPeopleDialog.searchStaff")} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
               </div>
-              <div role="group" aria-label="Staff to add" className="flex max-h-72 flex-col overflow-auto rounded-lg border border-border">
+              <div role="group" aria-label={t("team.addPeopleDialog.staffToAdd")} className="flex max-h-72 flex-col overflow-auto rounded-lg border border-border">
                 {shown.map((m) => {
                   const id = `add-${m.id}`;
-                  const teamsLabel = (m.teams ?? []).map((t) => t.name).join(", ");
+                  const teamsLabel = (m.teams ?? []).map((tm) => tm.name).join(", ");
                   return (
                     <label key={m.id} htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 border-t border-border px-3 py-2 text-[13.5px] text-on-surface first:border-t-0 hover:bg-surface-sunken">
                       <Checkbox id={id} checked={picked.includes(m.id)} onCheckedChange={(on) => setPicked((p) => (on === true ? [...p, m.id] : p.filter((x) => x !== m.id)))} />
                       <span className="flex-1">{m.name}</span>
-                      <span className={teamsLabel ? "text-[12.5px] text-on-surface-muted" : "text-[12.5px] font-medium text-due-soon"}>{teamsLabel || "No Team"}</span>
+                      <span className={teamsLabel ? "text-[12.5px] text-on-surface-muted" : "text-[12.5px] font-medium text-due-soon"}>{teamsLabel || t("team.addPeopleDialog.noTeam")}</span>
                     </label>
                   );
                 })}
               </div>
             </>
           )}
-          <p className="text-[12.5px] text-on-surface-muted">Owners and Field aren&apos;t listed — only Staff are on Teams.</p>
+          <p className="text-[12.5px] text-on-surface-muted">{t("team.addPeopleDialog.notListed")}</p>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("team.common.cancel")}
           </Button>
           <Button onClick={() => void add()} disabled={saving || picked.length === 0}>
             {saving ? <Spinner size="sm" /> : <UserPlus size={14} aria-hidden />}
-            {picked.length === 1 ? "Add 1 person" : `Add ${picked.length} people`}
+            {t("team.addPeopleDialog.submit", { count: picked.length })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -505,13 +513,14 @@ function AddPeopleDialog({ open, team, candidates, onOpenChange, onAdd }: { open
 
 /** US-TEAM-29 · `TeamPageHistory` — every change to the Team, newest first. */
 function TeamHistory({ teamId }: { teamId: string }) {
+  const t = useT();
   const [entries, setEntries] = useState<TeamHistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     apiClient
       .get<TeamHistoryEntry[]>(`/org/teams/${teamId}/history`)
       .then(setEntries)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load the history."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("team.history.loadFailed")));
   }, [teamId]);
 
   if (error)
@@ -529,7 +538,7 @@ function TeamHistory({ teamId }: { teamId: string }) {
   return (
     <div className="flex flex-col gap-3">
       {entries.length === 0 ? (
-        <p className="text-[13px] text-on-surface-muted">Nothing has changed on this Team since history began.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("team.history.empty")}</p>
       ) : (
         <ol className="rounded-lg border border-border bg-surface" data-testid="team-history">
           {entries.map((e, i) => {
@@ -542,10 +551,10 @@ function TeamHistory({ teamId }: { teamId: string }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span>
-                    <b className="font-semibold">{e.actorName ?? "Someone"}</b> {d.text}
+                    <b className="font-semibold">{e.actorName ?? t("team.history.someone")}</b> {d.text}
                   </span>
                   <span className="mt-0.5 block text-[12.5px] text-on-surface-muted">
-                    {shortDate(e.at)}, {new Date(e.at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                    {shortDate(e.at)}, {new Date(e.at).toLocaleTimeString(orgLocaleTag(), TIME_FORMAT)}
                   </span>
                   {d.chips.length > 0 && (
                     <span className="mt-1.5 flex flex-wrap gap-1.5">
@@ -563,7 +572,7 @@ function TeamHistory({ teamId }: { teamId: string }) {
         </ol>
       )}
       <Link href={`/team/audit-log?entityType=team&entityId=${teamId}`} className="w-fit text-[13px] font-medium text-primary hover:underline">
-        Open in audit log →
+        {t("team.history.openInAuditLog")}
       </Link>
     </div>
   );
@@ -576,28 +585,28 @@ export function describe(e: TeamHistoryEntry): { text: string; chips: string[]; 
   switch (e.action) {
     case "created": {
       const from = get("copiedFrom")?.to;
-      return { text: `created ${String(get("name")?.to ?? "the Team")}${from ? ` from ${String(from)}` : ""}`, chips: [], icon: from ? Copy : ShieldCheck };
+      return { text: `${t("team.history.created", { name: String(get("name")?.to ?? t("team.history.theTeam")) })}${from ? t("team.history.createdFrom", { from: String(from) }) : ""}`, chips: [], icon: from ? Copy : ShieldCheck };
     }
     case "updated":
       return {
-        text: changes.length === 1 ? `changed the ${changes[0]!.field}` : "changed the name and description",
+        text: changes.length === 1 ? t("team.history.changedField", { field: changes[0]!.field }) : t("team.history.changedNameAndDescription"),
         chips: changes.map((c) => `${c.from ?? "—"} → ${c.to ?? "—"}`),
         icon: Pencil,
       };
     case "members_changed": {
       const added = get("added")?.to;
       const removed = get("removed")?.from;
-      const parts = [added ? `added ${String(added)}` : null, removed ? `removed ${String(removed)}` : null].filter(Boolean);
-      return { text: parts.join(" and "), chips: [], icon: removed && !added ? UserMinus : UserPlus };
+      const parts = [added ? t("team.history.added", { who: String(added) }) : null, removed ? t("team.history.removed", { who: String(removed) }) : null].filter(Boolean);
+      return { text: parts.join(t("team.common.andSeparator")), chips: [], icon: removed && !added ? UserMinus : UserPlus };
     }
     case "privileges_changed": {
       const on = changes.filter((c) => c.to === "On").map((c) => c.field);
       const off = changes.filter((c) => c.to === "Off").map((c) => c.field);
-      const text = on.length && !off.length ? `turned on ${names(on)}` : off.length && !on.length ? `turned off ${names(off)}` : `changed ${changes.length} permissions`;
+      const text = on.length && !off.length ? t("team.history.turnedOn", { names: names(on) }) : off.length && !on.length ? t("team.history.turnedOff", { names: names(off) }) : t("team.history.changedCount", { n: changes.length });
       return { text, chips: [...on.map((l) => `+ ${l}`), ...off.map((l) => `− ${l}`)], icon: off.length && !on.length ? ShieldMinus : ShieldCheck };
     }
     case "deleted":
-      return { text: "deleted the Team", chips: [], icon: Trash2 };
+      return { text: t("team.history.deleted"), chips: [], icon: Trash2 };
     default:
       return { text: e.action.replace(/_/g, " "), chips: [], icon: Pencil };
   }

@@ -27,6 +27,7 @@ import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { useMyRole } from "../../../../lib/role-context";
 import { DrilldownDialog } from "../../reports/reports-explorer";
+import { useT } from "../../../../lib/i18n";
 
 /**
  * US-DASH-22 (D-160) — `DashboardOwnerBooks` › Top expenses: the five
@@ -36,6 +37,7 @@ import { DrilldownDialog } from "../../reports/reports-explorer";
  * shown without "View financial statements".
  */
 export function TopExpensesCard() {
+  const t = useT();
   const [period, setPeriod] = useState<TopExpensePeriod>("quarter");
   const [data, setData] = useState<TopExpenses | null>(null);
   const [failed, setFailed] = useState(false);
@@ -73,7 +75,7 @@ export function TopExpensesCard() {
           ? [
               {
                 key: "other",
-                label: "Other",
+                label: t("dashboard.topExpenses.other"),
                 amount: data.other.amount,
                 percent: data.other.percent,
                 row: null,
@@ -88,7 +90,7 @@ export function TopExpensesCard() {
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-[15px]">
           <span>
-            Top expenses · {TOP_EXPENSE_PERIOD_LABELS[period].toLowerCase()}
+            {t("dashboard.topExpenses.title", { period: TOP_EXPENSE_PERIOD_LABELS[period].toLowerCase() })}
           </span>
           <span className="flex items-center gap-3">
             <Select
@@ -97,7 +99,7 @@ export function TopExpensesCard() {
             >
               <SelectTrigger
                 className="h-8 w-44 text-[13px]"
-                aria-label="Period"
+                aria-label={t("dashboard.topExpenses.periodAria")}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -113,7 +115,7 @@ export function TopExpensesCard() {
               href="/reports/expenses-by-category"
               className="text-[13px] font-normal text-primary hover:underline"
             >
-              Expenses by category
+              {t("dashboard.topExpenses.byCategory")}
             </Link>
           </span>
         </CardTitle>
@@ -123,7 +125,7 @@ export function TopExpensesCard() {
           <WidgetSkeleton kind="bars" rows={4} />
         ) : bars.length === 0 ? (
           <p className="py-6 text-center text-[14px] text-on-surface-muted">
-            No expenses in this period.
+            {t("dashboard.topExpenses.empty")}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
@@ -157,7 +159,7 @@ export function TopExpensesCard() {
                 </div>
                 <Progress
                   value={Number(b.percent ?? 0)}
-                  aria-label={`${b.label}: ${b.percent ?? "0.0"}% of expenses`}
+                  aria-label={t("dashboard.topExpenses.percentAria", { label: b.label, percent: b.percent ?? "0.0" })}
                 />
               </li>
             ))}

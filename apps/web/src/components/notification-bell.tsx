@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { apiClient } from "../lib/api-client";
 import { NotificationDrawer } from "./notification-drawer";
+import { useT } from "../lib/i18n";
 
 /**
  * PRD S-10.11 — lives in `AppShellSidebar`'s footer (see app-layout.tsx),
@@ -23,6 +24,7 @@ import { NotificationDrawer } from "./notification-drawer";
  * since, unlike those two, this poll runs on every page, all the time.
  */
 export function NotificationBell({ collapsed }: { collapsed: boolean }) {
+  const t = useT();
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -46,7 +48,7 @@ export function NotificationBell({ collapsed }: { collapsed: boolean }) {
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        aria-label={hasUnread ? `Notifications (${unreadCount} unread)` : "Notifications"}
+        aria-label={hasUnread ? t("common.notificationBell.labelUnread", { unread: unreadCount }) : t("common.notificationBell.label")}
         className={
           collapsed
             ? "relative flex h-9 w-9 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"

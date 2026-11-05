@@ -5,6 +5,7 @@ import { Command as CommandPrimitive } from "cmdk";
 import { CornerDownLeft, Loader2, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { Kbd } from "./kbd";
 import { Spinner } from "./spinner";
 
@@ -111,6 +112,7 @@ export function CommandPalette({
   pendingId,
   className,
 }: CommandPaletteProps) {
+  const t = useT();
   const hasResults = groups.some((g) => g.items.length > 0);
   // The highlighted option. When results change, the first one is highlighted
   // (and announced through aria-activedescendant) unless the current one is still there.
@@ -168,7 +170,7 @@ export function CommandPalette({
         >
           <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
           <span className="sr-only" role="status">
-            {pendingId ? "Opening…" : ""}
+            {pendingId ? t("ui.commandPalette.opening") : ""}
           </span>
           <CommandPrimitive label={label} shouldFilter={false} loop value={selected} onValueChange={setSelected} className="flex min-h-0 flex-1 flex-col">
             <div className={cn("flex items-center gap-2 px-4", !toolbar && "border-b border-border")}>
@@ -184,8 +186,8 @@ export function CommandPalette({
               {loading && <Spinner size="sm" />}
               <DialogPrimitive.Close asChild>
                 {/* Escape closes too; out of the tab order so Tab goes from the field to the toolbar (US-OPS-49). */}
-                <button type="button" tabIndex={-1} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Close search">
-                  <Kbd>Esc</Kbd>
+                <button type="button" tabIndex={-1} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={t("ui.commandPalette.closeSearch")}>
+                  <Kbd>{t("ui.commandPalette.escKey")}</Kbd>
                 </button>
               </DialogPrimitive.Close>
             </div>

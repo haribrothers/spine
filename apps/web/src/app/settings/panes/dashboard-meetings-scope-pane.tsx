@@ -5,19 +5,20 @@ import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { useSettingsValue } from "../use-settings-value";
 import { SavedToast } from "../saved-toast";
+import { t, useT } from "../../../lib/i18n";
 
 export type DashboardMeetingsScope = "own" | "org";
 
 const SCOPES: { value: DashboardMeetingsScope; title: string; description: string }[] = [
   {
     value: "own",
-    title: "Only my meetings",
-    description: "Each person's dashboard shows only the meetings they organize.",
+    title: t("settings.dashboardMeetingsScope.own.title"),
+    description: t("settings.dashboardMeetingsScope.own.description"),
   },
   {
     value: "org",
-    title: "Every org meeting",
-    description: "Everyone's dashboard shows every meeting in the org, not just their own — useful for a small team that plans as one calendar.",
+    title: t("settings.dashboardMeetingsScope.org.title"),
+    description: t("settings.dashboardMeetingsScope.org.description"),
   },
 ];
 
@@ -44,6 +45,7 @@ export function DashboardMeetingsScopePane() {
 }
 
 function DashboardMeetingsScopeForm({ initialScope }: { initialScope: DashboardMeetingsScope }) {
+  const t = useT();
   const [scope, setScope] = useState<DashboardMeetingsScope>(initialScope);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -61,9 +63,9 @@ function DashboardMeetingsScopeForm({ initialScope }: { initialScope: DashboardM
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Upcoming meetings</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.dashboardMeetingsScope.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Choose which meetings the dashboard&apos;s &quot;Today&quot; card shows.
+          {t("settings.dashboardMeetingsScope.description")}
         </p>
       </div>
 
@@ -86,10 +88,10 @@ function DashboardMeetingsScopeForm({ initialScope }: { initialScope: DashboardM
         ))}
       </RadioGroup>
 
-      <p className="text-[12px] text-on-surface-muted">Field users always see only their own meetings, regardless of this setting.</p>
+      <p className="text-[12px] text-on-surface-muted">{t("settings.dashboardMeetingsScope.fieldNote")}</p>
 
       <Button onClick={handleSave} disabled={saving} className="ml-auto">
-        {saving ? <Spinner size="sm" /> : "Save"}
+        {saving ? <Spinner size="sm" /> : t("settings.common.save")}
       </Button>
 
       <SavedToast open={saved} onOpenChange={setSaved} />

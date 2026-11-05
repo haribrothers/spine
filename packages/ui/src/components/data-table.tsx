@@ -2,6 +2,7 @@
 
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
+import { useT } from "../lib/i18n";
 import { Button } from "./button";
 import {
   DropdownMenu,
@@ -62,7 +63,7 @@ export function DataTable<T>({
   pageSize,
   configurablePageSize,
   pageSizeOptions,
-  searchPlaceholder = "Search…",
+  searchPlaceholder,
   searchKey,
   onSearchChange,
   className,
@@ -82,6 +83,8 @@ export function DataTable<T>({
   renderExpanded,
   expandLabel,
 }: DataTableProps<T>) {
+  const t = useT();
+  const searchText = searchPlaceholder ?? t("ui.dataTable.searchPlaceholder");
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(defaultHidden ?? []));
 
@@ -95,8 +98,8 @@ export function DataTable<T>({
           toolbarStart
         ) : searchKey ? (
           <Input
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
+            placeholder={searchText}
+            aria-label={searchText}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -111,7 +114,7 @@ export function DataTable<T>({
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="sm">
               <SlidersHorizontal size={14} />
-              Columns
+              {t("ui.dataTable.columns")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

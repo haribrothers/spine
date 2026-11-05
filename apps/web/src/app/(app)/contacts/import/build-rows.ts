@@ -1,6 +1,7 @@
 import { GST_STATES, gstinError, normaliseGstin } from "@spine/shared";
 import type { Contact, ContactType } from "../types";
 import type { ColumnMapping, ImportRow } from "./types";
+import { t } from "../../../../lib/i18n";
 
 const VALID_TYPES = new Set<ContactType>(["customer", "vendor", "both"]);
 const TRUE_VALUES = new Set(["true", "yes", "y", "1"]);
@@ -54,16 +55,16 @@ export function buildImportRows(
     const isCompanyRaw = get(raw, "isCompany").toLowerCase();
 
     const errors: string[] = [];
-    if (!name) errors.push("Missing name");
-    if (!typeRaw) errors.push("Missing type");
-    else if (!type) errors.push(`Invalid type "${typeRaw}" — must be customer, vendor, or both`);
-    if (email && !EMAIL_PATTERN.test(email)) errors.push(`Invalid email "${email}"`);
+    if (!name) errors.push(t("contacts.importRows.missingName"));
+    if (!typeRaw) errors.push(t("contacts.importRows.missingType"));
+    else if (!type) errors.push(t("contacts.importRows.invalidType", { value: typeRaw }));
+    if (email && !EMAIL_PATTERN.test(email)) errors.push(t("contacts.importRows.invalidEmail", { value: email }));
     const gstin = normaliseGstin(get(raw, "gstin"));
     const stateRaw = get(raw, "stateCode");
     const stateCode = stateRaw ? stateCodeOf(stateRaw) : null;
-    if (stateRaw && !stateCode) errors.push(`Unknown state "${stateRaw}"`);
+    if (stateRaw && !stateCode) errors.push(t("contacts.importRows.unknownState", { value: stateRaw }));
     const gstinProblem = gstin ? gstinError(gstin, stateCode) : null;
-    if (gstinProblem) errors.push(`GSTIN ${gstin}: ${gstinProblem}`);
+    if (gstinProblem) errors.push(t("contacts.importRows.gstinProblem", { gstin, problem: gstinProblem }));
 
     const duplicateOf = existingContacts
       .filter(

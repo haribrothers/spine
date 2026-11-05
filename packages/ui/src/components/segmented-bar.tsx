@@ -1,4 +1,5 @@
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 
 export interface SegmentedBarSegment {
   key: string;
@@ -39,7 +40,7 @@ export function SegmentedBar({ segments, "aria-label": ariaLabel, emptyState, cl
   const share = (value: number) => (total > 0 ? (Math.max(0, value) / total) * 100 : 0);
   const percent = (value: number) => `${share(value).toFixed(share(value) > 0 && share(value) < 1 ? 1 : 0)}%`;
   if (total === 0) {
-    return <div className={cn("flex h-16 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? "Nothing to show."}</div>;
+    return <div className={cn("flex h-16 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? t("ui.segmentedBar.empty")}</div>;
   }
   return (
     <div className={cn("flex flex-col gap-3", className)}>

@@ -33,6 +33,7 @@ import { DUE_PICKS, daysAfter, pickedDueDays } from "./due-terms";
 import { saveOneOffLinesToCatalogue } from "../quotes/quote-builder";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "../quotes/quote-line-editor";
 import type { Invoice, InvoiceType, TaxGroupOption, TaxRateOption } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -84,6 +85,7 @@ function toDay(d: Date): string {
  * instant feedback; the server's totals are the ones stored.
  */
 export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
+  const t = useT();
   const router = useRouter();
   const canIssue = useCapability("invoices.issue");
   const { dirty, touch, interactionProps, markSaved, leaveTo, setLeaveTo, leave } = useUnsavedGuard("invoiceBuilderGuard");
@@ -137,7 +139,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
     const from = duplicatedFrom.current;
     if (from === null) return;
     setIssueDate((current) => current ?? new Date());
-    if (from) showToast("Duplicated", `Duplicated from ${from}. Check the dates and lines, then save.`);
+    if (from) showToast(t("invoices.builder.duplicatedTitle"), t("invoices.builder.duplicatedBody", { from }));
     router.replace(window.location.pathname, { scroll: false });
     // Once, on open: duplicatedFrom is read from the address the builder opened with.
   }, []);
@@ -199,7 +201,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   async function preview() {
     setError(null);
     if (!contactId) {
-      setError("Select a contact to preview the invoice.");
+      setError(t("invoices.builder.previewNeedsContact"));
       return;
     }
     // Opened before the request so the browser doesn't block it as a pop-up.
@@ -212,7 +214,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       else window.open(url, "_blank");
     } catch (err) {
       tab?.close();
-      setError(err instanceof Error ? err.message : "Couldn't make the preview. Try again.");
+      setError(err instanceof Error ? err.message : t("invoices.builder.previewFailed"));
     } finally {
       setPreviewing(false);
     }
@@ -222,7 +224,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   async function save(then: "view" | "issue" = "view") {
     setError(null);
     if (!contactId) {
-      setError("Select a contact before saving.");
+      setError(t("invoices.builder.saveNeedsContact"));
       return;
     }
     setSaving(true);
@@ -235,7 +237,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       markSaved();
       router.push(`/invoices/${saved.id}${then === "issue" ? "?action=issue" : ""}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save invoice.");
+      setError(err instanceof Error ? err.message : t("invoices.builder.saveFailed"));
       setSaving(false);
     }
   }
@@ -256,42 +258,42 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       )}
 
       <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <FormField label="Contact" required>
+        <FormField label={t("invoices.builder.contact")} required>
           {(field) => <ContactPicker id={field.id} aria-describedby={field["aria-describedby"]} aria-invalid={field["aria-invalid"]} aria-required={field["aria-required"]} value={contactId} onValueChange={touch(setContactId)} />}
         </FormField>
-        <FormField label="Type">
+        <FormField label={t("invoices.builder.type")}>
           {() => (
             <Select value={type} onValueChange={(v) => touch(setType)(v as InvoiceType)}>
-              <SelectTrigger aria-label="Type">
+              <SelectTrigger aria-label={t("invoices.builder.type")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="advance">Advance</SelectItem>
-                <SelectItem value="progress">Progress</SelectItem>
+                <SelectItem value="standard">{t("invoices.builder.typeStandard")}</SelectItem>
+                <SelectItem value="advance">{t("invoices.builder.typeAdvance")}</SelectItem>
+                <SelectItem value="progress">{t("invoices.builder.typeProgress")}</SelectItem>
               </SelectContent>
             </Select>
           )}
         </FormField>
-        <FormField label="Currency" required>
-          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label="Currency" />}
+        <FormField label={t("invoices.builder.currency")} required>
+          {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} aria-label={t("invoices.builder.currency")} />}
         </FormField>
         {pos.active ? (
           <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />
         ) : (
           <div className="hidden xl:block" />
         )}
-        <FormField label="Issue date" helperText="Today if left blank when issued.">
-          {() => <DatePicker value={issueDate} onChange={touch(setIssueDate)} aria-label="Issue date" />}
+        <FormField label={t("invoices.builder.issueDate")} helperText={t("invoices.builder.issueDateHelp")}>
+          {() => <DatePicker value={issueDate} onChange={touch(setIssueDate)} aria-label={t("invoices.builder.issueDate")} />}
         </FormField>
         <div className="flex flex-col gap-1.5 sm:col-span-2 xl:col-span-3">
-          <FormField label="Due date" helperText={`Your terms: due ${dueDays === 0 ? "on receipt" : `${dueDays} days after issue`} (Settings › Documents).`}>
+          <FormField label={t("invoices.builder.dueDate")} helperText={t("invoices.builder.dueTermsHelp", { terms: dueDays === 0 ? t("invoices.builder.termsOnReceipt") : t("invoices.builder.termsDaysAfterIssue", { n: dueDays }) })}>
             {() => (
               <div className="flex flex-wrap items-center gap-2.5">
                 <div className="w-56">
-                  <DatePicker value={dueDate} onChange={touch(setDueDate)} aria-label="Due date" />
+                  <DatePicker value={dueDate} onChange={touch(setDueDate)} aria-label={t("invoices.builder.dueDate")} />
                 </div>
-                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Due in">
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("invoices.builder.dueIn")}>
                   {DUE_PICKS.map((days) => (
                     <button
                       key={days}
@@ -303,7 +305,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
                         picked === days ? "border-primary bg-info-bg text-primary" : "border-border bg-surface-sunken text-on-surface hover:border-border-strong",
                       )}
                     >
-                      {days === 0 ? "On receipt" : `+${days} days`}
+                      {days === 0 ? t("invoices.builder.onReceipt") : t("invoices.builder.plusDays", { n: days })}
                     </button>
                   ))}
                 </div>
@@ -317,9 +319,9 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
 
       <Card className="flex flex-col gap-0 overflow-hidden p-0">
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
-          <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+          <h2 className="text-[15px] font-semibold text-on-surface">{t("invoices.builder.lines")}</h2>
           <a href="#invoice-notes" className="text-[12.5px] font-medium text-primary hover:underline">
-            Notes and terms ↓
+            {t("invoices.builder.notesAndTermsLink")}
           </a>
         </div>
         <QuoteLineEditor lines={lines} onChange={touch(setLines)} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
@@ -327,11 +329,11 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
 
       <Card id="invoice-notes" className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField label="Notes" helperText="Visible to the customer on the invoice.">
-            {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder="Notes for the customer…" />}
+          <FormField label={t("invoices.builder.notes")} helperText={t("invoices.builder.notesHelp")}>
+            {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder={t("invoices.builder.notesPlaceholder")} />}
           </FormField>
-          <FormField label="Terms & conditions">
-            {(field) => <RichTextEditor {...field} value={terms} onValueChange={touch(setTerms)} placeholder="Payment terms, etc…" />}
+          <FormField label={t("invoices.builder.terms")}>
+            {(field) => <RichTextEditor {...field} value={terms} onValueChange={touch(setTerms)} placeholder={t("invoices.builder.termsPlaceholder")} />}
           </FormField>
         </div>
       </Card>
@@ -339,19 +341,19 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       {/* US-INV-34: totals and actions stay in view. */}
       <DocumentBuilderBar totals={totals} currency={currency} dirty={dirty} testIdPrefix="invoice">
         <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
-          Cancel
+          {t("invoices.builder.cancel")}
         </Button>
         <Button type="button" variant="secondary" onClick={() => void preview()} disabled={saving || previewing} aria-busy={previewing}>
           {previewing ? <Spinner size="sm" /> : <Eye size={14} aria-hidden />}
-          Preview PDF
+          {t("invoices.builder.previewPdf")}
         </Button>
         <Button type="button" variant={canIssue ? "secondary" : "primary"} onClick={() => void save("view")} disabled={saving}>
-          {saving ? <Spinner size="sm" /> : invoice ? "Save draft" : "Save as draft"}
+          {saving ? <Spinner size="sm" /> : invoice ? t("invoices.builder.saveDraft") : t("invoices.builder.saveAsDraft")}
         </Button>
         {canIssue && (
           <Button type="button" onClick={() => void save("issue")} disabled={saving}>
             <Send size={14} aria-hidden />
-            Save and issue
+            {t("invoices.builder.saveAndIssue")}
           </Button>
         )}
       </DocumentBuilderBar>

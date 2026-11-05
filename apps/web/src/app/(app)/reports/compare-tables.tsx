@@ -4,6 +4,7 @@ import { StatementTable, type StatementColumn, type StatementRow } from "@spine/
 import { changePercent, type CompareLine, type ProfitAndLossComparison } from "@spine/shared";
 import { formatMoney } from "../../../lib/money";
 import type { BalanceSheetReport, ReportAccountLine } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /** "▲ +$6,059.53" / "▼ −$1,324.53" / "$0.00": an arrow and a sign, never colour alone. */
 export function changeText(diff: bigint, currency: string): string {
@@ -25,16 +26,17 @@ export function percentText(current: bigint, previous: bigint): string {
  * For "Each month": one column per month and Total.
  */
 export function PlCompareTable({ comparison, totals, currency }: { comparison: ProfitAndLossComparison; totals: { income: string; expenses: string; netProfit: string }; currency: string }) {
+  const t = useT();
   const monthly = comparison.mode === "monthly";
   const money = (v: string | bigint) => formatMoney(v, currency);
   const columns: StatementColumn[] = [
-    { key: "account", header: "Account" },
+    { key: "account", header: t("reports.common.account") },
     ...comparison.columns.map((c, i) => ({ key: `c${i}`, header: c.label, align: "right" as const })),
     ...(monthly
-      ? [{ key: "total", header: "Total", align: "right" as const }]
+      ? [{ key: "total", header: t("reports.common.total"), align: "right" as const }]
       : [
-          { key: "change", header: "Change", align: "right" as const },
-          { key: "pct", header: "Change %", align: "right" as const },
+          { key: "change", header: t("reports.common.change"), align: "right" as const },
+          { key: "pct", header: t("reports.common.changePercent"), align: "right" as const },
         ]),
   ];
   const cells = (label: string, amounts: string[], total: string): Record<string, React.ReactNode> => {
@@ -51,19 +53,20 @@ export function PlCompareTable({ comparison, totals, currency }: { comparison: P
   const lines = (key: string, list: CompareLine[]): StatementRow[] =>
     list.map((l) => ({ kind: "line", key: `${key}-${l.accountId}`, cells: cells(`${l.code} · ${l.name}`, l.amounts, l.amounts.reduce((s, a) => s + BigInt(a), 0n).toString()) }));
   const rows: StatementRow[] = [
-    { kind: "section", key: "income", label: "Income" },
+    { kind: "section", key: "income", label: t("reports.common.income") },
     ...lines("income", comparison.income),
-    { kind: "subtotal", key: "total-income", cells: cells("Total income", comparison.totalIncome, totals.income) },
-    { kind: "section", key: "expenses", label: "Expenses" },
+    { kind: "subtotal", key: "total-income", cells: cells(t("reports.common.totalIncome"), comparison.totalIncome, totals.income) },
+    { kind: "section", key: "expenses", label: t("reports.common.expenses") },
     ...lines("expenses", comparison.expenses),
-    { kind: "subtotal", key: "total-expenses", cells: cells("Total expenses", comparison.totalExpenses, totals.expenses) },
-    { kind: "total", key: "net", cells: cells("Net profit", comparison.netProfit, totals.netProfit) },
+    { kind: "subtotal", key: "total-expenses", cells: cells(t("reports.common.totalExpenses"), comparison.totalExpenses, totals.expenses) },
+    { kind: "total", key: "net", cells: cells(t("reports.common.netProfit"), comparison.netProfit, totals.netProfit) },
   ];
   return <StatementTable columns={columns} rows={rows} data-testid="pl-compare-table" />;
 }
 
 /** US-RPT-27 — the Balance Sheet on two dates side by side. */
 export function BsCompareTable({ report, comparison, currency, labels }: { report: BalanceSheetReport; comparison: BalanceSheetReport; currency: string; labels: [string, string] }) {
+  const t = useT();
   const money = (v: string | bigint) => formatMoney(v, currency);
   const key = (l: ReportAccountLine) => l.accountId ?? `current-${l.code}`;
   const merge = (a: ReportAccountLine[], b: ReportAccountLine[]) => {
@@ -78,26 +81,26 @@ export function BsCompareTable({ report, comparison, currency, labels }: { repor
   };
   const cells = (label: string, now: string, then: string) => ({ account: label, now: money(now), then: money(then), change: changeText(BigInt(now) - BigInt(then), currency) });
   const sections = [
-    { label: "Assets", lines: merge(report.assets, comparison.assets), total: [report.totalAssets, comparison.totalAssets] as const, totalLabel: "Total assets" },
-    { label: "Liabilities", lines: merge(report.liabilities, comparison.liabilities), total: [report.totalLiabilities, comparison.totalLiabilities] as const, totalLabel: "Total liabilities" },
-    { label: "Equity", lines: merge(report.equity, comparison.equity), total: [report.totalEquity, comparison.totalEquity] as const, totalLabel: "Total equity" },
+    { key: "Assets", label: t("reports.common.assets"), lines: merge(report.assets, comparison.assets), total: [report.totalAssets, comparison.totalAssets] as const, totalLabel: t("reports.common.totalAssets") },
+    { key: "Liabilities", label: t("reports.common.liabilities"), lines: merge(report.liabilities, comparison.liabilities), total: [report.totalLiabilities, comparison.totalLiabilities] as const, totalLabel: t("reports.common.totalLiabilities") },
+    { key: "Equity", label: t("reports.common.equity"), lines: merge(report.equity, comparison.equity), total: [report.totalEquity, comparison.totalEquity] as const, totalLabel: t("reports.common.totalEquity") },
   ];
   const rows: StatementRow[] = [
     ...sections.flatMap((s): StatementRow[] => [
-      { kind: "section", key: s.label, label: s.label },
-      ...s.lines.map(([id, l]): StatementRow => ({ kind: "line", key: `${s.label}-${id}`, cells: cells(l.label, l.now, l.then) })),
-      { kind: "subtotal", key: `${s.label}-total`, cells: cells(s.totalLabel, s.total[0], s.total[1]) },
+      { kind: "section", key: s.key, label: s.label },
+      ...s.lines.map(([id, l]): StatementRow => ({ kind: "line", key: `${s.key}-${id}`, cells: cells(l.label, l.now, l.then) })),
+      { kind: "subtotal", key: `${s.key}-total`, cells: cells(s.totalLabel, s.total[0], s.total[1]) },
     ]),
-    { kind: "total", key: "total", cells: cells("Total liabilities + equity", report.totalLiabilitiesAndEquity, comparison.totalLiabilitiesAndEquity) },
+    { kind: "total", key: "total", cells: cells(t("reports.common.totalLiabilitiesAndEquity"), report.totalLiabilitiesAndEquity, comparison.totalLiabilitiesAndEquity) },
   ];
   return (
     <StatementTable
       data-testid="bs-compare-table"
       columns={[
-        { key: "account", header: "Account" },
+        { key: "account", header: t("reports.common.account") },
         { key: "now", header: labels[0], align: "right" },
         { key: "then", header: labels[1], align: "right" },
-        { key: "change", header: "Change", align: "right" },
+        { key: "change", header: t("reports.common.change"), align: "right" },
       ]}
       rows={rows}
     />

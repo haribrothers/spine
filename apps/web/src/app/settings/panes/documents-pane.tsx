@@ -22,12 +22,13 @@ import {
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
 import { DocumentSample } from "./document-sample";
+import { t, useT } from "../../../lib/i18n";
 
 const COLUMN_LABELS: { key: keyof DocumentColumns; label: string; gstOnly?: boolean }[] = [
-  { key: "quantity", label: "Quantity and unit" },
-  { key: "discount", label: "Discount" },
-  { key: "hsnSac", label: "HSN/SAC", gstOnly: true },
-  { key: "lineTax", label: "Tax per line" },
+  { key: "quantity", label: t("settings.documents.columns.quantity") },
+  { key: "discount", label: t("settings.documents.columns.discount") },
+  { key: "hsnSac", label: t("settings.documents.columns.hsnSac"), gstOnly: true },
+  { key: "lineTax", label: t("settings.documents.columns.lineTax") },
 ];
 
 
@@ -40,6 +41,7 @@ const COLUMN_LABELS: { key: keyof DocumentColumns; label: string; gstOnly?: bool
  * invoice or credit note keeps the title GST requires (US-TAX-15).
  */
 export function DocumentsPane() {
+  const t = useT();
   const [layout, setLayout] = useState<DocumentLayout | null>(null);
   const [type, setType] = useState<DocumentType>("invoice");
   const [gst, setGst] = useState(false);
@@ -73,7 +75,7 @@ export function DocumentsPane() {
   async function save() {
     const parsed = documentLayoutSchema.safeParse(layout);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check the options and try again.");
+      setError(parsed.error.issues[0]?.message ?? t("settings.documents.checkOptions"));
       return;
     }
     setSaving(true);
@@ -82,7 +84,7 @@ export function DocumentsPane() {
       await apiClient.put("/org/settings/document_layout", { value: parsed.data });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save the document options.");
+      setError(err instanceof Error ? err.message : t("settings.documents.saveError"));
     } finally {
       setSaving(false);
     }
@@ -91,15 +93,15 @@ export function DocumentsPane() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Documents</h2>
-        <p className="text-[13px] text-on-surface-muted">Choose what each document shows. The preview updates as you change options.</p>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.documents.title")}</h2>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.documents.description")}</p>
       </div>
 
       <Tabs value={type} onValueChange={(v) => setType(v as DocumentType)}>
-        <TabsList aria-label="Document type">
-          {DOCUMENT_TYPES.map((t) => (
-            <TabsTrigger key={t} value={t} aria-controls={undefined}>
-              {DOCUMENT_TYPE_LABELS[t]}
+        <TabsList aria-label={t("settings.documents.documentType")}>
+          {DOCUMENT_TYPES.map((docType) => (
+            <TabsTrigger key={docType} value={docType} aria-controls={undefined}>
+              {DOCUMENT_TYPE_LABELS[docType]}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -110,17 +112,17 @@ export function DocumentsPane() {
           <div className="grid gap-3 md:grid-cols-2">
             <PaperSizeField value={current.paperSize} onChange={(paperSize) => update({ paperSize })} />
             {gst && (type === "invoice" || type === "credit_note") ? (
-              <FormField label="Title" helperText="Set by your GST settings">
-                {(field) => <Input {...field} value={type === "invoice" ? "Tax Invoice" : "Credit Note"} disabled />}
+              <FormField label={t("settings.documents.titleLabel")} helperText={t("settings.documents.titleGst")}>
+                {(field) => <Input {...field} value={type === "invoice" ? t("settings.documents.gstTaxInvoice") : t("settings.documents.gstCreditNote")} disabled />}
               </FormField>
             ) : (
-              <FormField label="Title" helperText="e.g. Quotation, Tax Invoice, Estimate">
+              <FormField label={t("settings.documents.titleLabel")} helperText={t("settings.documents.titleHelp")}>
                 {(field) => <Input {...field} maxLength={60} value={layout[type]?.title ?? current.title} onChange={(e) => update({ title: e.target.value })} />}
               </FormField>
             )}
             {/* US-QUO-36: new quotes start valid for this many days. */}
             {type === "quote" && (
-              <FormField label="Quotes valid for" helperText="Days, 1 to 365. New quotes start with this validity.">
+              <FormField label={t("settings.documents.validFor")} helperText={t("settings.documents.validForHelp")}>
                 {(field) => (
                   <Input
                     {...field}
@@ -138,7 +140,7 @@ export function DocumentsPane() {
             )}
             {/* US-INV-33: invoices are due this many days after they're issued. */}
             {type === "invoice" && (
-              <FormField label="Invoices due in" helperText="Days after issue, 0 to 365. 0 is on receipt. Issued invoices without a due date get one from this.">
+              <FormField label={t("settings.documents.dueIn")} helperText={t("settings.documents.dueInHelp")}>
                 {(field) => (
                   <Input
                     {...field}
@@ -157,7 +159,7 @@ export function DocumentsPane() {
           </div>
           {LINE_DOCUMENT_TYPES.includes(type) && (
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Columns</legend>
+              <legend className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("settings.documents.columnsLegend")}</legend>
               <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {COLUMN_LABELS.filter((c) => (!c.gstOnly || gst) && !(c.key === "discount" && type === "credit_note")).map((c) => (
                   <label key={c.key} className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
@@ -169,11 +171,11 @@ export function DocumentsPane() {
               <div className="mt-1 flex flex-col gap-2">
                 <label className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
                   <Checkbox checked={current.taxSummary} onCheckedChange={(v) => update({ taxSummary: v === true })} />
-                  Tax summary table
+                  {t("settings.documents.taxSummary")}
                 </label>
                 <label className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
                   <Checkbox checked={current.amountInWords} onCheckedChange={(v) => update({ amountInWords: v === true })} />
-                  Amount in words
+                  {t("settings.documents.amountInWords")}
                 </label>
               </div>
             </fieldset>
@@ -185,13 +187,13 @@ export function DocumentsPane() {
             onFileChange={(signatureFileId) => setLayout((l) => (l ? { ...l, signatureFileId } : l))}
           />
           <FormField
-            label="Default terms"
-            helperText={type === "quote" || type === "invoice" ? "New drafts start with these; change them on each document." : "Printed on every one."}
+            label={t("settings.documents.defaultTerms")}
+            helperText={type === "quote" || type === "invoice" ? t("settings.documents.defaultTermsDraft") : t("settings.documents.defaultTermsPrinted")}
             errorText={current.terms.length > DOCUMENT_TEXT_MAX ? DOCUMENT_TERMS_TOO_LONG : undefined}
           >
             {(field) => <Textarea {...field} rows={3} value={current.terms} onChange={(e) => update({ terms: e.target.value })} />}
           </FormField>
-          <FormField label="Default notes" errorText={current.notes.length > DOCUMENT_TEXT_MAX ? DOCUMENT_NOTES_TOO_LONG : undefined}>
+          <FormField label={t("settings.documents.defaultNotes")} errorText={current.notes.length > DOCUMENT_TEXT_MAX ? DOCUMENT_NOTES_TOO_LONG : undefined}>
             {(field) => <Textarea {...field} rows={3} value={current.notes} onChange={(e) => update({ notes: e.target.value })} />}
           </FormField>
         </div>
@@ -199,7 +201,7 @@ export function DocumentsPane() {
         <div className="lg:sticky lg:top-0 lg:self-start">
           <DocumentSample
             type={type}
-            title={gst && type === "invoice" ? "Tax Invoice" : gst && type === "credit_note" ? "Credit Note" : (layout[type]?.title ?? current.title)}
+            title={gst && type === "invoice" ? t("settings.documents.gstTaxInvoice") : gst && type === "credit_note" ? t("settings.documents.gstCreditNote") : (layout[type]?.title ?? current.title)}
             paperSize={current.paperSize}
             columns={current.columns}
             taxSummary={current.taxSummary}
@@ -213,7 +215,7 @@ export function DocumentsPane() {
         </div>
       </div>
 
-      <p className="text-[13px] text-on-surface-muted">Hidden columns don&apos;t change any amounts. Issued PDFs never change.</p>
+      <p className="text-[13px] text-on-surface-muted">{t("settings.documents.hiddenNote")}</p>
       {error && (
         <p role="alert" className="text-[13px] text-overdue">
           {error}
@@ -221,7 +223,7 @@ export function DocumentsPane() {
       )}
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}>
-          {saving ? <Spinner size="sm" /> : "Save"}
+          {saving ? <Spinner size="sm" /> : t("settings.common.save")}
         </Button>
       </div>
       <SavedToast open={saved} onOpenChange={setSaved} />
@@ -245,13 +247,14 @@ function SignatureOption({
   onCheckedChange: (checked: boolean) => void;
   onFileChange: (fileId: string | null) => void;
 }) {
+  const t = useT();
   const input = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
     if (!["image/png", "image/jpeg"].includes(file.type)) {
-      setError("Upload a PNG or JPEG image.");
+      setError(t("settings.documents.signatureType"));
       return;
     }
     setUploading(true);
@@ -261,7 +264,7 @@ function SignatureOption({
       onFileChange(uploaded.id);
       onCheckedChange(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload the signature.");
+      setError(err instanceof Error ? err.message : t("settings.documents.signatureUploadError"));
     } finally {
       setUploading(false);
     }
@@ -271,19 +274,19 @@ function SignatureOption({
     <div className="flex flex-col gap-1.5">
       <label className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
         <Checkbox checked={checked && fileId !== null} disabled={fileId === null} onCheckedChange={(v) => onCheckedChange(v === true)} />
-        Signature
+        {t("settings.documents.signature")}
       </label>
       <p className="text-[12px] text-on-surface-muted">
-        {fileId ? "Shown above “Authorised signatory” on the documents that tick it. Issued PDFs keep the one they were issued with." : "Upload a PNG or JPEG of your signature to print it on documents."}
+        {fileId ? t("settings.documents.signatureShown") : t("settings.documents.signatureUpload")}
       </p>
       <div className="flex flex-wrap gap-2">
-        <input ref={input} type="file" accept="image/png,image/jpeg" className="sr-only" aria-label="Signature image" onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
+        <input ref={input} type="file" accept="image/png,image/jpeg" className="sr-only" aria-label={t("settings.documents.signatureImage")} onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
         <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => input.current?.click()}>
-          {uploading ? <Spinner size="sm" /> : fileId ? "Replace signature" : "Upload signature"}
+          {uploading ? <Spinner size="sm" /> : fileId ? t("settings.documents.replaceSignature") : t("settings.documents.uploadSignature")}
         </Button>
         {fileId && (
           <Button type="button" variant="ghost" size="sm" onClick={() => onFileChange(null)}>
-            Remove signature
+            {t("settings.documents.removeSignature")}
           </Button>
         )}
       </div>
@@ -297,10 +300,11 @@ function SignatureOption({
 }
 
 function PaperSizeField({ value, onChange }: { value: string; onChange: (value: (typeof PAPER_SIZES)[number]) => void }) {
+  const t = useT();
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <Label id={id}>Paper size</Label>
+      <Label id={id}>{t("settings.documents.paperSize")}</Label>
       <Select value={value} onValueChange={(v) => onChange(v as (typeof PAPER_SIZES)[number])}>
         <SelectTrigger aria-labelledby={id} className="w-40">
           <SelectValue />

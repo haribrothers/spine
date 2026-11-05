@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-04 — Every user-facing string in translation files (US-OPS-16, D-268, D-069)
+
+- **Strings:** every string the web app, the field app, `@spine/ui` and `@spine/ui-native` show now comes from `packages/shared/src/i18n/en.json`: about 7,650 strings in 34 areas, read through i18next (`react-i18next` in components). Keys are typed, so a missing or misspelled key fails typecheck. English is still the only language, and no wording changed. A translation is a sibling file with the same keys.
+- **Lint:** `i18next/no-literal-string` (from `@spine/config/eslint/i18n`) fails CI on a hard-coded string in JSX text or a visible attribute, in all four packages.
+- **Locale:** dates and numbers use the business's locale everywhere. Before, many dates used the browser's locale or a fixed `en-GB`. The web app reads `orgLocaleTag()`, and the field app and the component libraries read `formatLocale()` from `@spine/shared/i18n`, set from the business.
+- **How:** 15 agents converted the apps area by area in parallel, after the setup (`80b9f778`). Then every literal they removed was checked against `en.json`, and lint, typecheck, unit tests and the E2E suite were run. Two tests that read source text now read the keys' English (US-OPS-10, US-SET-26).
+- **Still in code, until 1.1 with emails, PDFs and API errors:** labels exported by `@spine/shared` that the server also uses. A few sentences are assembled from pieces.
+
 ### 2026-11-04 — Pass an accessibility audit of every screen (US-OPS-17, PRD §10.8)
 
 - **Audit:** a new E2E runs axe-core (WCAG 2.1 A and AA) with demo data on every web page: 54 pages, a demo record of each of 9 kinds and 27 Settings panes, in light and dark mode. It now passes with no violations.

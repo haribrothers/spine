@@ -1,4 +1,5 @@
 import type { SupplyClass } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 /** Mirrors apps/api/src/db/schema/invoices.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following quotes/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type InvoiceStatus = "draft" | "issued" | "void";
 /** `opening` (US-RPT-17): brought in from the old system — its old number, no lines, no PDF. */
@@ -98,9 +99,9 @@ export interface Invoice {
 }
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
-  draft: "Draft",
-  issued: "Issued",
-  void: "Void",
+  draft: t("invoices.status.draft"),
+  issued: t("invoices.status.issued"),
+  void: t("invoices.status.void"),
 };
 
 /** Minimal shape used by the contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */
@@ -150,12 +151,12 @@ export interface TaxGroupOption {
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  cash: "Cash",
-  bank_transfer: "Bank transfer",
-  cheque: "Cheque",
-  card: "Card",
-  upi: "UPI",
-  other: "Other",
+  cash: t("invoices.paymentMethod.cash"),
+  bank_transfer: t("invoices.paymentMethod.bankTransfer"),
+  cheque: t("invoices.paymentMethod.cheque"),
+  card: t("invoices.paymentMethod.card"),
+  upi: t("invoices.paymentMethod.upi"),
+  other: t("invoices.paymentMethod.other"),
 };
 
 /** Mirrors GET /payments?invoiceId=:id's response shape (PaymentsService.listForInvoice) — a payment row plus how much of it was allocated specifically to this invoice, since one payment can span several invoices (S-06.2). */
@@ -277,6 +278,6 @@ export interface CreditNotePreview {
 /** US-PAY-13 — shown next to the status badge once anything has been paid. */
 export const PAYMENT_STATUS_LABELS: Record<Invoice["paymentStatus"], string | null> = {
   unpaid: null,
-  partially_paid: "Partially paid",
-  paid: "Paid",
+  partially_paid: t("invoices.paymentStatus.partiallyPaid"),
+  paid: t("invoices.paymentStatus.paid"),
 };

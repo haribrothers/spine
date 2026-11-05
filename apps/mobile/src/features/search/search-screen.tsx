@@ -26,6 +26,7 @@ import { ProfileAvatarButton } from "../../components/header-items";
 import { useOutboxItems } from "../../lib/outbox/pending";
 import type { OutboxItem } from "../../lib/outbox/types";
 import { useAndroidBack } from "../../lib/use-android-back";
+import { t as translate, useT } from "../../lib/i18n";
 
 /** Expenses still on the phone, as search rows (US-MOB-23: "Waiting"). */
 export function waitingExpenses(items: readonly OutboxItem[]): MyExpense[] {
@@ -50,9 +51,9 @@ export function waitingExpenses(items: readonly OutboxItem[]): MyExpense[] {
   );
 }
 
-export const SEARCH_PLACEHOLDER = "Search jobs and expenses";
-export const SEARCH_HINT = "Find a job by name, customer or address, or one of your expenses by category or description.";
-export const NO_RESULTS_HINT = "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category.";
+export const SEARCH_PLACEHOLDER = translate("mobileApp.search.placeholder");
+export const SEARCH_HINT = translate("mobileApp.search.hint");
+export const NO_RESULTS_HINT = translate("mobileApp.search.noResultsHint");
 const DEBOUNCE_MS = 200;
 
 /** Text with the matching part highlighted (US-MOB-23). */
@@ -75,8 +76,8 @@ export function Highlighted({ text, query, className, numberOfLines }: { text: s
 function expenseDay(date: string, locale: string): string {
   const day = calendarDay(date);
   const days = daysUntil(day);
-  if (days === 0) return "Today";
-  if (days === -1) return "Yesterday";
+  if (days === 0) return translate("mobileApp.format.todayCapital");
+  if (days === -1) return translate("mobileApp.format.yesterday");
   return days > -7 && days < 0 ? `${weekday(day, locale)} ${dayMonth(day, locale)}` : dayMonth(day, locale);
 }
 
@@ -90,6 +91,7 @@ type Row = { kind: "job"; job: FieldJob } | { kind: "expense"; hit: ExpenseHit }
  * search bar at the top of its fourth tab.
  */
 export function SearchScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const format = useBusinessFormat();
@@ -123,8 +125,8 @@ export function SearchScreen() {
   );
   const searching = query.trim().length > 0;
   const sections = [
-    ...(results.jobs.length ? [{ key: "jobs", title: "Jobs", count: results.jobs.length, data: results.jobs.map((job): Row => ({ kind: "job", job })) }] : []),
-    ...(results.expenses.length ? [{ key: "expenses", title: "Your expenses", count: results.expenses.length, data: results.expenses.map((hit): Row => ({ kind: "expense", hit })) }] : []),
+    ...(results.jobs.length ? [{ key: "jobs", title: t("mobileApp.tabs.jobs"), count: results.jobs.length, data: results.jobs.map((job): Row => ({ kind: "job", job })) }] : []),
+    ...(results.expenses.length ? [{ key: "expenses", title: t("mobileApp.search.yourExpenses"), count: results.expenses.length, data: results.expenses.map((hit): Row => ({ kind: "expense", hit })) }] : []),
   ];
 
   const remember = useCallback(async () => setRecent(await addRecentSearch(query)), [query]);
@@ -151,7 +153,7 @@ export function SearchScreen() {
         <>
           <View className="flex-row items-center justify-between">
             <Text accessibilityRole="header" className={android ? "text-[15px] font-medium text-primary dark:text-primary-dark" : "text-[20px] font-semibold text-on-surface dark:text-on-surface-dark"}>
-              Recent searches
+              {t("mobileApp.search.recent")}
             </Text>
             <Pressable
               testID="search-recent-action"
@@ -165,7 +167,7 @@ export function SearchScreen() {
                 } else setEditing((value) => !value);
               }}
             >
-              <Text className={`text-[16px] text-primary dark:text-primary-dark ${android ? "font-medium" : ""}`}>{android ? "Clear" : editing ? "Done" : "Edit"}</Text>
+              <Text className={`text-[16px] text-primary dark:text-primary-dark ${android ? "font-medium" : ""}`}>{android ? t("mobileApp.search.clear") : editing ? t("mobileApp.search.done") : t("mobileApp.search.edit")}</Text>
             </Pressable>
           </View>
           <View className={android ? "" : "overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark"}>
@@ -175,14 +177,14 @@ export function SearchScreen() {
                 testID={`search-recent-${index}`}
                 onPress={() => (editing ? undefined : searchFor(entry))}
                 accessibilityRole="button"
-                accessibilityLabel={`Search for ${entry}`}
+                accessibilityLabel={t("mobileApp.search.searchFor", { entry })}
                 className={`min-h-[52px] flex-row items-center gap-3 px-4 ${index ? "border-t border-border dark:border-border-dark" : ""}`}
               >
                 {editing ? (
                   <Pressable
                     onPress={async () => setRecent(await removeRecentSearch(entry))}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove ${entry}`}
+                    accessibilityLabel={t("mobileApp.search.remove", { entry })}
                     hitSlop={10}
                   >
                     <CircleMinus size={20} color={colors.overdue} />
@@ -239,15 +241,15 @@ export function SearchScreen() {
           );
         }
         const { expense, jobName, waiting } = row.hit;
-        const status = waiting ? { label: "Waiting", status: "draft" as const } : EXPENSE_STATUS[expense.status];
+        const status = waiting ? { label: t("mobileApp.expenseStatus.waiting"), status: "draft" as const } : EXPENSE_STATUS[expense.status];
         const line = [expenseDay(expense.date, format.locale), jobName ?? expense.description].filter(Boolean).join(" · ");
         return (
-          <Pressable testID={`search-expense-${expense.id}`} onPress={() => open(row)} accessibilityRole="button" accessibilityLabel={`${expense.categoryName ?? "Expense"}, ${money(expense.amount, { currency: expense.currency, locale: format.locale })}, ${status.label}`} className={`flex-row items-center gap-3 px-3 py-3 ${shape}`}>
+          <Pressable testID={`search-expense-${expense.id}`} onPress={() => open(row)} accessibilityRole="button" accessibilityLabel={t("mobileApp.search.expenseLabel", { category: expense.categoryName ?? t("mobileApp.expense.title"), amount: money(expense.amount, { currency: expense.currency, locale: format.locale }), status: status.label })} className={`flex-row items-center gap-3 px-3 py-3 ${shape}`}>
             <View className="h-11 w-11 items-center justify-center rounded-xl bg-draft-bg dark:bg-draft-bg-dark">
               <ReceiptText size={20} color={colors.onSurfaceMuted} />
             </View>
             <View className="flex-1 gap-0.5">
-              <Highlighted text={expense.categoryName ?? "Expense"} query={query} numberOfLines={1} className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark" />
+              <Highlighted text={expense.categoryName ?? t("mobileApp.expense.title")} query={query} numberOfLines={1} className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark" />
               {line ? <Highlighted text={line} query={query} numberOfLines={1} className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark" /> : null}
             </View>
             <View className="items-end gap-1">
@@ -261,7 +263,7 @@ export function SearchScreen() {
         // Nothing saved on the phone yet and the first fetch is out: rows, not "No results".
         (modules.jobsField && jobs.loading) || expenses.loading ? (
           <View className="pt-4">
-            <ListRowsSkeleton label="Loading your jobs and expenses" testID="skeleton-search" rows={3} leading trailing="amount" />
+            <ListRowsSkeleton label={t("mobileApp.search.loading")} testID="skeleton-search" rows={3} leading trailing="amount" />
           </View>
         ) : (
         <EmptyState
@@ -276,7 +278,7 @@ export function SearchScreen() {
               <SearchIcon size={28} color={colors.onSurfaceMuted} />
             )
           }
-          title={`No results for “${query.trim()}”`}
+          title={t("mobileApp.search.noResults", { query: query.trim() })}
           description={NO_RESULTS_HINT}
         />
         )
@@ -322,7 +324,7 @@ export function SearchScreen() {
       <View className={active ? "bg-surface-container dark:bg-surface-container-dark" : "px-4 pb-2 pt-2"}>
         <View className={`h-14 flex-row items-center gap-3 ${active ? "px-2" : "rounded-full bg-surface-container px-4 dark:bg-surface-container-dark"}`}>
           {active ? (
-            <Pressable testID="search-back" onPress={leave} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" className="h-12 w-12 items-center justify-center">
+            <Pressable testID="search-back" onPress={leave} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("mobileApp.common.back")} className="h-12 w-12 items-center justify-center">
               <ArrowLeft size={24} color={colors.onSurface} />
             </Pressable>
           ) : (
@@ -345,7 +347,7 @@ export function SearchScreen() {
             className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark"
           />
           {typed.length ? (
-            <Pressable onPress={() => searchFor("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search" className="h-12 w-12 items-center justify-center">
+            <Pressable onPress={() => searchFor("")} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("mobileApp.search.clearSearch")} className="h-12 w-12 items-center justify-center">
               <X size={22} color={colors.onSurface} />
             </Pressable>
           ) : active ? null : (

@@ -3,6 +3,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Menu, X } from "lucide-react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { DialogOverlay } from "./dialog";
 import { Breadcrumb, type BreadcrumbItem } from "./breadcrumb";
 import {
@@ -133,13 +134,14 @@ export interface AppShellTopBarProps {
  * sidebar: a menu button, the logo, then notifications and the avatar.
  * Every control is at least 44×44px. Hidden from 768px up.
  */
-export function AppShellTopBar({ logo, onMenuClick, actions, menuLabel = "Open navigation" }: AppShellTopBarProps) {
+export function AppShellTopBar({ logo, onMenuClick, actions, menuLabel }: AppShellTopBarProps) {
+  const t = useT();
   return (
     <header data-testid="app-top-bar" className="flex h-14 shrink-0 items-center gap-1 border-b border-border bg-surface px-1.5 md:hidden">
       <button
         type="button"
         onClick={onMenuClick}
-        aria-label={menuLabel}
+        aria-label={menuLabel ?? t("ui.appShell.openNavigation")}
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <Menu size={22} aria-hidden />
@@ -166,7 +168,8 @@ export interface AppShellMobileNavProps extends Pick<AppShellSidebarProps, "sect
  * pressing Escape or following a link closes it. Same sections as the
  * sidebar, expanded.
  */
-export function AppShellMobileNav({ open, onOpenChange, logo, sections, isActive, renderLink, search, footer, title = "Navigation" }: AppShellMobileNavProps) {
+export function AppShellMobileNav({ open, onOpenChange, logo, sections, isActive, renderLink, search, footer, title }: AppShellMobileNavProps) {
+  const t = useT();
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -180,11 +183,11 @@ export function AppShellMobileNav({ open, onOpenChange, logo, sections, isActive
             if ((event.target as HTMLElement).closest("a[href]")) onOpenChange(false);
           }}
         >
-          <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">{title ?? t("ui.appShell.navigation")}</DialogPrimitive.Title>
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border pl-3 pr-1.5">
             {logo}
             <DialogPrimitive.Close
-              aria-label="Close navigation"
+              aria-label={t("ui.appShell.closeNavigation")}
               className="flex h-11 w-11 items-center justify-center rounded-md text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <X size={20} aria-hidden />

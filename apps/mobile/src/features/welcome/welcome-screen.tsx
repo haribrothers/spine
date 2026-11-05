@@ -23,12 +23,13 @@ import { FullWidthButton, useNativeColors } from "@spine/ui-native";
 import { BrandGlow, JobCard, MarkLayer, MilestonePill, PhotoCard, QuoteCard, ReceiptCard, SIGNATURE_LENGTH, SIGNATURE_PATH, Sparkle } from "../brand/illustration";
 import { Orbits, type OrbitDot, type OrbitRing } from "../brand/orbits";
 import { hideSplash } from "../../lib/splash";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const WELCOME_TITLE = "Today’s jobs, in your pocket";
+export const WELCOME_TITLE = translate("mobileApp.welcome.title");
 /** Broken where the design breaks it; screen readers hear WELCOME_TITLE. */
-const WELCOME_TITLE_LINES = "Today’s jobs,\nin your pocket";
-export const WELCOME_BODY = "Photos, expenses and sign-offs reach your office — even when there’s no signal.";
-export const WELCOME_FOOTER = "Your office sets up your account — you’ll sign in next.";
+const WELCOME_TITLE_LINES = translate("mobileApp.welcome.titleLines");
+export const WELCOME_BODY = translate("mobileApp.welcome.body");
+export const WELCOME_FOOTER = translate("mobileApp.welcome.footer");
 
 /** The illustration is drawn on a 440-tall stage (canvas "11 Splash and Welcome") and scaled down when space is short. */
 const STAGE = 440;
@@ -158,6 +159,7 @@ function FadeUp({ play, still, delay, children }: { play: boolean; still: boolea
  * nothing moves with Reduce Motion. The button works from the first frame.
  */
 export function WelcomeScreen({ onGetStarted }: { onGetStarted: () => void }) {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
   const still = useReducedMotion();
@@ -266,7 +268,7 @@ export function WelcomeScreen({ onGetStarted }: { onGetStarted: () => void }) {
       </ScrollView>
       <View testID="welcome-actions" className="gap-3.5 px-6 pt-4" style={{ paddingBottom: insets.bottom + 16 }} onLayout={(e: LayoutChangeEvent) => setFootHeight(e.nativeEvent.layout.height)}>
         <FadeUp play={play} still={still} delay={1150}>
-          <FullWidthButton testID="welcome-get-started" label="Get started" controlSize="large" onPress={onGetStarted} />
+          <FullWidthButton testID="welcome-get-started" label={t("mobileApp.welcome.getStarted")} controlSize="large" onPress={onGetStarted} />
           <Text className="mt-3.5 text-center text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">{WELCOME_FOOTER}</Text>
         </FadeUp>
       </View>

@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 /**
  * Canvas-based crop + downscale for avatar/logo uploads. No existing
  * precedent for canvas work anywhere in the repo (confirmed via
@@ -34,7 +36,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Could not load image for cropping."));
+    img.onerror = () => reject(new Error(t("common.logoCrop.loadFailed")));
     img.src = src;
   });
 }
@@ -72,7 +74,7 @@ export async function cropAndResizeImage(
   canvas.height = outputHeight;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    throw new Error("Could not get a 2D canvas context.");
+    throw new Error(t("common.logoCrop.canvasFailed"));
   }
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
@@ -93,7 +95,7 @@ export async function cropAndResizeImage(
     canvas.toBlob(resolve, mimeType, quality);
   });
   if (!blob) {
-    throw new Error("Could not encode the cropped image.");
+    throw new Error(t("common.logoCrop.encodeFailed"));
   }
 
   return new File([blob], fileName, { type: mimeType });

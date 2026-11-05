@@ -1,4 +1,5 @@
 import type { LocalPhoto, OutboxItem } from "./types";
+import { t } from "../i18n";
 
 export interface JobWaiting {
   /** Photos of this job not yet sent (site photos and those with a completion), oldest first. */
@@ -23,7 +24,7 @@ export function jobWaiting(items: readonly OutboxItem[], jobId: string): JobWait
 /** "2 photos waiting", "Completion waiting". */
 export function waitingChips(waiting: JobWaiting): string[] {
   return [
-    ...(waiting.sitePhotos ? [`${waiting.sitePhotos} ${waiting.sitePhotos === 1 ? "photo" : "photos"} waiting`] : []),
-    ...(waiting.completionMilestoneIds.length ? ["Completion waiting"] : []),
+    ...(waiting.sitePhotos ? [t("mobileApp.outbox.photosWaiting", { count: waiting.sitePhotos })] : []),
+    ...(waiting.completionMilestoneIds.length ? [t("mobileApp.outbox.completionWaiting")] : []),
   ];
 }

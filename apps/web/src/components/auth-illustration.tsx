@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Calendar, CircleCheck, FileCheck, FileText, HardHat, Receipt } from "lucide-react";
 import styles from "./auth-illustration.module.css";
+import { t } from "../lib/i18n";
 
 export type AuthScene = "welcome" | "login";
 
@@ -89,25 +90,25 @@ function DocCard({ style, icon, tone, status }: { style: Timing; icon: ReactNode
 function WelcomeScene() {
   return (
     <>
-      <Caption title="From quote to paid, in one place." body="Send a quote, win the job, invoice it and get paid — Spine keeps the books as you go." />
+      <Caption title={t("auth.illustration.welcomeTitle")} body={t("auth.illustration.welcomeBody")} />
       <DocCard
         style={{ left: "5%", top: "20%", "--d": "0.9s", "--fd": "2.6s" }}
         icon={<FileText {...ICON} />}
         tone="info"
-        status={<Swap at="1.6s" from={<Chip tone="info">Sent</Chip>} to={<Chip tone="paid">Accepted</Chip>} />}
+        status={<Swap at="1.6s" from={<Chip tone="info">{t("auth.illustration.sent")}</Chip>} to={<Chip tone="paid">{t("auth.illustration.accepted")}</Chip>} />}
       />
       <DocCard
         style={{ right: "5%", top: "27%", "--d": "1.3s", "--fd": "3s" }}
         icon={<Receipt {...ICON} />}
         tone="due"
-        status={<Swap at="2.4s" from={<Chip tone="due">Due</Chip>} to={<Chip tone="paid">Paid</Chip>} />}
+        status={<Swap at="2.4s" from={<Chip tone="due">{t("auth.illustration.due")}</Chip>} to={<Chip tone="paid">{t("auth.illustration.paid")}</Chip>} />}
       />
       <Card className={styles.toast} style={{ left: "28%", top: "43%", "--d": "2.6s", "--fd": "3.4s" }}>
         <Icon tone="paid">
           <CircleCheck {...ICON} />
         </Icon>
         <Lines widths={["84%", "52%"]} strong />
-        <Chip tone="paid">Paid</Chip>
+        <Chip tone="paid">{t("auth.illustration.paid")}</Chip>
       </Card>
       <div className={styles.team}>
         <Figure who="trades" outfit="mint" delay="0.1s" />
@@ -131,7 +132,7 @@ function TodayRow({ icon, tone }: { icon: ReactNode; tone: "info" | "due" }) {
 function LoginScene() {
   return (
     <>
-      <Caption title="Welcome back." body="Today’s jobs, quotes and payments are where you left them." />
+      <Caption title={t("auth.illustration.loginTitle")} body={t("auth.illustration.loginBody")} />
       <Card className={styles.today} style={{ left: "5%", top: "20%", "--d": "0.5s", "--fd": "2.4s" }}>
         <div className="mb-1.5 mt-0.5">
           <Lines widths={["36%", "62%"]} />
@@ -145,7 +146,7 @@ function LoginScene() {
           <FileCheck {...ICON} />
         </Icon>
         <Lines widths={["84%", "52%"]} strong />
-        <Chip tone="paid">Accepted</Chip>
+        <Chip tone="paid">{t("auth.illustration.accepted")}</Chip>
       </Card>
       <Figure who="morning" outfit="sky" delay="0.1s" className={styles.solo} />
     </>

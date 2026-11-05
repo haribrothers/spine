@@ -25,6 +25,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useModules } from "../../../lib/modules-context";
 import { useToast } from "../../../components/toast-host";
 import { AccountCard, AccountPaneHeader } from "./account-card";
+import { useT } from "../../../lib/i18n";
 
 /** What agents can and can't do, for the turn-on confirmation. */
 function CanAndCant() {
@@ -41,14 +42,16 @@ function CanAndCant() {
 }
 
 /** The address people add as a connector, with Copy. */
-export function ConnectorAddress({ url, copyLabel = "Copy" }: { url: string; copyLabel?: string }) {
+export function ConnectorAddress({ url, copyLabel: copyLabelProp }: { url: string; copyLabel?: string }) {
+  const t = useT();
+  const copyLabel = copyLabelProp ?? t("settings.agents.copy");
   const toast = useToast();
   async function copy() {
     try {
       await navigator.clipboard.writeText(url);
-      toast("Address copied", "Paste it as a connector in your agent.");
+      toast(t("settings.agents.copied"), t("settings.agents.copiedDescription"));
     } catch {
-      toast("Couldn't copy the address", "Select it and copy it yourself.");
+      toast(t("settings.agents.copyError"), t("settings.agents.copyErrorDescription"));
     }
   }
   return (
@@ -57,7 +60,7 @@ export function ConnectorAddress({ url, copyLabel = "Copy" }: { url: string; cop
         <Link2 size={15} aria-hidden className="shrink-0 text-on-surface-muted" />
         <span className="truncate">{url}</span>
       </div>
-      <Button variant="secondary" onClick={() => void copy()} aria-label={`${copyLabel}: ${url}`}>
+      <Button variant="secondary" onClick={() => void copy()} aria-label={t("settings.agents.copyAria", { label: copyLabel, url })}>
         <Copy size={15} aria-hidden />
         {copyLabel}
       </Button>
@@ -74,6 +77,7 @@ export function ConnectorAddress({ url, copyLabel = "Copy" }: { url: string; cop
  * and turning on or off asks first. Owner-only (the pane, and the API).
  */
 export function AgentsPane() {
+  const t = useT();
   const toast = useToast();
   const { refresh } = useModules();
   const { confirm, dialog } = useConfirm();
@@ -93,7 +97,7 @@ export function AgentsPane() {
     apiClient
       .get<AgentsSettings>("/org/agents")
       .then(setSaved)
-      .catch((err) => setError(err instanceof Error ? err.message : "The settings didn't load. Try again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("settings.agents.loadError")));
     void loadConnections();
   }, []);
 
@@ -116,16 +120,16 @@ export function AgentsPane() {
   async function switchTo(on: boolean) {
     setError(null);
     const ok = on
-      ? await confirm({ title: AGENTS_TURN_ON_TITLE, description: <>{AGENTS_TURN_ON_MESSAGE}<CanAndCant /></>, confirmLabel: "Turn on connected agents" })
-      : await confirm({ title: AGENTS_TURN_OFF_TITLE, description: AGENTS_TURN_OFF_MESSAGE, confirmLabel: "Turn off connected agents" });
+      ? await confirm({ title: AGENTS_TURN_ON_TITLE, description: <>{AGENTS_TURN_ON_MESSAGE}<CanAndCant /></>, confirmLabel: t("settings.agents.turnOn") })
+      : await confirm({ title: AGENTS_TURN_OFF_TITLE, description: AGENTS_TURN_OFF_MESSAGE, confirmLabel: t("settings.agents.turnOff") });
     if (!ok) return;
     setBusy("switch");
     try {
       await put({ enabled: on });
       refresh();
-      toast(on ? AGENTS_ON_TOAST : AGENTS_OFF_TOAST, on ? "People can connect their agents with the address below." : "No agent can use Spine until you turn this back on.");
+      toast(on ? AGENTS_ON_TOAST : AGENTS_OFF_TOAST, on ? t("settings.agents.onDescription") : t("settings.agents.offDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Connected agents weren't switched. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.agents.switchError"));
     } finally {
       setBusy(null);
     }
@@ -134,10 +138,10 @@ export function AgentsPane() {
   async function disconnect(c: AgentConnection) {
     try {
       await apiClient.delete(`/org/agents/connections/${c.id}`);
-      toast(agentDisconnectedToast(c.clientName), c.user ? `${c.user.name} is told it was disconnected.` : "It can't use Spine any more.");
+      toast(agentDisconnectedToast(c.clientName), c.user ? t("settings.agents.personTold", { person: c.user.name }) : t("settings.agents.cantUse"));
       await loadConnections();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "It wasn't disconnected. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.agents.disconnectError"));
     }
   }
 
@@ -146,9 +150,9 @@ export function AgentsPane() {
     setBusy("drafts");
     try {
       await put({ drafts: on });
-      toast(on ? "Agents can create drafts" : "Agents can only read", on ? "Leads, quotes, vendor bills and notes, for people to finish in Spine." : "Draft tools are gone from every connected agent.");
+      toast(on ? t("settings.agents.drafts") : t("settings.agents.readOnly"), on ? t("settings.agents.draftsOnDescription") : t("settings.agents.draftsOffDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That wasn't switched. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.agents.draftsError"));
     } finally {
       setBusy(null);
     }
@@ -158,11 +162,11 @@ export function AgentsPane() {
     <div className="flex flex-col gap-4" data-testid="agents-pane">
       <div className="flex items-start gap-4 pr-8">
         <div className="min-w-0 flex-1">
-          <AccountPaneHeader title="Connected agents" description={AGENTS_PANE_INTRO} />
+          <AccountPaneHeader title={t("settings.agents.title")} description={AGENTS_PANE_INTRO} />
         </div>
         <label className="flex shrink-0 items-center gap-2.5 pt-1 text-[13.5px] font-semibold text-on-surface">
-          {saved.enabled ? "On" : "Off"}
-          <Switch aria-label="Connected agents" checked={saved.enabled} disabled={busy === "switch"} onCheckedChange={(on) => void switchTo(on)} />
+          {saved.enabled ? t("settings.agents.on") : t("settings.agents.off")}
+          <Switch aria-label={t("settings.agents.title")} checked={saved.enabled} disabled={busy === "switch"} onCheckedChange={(on) => void switchTo(on)} />
         </label>
       </div>
       {error && (
@@ -173,10 +177,10 @@ export function AgentsPane() {
       )}
 
       {!saved.enabled ? (
-        <p className="text-[13px] text-on-surface-muted">The address to add and everyone&apos;s connections appear once it&apos;s on.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.agents.offNote")}</p>
       ) : (
         <>
-          <AccountCard title="Connector address" description="People add this address as a connector in their agent, then sign in with their own Spine account.">
+          <AccountCard title={t("settings.agents.connectorAddress")} description={t("settings.agents.connectorDescription")}>
             <div className="flex flex-col gap-3">
               <ConnectorAddress url={saved.mcpUrl} />
               {!saved.httpsReachable && (
@@ -199,28 +203,28 @@ export function AgentsPane() {
             </div>
           </AccountCard>
 
-          <section className="rounded-lg border border-border bg-surface p-5" aria-label="Agents can create drafts">
+          <section className="rounded-lg border border-border bg-surface p-5" aria-label={t("settings.agents.drafts")}>
             <label className="flex items-start gap-3">
               <span className="grid size-8 shrink-0 place-items-center rounded-md bg-info-bg text-primary">
                 <FilePlus size={16} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[13.5px] font-semibold text-on-surface">Agents can create drafts</span>
+                <span className="block text-[13.5px] font-semibold text-on-surface">{t("settings.agents.drafts")}</span>
                 <span id="agents-drafts-hint" className="mt-0.5 block text-[12.5px] text-on-surface-muted">
                   {AGENTS_DRAFTS_HINT}
                 </span>
               </span>
-              <Switch aria-label="Agents can create drafts" aria-describedby="agents-drafts-hint" checked={saved.drafts} disabled={busy === "drafts"} onCheckedChange={(on) => void switchDrafts(on)} />
+              <Switch aria-label={t("settings.agents.drafts")} aria-describedby="agents-drafts-hint" checked={saved.drafts} disabled={busy === "drafts"} onCheckedChange={(on) => void switchDrafts(on)} />
             </label>
           </section>
 
-          <AccountCard title="Connections" description="Every agent connected to Spine, by person. Disconnecting stops it at once; drafts it created stay.">
+          <AccountCard title={t("settings.agents.connections")} description={t("settings.agents.connectionsDescription")}>
             {connections && connections.length > 0 ? (
               <AgentConnectionsTable connections={connections} showPerson onDisconnect={disconnect} />
             ) : (
               <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border-strong px-5 py-8 text-center text-[13px] text-on-surface-muted" data-testid="agents-none">
-                <b className="text-[14px] font-semibold text-on-surface">No agents connected yet</b>
-                When someone adds the address to their agent and allows it, it shows here.
+                <b className="text-[14px] font-semibold text-on-surface">{t("settings.agents.emptyTitle")}</b>
+                {t("settings.agents.emptyBody")}
               </div>
             )}
           </AccountCard>

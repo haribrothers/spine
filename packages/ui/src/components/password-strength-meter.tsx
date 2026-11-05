@@ -3,6 +3,7 @@
 import { Circle, CircleCheck } from "lucide-react";
 import { PASSWORD_CHECK_LABELS, PASSWORD_LEVEL_LABELS, passwordStrength, type PasswordChecks } from "@spine/shared";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export interface PasswordStrengthMeterProps {
   password: string;
@@ -22,6 +23,7 @@ const FILL: Record<number, string> = { 1: "bg-overdue", 2: "bg-due-soon", 3: "bg
  * server uses for its refusals.
  */
 export function PasswordStrengthMeter({ password, checklist = true, className, id }: PasswordStrengthMeterProps) {
+  const t = useT();
   const strength = passwordStrength(password);
   const label = PASSWORD_LEVEL_LABELS[strength.level];
   return (
@@ -34,10 +36,10 @@ export function PasswordStrengthMeter({ password, checklist = true, className, i
       <p className="text-[12px] font-medium text-on-surface-muted" role="status" aria-live="polite">
         {password ? (
           <>
-            Password strength: <span className="font-semibold text-on-surface">{label}</span>
+            {t("ui.passwordStrength.labelPrefix")}<span className="font-semibold text-on-surface">{label}</span>
           </>
         ) : (
-          "Password strength"
+          t("ui.passwordStrength.label")
         )}
       </p>
       {checklist ? (
@@ -49,7 +51,7 @@ export function PasswordStrengthMeter({ password, checklist = true, className, i
                 {ok ? <CircleCheck size={14} className="shrink-0 text-paid" aria-hidden /> : <Circle size={14} className="shrink-0" aria-hidden />}
                 <span>
                   {PASSWORD_CHECK_LABELS[key]}
-                  <span className="sr-only">{ok ? " (done)" : " (not yet)"}</span>
+                  <span className="sr-only">{ok ? t("ui.passwordStrength.done") : t("ui.passwordStrength.notYet")}</span>
                 </span>
               </li>
             );

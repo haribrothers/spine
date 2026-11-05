@@ -1,5 +1,6 @@
 import { AppShellHeader } from "@spine/ui";
 import { ContactsExplorer } from "./contacts-explorer";
+import { t } from "../../../lib/i18n";
 
 /**
  * S-01.1/S-01.2 — the contacts list (F1 MUST: store companies/individuals,
@@ -24,9 +25,9 @@ export default async function ContactsPage({
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Sales" }, { label: "Contacts" }]}
-        title="Contacts"
-        description="Customers and vendors you do business with."
+        breadcrumb={[{ label: t("contacts.page.breadcrumbSales") }, { label: t("contacts.page.title") }]}
+        title={t("contacts.page.title")}
+        description={t("contacts.page.description")}
       />
       <ContactsExplorer initialDrawerOpen={newParam === "1"} />
     </>

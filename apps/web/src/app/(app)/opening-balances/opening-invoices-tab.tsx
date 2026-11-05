@@ -30,10 +30,11 @@ import {
 } from "@spine/ui";
 import { STATEMENT_DATE_FORMATS, parseStatementAmount, parseStatementDate, type OpeningImportResult, type OpeningInvoice, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
-import { formatMoney } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 const NONE = "__none__";
 
 type Option = { id: string; name: string };
@@ -45,6 +46,7 @@ type JobOption = { id: string; name: string; number: string | null };
  * Added one by one or imported from CSV; customers are matched by name.
  */
 export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
+  const t = useT();
   const [rows, setRows] = useState<OpeningInvoice[] | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [customers, setCustomers] = useState<Option[]>([]);
@@ -78,7 +80,7 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
       await apiClient.delete(`/opening-balances/invoices/${row.id}`);
       changed();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove this invoice.");
+      setError(err instanceof Error ? err.message : t("openingBalances.invoices.removeError"));
     }
   }
 
@@ -90,17 +92,17 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Opening invoices" value={rows ? String(rows.length) : "—"} />
-        <StatCard label="Amount due" value={money(totalDue)} />
-        <StatCard label="Retention held" value={money(totalRetention)} trend={{ direction: "neutral", label: `on ${retentionJobs} ${retentionJobs === 1 ? "job" : "jobs"}` }} />
-        <StatCard label="Customers not matched" value={String(unmatchedCount)} trend={{ direction: "neutral", label: "from the last import" }} />
+        <StatCard label={t("openingBalances.invoices.openingInvoices")} value={rows ? String(rows.length) : "—"} />
+        <StatCard label={t("openingBalances.common.amountDue")} value={money(totalDue)} />
+        <StatCard label={t("openingBalances.common.retentionHeld")} value={money(totalRetention)} trend={{ direction: "neutral", label: t("openingBalances.invoices.onJobs", { count: retentionJobs }) }} />
+        <StatCard label={t("openingBalances.invoices.notMatched")} value={String(unmatchedCount)} trend={{ direction: "neutral", label: t("openingBalances.invoices.fromLastImport") }} />
       </div>
       {!locked && (
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={() => setImportOpen(true)}>
-            Import from CSV
+            {t("openingBalances.invoices.importCsv")}
           </Button>
-          <Button onClick={() => setEditing("new")}>Add invoice</Button>
+          <Button onClick={() => setEditing("new")}>{t("openingBalances.invoices.add")}</Button>
         </div>
       )}
       {error && (
@@ -112,21 +114,21 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
         <table className="w-full text-[14px]" data-testid="opening-invoices">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
-              <th className="px-4 py-3 font-medium">Invoice number</th>
-              <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 font-medium">Invoice date</th>
-              <th className="px-4 py-3 font-medium">Due date</th>
-              <th className="px-4 py-3 text-right font-medium">Amount due</th>
-              <th className="px-4 py-3 text-right font-medium">Retention held</th>
-              <th className="px-4 py-3 font-medium">Job</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.invoices.colNumber")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.invoices.colCustomer")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.invoiceDate")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.dueDate")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.amountDue")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.retentionHeld")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.job")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {rows?.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-6 text-center text-[13px] text-on-surface-muted">
-                  No opening invoices yet.
+                  {t("openingBalances.invoices.empty")}
                 </td>
               </tr>
             )}
@@ -142,17 +144,17 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
                 <td className="px-4 py-3 text-right">
                   {!locked && !r.hasActivity ? (
                     <span className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" aria-label={`Edit ${r.number}`} onClick={() => setEditing(r)}>
-                        Edit
+                      <Button variant="ghost" size="sm" aria-label={t("openingBalances.invoices.editAria", { number: r.number })} onClick={() => setEditing(r)}>
+                        {t("openingBalances.common.edit")}
                       </Button>
-                      <Button variant="ghost" size="sm" aria-label={`Remove ${r.number}`} onClick={async () => {
-                      if (await confirm({ title: `Remove opening invoice ${r.number}?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r);
+                      <Button variant="ghost" size="sm" aria-label={t("openingBalances.invoices.removeAria", { number: r.number })} onClick={async () => {
+                      if (await confirm({ title: t("openingBalances.invoices.removeTitle", { number: r.number }), description: t("openingBalances.common.removeBody"), confirmLabel: t("openingBalances.common.remove"), danger: true })) void remove(r);
                     }}>
-                        Remove
+                        {t("openingBalances.common.remove")}
                       </Button>
                     </span>
                   ) : r.hasActivity ? (
-                    <span className="text-[12px] text-on-surface-muted">Paid or credited</span>
+                    <span className="text-[12px] text-on-surface-muted">{t("openingBalances.common.paidOrCredited")}</span>
                   ) : null}
                 </td>
               </tr>
@@ -160,7 +162,7 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
           </tbody>
         </table>
       </div>
-      <p className="text-[13px] text-on-surface-muted">Opening invoices keep your old numbers, have no lines or tax, and age, get paid and get reminded like any other invoice. Attach the original PDF to each one.</p>
+      <p className="text-[13px] text-on-surface-muted">{t("openingBalances.invoices.footnote")}</p>
 
       <OpeningInvoiceDialog
         value={editing}
@@ -206,6 +208,7 @@ function OpeningInvoiceDialog({
   currency: string;
   onSaved: () => void;
 }) {
+  const t = useT();
   const existing = value && value !== "new" ? value : null;
   const jobsOn = useModule("jobsField");
   const [contactId, setContactId] = useState("");
@@ -232,7 +235,7 @@ function OpeningInvoiceDialog({
 
   async function save() {
     if (!contactId || !number.trim() || !invoiceDate || !dueDate) {
-      setError("Enter the customer, invoice number and both dates.");
+      setError(t("openingBalances.invoices.missingFields"));
       return;
     }
     setSaving(true);
@@ -243,7 +246,7 @@ function OpeningInvoiceDialog({
       else await apiClient.post("/opening-balances/invoices", body);
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save this invoice.");
+      setError(err instanceof Error ? err.message : t("openingBalances.invoices.saveError"));
     } finally {
       setSaving(false);
     }
@@ -253,8 +256,8 @@ function OpeningInvoiceDialog({
     <Dialog open={value !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>{existing ? `Edit opening invoice ${existing.number}` : "Add opening invoice"}</DialogTitle>
-          <DialogDescription>An unpaid invoice from your old system, as it stood on the cutover date.</DialogDescription>
+          <DialogTitle>{existing ? t("openingBalances.invoices.editTitle", { number: existing.number }) : t("openingBalances.invoices.addTitle")}</DialogTitle>
+          <DialogDescription>{t("openingBalances.invoices.dialogBody")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -263,11 +266,11 @@ function OpeningInvoiceDialog({
             </Alert>
           )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField label="Customer" required>
+            <FormField label={t("openingBalances.invoices.customer")} required>
               {(field) => (
                 <Select value={contactId || undefined} onValueChange={setContactId}>
                   <SelectTrigger id={field.id}>
-                    <SelectValue placeholder="Choose a customer" />
+                    <SelectValue placeholder={t("openingBalances.invoices.chooseCustomer")} />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((c) => (
@@ -279,31 +282,31 @@ function OpeningInvoiceDialog({
                 </Select>
               )}
             </FormField>
-            <FormField label="Invoice number" required>
-              {(field) => <Input {...field} value={number} onChange={(e) => setNumber(e.target.value)} maxLength={60} placeholder="As on your old invoice" />}
+            <FormField label={t("openingBalances.invoices.colNumber")} required>
+              {(field) => <Input {...field} value={number} onChange={(e) => setNumber(e.target.value)} maxLength={60} placeholder={t("openingBalances.invoices.numberPlaceholder")} />}
             </FormField>
-            <FormField label="Invoice date" required>
+            <FormField label={t("openingBalances.common.invoiceDate")} required>
               {() => <DatePicker value={invoiceDate} onChange={setInvoiceDate} />}
             </FormField>
-            <FormField label="Due date" required>
+            <FormField label={t("openingBalances.common.dueDate")} required>
               {() => <DatePicker value={dueDate} onChange={setDueDate} />}
             </FormField>
-            <FormField label="Amount due" required>
+            <FormField label={t("openingBalances.common.amountDue")} required>
               {(field) => <MoneyInput id={field.id} value={amountDue} onValueChange={setAmountDue} currency={currency} />}
             </FormField>
-            <FormField label="Retention held" helperText="Optional — held back on a job until the job is done.">
+            <FormField label={t("openingBalances.common.retentionHeld")} helperText={t("openingBalances.invoices.retentionHelp")}>
               {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={retention} onValueChange={setRetention} currency={currency} />}
             </FormField>
             {/* US-SET-24: no jobs while Jobs & field is switched off. */}
             {jobsOn && (
-              <FormField label="Job" helperText={retention > 0n ? "Needed for retention." : "Optional."}>
+              <FormField label={t("openingBalances.common.job")} helperText={retention > 0n ? t("openingBalances.invoices.jobNeeded") : t("openingBalances.invoices.jobOptional")}>
                 {(field) => (
                   <Select value={jobId} onValueChange={setJobId}>
                     <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>No job</SelectItem>
+                      <SelectItem value={NONE}>{t("openingBalances.invoices.noJob")}</SelectItem>
                       {jobs.map((j) => (
                         <SelectItem key={j.id} value={j.id}>
                           {j.number ? `${j.number} · ` : ""}
@@ -319,10 +322,10 @@ function OpeningInvoiceDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Cancel
+            {t("openingBalances.common.cancel")}
           </Button>
           <Button onClick={save} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : existing ? "Save invoice" : "Add invoice"}
+            {saving ? <Spinner size="sm" /> : existing ? t("openingBalances.invoices.save") : t("openingBalances.invoices.add")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -331,18 +334,19 @@ function OpeningInvoiceDialog({
 }
 
 const FIELDS = [
-  { key: "customer", label: "Customer name", required: true, guess: /customer|client|name/i },
-  { key: "number", label: "Invoice number", required: true, guess: /number|no\.?$|invoice/i },
-  { key: "invoiceDate", label: "Invoice date", required: true, guess: /invoice date|^date$|issued/i },
-  { key: "dueDate", label: "Due date", required: true, guess: /due/i },
-  { key: "amountDue", label: "Amount due", required: true, guess: /amount|due amount|balance|outstanding/i },
-  { key: "retentionHeld", label: "Retention held", required: false, guess: /retention/i },
-  { key: "job", label: "Job", required: false, guess: /job/i },
+  { key: "customer", label: t("openingBalances.invoices.fieldCustomer"), required: true, guess: /customer|client|name/i },
+  { key: "number", label: t("openingBalances.invoices.colNumber"), required: true, guess: /number|no\.?$|invoice/i },
+  { key: "invoiceDate", label: t("openingBalances.common.invoiceDate"), required: true, guess: /invoice date|^date$|issued/i },
+  { key: "dueDate", label: t("openingBalances.common.dueDate"), required: true, guess: /due/i },
+  { key: "amountDue", label: t("openingBalances.common.amountDue"), required: true, guess: /amount|due amount|balance|outstanding/i },
+  { key: "retentionHeld", label: t("openingBalances.common.retentionHeld"), required: false, guess: /retention/i },
+  { key: "job", label: t("openingBalances.common.job"), required: false, guess: /job/i },
 ] as const;
 type FieldKey = (typeof FIELDS)[number]["key"];
 
 /** US-RPT-17 — "Import from CSV": map the columns, check each row, match customers by name. */
 function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnmatched }: { open: boolean; onOpenChange: (open: boolean) => void; currency: string; onImported: () => void; onUnmatched: (n: number) => void }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -374,7 +378,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
       complete: (parsed) => {
         const cols = parsed.meta.fields ?? [];
         if (!cols.length) {
-          setError("That file has no columns. Export it from your old system as CSV.");
+          setError(t("openingBalances.import.noColumns"));
           return;
         }
         setFileName(file.name);
@@ -387,7 +391,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
         }
         setMapping(guess);
       },
-      error: () => setError("That file couldn't be read. Export it from your old system as CSV."),
+      error: () => setError(t("openingBalances.import.unreadable")),
     });
   }
 
@@ -426,7 +430,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
       setResult(res);
       onImported();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't import this file.");
+      setError(err instanceof Error ? err.message : t("openingBalances.import.error"));
     } finally {
       setBusy(false);
     }
@@ -436,8 +440,8 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Import opening invoices from CSV</DialogTitle>
-          <DialogDescription>One row per unpaid invoice from your old system. Customers are matched by name.</DialogDescription>
+          <DialogTitle>{t("openingBalances.invoices.importTitle")}</DialogTitle>
+          <DialogDescription>{t("openingBalances.invoices.importBody")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -449,45 +453,45 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
             <div className="flex flex-col gap-2" data-testid="opening-import-result">
               <Alert variant={result.failed.length ? "warning" : "success"}>
                 <AlertDescription>
-                  Imported {result.imported} invoices · {result.failed.length} rows couldn&apos;t be imported
+                  {t("openingBalances.invoices.importResult", { imported: result.imported, failed: result.failed.length })}
                 </AlertDescription>
               </Alert>
               <ul className="flex flex-col gap-1 text-[13px] text-on-surface">
                 {result.failed.map((f) => (
                   <li key={f.row}>
-                    Row {f.row}: {f.reason}
+                    {t("openingBalances.import.failedRow", { row: f.row, reason: f.reason })}
                   </li>
                 ))}
               </ul>
             </div>
           ) : unmatched ? (
             <Card className="flex flex-col gap-3" data-testid="opening-import-unmatched">
-              <h3 className="text-[15px] font-semibold text-on-surface">Import from CSV · {fileName}</h3>
+              <h3 className="text-[15px] font-semibold text-on-surface">{t("openingBalances.import.heading", { file: fileName ?? "" })}</h3>
               <p className="text-[14px] text-on-surface">
-                {unmatched.length} customer {unmatched.length === 1 ? "name didn't" : "names didn't"} match anyone in Spine: {unmatched.join(", ")}.
+                {t("openingBalances.invoices.unmatched", { count: unmatched.length, names: unmatched.join(", ") })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={() => run(true)} disabled={busy}>
-                  {busy ? <Spinner size="sm" /> : "Create these customers"}
+                  {busy ? <Spinner size="sm" /> : t("openingBalances.invoices.createCustomers")}
                 </Button>
                 <Button variant="ghost" className="text-primary" onClick={() => onOpenChange(false)}>
-                  Fix the file
+                  {t("openingBalances.import.fixFile")}
                 </Button>
               </div>
             </Card>
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed border-border-strong p-4">
-                <p className="text-[13px] text-on-surface">{fileName ? `${fileName} · ${data.length} rows` : "A CSV with a row per unpaid invoice."}</p>
+                <p className="text-[13px] text-on-surface">{fileName ? t("openingBalances.import.fileRows", { file: fileName, n: data.length }) : t("openingBalances.invoices.fileHint")}</p>
                 <Button variant="secondary" onClick={() => inputRef.current?.click()}>
-                  {fileName ? "Choose another file" : "Choose file"}
+                  {fileName ? t("openingBalances.import.chooseAnother") : t("openingBalances.import.chooseFile")}
                 </Button>
                 <input
                   ref={inputRef}
                   type="file"
                   accept=".csv,text/csv"
                   className="sr-only"
-                  aria-label="Opening invoices file"
+                  aria-label={t("openingBalances.invoices.fileLabel")}
                   data-testid="opening-invoices-file"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -506,7 +510,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={NONE}>{f.required ? "Choose a column" : "None"}</SelectItem>
+                            <SelectItem value={NONE}>{f.required ? t("openingBalances.import.chooseColumn") : t("openingBalances.import.none")}</SelectItem>
                             {headers.map((h) => (
                               <SelectItem key={h} value={h}>
                                 {h}
@@ -517,7 +521,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
                       )}
                     </FormField>
                   ))}
-                  <FormField label="Date format" required>
+                  <FormField label={t("openingBalances.import.dateFormat")} required>
                     {(field) => (
                       <Select value={dateFormat} onValueChange={(v) => setDateFormat(v as StatementDateFormat)}>
                         <SelectTrigger id={field.id}>
@@ -540,15 +544,15 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
         </DialogBody>
         <DialogFooter>
           {result ? (
-            <Button onClick={() => onOpenChange(false)}>Done</Button>
+            <Button onClick={() => onOpenChange(false)}>{t("openingBalances.import.done")}</Button>
           ) : (
             <>
               <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-                Cancel
+                {t("openingBalances.common.cancel")}
               </Button>
               {!unmatched && (
                 <Button onClick={() => run(false)} disabled={!fileName || !ready || busy}>
-                  {busy ? <Spinner size="sm" /> : `Import ${data.length} invoices`}
+                  {busy ? <Spinner size="sm" /> : t("openingBalances.invoices.importN", { n: data.length })}
                 </Button>
               )}
             </>

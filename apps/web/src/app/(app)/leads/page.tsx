@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { LeadsBoard } from "./leads-board";
+import { t } from "../../../lib/i18n";
 
 /**
  * S-01.5 — the pipeline board, rebuilt by US-CRM-24 to 28 (D-211): open
@@ -12,9 +13,9 @@ export default function LeadsPage() {
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Sales" }, { label: "Pipeline" }]}
-        title="Pipeline"
-        description="Your open leads by stage, and what you've won and lost lately."
+        breadcrumb={[{ label: t("leads.page.sales") }, { label: t("leads.page.title") }]}
+        title={t("leads.page.title")}
+        description={t("leads.page.description")}
       />
       <Suspense>
         <LeadsBoard />

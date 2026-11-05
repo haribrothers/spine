@@ -18,6 +18,7 @@ import {
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { loadCustomerCredit, type CustomerCredit } from "../../../lib/customer-credit";
+import { useT } from "../../../lib/i18n";
 
 /**
  * US-PAY-16 — "Apply credit" on an invoice: the customer's credit from
@@ -44,6 +45,7 @@ export function ApplyCustomerCreditDialog({
   balanceDue: bigint;
   onApplied: (total: bigint) => void;
 }) {
+  const t = useT();
   const [credits, setCredits] = useState<CustomerCredit[] | null>(null);
   const [amounts, setAmounts] = useState<Record<string, bigint>>({});
   const [saving, setSaving] = useState(false);
@@ -71,11 +73,11 @@ export function ApplyCustomerCreditDialog({
   async function handleSubmit() {
     setError(null);
     if (total <= 0n) {
-      setError("Enter an amount to apply.");
+      setError(t("invoices.applyCredit.enterAmount"));
       return;
     }
     if (total > balanceDue) {
-      setError(`You can apply up to ${formatMoney(balanceDue, currency)} to ${invoiceNumber ?? "this invoice"}.`);
+      setError(t("invoices.applyCredit.tooMuch", { amount: formatMoney(balanceDue, currency), number: invoiceNumber ?? t("invoices.applyCredit.thisInvoice") }));
       return;
     }
     setSaving(true);
@@ -89,7 +91,7 @@ export function ApplyCustomerCreditDialog({
       onOpenChange(false);
       onApplied(total);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't apply the credit. Try again.");
+      setError(err instanceof Error ? err.message : t("invoices.applyCredit.failed"));
     } finally {
       setSaving(false);
     }
@@ -99,9 +101,9 @@ export function ApplyCustomerCreditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Apply credit</DialogTitle>
+          <DialogTitle>{t("invoices.applyCredit.title")}</DialogTitle>
           <DialogDescription>
-            Use this customer&apos;s credit — from payments and credit notes — against {invoiceNumber ?? "this invoice"}. {formatMoney(balanceDue, currency)} is owed.
+            {t("invoices.applyCredit.description", { number: invoiceNumber ?? t("invoices.applyCredit.thisInvoice"), amount: formatMoney(balanceDue, currency) })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
@@ -115,17 +117,17 @@ export function ApplyCustomerCreditDialog({
               <Spinner size="sm" />
             </div>
           ) : credits.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">This customer has no credit to apply.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("invoices.applyCredit.noCredit")}</p>
           ) : (
             credits.map((c) => (
               <div key={c.id} className="flex flex-wrap items-center gap-3" data-testid="credit-source">
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-medium text-on-surface">{c.label}</p>
-                  <p className="text-[12px] text-on-surface-muted">{formatMoney(c.available, currency)} available</p>
+                  <p className="text-[12px] text-on-surface-muted">{t("invoices.applyCredit.available", { amount: formatMoney(c.available, currency) })}</p>
                 </div>
                 <div className="w-36">
                   <MoneyInput
-                    aria-label={`Amount from ${c.label}`}
+                    aria-label={t("invoices.applyCredit.amountFrom", { label: c.label })}
                     value={amounts[c.id] ?? 0n}
                     onValueChange={(v) => setAmounts((prev) => ({ ...prev, [c.id]: v > c.available ? c.available : v }))}
                     currency={currency}
@@ -134,14 +136,14 @@ export function ApplyCustomerCreditDialog({
               </div>
             ))
           )}
-          {credits && credits.length > 0 && <p className="text-[13px] text-on-surface-muted">Applying {formatMoney(total, currency)}.</p>}
+          {credits && credits.length > 0 && <p className="text-[13px] text-on-surface-muted">{t("invoices.applyCredit.applying", { amount: formatMoney(total, currency) })}</p>}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("invoices.applyCredit.cancel")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving || !credits?.length}>
-            {saving ? <Spinner size="sm" /> : "Apply credit"}
+            {saving ? <Spinner size="sm" /> : t("invoices.applyCredit.apply")}
           </Button>
         </DialogFooter>
       </DialogContent>

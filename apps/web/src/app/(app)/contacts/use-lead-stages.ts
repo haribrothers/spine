@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { LeadStage } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { t } from "../../../lib/i18n";
 
 /**
  * US-CRM-19 — the organisation's pipeline stages in board order, shared by
@@ -19,7 +20,7 @@ export function useLeadStages() {
         setStages(rows);
         setError(null);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load the pipeline stages."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("contacts.leadStages.loadError")));
   }, []);
 
   useEffect(() => {

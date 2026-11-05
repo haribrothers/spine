@@ -6,6 +6,7 @@ import { getOrgLocale } from "../../lib/get-org-locale";
 import { MoneyLocaleProvider } from "../../components/money-locale-provider";
 import { OrgThemePreset } from "../../components/org-theme-preset";
 import { getOrgThemePreset } from "../../lib/get-org-theme-preset";
+import { t } from "../../lib/i18n";
 
 /**
  * Shared chrome for every authenticated page (dashboard, quotes, contacts,
@@ -27,7 +28,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
       <OrgThemePreset preset={themePreset} />
       <AppLayout
         role={membership?.role ?? null}
-        userName={session?.user?.name ?? "Signed in"}
+        userName={session?.user?.name ?? t("common.app.signedIn")}
         userEmail={session?.user?.email ?? ""}
         isOwner={membership?.role === "owner"}
       >

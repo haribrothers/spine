@@ -28,17 +28,18 @@ import {
 import type { CustomerRefund } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 import { loadCustomerCredit, type CustomerCredit } from "../lib/customer-credit";
-import { formatMoney } from "../lib/money";
+import { formatMoney, orgLocaleTag } from "../lib/money";
 import { MoneyAccountPicker } from "./money-account-picker";
 import { useToast } from "./toast-host";
+import { t, useT } from "../lib/i18n";
 
 const METHODS: { value: string; label: string }[] = [
-  { value: "bank_transfer", label: "Bank transfer" },
-  { value: "cash", label: "Cash" },
-  { value: "cheque", label: "Cheque" },
-  { value: "card", label: "Card" },
-  { value: "upi", label: "UPI" },
-  { value: "other", label: "Other" },
+  { value: "bank_transfer", label: t("payments.method.bankTransfer") },
+  { value: "cash", label: t("payments.method.cash") },
+  { value: "cheque", label: t("payments.method.cheque") },
+  { value: "card", label: t("payments.method.card") },
+  { value: "upi", label: t("payments.method.upi") },
+  { value: "other", label: t("payments.method.other") },
 ];
 
 function localIso(date: Date): string {
@@ -68,6 +69,7 @@ export function CustomerRefundDialog({
   sourceId?: string;
   onRefunded: (refund: CustomerRefund) => void;
 }) {
+  const t = useT();
   const [credits, setCredits] = useState<CustomerCredit[] | null>(null);
   const [chosenId, setChosenId] = useState("");
   const [amount, setAmount] = useState<bigint>(0n);
@@ -100,15 +102,15 @@ export function CustomerRefundDialog({
   async function handleSubmit() {
     setError(null);
     if (!chosen) {
-      setError("Choose the credit to refund from.");
+      setError(t("payments.refund.chooseCredit"));
       return;
     }
     if (amount <= 0n) {
-      setError("Enter an amount greater than zero.");
+      setError(t("payments.refund.amountPositive"));
       return;
     }
     if (amount > chosen.available) {
-      setError(`You can refund up to ${formatMoney(chosen.available, currency)} from this ${chosen.kind === "payment" ? "payment" : "credit note"}.`);
+      setError(t(chosen.kind === "payment" ? "payments.refund.tooMuchPayment" : "payments.refund.tooMuchCreditNote", { amount: formatMoney(chosen.available, currency) }));
       return;
     }
     setSaving(true);
@@ -125,7 +127,7 @@ export function CustomerRefundDialog({
       onOpenChange(false);
       onRefunded(refund);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this refund. Try again.");
+      setError(err instanceof Error ? err.message : t("payments.refund.failed"));
     } finally {
       setSaving(false);
     }
@@ -135,8 +137,8 @@ export function CustomerRefundDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Refund {contactName}</DialogTitle>
-          <DialogDescription>Pay back credit the customer holds. The money leaves the account you choose, and their credit drops.</DialogDescription>
+          <DialogTitle>{t("payments.refund.title", { name: contactName })}</DialogTitle>
+          <DialogDescription>{t("payments.refund.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -149,10 +151,10 @@ export function CustomerRefundDialog({
               <Spinner size="sm" />
             </div>
           ) : credits.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">{contactName} has no credit to refund.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("payments.refund.noCredit", { name: contactName })}</p>
           ) : (
             <>
-              <FormField label="Refund from" required helperText={chosen ? `${formatMoney(chosen.available, currency)} of credit` : undefined}>
+              <FormField label={t("payments.refund.refundFrom")} required helperText={chosen ? t("payments.refund.ofCredit", { amount: formatMoney(chosen.available, currency) }) : undefined}>
                 {(field) => (
                   <Select
                     value={chosenId}
@@ -175,14 +177,14 @@ export function CustomerRefundDialog({
                 )}
               </FormField>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField label="Amount" required>
+                <FormField label={t("payments.refund.amount")} required>
                   {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
                 </FormField>
-                <FormField label="Date" required>
+                <FormField label={t("payments.refund.date")} required>
                   {() => <DatePicker value={date} onChange={setDate} />}
                 </FormField>
                 <MoneyAccountPicker form="refund" direction="out" value={moneyAccountId} onValueChange={setMoneyAccountId} />
-                <FormField label="Method" required>
+                <FormField label={t("payments.refund.method")} required>
                   {(field) => (
                     <Select value={method} onValueChange={setMethod}>
                       <SelectTrigger id={field.id}>
@@ -199,22 +201,22 @@ export function CustomerRefundDialog({
                   )}
                 </FormField>
               </div>
-              <FormField label="Reference">
-                {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" maxLength={120} />}
+              <FormField label={t("payments.refund.reference")}>
+                {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder={t("payments.refund.optional")} maxLength={120} />}
               </FormField>
               <label htmlFor="refund-confirmation" className="flex cursor-pointer items-center gap-3 text-[14px] text-on-surface">
                 <Checkbox id="refund-confirmation" checked={sendConfirmation} onCheckedChange={(v) => setSendConfirmation(v === true)} />
-                Send refund confirmation
+                {t("payments.refund.sendConfirmation")}
               </label>
             </>
           )}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("payments.refund.cancel")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving || !credits?.length}>
-            {saving ? <Spinner size="sm" /> : "Record refund"}
+            {saving ? <Spinner size="sm" /> : t("payments.refund.record")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -224,8 +226,12 @@ export function CustomerRefundDialog({
 
 /** The toast after a refund: "Refunded $200.00 to Maple Ridge Developments", and whether the confirmation went. */
 export function refundToast(refund: CustomerRefund): { title: string; description: string } {
-  const title = `Refunded ${formatMoney(BigInt(refund.amount), refund.currency)} to ${refund.contactName}`;
-  const description = refund.confirmation ? (refund.confirmation.sent ? "The customer has been emailed a confirmation." : (refund.confirmation.reason ?? "No confirmation was sent.")) : "Their credit has dropped by the same amount.";
+  const title = t("payments.refund.toastTitle", { amount: formatMoney(BigInt(refund.amount), refund.currency), name: refund.contactName });
+  const description = refund.confirmation
+    ? refund.confirmation.sent
+      ? t("payments.refund.confirmationSent")
+      : (refund.confirmation.reason ?? t("payments.refund.noConfirmation"))
+    : t("payments.refund.creditDropped");
   return { title, description };
 }
 
@@ -235,6 +241,7 @@ export function refundToast(refund: CustomerRefund): { title: string; descriptio
  * gives the credit back.
  */
 export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onChanged }: { contactId: string; sourceId: string; refreshKey?: number; canRefund: boolean; onChanged: () => void }) {
+  const t = useT();
   const [refunds, setRefunds] = useState<CustomerRefund[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -252,9 +259,9 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
 
   async function remove(refund: CustomerRefund) {
     const ok = await confirm({
-      title: "Delete this refund?",
-      description: `The ${formatMoney(BigInt(refund.amount), refund.currency)} refund is reversed in your books, and the customer's credit goes back up by that much.`,
-      confirmLabel: "Delete refund",
+      title: t("payments.refund.deleteTitle"),
+      description: t("payments.refund.deleteDescription", { amount: formatMoney(BigInt(refund.amount), refund.currency) }),
+      confirmLabel: t("payments.refund.deleteRefund"),
       danger: true,
     });
     if (!ok) return;
@@ -262,10 +269,10 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
     setBusyId(refund.id);
     try {
       await apiClient.delete(`/customer-refunds/${refund.id}`);
-      showToast("Refund deleted", `${formatMoney(BigInt(refund.amount), refund.currency)} is back in ${refund.contactName}'s credit and the refund is reversed in your books.`);
+      showToast(t("payments.refund.deletedTitle"), t("payments.refund.deletedBody", { amount: formatMoney(BigInt(refund.amount), refund.currency), name: refund.contactName }));
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't delete this refund.");
+      setError(err instanceof Error ? err.message : t("payments.refund.deleteFailed"));
     } finally {
       setBusyId(null);
     }
@@ -273,7 +280,7 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
 
   return (
     <div className="flex flex-col gap-2" data-testid="refunds">
-      <h3 className="text-[13px] font-semibold text-on-surface-muted">Refunds</h3>
+      <h3 className="text-[13px] font-semibold text-on-surface-muted">{t("payments.refund.refunds")}</h3>
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
@@ -282,17 +289,17 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
       {refunds.map((r) => (
         <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 text-[13px]">
           <span className={r.deletedAt ? "text-on-surface-muted line-through" : "text-on-surface"}>
-            {new Date(`${r.date}T00:00:00`).toLocaleDateString()} · {r.moneyAccount.name}
+            {new Date(`${r.date}T00:00:00`).toLocaleDateString(orgLocaleTag())} · {r.moneyAccount.name}
             {r.reference ? ` · ${r.reference}` : ""}
           </span>
           <span className="flex items-center gap-2">
             <span className="tabular-nums text-on-surface">{formatMoney(BigInt(r.amount), r.currency)}</span>
             {r.deletedAt ? (
-              <span className="text-on-surface-muted">Deleted</span>
+              <span className="text-on-surface-muted">{t("payments.refund.deleted")}</span>
             ) : (
               canRefund && (
-                <Button variant="ghost" size="sm" onClick={() => remove(r)} disabled={busyId === r.id} aria-label={`Delete refund of ${formatMoney(BigInt(r.amount), r.currency)}`}>
-                  Delete refund
+                <Button variant="ghost" size="sm" onClick={() => remove(r)} disabled={busyId === r.id} aria-label={t("payments.refund.deleteAria", { amount: formatMoney(BigInt(r.amount), r.currency) })}>
+                  {t("payments.refund.deleteRefund")}
                 </Button>
               )
             )}

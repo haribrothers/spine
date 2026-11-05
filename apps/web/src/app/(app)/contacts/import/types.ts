@@ -1,21 +1,22 @@
 import type { ContactType } from "../types";
+import { t } from "../../../../lib/i18n";
 
 /** Spine fields a CSV column can be mapped to. `"skip"` means "don't map this column to anything." */
 export const IMPORT_FIELDS = ["name", "type", "isCompany", "email", "phone", "notes", "taxId", "gstin", "stateCode", "website"] as const;
 export type ImportField = (typeof IMPORT_FIELDS)[number];
 
 export const IMPORT_FIELD_LABELS: Record<ImportField, string> = {
-  name: "Name",
-  type: "Type (customer/vendor/both)",
-  isCompany: "Is company",
-  email: "Email",
-  phone: "Phone",
-  notes: "Notes",
-  taxId: "Tax ID",
+  name: t("contacts.importFields.name"),
+  type: t("contacts.importFields.type"),
+  isCompany: t("contacts.importFields.isCompany"),
+  email: t("contacts.importFields.email"),
+  phone: t("contacts.importFields.phone"),
+  notes: t("contacts.importFields.notes"),
+  taxId: t("contacts.importFields.taxId"),
   // US-TAX-12 — a GSTIN makes the contact a registered business.
-  gstin: "GSTIN",
-  stateCode: "State",
-  website: "Website",
+  gstin: t("contacts.importFields.gstin"),
+  stateCode: t("contacts.importFields.stateCode"),
+  website: t("contacts.importFields.website"),
 };
 
 export const REQUIRED_IMPORT_FIELDS: ImportField[] = ["name", "type"];

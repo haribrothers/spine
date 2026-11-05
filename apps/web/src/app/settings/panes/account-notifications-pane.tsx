@@ -9,6 +9,7 @@ import { useToast } from "../../../components/toast-host";
 import { BrowserNotificationsSection } from "../../../components/browser-notifications-section";
 import { DailyDigestSection } from "../../../components/daily-digest-section";
 import { AccountCard, AccountPaneHeader } from "./account-card";
+import { useT } from "../../../lib/i18n";
 
 const LEADS = [5, 15, 30, 60] as const;
 
@@ -19,6 +20,7 @@ const LEADS = [5, 15, 30, 60] as const;
  * changes.
  */
 export function AccountNotificationsPane() {
+  const t = useT();
   const { account, setAccount } = useAccount();
   const toast = useToast();
   const [error, setError] = useState<string | null>(null);
@@ -35,15 +37,15 @@ export function AccountNotificationsPane() {
   async function setLead(value: string) {
     try {
       setAccount(await apiClient.put<Account>("/users/me/meeting-reminder-lead-minutes", { meetingReminderLeadMinutes: value === "" ? null : Number(value) }));
-      toast("Meeting reminders saved.", value === "" ? `You'll be reminded ${businessDefault} minutes before, the business default.` : `You'll be reminded ${value} minutes before.`);
+      toast(t("settings.notifications.remindersSaved"), value === "" ? t("settings.notifications.remindedDefault", { minutes: businessDefault }) : t("settings.notifications.reminded", { minutes: value }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save your meeting reminders. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.notifications.saveError"));
     }
   }
 
   return (
     <div className="flex flex-col gap-4" data-testid="account-notifications">
-      <AccountPaneHeader title="Notifications" description="How Spine tells you about what needs you. These are yours; the business's defaults are named where they apply." />
+      <AccountPaneHeader title={t("settings.notifications.title")} description={t("settings.notifications.description")} />
       {error && (
         <p className="text-[13px] text-overdue" role="alert">
           {error}
@@ -57,25 +59,25 @@ export function AccountNotificationsPane() {
         timeZone={account.orgDefaults.timeZone}
         onSaved={(next) => {
           setAccount({ ...account, ...next });
-          toast(next.digestEnabled ? `Daily digest on: ${next.digestDays === "daily" ? "every day" : "Monday to Friday"}.` : "Daily digest turned off.", "Change it here any time.");
+          toast(next.digestEnabled ? t("settings.notifications.digestOn", { days: next.digestDays === "daily" ? t("settings.notifications.everyDay") : t("settings.notifications.weekdays") }) : t("settings.notifications.digestOff"), t("settings.notifications.changeAnyTime"));
         }}
         onError={setError}
       />
-      <AccountCard title="Meeting reminders" description="How long before a meeting you're attending starts we remind you.">
+      <AccountCard title={t("settings.notifications.remindersTitle")} description={t("settings.notifications.remindersDescription")}>
         <ToggleGroup
           type="single"
           value={account.meetingReminderLeadMinutes === null ? "" : String(account.meetingReminderLeadMinutes)}
           onValueChange={(v) => v !== undefined && void setLead(v)}
           className="w-fit flex-wrap rounded-sm bg-surface-sunken p-0.5"
-          aria-label="Meeting reminders"
+          aria-label={t("settings.notifications.remindersTitle")}
         >
           <ToggleGroupItem value="" className="h-8 gap-1.5 px-3">
             <AlarmClock size={14} aria-hidden />
-            Business default · {businessDefault} min
+            {t("settings.notifications.businessDefault", { minutes: businessDefault })}
           </ToggleGroupItem>
           {LEADS.map((m) => (
             <ToggleGroupItem key={m} value={String(m)} className="h-8 px-3">
-              {m} min
+              {t("settings.notifications.minutes", { minutes: m })}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

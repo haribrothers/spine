@@ -7,6 +7,7 @@ import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
 import type { Invoice } from "../invoices/types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * US-INV-37 (D-219) — "New credit note" from the credit notes list: which
@@ -15,6 +16,7 @@ import type { Invoice } from "../invoices/types";
  * job; Continue opens the issue dialog for the one picked.
  */
 export function NewCreditNoteDialog({ open, onOpenChange, onPicked }: { open: boolean; onOpenChange: (open: boolean) => void; onPicked: (invoice: Invoice) => void }) {
+  const t = useT();
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
@@ -41,22 +43,22 @@ export function NewCreditNoteDialog({ open, onOpenChange, onPicked }: { open: bo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>New credit note</DialogTitle>
-          <DialogDescription>Which invoice does it correct? Only issued invoices with something left to credit are listed.</DialogDescription>
+          <DialogTitle>{t("creditNotes.newDialog.title")}</DialogTitle>
+          <DialogDescription>{t("creditNotes.newDialog.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-            <Input type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by number, customer or job" aria-label="Search invoices to credit" className="pl-9" />
+            <Input type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("creditNotes.newDialog.searchPlaceholder")} aria-label={t("creditNotes.newDialog.searchAria")} className="pl-9" />
           </div>
           {!invoices ? (
             <div className="flex justify-center py-6">
               <Spinner size="sm" />
             </div>
           ) : shown.length === 0 ? (
-            <p className="py-2 text-[13px] text-on-surface-muted">{q.trim() ? `No issued invoice matches “${q.trim()}”.` : "No issued invoice has anything left to credit."}</p>
+            <p className="py-2 text-[13px] text-on-surface-muted">{q.trim() ? t("creditNotes.newDialog.noMatch", { q: q.trim() }) : t("creditNotes.newDialog.noneLeft")}</p>
           ) : (
-            <div role="listbox" aria-label="Invoices" className="overflow-hidden rounded-md border border-border">
+            <div role="listbox" aria-label={t("creditNotes.newDialog.listAria")} className="overflow-hidden rounded-md border border-border">
               {shown.map((inv) => (
                 <button
                   key={inv.id}
@@ -73,11 +75,11 @@ export function NewCreditNoteDialog({ open, onOpenChange, onPicked }: { open: bo
                   <span className="min-w-0">
                     <span className="block text-[13.5px] font-semibold text-on-surface">{inv.number}</span>
                     <span className="block truncate text-[12.5px] text-on-surface-muted">
-                      {[inv.contactName, inv.issueDate ? `issued ${calendarDate(inv.issueDate, today, orgLocaleTag())}` : null, formatMoney(BigInt(inv.totalAmount), inv.currency)].filter(Boolean).join(" · ")}
+                      {[inv.contactName, inv.issueDate ? t("creditNotes.newDialog.issuedOn", { date: calendarDate(inv.issueDate, today, orgLocaleTag()) }) : null, formatMoney(BigInt(inv.totalAmount), inv.currency)].filter(Boolean).join(" · ")}
                     </span>
                   </span>
                   <span className="text-right">
-                    <span className="block text-[12px] text-on-surface-muted">Left to credit</span>
+                    <span className="block text-[12px] text-on-surface-muted">{t("creditNotes.newDialog.leftToCredit")}</span>
                     <span className="block text-[13.5px] tabular-nums text-on-surface">{formatMoney(BigInt(inv.leftToCredit ?? "0"), inv.currency)}</span>
                   </span>
                 </button>
@@ -87,10 +89,10 @@ export function NewCreditNoteDialog({ open, onOpenChange, onPicked }: { open: bo
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("creditNotes.newDialog.cancel")}
           </Button>
           <Button type="button" disabled={!chosen} onClick={() => chosen && onPicked(chosen)}>
-            Continue
+            {t("creditNotes.newDialog.continue")}
           </Button>
         </DialogFooter>
       </DialogContent>

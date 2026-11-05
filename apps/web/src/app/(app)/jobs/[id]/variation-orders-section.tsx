@@ -18,11 +18,12 @@ import {
   useConfirm,
 } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import { t as translate, useT } from "../../../../lib/i18n";
 import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/place-of-supply";
 import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobVariationOrder } from "../types";
 import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLine } from "./variation-order-line-editor";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { useToast } from "../../../../components/toast-host";
 
 import { SectionLink } from "../../../../components/section-link";
@@ -31,6 +32,13 @@ const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], str
   sent: "bg-due-soon-bg text-due-soon",
   accepted: "bg-paid-bg text-paid",
   rejected: "bg-overdue-bg text-overdue",
+};
+
+const QUOTE_STATUS_LABELS: Record<JobVariationOrder["quote"]["status"], string> = {
+  draft: translate("jobs.variations.quoteStatus.draft"),
+  sent: translate("jobs.variations.quoteStatus.sent"),
+  accepted: translate("jobs.variations.quoteStatus.accepted"),
+  rejected: translate("jobs.variations.quoteStatus.rejected"),
 };
 
 /**
@@ -45,6 +53,7 @@ const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], str
  */
 /** `raiseRequest` — the job page's "Raise variation" (US-JOB-34) opens the create dialog when it changes. */
 export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: { job: Job; onJobChanged: () => void; raiseRequest?: number }) {
+  const t = useT();
   const canCreate = useCapability("variation_orders.edit_own");
   const canApply = useCapability("variation_orders.apply");
   const showToast = useToast();
@@ -63,8 +72,8 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
     apiClient
       .get<JobVariationOrder[]>(`/jobs/${job.id}/variation-orders`)
       .then(setVariations)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load variation orders."));
-  }, [job.id]);
+      .catch((err) => setError(err instanceof Error ? err.message : t("jobs.variations.loadFailed")));
+  }, [job.id, t]);
 
   useEffect(() => {
     load();
@@ -83,7 +92,7 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
   async function handleCreate() {
     setCreateError(null);
     if (!lines.length || lines.some((l) => l.type === "item" && !l.name.trim())) {
-      setCreateError("Every line needs a name.");
+      setCreateError(t("jobs.variations.lineNeedsName"));
       return;
     }
     setSaving(true);
@@ -109,7 +118,7 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
       load();
       onJobChanged();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Could not create this variation order.");
+      setCreateError(err instanceof Error ? err.message : t("jobs.variations.createFailed"));
     } finally {
       setSaving(false);
     }
@@ -118,11 +127,11 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
   async function handleApply(variationOrderId: string) {
     const v = variations?.find((o) => o.id === variationOrderId);
     const ok = await confirm({
-      title: "Apply this variation to the job?",
+      title: t("jobs.variations.applyTitle"),
       description: v
-        ? `${formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)} from ${v.quote.number ?? "the variation quote"} is added to ${job.name}'s contract value, and its percentage milestones are worked out again. This can't be undone.`
-        : "Its amount is added to the job's contract value, and its percentage milestones are worked out again. This can't be undone.",
-      confirmLabel: "Apply to job",
+        ? t("jobs.variations.applyDescription", { amount: formatMoney(BigInt(v.quote.totalAmount), v.quote.currency), quote: v.quote.number ?? t("jobs.variations.theVariationQuote"), job: job.name })
+        : t("jobs.variations.applyDescriptionGeneric"),
+      confirmLabel: t("jobs.variations.applyConfirm"),
     });
     if (!ok) return;
     setError(null);
@@ -130,13 +139,13 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
     try {
       await apiClient.post(`/jobs/${job.id}/variation-orders/${variationOrderId}/apply`);
       showToast(
-        "Variation applied",
-        v ? `${formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)} from ${v.quote.number ?? "the variation quote"} is now part of ${job.name}'s contract value.` : `${job.name}'s contract value has been updated.`,
+        t("jobs.variations.applied"),
+        v ? t("jobs.variations.appliedDescription", { amount: formatMoney(BigInt(v.quote.totalAmount), v.quote.currency), quote: v.quote.number ?? t("jobs.variations.theVariationQuote"), job: job.name }) : t("jobs.variations.appliedDescriptionGeneric", { job: job.name }),
       );
       load();
       onJobChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not apply this variation order.");
+      setError(err instanceof Error ? err.message : t("jobs.variations.applyFailed"));
     } finally {
       setApplyingId(null);
     }
@@ -151,10 +160,10 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
       )}
 
       <div className="flex items-center justify-between">
-        <h3 className="text-[14px] font-semibold text-on-surface">Variation orders</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("jobs.variations.title")}</h3>
         {canCreate && (
           <Button variant="secondary" size="sm" onClick={openCreate}>
-            Raise variation order
+            {t("jobs.variations.raise")}
           </Button>
         )}
       </div>
@@ -165,7 +174,7 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
         </div>
       ) : variations.length === 0 ? (
         <p className="text-[13px] text-on-surface-muted">
-          No variation orders yet — raise one when the scope of this job changes so it's tracked and billed separately.
+          {t("jobs.variations.empty")}
         </p>
       ) : (
         <div className="flex flex-col divide-y divide-border">
@@ -174,16 +183,16 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
               <div>
                 <div className="flex items-center gap-2">
                   <SectionLink href={`/quotes/${v.quoteId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
-                    {v.quote.number ?? "Draft variation quote"}
+                    {v.quote.number ?? t("jobs.variations.draftQuote")}
                   </SectionLink>
                   <Badge className={QUOTE_STATUS_BADGE_CLASS[v.quote.status]}>
-                    {v.quote.status.charAt(0).toUpperCase() + v.quote.status.slice(1)}
+                    {QUOTE_STATUS_LABELS[v.quote.status]}
                   </Badge>
-                  {v.appliedAt && <Badge className="bg-paid-bg text-paid">Applied</Badge>}
+                  {v.appliedAt && <Badge className="bg-paid-bg text-paid">{t("jobs.variations.appliedBadge")}</Badge>}
                 </div>
                 <p className="text-[12px] text-on-surface-muted">
-                  Raised {new Date(v.createdAt).toLocaleDateString()}
-                  {v.appliedAt && <> · Applied {new Date(v.appliedAt).toLocaleDateString()}</>}
+                  {t("jobs.variations.raisedOn", { date: new Date(v.createdAt).toLocaleDateString(orgLocaleTag()) })}
+                  {v.appliedAt && <>{t("jobs.variations.appliedOn", { date: new Date(v.appliedAt).toLocaleDateString(orgLocaleTag()) })}</>}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -192,7 +201,7 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
                 </span>
                 {!v.appliedAt && v.quote.status === "accepted" && canApply && (
                   <Button size="sm" onClick={() => handleApply(v.id)} disabled={applyingId === v.id}>
-                    {applyingId === v.id ? <Spinner size="sm" /> : "Apply to job"}
+                    {applyingId === v.id ? <Spinner size="sm" /> : t("jobs.variations.applyConfirm")}
                   </Button>
                 )}
               </div>
@@ -204,10 +213,9 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent size="lg">
           <DialogHeader>
-            <DialogTitle>Raise a variation order</DialogTitle>
+            <DialogTitle>{t("jobs.variations.dialogTitle")}</DialogTitle>
             <DialogDescription>
-              Creates a draft quote linked to this job for {job.contactName ?? "the job's contact"}. Send and get it accepted through
-              the ordinary quote flow, then apply it here to fold the change into the job's contract value.
+              {t("jobs.variations.dialogDescription", { name: job.contactName ?? t("jobs.variations.theJobsContact") })}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
@@ -221,10 +229,10 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)} disabled={saving}>
-              Cancel
+              {t("jobs.variations.cancel")}
             </Button>
             <Button type="button" onClick={handleCreate} disabled={saving}>
-              {saving ? <Spinner size="sm" /> : "Create variation order"}
+              {saving ? <Spinner size="sm" /> : t("jobs.variations.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

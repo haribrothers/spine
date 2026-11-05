@@ -6,6 +6,7 @@ import { apiClient } from "../../../lib/api-client";
 import { BusinessProfileStep, type BusinessProfileValue } from "../../onboarding/steps/business-profile-step";
 import { useSettingsValue } from "../use-settings-value";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
 
 /**
  * S-10.1 — business profile, editable independent of onboarding. Mounts the
@@ -19,6 +20,7 @@ import { SavedToast } from "../saved-toast";
  * into a pane hosted by SettingsDialog — content/logic unchanged.
  */
 export function BusinessPane() {
+  const t = useT();
   const { value, ready } = useSettingsValue<BusinessProfileValue>("business_profile", { name: "" });
   const [saved, setSaved] = useState(false);
 
@@ -33,12 +35,12 @@ export function BusinessPane() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Business profile</h2>
-        <p className="text-[13px] text-on-surface-muted">Name, logo and address — shown on quotes and invoices.</p>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.business.title")}</h2>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.business.description")}</p>
       </div>
       <BusinessProfileStep
         initialValue={value}
-        saveLabel="Save"
+        saveLabel={t("settings.common.save")}
         onSave={async (v) => {
           await apiClient.put("/org/settings/business_profile", { value: v });
           setSaved(true);

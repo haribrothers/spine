@@ -659,7 +659,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-13 · Recover from an unexpected error
 - [x] US-OPS-14 · Use the web app on a phone
 - [x] US-OPS-15 · Keep wide tables usable on small screens
-- [ ] US-OPS-16 · Move every user-facing string into translation files
+- [x] US-OPS-16 · Move every user-facing string into translation files
 - [x] US-OPS-17 · Pass an accessibility audit of every screen
 - [ ] US-OPS-18 · Complete a security review before 1.0
 - [ ] US-OPS-19 · Ship the README, licence and contributor guide

@@ -20,8 +20,10 @@ import { apiClient } from "../../../lib/api-client";
 import { useModules } from "../../../lib/modules-context";
 import { useOpenSettings } from "../../../components/settings-route";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
+import { orgLocaleTag } from "../../../lib/money";
 
-const shortDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const shortDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 
 /**
  * US-SET-23 (D-154) — Settings › Modules: switch off what the business
@@ -29,6 +31,7 @@ const shortDate = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateStrin
  * nothing is deleted. Owner-only (the pane, and the API).
  */
 export function ModulesPane() {
+  const t = useT();
   const { refresh } = useModules();
   const [saved, setSaved] = useState<ModulesResponse | null>(null);
   const [draft, setDraft] = useState<ModuleSettings | null>(null);
@@ -61,7 +64,7 @@ export function ModulesPane() {
         setSaved(m);
         setDraft({ leadsMeetings: m.leadsMeetings, jobsField: m.jobsField, approvals: m.approvals, recurring: m.recurring });
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "The modules didn't load. Try again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("settings.modules.loadError")));
   }, []);
 
   if (!draft || !saved) {
@@ -94,7 +97,7 @@ export function ModulesPane() {
       setToast(true);
       refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The modules weren't saved. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.modules.saveError"));
       // The field app's users block switching Jobs & field off: the switch stays on.
       setDraft({ ...draft!, jobsField: saved!.jobsField || draft!.jobsField });
     } finally {
@@ -105,8 +108,8 @@ export function ModulesPane() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Modules</h2>
-        <p className="text-[13px] text-on-surface-muted">Switch off what your business doesn&apos;t use. Everyone sees a simpler Spine; nothing is deleted.</p>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.modules.title")}</h2>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.modules.description")}</p>
       </div>
 
       <ul className="flex flex-col gap-3" data-testid="modules-list">
@@ -121,7 +124,7 @@ export function ModulesPane() {
                 </p>
                 <p id={`${id}-description`} className="text-[13px] text-on-surface-muted">
                   {MODULES[key].description}
-                  {offSince && ` Switched off ${shortDate(offSince)}${key === "recurring" ? " — schedules are paused." : "."}`}
+                  {offSince && (key === "recurring" ? t("settings.modules.switchedOffPaused", { date: shortDate(offSince) }) : t("settings.modules.switchedOff", { date: shortDate(offSince) }))}
                 </p>
               </div>
               <Switch aria-labelledby={`${id}-label`} aria-describedby={`${id}-description`} checked={draft[key]} onCheckedChange={(on) => toggle(key, on)} />
@@ -137,9 +140,9 @@ export function ModulesPane() {
             <p className="text-[13px] text-on-surface-muted">{MODULES.ai.description}</p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <span className="text-[12.5px] font-medium text-on-surface-muted">{ai?.enabled ? `On · ${ai.providerHost}` : "Off"}</span>
+            <span className="text-[12.5px] font-medium text-on-surface-muted">{ai?.enabled ? t("settings.modules.onWithHost", { host: ai.providerHost }) : t("settings.modules.off")}</span>
             <Button variant="secondary" size="sm" aria-describedby="module-ai-label" onClick={() => openSettings("ai")}>
-              Set up in AI assistant
+              {t("settings.modules.setUpAi")}
               <ArrowRight size={14} aria-hidden />
             </Button>
           </div>
@@ -153,9 +156,9 @@ export function ModulesPane() {
             <p className="text-[13px] text-on-surface-muted">{MODULES.agents.description}</p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <span className="text-[12.5px] font-medium text-on-surface-muted">{agents?.enabled ? "On" : "Off"}</span>
+            <span className="text-[12.5px] font-medium text-on-surface-muted">{agents?.enabled ? t("settings.modules.on") : t("settings.modules.off")}</span>
             <Button variant="secondary" size="sm" aria-describedby="module-agents-label" onClick={() => openSettings("agents")}>
-              Set up in Connected agents
+              {t("settings.modules.setUpAgents")}
               <ArrowRight size={14} aria-hidden />
             </Button>
           </div>
@@ -175,7 +178,7 @@ export function ModulesPane() {
       )}
       <div className="flex justify-end">
         <Button onClick={() => void save()} disabled={saving}>
-          {saving ? <Spinner size="sm" /> : "Save"}
+          {saving ? <Spinner size="sm" /> : t("settings.common.save")}
         </Button>
       </div>
       <SavedToast open={toast} onOpenChange={setToast} />
@@ -183,15 +186,15 @@ export function ModulesPane() {
       <AlertDialog open={confirmOff !== null} onOpenChange={(open) => !open && setConfirmOff(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Switch off {confirmOff ? MODULES[confirmOff].label.toLowerCase() : ""}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.modules.switchOffConfirm.title", { module: confirmOff ? MODULES[confirmOff].label.toLowerCase() : "" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmOff && `${MODULES[confirmOff].includes.charAt(0).toUpperCase()}${MODULES[confirmOff].includes.slice(1)} disappear for everyone. `}
+              {confirmOff && t("settings.modules.switchOffConfirm.disappear", { what: `${MODULES[confirmOff].includes.charAt(0).toUpperCase()}${MODULES[confirmOff].includes.slice(1)}` })}
               {SWITCH_OFF_REASSURANCE}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep it on</AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmOff && setDraft((d) => (d ? { ...d, [confirmOff]: false } : d))}>Switch off</AlertDialogAction>
+            <AlertDialogCancel>{t("settings.modules.switchOffConfirm.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmOff && setDraft((d) => (d ? { ...d, [confirmOff]: false } : d))}>{t("settings.modules.switchOffConfirm.confirm")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

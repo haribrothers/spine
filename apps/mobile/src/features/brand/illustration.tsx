@@ -9,6 +9,7 @@ import MapPin from "lucide-react-native/icons/map-pin";
 import Receipt from "lucide-react-native/icons/receipt";
 import { SPINE_MARK_LAYERS, useNativeColors } from "@spine/ui-native";
 import { brandColors, darkColors, lightColors } from "@spine/ui-native/tokens";
+import { useT } from "../../lib/i18n";
 
 /**
  * D-203, D-204 — the parts Welcome (US-MOB-26) and Sign in (US-MOB-01) draw
@@ -101,21 +102,24 @@ function Chip({ tone, children }: { tone: "due" | "paid"; children: string }) {
 
 /** Today's job: "Marina office fit-out", its address and when it's due. */
 export function JobCard({ showDue = true }: { showDue?: boolean }) {
+  const t = useT();
   const colors = useNativeColors();
   return (
     <WorkCard>
       <View className="flex-row items-center gap-1.5">
         <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: brandColors.teal }} />
-        <Kicker>Today · 8:00</Kicker>
+        <Kicker>{t("mobileApp.illustration.todayAt")}</Kicker>
       </View>
+      {/* eslint-disable-next-line i18next/no-literal-string -- sample work in a decorative illustration, hidden from screen readers */}
       <Text numberOfLines={1} className="mt-0.5 text-[14px] font-semibold text-on-surface dark:text-on-surface-dark">
         Marina office fit-out
       </Text>
       <View className="flex-row items-center">
+        {/* eslint-disable-next-line i18next/no-literal-string -- sample work in a decorative illustration, hidden from screen readers */}
         <Meta icon={<MapPin size={13} color={colors.onSurfaceMuted} />}>14 Harbour St</Meta>
         {showDue ? (
           <View className="ml-auto mt-1.5">
-            <Chip tone="due">Due Sat</Chip>
+            <Chip tone="due">{t("mobileApp.illustration.dueSat")}</Chip>
           </View>
         ) : null}
       </View>
@@ -124,20 +128,24 @@ export function JobCard({ showDue = true }: { showDue?: boolean }) {
 }
 
 /** A site photo on a polaroid: the striped placeholder used across the app's designs. */
-export function PhotoCard({ label = "3 photos saved", photoHeight = 66 }: { label?: string; photoHeight?: number }) {
+export function PhotoCard({ label, photoHeight = 66 }: { label?: string; photoHeight?: number }) {
+  const t = useT();
   const colors = useNativeColors();
+  // Only the default line ("3 photos saved") has the tick.
+  const saved = label === undefined;
   return (
     <WorkCard className="px-1.5 pb-2 pt-1.5">
       <View style={{ height: photoHeight }} className="items-center justify-center rounded-[9px] bg-surface-sunken dark:bg-surface-sunken-dark">
         <Camera size={22} color={colors.onSurfaceMuted} />
       </View>
-      <Meta icon={label.includes("saved") ? <Check size={13} color={colors.paid} /> : undefined}>{label}</Meta>
+      <Meta icon={saved ? <Check size={13} color={colors.paid} /> : undefined}>{label ?? t("mobileApp.illustration.photosSaved")}</Meta>
     </WorkCard>
   );
 }
 
 /** A fuel receipt and its amount. */
 export function ReceiptCard() {
+  const t = useT();
   const colors = useNativeColors();
   return (
     <WorkCard className="flex-row items-center gap-2.5 px-3 py-2.5">
@@ -145,7 +153,7 @@ export function ReceiptCard() {
         <Receipt size={18} color={colors.dueSoon} />
       </View>
       <View>
-        <Kicker>Fuel</Kicker>
+        <Kicker>{t("mobileApp.illustration.fuel")}</Kicker>
         <Text className="text-[14px] font-semibold text-on-surface dark:text-on-surface-dark">$64.20</Text>
       </View>
     </WorkCard>
@@ -157,13 +165,16 @@ export const SIGNATURE_PATH = "M4 22c8-12 15-16 17-9s-5 12 0 9 10-16 15-12-2 14 
 export const SIGNATURE_LENGTH = 400;
 
 export function QuoteCard({ signature }: { signature: ReactNode }) {
+  const t = useT();
   return (
     <WorkCard>
       <View className="flex-row items-center">
+        {/* eslint-disable-next-line i18next/no-literal-string -- sample work in a decorative illustration, hidden from screen readers */}
         <Kicker>QUO-0004</Kicker>
-        <Chip tone="paid">Signed</Chip>
+        <Chip tone="paid">{t("mobileApp.illustration.signed")}</Chip>
       </View>
       {signature}
+      {/* eslint-disable-next-line i18next/no-literal-string -- sample work in a decorative illustration, hidden from screen readers */}
       <Meta>Alan Reyes</Meta>
     </WorkCard>
   );
@@ -171,12 +182,14 @@ export function QuoteCard({ signature }: { signature: ReactNode }) {
 
 /** "Foundations · Completed": a milestone ticked off from the phone (US-MOB-15). */
 export function MilestonePill({ compact = false }: { compact?: boolean }) {
+  const t = useT();
   const colors = useNativeColors();
   return (
     <WorkCard className={`flex-row items-center gap-2 rounded-full ${compact ? "h-[34px] pl-2 pr-3" : "h-10 pl-2.5 pr-4"}`}>
       <CircleCheck size={compact ? 16 : 18} color={colors.paid} />
+      {/* eslint-disable-next-line i18next/no-literal-string -- sample work in a decorative illustration, hidden from screen readers */}
       <Text className={`${compact ? "text-[12px]" : "text-[13px]"} font-semibold text-on-surface dark:text-on-surface-dark`}>Foundations</Text>
-      {compact ? null : <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Completed</Text>}
+      {compact ? null : <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileApp.illustration.completed")}</Text>}
     </WorkCard>
   );
 }

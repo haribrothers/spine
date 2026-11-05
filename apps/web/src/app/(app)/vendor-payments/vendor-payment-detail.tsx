@@ -32,6 +32,7 @@ import { HistorySection } from "../../../components/history-section";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
+import { useT } from "../../../lib/i18n";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { RemittanceEmailDialog } from "./remittance-email-dialog";
 import { VendorPaymentActivity } from "./vendor-payment-activity";
@@ -52,6 +53,7 @@ import { useLoadFailure } from "../../../lib/use-load-failure";
  * `?action=email|delete` (from a row's menu) opens that dialog.
  */
 export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
+  const t = useT();
   const loadFailed = useLoadFailure(paymentId);
   const router = useRouter();
   const showToast = useToast();
@@ -76,7 +78,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
     apiClient
       .get<VendorPaymentDetailData>(`/vendor-payments/${paymentId}`)
       .then(setPayment)
-      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this payment."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("vendorPayments.detail.loadFailed")));
   }, [paymentId]);
 
   useEffect(() => {
@@ -92,8 +94,8 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
   }, [payment, canEmail]);
 
   const money = (v: string | bigint) => formatMoney(BigInt(v), payment?.currency ?? "USD");
-  const number = payment?.number ?? "Vendor payment";
-  const vendor = payment?.contactName ?? "the vendor";
+  const number = payment?.number ?? t("vendorPayments.detail.fallbackTitle");
+  const vendor = payment?.contactName ?? t("vendorPayments.detail.theVendor");
 
   async function download() {
     if (!payment) return;
@@ -103,7 +105,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
       const { blob, headers } = await apiClient.download(`/vendor-payments/${payment.id}/remittance.pdf`);
       saveBlob(blob, filenameFrom(headers, `remittance-${number}.pdf`));
     } catch (err) {
-      setActionError({ title: "Couldn't download the remittance advice.", message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("vendorPayments.detail.downloadFailed"), message: err instanceof Error ? err.message : t("vendorPayments.detail.tryAgain") });
     } finally {
       setDownloading(false);
     }
@@ -115,22 +117,34 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
       setReconciledOpen(true);
       return;
     }
-    const owes = payment.paidTo.map((b, i) => `${b.billNumber} ${i === 0 ? "will owe" : ""} ${money(b.amount)}${BigInt(b.billBalance) > 0n ? " more" : " again"}`.replace(/\s+/g, " "));
-    const list = owes.length <= 1 ? owes[0] : `${owes.slice(0, -1).join(", ")} and ${owes.at(-1)}`;
+    const owes = payment.paidTo.map((b, i) => {
+      const more = BigInt(b.billBalance) > 0n;
+      const values = { number: b.billNumber, amount: money(b.amount) };
+      const text =
+        i === 0
+          ? more
+            ? t("vendorPayments.detail.owesFirstMore", values)
+            : t("vendorPayments.detail.owesFirstAgain", values)
+          : more
+            ? t("vendorPayments.detail.owesMore", values)
+            : t("vendorPayments.detail.owesAgain", values);
+      return text.replace(/\s+/g, " ");
+    });
+    const list = owes.length <= 1 ? owes[0] : t("vendorPayments.detail.listAnd", { rest: owes.slice(0, -1).join(", "), last: owes.at(-1) ?? "" });
     const ok = await confirm({
-      title: `Delete ${number}?`,
-      description: `It's removed for good, and a reversing entry posts today.${list ? ` ${list}.` : ""}`,
-      confirmLabel: "Delete payment",
+      title: t("vendorPayments.detail.deleteTitle", { number }),
+      description: list ? t("vendorPayments.detail.deleteDescriptionWithList", { list }) : t("vendorPayments.detail.deleteDescription"),
+      confirmLabel: t("vendorPayments.detail.deletePayment"),
       danger: true,
     });
     if (!ok) return;
     setActionError(null);
     try {
       await apiClient.delete(`/vendor-payments/${payment.id}`);
-      showToast(`${number} deleted`, payment.paidTo.length ? `The bills it paid owe again, and its entry was reversed.` : "Its entry was reversed.");
+      showToast(t("vendorPayments.detail.deletedToast", { number }), payment.paidTo.length ? t("vendorPayments.detail.deletedBillsOweAgain") : t("vendorPayments.detail.deletedReversed"));
       router.push("/vendor-payments");
     } catch (err) {
-      setActionError({ title: `Couldn't delete ${number}.`, message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("vendorPayments.detail.deleteFailed", { number }), message: err instanceof Error ? err.message : t("vendorPayments.detail.tryAgain") });
     }
   }
 
@@ -164,15 +178,15 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
   const method = PAYMENT_METHOD_LABELS[payment.method];
   const date = calendarDate(payment.date.slice(0, 10), today, locale);
   const emailIsNext = canEmail && mail !== null && mail.ready && Boolean(mail.to) && payment.paidTo.length > 0;
-  const emailWhyNot = !mail ? null : !mail.ready ? "Set up email sending first" : !mail.to ? `Add an email address for ${vendor}` : null;
+  const emailWhyNot = !mail ? null : !mail.ready ? t("vendorPayments.detail.setUpEmail") : !mail.to ? t("vendorPayments.detail.addEmail", { vendor }) : null;
   const full = payment.paidTo.filter((b) => BigInt(b.billBalance) === 0n);
   const part = payment.paidTo.filter((b) => BigInt(b.billBalance) > 0n);
-  const billsSub = [full.length ? `${full.map((b) => b.billNumber).join(", ")} in full` : null, part.length ? `part of ${part.map((b) => b.billNumber).join(", ")}` : null].filter(Boolean).join(", ");
+  const billsSub = [full.length ? t("vendorPayments.detail.inFull", { bills: full.map((b) => b.billNumber).join(", ") }) : null, part.length ? t("vendorPayments.detail.partOf", { bills: part.map((b) => b.billNumber).join(", ") }) : null].filter(Boolean).join(", ");
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <Breadcrumb items={[{ label: "Purchases" }, { label: "Vendor payments", href: "/vendor-payments" }, { label: number }]} />
+        <Breadcrumb items={[{ label: t("vendorPayments.detail.breadcrumbPurchases") }, { label: t("vendorPayments.detail.breadcrumbVendorPayments"), href: "/vendor-payments" }, { label: number }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
             <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{number}</h1>
@@ -180,7 +194,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
                 <SectionLink href={`/contacts/${payment.contactId}`} className="font-medium text-primary hover:underline">
-                  {payment.contactName ?? "Unknown vendor"}
+                  {payment.contactName ?? t("vendorPayments.detail.unknownVendor")}
                 </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
@@ -194,7 +208,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
               {payment.moneyAccount && (
                 <span className="inline-flex items-center gap-1.5">
                   <Landmark size={14} aria-hidden />
-                  Paid from {payment.moneyAccount.name}
+                  {t("vendorPayments.detail.paidFrom", { account: payment.moneyAccount.name })}
                 </span>
               )}
               {payment.reference && (
@@ -208,18 +222,18 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
           <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="vendor-payment-actions">
             <Button variant={emailIsNext ? "secondary" : "primary"} onClick={() => void download()} disabled={downloading}>
               {downloading ? <Spinner size="sm" /> : <Download size={14} aria-hidden />}
-              Download remittance advice
+              {t("vendorPayments.detail.downloadRemittance")}
             </Button>
             {emailIsNext && (
               <Button onClick={() => setEmailOpen(true)}>
                 <Mail size={14} aria-hidden />
-                Email remittance advice
+                {t("vendorPayments.detail.emailRemittance")}
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
-                  More <ChevronDown size={14} />
+                  {t("vendorPayments.detail.more")} <ChevronDown size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -227,27 +241,27 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
                   <DropdownMenuItem disabled={Boolean(emailWhyNot) || payment.paidTo.length === 0} onSelect={() => setEmailOpen(true)}>
                     <MENU_ICONS.email aria-hidden />
                     <span className="flex flex-col">
-                      Email remittance advice
+                      {t("vendorPayments.detail.emailRemittance")}
                       {emailWhyNot && <span className="text-[11.5px]">{emailWhyNot}</span>}
                     </span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
                   <MENU_ICONS.history aria-hidden />
-                  View history
+                  {t("vendorPayments.detail.viewHistory")}
                 </DropdownMenuItem>
                 {canDelete && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem destructive onSelect={() => void remove()}>
                       <MENU_ICONS.delete aria-hidden />
-                      Delete payment
+                      {t("vendorPayments.detail.deletePayment")}
                     </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel="this vendor payment" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel={t("vendorPayments.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
           </div>
         </div>
       </div>
@@ -256,15 +270,15 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
 
       <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-2" data-testid="vendor-payment-figures">
         <div className="flex flex-col gap-0.5 px-4 py-3">
-          <span className="text-[12px] text-on-surface-muted">Paid</span>
+          <span className="text-[12px] text-on-surface-muted">{t("vendorPayments.detail.paid")}</span>
           <span className="text-[20px] font-semibold tabular-nums text-on-surface">{money(payment.amount)}</span>
           <span className="text-[12px] text-on-surface-muted">
             {method} · {date}
           </span>
         </div>
         <div className="flex flex-col gap-0.5 border-t border-border px-4 py-3 sm:border-l sm:border-t-0">
-          <span className="text-[12px] text-on-surface-muted">Bills paid</span>
-          <span className="text-[20px] font-semibold text-on-surface">{payment.paidTo.length === 1 ? payment.paidTo[0]!.billNumber : `${payment.paidTo.length} bills`}</span>
+          <span className="text-[12px] text-on-surface-muted">{t("vendorPayments.detail.billsPaid")}</span>
+          <span className="text-[20px] font-semibold text-on-surface">{payment.paidTo.length === 1 ? payment.paidTo[0]!.billNumber : t("vendorPayments.detail.billCount", { count: payment.paidTo.length })}</span>
           <span className="text-[12px] text-on-surface-muted">{billsSub || "—"}</span>
         </div>
       </div>
@@ -272,16 +286,16 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Card className="p-0" data-testid="vendor-payment-paid-to">
-            <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">Paid to</h3>
+            <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorPayments.detail.paidTo")}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-[13.5px]">
                 <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
                   <tr>
-                    <th className="px-4 py-2 text-left font-medium">Bill</th>
-                    <th className="px-4 py-2 text-right font-medium">Bill total</th>
-                    <th className="px-4 py-2 text-right font-medium">From this payment</th>
-                    <th className="px-4 py-2 text-right font-medium">Still owes</th>
-                    <th className="px-4 py-2 text-right font-medium">Due</th>
+                    <th className="px-4 py-2 text-left font-medium">{t("vendorPayments.detail.bill")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("vendorPayments.detail.billTotal")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("vendorPayments.detail.fromThisPayment")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("vendorPayments.detail.stillOwes")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("vendorPayments.detail.due")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,11 +305,11 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
                         <SectionLink href={`/vendor-bills/${b.billId}`} className="font-medium text-primary hover:underline">
                           {b.billNumber}
                         </SectionLink>
-                        {b.billDate && <span className="block text-[12px] text-on-surface-muted">Billed {calendarDate(b.billDate, today, locale)}</span>}
+                        {b.billDate && <span className="block text-[12px] text-on-surface-muted">{t("vendorPayments.detail.billed", { date: calendarDate(b.billDate, today, locale) })}</span>}
                       </td>
                       <td className="px-4 py-2.5 text-right tabular-nums">{money(b.billTotal)}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums">{money(b.amount)}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">{BigInt(b.billBalance) > 0n ? money(b.billBalance) : <span className="font-medium text-paid">Paid</span>}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">{BigInt(b.billBalance) > 0n ? money(b.billBalance) : <span className="font-medium text-paid">{t("vendorPayments.detail.paid")}</span>}</td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-right">{b.dueDate ? calendarDate(b.dueDate, today, locale) : "—"}</td>
                     </tr>
                   ))}
@@ -306,7 +320,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
           <AttachmentsSection entityType="vendor_payment" entityId={payment.id} />
           {payment.notes && (
             <Card className="p-0">
-              <h3 className="px-4 pb-1 pt-4 text-[14px] font-semibold text-on-surface">Notes</h3>
+              <h3 className="px-4 pb-1 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorPayments.detail.notes")}</h3>
               <p className="px-4 pb-4 text-[13.5px] text-on-surface">{payment.notes}</p>
             </Card>
           )}
@@ -321,26 +335,26 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
         number={number}
         vendorName={vendor}
         onSent={(to) => {
-          showToast("Remittance advice sent", `${number}'s remittance advice went to ${to}.`);
+          showToast(t("vendorPayments.detail.remittanceSent"), t("vendorPayments.detail.remittanceSentDescription", { number, to }));
           setRefreshKey((k) => k + 1);
         }}
       />
       <Dialog open={reconciledOpen} onOpenChange={setReconciledOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Can&apos;t delete {number} yet</DialogTitle>
+            <DialogTitle>{t("vendorPayments.detail.cantDeleteTitle", { number })}</DialogTitle>
             <DialogDescription>
-              {number} is matched to a bank statement line{payment.moneyAccount ? ` in ${payment.moneyAccount.name}` : ""}. Unmatch it in Banking first, then delete it — so your reconciled figures don&apos;t change.
+              {payment.moneyAccount ? t("vendorPayments.detail.reconciledDescriptionInAccount", { number, account: payment.moneyAccount.name }) : t("vendorPayments.detail.reconciledDescription", { number })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setReconciledOpen(false)}>
-              Close
+              {t("vendorPayments.detail.close")}
             </Button>
             {payment.moneyAccountId && (
               <Button onClick={() => router.push(`/banking/${payment.moneyAccountId}`)}>
                 <Landmark size={14} aria-hidden />
-                Open {payment.moneyAccount?.name ?? "the account"}
+                {t("vendorPayments.detail.openAccount", { account: payment.moneyAccount?.name ?? t("vendorPayments.detail.theAccount") })}
               </Button>
             )}
           </DialogFooter>

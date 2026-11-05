@@ -1,6 +1,7 @@
 import type { TableSort } from "@spine/ui";
 import { inReceivablesAge, parseReceivablesAge, type ReceivablesAge } from "@spine/shared";
 import type { ReceivablesCustomerRow, ReceivablesInvoiceRow } from "./types";
+import { t } from "../../../lib/i18n";
 
 export type ReceivablesTab = "customer" | "invoice";
 
@@ -83,24 +84,22 @@ export function customerView(customers: ReceivablesCustomerRow[], invoices: Rece
   return out;
 }
 
-const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
-
 /** US-PAY-30 — how late an invoice is, in words: "12 days late", "Due today", "Due in 5 days", "No due date". */
 export function howLate(row: Pick<ReceivablesInvoiceRow, "dueDate" | "daysOverdue">): string {
-  if (!row.dueDate) return "No due date";
-  if (row.daysOverdue > 0) return `${plural(row.daysOverdue, "day")} late`;
-  if (row.daysOverdue === 0) return "Due today";
-  return `Due in ${plural(-row.daysOverdue, "day")}`;
+  if (!row.dueDate) return t("receivables.list.noDueDate");
+  if (row.daysOverdue > 0) return t("receivables.list.daysLate", { count: row.daysOverdue });
+  if (row.daysOverdue === 0) return t("receivables.list.dueToday");
+  return t("receivables.list.dueInDays", { count: -row.daysOverdue });
 }
 
 /** US-PAY-27 — the customer's oldest: "45 days late", or "Not due yet". */
 export function oldestLabel(days: number): string {
-  return days > 0 ? `${plural(days, "day")} late` : "Not due yet";
+  return days > 0 ? t("receivables.list.daysLate", { count: days }) : t("receivables.list.notDueYet");
 }
 
 /** Why Send reminder can't go for an invoice, or null when it can (the bulk send's reasons, US-INV-23). */
 export function reminderBlocked(row: Pick<ReceivablesInvoiceRow, "remindedToday" | "contactHasEmail">): string | null {
-  if (row.remindedToday) return "Already reminded today.";
-  if (!row.contactHasEmail) return "The customer has no email address.";
+  if (row.remindedToday) return t("receivables.list.remindedToday");
+  if (!row.contactHasEmail) return t("receivables.list.noEmail");
   return null;
 }

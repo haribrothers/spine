@@ -11,13 +11,14 @@ import {
   AlertDialogTitle,
   Button,
 } from "@spine/ui";
+import { t as translate, useT } from "../../../lib/i18n";
 
-const ACTION_COPY: Record<"edit" | "delete" | "move", { title: string; verb: string }> = {
-  edit: { title: "Edit recurring event", verb: "edit" },
-  delete: { title: "Delete recurring event", verb: "delete" },
+const ACTION_COPY: Record<"edit" | "delete" | "move", { title: string; description: string }> = {
+  edit: { title: translate("meetings.scopeChoice.editTitle"), description: translate("meetings.scopeChoice.editDescription") },
+  delete: { title: translate("meetings.scopeChoice.deleteTitle"), description: translate("meetings.scopeChoice.deleteDescription") },
   // PRD S-01.14 — dragging to move, or resizing, a recurring occurrence
   // shares the same This event/All events choice as edit/delete.
-  move: { title: "Move recurring event", verb: "move" },
+  move: { title: translate("meetings.scopeChoice.moveTitle"), description: translate("meetings.scopeChoice.moveDescription") },
 };
 
 /**
@@ -37,24 +38,25 @@ export function MeetingScopeChoiceDialog({
   onOpenChange: (open: boolean) => void;
   onChoose: (scope: "occurrence" | "series") => void;
 }) {
-  const { title, verb } = ACTION_COPY[action];
+  const t = useT();
+  const { title, description } = ACTION_COPY[action];
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            This is a recurring event. Do you want to {verb} just this event, or all events in the series?
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("meetings.scopeChoice.cancel")}</AlertDialogCancel>
           <Button variant="secondary" onClick={() => onChoose("occurrence")}>
-            This event
+            {t("meetings.scopeChoice.thisEvent")}
           </Button>
           {/* US-OPS-10: red only when "All events" deletes the series. */}
           <AlertDialogAction variant={action === "delete" ? "danger" : "primary"} onClick={() => onChoose("series")}>
-            All events
+            {t("meetings.scopeChoice.allEvents")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

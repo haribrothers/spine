@@ -44,7 +44,7 @@ import {
   type TaxSummaryReport,
   type TrialBalanceReport,
 } from "./types";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import {
@@ -71,6 +71,7 @@ import { JOB_STATUS_LABELS, type Job } from "../jobs/types";
 import { STATUS_BADGE_CLASS } from "../jobs/jobs-table";
 
 import { SectionLink } from "../../../components/section-link";
+import { t, useT } from "../../../lib/i18n";
 /** The local calendar date (toISOString would shift it a day in time zones ahead of UTC). */
 function toDateParam(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -79,9 +80,9 @@ function toDateParam(d: Date): string {
 /** "▲ 11.6% vs previous period" for a card; words and an arrow, not colour alone. */
 function cardTrend(current: string, previous: string, against: string): { direction: "up" | "down" | "neutral"; label: string } {
   const pct = changePercent(BigInt(current), BigInt(previous));
-  if (pct === null) return { direction: "neutral", label: `— ${against}` };
-  if (/^-?0\.0$/.test(pct)) return { direction: "neutral", label: `no change ${against}` };
-  return pct.startsWith("-") ? { direction: "down", label: `▼ ${pct.slice(1)}% ${against}` } : { direction: "up", label: `▲ ${pct}% ${against}` };
+  if (pct === null) return { direction: "neutral", label: t("reports.explorer.trend.none", { against }) };
+  if (/^-?0\.0$/.test(pct)) return { direction: "neutral", label: t("reports.explorer.trend.noChange", { against }) };
+  return pct.startsWith("-") ? { direction: "down", label: t("reports.explorer.trend.down", { pct: pct.slice(1), against }) } : { direction: "up", label: t("reports.explorer.trend.up", { pct, against }) };
 }
 
 function startOfYear(): Date {
@@ -102,8 +103,8 @@ function useCanDrill(): boolean {
   return isOwner || canReadLedger;
 }
 
-const NO_REPORT_ACCESS = "You don't have access to this report. Ask an owner.";
-const DRILL_NOTE = "Click an account to see every journal entry behind its figure.";
+const NO_REPORT_ACCESS = t("reports.common.noAccess");
+const DRILL_NOTE = t("reports.explorer.drillNote");
 
 type Drill = { accountId: string; code: string; name: string };
 
@@ -139,8 +140,8 @@ function sectionRows(
 }
 
 const AMOUNT_COLUMNS = [
-  { key: "account", header: "Account" },
-  { key: "amount", header: "Amount", align: "right" as const },
+  { key: "account", header: t("reports.common.account") },
+  { key: "amount", header: t("reports.common.amount"), align: "right" as const },
 ];
 
 /** How many calendar months a range touches. */
@@ -150,38 +151,40 @@ function monthsIn(from: Date, to: Date): number {
 
 /** US-RPT-40 — income and expenses for each month of the range, from the "Each month" comparison. */
 function MonthlyChart({ comparison, currency }: { comparison: ProfitAndLossComparison; currency: string }) {
+  const t = useT();
   const money = (v: string) => formatMoney(v, currency);
-  const compact = new Intl.NumberFormat(undefined, { style: "currency", currency, notation: "compact", maximumFractionDigits: 0 });
+  const compact = new Intl.NumberFormat(orgLocaleTag(), { style: "currency", currency, notation: "compact", maximumFractionDigits: 0 });
   const rows = comparison.columns.map((c, i) => ({ key: c.from, label: c.label, income: Number(comparison.totalIncome[i] ?? 0), expenses: Number(comparison.totalExpenses[i] ?? 0), net: comparison.netProfit[i] ?? "0" }));
   return (
-    <ReportChart title="Income and expenses by month" data-testid="pl-chart">
+    <ReportChart title={t("reports.explorer.monthlyChart.title")} data-testid="pl-chart">
       <GroupedBarChart
         data={rows}
         series={[
-          { key: "income", label: "Income", color: "var(--color-primary)" },
-          { key: "expenses", label: "Expenses", color: "var(--color-due-soon)" },
+          { key: "income", label: t("reports.common.income"), color: "var(--color-primary)" },
+          { key: "expenses", label: t("reports.common.expenses"), color: "var(--color-due-soon)" },
         ]}
         formatTick={(v) => compact.format(v / 100)}
         renderTooltip={(row) => (
           <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-0.5">
             <dt className="col-span-2 mb-1 font-semibold">{row.label}</dt>
-            <dt className="text-on-surface-muted">Income</dt>
+            <dt className="text-on-surface-muted">{t("reports.common.income")}</dt>
             <dd className="text-right tabular-nums">{money(String(row.income))}</dd>
-            <dt className="text-on-surface-muted">Expenses</dt>
+            <dt className="text-on-surface-muted">{t("reports.common.expenses")}</dt>
             <dd className="text-right tabular-nums">{money(String(row.expenses))}</dd>
-            <dt className="text-on-surface-muted">Net profit</dt>
+            <dt className="text-on-surface-muted">{t("reports.common.netProfit")}</dt>
             <dd className="text-right tabular-nums">{money(String(row.net))}</dd>
           </dl>
         )}
-        aria-label="Income and expenses by month"
-        description="Choose “Each month” in Compare with to see these figures in the table."
-        emptyState="Nothing posted in this range."
+        aria-label={t("reports.explorer.monthlyChart.title")}
+        description={t("reports.explorer.monthlyChart.description")}
+        emptyState={t("reports.explorer.monthlyChart.empty")}
       />
     </ReportChart>
   );
 }
 
 export function ProfitAndLossTab() {
+  const t = useT();
   const canDrill = useCanDrill();
   const currency = useCurrency();
   const [from, setFrom] = useState<Date>(startOfYear());
@@ -202,8 +205,8 @@ export function ProfitAndLossTab() {
   useReportDetail(
     report
       ? [
-          comparison ? (comparison.mode === "monthly" ? "by month" : `compared with ${comparison.columns[1]!.label}`) : null,
-          report.basis === "cash" ? "Cash basis" : "Accrual basis",
+          comparison ? (comparison.mode === "monthly" ? t("reports.explorer.pl.byMonth") : t("reports.explorer.pl.comparedWith", { label: comparison.columns[1]!.label })) : null,
+          report.basis === "cash" ? t("reports.explorer.pl.cashBasis") : t("reports.explorer.pl.accrualBasis"),
         ]
           .filter(Boolean)
           .join(" · ")
@@ -212,7 +215,7 @@ export function ProfitAndLossTab() {
 
   const money = (v: string) => formatMoney(BigInt(v), currency);
   const cash = report?.basis === "cash";
-  const against = comparison && comparison.mode !== "monthly" ? (comparison.mode === "previous" ? "vs previous period" : "vs last year") : null;
+  const against = comparison && comparison.mode !== "monthly" ? (comparison.mode === "previous" ? t("reports.explorer.pl.vsPreviousPeriod") : t("reports.explorer.pl.vsLastYear")) : null;
   const trend = (amounts: string[] | undefined) => (against && amounts ? cardTrend(amounts[0]!, amounts[1]!, against) : undefined);
   const onDrill = canDrill && !cash ? setDrilldown : undefined;
 
@@ -224,14 +227,14 @@ export function ProfitAndLossTab() {
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />
-            <ReportFilter label="Compare with">
+            <ReportFilter label={t("reports.common.compareWith")}>
               {(id) => (
                 <Select value={compare} onValueChange={(v) => setCompare(v as typeof compare)}>
                   <SelectTrigger className="w-56" aria-labelledby={id}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No comparison</SelectItem>
+                    <SelectItem value="none">{t("reports.common.noComparison")}</SelectItem>
                     {PL_COMPARE_MODES.map((m) => (
                       <SelectItem key={m} value={m}>
                         {PL_COMPARE_LABELS[m]}
@@ -241,14 +244,14 @@ export function ProfitAndLossTab() {
                 </Select>
               )}
             </ReportFilter>
-            <ReportFilter label="Basis">
+            <ReportFilter label={t("reports.explorer.pl.basis")}>
               {(id) => (
                 <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as typeof basis)} aria-labelledby={id}>
                   <ToggleGroupItem value="accrual" className="px-3">
-                    Accrual
+                    {t("reports.explorer.pl.accrual")}
                   </ToggleGroupItem>
                   <ToggleGroupItem value="cash" className="px-3">
-                    Cash
+                    {t("reports.explorer.pl.cash")}
                   </ToggleGroupItem>
                 </ToggleGroup>
               )}
@@ -267,17 +270,17 @@ export function ProfitAndLossTab() {
       {report && !error && (
         <div className="flex flex-col gap-6" data-testid={cash ? "cash-basis" : comparison ? "pl-comparison" : "pl-statement"}>
           <ReportKpis count={4} data-testid="pl-cards">
-            <StatCard label={cash ? "Cash received (income)" : "Total income"} value={money(report.totalIncome)} trend={trend(comparison?.totalIncome) ?? (cash ? { direction: "neutral", label: "paid by customers in the range" } : undefined)} />
-            <StatCard label={cash ? "Cash paid (expenses)" : "Total expenses"} value={money(report.totalExpenses)} trend={trend(comparison?.totalExpenses) ?? (cash ? { direction: "neutral", label: "paid to vendors and staff" } : undefined)} />
+            <StatCard label={cash ? t("reports.explorer.pl.cashReceivedIncome") : t("reports.common.totalIncome")} value={money(report.totalIncome)} trend={trend(comparison?.totalIncome) ?? (cash ? { direction: "neutral", label: t("reports.explorer.pl.paidByCustomers") } : undefined)} />
+            <StatCard label={cash ? t("reports.explorer.pl.cashPaidExpenses") : t("reports.common.totalExpenses")} value={money(report.totalExpenses)} trend={trend(comparison?.totalExpenses) ?? (cash ? { direction: "neutral", label: t("reports.explorer.pl.paidToVendors") } : undefined)} />
             <StatCard
-              label={cash ? "Net profit (cash basis)" : "Net profit"}
+              label={cash ? t("reports.explorer.pl.netProfitCash") : t("reports.common.netProfit")}
               value={money(report.netProfit)}
-              trend={trend(comparison?.netProfit) ?? (cash ? { direction: "neutral", label: `accrual basis: ${money(report.accrualNetProfit ?? "0")}` } : undefined)}
+              trend={trend(comparison?.netProfit) ?? (cash ? { direction: "neutral", label: t("reports.explorer.pl.accrualBasisAmount", { amount: money(report.accrualNetProfit ?? "0") }) } : undefined)}
             />
             <StatCard
-              label="Net margin"
+              label={t("reports.explorer.pl.netMargin")}
               value={marginText(report.netProfit, report.totalIncome)}
-              trend={against && comparison ? { direction: "neutral", label: `${marginText(comparison.netProfit[1]!, comparison.totalIncome[1]!)} ${against}` } : { direction: "neutral", label: "net profit as a share of income" }}
+              trend={against && comparison ? { direction: "neutral", label: `${marginText(comparison.netProfit[1]!, comparison.totalIncome[1]!)} ${against}` } : { direction: "neutral", label: t("reports.explorer.pl.netMarginHint") }}
             />
           </ReportKpis>
 
@@ -291,10 +294,10 @@ export function ProfitAndLossTab() {
               columns={AMOUNT_COLUMNS}
               rows={sectionRows(
                 [
-                  { key: "income", label: "Income", lines: report.income, total: report.totalIncome, totalLabel: cash ? "Cash received" : "Total income", empty: cash ? "Nothing received in this range." : "No income posted in this range." },
-                  { key: "expenses", label: "Expenses", lines: report.expenses, total: report.totalExpenses, totalLabel: cash ? "Cash paid" : "Total expenses", empty: cash ? "Nothing paid in this range." : "No expenses posted in this range." },
+                  { key: "income", label: t("reports.common.income"), lines: report.income, total: report.totalIncome, totalLabel: cash ? t("reports.explorer.pl.cashReceived") : t("reports.common.totalIncome"), empty: cash ? t("reports.explorer.pl.nothingReceived") : t("reports.explorer.pl.noIncome") },
+                  { key: "expenses", label: t("reports.common.expenses"), lines: report.expenses, total: report.totalExpenses, totalLabel: cash ? t("reports.explorer.pl.cashPaid") : t("reports.common.totalExpenses"), empty: cash ? t("reports.explorer.pl.nothingPaid") : t("reports.explorer.pl.noExpenses") },
                 ],
-                { label: cash ? "Net profit (cash basis)" : "Net profit", amount: report.netProfit },
+                { label: cash ? t("reports.explorer.pl.netProfitCash") : t("reports.common.netProfit"), amount: report.netProfit },
                 money,
                 onDrill,
               )}
@@ -304,7 +307,7 @@ export function ProfitAndLossTab() {
           {cash ? (
             <CashBasisNotes report={report} />
           ) : comparison ? (
-            <ReportFootnote>Arrows and signs show direction; colour is never the only signal. Choose &quot;Each month&quot; for one column per month plus a total.</ReportFootnote>
+            <ReportFootnote>{t("reports.explorer.pl.compareFootnote")}</ReportFootnote>
           ) : (
             onDrill && <ReportFootnote>{DRILL_NOTE}</ReportFootnote>
           )}
@@ -320,28 +323,28 @@ export function ProfitAndLossTab() {
 
 /** US-RPT-35 — what the cash basis leaves out, and how it's worked out. */
 function CashBasisNotes({ report }: { report: ProfitAndLossReport }) {
+  const t = useT();
   const excluded = report.openingExcluded;
-  const cutover = excluded ? new Date(`${excluded.cutoverDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
+  const cutover = excluded ? new Date(`${excluded.cutoverDate}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" }) : "";
   return (
     <div className="flex flex-col gap-3" data-testid="cash-basis-notes">
       {excluded && BigInt(excluded.invoices) > 0n && (
         <Alert variant="info">
-          <AlertDescription>Payments on invoices from before {cutover} aren&apos;t counted — that income was in your old books.</AlertDescription>
+          <AlertDescription>{t("reports.explorer.cashNotes.invoicesExcluded", { cutover })}</AlertDescription>
         </Alert>
       )}
       {excluded && BigInt(excluded.bills) > 0n && (
         <Alert variant="info">
-          <AlertDescription>Payments on bills from before {cutover} aren&apos;t counted — those costs were in your old books.</AlertDescription>
+          <AlertDescription>{t("reports.explorer.cashNotes.billsExcluded", { cutover })}</AlertDescription>
         </Alert>
       )}
-      <ReportFootnote>
-        Income counts what customers paid in the range and costs what was paid, split across accounts in proportion to each invoice&apos;s or bill&apos;s lines. The Balance Sheet, Trial Balance and Tax Summary stay on the accrual basis.
-      </ReportFootnote>
+      <ReportFootnote>{t("reports.explorer.cashNotes.footnote")}</ReportFootnote>
     </div>
   );
 }
 
 export function BalanceSheetTab() {
+  const t = useT();
   const canDrill = useCanDrill();
   const currency = useCurrency();
   const [asOf, setAsOf] = useState<Date>(endOfToday());
@@ -360,10 +363,10 @@ export function BalanceSheetTab() {
   const url = compare === "none" ? `/reports/balance-sheet?asOf=${date}` : yearStart ? `/reports/balance-sheet?asOf=${date}&compareAsOf=${previousYearEnd(date, yearStart)}` : null;
   const { data: report, error, loading } = useReport<BalanceSheetReport>(url, FINANCIAL_STATEMENTS_NO_ACCESS);
   const comparison = report?.comparison;
-  useReportDetail(comparison ? `compared with ${periodLabel(comparison.asOf, comparison.asOf)}` : null);
+  useReportDetail(comparison ? t("reports.explorer.bs.comparedWith", { label: periodLabel(comparison.asOf, comparison.asOf) }) : null);
 
   const money = (v: string) => formatMoney(BigInt(v), currency);
-  const trend = (now: string, then: string | undefined) => (then === undefined ? undefined : cardTrend(now, then, "vs previous year end"));
+  const trend = (now: string, then: string | undefined) => (then === undefined ? undefined : cardTrend(now, then, t("reports.explorer.bs.vsPreviousYearEnd")));
 
   return (
     <>
@@ -372,18 +375,18 @@ export function BalanceSheetTab() {
         loading={loading}
         filters={
           <>
-            <ReportFilter label="As of">
+            <ReportFilter label={t("reports.common.asOf")}>
               <DatePicker value={asOf} onChange={(d) => d && setAsOf(d)} />
             </ReportFilter>
-            <ReportFilter label="Compare with">
+            <ReportFilter label={t("reports.common.compareWith")}>
               {(id) => (
                 <Select value={compare} onValueChange={(v) => setCompare(v as typeof compare)}>
                   <SelectTrigger className="w-56" aria-labelledby={id}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No comparison</SelectItem>
-                    <SelectItem value="previous_year_end">Previous year end</SelectItem>
+                    <SelectItem value="none">{t("reports.common.noComparison")}</SelectItem>
+                    <SelectItem value="previous_year_end">{t("reports.explorer.bs.previousYearEnd")}</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -402,9 +405,9 @@ export function BalanceSheetTab() {
       {report && !error && (
         <>
           <ReportKpis count={3} data-testid="bs-cards">
-            <StatCard label="Total assets" value={money(report.totalAssets)} trend={trend(report.totalAssets, comparison?.totalAssets) ?? { direction: "neutral", label: "what the business owns" }} />
-            <StatCard label="Total liabilities" value={money(report.totalLiabilities)} trend={trend(report.totalLiabilities, comparison?.totalLiabilities) ?? { direction: "neutral", label: "what it owes" }} />
-            <StatCard label="Total equity" value={money(report.totalEquity)} trend={trend(report.totalEquity, comparison?.totalEquity) ?? { direction: "neutral", label: "assets less liabilities" }} />
+            <StatCard label={t("reports.common.totalAssets")} value={money(report.totalAssets)} trend={trend(report.totalAssets, comparison?.totalAssets) ?? { direction: "neutral", label: t("reports.explorer.bs.assetsHint") }} />
+            <StatCard label={t("reports.common.totalLiabilities")} value={money(report.totalLiabilities)} trend={trend(report.totalLiabilities, comparison?.totalLiabilities) ?? { direction: "neutral", label: t("reports.explorer.bs.liabilitiesHint") }} />
+            <StatCard label={t("reports.common.totalEquity")} value={money(report.totalEquity)} trend={trend(report.totalEquity, comparison?.totalEquity) ?? { direction: "neutral", label: t("reports.explorer.bs.equityHint") }} />
           </ReportKpis>
 
           {comparison ? (
@@ -415,11 +418,11 @@ export function BalanceSheetTab() {
               columns={AMOUNT_COLUMNS}
               rows={sectionRows(
                 [
-                  { key: "assets", label: "Assets", lines: report.assets, total: report.totalAssets, totalLabel: "Total assets", empty: "No assets on this date." },
-                  { key: "liabilities", label: "Liabilities", lines: report.liabilities, total: report.totalLiabilities, totalLabel: "Total liabilities", empty: "No liabilities on this date." },
-                  { key: "equity", label: "Equity", lines: report.equity, total: report.totalEquity, totalLabel: "Total equity", empty: "No equity on this date." },
+                  { key: "assets", label: t("reports.common.assets"), lines: report.assets, total: report.totalAssets, totalLabel: t("reports.common.totalAssets"), empty: t("reports.explorer.bs.noAssets") },
+                  { key: "liabilities", label: t("reports.common.liabilities"), lines: report.liabilities, total: report.totalLiabilities, totalLabel: t("reports.common.totalLiabilities"), empty: t("reports.explorer.bs.noLiabilities") },
+                  { key: "equity", label: t("reports.common.equity"), lines: report.equity, total: report.totalEquity, totalLabel: t("reports.common.totalEquity"), empty: t("reports.explorer.bs.noEquity") },
                 ],
-                { label: "Total liabilities + equity", amount: report.totalLiabilitiesAndEquity },
+                { label: t("reports.common.totalLiabilitiesAndEquity"), amount: report.totalLiabilitiesAndEquity },
                 money,
                 canDrill ? setDrilldown : undefined,
               )}
@@ -435,11 +438,11 @@ export function BalanceSheetTab() {
 }
 
 const JOB_STATUS_FILTERS = [
-  { value: "active_on_hold", label: "Active and on hold" },
-  { value: "active", label: "Active" },
-  { value: "on_hold", label: "On hold" },
-  { value: "completed", label: "Completed" },
-  { value: "all", label: "All" },
+  { value: "active_on_hold", label: t("reports.explorer.jobs.filterActiveOnHold") },
+  { value: "active", label: t("reports.explorer.jobs.filterActive") },
+  { value: "on_hold", label: t("reports.explorer.jobs.filterOnHold") },
+  { value: "completed", label: t("reports.explorer.jobs.filterCompleted") },
+  { value: "all", label: t("reports.explorer.jobs.filterAll") },
 ] as const;
 
 const CHART_JOBS = 10;
@@ -450,6 +453,7 @@ const CHART_JOBS = 10;
  * the table of every job. The figures are the job Costing tab's own.
  */
 export function JobProfitabilityTab() {
+  const t = useT();
   const [status, setStatus] = useState<string>("active_on_hold");
   const url = `/reports/job-profitability?status=${status}`;
   const { data: report, error, loading } = useReport<JobProfitabilityReport>(url, NO_REPORT_ACCESS);
@@ -459,13 +463,13 @@ export function JobProfitabilityTab() {
   const sum = (pick: (j: JobProfitabilityRow) => string) => (report?.jobs ?? []).reduce((s, j) => s + BigInt(pick(j)), 0n);
   const totals = { contract: sum((j) => j.contractValueAmount), billed: sum((j) => j.billedToDate), revenue: sum((j) => j.revenue), cost: sum((j) => j.cost), margin: sum((j) => j.margin) };
   const charted = report ? [...report.jobs].sort((a, b) => (BigInt(b.contractValueAmount) > BigInt(a.contractValueAmount) ? 1 : -1)).slice(0, CHART_JOBS) : [];
-  const compact = new Intl.NumberFormat(undefined, { style: "currency", currency, notation: "compact", maximumFractionDigits: 0 });
+  const compact = new Intl.NumberFormat(orgLocaleTag(), { style: "currency", currency, notation: "compact", maximumFractionDigits: 0 });
   const pct = (part: bigint, whole: bigint) => (whole === 0n ? "—" : `${(part * 100n) / whole}%`);
 
   const columns: TableColumn<JobProfitabilityRow>[] = [
     {
       key: "job",
-      header: "Job",
+      header: t("reports.common.job"),
       render: (job) => (
         <SectionLink href={`/jobs/${job.jobId}`} className="font-medium text-primary hover:underline">
           {job.name}
@@ -475,18 +479,18 @@ export function JobProfitabilityTab() {
     },
     {
       key: "status",
-      header: "Status",
+      header: t("reports.common.status"),
       render: (job) => {
         const s = job.status as Job["status"];
         return <Badge className={STATUS_BADGE_CLASS[s]}>{JOB_STATUS_LABELS[s] ?? job.status}</Badge>;
       },
     },
-    { key: "contract", header: "Contract value", align: "right", render: (job) => <span className="tabular-nums">{money(job.contractValueAmount)}</span>, sortValue: (job) => BigInt(job.contractValueAmount) },
-    { key: "billed", header: "Billed to date", align: "right", render: (job) => <span className="tabular-nums">{money(job.billedToDate)}</span>, sortValue: (job) => BigInt(job.billedToDate) },
-    { key: "billedPct", header: "Billed %", align: "right", render: (job) => (job.billedPct === null ? "—" : `${job.billedPct}%`), sortValue: (job) => job.billedPct ?? -1 },
+    { key: "contract", header: t("reports.common.contractValue"), align: "right", render: (job) => <span className="tabular-nums">{money(job.contractValueAmount)}</span>, sortValue: (job) => BigInt(job.contractValueAmount) },
+    { key: "billed", header: t("reports.common.billedToDate"), align: "right", render: (job) => <span className="tabular-nums">{money(job.billedToDate)}</span>, sortValue: (job) => BigInt(job.billedToDate) },
+    { key: "billedPct", header: t("reports.explorer.jobs.billedPct"), align: "right", render: (job) => (job.billedPct === null ? "—" : `${job.billedPct}%`), sortValue: (job) => job.billedPct ?? -1 },
     {
       key: "budget",
-      header: "Budget used",
+      header: t("reports.explorer.jobs.budgetUsed"),
       render: (job) => (
         <span className={`inline-flex items-center gap-1 tabular-nums ${job.budgetState === "over" ? "text-overdue" : job.budgetState === "near" ? "text-due-soon" : ""}`}>
           {job.budgetState === "over" && <OctagonAlert size={13} aria-hidden />}
@@ -495,10 +499,10 @@ export function JobProfitabilityTab() {
         </span>
       ),
     },
-    { key: "revenue", header: "Revenue", align: "right", render: (job) => <span className="tabular-nums">{money(job.revenue)}</span>, sortValue: (job) => BigInt(job.revenue) },
-    { key: "cost", header: "Cost", align: "right", render: (job) => <span className="tabular-nums">{money(job.cost)}</span>, sortValue: (job) => BigInt(job.cost) },
-    { key: "margin", header: "Margin", align: "right", render: (job) => <span className="tabular-nums">{money(job.margin)}</span>, sortValue: (job) => BigInt(job.margin) },
-    { key: "marginPct", header: "Margin %", align: "right", render: (job) => (job.marginPct === null ? "—" : `${job.marginPct}%`), sortValue: (job) => job.marginPct ?? -1 },
+    { key: "revenue", header: t("reports.common.revenue"), align: "right", render: (job) => <span className="tabular-nums">{money(job.revenue)}</span>, sortValue: (job) => BigInt(job.revenue) },
+    { key: "cost", header: t("reports.common.cost"), align: "right", render: (job) => <span className="tabular-nums">{money(job.cost)}</span>, sortValue: (job) => BigInt(job.cost) },
+    { key: "margin", header: t("reports.common.margin"), align: "right", render: (job) => <span className="tabular-nums">{money(job.margin)}</span>, sortValue: (job) => BigInt(job.margin) },
+    { key: "marginPct", header: t("reports.explorer.jobs.marginPct"), align: "right", render: (job) => (job.marginPct === null ? "—" : `${job.marginPct}%`), sortValue: (job) => job.marginPct ?? -1 },
   ];
 
   return (
@@ -506,7 +510,7 @@ export function JobProfitabilityTab() {
       <ReportToolbar
         loading={loading}
         filters={
-          <ReportFilter label="Jobs">
+          <ReportFilter label={t("reports.common.jobs")}>
             {(id) => (
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger className="w-56" aria-labelledby={id}>
@@ -541,13 +545,13 @@ export function JobProfitabilityTab() {
         !error && (
           <>
             <ReportKpis count={4} data-testid="job-cards">
-              <StatCard label="Jobs" value={String(report.jobs.length)} />
-              <StatCard label="Contract value" value={money(totals.contract)} />
-              <StatCard label="Billed to date" value={money(totals.billed)} trend={{ direction: "neutral", label: `${pct(totals.billed, totals.contract)} of contract value` }} />
-              <StatCard label="Margin" value={money(totals.margin)} trend={{ direction: "neutral", label: `${pct(totals.margin, totals.revenue)} of revenue` }} />
+              <StatCard label={t("reports.common.jobs")} value={String(report.jobs.length)} />
+              <StatCard label={t("reports.common.contractValue")} value={money(totals.contract)} />
+              <StatCard label={t("reports.common.billedToDate")} value={money(totals.billed)} trend={{ direction: "neutral", label: t("reports.explorer.jobs.ofContractValue", { pct: pct(totals.billed, totals.contract) }) }} />
+              <StatCard label={t("reports.common.margin")} value={money(totals.margin)} trend={{ direction: "neutral", label: t("reports.explorer.jobs.ofRevenue", { pct: pct(totals.margin, totals.revenue) }) }} />
             </ReportKpis>
             {report.jobs.length > 0 && (
-              <ReportChart title="Contract, billed and cost by job">
+              <ReportChart title={t("reports.explorer.jobs.chartTitle")}>
                 <GroupedBarChart
                   data={charted.map((job) => ({
                     key: job.jobId,
@@ -558,39 +562,39 @@ export function JobProfitabilityTab() {
                     budget: job.costBudget === null ? null : Number(job.costBudget),
                   }))}
                   series={[
-                    { key: "contract", label: "Contract value", color: "var(--color-on-surface-muted)" },
-                    { key: "billed", label: "Billed to date", color: "var(--color-primary)" },
-                    { key: "cost", label: "Cost", color: "var(--color-due-soon)" },
+                    { key: "contract", label: t("reports.common.contractValue"), color: "var(--color-on-surface-muted)" },
+                    { key: "billed", label: t("reports.common.billedToDate"), color: "var(--color-primary)" },
+                    { key: "cost", label: t("reports.common.cost"), color: "var(--color-due-soon)" },
                   ]}
-                  marker={{ key: "budget", label: "Cost budget", seriesKey: "cost" }}
+                  marker={{ key: "budget", label: t("reports.explorer.jobs.costBudget"), seriesKey: "cost" }}
                   formatTick={(v) => compact.format(v / 100)}
                   renderTooltip={(row) => {
                     const job = charted.find((j) => j.jobId === row.key)!;
                     return (
                       <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-0.5">
                         <dt className="col-span-2 mb-1 font-semibold">{job.name}</dt>
-                        <dt className="text-on-surface-muted">Contract value</dt>
+                        <dt className="text-on-surface-muted">{t("reports.common.contractValue")}</dt>
                         <dd className="text-right tabular-nums">{money(job.contractValueAmount)}</dd>
-                        <dt className="text-on-surface-muted">Billed to date</dt>
+                        <dt className="text-on-surface-muted">{t("reports.common.billedToDate")}</dt>
                         <dd className="text-right tabular-nums">
                           {money(job.billedToDate)}
                           {job.billedPct !== null && ` · ${job.billedPct}%`}
                         </dd>
-                        <dt className="text-on-surface-muted">Cost</dt>
+                        <dt className="text-on-surface-muted">{t("reports.common.cost")}</dt>
                         <dd className="text-right tabular-nums">{money(job.cost)}</dd>
-                        <dt className="text-on-surface-muted">Budget</dt>
-                        <dd className="text-right tabular-nums">{job.costBudget === null ? "—" : `${money(job.costBudget)} · ${job.budgetUsedPct ?? 0}% used`}</dd>
-                        <dt className="text-on-surface-muted">Margin</dt>
+                        <dt className="text-on-surface-muted">{t("reports.explorer.jobs.budget")}</dt>
+                        <dd className="text-right tabular-nums">{job.costBudget === null ? "—" : t("reports.explorer.jobs.budgetUsedAmount", { amount: money(job.costBudget), pct: job.budgetUsedPct ?? 0 })}</dd>
+                        <dt className="text-on-surface-muted">{t("reports.common.margin")}</dt>
                         <dd className="text-right tabular-nums">{money(job.margin)}</dd>
                       </dl>
                     );
                   }}
-                  aria-label="Contract, billed and cost by job"
-                  description="The table below lists the same figures for every job."
+                  aria-label={t("reports.explorer.jobs.chartTitle")}
+                  description={t("reports.explorer.jobs.chartDescription")}
                 />
                 {report.jobs.length > CHART_JOBS && (
                   <p className="mt-2 text-[12px] text-on-surface-muted">
-                    Showing {CHART_JOBS} of {report.jobs.length} jobs — the table lists them all.
+                    {t("reports.explorer.jobs.showing", { shown: CHART_JOBS, total: report.jobs.length })}
                   </p>
                 )}
               </ReportChart>
@@ -600,13 +604,13 @@ export function JobProfitabilityTab() {
                 columns={columns}
                 data={report.jobs}
                 rowKey={(job) => job.jobId}
-                searchPlaceholder="Search jobs"
+                searchPlaceholder={t("reports.explorer.jobs.search")}
                 searchKey={(job) => job.name}
                 configurablePageSize
-                footer={report.jobs.length ? { job: "Total", contract: money(totals.contract), billed: money(totals.billed), revenue: money(totals.revenue), cost: money(totals.cost), margin: money(totals.margin) } : undefined}
+                footer={report.jobs.length ? { job: t("reports.common.total"), contract: money(totals.contract), billed: money(totals.billed), revenue: money(totals.revenue), cost: money(totals.cost), margin: money(totals.margin) } : undefined}
               />
             </div>
-            <ReportFootnote>The same figures as each job&apos;s Costing tab: revenue and cost from the ledger, billed to date from issued invoices.</ReportFootnote>
+            <ReportFootnote>{t("reports.explorer.jobs.footnote")}</ReportFootnote>
           </>
         )
       )}
@@ -634,6 +638,7 @@ export function DrilldownDialog({
   /** Only this job's lines. */
   jobId?: string;
 }) {
+  const t = useT();
   const { data: report, error } = useReport<AccountDrilldownReport>(`/reports/account-drilldown?accountId=${accountId}&from=${from}&to=${to}${jobId ? `&jobId=${jobId}` : ""}`, NO_REPORT_ACCESS);
 
   return (
@@ -656,13 +661,13 @@ export function DrilldownDialog({
           {report && !error && (
             <div className="flex flex-col gap-1">
               {report.entries.length === 0 ? (
-                <p className="py-4 text-[13px] text-on-surface-muted">No journal entries posted to this account in range.</p>
+                <p className="py-4 text-[13px] text-on-surface-muted">{t("reports.explorer.drilldown.empty")}</p>
               ) : (
                 report.entries.map((entry) => {
                   const route = SOURCE_TYPE_ROUTES[entry.sourceType]?.(entry.sourceId);
                   const label = entry.narration ?? `${entry.sourceType} ${entry.sourceId}`;
                   const amount = entry.debit !== "0" ? entry.debit : entry.credit;
-                  const side = entry.debit !== "0" ? "Dr" : "Cr";
+                  const side = entry.debit !== "0" ? t("reports.common.debitSide") : t("reports.common.creditSide");
                   return (
                     <div key={entry.journalEntryId} className="flex items-center justify-between border-b border-border py-2 text-[13px] last:border-b-0">
                       <div className="flex flex-col">
@@ -673,7 +678,7 @@ export function DrilldownDialog({
                         ) : (
                           <span className="text-on-surface">{label}</span>
                         )}
-                        <span className="text-[11px] text-on-surface-muted">{new Date(entry.date).toLocaleDateString()}</span>
+                        <span className="text-[11px] text-on-surface-muted">{new Date(entry.date).toLocaleDateString(orgLocaleTag())}</span>
                       </div>
                       <span className="tabular-nums text-on-surface-muted">
                         {side} {formatMoney(BigInt(amount), currency)}
@@ -697,6 +702,7 @@ type TrialBalanceLine = TrialBalanceReport["lines"][number];
  * side, with matching totals. Click an account for its journal entries.
  */
 export function TrialBalanceTab() {
+  const t = useT();
   const canDrill = useCanDrill();
   const currency = useCurrency();
   const [asOf, setAsOf] = useState<Date>(endOfToday());
@@ -711,10 +717,10 @@ export function TrialBalanceTab() {
   const difference = report ? BigInt(report.totalDebit) - BigInt(report.totalCredit) : 0n;
 
   const columns: TableColumn<TrialBalanceLine>[] = [
-    { key: "code", header: "Code", render: (line) => <span className="tabular-nums text-on-surface-muted">{line.code}</span>, sortValue: (line) => line.code },
+    { key: "code", header: t("reports.common.code"), render: (line) => <span className="tabular-nums text-on-surface-muted">{line.code}</span>, sortValue: (line) => line.code },
     {
       key: "account",
-      header: "Account",
+      header: t("reports.common.account"),
       render: (line) =>
         canDrill ? (
           <button type="button" className="text-left text-primary hover:underline" onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}>
@@ -725,8 +731,8 @@ export function TrialBalanceTab() {
         ),
       sortValue: (line) => line.name,
     },
-    { key: "debit", header: "Debit", align: "right", render: (line) => <span className="tabular-nums">{money(line.debit)}</span>, sortValue: (line) => BigInt(line.debit) },
-    { key: "credit", header: "Credit", align: "right", render: (line) => <span className="tabular-nums">{money(line.credit)}</span>, sortValue: (line) => BigInt(line.credit) },
+    { key: "debit", header: t("reports.common.debit"), align: "right", render: (line) => <span className="tabular-nums">{money(line.debit)}</span>, sortValue: (line) => BigInt(line.debit) },
+    { key: "credit", header: t("reports.common.credit"), align: "right", render: (line) => <span className="tabular-nums">{money(line.credit)}</span>, sortValue: (line) => BigInt(line.credit) },
   ];
 
   return (
@@ -736,10 +742,10 @@ export function TrialBalanceTab() {
         loading={loading}
         filters={
           <>
-            <ReportFilter label="As of">
+            <ReportFilter label={t("reports.common.asOf")}>
               <DatePicker value={asOf} onChange={(d) => d && setAsOf(d)} />
             </ReportFilter>
-            <ReportFilterCheckbox label="Hide accounts with no balance" checked={hideZero} onCheckedChange={setHideZero} />
+            <ReportFilterCheckbox label={t("reports.explorer.tb.hideZero")} checked={hideZero} onCheckedChange={setHideZero} />
           </>
         }
         actions={!error && <ReportExportMenu path={url} search={search} />}
@@ -754,18 +760,18 @@ export function TrialBalanceTab() {
       {report && !error && (
         <>
           <ReportKpis count={4} data-testid="tb-cards">
-            <StatCard label="Accounts" value={String(report.lines.length)} />
-            <StatCard label="Total debits" value={formatMoney(BigInt(report.totalDebit), currency)} />
-            <StatCard label="Total credits" value={formatMoney(BigInt(report.totalCredit), currency)} />
+            <StatCard label={t("reports.explorer.tb.accounts")} value={String(report.lines.length)} />
+            <StatCard label={t("reports.common.totalDebits")} value={formatMoney(BigInt(report.totalDebit), currency)} />
+            <StatCard label={t("reports.common.totalCredits")} value={formatMoney(BigInt(report.totalCredit), currency)} />
             <StatCard
-              label="Difference"
+              label={t("reports.explorer.tb.difference")}
               value={formatMoney(difference, currency)}
-              trend={report.balanced ? { direction: "neutral", label: "✓ balanced" } : { direction: "down", label: "▼ out of balance" }}
+              trend={report.balanced ? { direction: "neutral", label: t("reports.explorer.tb.balancedTrend") } : { direction: "down", label: t("reports.explorer.tb.outOfBalanceTrend") }}
             />
           </ReportKpis>
           {!report.balanced && (
             <Alert variant="critical" data-testid="trial-balance-status">
-              <AlertDescription>Out of balance by {formatMoney(difference, currency)}. This has been logged; tell your administrator.</AlertDescription>
+              <AlertDescription>{t("reports.explorer.tb.outOfBalance", { amount: formatMoney(difference, currency) })}</AlertDescription>
             </Alert>
           )}
           <div data-testid="trial-balance-table">
@@ -773,16 +779,16 @@ export function TrialBalanceTab() {
               columns={columns}
               data={report.lines}
               rowKey={(line) => line.accountId}
-              searchPlaceholder="Search accounts"
+              searchPlaceholder={t("reports.explorer.tb.search")}
               searchKey={(line) => `${line.code} ${line.name}`}
               onSearchChange={setSearch}
               configurablePageSize
               pageSizeOptions={[50, 100, 250]}
-              footer={{ account: "Total", debit: formatMoney(BigInt(report.totalDebit), currency), credit: formatMoney(BigInt(report.totalCredit), currency) }}
+              footer={{ account: t("reports.common.total"), debit: formatMoney(BigInt(report.totalDebit), currency), credit: formatMoney(BigInt(report.totalCredit), currency) }}
             />
           </div>
-          {report.balanced && <ReportFootnote data-testid="trial-balance-status">Balanced — total debits equal total credits.</ReportFootnote>}
-          {canDrill && <ReportFootnote>Click an account to see every journal entry behind its balance.</ReportFootnote>}
+          {report.balanced && <ReportFootnote data-testid="trial-balance-status">{t("reports.explorer.tb.balanced")}</ReportFootnote>}
+          {canDrill && <ReportFootnote>{t("reports.explorer.tb.drillNote")}</ReportFootnote>}
         </>
       )}
 
@@ -801,6 +807,7 @@ export function TrialBalanceTab() {
  * supply classes and what's been paid to the tax authority.
  */
 export function TaxSummaryTab() {
+  const t = useT();
   // Recording tax payments stays Owner-only (US-TAX-08); reading the summary is "View financial statements" (US-RPT-36).
   const isOwner = useMyRole() === "owner";
   const currency = useCurrency();
@@ -828,7 +835,7 @@ export function TaxSummaryTab() {
           !error && (
             <>
               <ReportExportMenu path={url} />
-              {report && isOwner && <Button onClick={() => setPaymentOpen(true)}>Record tax payment</Button>}
+              {report && isOwner && <Button onClick={() => setPaymentOpen(true)}>{t("reports.explorer.tax.recordPayment")}</Button>}
             </>
           )
         }
@@ -843,26 +850,26 @@ export function TaxSummaryTab() {
       {report && !error && (
         <>
           <ReportKpis count={4} data-testid="tax-summary-cards">
-            <StatCard label="Tax collected" value={money(report.taxCollected)} trend={{ direction: "neutral", label: "On issued invoices, after credit notes" }} />
-            <StatCard label="Tax paid" value={money(report.taxPaid)} trend={{ direction: "neutral", label: "On bills, expenses and money out, less vendor credits" }} />
-            <StatCard label="Net payable" value={money(report.netTaxPayable)} trend={{ direction: "neutral", label: "Collected minus paid" }} />
+            <StatCard label={t("reports.explorer.tax.collected")} value={money(report.taxCollected)} trend={{ direction: "neutral", label: t("reports.explorer.tax.collectedHint") }} />
+            <StatCard label={t("reports.explorer.tax.paid")} value={money(report.taxPaid)} trend={{ direction: "neutral", label: t("reports.explorer.tax.paidHint") }} />
+            <StatCard label={t("reports.explorer.tax.netPayable")} value={money(report.netTaxPayable)} trend={{ direction: "neutral", label: t("reports.explorer.tax.netPayableHint") }} />
             {/* US-RPT-37: tax payments recorded for the range (US-TAX-08). */}
-            <StatCard label="Paid to the tax authority" value={money(report.payments.paid)} trend={{ direction: "neutral", label: `Still to pay ${money(report.payments.stillToPay)}` }} />
+            <StatCard label={t("reports.explorer.tax.paidToAuthority")} value={money(report.payments.paid)} trend={{ direction: "neutral", label: t("reports.explorer.tax.stillToPay", { amount: money(report.payments.stillToPay) }) }} />
           </ReportKpis>
 
           {/* US-RPT-37: collected, paid and net by tax type. */}
           <StatementTable
             data-testid="tax-summary-by-type"
             columns={[
-              { key: "name", header: "Tax type" },
-              { key: "collected", header: "Collected", align: "right" },
-              { key: "paid", header: "Paid", align: "right" },
-              { key: "net", header: "Net", align: "right" },
+              { key: "name", header: t("reports.explorer.tax.taxType") },
+              { key: "collected", header: t("reports.explorer.tax.collectedColumn"), align: "right" },
+              { key: "paid", header: t("reports.explorer.tax.paidColumn"), align: "right" },
+              { key: "net", header: t("reports.explorer.tax.netColumn"), align: "right" },
             ]}
             rows={[
-              ...(report.byTaxType.rows.length === 0 ? [{ kind: "empty" as const, key: "none", label: "No tax collected or paid in this range." }] : []),
+              ...(report.byTaxType.rows.length === 0 ? [{ kind: "empty" as const, key: "none", label: t("reports.explorer.tax.noTaxByType") }] : []),
               ...report.byTaxType.rows.map((row) => ({ kind: "line" as const, key: row.taxType, cells: { name: row.label, collected: money(row.collected), paid: money(row.paid), net: money(row.net) } })),
-              { kind: "total", key: "total", cells: { name: "Total", collected: money(report.byTaxType.total.collected), paid: money(report.byTaxType.total.paid), net: money(report.byTaxType.total.net) } },
+              { kind: "total", key: "total", cells: { name: t("reports.common.total"), collected: money(report.byTaxType.total.collected), paid: money(report.byTaxType.total.paid), net: money(report.byTaxType.total.net) } },
             ]}
           />
 
@@ -870,33 +877,33 @@ export function TaxSummaryTab() {
             <StatementTable
               data-testid="tax-summary-table"
               columns={[
-                { key: "name", header: "Collected by rate" },
-                { key: "taxable", header: "Taxable amount", align: "right" },
-                { key: "tax", header: "Tax", align: "right" },
+                { key: "name", header: t("reports.explorer.tax.collectedByRate") },
+                { key: "taxable", header: t("reports.common.taxableAmount"), align: "right" },
+                { key: "tax", header: t("reports.common.tax"), align: "right" },
               ]}
               rows={[
-                ...(report.collectedByRate.length === 0 && !report.adjustments ? [{ kind: "empty" as const, key: "none", label: "No tax collected in this range." }] : []),
+                ...(report.collectedByRate.length === 0 && !report.adjustments ? [{ kind: "empty" as const, key: "none", label: t("reports.explorer.tax.noTaxCollected") }] : []),
                 ...report.collectedByRate.map((row) => ({ kind: "line" as const, key: row.name, cells: { name: row.name, taxable: money(row.taxableAmount), tax: money(row.amount) } })),
                 ...(report.adjustments
-                  ? [{ kind: "line" as const, key: "adjustments", cells: { name: "Adjustments from credit notes and voided invoices", taxable: money(report.adjustments.taxableAmount), tax: money(report.adjustments.amount) } }]
+                  ? [{ kind: "line" as const, key: "adjustments", cells: { name: t("reports.explorer.tax.collectedAdjustments"), taxable: money(report.adjustments.taxableAmount), tax: money(report.adjustments.amount) } }]
                   : []),
-                { kind: "total", key: "total", cells: { name: "Total collected", taxable: money(report.totalTaxable), tax: money(report.taxCollected) } },
+                { kind: "total", key: "total", cells: { name: t("reports.explorer.tax.totalCollected"), taxable: money(report.totalTaxable), tax: money(report.taxCollected) } },
               ]}
             />
             <StatementTable
               data-testid="tax-summary-paid"
               columns={[
-                { key: "name", header: "Paid by rate" },
-                { key: "taxable", header: "Taxable amount", align: "right" },
-                { key: "tax", header: "Tax", align: "right" },
+                { key: "name", header: t("reports.explorer.tax.paidByRate") },
+                { key: "taxable", header: t("reports.common.taxableAmount"), align: "right" },
+                { key: "tax", header: t("reports.common.tax"), align: "right" },
               ]}
               rows={[
-                ...(report.paidByRate.length === 0 && !report.paidAdjustments ? [{ kind: "empty" as const, key: "none", label: "No tax paid in this range." }] : []),
+                ...(report.paidByRate.length === 0 && !report.paidAdjustments ? [{ kind: "empty" as const, key: "none", label: t("reports.explorer.tax.noTaxPaid") }] : []),
                 ...report.paidByRate.map((row) => ({ kind: "line" as const, key: row.name, cells: { name: row.name, taxable: money(row.taxableAmount), tax: money(row.amount) } })),
                 ...(report.paidAdjustments
-                  ? [{ kind: "line" as const, key: "adjustments", cells: { name: "Adjustments from voided bills and removed documents", taxable: "—", tax: money(report.paidAdjustments.amount) } }]
+                  ? [{ kind: "line" as const, key: "adjustments", cells: { name: t("reports.explorer.tax.paidAdjustments"), taxable: "—", tax: money(report.paidAdjustments.amount) } }]
                   : []),
-                { kind: "total", key: "total", cells: { name: "Total paid", taxable: money(report.totalPaidTaxable), tax: money(report.taxPaid) } },
+                { kind: "total", key: "total", cells: { name: t("reports.explorer.tax.totalPaid"), taxable: money(report.totalPaidTaxable), tax: money(report.taxPaid) } },
               ]}
             />
           </div>
@@ -905,14 +912,14 @@ export function TaxSummaryTab() {
           <StatementTable
             data-testid="tax-summary-supply-class"
             columns={[
-              { key: "name", header: "Supply class" },
-              { key: "sales", header: "Sales", align: "right" },
-              { key: "purchases", header: "Purchases", align: "right" },
+              { key: "name", header: t("reports.explorer.tax.supplyClass") },
+              { key: "sales", header: t("reports.explorer.tax.sales"), align: "right" },
+              { key: "purchases", header: t("reports.explorer.tax.purchases"), align: "right" },
             ]}
             rows={report.bySupplyClass.map((row) => ({ kind: "line" as const, key: row.supplyClass, cells: { name: row.label, sales: money(row.sales), purchases: money(row.purchases) } }))}
           />
           {isOwner && <TaxPaymentsList from={report.from} to={report.to} currency={currency} version={paymentsVersion} onChanged={() => setPaymentsVersion((v) => v + 1)} />}
-          <ReportFootnote>Spine produces the numbers for your return; it doesn&apos;t file it. Owners, and members with &quot;View financial statements&quot;, can see this report.</ReportFootnote>
+          <ReportFootnote>{t("reports.explorer.tax.footnote")}</ReportFootnote>
           <TaxPaymentDialog
             open={paymentOpen}
             onOpenChange={setPaymentOpen}
@@ -922,8 +929,8 @@ export function TaxSummaryTab() {
             onRecorded={(payment) => {
               setPaymentsVersion((v) => v + 1);
               const total = BigInt(payment.amount) + BigInt(payment.inputTaxUsed);
-              if (payment.kind === "payment") showToast("Tax payment recorded", `${formatMoney(total, currency)} of output tax is settled for the period.`);
-              else showToast("Tax refund recorded", `${formatMoney(payment.amount, currency)} came back from the tax authority.`);
+              if (payment.kind === "payment") showToast(t("reports.explorer.tax.paymentRecorded"), t("reports.explorer.tax.paymentRecordedDescription", { amount: formatMoney(total, currency) }));
+              else showToast(t("reports.explorer.tax.refundRecorded"), t("reports.explorer.tax.refundRecordedDescription", { amount: formatMoney(payment.amount, currency) }));
             }}
           />
         </>

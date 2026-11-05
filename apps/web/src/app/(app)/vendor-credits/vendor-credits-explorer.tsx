@@ -12,6 +12,7 @@ import { formatMoney } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { useToast } from "../../../components/toast-host";
 import { ActionError } from "../../../components/action-error";
+import { t as translate, useT } from "../../../lib/i18n";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
 import type { ContactOption, JobOption } from "../vendor-bills/types";
 import { ApplyVendorCreditDialog } from "./apply-vendor-credit-dialog";
@@ -38,12 +39,12 @@ import type { VendorCredit } from "./types";
 const ALL = "__all__";
 const STATE_OPTIONS = CREDIT_STATES.map((s) => ({ value: s, label: CREDIT_STATE_LABELS[s] }));
 const SKELETON_COLUMNS = [
-  { key: "number", header: "Number", width: "w-24" },
-  { key: "ref", header: "Their no.", width: "w-20" },
-  { key: "vendor", header: "Vendor", width: "w-40" },
-  { key: "date", header: "Date", width: "w-20" },
-  { key: "state", header: "State", width: "w-20" },
-  { key: "total", header: "Total", width: "w-24" },
+  { key: "number", header: translate("vendorCredits.columns.number"), width: "w-24" },
+  { key: "ref", header: translate("vendorCredits.columns.theirNo"), width: "w-20" },
+  { key: "vendor", header: translate("vendorCredits.columns.vendor"), width: "w-40" },
+  { key: "date", header: translate("vendorCredits.columns.date"), width: "w-20" },
+  { key: "state", header: translate("vendorCredits.columns.state"), width: "w-20" },
+  { key: "total", header: translate("vendorCredits.columns.total"), width: "w-24" },
 ];
 
 /**
@@ -57,6 +58,7 @@ const SKELETON_COLUMNS = [
  * together.
  */
 export function VendorCreditsExplorer() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canCreate = useCapability("vendor_credits.edit_own");
@@ -99,9 +101,9 @@ export function VendorCreditsExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Vendor credits updated");
+      if (mode === "refresh") setAnnouncement(t("vendorCredits.explorer.updated"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Couldn't load vendor credits.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("vendorCredits.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -154,8 +156,8 @@ export function VendorCreditsExplorer() {
     return state.sort ? shown : [...shown].sort((a, b) => `${b.date.slice(0, 10)}${b.createdAt ?? ""}`.localeCompare(`${a.date.slice(0, 10)}${a.createdAt ?? ""}`));
   }, [credits, state, today]);
   const selectedCredits = useMemo(() => (credits ?? []).filter((c) => selected.has(c.id)), [credits, selected]);
-  const vendorOptions = useMemo(() => [{ value: ALL, label: "All vendors" }, ...contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name }))], [contacts]);
-  const jobOptions = useMemo(() => [{ value: ALL, label: "All jobs" }, ...jobs.map((j) => ({ value: j.id, label: j.name }))], [jobs]);
+  const vendorOptions = useMemo(() => [{ value: ALL, label: t("vendorCredits.explorer.allVendors") }, ...contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name }))], [contacts]);
+  const jobOptions = useMemo(() => [{ value: ALL, label: t("vendorCredits.explorer.allJobs") }, ...jobs.map((j) => ({ value: j.id, label: j.name }))], [jobs]);
 
   /** After an action: what happened (D-223), and the list again. */
   function done(title: string, description: string) {
@@ -180,14 +182,14 @@ export function VendorCreditsExplorer() {
   }
 
   const money = (v: bigint) => formatMoney(v, orgCurrency);
-  const countOf = (n: number) => `${n} ${n === 1 ? "credit" : "credits"}`;
+  const countOf = (n: number) => t("vendorCredits.explorer.credits", { count: n });
   const card = (key: Exclude<CreditCard, "">, label: string, value: string, hint: string, tone: "default" | "warning" = "default") => {
     const on = state.card === key;
     return (
       <button
         type="button"
         aria-pressed={on}
-        aria-label={`Show ${label.toLowerCase()} only`}
+        aria-label={t("vendorCredits.explorer.showOnly", { label: label.toLowerCase() })}
         onClick={() => update({ card: on ? "" : key })}
         className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
@@ -195,7 +197,7 @@ export function VendorCreditsExplorer() {
           label={label}
           value={value}
           tone={tone}
-          trend={{ direction: "neutral", label: on ? "Showing these · press again to clear" : hint }}
+          trend={{ direction: "neutral", label: on ? t("vendorCredits.explorer.showingThese") : hint }}
           className={cn("h-full transition-colors hover:border-border-strong", on && "border-primary bg-info-bg/60 ring-1 ring-primary")}
         />
         <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", on ? "text-primary" : "text-on-surface-muted")} />
@@ -206,7 +208,7 @@ export function VendorCreditsExplorer() {
   const search = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search numbers, vendors or bills" aria-label="Search vendor credits" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("vendorCredits.explorer.searchPlaceholder")} aria-label={t("vendorCredits.explorer.searchLabel")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
   const filtersOn = hasCreditFilters(state);
@@ -215,44 +217,57 @@ export function VendorCreditsExplorer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="credit-stats">
-        <StatCard label="Credit to use" value={stats ? money(stats.toUse.amount) : "—"} trend={{ direction: "neutral", label: stats ? `${countOf(stats.toUse.count)} open or partly used` : "Open or partly used" }} className="h-full" />
-        {card("drafts", "Drafts to record", stats ? String(stats.drafts.count) : "—", stats ? `${money(stats.drafts.amount)} in all` : "")}
-        {card("partly", "Partly used", stats ? money(stats.partly.amount) : "—", stats ? `${countOf(stats.partly.count)} with some left` : "")}
-        {card("unused", `Unused ${UNUSED_DAYS}+ days`, stats ? money(stats.unused.amount) : "—", stats ? `${countOf(stats.unused.count)}${stats.unused.count ? " · ask for a refund?" : ""}` : "", stats && stats.unused.amount > 0n ? "warning" : "default")}
+        <StatCard
+          label={t("vendorCredits.explorer.creditToUse")}
+          value={stats ? money(stats.toUse.amount) : "—"}
+          trend={{ direction: "neutral", label: stats ? t("vendorCredits.explorer.creditToUseTrend", { credits: countOf(stats.toUse.count) }) : t("vendorCredits.explorer.openOrPartlyUsed") }}
+          className="h-full"
+        />
+        {/* eslint-disable i18next/no-literal-string -- card keys and tones, not copy */}
+        {card("drafts", t("vendorCredits.explorer.draftsToRecord"), stats ? String(stats.drafts.count) : "—", stats ? t("vendorCredits.explorer.inAll", { amount: money(stats.drafts.amount) }) : "")}
+        {card("partly", t("vendorCredits.explorer.partlyUsed"), stats ? money(stats.partly.amount) : "—", stats ? t("vendorCredits.explorer.withSomeLeft", { credits: countOf(stats.partly.count) }) : "")}
+        {card(
+          "unused",
+          t("vendorCredits.explorer.unusedDays", { days: UNUSED_DAYS }),
+          stats ? money(stats.unused.amount) : "—",
+          stats ? (stats.unused.count ? t("vendorCredits.explorer.askForRefund", { credits: countOf(stats.unused.count) }) : countOf(stats.unused.count)) : "",
+          stats && stats.unused.amount > 0n ? "warning" : "default",
+        )}
+        {/* eslint-enable i18next/no-literal-string */}
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as CreditState[] })} placeholder="State" aria-label="Filter by state" className="w-40" />
-            <Combobox options={vendorOptions} value={state.vendor || ALL} onValueChange={(v) => update({ vendor: v === ALL ? "" : v })} placeholder="All vendors" aria-label="Filter by vendor" className="w-56" />
+            <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as CreditState[] })} placeholder={t("vendorCredits.explorer.statePlaceholder")} aria-label={t("vendorCredits.explorer.filterByState")} className="w-40" />
+            <Combobox options={vendorOptions} value={state.vendor || ALL} onValueChange={(v) => update({ vendor: v === ALL ? "" : v })} placeholder={t("vendorCredits.explorer.allVendors")} aria-label={t("vendorCredits.explorer.filterByVendor")} className="w-56" />
             {/* US-SET-24 */}
-            {jobsOn && <Combobox options={jobOptions} value={state.job || ALL} onValueChange={(v) => update({ job: v === ALL ? "" : v })} placeholder="All jobs" aria-label="Filter by job" className="w-48" />}
+            {jobsOn && <Combobox options={jobOptions} value={state.job || ALL} onValueChange={(v) => update({ job: v === ALL ? "" : v })} placeholder={t("vendorCredits.explorer.allJobs")} aria-label={t("vendorCredits.explorer.filterByJob")} className="w-48" />}
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("vendorCredits.explorer.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="credits-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("vendorCredits.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !credits} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("vendorCredits.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !credits} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("vendorCredits.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             {canCreate && (
               <Button asChild>
                 <Link href="/vendor-credits/new">
                   <Plus size={14} aria-hidden />
-                  New vendor credit
+                  {t("vendorCredits.explorer.newVendorCredit")}
                 </Link>
               </Button>
             )}
@@ -264,9 +279,9 @@ export function VendorCreditsExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("vendorCredits.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("vendorCredits.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -283,23 +298,23 @@ export function VendorCreditsExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<FileMinus />}
-                title="No vendor credits match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("vendorCredits.explorer.noMatchTitle")}
+                description={t("vendorCredits.explorer.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("vendorCredits.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<FileMinus />}
-                title="No vendor credits yet"
-                description="Record a vendor's credit note for returned goods, an overcharge or a discount after the bill."
+                title={t("vendorCredits.explorer.emptyTitle")}
+                description={t("vendorCredits.explorer.emptyDescription")}
                 action={
                   canCreate ? (
                     <Button asChild>
-                      <Link href="/vendor-credits/new">New vendor credit</Link>
+                      <Link href="/vendor-credits/new">{t("vendorCredits.explorer.newVendorCredit")}</Link>
                     </Button>
                   ) : undefined
                 }
@@ -343,7 +358,7 @@ export function VendorCreditsExplorer() {
           onApplied={(total, bills) => {
             const credit = applying;
             setApplying(null);
-            done("Credit applied", `${formatMoney(total, credit.currency)} of ${creditLabel(credit)} now counts against ${bills === 1 ? "1 bill" : `${bills} bills`}.`);
+            done(t("vendorCredits.applied.title"), t("vendorCredits.applied.description", { amount: formatMoney(total, credit.currency), credit: creditLabel(credit), bills: t("vendorCredits.applied.bills", { count: bills }) }));
           }}
         />
       )}
@@ -355,7 +370,7 @@ export function VendorCreditsExplorer() {
           onRecorded={(amount) => {
             const credit = refunding;
             setRefunding(null);
-            done("Refund recorded", `${formatMoney(amount, credit.currency)} from ${credit.contactName ?? "the vendor"} is in your books.`);
+            done(t("vendorCredits.applied.refundRecorded"), t("vendorCredits.applied.refundRecordedDescription", { amount: formatMoney(amount, credit.currency), vendor: credit.contactName ?? t("vendorCredits.explorer.theVendor") }));
           }}
         />
       )}
@@ -367,7 +382,7 @@ export function VendorCreditsExplorer() {
           onVoided={() => {
             const credit = voiding;
             setVoiding(null);
-            done(`${creditLabel(credit)} voided`, `A reversing entry took it off your books, so what you owe ${credit.contactName ?? "the vendor"} went back up.`);
+            done(t("vendorCredits.applied.voidedTitle", { credit: creditLabel(credit) }), t("vendorCredits.applied.voidedDescription", { vendor: credit.contactName ?? t("vendorCredits.explorer.theVendor") }));
           }}
         />
       )}

@@ -5,6 +5,7 @@ import { Badge, Spinner } from "@spine/ui";
 import { BETA_NOTE, isPrerelease } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { AccountCard, AccountPaneHeader } from "./account-card";
+import { useT } from "../../../lib/i18n";
 
 /**
  * US-OPS-52 (D-265) — Settings › Your account › About Spine: the version this
@@ -12,6 +13,7 @@ import { AccountCard, AccountPaneHeader } from "./account-card";
  * one they found something in. Everyone sees it.
  */
 export function AboutPane() {
+  const t = useT();
   const [version, setVersion] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -23,17 +25,17 @@ export function AboutPane() {
 
   return (
     <div className="flex flex-col gap-4">
-      <AccountPaneHeader title="About Spine" description="Which version of Spine this business runs." />
-      <AccountCard title="Version">
+      <AccountPaneHeader title={t("settings.about.title")} description={t("settings.about.description")} />
+      <AccountCard title={t("settings.about.versionTitle")}>
         {version === undefined ? (
           <Spinner />
         ) : version === null ? (
-          <p className="text-[13.5px] text-on-surface-muted">Spine couldn&rsquo;t say which version it is. Try again in a moment.</p>
+          <p className="text-[13.5px] text-on-surface-muted">{t("settings.about.versionUnknown")}</p>
         ) : (
           <div className="flex flex-col gap-2">
             <p className="flex items-center gap-2 text-[14px] text-on-surface" data-testid="spine-version">
               Spine {version}
-              {isPrerelease(version) && <Badge>Beta</Badge>}
+              {isPrerelease(version) && <Badge>{t("settings.about.beta")}</Badge>}
             </p>
             {isPrerelease(version) && <p className="text-[13px] text-on-surface-muted">{BETA_NOTE}</p>}
           </div>

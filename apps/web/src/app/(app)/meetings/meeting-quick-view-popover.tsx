@@ -18,7 +18,13 @@ import { Eye, MapPin, MoreVertical, Pencil, Repeat, Trash2, Users, X } from "luc
 import { STATUS_CLASSNAME, STATUS_LABEL } from "./meeting-attendee-status";
 import type { Meeting, MeetingAttendee } from "./types";
 import { MENU_ICONS } from "../../../lib/menu-icons";
+import { t as translate, useT } from "../../../lib/i18n";
 import { useMeetingRespond } from "./use-meeting-respond";
+
+/** The answers an invitee can give, in button order. */
+const RESPONSES = ["accepted", "tentative", "declined"] as const;
+const DAY_FORMAT = "EEEE, MMMM d";
+const TIME_FORMAT = "h:mm a";
 
 interface Member {
   id: string;
@@ -30,10 +36,11 @@ interface Member {
 /** "Weekly on weekdays"-style summary — not exact RFC 5545 text, just enough for a quick-glance popover. */
 function describeRecurrence(rule: CalendarRecurrenceRule): string {
   const interval = rule.interval && rule.interval > 1 ? rule.interval : undefined;
-  const unit = { daily: "day", weekly: "week", monthly: "month" }[rule.frequency];
-  const cadence = interval ? `Every ${interval} ${unit}s` : `${{ daily: "Daily", weekly: "Weekly", monthly: "Monthly" }[rule.frequency]}`;
+  const every = { daily: "meetings.recurrence.everyDays", weekly: "meetings.recurrence.everyWeeks", monthly: "meetings.recurrence.everyMonths" } as const;
+  const plain = { daily: "meetings.recurrence.daily", weekly: "meetings.recurrence.weekly", monthly: "meetings.recurrence.monthly" } as const;
+  const cadence = interval ? translate(every[rule.frequency], { interval }) : translate(plain[rule.frequency]);
   const end =
-    rule.end.type === "count" ? `, ${rule.end.count} times` : `, until ${format(rule.end.date, "MMM d, yyyy")}`;
+    rule.end.type === "count" ? translate("meetings.recurrence.times", { times: rule.end.count }) : translate("meetings.recurrence.until", { date: format(rule.end.date, "MMM d, yyyy") });
   return `${cadence}${end}`;
 }
 
@@ -83,6 +90,7 @@ export function MeetingQuickViewPopover({
   onAttendeesUpdated: (rows: MeetingAttendee[]) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const { event, occurrenceStart, occurrenceEnd, isRecurring } = instance;
   const { respond, busy: respondBusy } = useMeetingRespond(meeting.id, onAttendeesUpdated);
   const myAttendeeRow = attendees?.find((a) => a.userId === currentUserId);
@@ -93,14 +101,14 @@ export function MeetingQuickViewPopover({
         <h3 className="text-[14px] font-semibold text-on-surface">{event.title}</h3>
         <div className="flex shrink-0 items-center gap-0.5">
           {canEdit ? (
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Edit" onClick={() => onEdit(isRecurring ? undefined : "series")}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label={t("meetings.quickView.edit")} onClick={() => onEdit(isRecurring ? undefined : "series")}>
               <Pencil size={14} />
             </Button>
           ) : (
             <span
               className="flex h-7 w-7 items-center justify-center text-on-surface-muted"
-              aria-label="View only — you don't have permission to edit this meeting"
-              title="View only"
+              aria-label={t("meetings.quickView.viewOnlyAria")}
+              title={t("meetings.quickView.viewOnly")}
             >
               <Eye size={14} />
             </span>
@@ -110,7 +118,7 @@ export function MeetingQuickViewPopover({
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0 text-overdue hover:bg-overdue-bg"
-              aria-label="Delete"
+              aria-label={t("meetings.quickView.delete")}
               onClick={() => onDelete(isRecurring ? undefined : "series")}
             >
               <Trash2 size={14} />
@@ -119,19 +127,19 @@ export function MeetingQuickViewPopover({
           {canEdit && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="More options">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label={t("meetings.quickView.moreOptions")}>
                   <MoreVertical size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={onDuplicate}>
                   <MENU_ICONS.duplicate aria-hidden />
-                  Duplicate
+                  {t("meetings.quickView.duplicate")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Close" onClick={onClose}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label={t("meetings.quickView.close")} onClick={onClose}>
             <X size={14} />
           </Button>
         </div>
@@ -140,8 +148,8 @@ export function MeetingQuickViewPopover({
       <div className="flex flex-col gap-1.5 text-[13px] text-on-surface-muted">
         <p>
           {event.allDay
-            ? format(occurrenceStart, "EEEE, MMMM d")
-            : `${format(occurrenceStart, "EEEE, MMMM d")} · ${format(occurrenceStart, "h:mm a")} – ${format(occurrenceEnd, "h:mm a")}`}
+            ? format(occurrenceStart, DAY_FORMAT)
+            : `${format(occurrenceStart, DAY_FORMAT)} · ${format(occurrenceStart, TIME_FORMAT)} – ${format(occurrenceEnd, TIME_FORMAT)}`}
         </p>
         {event.recurrence && (
           <p className="flex items-center gap-1.5">
@@ -155,15 +163,15 @@ export function MeetingQuickViewPopover({
             {event.location}
           </p>
         )}
-        {contactLabel && <p>Linked to {contactLabel}</p>}
-        {organizerName && <p>Organized by {organizerName}</p>}
+        {contactLabel && <p>{t("meetings.quickView.linkedTo", { name: contactLabel })}</p>}
+        {organizerName && <p>{t("meetings.quickView.organizedBy", { name: organizerName })}</p>}
       </div>
 
       {!canEdit && myAttendeeRow && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
-          <p className="text-[12px] font-medium text-on-surface">Your response</p>
+          <p className="text-[12px] font-medium text-on-surface">{t("meetings.quickView.yourResponse")}</p>
           <div className="flex gap-2">
-            {(["accepted", "tentative", "declined"] as const).map((status) => (
+            {RESPONSES.map((status) => (
               <Button
                 key={status}
                 size="sm"
@@ -184,7 +192,7 @@ export function MeetingQuickViewPopover({
         <div className="flex flex-col gap-2 border-t border-border pt-3" aria-busy="true" data-testid="quick-view-attendees-loading">
           <p className="flex items-center gap-1.5 text-[12px] font-medium text-on-surface">
             <Users size={12} />
-            Attendees
+            {t("meetings.quickView.attendees")}
           </p>
           <ul className="flex flex-col gap-1.5" aria-hidden>
             <li className="flex items-center gap-2">
@@ -199,7 +207,7 @@ export function MeetingQuickViewPopover({
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           <p className="flex items-center gap-1.5 text-[12px] font-medium text-on-surface">
             <Users size={12} />
-            Attendees
+            {t("meetings.quickView.attendees")}
           </p>
           <ul className="flex flex-col gap-1.5">
             {attendees.map((a) => (
@@ -208,8 +216,8 @@ export function MeetingQuickViewPopover({
                   <AvatarFallback>{(a.name ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="flex-1 truncate text-on-surface">
-                  {a.name ?? "Former member"}
-                  {a.userId === meeting.organizerUserId && " (organizer)"}
+                  {a.name ?? t("meetings.quickView.formerMember")}
+                  {a.userId === meeting.organizerUserId && t("meetings.quickView.organizerSuffix")}
                 </span>
                 <Badge className={STATUS_CLASSNAME[a.status]}>{STATUS_LABEL[a.status]}</Badge>
               </li>

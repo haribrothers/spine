@@ -1,4 +1,5 @@
 import { SECTION_OPEN_CAPABILITIES, type Capability } from "@spine/shared";
+import { t } from "./i18n";
 
 export type PageAccess =
   | { state: "allowed" }
@@ -19,20 +20,20 @@ const FIELD_PAGES = ["/dashboard", "/activity", "/jobs", "/meetings", "/expenses
 
 const RULES: PageRule[] = [
   // US-PUR-19: more specific than "/expenses", which every role can open.
-  { prefix: "/expenses/categories", name: "Expense categories", anyOf: ["expense_categories.edit_own", "expense_categories.edit_others"] },
-  { prefix: "/team", name: "Team", ownerOnly: true },
+  { prefix: "/expenses/categories", name: t("common.pageAccess.expenseCategories"), anyOf: ["expense_categories.edit_own", "expense_categories.edit_others"] },
+  { prefix: "/team", name: t("common.nav.sections.team"), ownerOnly: true },
   // US-SET-27 (D-220): every customer and team email.
-  { prefix: "/emails", name: "Email log", ownerOnly: true },
+  { prefix: "/emails", name: t("common.pageAccess.emailLog"), ownerOnly: true },
   // US-RPT-16 (D-137)
-  { prefix: "/opening-balances", name: "Opening balances", ownerOnly: true },
-  { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
-  { prefix: "/payables", name: "Payables", anyOf: ["reports.view_payables"] },
-  { prefix: "/banking", name: "Banking", anyOf: ["banking.view"] },
+  { prefix: "/opening-balances", name: t("common.pageAccess.openingBalances"), ownerOnly: true },
+  { prefix: "/receivables", name: t("common.nav.items.receivables"), anyOf: ["reports.view_receivables"] },
+  { prefix: "/payables", name: t("common.nav.items.payables"), anyOf: ["reports.view_payables"] },
+  { prefix: "/banking", name: t("common.nav.items.banking"), anyOf: ["banking.view"] },
   // US-RPT-22
-  { prefix: "/journals", name: "Journals", anyOf: ["ledger.view"] },
+  { prefix: "/journals", name: t("common.nav.items.journals"), anyOf: ["ledger.view"] },
   {
     prefix: "/reports",
-    name: "Reports",
+    name: t("common.nav.items.reports"),
     // US-RPT-23: the Reports page lists whatever reports the person can open.
     anyOf: ["reports.view_dashboard_summary", "reports.view_receivables", "reports.view_payables", "reports.view_job_profitability", "reports.view_financial_statements", "ledger.view"],
   },
@@ -42,24 +43,24 @@ const RULES: PageRule[] = [
 
 /** Names for pages Field can't open, as the sidebar labels them. */
 const PAGE_NAMES: Record<string, string> = {
-  "/contacts": "Contacts",
-  "/leads": "Pipeline",
-  "/catalog": "Catalogue",
-  "/quotes": "Quotes",
-  "/invoices": "Invoices",
-  "/credit-notes": "Credit Notes",
-  "/payments": "Payments",
-  "/receivables": "Receivables",
-  "/vendor-bills": "Vendor Bills",
-  "/vendor-credits": "Vendor Credits",
-  "/vendor-payments": "Vendor Payments",
-  "/payables": "Payables",
-  "/banking": "Banking",
-  "/journals": "Journals",
-  "/reports": "Reports",
-  "/team": "Team",
-  "/emails": "Email log",
-  "/expenses/categories": "Expense categories",
+  "/contacts": t("common.nav.items.contacts"),
+  "/leads": t("common.nav.items.pipeline"),
+  "/catalog": t("common.nav.items.catalogue"),
+  "/quotes": t("common.nav.items.quotes"),
+  "/invoices": t("common.nav.items.invoices"),
+  "/credit-notes": t("common.nav.items.creditNotes"),
+  "/payments": t("common.nav.items.payments"),
+  "/receivables": t("common.nav.items.receivables"),
+  "/vendor-bills": t("common.nav.items.vendorBills"),
+  "/vendor-credits": t("common.nav.items.vendorCredits"),
+  "/vendor-payments": t("common.nav.items.vendorPayments"),
+  "/payables": t("common.nav.items.payables"),
+  "/banking": t("common.nav.items.banking"),
+  "/journals": t("common.nav.items.journals"),
+  "/reports": t("common.nav.items.reports"),
+  "/team": t("common.nav.sections.team"),
+  "/emails": t("common.pageAccess.emailLog"),
+  "/expenses/categories": t("common.pageAccess.expenseCategories"),
 };
 
 const matches = (pathname: string, prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
@@ -77,7 +78,7 @@ export function pageAccessFor(pathname: string, role: string | null, capabilitie
     // Field's capabilities are fixed and never include expense categories.
     if (FIELD_PAGES.some((p) => matches(pathname, p)) && !rule?.anyOf?.some((c) => c.startsWith("expense_categories."))) return { state: "allowed" };
     const prefix = Object.keys(PAGE_NAMES).find((p) => matches(pathname, p));
-    return { state: "denied", pageName: prefix ? PAGE_NAMES[prefix]! : "this page", ownerOnly: rule?.ownerOnly ?? false, fixedRole: true };
+    return { state: "denied", pageName: prefix ? PAGE_NAMES[prefix]! : t("common.pageAccess.thisPage"), ownerOnly: rule?.ownerOnly ?? false, fixedRole: true };
   }
 
   if (!rule) return { state: "allowed" };

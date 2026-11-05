@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@spine/ui";
 import { AuthFrame, AuthHeading } from "../../components/auth-frame";
+import { t } from "../../lib/i18n";
 
-const NEXT_STEPS = ["Create your account", "Set up your business in a few minutes", "Invite your team"];
+const NEXT_STEPS = [t("auth.welcome.stepCreateAccount"), t("auth.welcome.stepSetUp"), t("auth.welcome.stepInvite")];
 
 /**
  * US-AUTH-13 (D-207) — where a new install opens (the middleware sends `/`
@@ -13,8 +14,8 @@ const NEXT_STEPS = ["Create your account", "Set up your business in a few minute
 export default function WelcomePage() {
   return (
     <AuthFrame scene="welcome">
-      <AuthHeading title="Run your business on Spine" large>
-        Quotes, jobs, invoices and your books in one place — on your own server.
+      <AuthHeading title={t("auth.welcome.title")} large>
+        {t("auth.welcome.body")}
       </AuthHeading>
       <ol className="mt-7 flex flex-col gap-3.5">
         {NEXT_STEPS.map((step, index) => (
@@ -26,13 +27,13 @@ export default function WelcomePage() {
       </ol>
       <Button asChild size="touch" className="mt-7 w-full">
         <Link href="/signup">
-          Create your account
+          {t("auth.welcome.cta")}
           <ArrowRight size={16} aria-hidden />
         </Link>
       </Button>
       <p className="mt-4 flex items-center gap-2 text-[13px] text-on-surface-muted">
         <ShieldCheck size={16} className="text-paid" aria-hidden />
-        Everything you enter stays on this server.
+        {t("auth.welcome.staysHere")}
       </p>
     </AuthFrame>
   );

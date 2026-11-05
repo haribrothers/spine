@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Badge, DataTable, type TableColumn, type TableSort } from "@spine/ui";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { CreditStateBadge } from "./vendor-credit-detail";
 import { VendorCreditRowActions, creditLabel, type CreditRowHandlers } from "./vendor-credit-row-actions";
@@ -40,26 +41,27 @@ export function VendorCreditsTable({
   onSelectedChange?: (next: Set<string>) => void;
   handlers: CreditRowHandlers;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const muted = <span className="text-on-surface-muted">—</span>;
   const columns: TableColumn<VendorCredit>[] = [
     {
       key: "number",
-      header: "Number",
+      header: t("vendorCredits.columns.number"),
       render: (row) => (
         <span className="flex items-center gap-2">
-          <Link href={`/vendor-credits/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline" aria-label={row.number ?? `Draft credit ${row.vendorReference ?? ""}`}>
+          <Link href={`/vendor-credits/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline" aria-label={row.number ?? t("vendorCredits.table.draftCredit", { reference: row.vendorReference ?? "" })}>
             {row.number ?? "—"}
           </Link>
-          {row.isOpening && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
+          {row.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorCredits.table.openingBalance")}</Badge>}
         </span>
       ),
       sortValue: (row) => row.number ?? "",
     },
-    { key: "ref", header: "Their no.", render: (row) => row.vendorReference ?? muted, sortValue: (row) => row.vendorReference ?? "" },
+    { key: "ref", header: t("vendorCredits.columns.theirNo"), render: (row) => row.vendorReference ?? muted, sortValue: (row) => row.vendorReference ?? "" },
     {
       key: "contact",
-      header: "Vendor",
+      header: t("vendorCredits.columns.vendor"),
       render: (row) => (
         <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -67,14 +69,14 @@ export function VendorCreditsTable({
       ),
       sortValue: (row) => row.contactName ?? "",
     },
-    { key: "date", header: "Date", render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => row.date.slice(0, 10) },
+    { key: "date", header: t("vendorCredits.columns.date"), render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => row.date.slice(0, 10) },
     {
       key: "bill",
-      header: "Against bill",
+      header: t("vendorCredits.columns.againstBill"),
       render: (row) =>
         row.billId ? (
           <SectionLink href={`/vendor-bills/${row.billId}`} className="font-medium text-primary hover:underline">
-            {row.billNumber ?? "A bill"}
+            {row.billNumber ?? t("vendorCredits.table.aBill")}
           </SectionLink>
         ) : (
           muted
@@ -83,15 +85,15 @@ export function VendorCreditsTable({
     },
     {
       key: "job",
-      header: "Job",
+      header: t("vendorCredits.columns.job"),
       render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : muted),
       sortValue: (row) => row.jobName ?? "",
     },
-    { key: "state", header: "State", render: (row) => <CreditStateBadge credit={row} testId="credit-row-state" />, sortValue: (row) => CREDIT_STATES.indexOf(creditState(row)) },
-    { key: "total", header: "Total", align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "state", header: t("vendorCredits.columns.state"), render: (row) => <CreditStateBadge credit={row} testId="credit-row-state" />, sortValue: (row) => CREDIT_STATES.indexOf(creditState(row)) },
+    { key: "total", header: t("vendorCredits.columns.total"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
     {
       key: "left",
-      header: "Left to use",
+      header: t("vendorCredits.columns.leftToUse"),
       align: "right",
       render: (row) => (row.status === "void" ? muted : <span className="tabular-nums">{formatMoney(BigInt(row.status === "draft" ? row.totalAmount : row.balanceAmount), row.currency)}</span>),
       sortValue: (row) => (row.status === "void" ? -1n : BigInt(row.status === "draft" ? row.totalAmount : row.balanceAmount)),

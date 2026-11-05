@@ -12,6 +12,7 @@ import { useToast } from "../../../components/toast-host";
 import { EmailSetupWarning } from "./email-setup-warning";
 import { EmailsTable } from "./emails-table";
 import { ActionError } from "../../../components/action-error";
+import { t, useT } from "../../../lib/i18n";
 import {
   EMAIL_RANGES,
   EMAIL_RANGE_LABELS,
@@ -29,12 +30,12 @@ const STATUS_OPTIONS = EMAIL_LOG_STATUSES.map((value) => ({ value, label: EMAIL_
 const KIND_OPTIONS = EMAIL_KINDS.filter((k) => k !== "verification").map((value) => ({ value, label: EMAIL_KIND_LABELS[value] }));
 
 const SKELETON_COLUMNS = [
-  { key: "when", header: "When", width: "w-16" },
-  { key: "to", header: "To", width: "w-40" },
-  { key: "subject", header: "Subject", width: "w-56" },
-  { key: "record", header: "Record", width: "w-20" },
-  { key: "status", header: "Status", width: "w-16" },
-  { key: "attempts", header: "Attempts", width: "w-12" },
+  { key: "when", header: t("emails.columns.when"), width: "w-16" },
+  { key: "to", header: t("emails.columns.to"), width: "w-40" },
+  { key: "subject", header: t("emails.columns.subject"), width: "w-56" },
+  { key: "record", header: t("emails.columns.record"), width: "w-20" },
+  { key: "status", header: t("emails.columns.status"), width: "w-16" },
+  { key: "attempts", header: t("emails.columns.attempts"), width: "w-12" },
 ];
 
 /**
@@ -46,6 +47,7 @@ const SKELETON_COLUMNS = [
  * ask first (D-218).
  */
 export function EmailsExplorer() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [state, setState] = useState<EmailsListState>(() => parseEmailsState(new URLSearchParams(searchParams.toString())));
@@ -81,9 +83,9 @@ export function EmailsExplorer() {
         setRefreshFailed(false);
         setUpdatedAt(Date.now());
         setNow(Date.now());
-        if (mode === "refresh") setAnnouncement("Email log updated");
+        if (mode === "refresh") setAnnouncement(t("emails.explorer.updated"));
       } catch (err) {
-        if (mode === "first") setError(err instanceof Error ? err.message : "Could not load the email log.");
+        if (mode === "first") setError(err instanceof Error ? err.message : t("emails.explorer.loadFailed"));
         else setRefreshFailed(true);
       } finally {
         loading.current = false;
@@ -116,45 +118,45 @@ export function EmailsExplorer() {
 
   const today = useMemo(() => new Date(now), [now]);
   const rows = useMemo(() => (emails ? filterEmails(emails, state, today) : null), [emails, state, today]);
-  const recordLabel = state.record ? (emails?.find((e) => e.entityId === state.record)?.recordLabel ?? "this record") : null;
+  const recordLabel = state.record ? (emails?.find((e) => e.entityId === state.record)?.recordLabel ?? t("emails.explorer.thisRecord")) : null;
 
   async function retry(email: EmailLogEntry) {
     const ok = await confirm({
-      title: "Retry this email?",
+      title: t("emails.retryConfirm.title"),
       description: (
         <>
-          {emailDescription(email)} goes to {email.toAddress} again now, with {email.maxAttempts} attempts.
-          {email.lastError && <> Last time it failed: “{email.lastError}” — check the address on the contact first if it&apos;s wrong.</>}
+          {t("emails.retryConfirm.description", { email: emailDescription(email), address: email.toAddress, attempts: email.maxAttempts })}
+          {email.lastError && t("emails.retryConfirm.lastError", { error: email.lastError })}
         </>
       ),
-      confirmLabel: "Retry email",
+      confirmLabel: t("emails.retryConfirm.confirm"),
     });
     if (!ok) return;
     setActionError(null);
     try {
       await apiClient.post(`/emails/${email.id}/retry`, {});
-      showToast("Email queued again", `${emailDescription(email)} will be sent to ${email.toAddress} shortly.`);
+      showToast(t("emails.retryToast.title"), t("emails.retryToast.description", { email: emailDescription(email), address: email.toAddress }));
       void load("refresh");
     } catch (err) {
-      setActionError({ title: "Couldn't retry the email.", message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("emails.retryFailed"), message: err instanceof Error ? err.message : t("emails.explorer.tryAgain") });
     }
   }
 
   async function cancel(email: EmailLogEntry) {
     const ok = await confirm({
-      title: "Cancel this email?",
-      description: `${emailDescription(email)} won't be sent to ${email.toAddress || "anyone"}. You can send it again from its record.`,
-      confirmLabel: "Cancel email",
+      title: t("emails.cancelConfirm.title"),
+      description: t("emails.cancelConfirm.description", { email: emailDescription(email), address: email.toAddress || t("emails.cancelConfirm.anyone") }),
+      confirmLabel: t("emails.cancelConfirm.confirm"),
       danger: true,
     });
     if (!ok) return;
     setActionError(null);
     try {
       await apiClient.post(`/emails/${email.id}/cancel`, {});
-      showToast("Email cancelled", `${emailDescription(email)} won't be sent.`);
+      showToast(t("emails.cancelToast.title"), t("emails.cancelToast.description", { email: emailDescription(email) }));
       void load("refresh");
     } catch (err) {
-      setActionError({ title: "Couldn't cancel the email.", message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("emails.cancelFailed"), message: err instanceof Error ? err.message : t("emails.explorer.tryAgain") });
     }
   }
 
@@ -170,7 +172,7 @@ export function EmailsExplorer() {
   const search = (
     <div className="relative w-80">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search recipient, subject or record" aria-label="Search emails" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("emails.explorer.searchPlaceholder")} aria-label={t("emails.explorer.searchLabel")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
   const filtersOn = hasEmailFilters(state);
@@ -185,44 +187,44 @@ export function EmailsExplorer() {
         <button
           type="button"
           aria-pressed={card("waiting")}
-          aria-label={`Show waiting emails, ${status?.waiting ?? 0}`}
+          aria-label={t("emails.stats.showWaiting", { n: status?.waiting ?? 0 })}
           onClick={() => update({ card: card("waiting") ? "" : "waiting" })}
           className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <StatCard
-            label="Waiting"
+            label={t("emails.stats.waiting")}
             value={status ? String(status.waiting) : "—"}
-            detail="Queued or retrying"
-            trend={{ direction: "neutral", label: card("waiting") ? "Showing these · press again to clear" : "Show these emails" }}
+            detail={t("emails.stats.waitingDetail")}
+            trend={{ direction: "neutral", label: card("waiting") ? t("emails.stats.showingThese") : t("emails.stats.showThese") }}
             className={cn("h-full transition-colors hover:border-border-strong", card("waiting") && "border-primary bg-info-bg/60 ring-1 ring-primary")}
           />
         </button>
         <button
           type="button"
           aria-pressed={card("failed")}
-          aria-label={`Show emails that failed in the last 7 days, ${failed}`}
+          aria-label={t("emails.stats.showFailed", { n: failed })}
           onClick={() => update({ card: card("failed") ? "" : "failed" })}
           className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <StatCard
-            label="Failed in the last 7 days"
+            label={t("emails.stats.failed")}
             value={status ? String(failed) : "—"}
-            detail="Not retried or cancelled"
+            detail={t("emails.stats.failedDetail")}
             tone={failed > 0 ? "critical" : "default"}
-            trend={{ direction: "neutral", label: card("failed") ? "Showing these · press again to clear" : "Show these emails" }}
+            trend={{ direction: "neutral", label: card("failed") ? t("emails.stats.showingThese") : t("emails.stats.showThese") }}
             className={cn("h-full transition-colors hover:border-border-strong", card("failed") && "border-primary bg-info-bg/60 ring-1 ring-primary")}
           />
         </button>
-        <StatCard label="Sent today" value={status ? String(status.sentToday) : "—"} trend={{ direction: "neutral", label: "Since midnight" }} className="h-full" />
+        <StatCard label={t("emails.stats.sentToday")} value={status ? String(status.sentToday) : "—"} trend={{ direction: "neutral", label: t("emails.stats.sinceMidnight") }} className="h-full" />
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(v) => update({ status: v as EmailLogStatus[] })} placeholder="Status" aria-label="Filter by status" className="w-40" />
-            <MultiSelect options={KIND_OPTIONS} value={state.kind} onValueChange={(v) => update({ kind: v as EmailKind[] })} placeholder="Kind" aria-label="Filter by kind" className="w-44" />
+            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(v) => update({ status: v as EmailLogStatus[] })} placeholder={t("emails.filters.status")} aria-label={t("emails.filters.filterByStatus")} className="w-40" />
+            <MultiSelect options={KIND_OPTIONS} value={state.kind} onValueChange={(v) => update({ kind: v as EmailKind[] })} placeholder={t("emails.filters.kind")} aria-label={t("emails.filters.filterByKind")} className="w-44" />
             <Select value={state.range} onValueChange={(v) => update({ range: v as EmailRange })}>
-              <SelectTrigger aria-label="Show emails from" className="w-40">
+              <SelectTrigger aria-label={t("emails.filters.showFrom")} className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -235,31 +237,31 @@ export function EmailsExplorer() {
             </Select>
             {recordLabel && (
               <span className="inline-flex items-center gap-1 rounded-full bg-info-bg py-0.5 pl-2.5 pr-1 text-[12.5px] font-medium text-on-surface" data-testid="email-record-filter">
-                Emails for {recordLabel}
-                <button type="button" aria-label={`Show all emails, not just ${recordLabel}'s`} onClick={() => update({ record: "" })} className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-surface">
+                {t("emails.filters.recordChip", { record: recordLabel })}
+                <button type="button" aria-label={t("emails.filters.showAll", { record: recordLabel })} onClick={() => update({ record: "" })} className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-surface">
                   <X size={12} aria-hidden />
                 </button>
               </span>
             )}
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("emails.filters.clear")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="emails-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("emails.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !emails} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("emails.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !emails} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("emails.explorer.refreshList")}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -269,9 +271,9 @@ export function EmailsExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("emails.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("emails.explorer.tryAgainButton")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -291,16 +293,16 @@ export function EmailsExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<Mail />}
-                title="No emails match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("emails.empty.filteredTitle")}
+                description={t("emails.empty.filteredDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("emails.filters.clear")}
                   </Button>
                 }
               />
             ) : (
-              <EmptyState icon={<Mail />} title="No emails yet" description="Quotes, invoices, reminders, receipts and your team's notifications show here once Spine sends them." />
+              <EmptyState icon={<Mail />} title={t("emails.empty.title")} description={t("emails.empty.description")} />
             )}
           </div>
         </div>

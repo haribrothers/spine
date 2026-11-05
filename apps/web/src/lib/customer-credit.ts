@@ -1,4 +1,5 @@
 import { apiClient } from "./api-client";
+import { t } from "./i18n";
 
 /** One source of the customer's credit: an unallocated payment or a credit note's spare credit. */
 export interface CustomerCredit {
@@ -16,9 +17,9 @@ export async function loadCustomerCredit(contactId: string): Promise<CustomerCre
     apiClient.get<{ id: string; number: string | null; date: string | null; status: string; creditRemainingAmount?: string }[]>(`/credit-notes?contactId=${contactId}`).catch(() => []),
   ]);
   return [
-    ...payments.filter((p) => BigInt(p.unallocatedAmount) > 0n).map((p) => ({ kind: "payment" as const, id: p.id, label: `Payment ${p.number ?? ""}`.trim(), date: p.date, available: BigInt(p.unallocatedAmount) })),
+    ...payments.filter((p) => BigInt(p.unallocatedAmount) > 0n).map((p) => ({ kind: "payment" as const, id: p.id, label: t("payments.customerCredit.payment", { number: p.number ?? "" }).trim(), date: p.date, available: BigInt(p.unallocatedAmount) })),
     ...notes
       .filter((n) => n.status === "issued" && BigInt(n.creditRemainingAmount ?? "0") > 0n)
-      .map((n) => ({ kind: "credit_note" as const, id: n.id, label: `Credit note ${n.number ?? ""}`.trim(), date: n.date, available: BigInt(n.creditRemainingAmount!) })),
+      .map((n) => ({ kind: "credit_note" as const, id: n.id, label: t("payments.customerCredit.creditNote", { number: n.number ?? "" }).trim(), date: n.date, available: BigInt(n.creditRemainingAmount!) })),
   ].sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
 }

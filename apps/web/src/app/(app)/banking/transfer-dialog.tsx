@@ -27,14 +27,16 @@ import {
 import { SAME_ACCOUNT_TRANSFER, type BankTransfer, type MoneyAccount } from "@spine/shared";
 import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
 
 function AccountSelect({ id, accounts, value, onValueChange, disabled }: { id: string; accounts: MoneyAccount[]; value: string; onValueChange: (v: string) => void; disabled?: boolean }) {
+  const t = useT();
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger id={id}>
-        <SelectValue placeholder="Choose an account" />
+        <SelectValue placeholder={t("banking.transfer.chooseAccount")} />
       </SelectTrigger>
       <SelectContent>
         {accounts.map((a) => (
@@ -70,6 +72,7 @@ export function TransferDialog({
   /** US-BANK-15 — opened from an account: it's the From side. */
   initialAccountId?: string;
 }) {
+  const t = useT();
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
   const [amount, setAmount] = useState<bigint>(0n);
@@ -101,7 +104,7 @@ export function TransferDialog({
   async function handleSubmit() {
     setError(null);
     if (!fromId || !toId) {
-      setError("Choose the account the money left and the one it went to.");
+      setError(t("banking.transfer.chooseBoth"));
       return;
     }
     if (fromId === toId) {
@@ -109,15 +112,15 @@ export function TransferDialog({
       return;
     }
     if (amount <= 0n) {
-      setError("Enter an amount greater than zero.");
+      setError(t("banking.transfer.amountRequired"));
       return;
     }
     // US-BANK-15 (D-218): moving money asks first.
     const ok = await confirm({
-      title: `Move ${formatMoney(amount, currency)} from ${from?.name ?? "the account"} to ${to?.name ?? "the account"}?`,
-      description: `Both balances change on ${formatDay(toIsoDate(date))}, and both registers show the transfer.`,
-      confirmLabel: "Move money",
-      cancelLabel: "Go back",
+      title: t("banking.transfer.confirmTitle", { amount: formatMoney(amount, currency), from: from?.name ?? t("banking.transfer.theAccount"), to: to?.name ?? t("banking.transfer.theAccount") }),
+      description: t("banking.transfer.confirmBody", { date: formatDay(toIsoDate(date)) }),
+      confirmLabel: t("banking.transfer.moveMoney"),
+      cancelLabel: t("banking.explorer.goBack"),
     });
     if (!ok) return;
     setSaving(true);
@@ -126,7 +129,7 @@ export function TransferDialog({
       onOpenChange(false);
       onRecorded(transfer);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this transfer. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.transfer.error"));
     } finally {
       setSaving(false);
     }
@@ -136,8 +139,8 @@ export function TransferDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Transfer between accounts</DialogTitle>
-          <DialogDescription>Move money between your own accounts — a deposit, a top-up or paying off a card.</DialogDescription>
+          <DialogTitle>{t("banking.transfer.title")}</DialogTitle>
+          <DialogDescription>{t("banking.transfer.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -146,21 +149,21 @@ export function TransferDialog({
             </Alert>
           )}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField label="From" required>
+            <FormField label={t("banking.transfer.from")} required>
               {(field) => <AccountSelect id={field.id} accounts={accounts} value={fromId} onValueChange={setFromId} disabled={prefill?.direction === "out"} />}
             </FormField>
-            <FormField label="To" required>
+            <FormField label={t("banking.transfer.to")} required>
               {(field) => <AccountSelect id={field.id} accounts={accounts} value={toId} onValueChange={setToId} disabled={prefill?.direction === "in"} />}
             </FormField>
-            <FormField label="Amount" required>
+            <FormField label={t("banking.transfer.amount")} required>
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={Boolean(prefill)} />}
             </FormField>
-            <FormField label="Date" required>
+            <FormField label={t("banking.transfer.date")} required>
               {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
           </div>
-          <FormField label="Reference">
-            {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" maxLength={120} />}
+          <FormField label={t("banking.transfer.reference")}>
+            {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder={t("banking.transfer.optional")} maxLength={120} />}
           </FormField>
           {sameAccount && (
             <p role="alert" className="text-[13px] font-medium text-overdue">
@@ -169,16 +172,16 @@ export function TransferDialog({
           )}
           {from && to && from.id !== to.id && (
             <p className="text-[13px] text-on-surface-muted">
-              Posts Dr {to.name} / Cr {from.name}. Both registers show it.
+              {t("banking.transfer.posts", { to: to.name, from: from.name })}
             </p>
           )}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("banking.transfer.cancel")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving || sameAccount}>
-            {saving ? <Spinner size="sm" /> : "Move money"}
+            {saving ? <Spinner size="sm" /> : t("banking.transfer.moveMoney")}
           </Button>
         </DialogFooter>
       </DialogContent>

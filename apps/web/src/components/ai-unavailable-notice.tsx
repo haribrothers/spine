@@ -2,6 +2,7 @@
 
 import { RotateCw } from "lucide-react";
 import { Alert, Button } from "@spine/ui";
+import { useT } from "../lib/i18n";
 
 /**
  * US-AI-07 — the inline message by an AI control when its request didn't
@@ -11,6 +12,7 @@ import { Alert, Button } from "@spine/ui";
  * or too many requests. The form around it stays as it was.
  */
 export function AiUnavailableNotice({ message, detail, onRetry }: { message: string; detail?: string; onRetry?: () => void }) {
+  const t = useT();
   const split = message.indexOf(". ");
   const [lead, rest] = split < 0 ? [message, ""] : [message.slice(0, split + 1), message.slice(split + 2)];
   return (
@@ -24,7 +26,7 @@ export function AiUnavailableNotice({ message, detail, onRetry }: { message: str
         {onRetry && (
           <Button type="button" variant="secondary" size="sm" onClick={onRetry}>
             <RotateCw size={14} aria-hidden />
-            Try again
+            {t("common.aiUnavailable.tryAgain")}
           </Button>
         )}
       </div>

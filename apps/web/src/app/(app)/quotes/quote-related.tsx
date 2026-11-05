@@ -9,6 +9,7 @@ import { apiClient } from "../../../lib/api-client";
 import { orgLocaleTag } from "../../../lib/money";
 import { STATUS_BADGE_CLASS } from "./quotes-table";
 import { QUOTE_STATUS_LABELS } from "./types";
+import { useT } from "../../../lib/i18n";
 
 import { SectionLink } from "../../../components/section-link";
 function Heading({ children }: { children: React.ReactNode }) {
@@ -21,6 +22,7 @@ function Heading({ children }: { children: React.ReactNode }) {
  * when there's nothing but this quote.
  */
 export function QuoteRelated({ quoteId, refreshKey }: { quoteId: string; refreshKey?: unknown }) {
+  const t = useT();
   const [data, setData] = useState<QuoteRelatedData | null>(null);
 
   useEffect(() => {
@@ -37,37 +39,38 @@ export function QuoteRelated({ quoteId, refreshKey }: { quoteId: string; refresh
 
   return (
     <Card className="flex flex-col p-0" data-testid="quote-related">
-      <h3 className="px-4 pt-4 text-[14px] font-semibold text-on-surface">Related</h3>
+      <h3 className="px-4 pt-4 text-[14px] font-semibold text-on-surface">{t("quotes.related.title")}</h3>
       <div className="flex flex-col px-4 pb-3">
         {data.lead && (
           <>
-            <Heading>Lead</Heading>
+            <Heading>{t("quotes.related.lead")}</Heading>
             <div className="flex items-center gap-2 py-1.5 text-[13px]">
               <Target size={14} className="text-on-surface-muted" aria-hidden />
               <SectionLink href={`/leads?lead=${data.lead.id}`} className="font-medium text-primary hover:underline">
-                {data.lead.title || "Untitled lead"}
+                {data.lead.title || t("quotes.related.untitledLead")}
               </SectionLink>
             </div>
           </>
         )}
         {hasVersions && (
           <>
-            <Heading>Versions</Heading>
+            <Heading>{t("quotes.related.versions")}</Heading>
             <ul className="flex flex-col">
               {data.versions.map((v) => (
                 <li key={v.id} className="flex items-center gap-2 py-1.5 text-[13px]">
                   <FileText size={14} className="text-on-surface-muted" aria-hidden />
                   {v.id === quoteId ? (
-                    <span className="font-semibold text-on-surface">v{v.version}</span>
+                    <span className="font-semibold text-on-surface">{t("quotes.table.version", { version: v.version })}</span>
                   ) : (
-                    <Link href={`/quotes/${v.id}`} className="font-medium text-primary hover:underline" aria-label={`Version ${v.version}${v.number ? `, ${v.number}` : ""}`}>
-                      v{v.version}
+                    <Link href={`/quotes/${v.id}`} className="font-medium text-primary hover:underline" aria-label={v.number ? t("quotes.related.versionLabelWithNumber", { version: v.version, number: v.number }) : t("quotes.related.versionLabel", { version: v.version })}>
+                      {t("quotes.table.version", { version: v.version })}
                     </Link>
                   )}
                   <Badge className={STATUS_BADGE_CLASS[v.status]}>{QUOTE_STATUS_LABELS[v.status]}</Badge>
-                  {v.isExpired && <Badge className="bg-overdue-bg text-overdue">Expired</Badge>}
+                  {v.isExpired && <Badge className="bg-overdue-bg text-overdue">{t("quotes.status.expired")}</Badge>}
                   <span className="ml-auto text-[12px] text-on-surface-muted">
-                    {v.id === quoteId ? "this one" : new Date(v.createdAt).toLocaleDateString(locale, { day: "numeric", month: "short" })}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- date format options */}
+                    {v.id === quoteId ? t("quotes.related.thisOne") : new Date(v.createdAt).toLocaleDateString(locale, { day: "numeric", month: "short" })}
                   </span>
                 </li>
               ))}
@@ -76,7 +79,7 @@ export function QuoteRelated({ quoteId, refreshKey }: { quoteId: string; refresh
         )}
         {(data.jobs.length > 0 || data.invoices.length > 0) && (
           <>
-            <Heading>Made from this quote</Heading>
+            <Heading>{t("quotes.related.madeFrom")}</Heading>
             <ul className="flex flex-col">
               {data.jobs.map((j) => (
                 <li key={j.id} className="flex items-center gap-2 py-1.5 text-[13px]">
@@ -91,7 +94,7 @@ export function QuoteRelated({ quoteId, refreshKey }: { quoteId: string; refresh
                 <li key={inv.id} className="flex items-center gap-2 py-1.5 text-[13px]">
                   <Receipt size={14} className="text-on-surface-muted" aria-hidden />
                   <SectionLink href={`/invoices/${inv.id}`} className="font-medium text-primary hover:underline">
-                    {inv.number ?? "Draft invoice"}
+                    {inv.number ?? t("quotes.related.draftInvoice")}
                   </SectionLink>
                   <span className="ml-auto text-[12px] capitalize text-on-surface-muted">{inv.status.replace(/_/g, " ")}</span>
                 </li>

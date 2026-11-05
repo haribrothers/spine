@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, Button, Combobox, Field, Label, Switch } from "@spine/ui";
 import { Trash2 } from "lucide-react";
+import { useT } from "../../../lib/i18n";
 
 interface Member {
   id: string;
@@ -39,6 +40,7 @@ export function MeetingVisibilityAndInviteesEditor({
   /** Organizer's own userId — never offered as an invitee (they're implicitly included). */
   excludeUserId: string;
 }) {
+  const t = useT();
   const [pendingUserId, setPendingUserId] = useState("");
 
   const invitableMembers = members.filter((m) => m.userId !== excludeUserId && !attendeeUserIds.includes(m.userId));
@@ -60,10 +62,10 @@ export function MeetingVisibilityAndInviteesEditor({
       <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2">
         <div>
           <Label htmlFor="meeting-visibility-org" className="font-medium">
-            Visible to everyone in the org
+            {t("meetings.visibility.label")}
           </Label>
           <p className="text-[12px] text-on-surface-muted">
-            {visibility === "org" ? "Every org member can see this meeting." : "Only you and invited attendees can see this meeting."}
+            {visibility === "org" ? t("meetings.visibility.org") : t("meetings.visibility.private")}
           </p>
         </div>
         <Switch
@@ -74,18 +76,18 @@ export function MeetingVisibilityAndInviteesEditor({
       </div>
 
       <Field>
-        <Label>Invite people</Label>
+        <Label>{t("meetings.visibility.invite")}</Label>
         <div className="flex gap-2">
           <div className="flex-1">
             <Combobox
               options={memberOptions}
               value={pendingUserId}
               onValueChange={setPendingUserId}
-              placeholder="Select people to invite…"
+              placeholder={t("meetings.visibility.invitePlaceholder")}
             />
           </div>
           <Button type="button" variant="secondary" disabled={!pendingUserId} onClick={handleAdd}>
-            Add
+            {t("meetings.visibility.add")}
           </Button>
         </div>
       </Field>
@@ -99,13 +101,13 @@ export function MeetingVisibilityAndInviteesEditor({
                 <Avatar size="sm">
                   <AvatarFallback>{(member?.name ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <span className="flex-1 truncate text-on-surface">{member?.name ?? "Unknown member"}</span>
+                <span className="flex-1 truncate text-on-surface">{member?.name ?? t("meetings.visibility.unknownMember")}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0 text-overdue hover:bg-overdue-bg"
-                  aria-label={`Remove ${member?.name ?? "person"}`}
+                  aria-label={t("meetings.visibility.removeAria", { name: member?.name ?? t("meetings.visibility.person") })}
                   onClick={() => handleRemove(userId)}
                 >
                   <Trash2 size={14} />

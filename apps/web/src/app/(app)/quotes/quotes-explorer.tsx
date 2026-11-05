@@ -41,13 +41,14 @@ import {
 import type { Quote } from "./types";
 import { QUOTE_TOASTS } from "./quote-row-actions";
 import { ActionError } from "../../../components/action-error";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "sent", label: "Sent" },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Declined" },
-  { value: "expired", label: "Expired" },
+  { value: "draft", label: translate("quotes.status.draft") },
+  { value: "sent", label: translate("quotes.status.sent") },
+  { value: "accepted", label: translate("quotes.status.accepted") },
+  { value: "rejected", label: translate("quotes.status.declined") },
+  { value: "expired", label: translate("quotes.status.expired") },
 ];
 
 const ALL_CONTACTS = "__all__";
@@ -63,6 +64,7 @@ const ALL_CONTACTS = "__all__";
  * "Expired" isn't a stored status — the API computes `isExpired`.
  */
 export function QuotesExplorer() {
+  const t = useT();
   const canCreate = useCapability("quotes.edit_own");
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -95,15 +97,15 @@ export function QuotesExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Quotes updated");
+      if (mode === "refresh") setAnnouncement(t("quotes.explorer.updated"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load quotes.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("quotes.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load("first");
@@ -133,7 +135,7 @@ export function QuotesExplorer() {
   const orgCurrency = currency ?? quotes?.[0]?.currency ?? "USD";
   const stats = useMemo(() => (quotes ? quoteStats(quotes, orgCurrency, today) : null), [quotes, orgCurrency, today]);
   const rows = useMemo(() => (quotes ? filterQuotes(quotes, state, today) : null), [quotes, state, today]);
-  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: "All contacts" }, ...quoteContacts(quotes ?? [])], [quotes]);
+  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: t("quotes.explorer.allContacts") }, ...quoteContacts(quotes ?? [])], [quotes, t]);
 
   function handleDeleted(quote: Quote) {
     void load("refresh");
@@ -148,7 +150,7 @@ export function QuotesExplorer() {
     );
   }
 
-  const money = (s: MoneySum) => (s.amount > 0n || s.otherCurrencies ? `${formatMoney(s.amount, orgCurrency)}${s.otherCurrencies ? " + other currencies" : ""}` : "");
+  const money = (s: MoneySum) => (s.amount > 0n || s.otherCurrencies ? (s.otherCurrencies ? t("quotes.explorer.moneyWithOther", { amount: formatMoney(s.amount, orgCurrency) }) : formatMoney(s.amount, orgCurrency)) : "");
 
   const card = (label: string, value: string, extra: string, key: QuoteCard | null, hint: string, ariaHint: string, tone?: "warn") => {
     const pressed = key ? state.card === key : false;
@@ -158,7 +160,7 @@ export function QuotesExplorer() {
         value={value}
         detail={extra || undefined}
         tone={tone === "warn" && Number(value) > 0 ? "warning" : "default"}
-        trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : hint }}
+        trend={{ direction: "neutral", label: pressed ? t("quotes.explorer.showingThese") : hint }}
         className={cn("h-full transition-colors", key && "hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
       />
     );
@@ -179,7 +181,7 @@ export function QuotesExplorer() {
   const search = (
     <div className="relative w-72">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search quotes, titles or lines" aria-label="Search quotes" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("quotes.explorer.searchPlaceholder")} aria-label={t("quotes.explorer.searchLabel")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
 
@@ -189,15 +191,18 @@ export function QuotesExplorer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="quote-stats">
-        {card("Open", stats ? String(stats.open.count) : "—", stats ? money(stats.open) : "", "open", "Sent and still valid", "Show open quotes")}
-        {card("Expiring in 7 days", stats ? String(stats.expiring) : "—", "", "expiring", "Show these quotes", "Show quotes expiring in 7 days", "warn")}
-        {card("Won this month", stats ? String(stats.won.count) : "—", stats ? money(stats.won) : "", "won", "Show these quotes", "Show quotes won this month")}
+        {/* eslint-disable-next-line i18next/no-literal-string -- card keys */}
+        {card(t("quotes.explorer.open"), stats ? String(stats.open.count) : "—", stats ? money(stats.open) : "", "open", t("quotes.explorer.openHint"), t("quotes.explorer.openAria"))}
+        {/* eslint-disable-next-line i18next/no-literal-string -- card keys and tone */}
+        {card(t("quotes.explorer.expiring"), stats ? String(stats.expiring) : "—", "", "expiring", t("quotes.explorer.showThese"), t("quotes.explorer.expiringAria"), "warn")}
+        {/* eslint-disable-next-line i18next/no-literal-string -- card keys */}
+        {card(t("quotes.explorer.won"), stats ? String(stats.won.count) : "—", stats ? money(stats.won) : "", "won", t("quotes.explorer.showThese"), t("quotes.explorer.wonAria"))}
         {card(
-          "Win rate",
+          t("quotes.explorer.winRate"),
           stats ? winRateText(stats.winRate) : "—",
           "",
           null,
-          stats && stats.winRate.closed ? `${stats.winRate.won} of ${stats.winRate.closed} in the last 90 days` : "None closed in the last 90 days",
+          stats && stats.winRate.closed ? t("quotes.explorer.winRateHint", { won: stats.winRate.won, closed: stats.winRate.closed }) : t("quotes.explorer.winRateNone"),
           "",
         )}
       </div>
@@ -205,40 +210,40 @@ export function QuotesExplorer() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status })} placeholder="Status" aria-label="Filter by status" className="w-40" />
+            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status })} placeholder={t("quotes.explorer.statusPlaceholder")} aria-label={t("quotes.explorer.statusFilter")} className="w-40" />
             <Combobox
               options={contactOptions}
               value={state.contact || ALL_CONTACTS}
               onValueChange={(v) => update({ contact: v === ALL_CONTACTS ? "" : v })}
-              placeholder="All contacts"
-              aria-label="Filter by contact"
+              placeholder={t("quotes.explorer.allContacts")}
+              aria-label={t("quotes.explorer.contactFilter")}
               className="w-56"
             />
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("quotes.explorer.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="quotes-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("quotes.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !quotes} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("quotes.explorer.refresh")} aria-busy={refreshing} disabled={refreshing || !quotes} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("quotes.explorer.refresh")}</TooltipContent>
             </Tooltip>
             {canCreate && (
               <Button asChild>
                 <Link href="/quotes/new">
                   <Plus size={14} aria-hidden />
-                  New quote
+                  {t("quotes.explorer.newQuote")}
                 </Link>
               </Button>
             )}
@@ -250,9 +255,9 @@ export function QuotesExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("quotes.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("quotes.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -269,23 +274,23 @@ export function QuotesExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<FileText />}
-                title="No quotes match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("quotes.explorer.noMatchTitle")}
+                description={t("quotes.explorer.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("quotes.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<FileText />}
-                title="No quotes yet"
-                description="Build a multi-line quote for a customer — save it as a draft, then send when it's ready."
+                title={t("quotes.explorer.emptyTitle")}
+                description={t("quotes.explorer.emptyDescription")}
                 action={
                   canCreate ? (
                     <Button asChild>
-                      <Link href="/quotes/new">New quote</Link>
+                      <Link href="/quotes/new">{t("quotes.explorer.newQuote")}</Link>
                     </Button>
                   ) : undefined
                 }

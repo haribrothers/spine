@@ -28,6 +28,7 @@ import {
 import { useModules } from "../../../lib/modules-context";
 import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { KpiRow } from "./kpi-row";
 import { BasisSwitch, DashboardBasisProvider } from "./dashboard-basis";
 import { DashboardCurrencyProvider } from "./dashboard-currency";
@@ -47,6 +48,7 @@ import {
   useCapabilities,
   useCapability,
 } from "../../../lib/capabilities-context";
+import { orgLocaleTag } from "../../../lib/money";
 
 /** `YYYY-MM-DD` in the browser's own calendar. */
 function localToday(): string {
@@ -163,6 +165,7 @@ export function DashboardShell({
   role: string | null;
   userName: string | null;
 }) {
+  const t = useT();
   const [savedLayout, setSavedLayout] = useState<
     DashboardLayout | null | undefined
   >(undefined);
@@ -200,7 +203,7 @@ export function DashboardShell({
       const first = item.items[0];
       if (!canSendReminder)
         return {
-          label: "Open",
+          label: t("dashboard.shell.open"),
           href:
             item.count === 1 && first
               ? `/invoices/${first.id}`
@@ -294,7 +297,7 @@ export function DashboardShell({
   const columnsClass = role === "field" ? "lg:grid-cols-2" : "lg:grid-cols-2 xl:grid-cols-3 wide-plus:grid-cols-2";
 
   const firstName = userName?.trim().split(/\s+/)[0];
-  const dateLine = now.toLocaleDateString("en-GB", {
+  const dateLine = now.toLocaleDateString(orgLocaleTag(), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -329,8 +332,8 @@ export function DashboardShell({
       <div className="flex flex-col gap-6">
         <AppShellHeader
           className="mb-0"
-          breadcrumb={[{ label: "Overview" }, { label: "Dashboard" }]}
-          title={`${greetingFor(now.getHours())}${firstName ? `, ${firstName}` : ""}`}
+          breadcrumb={[{ label: t("dashboard.shell.breadcrumbOverview") }, { label: t("dashboard.shell.breadcrumbDashboard") }]}
+          title={firstName ? t("dashboard.shell.greetingWithName", { greeting: greetingFor(now.getHours()), name: firstName }) : greetingFor(now.getHours())}
           description={subtitle}
           action={
             <div className="flex flex-wrap items-center gap-2">
@@ -338,11 +341,11 @@ export function DashboardShell({
               <Button variant="secondary" onClick={() => setEditing((v) => !v)}>
                 {editing ? (
                   <>
-                    <Check size={14} /> Done
+                    <Check size={14} /> {t("dashboard.shell.done")}
                   </>
                 ) : (
                   <>
-                    <Pencil size={14} /> Edit layout
+                    <Pencil size={14} /> {t("dashboard.shell.editLayout")}
                   </>
                 )}
               </Button>
@@ -353,7 +356,7 @@ export function DashboardShell({
         {role === "owner" && <StorageIntegrityAlert />}
 
         <p role="status" className="sr-only">
-          {layoutKnown ? "" : "Loading dashboard"}
+          {layoutKnown ? "" : t("dashboard.shell.loading")}
         </p>
         <div
           aria-busy={!layoutKnown}
@@ -374,13 +377,13 @@ export function DashboardShell({
                   today={localToday()}
                   note={
                     role === "owner"
-                      ? "Cleared items disappear automatically"
-                      : "Only things you can act on"
+                      ? t("dashboard.shell.ownerNote")
+                      : t("dashboard.shell.memberNote")
                   }
                   actionFor={actionFor}
                   emptyText={
                     role === "field"
-                      ? "Milestones due on your jobs and expenses sent back to you will show up here."
+                      ? t("dashboard.shell.fieldEmpty")
                       : undefined
                   }
                 />

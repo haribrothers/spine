@@ -5,6 +5,7 @@ import { Banner } from "@spine/ui";
 import { UPDATE_GUIDE_URL, availableUpdate, updateNotice, type UpdateStatus } from "@spine/shared";
 import { CircleArrowUp } from "lucide-react";
 import { apiClient } from "../lib/api-client";
+import { useT } from "../lib/i18n";
 
 /** The version whose banner this browser closed. */
 export const DISMISSED_UPDATE_KEY = "spine.update.dismissed";
@@ -24,6 +25,7 @@ function dismissedVersion(): string | null {
  * nothing while loading, if the check fails, or with `UPDATE_CHECK=off`.
  */
 export function UpdateBanner() {
+  const t = useT();
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
 
@@ -58,16 +60,16 @@ export function UpdateBanner() {
         <>
           {status.releaseUrl && (
             <a href={status.releaseUrl} target="_blank" rel="noreferrer">
-              What&apos;s new
+              {t("common.updateBanner.whatsNew")}
             </a>
           )}
           <a href={UPDATE_GUIDE_URL} target="_blank" rel="noreferrer">
-            How to update
+            {t("common.updateBanner.howToUpdate")}
           </a>
         </>
       }
       onDismiss={dismiss}
-      dismissLabel="Close the update notice"
+      dismissLabel={t("common.updateBanner.dismiss")}
     >
       {notice.body}
     </Banner>

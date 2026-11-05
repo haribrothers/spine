@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import { forwardRef } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { DialogOverlay } from "./dialog";
 
 export const Drawer = DialogPrimitive.Root;
@@ -55,20 +56,23 @@ export interface DrawerContentProps
     VariantProps<typeof drawerVariants> {}
 
 export const DrawerContent = forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DrawerContentProps>(
-  ({ className, side, size, children, ...props }, ref) => (
+  ({ className, side, size, children, ...props }, ref) => {
+    const t = useT();
+    return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
       <DialogPrimitive.Content ref={ref} className={cn(drawerVariants({ side, size, className }))} {...props}>
         {children}
         <DialogPrimitive.Close
-          aria-label="Close"
+          aria-label={t("ui.dialog.close")}
           className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X size={16} />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
-  ),
+    );
+  },
 );
 DrawerContent.displayName = "DrawerContent";
 

@@ -46,6 +46,7 @@ import { useModules } from "../lib/modules-context";
 import { useAccount } from "../lib/account-context";
 import { apiClient } from "../lib/api-client";
 import { SettingsDirtyContext } from "../lib/settings-dirty";
+import { t, useT } from "../lib/i18n";
 import { AccountProfilePane } from "../app/settings/panes/account-profile-pane";
 import { AccountSecurityPane } from "../app/settings/panes/account-security-pane";
 import { AccountNotificationsPane } from "../app/settings/panes/account-notifications-pane";
@@ -77,13 +78,13 @@ import { MeetingReminderLeadTimePane } from "../app/settings/panes/meeting-remin
 
 /** US-SET-31 (D-236) — the groups, in the order the list shows them. */
 export const SETTINGS_GROUPS = [
-  { key: "account", label: "Your account" },
-  { key: "business", label: "Business" },
-  { key: "money", label: "Money & tax" },
-  { key: "documents", label: "Documents & emails" },
-  { key: "sales", label: "Sales & meetings" },
-  { key: "data", label: "Data" },
-  { key: "team", label: "Team" },
+  { key: "account", label: t("settings.groups.account") },
+  { key: "business", label: t("settings.groups.business") },
+  { key: "money", label: t("settings.groups.money") },
+  { key: "documents", label: t("settings.groups.documents") },
+  { key: "sales", label: t("settings.groups.sales") },
+  { key: "data", label: t("settings.groups.data") },
+  { key: "team", label: t("settings.groups.team") },
 ] as const;
 type GroupKey = (typeof SETTINGS_GROUPS)[number]["key"];
 
@@ -106,53 +107,53 @@ export interface SettingsSection {
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   // US-SET-30: Your account — every role.
-  { key: "profile", label: "Profile", icon: UserRound, group: "account", render: () => <AccountProfilePane />, keywords: ["photo", "avatar", "name", "sign-in email", "email"] },
-  { key: "security", label: "Password & security", icon: KeyRound, group: "account", render: () => <AccountSecurityPane />, keywords: ["password", "change password", "devices", "sessions", "sign out", "signed in"] },
-  { key: "notifications", label: "Notifications", icon: Bell, group: "account", render: () => <AccountNotificationsPane />, keywords: ["browser notifications", "daily digest", "meeting reminders", "email summary"], savesOnChange: true },
+  { key: "profile", label: t("settings.sections.profile.label"), icon: UserRound, group: "account", render: () => <AccountProfilePane />, keywords: [...t("settings.sections.profile.keywords", { returnObjects: true })] },
+  { key: "security", label: t("settings.sections.security.label"), icon: KeyRound, group: "account", render: () => <AccountSecurityPane />, keywords: [...t("settings.sections.security.keywords", { returnObjects: true })] },
+  { key: "notifications", label: t("settings.sections.notifications.label"), icon: Bell, group: "account", render: () => <AccountNotificationsPane />, keywords: [...t("settings.sections.notifications.keywords", { returnObjects: true })], savesOnChange: true },
   // US-MCP-04: each person's own agents; gone while Connected agents is off (its module owns the pane).
-  { key: "my-connected-agents", label: "Connected agents", icon: Plug, group: "account", render: () => <MyAgentsPane />, keywords: ["MCP", "agent", "agents", "Claude", "ChatGPT", "disconnect", "connected apps"], savesOnChange: true },
+  { key: "my-connected-agents", label: t("settings.sections.myConnectedAgents.label"), icon: Plug, group: "account", render: () => <MyAgentsPane />, keywords: [...t("settings.sections.myConnectedAgents.keywords", { returnObjects: true })], savesOnChange: true },
   // US-OPS-52: the version, and "Beta" on a pre-release.
-  { key: "about", label: "About Spine", icon: Info, group: "account", render: () => <AboutPane />, keywords: ["version", "beta", "about", "release"] },
+  { key: "about", label: t("settings.sections.about.label"), icon: Info, group: "account", render: () => <AboutPane />, keywords: [...t("settings.sections.about.keywords", { returnObjects: true })] },
   // Business
-  { key: "business", label: "Business profile", icon: Building2, group: "business", render: () => <BusinessPane />, keywords: ["business name", "registered name", "address", "phone", "GSTIN", "PAN", "tax number"] },
-  { key: "branding", label: "Branding", icon: Palette, group: "business", render: () => <BrandingPane />, keywords: ["logo", "brand colour", "app theme", "footer"] },
-  { key: "template", label: "Industry template", icon: Sparkles, group: "business", render: () => <TemplatePane />, keywords: ["industry", "template"] },
-  { key: "currency", label: "Currency & locale", icon: Coins, group: "business", render: () => <CurrencyPane />, keywords: ["currency", "locale", "number format", "date format"] },
+  { key: "business", label: t("settings.sections.business.label"), icon: Building2, group: "business", render: () => <BusinessPane />, keywords: [...t("settings.sections.business.keywords", { returnObjects: true })] },
+  { key: "branding", label: t("settings.sections.branding.label"), icon: Palette, group: "business", render: () => <BrandingPane />, keywords: [...t("settings.sections.branding.keywords", { returnObjects: true })] },
+  { key: "template", label: t("settings.sections.template.label"), icon: Sparkles, group: "business", render: () => <TemplatePane />, keywords: [...t("settings.sections.template.keywords", { returnObjects: true })] },
+  { key: "currency", label: t("settings.sections.currency.label"), icon: Coins, group: "business", render: () => <CurrencyPane />, keywords: [...t("settings.sections.currency.keywords", { returnObjects: true })] },
   // US-SET-23
-  { key: "modules", label: "Modules", icon: ToggleRight, group: "business", render: () => <ModulesPane />, keywords: ["modules", "leads and meetings", "jobs and field", "approvals", "recurring documents"] },
+  { key: "modules", label: t("settings.sections.modules.label"), icon: ToggleRight, group: "business", render: () => <ModulesPane />, keywords: [...t("settings.sections.modules.keywords", { returnObjects: true })] },
   // US-AI-01, US-AI-02 (D-242): after Modules; the Bot icon, since Industry template has Sparkles.
-  { key: "ai", label: "AI assistant", icon: Bot, group: "business", render: () => <AiPane />, keywords: ["AI", "artificial intelligence", "provider", "model", "API key", "Anthropic", "Claude", "OpenAI", "Ollama", "budget", "receipts"] },
+  { key: "ai", label: t("settings.sections.ai.label"), icon: Bot, group: "business", render: () => <AiPane />, keywords: [...t("settings.sections.ai.keywords", { returnObjects: true })] },
   // US-MCP-02 (D-256): outside agents, switched in their own pane like AI.
-  { key: "agents", label: "Connected agents", icon: Plug, group: "business", render: () => <AgentsPane />, keywords: ["MCP", "agent", "agents", "Claude", "ChatGPT", "Claude Code", "connector", "connected apps"], savesOnChange: true },
+  { key: "agents", label: t("settings.sections.agents.label"), icon: Plug, group: "business", render: () => <AgentsPane />, keywords: [...t("settings.sections.agents.keywords", { returnObjects: true })], savesOnChange: true },
   // Money & tax
-  { key: "fiscal-year", label: "Financial year", icon: Calendar, group: "money", render: () => <FiscalYearPane />, keywords: ["financial year", "year end", "fiscal year"] },
-  { key: "tax", label: "Tax", icon: Percent, group: "money", render: () => <TaxPane />, keywords: ["tax rates", "tax groups", "VAT", "sales tax", "country"] },
+  { key: "fiscal-year", label: t("settings.sections.fiscalYear.label"), icon: Calendar, group: "money", render: () => <FiscalYearPane />, keywords: [...t("settings.sections.fiscalYear.keywords", { returnObjects: true })] },
+  { key: "tax", label: t("settings.sections.tax.label"), icon: Percent, group: "money", render: () => <TaxPane />, keywords: [...t("settings.sections.tax.keywords", { returnObjects: true })] },
   // US-TAX-12: India only.
-  { key: "gst", label: "GST", icon: FileText, group: "money", render: () => <GstPane />, country: "IN", keywords: ["GSTIN", "place of supply", "HSN", "SAC", "LUT", "exports"] },
-  { key: "accounts", label: "Chart of accounts", icon: Wallet, group: "money", render: () => <AccountsPane />, keywords: ["chart of accounts", "ledger accounts", "account codes"] },
+  { key: "gst", label: t("settings.sections.gst.label"), icon: FileText, group: "money", render: () => <GstPane />, country: "IN", keywords: [...t("settings.sections.gst.keywords", { returnObjects: true })] },
+  { key: "accounts", label: t("settings.sections.accounts.label"), icon: Wallet, group: "money", render: () => <AccountsPane />, keywords: [...t("settings.sections.accounts.keywords", { returnObjects: true })] },
   // US-RPT-16 (D-137)
-  { key: "opening-balances", label: "Opening balances", icon: Scale, group: "money", render: (close) => <OpeningBalancesPane onOpen={close} />, keywords: ["opening balances", "starting balances"] },
-  { key: "payment-instructions", label: "Payment instructions", icon: Landmark, group: "money", render: () => <PaymentInstructionsPane />, keywords: ["bank details", "UPI", "IBAN", "account number", "how to pay"] },
+  { key: "opening-balances", label: t("settings.sections.openingBalances.label"), icon: Scale, group: "money", render: (close) => <OpeningBalancesPane onOpen={close} />, keywords: [...t("settings.sections.openingBalances.keywords", { returnObjects: true })] },
+  { key: "payment-instructions", label: t("settings.sections.paymentInstructions.label"), icon: Landmark, group: "money", render: () => <PaymentInstructionsPane />, keywords: [...t("settings.sections.paymentInstructions.keywords", { returnObjects: true })] },
   // Documents & emails
-  { key: "numbering", label: "Numbering", icon: ListOrdered, group: "documents", render: () => <NumberingPane />, keywords: ["invoice prefix", "quote prefix", "prefix", "next number", "document numbers"] },
+  { key: "numbering", label: t("settings.sections.numbering.label"), icon: ListOrdered, group: "documents", render: () => <NumberingPane />, keywords: [...t("settings.sections.numbering.keywords", { returnObjects: true })] },
   // US-SET-17 to US-SET-20
-  { key: "documents", label: "Documents", icon: Files, group: "documents", render: () => <DocumentsPane />, keywords: ["paper size", "columns", "signature", "amount in words", "terms", "PDF", "title"] },
+  { key: "documents", label: t("settings.sections.documents.label"), icon: Files, group: "documents", render: () => <DocumentsPane />, keywords: [...t("settings.sections.documents.keywords", { returnObjects: true })] },
   // US-SET-21/22
-  { key: "emails", label: "Emails", icon: Mail, group: "documents", render: (close) => <EmailsPane onOpenLog={close} />, keywords: ["email templates", "subject", "SMTP", "sender"] },
-  { key: "reminders", label: "Automatic reminders", icon: BellRing, group: "documents", render: () => <RemindersPane />, keywords: ["automatic reminders", "overdue", "payment reminders"] },
+  { key: "emails", label: t("settings.sections.emails.label"), icon: Mail, group: "documents", render: (close) => <EmailsPane onOpenLog={close} />, keywords: [...t("settings.sections.emails.keywords", { returnObjects: true })] },
+  { key: "reminders", label: t("settings.sections.reminders.label"), icon: BellRing, group: "documents", render: () => <RemindersPane />, keywords: [...t("settings.sections.reminders.keywords", { returnObjects: true })] },
   // Sales & meetings
-  { key: "lead-stages", label: "Pipeline stages", icon: Columns3, group: "sales", render: () => <LeadStagesPane />, keywords: ["pipeline stages", "lead stages"] },
-  { key: "quote-conversion-guard", label: "Repeat quote conversion", icon: ShieldAlert, group: "sales", render: () => <QuoteConversionGuardPane />, keywords: ["repeat conversion", "convert a quote twice"] },
-  { key: "dashboard-meetings-scope", label: "Upcoming meetings", icon: CalendarClock, group: "sales", render: () => <DashboardMeetingsScopePane />, keywords: ["upcoming meetings", "dashboard meetings"] },
-  { key: "meeting-reminder-lead-time", label: "Meeting reminders", icon: AlarmClock, group: "sales", render: () => <MeetingReminderLeadTimePane />, keywords: ["meeting reminders", "reminder time", "business default"] },
+  { key: "lead-stages", label: t("settings.sections.leadStages.label"), icon: Columns3, group: "sales", render: () => <LeadStagesPane />, keywords: [...t("settings.sections.leadStages.keywords", { returnObjects: true })] },
+  { key: "quote-conversion-guard", label: t("settings.sections.quoteConversionGuard.label"), icon: ShieldAlert, group: "sales", render: () => <QuoteConversionGuardPane />, keywords: [...t("settings.sections.quoteConversionGuard.keywords", { returnObjects: true })] },
+  { key: "dashboard-meetings-scope", label: t("settings.sections.dashboardMeetingsScope.label"), icon: CalendarClock, group: "sales", render: () => <DashboardMeetingsScopePane />, keywords: [...t("settings.sections.dashboardMeetingsScope.keywords", { returnObjects: true })] },
+  { key: "meeting-reminder-lead-time", label: t("settings.sections.meetingReminderLeadTime.label"), icon: AlarmClock, group: "sales", render: () => <MeetingReminderLeadTimePane />, keywords: [...t("settings.sections.meetingReminderLeadTime.keywords", { returnObjects: true })] },
   // US-SET-15/16 (D-094)
-  { key: "data-export", label: "Data export", icon: Download, group: "data", render: () => <DataExportPane />, keywords: ["export", "backup", "ZIP", "CSV"] },
-  { key: "data", label: "Demo data", icon: Database, group: "data", render: () => <DataPane />, keywords: ["demo data", "sample data", "delete demo"] },
+  { key: "data-export", label: t("settings.sections.dataExport.label"), icon: Download, group: "data", render: () => <DataExportPane />, keywords: [...t("settings.sections.dataExport.keywords", { returnObjects: true })] },
+  { key: "data", label: t("settings.sections.data.label"), icon: Database, group: "data", render: () => <DataPane />, keywords: [...t("settings.sections.data.keywords", { returnObjects: true })] },
   // US-SET-31: Team pages, opened from here.
-  { key: "users", label: "Users", icon: UserCog, group: "team", href: "/team/users", keywords: ["users", "people", "invite"] },
-  { key: "teams", label: "Teams", icon: Shield, group: "team", href: "/team/teams", keywords: ["teams", "permissions"] },
-  { key: "audit-log", label: "Audit log", icon: History, group: "team", href: "/team/audit-log", keywords: ["audit log", "history", "changes"] },
-  { key: "email-log", label: "Email log", icon: Mails, group: "team", href: "/emails", keywords: ["email log", "sent emails", "failed emails"] },
+  { key: "users", label: t("settings.sections.users.label"), icon: UserCog, group: "team", href: "/team/users", keywords: [...t("settings.sections.users.keywords", { returnObjects: true })] },
+  { key: "teams", label: t("settings.sections.teams.label"), icon: Shield, group: "team", href: "/team/teams", keywords: [...t("settings.sections.teams.keywords", { returnObjects: true })] },
+  { key: "audit-log", label: t("settings.sections.auditLog.label"), icon: History, group: "team", href: "/team/audit-log", keywords: [...t("settings.sections.auditLog.keywords", { returnObjects: true })] },
+  { key: "email-log", label: t("settings.sections.emailLog.label"), icon: Mails, group: "team", href: "/emails", keywords: [...t("settings.sections.emailLog.keywords", { returnObjects: true })] },
 ];
 
 /** The pane Settings opens on: Business profile for Owners, Profile for everyone else (US-SET-30). */
@@ -217,6 +218,7 @@ export function SettingsDialog({
   activeKey?: string | null;
   onActiveKeyChange?: (key: string) => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const { confirm, dialog } = useConfirm();
   const [query, setQuery] = useState("");
@@ -282,10 +284,10 @@ export function SettingsDialog({
   async function canLeave(): Promise<boolean> {
     if (!dirty) return true;
     const ok = await confirm({
-      title: `Discard unsaved changes to ${active.label}?`,
-      description: "What you changed here hasn't been saved.",
-      confirmLabel: "Discard",
-      cancelLabel: "Keep editing",
+      title: t("settings.dialog.discardConfirm.title", { section: active.label }),
+      description: t("settings.dialog.discardConfirm.description"),
+      confirmLabel: t("settings.dialog.discardConfirm.confirm"),
+      cancelLabel: t("settings.dialog.discardConfirm.cancel"),
       danger: true,
     });
     if (ok) setDirty(false);
@@ -343,13 +345,13 @@ export function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => void requestClose(next)}>
       <DialogContent size="xl" aria-describedby={undefined} data-testid="settings-dialog">
-        <DialogTitle className="sr-only">Settings</DialogTitle>
+        <DialogTitle className="sr-only">{t("settings.dialog.title")}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <nav aria-label="Settings sections" className={cn("flex w-full shrink-0 flex-col gap-2 border-border px-3 py-4 md:w-66 md:border-r", showPane && "max-md:hidden")}>
-            <p className="pr-10 text-[16px] font-semibold text-on-surface md:hidden">Settings</p>
+          <nav aria-label={t("settings.dialog.sectionsNav")} className={cn("flex w-full shrink-0 flex-col gap-2 border-border px-3 py-4 md:w-66 md:border-r", showPane && "max-md:hidden")}>
+            <p className="pr-10 text-[16px] font-semibold text-on-surface md:hidden">{t("settings.dialog.title")}</p>
             <div className="relative">
               <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-muted" />
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onSearchKey} placeholder="Search settings" aria-label="Search settings" className="h-8.5 pl-8 text-[13px]" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onSearchKey} placeholder={t("settings.dialog.searchPlaceholder")} aria-label={t("settings.dialog.searchPlaceholder")} className="h-8.5 pl-8 text-[13px]" />
             </div>
             <div ref={listRef} className="-mx-1 flex min-h-0 flex-col gap-px overflow-y-auto px-1" data-testid="settings-sections">
               {SETTINGS_GROUPS.map((group) => {
@@ -380,7 +382,7 @@ export function SettingsDialog({
                             {section.label}
                             {searching && matches.length > 0 && (
                               <span className="block text-[11.5px] font-normal text-on-surface-muted">
-                                Matches:{" "}
+                                {t("settings.dialog.matches")}{" "}
                                 {matches.slice(0, 3).map((m, i) => (
                                   <Fragment key={m}>
                                     {i > 0 && ", "}
@@ -393,7 +395,7 @@ export function SettingsDialog({
                           {section.key === active.key && dirty && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-due" aria-hidden data-testid="settings-unsaved-dot" />
                           )}
-                          {section.key === active.key && dirty && <span className="sr-only">, edited</span>}
+                          {section.key === active.key && dirty && <span className="sr-only">{t("settings.dialog.edited")}</span>}
                           {section.href ? <ArrowUpRight size={14} aria-hidden className="shrink-0 text-on-surface-muted" /> : <ChevronRight size={15} aria-hidden className="shrink-0 text-on-surface-muted md:hidden" />}
                         </button>
                       );
@@ -403,9 +405,9 @@ export function SettingsDialog({
               })}
               {results.length === 0 && (
                 <div className="flex flex-col items-start gap-2 px-2 py-1.5">
-                  <span className="text-[13px] text-on-surface-muted">No matching settings.</span>
+                  <span className="text-[13px] text-on-surface-muted">{t("settings.dialog.noMatches")}</span>
                   <Button variant="secondary" size="sm" onClick={() => setQuery("")}>
-                    Clear search
+                    {t("settings.dialog.clearSearch")}
                   </Button>
                 </div>
               )}
@@ -414,7 +416,7 @@ export function SettingsDialog({
           <div className={cn("min-w-0 flex-1 overflow-y-auto p-6 max-md:p-4", !showPane && "max-md:hidden")} data-testid="settings-pane" onInput={markDirty} onClick={markDirty}>
             <Button variant="ghost" size="sm" className="mb-3 -ml-2 md:hidden" onClick={() => setShowPane(false)}>
               <ChevronLeft size={16} aria-hidden />
-              Back to settings
+              {t("settings.dialog.back")}
             </Button>
             <SettingsDirtyContext.Provider value={{ markSaved }}>
               <div className={cn("mx-auto w-full", active.key === "documents" ? "max-w-5xl" : "max-w-3xl")}>{active.render?.(() => onOpenChange(false))}</div>

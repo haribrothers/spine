@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import MinusIcon from "lucide-react-native/icons/minus";
 import PlusIcon from "lucide-react-native/icons/plus";
+import { useT } from "../lib/i18n";
 import { useNativeColors } from "../theme/use-native-colors";
 
 /**
@@ -44,6 +45,7 @@ export interface StepperProps {
 }
 
 export function Stepper({ value, onValueChange, min = 0, max = 100, step = 1, disabled = false, testID }: StepperProps) {
+  const t = useT();
   const colors = useNativeColors();
 
   const canDecrement = !disabled && value - step >= min;
@@ -63,7 +65,7 @@ export function Stepper({ value, onValueChange, min = 0, max = 100, step = 1, di
         onPress={decrement}
         disabled={!canDecrement}
         accessibilityRole="button"
-        accessibilityLabel="Decrease"
+        accessibilityLabel={t("uiNative.stepper.decrease")}
         accessibilityState={{ disabled: !canDecrement }}
         hitSlop={8}
         className="h-8 w-8 items-center justify-center rounded-full bg-surface-sunken dark:bg-surface-sunken-dark"
@@ -76,7 +78,7 @@ export function Stepper({ value, onValueChange, min = 0, max = 100, step = 1, di
         onPress={increment}
         disabled={!canIncrement}
         accessibilityRole="button"
-        accessibilityLabel="Increase"
+        accessibilityLabel={t("uiNative.stepper.increase")}
         accessibilityState={{ disabled: !canIncrement }}
         hitSlop={8}
         className="h-8 w-8 items-center justify-center rounded-full bg-surface-sunken dark:bg-surface-sunken-dark"

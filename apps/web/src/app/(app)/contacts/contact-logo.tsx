@@ -7,6 +7,7 @@ import { apiClient } from "../../../lib/api-client";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
 import type { SpineFile } from "./types";
 import { PHOTO_ACCEPT } from "../../../lib/upload-types";
+import { useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -46,6 +47,7 @@ export function ContactLogo({
   editable: boolean;
   onUploaded: (file: SpineFile) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export function ContactLogo({
       onUploaded(uploaded);
       closeCropDialog();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload logo.");
+      setError(err instanceof Error ? err.message : t("contacts.logo.uploadError"));
       throw err; // keep the dialog open so the user can retry Save
     } finally {
       setUploading(false);
@@ -95,7 +97,7 @@ export function ContactLogo({
         type="button"
         disabled={!editable || uploading}
         onClick={() => inputRef.current?.click()}
-        aria-label={editable ? "Upload logo" : undefined}
+        aria-label={editable ? t("contacts.logo.upload") : undefined}
         className={`group relative ${dimension} shrink-0 overflow-hidden rounded-full ${editable ? "cursor-pointer" : "cursor-default"}`}
       >
         <Avatar size="lg" className={dimension}>

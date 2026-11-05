@@ -1,4 +1,5 @@
 import type { SupplyClass } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 /** Mirrors apps/api/src/db/schema/purchases.ts's `vendorBills`/`vendorBillLines` row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type VendorBillStatus = "draft" | "recorded" | "void";
 export type VendorBillLineType = "item" | "heading" | "text";
@@ -71,9 +72,9 @@ export interface VendorBill {
 }
 
 export const VENDOR_BILL_STATUS_LABELS: Record<VendorBillStatus, string> = {
-  draft: "Draft",
-  recorded: "Recorded",
-  void: "Void",
+  draft: t("vendorBills.statuses.draft"),
+  recorded: t("vendorBills.statuses.recorded"),
+  void: t("vendorBills.statuses.void"),
 };
 
 /** Minimal shape used by the vendor-only contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */
@@ -146,12 +147,12 @@ export interface JobOption {
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  cash: "Cash",
-  bank_transfer: "Bank transfer",
-  cheque: "Cheque",
-  card: "Card",
-  upi: "UPI",
-  other: "Other",
+  cash: t("vendorBills.methods.cash"),
+  bank_transfer: t("vendorBills.methods.bankTransfer"),
+  cheque: t("vendorBills.methods.cheque"),
+  card: t("vendorBills.methods.card"),
+  upi: t("vendorBills.methods.upi"),
+  other: t("vendorBills.methods.other"),
 };
 
 /** Mirrors GET /vendor-payments?billId=:id's response shape (VendorPaymentsService.listForBill) — a vendor payment row plus how much of it was allocated specifically to this bill, since one payment can span several bills (S-07.8). */

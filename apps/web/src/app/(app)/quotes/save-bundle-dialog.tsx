@@ -6,6 +6,7 @@ import { BUNDLE_NAME_REQUIRED, type CatalogBundle } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import type { QuoteLine } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * US-QUO-25 — "Save lines as a bundle…" from a quote's More menu (the
@@ -27,6 +28,7 @@ export function SaveBundleDialog({
   currency: string;
   onSaved: (bundle: CatalogBundle) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState<string | undefined>();
@@ -44,9 +46,9 @@ export function SaveBundleDialog({
   const items = lines.filter((l) => l.type === "item");
   const total = lines.reduce((sum, l) => sum + BigInt(l.lineTotalAmount), 0n);
   const summary = [
-    `${items.length} ${items.length === 1 ? "line" : "lines"}`,
+    t("quotes.saveBundle.lines", { count: items.length }),
     ...items.slice(0, 3).map((l) => `${l.name} × ${l.quantity}`),
-    ...(items.length > 3 ? [`and ${items.length - 3} more`] : []),
+    ...(items.length > 3 ? [t("quotes.saveBundle.andMore", { more: items.length - 3 })] : []),
     formatMoney(total, currency),
   ].join(" · ");
 
@@ -62,7 +64,7 @@ export function SaveBundleDialog({
       onSaved(bundle);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save the bundle. Try again.");
+      setError(err instanceof Error ? err.message : t("quotes.saveBundle.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -72,8 +74,8 @@ export function SaveBundleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save lines as a bundle</DialogTitle>
-          <DialogDescription>Bundles appear in the item picker on quotes and invoices and add all their lines at once. Prices are copied when you add them.</DialogDescription>
+          <DialogTitle>{t("quotes.saveBundle.title")}</DialogTitle>
+          <DialogDescription>{t("quotes.saveBundle.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           {error && (
@@ -81,12 +83,12 @@ export function SaveBundleDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Bundle name" errorText={nameError}>
+          <FormField label={t("quotes.saveBundle.name")} errorText={nameError}>
             {(field) => (
               <Input
                 {...field}
                 value={name}
-                placeholder="e.g. Bathroom refit — standard"
+                placeholder={t("quotes.saveBundle.namePlaceholder")}
                 onChange={(e) => {
                   setName(e.target.value);
                   if (nameError && e.target.value.trim()) setNameError(undefined);
@@ -95,16 +97,16 @@ export function SaveBundleDialog({
             )}
           </FormField>
           <p className="rounded-md border border-border bg-surface px-3 py-2.5 text-[14px] text-on-surface">{summary}</p>
-          <FormField label="Description">
+          <FormField label={t("quotes.saveBundle.descriptionLabel")}>
             {(field) => <Textarea {...field} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("quotes.saveBundle.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save bundle"}
+            {saving ? <Spinner size="sm" /> : t("quotes.saveBundle.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -6,9 +6,11 @@ import Link from "next/link";
 import { Alert, AlertDescription, Button, FormField, Input, Spinner } from "@spine/ui";
 import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { requestResetLink } from "../../lib/password-reset";
+import { useT } from "../../lib/i18n";
 
 /** US-AUTH-09 — ask for a reset link. The same page whether or not email (SMTP) is set up (D-084). */
 export default function ForgotPasswordPage() {
+  const t = useT();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,24 +31,24 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthFrame scene="login">
-      <AuthHeading title="Reset your password">Enter the email you sign in with and we&apos;ll send you a link to choose a new password.</AuthHeading>
+      <AuthHeading title={t("auth.forgotPassword.title")}>{t("auth.forgotPassword.body")}</AuthHeading>
       <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
         {error && (
           <Alert variant="critical">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <FormField label="Email" required>
+        <FormField label={t("auth.fields.email")} required>
           {(field) => <Input {...field} type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required />}
         </FormField>
         <Button type="submit" size="touch" disabled={loading} className="mt-1">
-          {loading ? <Spinner size="sm" /> : "Send reset link"}
+          {loading ? <Spinner size="sm" /> : t("auth.forgotPassword.send")}
         </Button>
       </form>
-      <p className="mt-5 text-center text-[13px] text-on-surface-muted">The link works once and expires in 1 hour.</p>
+      <p className="mt-5 text-center text-[13px] text-on-surface-muted">{t("auth.forgotPassword.expires")}</p>
       <p className="mt-2 text-center text-[13px]">
         <Link href="/login" className="text-primary hover:underline">
-          Back to log in
+          {t("auth.actions.backToLogIn")}
         </Link>
       </p>
     </AuthFrame>

@@ -7,6 +7,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
 import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
+import { useT } from "../../../../lib/i18n";
 
 /** One row per pipeline stage, in board order (US-CRM-19: the organisation's own stages). */
 interface StageSummaryRow {
@@ -25,6 +26,7 @@ interface StageSummaryRow {
  * orientation, same component the revenue trend widget uses.
  */
 export function PipelineByStageChart() {
+  const t = useT();
   const orgCurrency = useDashboardCurrency();
   const currency = orgCurrency ?? "USD";
   const [rows, setRows] = useState<StageSummaryRow[] | null>(null);
@@ -55,9 +57,9 @@ export function PipelineByStageChart() {
     <Card data-testid="pipeline-by-stage">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Pipeline by stage
+          {t("dashboard.widgets.pipelineByStage")}
           <Link href="/leads" className="text-[13px] font-normal text-primary hover:underline">
-            View board
+            {t("dashboard.pipeline.viewBoard")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -65,7 +67,7 @@ export function PipelineByStageChart() {
         {!rows || !orgCurrency ? (
           <WidgetSkeleton kind="bars" rows={5} />
         ) : (
-          <TrendBarChart data={chartData} orientation="horizontal" emptyState="No leads yet." />
+          <TrendBarChart data={chartData} orientation="horizontal" emptyState={t("dashboard.pipeline.empty")} />
         )}
       </CardContent>
     </Card>

@@ -12,17 +12,18 @@ import { useBusinessFormat } from "../../lib/data/business";
 import { useOnline } from "../../lib/connectivity";
 import { SectionHeader } from "../../components/section-header";
 import { OutboxItemIcon } from "./item-icon";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const ALL_SYNCED_MESSAGE = "Everything has reached your office.";
+export const ALL_SYNCED_MESSAGE = translate("mobileApp.sync.allSyncedMessage");
 
 /** The line under "<n> items waiting" (US-MOB-08). */
 export function syncReason(problem: SyncProblem, online: boolean, sending: boolean): string {
-  if (!online || problem === "offline") return "You're offline · sends automatically when you reconnect";
-  if (problem === "updateRequired") return "Update Spine to send them · they're kept on this phone";
-  if (problem === "signedOut") return "Sign in again to send them · they're kept on this phone";
-  if (sending) return "Sending now…";
-  if (problem === "unreachable") return "Couldn't reach your Spine server · tries again automatically";
-  return "Sends automatically";
+  if (!online || problem === "offline") return translate("mobileApp.sync.reasonOffline");
+  if (problem === "updateRequired") return translate("mobileApp.sync.reasonUpdate");
+  if (problem === "signedOut") return translate("mobileApp.sync.reasonSignedOut");
+  if (sending) return translate("mobileApp.sync.reasonSending");
+  if (problem === "unreachable") return translate("mobileApp.sync.reasonUnreachable");
+  return translate("mobileApp.sync.reasonAuto");
 }
 
 function Group({ children, testID }: { children: React.ReactNode; testID?: string }) {
@@ -49,6 +50,7 @@ function Row({ first, children, testID }: { first: boolean; children: React.Reac
  * sign-out warning's "Send them first".
  */
 export function SyncScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const format = useBusinessFormat();
@@ -69,7 +71,7 @@ export function SyncScreen() {
         </View>
         <View className="flex-1 gap-0.5">
           <Text testID="sync-title" accessibilityRole="header" className="text-[22px] font-semibold text-on-surface dark:text-on-surface-dark">
-            {open ? waitingTitle(open) : "All synced"}
+            {open ? waitingTitle(open) : t("mobileApp.syncPill.allSynced")}
           </Text>
           <Text testID="sync-reason" className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">
             {open ? syncReason(problem, online, sending) : ALL_SYNCED_MESSAGE}
@@ -88,14 +90,14 @@ export function SyncScreen() {
           style={{ opacity: sending ? 0.6 : 1 }}
         >
           <RefreshCw size={18} color={colors.primary} />
-          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{sending ? "Sending…" : "Try sending now"}</Text>
+          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{sending ? t("mobileApp.sync.sending") : t("mobileApp.sync.tryNow")}</Text>
         </Pressable>
       ) : null}
 
       {failed.length ? (
         <View className="gap-2">
           <Text accessibilityRole="header" className={Platform.OS === "ios" ? "px-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark" : "text-[15px] font-medium text-overdue dark:text-overdue-dark"}>
-            {Platform.OS === "ios" ? `NEEDS FIXING · ${failed.length}` : `Needs fixing · ${failed.length}`}
+            {Platform.OS === "ios" ? t("mobileApp.sync.needsFixing", { n: failed.length }).toUpperCase() : t("mobileApp.sync.needsFixing", { n: failed.length })}
           </Text>
           <Group testID="sync-needs-fixing">
             {failed.map((item, index) => {
@@ -111,10 +113,10 @@ export function SyncScreen() {
                     testID={`sync-fix-${item.id}`}
                     onPress={() => router.push(`/sync/fix/${item.id}`)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Fix ${title}`}
+                    accessibilityLabel={t("mobileApp.sync.fixLabel", { title })}
                     className="min-h-[44px] justify-center rounded-full bg-overdue-bg px-4 active:opacity-70 dark:bg-overdue-bg-dark"
                   >
-                    <Text className="text-[15px] font-semibold text-overdue dark:text-overdue-dark">Fix</Text>
+                    <Text className="text-[15px] font-semibold text-overdue dark:text-overdue-dark">{t("mobileApp.fix.title")}</Text>
                   </Pressable>
                 </Row>
               );
@@ -125,7 +127,7 @@ export function SyncScreen() {
 
       {waiting.length ? (
         <View className="gap-2">
-          <SectionHeader title="Waiting" />
+          <SectionHeader title={t("mobileApp.expenseStatus.waiting")} />
           <Group testID="sync-waiting">
             {waiting.map((item, index) => {
               const { title, subtitle, icon } = describeItem(item, format);
@@ -138,7 +140,7 @@ export function SyncScreen() {
                   </View>
                   {Platform.OS === "ios" ? (
                     <View className="rounded-full bg-draft-bg px-2.5 py-0.5 dark:bg-draft-bg-dark">
-                      <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{item.status === "sending" ? "Sending" : "Waiting"}</Text>
+                      <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{item.status === "sending" ? t("mobileApp.sync.sendingChip") : t("mobileApp.expenseStatus.waiting")}</Text>
                     </View>
                   ) : null}
                 </Row>
@@ -150,7 +152,7 @@ export function SyncScreen() {
 
       {sent.length ? (
         <View className="gap-2">
-          <SectionHeader title="Sent today" />
+          <SectionHeader title={t("mobileApp.sync.sentToday")} />
           <Group testID="sync-sent">
             {sent.map((item, index) => {
               const { title, subtitle, icon } = describeItem(item, format);

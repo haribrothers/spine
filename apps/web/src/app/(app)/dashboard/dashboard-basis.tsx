@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@spine/ui";
 import type { DashboardBasis } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 
 const BasisContext = createContext<{ basis: DashboardBasis; setBasis: (basis: DashboardBasis) => void; /** US-DASH-27: false until the member's choice is known, so cards load once. */ ready: boolean }>({ basis: "accrual", setBasis: () => {}, ready: true });
 
@@ -35,14 +36,15 @@ export function useDashboardBasis() {
 
 /** "Accrual | Cash" in the dashboard header. */
 export function BasisSwitch() {
+  const t = useT();
   const { basis, setBasis } = useDashboardBasis();
   return (
-    <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as DashboardBasis)} aria-label="Profit basis">
+    <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as DashboardBasis)} aria-label={t("dashboard.basis.ariaLabel")}>
       <ToggleGroupItem value="accrual" className="px-3">
-        Accrual
+        {t("dashboard.basis.accrual")}
       </ToggleGroupItem>
       <ToggleGroupItem value="cash" className="px-3">
-        Cash
+        {t("dashboard.basis.cash")}
       </ToggleGroupItem>
     </ToggleGroup>
   );

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, Spinner, useConfirm } from "@spine/ui";
 import type { BankEntryDetails, BankTransaction, BankTransfer } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { AttachmentsSection } from "../../../components/attachments-section";
@@ -33,6 +34,7 @@ export function RegisterEntryDrawer({
   onOpenChange: (open: boolean) => void;
   onDeleted: (kind: DrawerEntry["kind"]) => void;
 }) {
+  const t = useT();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,7 +48,7 @@ export function RegisterEntryDrawer({
     apiClient
       .get<(BankTransaction | BankTransfer) & BankEntryDetails>(path)
       .then((res) => setLoaded({ kind: entry.kind, entry: res } as Loaded))
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this entry."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("banking.drawer.loadError")));
   }, [entry]);
 
   const money = (v: string) => formatMoney(BigInt(v), currency);
@@ -55,12 +57,10 @@ export function RegisterEntryDrawer({
   async function remove() {
     if (!entry || !loaded) return;
     const ok = await confirm({
-      title: isTransfer ? "Delete this transfer?" : "Delete this entry?",
-      description: isTransfer
-        ? "Spine posts a reversing entry today, so both accounts go back to their balances before it. The transfer stays in both registers, marked deleted."
-        : "Spine posts a reversing entry today, so the account goes back to its balance before it. The entry stays in the register, marked deleted.",
-      confirmLabel: isTransfer ? "Delete transfer" : "Delete entry",
-      cancelLabel: isTransfer ? "Keep transfer" : "Keep entry",
+      title: isTransfer ? t("banking.drawer.deleteTransferTitle") : t("banking.drawer.deleteEntryTitle"),
+      description: isTransfer ? t("banking.drawer.deleteTransferBody") : t("banking.drawer.deleteEntryBody"),
+      confirmLabel: isTransfer ? t("banking.drawer.deleteTransfer") : t("banking.drawer.deleteEntry"),
+      cancelLabel: isTransfer ? t("banking.drawer.keepTransfer") : t("banking.drawer.keepEntry"),
       danger: true,
     });
     if (!ok) return;
@@ -69,7 +69,7 @@ export function RegisterEntryDrawer({
       await apiClient.delete(isTransfer ? `/bank-transfers/${entry.id}` : `/bank-transactions/${entry.id}`);
       onDeleted(entry.kind);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't delete this entry. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.drawer.deleteError"));
     } finally {
       setBusy(false);
     }
@@ -78,12 +78,12 @@ export function RegisterEntryDrawer({
   const rows: [string, React.ReactNode][] = [];
   if (loaded?.kind === "bank_transaction") {
     const e = loaded.entry;
-    rows.push(["Amount", <b key="a" className="text-[18px] tabular-nums">{money(e.amount)}</b>]);
-    rows.push([e.direction === "in" ? "Into" : "From", e.moneyAccount.name]);
-    rows.push(["Category", `${e.account.code} · ${e.account.name}`]);
-    if (BigInt(e.taxAmount) > 0n) rows.push(["Tax", `${e.taxName ?? "Tax"} · ${money(e.taxAmount)} included`]);
+    rows.push([t("banking.drawer.amount"), <b key="a" className="text-[18px] tabular-nums">{money(e.amount)}</b>]);
+    rows.push([e.direction === "in" ? t("banking.drawer.into") : t("banking.drawer.from"), e.moneyAccount.name]);
+    rows.push([t("banking.drawer.category"), `${e.account.code} · ${e.account.name}`]);
+    if (BigInt(e.taxAmount) > 0n) rows.push([t("banking.drawer.tax"), t("banking.drawer.taxIncluded", { name: e.taxName ?? t("banking.drawer.tax"), amount: money(e.taxAmount) })]);
     rows.push([
-      "Contact",
+      t("banking.drawer.contact"),
       e.contact ? (
         <SectionLink key="c" href={`/contacts/${e.contact.id}`} className="text-primary hover:underline">
           {e.contact.name}
@@ -92,15 +92,25 @@ export function RegisterEntryDrawer({
         "—"
       ),
     ]);
-    rows.push(["Description", e.description ?? "—"]);
+    rows.push([t("banking.drawer.description"), e.description ?? "—"]);
   } else if (loaded?.kind === "bank_transfer") {
     const e = loaded.entry;
-    rows.push(["Amount", <b key="a" className="text-[18px] tabular-nums">{money(e.amount)}</b>]);
-    rows.push(["From", e.fromMoneyAccount.name]);
-    rows.push(["To", e.toMoneyAccount.name]);
-    rows.push(["Reference", e.reference ?? "—"]);
+    rows.push([t("banking.drawer.amount"), <b key="a" className="text-[18px] tabular-nums">{money(e.amount)}</b>]);
+    rows.push([t("banking.drawer.from"), e.fromMoneyAccount.name]);
+    rows.push([t("banking.drawer.to"), e.toMoneyAccount.name]);
+    rows.push([t("banking.drawer.reference"), e.reference ?? "—"]);
   }
-  if (loaded) rows.push(["Reconciled", loaded.entry.reconciled ? "Yes — it's part of a finished reconciliation" : <span key="r" className="text-on-surface-muted">Not yet</span>]);
+  if (loaded)
+    rows.push([
+      t("banking.drawer.reconciled"),
+      loaded.entry.reconciled ? (
+        t("banking.drawer.reconciledYes")
+      ) : (
+        <span key="r" className="text-on-surface-muted">
+          {t("banking.drawer.notYet")}
+        </span>
+      ),
+    ]);
 
   const deleted = Boolean(loaded?.entry.deletedAt);
   return (
@@ -109,7 +119,7 @@ export function RegisterEntryDrawer({
         <DrawerHeader>
           <DrawerTitle>{entry?.what}</DrawerTitle>
           <DrawerDescription>
-            {loaded ? [formatDay(loaded.entry.date), loaded.entry.createdBy ? `recorded by ${loaded.entry.createdBy}` : null, deleted ? "deleted" : null].filter(Boolean).join(" · ") : " "}
+            {loaded ? [formatDay(loaded.entry.date), loaded.entry.createdBy ? t("banking.drawer.recordedBy", { name: loaded.entry.createdBy }) : null, deleted ? t("banking.drawer.deleted") : null].filter(Boolean).join(" · ") : " "}
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="flex flex-col gap-5" data-testid="register-entry-drawer">
@@ -135,10 +145,10 @@ export function RegisterEntryDrawer({
           {loaded?.kind === "bank_transaction" && entry && <AttachmentsSection entityType="bank_transaction" entityId={entry.id} />}
           {loaded && canDelete && !deleted && !loaded.entry.reconciled && (
             <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-              <span className="text-[12.5px] text-on-surface-muted">Deleting posts a reversing entry today.</span>
+              <span className="text-[12.5px] text-on-surface-muted">{t("banking.drawer.deletingHint")}</span>
               <Button variant="danger" onClick={() => void remove()} disabled={busy}>
                 <MENU_ICONS.delete size={14} aria-hidden />
-                {isTransfer ? "Delete transfer" : "Delete entry"}
+                {isTransfer ? t("banking.drawer.deleteTransfer") : t("banking.drawer.deleteEntry")}
               </Button>
             </div>
           )}

@@ -7,6 +7,7 @@ import { cn } from "@spine/ui";
 import { useCapabilities } from "../lib/capabilities-context";
 import { pageAccessFor } from "../lib/page-access";
 import { useMyRole } from "../lib/role-context";
+import { useT } from "../lib/i18n";
 
 const pathOf = (href: ComponentProps<typeof Link>["href"]): string => (typeof href === "string" ? href : (href.pathname ?? "")).split(/[?#]/)[0] ?? "";
 
@@ -25,6 +26,7 @@ export function useCanOpen(): (href: ComponentProps<typeof Link>["href"]) => boo
  * this person, the record's name shows as plain text with a lock, not a link.
  */
 export function SectionLink({ href, className, children, "data-testid": testId, ...rest }: ComponentProps<typeof Link> & { "data-testid"?: string }) {
+  const t = useT();
   const role = useMyRole();
   const { capabilities } = useCapabilities();
   const access = pageAccessFor(pathOf(href), role, capabilities);
@@ -39,7 +41,7 @@ export function SectionLink({ href, className, children, "data-testid": testId, 
     <span className={cn(className, "inline-flex items-center gap-1 text-on-surface hover:no-underline")} data-testid={testId} data-closed-section="">
       {children}
       <Lock size={12} aria-hidden className="shrink-0 text-on-surface-muted" />
-      <span className="sr-only">{` (${access.pageName} is closed for your Team)`}</span>
+      <span className="sr-only">{t("common.sectionLink.closed", { page: access.pageName })}</span>
     </span>
   );
 }

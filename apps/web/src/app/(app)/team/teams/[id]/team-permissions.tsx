@@ -23,13 +23,14 @@ import {
 } from "@spine/ui";
 import { CAPABILITY_LABELS, type Capability } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
+import { t, useT } from "../../../../../lib/i18n";
 import type { MemberRow } from "../../../../../lib/members";
 import { useModules } from "../../../../../lib/modules-context";
 import type { TeamDetail, TeamPrivileges } from "../../../../../lib/teams";
 import { applyToDraft, changeReason, draftChanges, matchesSearch, permissionGroups, sectionChangeLine, sectionChanges, sectionSwitches, sectionsOpened, waitsFor } from "../teams-state";
 
-const ACCESS_WORDS = { work: " — can work here", view: " — view only", none: " — can't open" } as const;
-const ACCESS_LABELS = { work: "Can work here", view: "View only", none: "Can't open" } as const;
+const ACCESS_WORDS = { work: t("team.access.workWords"), view: t("team.access.viewWords"), none: t("team.access.noneWords") } as const;
+const ACCESS_LABELS = { work: t("team.access.canWorkHere"), view: t("team.access.viewOnly"), none: t("team.access.cantOpen") } as const;
 
 const granted = (p: TeamPrivileges) => Object.entries(p).filter(([, on]) => on).map(([c]) => c);
 
@@ -57,6 +58,7 @@ export function TeamPermissions({
   onDirtyChange: (count: number) => void;
   onSaved: (count: number) => Promise<void>;
 }) {
+  const t = useT();
   const { modules } = useModules();
   const [draft, setDraft] = useState<TeamPrivileges>(detail.privileges);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -85,7 +87,7 @@ export function TeamPermissions({
       const [{ capability, granted: on }] = list as [{ capability: Capability; granted: boolean }];
       const also = draftChanges(draft, next).filter((c) => c.capability !== capability);
       const reason = also.length ? changeReason(also[0]!.capability, also[0]!.granted, [{ capability, granted: on }]) : null;
-      setNotice(also.length ? `${also.map((c) => `“${CAPABILITY_LABELS[c.capability].label}”`).join(" and ")} turned ${on ? "on" : "off"} too. ${reason ?? ""}`.trim() : null);
+      setNotice(also.length ? t(on ? "team.permissions.alsoOn" : "team.permissions.alsoOff", { names: also.map((c) => t("team.permissions.quoted", { label: CAPABILITY_LABELS[c.capability].label })).join(t("team.common.andSeparator")), reason: reason ?? "" }).trim() : null);
     } else setNotice(null);
     setDraft(next);
   }
@@ -100,7 +102,7 @@ export function TeamPermissions({
       setNotice(null);
       await onSaved(count);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the permissions. Try again.");
+      setError(err instanceof Error ? err.message : t("team.permissions.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -133,23 +135,23 @@ export function TeamPermissions({
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-80 max-w-full">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-          <Input type="search" aria-label="Search permissions" placeholder="Search permissions" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+          <Input type="search" aria-label={t("team.permissions.search")} placeholder={t("team.permissions.search")} value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
         </div>
         <label className="flex items-center gap-2 text-[13px] font-medium text-on-surface">
-          <Checkbox checked={changedOnly} onCheckedChange={(on) => setChangedOnly(on === true)} aria-label="Show changed only" />
-          Show changed only
+          <Checkbox checked={changedOnly} onCheckedChange={(on) => setChangedOnly(on === true)} aria-label={t("team.permissions.showChangedOnly")} />
+          {t("team.permissions.showChangedOnly")}
         </label>
         <span className="flex-1" />
         <Button variant="secondary" size="sm" onClick={() => setExpanded(allOpen ? new Set() : new Set(groups.map((g) => g.label)))}>
           {allOpen ? <ChevronsDownUp size={14} aria-hidden /> : <ChevronsUpDown size={14} aria-hidden />}
-          {allOpen ? "Collapse all" : "Expand all"}
+          {allOpen ? t("team.permissions.collapseAll") : t("team.permissions.expandAll")}
         </Button>
       </div>
 
       <section className="overflow-hidden rounded-lg border border-border bg-surface" aria-labelledby="team-sections-title" data-testid="team-sections">
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 border-b border-border bg-surface-sunken px-3.5 py-2.5">
-          <h3 id="team-sections-title" className="text-[13.5px] font-semibold text-on-surface">Sections</h3>
-          <p className="text-[12.5px] text-on-surface-muted">Closed sections leave members’ sidebar. Receivables, Payables, Banking and Reports open with their permissions below.</p>
+          <h3 id="team-sections-title" className="text-[13.5px] font-semibold text-on-surface">{t("team.access.sections")}</h3>
+          <p className="text-[12.5px] text-on-surface-muted">{t("team.permissions.sectionsNote")}</p>
         </div>
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {switches.map((sw) => (
@@ -157,11 +159,11 @@ export function TeamPermissions({
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2 font-medium text-on-surface">
                   {sw.section}
-                  {changed.has(sw.capability) && <Badge className="bg-info-bg text-primary">Changed</Badge>}
+                  {changed.has(sw.capability) && <Badge className="bg-info-bg text-primary">{t("team.permissions.changed")}</Badge>}
                 </span>
                 <span className={cn("block text-[12px]", sw.access === "work" ? "text-paid" : "text-on-surface-muted")}>{ACCESS_LABELS[sw.access]}</span>
               </span>
-              <Switch checked={sw.on} onCheckedChange={(checked) => change([{ capability: sw.capability, granted: checked }])} aria-label={`${sw.section} section`} />
+              <Switch checked={sw.on} onCheckedChange={(checked) => change([{ capability: sw.capability, granted: checked }])} aria-label={t("team.permissions.sectionSwitch", { section: sw.section })} />
             </li>
           ))}
         </ul>
@@ -169,7 +171,7 @@ export function TeamPermissions({
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="overflow-hidden rounded-lg border border-border bg-surface" data-testid="permissions-list">
-          {visible.length === 0 && <p className="px-4 py-6 text-[13px] text-on-surface-muted">{changedOnly ? "Nothing changed yet." : "No permission matches."}</p>}
+          {visible.length === 0 && <p className="px-4 py-6 text-[13px] text-on-surface-muted">{changedOnly ? t("team.permissions.nothingChanged") : t("team.permissions.noMatch")}</p>}
           {visible.map((g) => {
             const on = g.capabilities.filter((c) => draft[c]).length;
             const was = g.capabilities.filter((c) => detail.privileges[c]).length;
@@ -193,10 +195,10 @@ export function TeamPermissions({
                     <span className="truncate">{g.label}</span>
                   </button>
                   <span className="text-[12.5px] font-medium tabular-nums text-on-surface-muted" data-testid="group-count">
-                    {on} of {g.capabilities.length}
-                    {on !== was ? ` · was ${was}` : ""}
+                    {t("team.common.ofTotal", { granted: on, total: g.capabilities.length })}
+                    {on !== was ? t("team.permissions.wasCount", { n: was }) : ""}
                   </span>
-                  <Switch checked={all} onCheckedChange={(checked) => change(g.capabilities.map((capability) => ({ capability, granted: checked })))} aria-label={`Everything in ${g.label}`} />
+                  <Switch checked={all} onCheckedChange={(checked) => change(g.capabilities.map((capability) => ({ capability, granted: checked })))} aria-label={t("team.permissions.everythingIn", { group: g.label })} />
                 </div>
                 {open &&
                   g.shown.map((c) => {
@@ -207,7 +209,7 @@ export function TeamPermissions({
                         <div className="min-w-0 flex-1">
                           <p className={cn("flex flex-wrap items-center gap-2 font-medium", waiting ? "text-on-surface-muted" : "text-on-surface")}>
                             {CAPABILITY_LABELS[c].label}
-                            {changed.has(c) && <Badge className="bg-info-bg text-primary">Changed</Badge>}
+                            {changed.has(c) && <Badge className="bg-info-bg text-primary">{t("team.permissions.changed")}</Badge>}
                           </p>
                           <p className="text-[12.5px] text-on-surface-muted">{waiting ?? CAPABILITY_LABELS[c].description}</p>
                         </div>
@@ -221,8 +223,8 @@ export function TeamPermissions({
         </div>
 
         <aside className="rounded-lg border border-border bg-surface px-4 py-3.5" data-testid="members-will-open">
-          <h3 className="text-[13.5px] font-semibold text-on-surface">What members will open</h3>
-          <p className="mb-2.5 text-[12.5px] text-on-surface-muted">Their sidebar with these permissions — before any other Team adds to it.</p>
+          <h3 className="text-[13.5px] font-semibold text-on-surface">{t("team.permissions.membersWillOpen")}</h3>
+          <p className="mb-2.5 text-[12.5px] text-on-surface-muted">{t("team.permissions.membersWillOpenNote")}</p>
           <ul className="flex flex-col gap-1.5 text-[13px]">
             {after.all.map((s) => {
               const change = moved.find((m) => m.href === s.href);
@@ -232,32 +234,32 @@ export function TeamPermissions({
                   <Icon size={15} aria-hidden className={s.access === "work" ? "text-paid" : undefined} />
                   <span className="min-w-0 flex-1">
                     {s.label}
-                    {s.access === "view" && <span className="text-[12px]"> · view only</span>}
+                    {s.access === "view" && <span className="text-[12px]">{" "}{t("team.access.viewOnlySuffix")}</span>}
                   </span>
                   <span className="sr-only">{ACCESS_WORDS[s.access]}</span>
-                  {change && <Badge className={change.up ? "bg-paid-bg text-paid" : "bg-overdue-bg text-overdue"}>{change.up ? "Added" : "Lost"}</Badge>}
+                  {change && <Badge className={change.up ? "bg-paid-bg text-paid" : "bg-overdue-bg text-overdue"}>{change.up ? t("team.permissions.added") : t("team.permissions.lost")}</Badge>}
                 </li>
               );
             })}
           </ul>
           <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-on-surface-muted" aria-hidden>
-            <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />Can work here</span>
-            <span className="flex items-center gap-1"><Eye size={13} />View only</span>
-            <span className="flex items-center gap-1"><CircleMinus size={13} />Can&apos;t open</span>
+            <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />{t("team.access.canWorkHere")}</span>
+            <span className="flex items-center gap-1"><Eye size={13} />{t("team.access.viewOnly")}</span>
+            <span className="flex items-center gap-1"><CircleMinus size={13} />{t("team.access.cantOpen")}</span>
           </p>
           {modules?.ai && (
             <p className="mt-3 flex items-start gap-2 rounded-md bg-info-bg p-2.5 text-[12.5px] text-on-surface" data-testid="ai-not-a-section">
               <Sparkles size={14} aria-hidden className="mt-0.5 shrink-0 text-primary" />
-              AI isn&apos;t a section. With Use AI features, members see AI on the bills, expenses, quotes, emails and reconciliations they can already work on.
+              {t("team.permissions.aiNote")}
             </p>
           )}
-          <p className="mt-2 text-[12.5px] text-on-surface-muted">{members.length ? `Applies to ${members.length === 1 ? "1 person" : `${members.length} people`} at their next request.` : "No one is on this Team yet."}</p>
+          <p className="mt-2 text-[12.5px] text-on-surface-muted">{members.length ? t("team.permissions.appliesTo", { people: t("team.common.personCount", { count: members.length }) }) : t("team.permissions.noOneOnTeam")}</p>
         </aside>
       </div>
 
       {changes.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-on-surface py-2.5 pl-5 pr-3 text-[13.5px] font-medium text-surface shadow-lg" data-testid="permissions-bar" role="region" aria-label="Unsaved changes">
-          {changes.length === 1 ? "1 change" : `${changes.length} changes`}
+        <div className="fixed bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-on-surface py-2.5 pl-5 pr-3 text-[13.5px] font-medium text-surface shadow-lg" data-testid="permissions-bar" role="region" aria-label={t("team.permissions.unsavedChanges")}>
+          {t("team.permissions.changeCount", { count: changes.length })}
           <Button
             size="sm"
             variant="secondary"
@@ -266,10 +268,10 @@ export function TeamPermissions({
               setNotice(null);
             }}
           >
-            Discard
+            {t("team.permissions.discard")}
           </Button>
           <Button size="sm" onClick={() => setConfirming(true)}>
-            Save changes
+            {t("team.permissions.saveChanges")}
           </Button>
         </div>
       )}
@@ -277,11 +279,9 @@ export function TeamPermissions({
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Save {changes.length === 1 ? "1 change" : `${changes.length} changes`} to {detail.name}?
-            </AlertDialogTitle>
+            <AlertDialogTitle>{t("team.permissions.saveTitle", { count: changes.length, team: detail.name })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {members.length ? `${members.map((m) => m.name).join(", ")} get${members.length === 1 ? "s" : ""} this at their next request.` : "No one is on this Team yet."}
+              {members.length ? t("team.permissions.getsThis", { count: members.length, names: members.map((m) => m.name).join(", ") }) : t("team.permissions.noOneOnTeam")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <ul className="flex max-h-64 flex-col gap-1.5 overflow-auto text-[13px] text-on-surface" data-testid="save-permissions-list">
@@ -291,7 +291,7 @@ export function TeamPermissions({
                 <li key={c.capability} className="flex items-start gap-2">
                   {c.granted ? <CircleCheck size={15} aria-hidden className="mt-0.5 shrink-0 text-paid" /> : <CircleMinus size={15} aria-hidden className="mt-0.5 shrink-0 text-overdue" />}
                   <span>
-                    {c.granted ? "Turn on" : "Turn off"} <b className="font-semibold">{CAPABILITY_LABELS[c.capability].label}</b>
+                    {c.granted ? t("team.permissions.turnOn") : t("team.permissions.turnOff")} <b className="font-semibold">{CAPABILITY_LABELS[c.capability].label}</b>
                     {reason && <span className="block text-[12px] text-on-surface-muted">{reason}</span>}
                   </span>
                 </li>
@@ -307,10 +307,10 @@ export function TeamPermissions({
             ))}
           </ul>
           <AlertDialogFooter>
-            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogCancel>{t("team.common.goBack")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmSave}>
               {saving ? <Spinner size="sm" /> : null}
-              Save changes
+              {t("team.permissions.saveChanges")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

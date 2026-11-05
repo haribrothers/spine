@@ -1,6 +1,7 @@
 import type { TableSort } from "@spine/ui";
 import { calendarDate, daysUntil } from "../quotes/quotes-list-state";
 import type { Invoice } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-INV-27 — the cards that filter the list. */
 export type InvoiceCard = "" | "outstanding" | "overdue" | "due7";
@@ -8,12 +9,12 @@ export type InvoiceCard = "" | "outstanding" | "overdue" | "due7";
 /** US-INV-29 — the one status a row shows. */
 export type InvoiceState = "draft" | "due" | "part_paid" | "paid" | "overdue" | "void";
 export const INVOICE_STATE_LABELS: Record<InvoiceState, string> = {
-  draft: "Draft",
-  due: "Due",
-  part_paid: "Part paid",
-  paid: "Paid",
-  overdue: "Overdue",
-  void: "Void",
+  draft: t("invoices.state.draft"),
+  due: t("invoices.state.due"),
+  part_paid: t("invoices.state.partPaid"),
+  paid: t("invoices.state.paid"),
+  overdue: t("invoices.state.overdue"),
+  void: t("invoices.state.void"),
 };
 const STATES = Object.keys(INVOICE_STATE_LABELS) as InvoiceState[];
 
@@ -166,7 +167,7 @@ export function filterInvoices(list: Invoice[], state: InvoicesListState, now: D
 /** The contacts that have an invoice, for the Contact filter. */
 export function invoiceContacts(list: Invoice[]): { value: string; label: string }[] {
   const seen = new Map<string, string>();
-  for (const inv of list) if (!seen.has(inv.contactId)) seen.set(inv.contactId, inv.contactName ?? "Unknown contact");
+  for (const inv of list) if (!seen.has(inv.contactId)) seen.set(inv.contactId, inv.contactName ?? t("invoices.list.unknownContact"));
   return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }
 
@@ -174,12 +175,12 @@ export function invoiceContacts(list: Invoice[]): { value: string; label: string
 export function dueNote(inv: Invoice, now: Date, locale?: string): { text: string; tone: "" | "soon" | "over" | "paid" } {
   const state = invoiceState(inv);
   if (state === "void") return { text: "", tone: "" };
-  if (state === "paid") return { text: inv.lastPaidAt ? `Paid ${calendarDate(inv.lastPaidAt, now, locale)}` : "Paid", tone: "paid" };
+  if (state === "paid") return { text: inv.lastPaidAt ? t("invoices.list.paidOn", { date: calendarDate(inv.lastPaidAt, now, locale) }) : t("invoices.list.paid"), tone: "paid" };
   if (!inv.dueDate) return { text: "", tone: "" };
   const days = daysUntil(inv.dueDate, now);
-  if (days < 0) return { text: `Overdue ${-days} ${-days === 1 ? "day" : "days"}`, tone: state === "draft" ? "" : "over" };
-  if (days === 0) return { text: "today", tone: "soon" };
-  return { text: `in ${days} ${days === 1 ? "day" : "days"}`, tone: days <= 7 && state !== "draft" ? "soon" : "" };
+  if (days < 0) return { text: t("invoices.list.overdueDays", { count: -days }), tone: state === "draft" ? "" : "over" };
+  if (days === 0) return { text: t("invoices.list.dueToday"), tone: "soon" };
+  return { text: t("invoices.list.dueInDays", { count: days }), tone: days <= 7 && state !== "draft" ? "soon" : "" };
 }
 
 /** Of the amount due (total less retention), the share paid or credited, 0–100. */

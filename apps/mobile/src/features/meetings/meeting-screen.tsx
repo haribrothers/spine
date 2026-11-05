@@ -8,6 +8,7 @@ import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { useBusinessFormat } from "../../lib/data/business";
 import type { Meeting } from "../../lib/data/meetings";
 import { weekdayDayMonth } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 
 /**
  * US-MOB-22 — where a meeting notification or Today's next meeting lands:
@@ -15,6 +16,7 @@ import { weekdayDayMonth } from "../../lib/format";
  * are managed on the web.
  */
 export function MeetingScreen({ id }: { id: string }) {
+  const t = useT();
   const colors = useNativeColors();
   const { locale } = useBusinessFormat();
   const meeting = useCachedQuery<Meeting>(`meeting:${id}`, `/meetings/${id}`);
@@ -22,7 +24,7 @@ export function MeetingScreen({ id }: { id: string }) {
   const time = (iso: string) => new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 bg-background dark:bg-background-dark" contentContainerClassName="gap-4 p-4 pb-16">
-      <Stack.Screen options={{ title: m?.title ?? "Meeting" }} />
+      <Stack.Screen options={{ title: m?.title ?? t("mobileWork.nav.meeting") }} />
       {m ? (
         <View testID="meeting" className="gap-4 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
           <Text accessibilityRole="header" className="text-[22px] font-semibold text-on-surface dark:text-on-surface-dark">{m.title}</Text>
@@ -30,7 +32,7 @@ export function MeetingScreen({ id }: { id: string }) {
             <CalendarClock size={20} color={colors.onSurfaceMuted} />
             <Text className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark">
               {weekdayDayMonth(new Date(m.startAt), locale)}
-              {m.allDay ? " · All day" : `, ${time(m.startAt)} – ${time(m.endAt)}`}
+              {m.allDay ? t("mobileWork.meeting.allDay") : t("mobileWork.meeting.timeRange", { start: time(m.startAt), end: time(m.endAt) })}
             </Text>
           </View>
           {m.location ? (
@@ -42,13 +44,13 @@ export function MeetingScreen({ id }: { id: string }) {
           {m.description ? <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">{m.description}</Text> : null}
         </View>
       ) : meeting.loading ? (
-        <LoadingRegion label="Loading the meeting" testID="skeleton-meeting-detail" className="gap-4 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
+        <LoadingRegion label={t("mobileWork.meeting.loading")} testID="skeleton-meeting-detail" className="gap-4 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
           <Skeleton className="h-7 w-3/4 rounded-md" />
           <Skeleton className="h-4 w-2/3 rounded-md" />
           <Skeleton className="h-4 w-1/2 rounded-md" />
         </LoadingRegion>
       ) : (
-        <EmptyState title="This meeting isn't available" description="It may have been cancelled, or you're no longer invited." />
+        <EmptyState title={t("mobileWork.meeting.unavailableTitle")} description={t("mobileWork.meeting.unavailableDescription")} />
       )}
     </ScrollView>
   );

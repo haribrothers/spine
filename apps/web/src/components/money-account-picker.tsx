@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FormField, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { MONEY_ACCOUNT_KIND_LABELS, type LastMoneyAccounts, type MoneyAccount, type MoneyAccountForm } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
+import { useT } from "../lib/i18n";
 
 /**
  * US-BANK-03 (D-140) — "Paid into" / "Paid from" on every form that moves
@@ -26,6 +27,7 @@ export function MoneyAccountPicker({
   /** Start on this account instead (e.g. the one an expense already carries). */
   initialId?: string | null;
 }) {
+  const t = useT();
   const [accounts, setAccounts] = useState<MoneyAccount[] | null>(null);
   const [lastUsedId, setLastUsedId] = useState<string | null>(null);
 
@@ -49,15 +51,18 @@ export function MoneyAccountPicker({
 
   if (accounts !== null && accounts.length === 0) return null;
 
-  const label = direction === "in" ? "Paid into" : "Paid from";
-  const where = direction === "in" ? "went into" : "came out of";
+  const label = direction === "in" ? t("banking.picker.paidInto") : t("banking.picker.paidFrom");
   const selected = accounts?.find((a) => a.id === value);
   const helper = !selected
     ? undefined
     : value === lastUsedId
-      ? `Last used by you. Change it if the money ${where} another account.`
+      ? direction === "in"
+        ? t("banking.picker.lastUsedIn")
+        : t("banking.picker.lastUsedOut")
       : selected.isDefault
-        ? `Your organisation's default account. Change it if the money ${where} another account.`
+        ? direction === "in"
+          ? t("banking.picker.defaultIn")
+          : t("banking.picker.defaultOut")
         : undefined;
 
   return (
@@ -65,7 +70,7 @@ export function MoneyAccountPicker({
       {(field) => (
         <Select value={value} onValueChange={onValueChange} disabled={!accounts}>
           <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
-            <SelectValue placeholder="Loading accounts…" />
+            <SelectValue placeholder={t("banking.picker.loading")} />
           </SelectTrigger>
           <SelectContent>
             {(accounts ?? []).map((a) => (
@@ -83,10 +88,11 @@ export function MoneyAccountPicker({
 
 /** The account a recorded payment or approved expense used, read-only beside its method. */
 export function MoneyAccountLine({ direction, account }: { direction: "in" | "out"; account: { name: string } | null | undefined }) {
+  const t = useT();
   if (!account) return null;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[12px] font-medium text-on-surface-muted">{direction === "in" ? "Paid into" : "Paid from"}</span>
+      <span className="text-[12px] font-medium text-on-surface-muted">{direction === "in" ? t("banking.picker.paidInto") : t("banking.picker.paidFrom")}</span>
       <span className="text-[14px] text-on-surface">{account.name}</span>
     </div>
   );

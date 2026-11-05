@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
 import { GENERIC_JOBS_OFF_NOTE, INDUSTRY_TEMPLATE_KEYS, INDUSTRY_TEMPLATES, TEMPLATE_KEEPS_MODULES_NOTE, TEMPLATES_WITHOUT_JOBS, type IndustryTemplateValue } from "@spine/shared";
+import { useT } from "../../../lib/i18n";
 
 export type IndustryTemplate = IndustryTemplateValue;
 
@@ -26,7 +27,8 @@ export interface IndustryTemplateStepProps {
  * a setting. The downstream effect (Construction surfacing
  * milestones/retention) is explicitly Phase 3 territory and not built here.
  */
-export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel = "Continue", modulesNote }: IndustryTemplateStepProps) {
+export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel, modulesNote }: IndustryTemplateStepProps) {
+  const t = useT();
   const [value, setValue] = useState<IndustryTemplate>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -74,11 +76,11 @@ export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel =
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : saveLabel}
+          {saving ? <Spinner size="sm" /> : (saveLabel ?? t("onboarding.common.continue"))}
         </Button>
       </div>
     </div>

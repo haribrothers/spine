@@ -27,6 +27,7 @@ import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
+import { useT } from "../../../lib/i18n";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { HistorySection } from "../../../components/history-section";
 import { calendarDate } from "../quotes/quotes-list-state";
@@ -62,6 +63,7 @@ export function CreditStateBadge({ credit, testId }: { credit: Pick<VendorCredit
  * Activity. Every major action asks first, and every action toasts.
  */
 export function VendorCreditDetail({ creditId }: { creditId: string }) {
+  const t = useT();
   const loadFailed = useLoadFailure(creditId);
   const router = useRouter();
   const [credit, setCredit] = useState<VendorCredit | null>(null);
@@ -88,7 +90,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         setCredit(c);
         setRefreshKey((k) => k + 1);
       })
-      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this vendor credit."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("vendorCredits.detail.loadFailed")));
   }, [creditId]);
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
     try {
       await action();
     } catch (err) {
-      setActionError({ title: failed, message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: failed, message: err instanceof Error ? err.message : t("vendorCredits.detail.tryAgain") });
     } finally {
       setBusy(false);
     }
@@ -131,8 +133,8 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const today = new Date();
   const locale = orgLocaleTag();
   const money = (v: string | bigint) => formatMoney(BigInt(v), credit.currency);
-  const vendor = credit.contactName ?? "the vendor";
-  const title = credit.number ?? "Draft vendor credit";
+  const vendor = credit.contactName ?? t("vendorCredits.detail.theVendor");
+  const title = credit.number ?? t("vendorCredits.detail.draftTitle");
   const isDraft = credit.status === "draft";
   const isVoid = credit.status === "void";
   const left = hasCreditLeft(credit);
@@ -147,29 +149,34 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const record = () =>
     act(
       {
-        title: "Record this vendor credit?",
-        description: `${money(credit.totalAmount)} from ${vendor} is posted to your books, lowering what you owe them. After that it can't be edited — only voided.`,
-        confirmLabel: "Record credit",
+        title: t("vendorCredits.recordConfirm.title"),
+        description: t("vendorCredits.recordConfirm.description", { amount: money(credit.totalAmount), vendor }),
+        confirmLabel: t("vendorCredits.recordConfirm.confirmLabel"),
       },
       async () => {
         const updated = await apiClient.post<VendorCredit>(`/vendor-credits/${credit.id}/record`);
         done(...creditRecordedToast({ ...updated, contactName: credit.contactName }));
       },
-      "Couldn't record the credit.",
+      t("vendorCredits.detail.recordFailed"),
     );
 
   const remove = () =>
     act(
-      { title: "Delete this draft credit?", description: `${vendor}'s credit note ${credit.vendorReference ?? ""} is removed for good. This can't be undone.`, confirmLabel: "Delete draft", danger: true },
+      {
+        title: t("vendorCredits.deleteConfirm.title"),
+        description: t("vendorCredits.deleteConfirm.description", { vendor, reference: credit.vendorReference ?? "" }),
+        confirmLabel: t("vendorCredits.deleteConfirm.confirmLabel"),
+        danger: true,
+      },
       async () => {
         await apiClient.delete(`/vendor-credits/${credit.id}`);
-        showToast("Draft credit deleted", `${vendor}'s credit note ${credit.vendorReference ?? ""} has been removed.`);
+        showToast(t("vendorCredits.deleteConfirm.deletedTitle"), t("vendorCredits.deleteConfirm.deletedDescription", { vendor, reference: credit.vendorReference ?? "" }));
         router.push("/vendor-credits");
       },
-      "Couldn't delete the draft.",
+      t("vendorCredits.detail.deleteFailed"),
     );
 
-  const primary = isDraft && canRecord ? { label: "Record credit", icon: <FileCheck size={14} aria-hidden />, onClick: () => void record() } : left && canApply ? { label: "Apply to bills", icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) } : null;
+  const primary = isDraft && canRecord ? { label: t("vendorCredits.detail.recordCredit"), icon: <FileCheck size={14} aria-hidden />, onClick: () => void record() } : left && canApply ? { label: t("vendorCredits.detail.applyToBills"), icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) } : null;
 
   const figure = (label: string, value: string, sub: string, testId: string, tone?: string) => (
     <div className="flex flex-col gap-1 border-b border-border px-5 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0" data-testid={testId}>
@@ -178,31 +185,30 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
       <span className="text-[12px] text-on-surface-muted">{sub}</span>
     </div>
   );
-  const count = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
   const liveRefunds = refunds.filter((r) => !r.deletedAt);
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <Breadcrumb items={[{ label: "Purchases" }, { label: "Vendor credits", href: "/vendor-credits" }, { label: title }]} />
+        <Breadcrumb items={[{ label: t("vendorCredits.detail.breadcrumbPurchases") }, { label: t("vendorCredits.detail.breadcrumbVendorCredits"), href: "/vendor-credits" }, { label: title }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
               <CreditStateBadge credit={credit} testId="credit-state" />
-              {credit.isOpening && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
+              {credit.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorCredits.detail.openingBalance")}</Badge>}
             </div>
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="credit-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
                 <SectionLink href={`/contacts/${credit.contactId}`} className="font-medium text-primary hover:underline">
-                  {credit.contactName ?? "Unknown vendor"}
+                  {credit.contactName ?? t("vendorCredits.detail.unknownVendor")}
                 </SectionLink>
               </span>
               {credit.vendorReference && (
                 <span className="inline-flex items-center gap-1.5">
                   <Hash size={14} aria-hidden />
-                  Their {credit.vendorReference}
+                  {t("vendorCredits.detail.their", { reference: credit.vendorReference })}
                 </span>
               )}
               <span className="inline-flex items-center gap-1.5">
@@ -212,9 +218,9 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               {credit.billId && (
                 <span className="inline-flex items-center gap-1.5">
                   <File size={14} aria-hidden />
-                  Against{" "}
+                  {t("vendorCredits.detail.against")}{" "}
                   <SectionLink href={`/vendor-bills/${credit.billId}`} className="font-medium text-primary hover:underline">
-                    {credit.billNumber ?? "a bill"}
+                    {credit.billNumber ?? t("vendorCredits.detail.aBill")}
                   </SectionLink>
                 </span>
               )}
@@ -222,7 +228,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                 <span className="inline-flex items-center gap-1.5">
                   <HardHat size={14} aria-hidden />
                   <SectionLink href={`/jobs/${credit.jobId}`} className="font-medium text-primary hover:underline">
-                    {credit.jobName ?? "The job"}
+                    {credit.jobName ?? t("vendorCredits.detail.theJob")}
                   </SectionLink>
                 </span>
               )}
@@ -240,14 +246,14 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               <Button variant="secondary" asChild>
                 <Link href={`/vendor-credits/${credit.id}/edit`}>
                   <Pencil size={14} aria-hidden />
-                  Edit
+                  {t("vendorCredits.detail.edit")}
                 </Link>
               </Button>
             )}
             {left && canApply && (
               <Button variant="secondary" onClick={() => setRefundOpen(true)} disabled={busy}>
                 <Banknote size={14} aria-hidden />
-                Record refund
+                {t("vendorCredits.detail.recordRefund")}
               </Button>
             )}
             {primary && (
@@ -259,30 +265,30 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
-                  More <ChevronDown size={14} />
+                  {t("vendorCredits.detail.more")} <ChevronDown size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
                   <MENU_ICONS.history aria-hidden />
-                  View history
+                  {t("vendorCredits.detail.viewHistory")}
                 </DropdownMenuItem>
                 {(canVoid || canDelete) && <DropdownMenuSeparator />}
                 {canVoid && (
                   <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
                     <MENU_ICONS.void aria-hidden />
-                    Void credit
+                    {t("vendorCredits.detail.voidCredit")}
                   </DropdownMenuItem>
                 )}
                 {canDelete && (
                   <DropdownMenuItem destructive onSelect={() => void remove()}>
                     <MENU_ICONS.delete aria-hidden />
-                    Delete draft
+                    {t("vendorCredits.detail.deleteDraft")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <HistorySection endpoint={`/vendor-credits/${credit.id}/history`} subjectLabel="this vendor credit" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <HistorySection endpoint={`/vendor-credits/${credit.id}/history`} subjectLabel={t("vendorCredits.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
           </div>
         </div>
       </div>
@@ -291,25 +297,27 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
       {isVoid && (
         <Alert variant="warning">
           <AlertDescription data-testid="credit-void-reason">
-            Void{credit.voidReason ? ` — ${credit.voidReason}` : ""}. It&apos;s off your books and can&apos;t be used.
+            {credit.voidReason ? t("vendorCredits.detail.voidNoticeReason", { reason: credit.voidReason }) : t("vendorCredits.detail.voidNotice")}
           </AlertDescription>
         </Alert>
       )}
 
       {!isDraft && (
         <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-4" data-testid="credit-figures">
-          {figure("Total", money(credit.totalAmount), `${count(items.length, "line")} · tax ${money(credit.taxAmount)}`, "fig-total")}
-          {figure("Applied to bills", money(applied), allocations.length ? count(allocations.length, "bill") : "Not applied yet", "fig-applied")}
-          {figure("Refunded", money(refunded), liveRefunds.length ? count(liveRefunds.length, "refund") : "No refunds", "fig-refunded")}
-          {figure("Left to use", isVoid ? "—" : money(credit.balanceAmount), isVoid ? "Void" : left ? "Apply it or ask for a refund" : "All used", "fig-left", left ? "text-primary" : undefined)}
+          {/* eslint-disable i18next/no-literal-string -- test ids and tone classes, not copy */}
+          {figure(t("vendorCredits.detail.total"), money(credit.totalAmount), t("vendorCredits.detail.totalSub", { lines: t("vendorCredits.detail.lines", { count: items.length }), tax: money(credit.taxAmount) }), "fig-total")}
+          {figure(t("vendorCredits.detail.appliedToBills"), money(applied), allocations.length ? t("vendorCredits.detail.billCount", { count: allocations.length }) : t("vendorCredits.detail.notAppliedYet"), "fig-applied")}
+          {figure(t("vendorCredits.detail.refunded"), money(refunded), liveRefunds.length ? t("vendorCredits.detail.refundCount", { count: liveRefunds.length }) : t("vendorCredits.detail.noRefunds"), "fig-refunded")}
+          {figure(t("vendorCredits.detail.leftToUse"), isVoid ? "—" : money(credit.balanceAmount), isVoid ? t("vendorCredits.detail.void") : left ? t("vendorCredits.detail.applyOrRefund") : t("vendorCredits.detail.allUsed"), "fig-left", left ? "text-primary" : undefined)}
+          {/* eslint-enable i18next/no-literal-string */}
         </div>
       )}
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Card className="p-0" data-testid="credit-lines">
-            <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">Lines</h3>
-            {credit.isOpening && <p className="px-4 pb-3 text-[13px] text-on-surface-muted">Brought in from your old system, so it has no lines.</p>}
+            <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorCredits.detail.linesTitle")}</h3>
+            {credit.isOpening && <p className="px-4 pb-3 text-[13px] text-on-surface-muted">{t("vendorCredits.detail.openingNote")}</p>}
             <div className="flex flex-col">
               {(credit.lines ?? []).map((line) => (
                 <div key={line.id} className="flex items-start justify-between gap-4 border-t border-border px-4 py-3">
@@ -319,7 +327,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                     {line.type === "item" && (
                       <p className="text-[12px] text-on-surface-muted">
                         {line.quantity} × {money(line.unitPriceAmount)}
-                        {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
+                        {line.taxRatePercentage > 0 && <> · {t("vendorCredits.detail.lineTax", { rate: line.taxRatePercentage })}</>}
                         {line.supplyClass && line.supplyClass !== "taxable" && <> · {SUPPLY_CLASS_LABELS[line.supplyClass]}</>}
                         {line.hsnSac && <> · {line.hsnSac}</>}
                         {line.accountName && <> · {line.accountCode ? `${line.accountCode} ` : ""}{line.accountName}</>}
@@ -332,15 +340,15 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
             </div>
             <div className="flex flex-col gap-1.5 border-t border-border px-4 py-3 text-[13px]">
               <div className="flex justify-between text-on-surface-muted">
-                <span>Subtotal</span>
+                <span>{t("vendorCredits.detail.subtotal")}</span>
                 <span className="tabular-nums text-on-surface">{money(credit.subtotalAmount)}</span>
               </div>
               <div className="flex justify-between text-on-surface-muted">
-                <span>Tax</span>
+                <span>{t("vendorCredits.detail.tax")}</span>
                 <span className="tabular-nums text-on-surface">{money(credit.taxAmount)}</span>
               </div>
               <div className="flex justify-between font-semibold text-on-surface">
-                <span>Total credit</span>
+                <span>{t("vendorCredits.detail.totalCredit")}</span>
                 <span className="tabular-nums">{money(credit.totalAmount)}</span>
               </div>
             </div>
@@ -348,9 +356,9 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
 
           {!isDraft && (
             <Card className="p-0" data-testid="credit-allocations">
-              <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">Applied to bills</h3>
+              <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorCredits.detail.appliedToBills")}</h3>
               {allocations.length === 0 ? (
-                <p className="border-t border-border px-4 py-3 text-[13px] text-on-surface-muted">{left ? "Not applied yet. Apply it to cut what you owe on a bill." : "Nothing was applied to a bill."}</p>
+                <p className="border-t border-border px-4 py-3 text-[13px] text-on-surface-muted">{left ? t("vendorCredits.detail.notAppliedHint") : t("vendorCredits.detail.nothingApplied")}</p>
               ) : (
                 allocations.map((a) => (
                   <div key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto_32px] items-center gap-4 border-t border-border px-4 py-2.5 text-[13.5px]" data-testid="credit-allocation">
@@ -362,7 +370,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                     {canApply && !isVoid ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button type="button" aria-label={`Actions for ${a.billNumber}`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                          <button type="button" aria-label={t("vendorCredits.detail.actionsFor", { label: a.billNumber })} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
                             <MoreHorizontal size={16} />
                           </button>
                         </DropdownMenuTrigger>
@@ -372,21 +380,21 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                             onSelect={() =>
                               void act(
                                 {
-                                  title: `Remove this credit from ${a.billNumber}?`,
-                                  description: `${a.billNumber} owes ${money(a.amount)} more again, and the credit has that much back to use.`,
-                                  confirmLabel: "Remove from bill",
+                                  title: t("vendorCredits.detail.removeTitle", { number: a.billNumber }),
+                                  description: t("vendorCredits.detail.removeDescription", { number: a.billNumber, amount: money(a.amount) }),
+                                  confirmLabel: t("vendorCredits.detail.removeFromBill"),
                                   danger: true,
                                 },
                                 async () => {
                                   await apiClient.delete(`/vendor-credits/${credit.id}/allocations/${a.id}`);
-                                  done("Removed from bill", `${money(a.amount)} is back on ${title}, and ${a.billNumber} owes that much again.`);
+                                  done(t("vendorCredits.detail.removedTitle"), t("vendorCredits.detail.removedDescription", { amount: money(a.amount), credit: title, number: a.billNumber }));
                                 },
-                                "Couldn't remove the credit from the bill.",
+                                t("vendorCredits.detail.removeFailed"),
                               )
                             }
                           >
                             <MENU_ICONS.moveOff aria-hidden />
-                            Remove from bill
+                            {t("vendorCredits.detail.removeFromBill")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -401,24 +409,24 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
 
           {!isDraft && (
             <Card className="p-0" data-testid="vendor-refunds">
-              <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">Refunds</h3>
+              <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorCredits.detail.refunds")}</h3>
               {refunds.length === 0 ? (
-                <p className="border-t border-border px-4 py-3 text-[13px] text-on-surface-muted">{left ? `None yet. Record a refund when ${vendor} pays you back.` : "None."}</p>
+                <p className="border-t border-border px-4 py-3 text-[13px] text-on-surface-muted">{left ? t("vendorCredits.detail.noneYet", { vendor }) : t("vendorCredits.detail.none")}</p>
               ) : (
                 refunds.map((r) => (
                   <div key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto_32px] items-center gap-4 border-t border-border px-4 py-2.5 text-[13.5px]">
                     <span className={r.deletedAt ? "text-on-surface-muted line-through" : "text-on-surface"}>
-                      {calendarDate(r.date.slice(0, 10), today, locale)} · {PAYMENT_METHOD_LABELS[r.method as PaymentMethod] ?? r.method} into {r.moneyAccountName}
+                      {t("vendorCredits.detail.refundLine", { date: calendarDate(r.date.slice(0, 10), today, locale), method: PAYMENT_METHOD_LABELS[r.method as PaymentMethod] ?? r.method, account: r.moneyAccountName })}
                       {r.reference ? ` · ${r.reference}` : ""}
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="tabular-nums text-on-surface">{money(r.amount)}</span>
-                      {r.deletedAt && <span className="text-[12px] text-on-surface-muted">Deleted</span>}
+                      {r.deletedAt && <span className="text-[12px] text-on-surface-muted">{t("vendorCredits.detail.deleted")}</span>}
                     </span>
                     {!r.deletedAt && canApply ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button type="button" aria-label={`Actions for the ${money(r.amount)} refund`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                          <button type="button" aria-label={t("vendorCredits.detail.refundActions", { amount: money(r.amount) })} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
                             <MoreHorizontal size={16} />
                           </button>
                         </DropdownMenuTrigger>
@@ -428,21 +436,21 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                             onSelect={() =>
                               void act(
                                 {
-                                  title: "Delete this refund?",
-                                  description: `The ${money(r.amount)} refund into ${r.moneyAccountName} is reversed in your books, and the credit has that much back to use. It stays listed, marked deleted.`,
-                                  confirmLabel: "Delete refund",
+                                  title: t("vendorCredits.detail.deleteRefundTitle"),
+                                  description: t("vendorCredits.detail.deleteRefundDescription", { amount: money(r.amount), account: r.moneyAccountName }),
+                                  confirmLabel: t("vendorCredits.detail.deleteRefund"),
                                   danger: true,
                                 },
                                 async () => {
                                   await apiClient.delete(`/vendor-refunds/${r.id}`);
-                                  done("Refund deleted", `${money(r.amount)} is back on ${title} to use.`);
+                                  done(t("vendorCredits.detail.refundDeleted"), t("vendorCredits.detail.refundDeletedDescription", { amount: money(r.amount), credit: title }));
                                 },
-                                "Couldn't delete the refund.",
+                                t("vendorCredits.detail.deleteRefundFailed"),
                               )
                             }
                           >
                             <MENU_ICONS.delete aria-hidden />
-                            Delete refund
+                            {t("vendorCredits.detail.deleteRefund")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -458,7 +466,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
           <AttachmentsSection entityType="vendor_credit" entityId={credit.id} />
           {credit.notes && (
             <Card className="flex flex-col gap-1">
-              <h3 className="text-[14px] font-semibold text-on-surface">Notes</h3>
+              <h3 className="text-[14px] font-semibold text-on-surface">{t("vendorCredits.detail.notes")}</h3>
               <p className="whitespace-pre-wrap text-[13px] text-on-surface">{credit.notes}</p>
             </Card>
           )}
@@ -470,10 +478,10 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         open={applyOpen}
         onOpenChange={setApplyOpen}
         credit={credit}
-        onApplied={(total, bills) => done("Credit applied", `${money(total)} of ${title} now counts against ${bills === 1 ? "1 bill" : `${bills} bills`}.`)}
+        onApplied={(total, bills) => done(t("vendorCredits.applied.title"), t("vendorCredits.applied.description", { amount: money(total), credit: title, bills: t("vendorCredits.applied.bills", { count: bills }) }))}
       />
-      <VendorRefundDialog open={refundOpen} onOpenChange={setRefundOpen} credit={credit} onRecorded={(amount) => done("Refund recorded", `${money(amount)} from ${vendor} is in your books.`)} />
-      <VoidCreditDialog credit={credit} open={voidOpen} onOpenChange={setVoidOpen} onVoided={() => done(`${title} voided`, `A reversing entry took it off your books, so what you owe ${vendor} went back up.`)} />
+      <VendorRefundDialog open={refundOpen} onOpenChange={setRefundOpen} credit={credit} onRecorded={(amount) => done(t("vendorCredits.applied.refundRecorded"), t("vendorCredits.applied.refundRecordedDescription", { amount: money(amount), vendor }))} />
+      <VoidCreditDialog credit={credit} open={voidOpen} onOpenChange={setVoidOpen} onVoided={() => done(t("vendorCredits.applied.voidedTitle", { credit: title }), t("vendorCredits.applied.voidedDescription", { vendor }))} />
       {confirmDialog}
     </div>
   );

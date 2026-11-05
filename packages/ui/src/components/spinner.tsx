@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 
 const sizeMap = {
   sm: 14,
@@ -19,14 +20,14 @@ const sizeMap = {
 export function Spinner({
   size = "md",
   className,
-  label = "Loading",
+  label,
 }: {
   size?: keyof typeof sizeMap;
   className?: string;
   label?: string;
 }) {
   return (
-    <span role="status" aria-label={label} className="inline-flex">
+    <span role="status" aria-label={label ?? t("ui.spinner.loading")} className="inline-flex">
       <Loader2 size={sizeMap[size]} aria-hidden="true" className={cn("animate-spin text-on-surface-muted", className)} />
     </span>
   );

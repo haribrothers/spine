@@ -7,8 +7,9 @@ import { apiClient } from "../../../../../lib/api-client";
 import { useMyRole } from "../../../../../lib/role-context";
 import { useToast } from "../../../../../components/toast-host";
 import { ReportFootnote, useReport } from "../../report-kit";
+import { t, useT } from "../../../../../lib/i18n";
 
-const TYPE_LABELS: Record<TallyMappingRow["type"], string> = { asset: "Asset", liability: "Liability", equity: "Equity", income: "Income", expense: "Expense" };
+const TYPE_LABELS: Record<TallyMappingRow["type"], string> = { asset: t("reports.tallyMapping.types.asset"), liability: t("reports.tallyMapping.types.liability"), equity: t("reports.tallyMapping.types.equity"), income: t("reports.tallyMapping.types.income"), expense: t("reports.tallyMapping.types.expense") };
 type TypeFilter = "all" | TallyMappingRow["type"];
 
 /**
@@ -17,6 +18,7 @@ type TypeFilter = "all" | TallyMappingRow["type"];
  * saves changes, which every later export uses.
  */
 export function TallyMappingView() {
+  const t = useT();
   const isOwner = useMyRole() === "owner";
   const { data, error, loading } = useReport<TallyMappingRow[]>("/exports/tally/mapping", FINANCIAL_STATEMENTS_NO_ACCESS);
   const [rows, setRows] = useState<TallyMappingRow[]>([]);
@@ -45,24 +47,24 @@ export function TallyMappingView() {
       const saved = await apiClient.put<TallyMappingRow[]>("/exports/tally/mapping", { mappings: Object.entries(changed).map(([accountId, tallyGroup]) => ({ accountId, tallyGroup })) });
       setRows(saved);
       setChanged({});
-      showToast("Mapping saved", "Exports to Tally use these groups from now on.");
+      showToast(t("reports.tallyMapping.saved"), t("reports.tallyMapping.savedDescription"));
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "The mapping wasn't saved. Try again.");
+      setSaveError(err instanceof Error ? err.message : t("reports.tallyMapping.saveFailed"));
     } finally {
       setSaving(false);
     }
   }
 
   const columns: TableColumn<TallyMappingRow>[] = [
-    { key: "code", header: "Code", render: (r) => r.code, sortValue: (r) => r.code },
-    { key: "name", header: "Account", render: (r) => r.name, sortValue: (r) => r.name },
-    { key: "type", header: "Spine type", render: (r) => TYPE_LABELS[r.type], sortValue: (r) => r.type },
+    { key: "code", header: t("reports.common.code"), render: (r) => r.code, sortValue: (r) => r.code },
+    { key: "name", header: t("reports.common.account"), render: (r) => r.name, sortValue: (r) => r.name },
+    { key: "type", header: t("reports.tallyMapping.spineType"), render: (r) => TYPE_LABELS[r.type], sortValue: (r) => r.type },
     {
       key: "group",
-      header: "Tally group",
+      header: t("reports.tallyMapping.tallyGroup"),
       render: (r) => (
         <Select value={r.tallyGroup} onValueChange={(v) => choose(r, v as TallyGroup)} disabled={!isOwner}>
-          <SelectTrigger className="w-56" aria-label={`Tally group for ${r.code} ${r.name}`} data-testid={`tally-group-${r.code}`}>
+          <SelectTrigger className="w-56" aria-label={t("reports.tallyMapping.tallyGroupFor", { code: r.code, name: r.name })} data-testid={`tally-group-${r.code}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -82,17 +84,17 @@ export function TallyMappingView() {
       <ReportToolbar
         loading={loading}
         filters={
-          <ReportFilter label="Account type">
+          <ReportFilter label={t("reports.tallyMapping.accountType")}>
             {(id) => (
               <Select value={type} onValueChange={(v) => setType(v as TypeFilter)}>
                 <SelectTrigger className="w-48" aria-labelledby={id}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All account types</SelectItem>
-                  {(Object.keys(TYPE_LABELS) as TallyMappingRow["type"][]).map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {TYPE_LABELS[t]}
+                  <SelectItem value="all">{t("reports.tallyMapping.allAccountTypes")}</SelectItem>
+                  {(Object.keys(TYPE_LABELS) as TallyMappingRow["type"][]).map((ty) => (
+                    <SelectItem key={ty} value={ty}>
+                      {TYPE_LABELS[ty]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -105,7 +107,7 @@ export function TallyMappingView() {
           data && (
             <Button onClick={() => void save()} disabled={dirty === 0 || saving}>
               {saving && <Spinner size="sm" />}
-              Save mapping
+              {t("reports.tallyMapping.save")}
             </Button>
           )
         }
@@ -118,16 +120,16 @@ export function TallyMappingView() {
       )}
       {data && !isOwner && (
         <Alert>
-          <AlertDescription>Only an Owner can change the mapping.</AlertDescription>
+          <AlertDescription>{t("reports.tallyMapping.ownerOnly")}</AlertDescription>
         </Alert>
       )}
 
       {data && (
         <div data-testid="tally-mapping">
-          <DataTable columns={columns} data={visible} rowKey={(r) => r.accountId} searchPlaceholder="Search accounts" searchKey={(r) => `${r.code} ${r.name}`} configurablePageSize pageSizeOptions={[10, 25, 50, 100]} />
+          <DataTable columns={columns} data={visible} rowKey={(r) => r.accountId} searchPlaceholder={t("reports.tallyMapping.search")} searchKey={(r) => `${r.code} ${r.name}`} configurablePageSize pageSizeOptions={[10, 25, 50, 100]} />
         </div>
       )}
-      <ReportFootnote>Defaults come from each account&apos;s type and code. Customers go under Sundry Debtors and vendors under Sundry Creditors.</ReportFootnote>
+      <ReportFootnote>{t("reports.tallyMapping.footnote")}</ReportFootnote>
     </>
   );
 }

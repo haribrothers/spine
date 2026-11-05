@@ -5,11 +5,12 @@ import { Badge, DataTable, type TableColumn } from "@spine/ui";
 import { ContactLogo } from "./contact-logo";
 import { ContactRowActions } from "./contact-row-actions";
 import type { Contact } from "./types";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
-  customer: "Customer",
-  vendor: "Vendor",
-  both: "Customer & vendor",
+  customer: translate("contacts.common.typeCustomer"),
+  vendor: translate("contacts.common.typeVendor"),
+  both: translate("contacts.common.typeBoth"),
 };
 
 /**
@@ -33,10 +34,11 @@ export function ContactsTable({
   onPageChange: (page: number) => void;
   toolbarStart: React.ReactNode;
 }) {
+  const t = useT();
   const columns: TableColumn<Contact>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t("contacts.common.name"),
       render: (row) => (
         <Link href={`/contacts/${row.id}`} className="flex min-w-0 max-w-[15rem] items-center gap-2.5 wide-plus:max-w-[20rem]">
           <ContactLogo name={row.name} fileId={row.logoFileId} size="md" editable={false} onUploaded={() => {}} />
@@ -50,13 +52,13 @@ export function ContactsTable({
     },
     {
       key: "type",
-      header: "Type",
+      header: t("contacts.common.type"),
       render: (row) => <Badge>{TYPE_LABELS[row.type]}</Badge>,
       sortValue: (row) => row.type,
     },
     {
       key: "email",
-      header: "Email",
+      header: t("contacts.common.email"),
       render: (row) =>
         row.email ? (
           <span className="block max-w-[13rem] truncate wide-plus:max-w-[16rem]" title={row.email}>
@@ -68,17 +70,17 @@ export function ContactsTable({
     },
     {
       key: "phone",
-      header: "Phone",
+      header: t("contacts.common.phone"),
       render: (row) => <span className="whitespace-nowrap">{row.phone ?? "—"}</span>,
     },
     {
       key: "status",
-      header: "Status",
+      header: t("contacts.common.status"),
       render: (row) =>
         row.archivedAt ? (
-          <Badge>Archived</Badge>
+          <Badge>{t("contacts.common.archived")}</Badge>
         ) : (
-          <Badge className="bg-transparent text-on-surface-muted">Active</Badge>
+          <Badge className="bg-transparent text-on-surface-muted">{t("contacts.common.active")}</Badge>
         ),
     },
     {

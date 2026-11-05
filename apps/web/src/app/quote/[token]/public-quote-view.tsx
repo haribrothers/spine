@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, RichTextEditor, SpineLogo, Spinner } from "@spine/ui";
 import { CheckCircle2, Clock, LinkIcon, XCircle } from "lucide-react";
 import type { PublicQuoteUnavailableBusiness, PublicQuoteView as PublicQuoteViewData } from "./types";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -30,6 +31,7 @@ type LoadState =
  * this route has neither a session nor `apiClient`'s convention to follow).
  */
 export function PublicQuoteView({ token }: { token: string }) {
+  const t = useT();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState<"accept" | "reject" | null>(null);
@@ -51,15 +53,15 @@ export function PublicQuoteView({ token }: { token: string }) {
         return;
       }
       if (!res.ok) {
-        setState({ kind: "error", message: "Something went wrong loading this quote. Please try again." });
+        setState({ kind: "error", message: t("publicQuote.loadFailed") });
         return;
       }
       const quote = (await res.json()) as PublicQuoteViewData;
       setState({ kind: "ready", quote });
     } catch {
-      setState({ kind: "error", message: "Could not reach the server. Check your connection and try again." });
+      setState({ kind: "error", message: t("publicQuote.unreachable") });
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     load();
@@ -75,11 +77,11 @@ export function PublicQuoteView({ token }: { token: string }) {
         body: JSON.stringify({ comment: comment.trim() || undefined }),
       });
       if (res.status === 429) {
-        setActionError("Too many attempts — please wait a minute and try again.");
+        setActionError(t("publicQuote.tooManyAttempts"));
         return;
       }
       if (!res.ok) {
-        let message = "This quote could not be updated. It may have already been responded to or the link may have expired.";
+        let message = t("publicQuote.updateFailed");
         try {
           const data = await res.json();
           if (typeof data?.message === "string") message = data.message;
@@ -92,7 +94,7 @@ export function PublicQuoteView({ token }: { token: string }) {
       const quote = (await res.json()) as PublicQuoteViewData;
       setState({ kind: "ready", quote });
     } catch {
-      setActionError("Could not reach the server. Check your connection and try again.");
+      setActionError(t("publicQuote.unreachable"));
     } finally {
       setBusy(null);
     }
@@ -115,8 +117,8 @@ export function PublicQuoteView({ token }: { token: string }) {
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-draft-bg text-draft" aria-hidden="true">
             <LinkIcon size={20} />
           </span>
-          <h1 className="text-[20px] font-semibold text-on-surface">This quote link isn&apos;t valid</h1>
-          <p className="text-[14px] text-on-surface-muted">Check that you opened the whole link from the email, or ask the business that sent it for a new one.</p>
+          <h1 className="text-[20px] font-semibold text-on-surface">{t("publicQuote.invalidTitle")}</h1>
+          <p className="text-[14px] text-on-surface-muted">{t("publicQuote.invalidDescription")}</p>
         </Card>
       </PageShell>
     );
@@ -150,16 +152,16 @@ export function PublicQuoteView({ token }: { token: string }) {
               <img src={quote.business.logoUrl} alt="" className="h-10 w-10 shrink-0 rounded object-contain" />
             )}
             <div>
-              <p className="text-[13px] text-on-surface-muted">{quote.business?.name ?? "Quote"}</p>
-              <h1 className="text-[20px] font-semibold text-on-surface">{quote.number ?? "Quote"}</h1>
+              <p className="text-[13px] text-on-surface-muted">{quote.business?.name ?? t("publicQuote.quote")}</p>
+              <h1 className="text-[20px] font-semibold text-on-surface">{quote.number ?? t("publicQuote.quote")}</h1>
               {quote.title && <p className="text-[15px] font-medium text-on-surface" data-testid="public-quote-title">{quote.title}</p>}
             </div>
           </div>
           <StatusBadge status={quote.status} />
         </div>
-        {quote.contactName && <p className="text-[13px] text-on-surface-muted">Prepared for {quote.contactName}</p>}
+        {quote.contactName && <p className="text-[13px] text-on-surface-muted">{t("publicQuote.preparedFor", { name: quote.contactName })}</p>}
         {quote.validUntil && !isResolved && (
-          <p className="text-[13px] text-on-surface-muted">Valid until {new Date(quote.validUntil).toLocaleDateString()}</p>
+          <p className="text-[13px] text-on-surface-muted">{t("publicQuote.validUntil", { date: new Date(quote.validUntil).toLocaleDateString(orgLocaleTag()) })}</p>
         )}
       </Card>
 
@@ -172,9 +174,9 @@ export function PublicQuoteView({ token }: { token: string }) {
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), quote.currency)}
-                    {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
-                    {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
+                    {t("publicQuote.lineQtyPrice", { quantity: line.quantity, price: formatMoney(BigInt(line.unitPriceAmount), quote.currency) })}
+                    {line.discountPercentage > 0 && t("publicQuote.lineDiscount", { percent: line.discountPercentage })}
+                    {line.taxRatePercentage > 0 && t("publicQuote.lineTax", { percent: line.taxRatePercentage })}
                   </p>
                 )}
               </div>
@@ -187,11 +189,11 @@ export function PublicQuoteView({ token }: { token: string }) {
       </Card>
 
       <Card className="flex flex-col gap-2">
-        <TotalRow label="Subtotal" value={fmt(quote.subtotalAmount)} />
-        {BigInt(quote.discountAmount) > 0n && <TotalRow label="Discount" value={fmt(-BigInt(quote.discountAmount))} />}
-        <TotalRow label="Tax" value={fmt(quote.taxAmount)} />
+        <TotalRow label={t("publicQuote.subtotal")} value={fmt(quote.subtotalAmount)} />
+        {BigInt(quote.discountAmount) > 0n && <TotalRow label={t("publicQuote.discount")} value={fmt(-BigInt(quote.discountAmount))} />}
+        <TotalRow label={t("publicQuote.tax")} value={fmt(quote.taxAmount)} />
         <div className="border-t border-border pt-2">
-          <TotalRow label="Total" value={fmt(quote.totalAmount)} emphasize />
+          <TotalRow label={t("publicQuote.total")} value={fmt(quote.totalAmount)} emphasize />
         </div>
       </Card>
 
@@ -199,13 +201,13 @@ export function PublicQuoteView({ token }: { token: string }) {
         <Card className="flex flex-col gap-4">
           {quote.notes && (
             <div>
-              <h3 className="text-[13px] font-semibold text-on-surface-muted">Notes</h3>
+              <h3 className="text-[13px] font-semibold text-on-surface-muted">{t("publicQuote.notes")}</h3>
               <RichTextContent html={quote.notes} />
             </div>
           )}
           {quote.termsAndConditions && (
             <div>
-              <h3 className="text-[13px] font-semibold text-on-surface-muted">Terms &amp; conditions</h3>
+              <h3 className="text-[13px] font-semibold text-on-surface-muted">{t("publicQuote.terms")}</h3>
               <RichTextContent html={quote.termsAndConditions} />
             </div>
           )}
@@ -216,15 +218,20 @@ export function PublicQuoteView({ token }: { token: string }) {
         <Card className="flex flex-col gap-2">
           <p className={`flex items-center gap-1.5 text-[14px] font-medium ${quote.status === "accepted" ? "text-paid" : "text-overdue"}`}>
             {quote.status === "accepted" ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-            You {quote.status} this quote
-            {quote.respondedAt && <> on {new Date(quote.respondedAt).toLocaleString()}</>}.
+            {quote.status === "accepted"
+              ? quote.respondedAt
+                ? t("publicQuote.youAcceptedOn", { date: new Date(quote.respondedAt).toLocaleString(orgLocaleTag()) })
+                : t("publicQuote.youAccepted")
+              : quote.respondedAt
+                ? t("publicQuote.youRejectedOn", { date: new Date(quote.respondedAt).toLocaleString(orgLocaleTag()) })
+                : t("publicQuote.youRejected")}
           </p>
           {quote.responseComment && <RichTextContent html={quote.responseComment} className="text-on-surface-muted" />}
         </Card>
       ) : (
         <Card className="flex flex-col gap-3">
-          <h3 className="text-[14px] font-semibold text-on-surface">Your decision</h3>
-          <RichTextEditor value={comment} onValueChange={setComment} placeholder="Add an optional comment…" />
+          <h3 className="text-[14px] font-semibold text-on-surface">{t("publicQuote.yourDecision")}</h3>
+          <RichTextEditor value={comment} onValueChange={setComment} placeholder={t("publicQuote.commentPlaceholder")} />
           {actionError && (
             <Alert variant="critical">
               <AlertDescription>{actionError}</AlertDescription>
@@ -232,10 +239,10 @@ export function PublicQuoteView({ token }: { token: string }) {
           )}
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button className="flex-1" onClick={() => respond("accept")} disabled={busy !== null}>
-              {busy === "accept" ? <Spinner size="sm" /> : "Accept quote"}
+              {busy === "accept" ? <Spinner size="sm" /> : t("publicQuote.accept")}
             </Button>
             <Button className="flex-1" variant="secondary" onClick={() => respond("reject")} disabled={busy !== null}>
-              {busy === "reject" ? <Spinner size="sm" /> : "Decline"}
+              {busy === "reject" ? <Spinner size="sm" /> : t("publicQuote.decline")}
             </Button>
           </div>
         </Card>
@@ -246,6 +253,7 @@ export function PublicQuoteView({ token }: { token: string }) {
 
 /** US-QUO-21 — whose quote it was and how to reach them, from the business profile. */
 function QuoteLinkExpired({ business }: { business: PublicQuoteUnavailableBusiness }) {
+  const t = useT();
   return (
     <PageShell>
       <div className="flex flex-col gap-1">
@@ -256,10 +264,9 @@ function QuoteLinkExpired({ business }: { business: PublicQuoteUnavailableBusine
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-due-soon-bg text-due-soon" aria-hidden="true">
           <Clock size={20} />
         </span>
-        <h1 className="text-[20px] font-semibold text-on-surface">This quote link has expired</h1>
+        <h1 className="text-[20px] font-semibold text-on-surface">{t("publicQuote.expiredTitle")}</h1>
         <p className="text-[14px] text-on-surface">
-          The link you opened is no longer active — the quote may have been updated or replaced. Contact {business.name} and they&apos;ll send
-          you the latest version.
+          {t("publicQuote.expiredDescription", { business: business.name })}
         </p>
         <address className="flex flex-col gap-0.5 rounded-md bg-surface-sunken p-4 text-[14px] not-italic text-on-surface">
           <span className="font-semibold">{business.name}</span>
@@ -279,7 +286,7 @@ function QuoteLinkExpired({ business }: { business: PublicQuoteUnavailableBusine
       {/* US-SET-26: the mark before the words, skipped by screen readers since the words say it. */}
       <p className="flex items-center justify-center gap-1.5 text-[12px] text-on-surface-muted">
         <SpineLogo decorative size={20} />
-        Sent with Spine
+        {t("publicQuote.sentWithSpine")}
       </p>
     </PageShell>
   );
@@ -295,9 +302,9 @@ const STATUS_BADGE_CLASS: Record<PublicQuoteViewData["status"], string> = {
   rejected: "bg-overdue-bg text-overdue",
 };
 const STATUS_LABEL: Record<PublicQuoteViewData["status"], string> = {
-  sent: "Awaiting your response",
-  accepted: "Accepted",
-  rejected: "Declined",
+  sent: translate("publicQuote.statusSent"),
+  accepted: translate("publicQuote.statusAccepted"),
+  rejected: translate("publicQuote.statusRejected"),
 };
 
 function StatusBadge({ status }: { status: PublicQuoteViewData["status"] }) {

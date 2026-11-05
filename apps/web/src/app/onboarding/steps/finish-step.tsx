@@ -7,6 +7,7 @@ import { Button } from "@spine/ui";
 import { setupProgress, type SetupCardStatus } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SettingsDialog } from "../../../components/settings-dialog";
+import { t as translate, useT } from "../../../lib/i18n";
 
 export interface FinishSummary {
   businessName?: string;
@@ -17,9 +18,9 @@ export interface FinishSummary {
 }
 
 const NEXT = [
-  { title: "Add your first customer", action: "Add customer", href: "/contacts/new", icon: UserPlus, tone: "bg-info-bg text-primary" },
-  { title: "Add something you sell", action: "Open catalogue", href: "/catalog", icon: Package, tone: "bg-paid-bg text-paid" },
-  { title: "Send your first quote", action: "New quote", href: "/quotes/new", icon: FileText, tone: "bg-due-soon-bg text-due-soon" },
+  { title: translate("onboarding.finish.nextCustomerTitle"), action: translate("onboarding.finish.nextCustomerAction"), href: "/contacts/new", icon: UserPlus, tone: "bg-info-bg text-primary" },
+  { title: translate("onboarding.finish.nextCatalogTitle"), action: translate("onboarding.finish.nextCatalogAction"), href: "/catalog", icon: Package, tone: "bg-paid-bg text-paid" },
+  { title: translate("onboarding.finish.nextQuoteTitle"), action: translate("onboarding.finish.nextQuoteAction"), href: "/quotes/new", icon: FileText, tone: "bg-due-soon-bg text-due-soon" },
 ] as const;
 
 /**
@@ -28,6 +29,7 @@ const NEXT = [
  * left. Onboarding is already marked finished when this shows.
  */
 export function FinishStep({ summary, onDashboard }: { summary: FinishSummary; onDashboard: () => void }) {
+  const t = useT();
   const [left, setLeft] = useState<number | null>(null);
   const [pane, setPane] = useState<string | null>(null);
 
@@ -44,12 +46,12 @@ export function FinishStep({ summary, onDashboard }: { summary: FinishSummary; o
     };
   }, []);
 
-  const team = summary.invitesSent === 0 ? "Just you for now" : summary.invitesSent === 1 ? "1 invite sent" : `${summary.invitesSent} invites sent`;
+  const team = summary.invitesSent === 0 ? t("onboarding.finish.justYou") : t("onboarding.finish.invitesSent", { count: summary.invitesSent });
   const rows: { label: string; value: string; pane?: string; href?: string }[] = [
-    { label: "Business", value: summary.businessName || "Not set yet", pane: "business" },
-    { label: "Money", value: summary.money, pane: "currency" },
-    { label: "Documents", value: `First invoice ${summary.invoiceNumber}`, pane: "numbering" },
-    { label: "Team", value: team, href: "/team/users" },
+    { label: t("onboarding.finish.business"), value: summary.businessName || t("onboarding.finish.notSetYet"), pane: "business" },
+    { label: t("onboarding.finish.money"), value: summary.money, pane: "currency" },
+    { label: t("onboarding.finish.documents"), value: t("onboarding.finish.firstInvoice", { number: summary.invoiceNumber }), pane: "numbering" },
+    { label: t("onboarding.finish.team"), value: team, href: "/team/users" },
   ];
 
   return (
@@ -57,8 +59,8 @@ export function FinishStep({ summary, onDashboard }: { summary: FinishSummary; o
       <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--color-brand-layer-top-from),var(--color-brand-layer-top-to)_55%,var(--color-brand-deep))] text-on-primary" aria-hidden>
         <Check size={32} />
       </span>
-      <h1 className="mt-[18px] text-[32px] font-bold leading-tight tracking-tight text-on-surface">You&apos;re set up</h1>
-      <p className="mt-3 text-[15px] text-on-surface-muted">{summary.businessName ? `Spine is ready for ${summary.businessName}.` : "Spine is ready."}</p>
+      <h1 className="mt-[18px] text-[32px] font-bold leading-tight tracking-tight text-on-surface">{t("onboarding.finish.title")}</h1>
+      <p className="mt-3 text-[15px] text-on-surface-muted">{summary.businessName ? t("onboarding.finish.readyFor", { name: summary.businessName }) : t("onboarding.finish.ready")}</p>
 
       <dl className="mt-6 rounded-xl border border-border bg-surface">
         {rows.map((row) => (
@@ -66,19 +68,19 @@ export function FinishStep({ summary, onDashboard }: { summary: FinishSummary; o
             <dt className="text-[12px] font-medium text-on-surface-muted">{row.label}</dt>
             <dd className="truncate text-on-surface">{row.value}</dd>
             {row.pane ? (
-              <button type="button" className="text-[13px] font-medium text-primary hover:underline" onClick={() => setPane(row.pane!)} aria-label={`Change ${row.label.toLowerCase()}`}>
-                Change
+              <button type="button" className="text-[13px] font-medium text-primary hover:underline" onClick={() => setPane(row.pane!)} aria-label={t("onboarding.finish.changeLabel", { thing: row.label.toLowerCase() })}>
+                {t("onboarding.finish.change")}
               </button>
             ) : (
-              <Link href={row.href!} className="text-[13px] font-medium text-primary hover:underline" aria-label={`Change ${row.label.toLowerCase()}`}>
-                Change
+              <Link href={row.href!} className="text-[13px] font-medium text-primary hover:underline" aria-label={t("onboarding.finish.changeLabel", { thing: row.label.toLowerCase() })}>
+                {t("onboarding.finish.change")}
               </Link>
             )}
           </div>
         ))}
       </dl>
 
-      <h2 className="mt-6 text-[14px] font-semibold text-on-surface">What to do next</h2>
+      <h2 className="mt-6 text-[14px] font-semibold text-on-surface">{t("onboarding.finish.whatNext")}</h2>
       <ul className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
         {NEXT.map((item) => (
           <li key={item.href}>
@@ -101,11 +103,11 @@ export function FinishStep({ summary, onDashboard }: { summary: FinishSummary; o
 
       <Link href="/setup" className="mt-3.5 flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline">
         <ListChecks size={15} aria-hidden />
-        {left === null ? "See what's left to set up" : `See what's left to set up — ${left} left`}
+        {left === null ? t("onboarding.finish.leftToSetUp") : t("onboarding.finish.leftToSetUpCount", { count: left })}
       </Link>
 
       <Button size="touch" className="mt-6" onClick={onDashboard}>
-        Go to dashboard
+        {t("onboarding.finish.goToDashboard")}
         <ArrowRight size={16} aria-hidden />
       </Button>
 

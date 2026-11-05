@@ -6,8 +6,9 @@ import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import type { Expense } from "./types";
+import { t as translate, useT } from "../../../lib/i18n";
 
-const what = (e: Expense) => `${e.description || e.categoryName || "this expense"} for ${formatMoney(BigInt(e.amount), e.currency)}`;
+const what = (e: Expense) => translate("expenses.review.what", { name: e.description || e.categoryName || translate("expenses.review.thisExpense"), amount: formatMoney(BigInt(e.amount), e.currency) });
 
 /**
  * US-PUR-08/US-PUR-42/US-PUR-43 — approving asks first (D-218): it posts the
@@ -19,7 +20,7 @@ export function ApproveExpenseDialog({
   open,
   onOpenChange,
   onApproved,
-  confirmLabel = "Approve",
+  confirmLabel,
 }: {
   expense: Expense;
   open: boolean;
@@ -27,6 +28,7 @@ export function ApproveExpenseDialog({
   onApproved: (updated: Expense) => void;
   confirmLabel?: string;
 }) {
+  const t = useT();
   const [comment, setComment] = useState("");
   const [accountId, setAccountId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function ApproveExpenseDialog({
       onOpenChange(false);
       onApproved(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't approve this expense.");
+      setError(err instanceof Error ? err.message : t("expenses.review.approveFailed"));
     } finally {
       setBusy(false);
     }
@@ -56,8 +58,8 @@ export function ApproveExpenseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Approve this expense?</DialogTitle>
-          <DialogDescription>{`${what(expense)} is posted to your books${expense.submittedByName ? `, and ${expense.submittedByName} is told` : ""}. This can't be undone.`}</DialogDescription>
+          <DialogTitle>{t("expenses.review.approveTitle")}</DialogTitle>
+          <DialogDescription>{expense.submittedByName ? t("expenses.review.approveDescriptionTold", { what: what(expense), name: expense.submittedByName }) : t("expenses.review.approveDescription", { what: what(expense) })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -66,16 +68,16 @@ export function ApproveExpenseDialog({
             </Alert>
           )}
           {open && <MoneyAccountPicker form="expense" direction="out" value={accountId} onValueChange={setAccountId} initialId={expense.moneyAccountId} />}
-          <FormField label="Comment" helperText="Optional — the submitter sees it.">
-            {(field) => <Input {...field} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="e.g. Matches the site diary." />}
+          <FormField label={t("expenses.common.comment")} helperText={t("expenses.review.commentHelper")}>
+            {(field) => <Input {...field} value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("expenses.review.commentPlaceholder")} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-            Go back
+            {t("expenses.common.goBack")}
           </Button>
           <Button type="button" onClick={() => void submit()} disabled={busy}>
-            {busy ? <Spinner size="sm" /> : confirmLabel}
+            {busy ? <Spinner size="sm" /> : (confirmLabel ?? t("expenses.common.approve"))}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -85,6 +87,7 @@ export function ApproveExpenseDialog({
 
 /** US-PUR-09/US-PUR-42 — rejecting asks first and needs a reason the submitter sees; nothing posts. */
 export function RejectExpenseDialog({ expense, open, onOpenChange, onRejected }: { expense: Expense; open: boolean; onOpenChange: (open: boolean) => void; onRejected: (updated: Expense) => void }) {
+  const t = useT();
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -97,7 +100,7 @@ export function RejectExpenseDialog({ expense, open, onOpenChange, onRejected }:
 
   async function submit() {
     if (!comment.trim()) {
-      setError("Say why it's rejected, so it can be fixed.");
+      setError(t("expenses.review.reasonRequired"));
       return;
     }
     setBusy(true);
@@ -107,7 +110,7 @@ export function RejectExpenseDialog({ expense, open, onOpenChange, onRejected }:
       onOpenChange(false);
       onRejected(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't reject this expense.");
+      setError(err instanceof Error ? err.message : t("expenses.review.rejectFailed"));
     } finally {
       setBusy(false);
     }
@@ -117,8 +120,8 @@ export function RejectExpenseDialog({ expense, open, onOpenChange, onRejected }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reject this expense?</DialogTitle>
-          <DialogDescription>{`${what(expense)} isn't posted. ${expense.submittedByName ?? "The submitter"} sees why and can fix it and resubmit.`}</DialogDescription>
+          <DialogTitle>{t("expenses.review.rejectTitle")}</DialogTitle>
+          <DialogDescription>{t("expenses.review.rejectDescription", { what: what(expense), who: expense.submittedByName ?? t("expenses.review.theSubmitter") })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -126,16 +129,16 @@ export function RejectExpenseDialog({ expense, open, onOpenChange, onRejected }:
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Reason" required>
-            {(field) => <Input {...field} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Why is this being rejected?" />}
+          <FormField label={t("expenses.review.reason")} required>
+            {(field) => <Input {...field} value={comment} onChange={(e) => setComment(e.target.value)} placeholder={t("expenses.review.reasonPlaceholder")} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-            Go back
+            {t("expenses.common.goBack")}
           </Button>
           <Button type="button" variant="danger" onClick={() => void submit()} disabled={busy}>
-            {busy ? <Spinner size="sm" /> : "Reject"}
+            {busy ? <Spinner size="sm" /> : t("expenses.common.reject")}
           </Button>
         </DialogFooter>
       </DialogContent>

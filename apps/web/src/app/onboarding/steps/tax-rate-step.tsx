@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, FormField, Input, Spinner } from "@spine/ui";
+import { useT } from "../../../lib/i18n";
 
 export interface TaxRateValue {
   name: string;
@@ -25,8 +26,9 @@ export interface TaxRateStepProps {
  * Tax (`settings/panes/tax-pane.tsx`), not here; this step intentionally
  * stays a single-rate shortcut, editable/expandable later from Settings.
  */
-export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: TaxRateStepProps) {
-  const [name, setName] = useState(initialValue.name || "Tax");
+export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel, onChange }: TaxRateStepProps) {
+  const t = useT();
+  const [name, setName] = useState(initialValue.name || t("onboarding.page.defaultTaxName"));
   const [percentage, setPercentage] = useState(String(initialValue.percentage ?? 0));
   const [saving, setSaving] = useState(false);
 
@@ -41,7 +43,7 @@ export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continu
 
   return (
     <div className="flex flex-col gap-4">
-      <FormField label="Tax name" helperText="e.g. VAT, GST, Sales Tax">
+      <FormField label={t("onboarding.taxRate.name")} helperText={t("onboarding.taxRate.nameHelper")}>
         {(field) => (
           <Input
             {...field}
@@ -54,7 +56,7 @@ export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continu
         )}
       </FormField>
 
-      <FormField label="Rate (%)">
+      <FormField label={t("onboarding.taxRate.rate")}>
         {(field) => (
           <Input
             {...field}
@@ -76,11 +78,11 @@ export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continu
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : saveLabel}
+          {saving ? <Spinner size="sm" /> : (saveLabel ?? t("onboarding.common.continue"))}
         </Button>
       </div>
     </div>

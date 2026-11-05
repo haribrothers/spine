@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch } from "@spine/ui";
 import { DIGEST_DAYS, DIGEST_DAYS_LABELS, DIGEST_TIMES, digestTimeLabel, type DigestDays, type NotificationPreferences } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
+import { useT } from "../lib/i18n";
 
 /**
  * US-NTF-14 (D-093) — "Daily digest" on Profile › Notifications: on or off,
@@ -22,12 +23,13 @@ export function DailyDigestSection({
   onSaved: (next: NotificationPreferences) => void;
   onError: (message: string) => void;
 }) {
+  const t = useT();
   const [saving, setSaving] = useState(false);
   const switchId = useId();
   const timeId = useId();
   const daysId = useId();
   // Keep a stored time that isn't one of the half-hour choices selectable.
-  const times = DIGEST_TIMES.some((t) => t.value === value.digestTime) ? DIGEST_TIMES : [...DIGEST_TIMES, { value: value.digestTime, label: digestTimeLabel(value.digestTime) }];
+  const times = DIGEST_TIMES.some((time) => time.value === value.digestTime) ? DIGEST_TIMES : [...DIGEST_TIMES, { value: value.digestTime, label: digestTimeLabel(value.digestTime) }];
 
   async function save(next: NotificationPreferences) {
     setSaving(true);
@@ -35,7 +37,7 @@ export function DailyDigestSection({
       const saved = await apiClient.put<NotificationPreferences>("/users/me/notification-preferences", next);
       onSaved({ digestEnabled: saved.digestEnabled, digestTime: saved.digestTime, digestDays: saved.digestDays });
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Couldn't save your digest settings. Try again.");
+      onError(err instanceof Error ? err.message : t("common.dailyDigest.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -44,35 +46,35 @@ export function DailyDigestSection({
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-5" aria-labelledby={`${switchId}-heading`} data-testid="daily-digest">
       <h3 id={`${switchId}-heading`} className="text-[15px] font-semibold text-on-surface">
-        Daily digest
+        {t("common.dailyDigest.heading")}
       </h3>
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <Label htmlFor={switchId} className="text-[14px] font-semibold text-on-surface">
-            Email me a summary each morning
+            {t("common.dailyDigest.switchLabel")}
           </Label>
-          <p className="text-[13px] text-on-surface-muted">What needs you today and what happened yesterday. Sent only on days with something to report.</p>
+          <p className="text-[13px] text-on-surface-muted">{t("common.dailyDigest.switchHint")}</p>
         </div>
         <Switch id={switchId} checked={value.digestEnabled} disabled={saving} onCheckedChange={(checked) => save({ ...value, digestEnabled: checked })} />
       </div>
       <div className="flex flex-wrap gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={timeId}>Send at</Label>
+          <Label htmlFor={timeId}>{t("common.dailyDigest.sendAt")}</Label>
           <Select value={value.digestTime} disabled={saving || !value.digestEnabled} onValueChange={(digestTime) => save({ ...value, digestTime })}>
             <SelectTrigger id={timeId} className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {times.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
+              {times.map((time) => (
+                <SelectItem key={time.value} value={time.value}>
+                  {time.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor={daysId}>Days</Label>
+          <Label htmlFor={daysId}>{t("common.dailyDigest.days")}</Label>
           <Select value={value.digestDays} disabled={saving || !value.digestEnabled} onValueChange={(digestDays) => save({ ...value, digestDays: digestDays as DigestDays })}>
             <SelectTrigger id={daysId} className="w-56">
               <SelectValue />
@@ -87,7 +89,7 @@ export function DailyDigestSection({
           </Select>
         </div>
       </div>
-      <p className="text-[12px] text-on-surface-muted">{timeZone ? `Times are in ${timeZone}, the business's time zone.` : "Times are in your organisation's time zone."}</p>
+      <p className="text-[12px] text-on-surface-muted">{timeZone ? t("common.dailyDigest.timeZoneNamed", { timeZone }) : t("common.dailyDigest.timeZoneOrg")}</p>
     </section>
   );
 }

@@ -25,17 +25,19 @@ import {
 } from "@spine/ui";
 import type { ManualJournal } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
-import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { HistorySection } from "../../../components/history-section";
 import { useMyRole } from "../../../lib/role-context";
 import { JournalDialog } from "./journal-dialog";
 import { useLoadFailure } from "../../../lib/use-load-failure";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 
 /** US-RPT-20, US-RPT-21 — `ManualJournalDetail`: the journal's lines and, once reversed, the reversal. */
 export function JournalDetail({ journalId }: { journalId: string }) {
+  const t = useT();
   const loadFailed = useLoadFailure(journalId);
   const [journal, setJournal] = useState<ManualJournal | null>(null);
   const [currency, setCurrency] = useState("USD");
@@ -57,7 +59,7 @@ export function JournalDetail({ journalId }: { journalId: string }) {
       setJournal(await apiClient.post<ManualJournal>(`/manual-journals/${journalId}/reverse`, { date: iso(reverseDate), reason: reverseReason.trim() }));
       setReverseOpen(false);
     } catch (err) {
-      setReverseError(err instanceof Error ? err.message : "Couldn't reverse this journal.");
+      setReverseError(err instanceof Error ? err.message : t("journals.detail.reverseError"));
     } finally {
       setBusy(false);
     }
@@ -67,7 +69,7 @@ export function JournalDetail({ journalId }: { journalId: string }) {
     apiClient
       .get<ManualJournal>(`/manual-journals/${journalId}`)
       .then(setJournal)
-      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Couldn't load this journal."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("journals.detail.loadError")));
   }, [journalId, loadFailed]);
 
   useEffect(() => {
@@ -82,10 +84,13 @@ export function JournalDetail({ journalId }: { journalId: string }) {
 
   return (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Reports" }, { label: "Journals", href: "/journals" }, { label: "Detail" }]} title="Journal" />
+      <AppShellHeader
+        breadcrumb={[{ label: t("journals.list.breadcrumbReports") }, { label: t("journals.list.title"), href: "/journals" }, { label: t("journals.detail.breadcrumbDetail") }]}
+        title={t("journals.detail.title")}
+      />
       <Link href="/journals" className="mb-4 inline-flex items-center gap-1.5 text-[14px] text-on-surface hover:text-primary">
         <ArrowLeft size={14} aria-hidden />
-        Back to journals
+        {t("journals.detail.back")}
       </Link>
       {error && (
         <Alert variant="critical">
@@ -104,18 +109,18 @@ export function JournalDetail({ journalId }: { journalId: string }) {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-[20px] font-semibold text-on-surface">{journal.number}</h2>
-                {journal.status === "reversed" ? <StatusChip status="draft">Reversed</StatusChip> : <StatusChip status="paid">Posted</StatusChip>}
+                {journal.status === "reversed" ? <StatusChip status="draft">{t("journals.list.reversed")}</StatusChip> : <StatusChip status="paid">{t("journals.list.posted")}</StatusChip>}
               </div>
               <p className="mt-1 text-[14px] text-on-surface-muted">
                 {day(journal.date)} · {journal.reason}
-                {journal.postedBy ? ` · posted by ${journal.postedBy.name}` : ""}
+                {journal.postedBy ? t("journals.detail.postedBy", { name: journal.postedBy.name }) : ""}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2" data-testid="journal-actions">
-              <HistorySection endpoint={`/manual-journals/${journal.id}/history`} subjectLabel="this journal" />
+              <HistorySection endpoint={`/manual-journals/${journal.id}/history`} subjectLabel={t("journals.detail.historySubject")} />
               {isOwner && (
                 <Button variant="secondary" onClick={() => setCopyOpen(true)}>
-                  Copy to new journal
+                  {t("journals.detail.copy")}
                 </Button>
               )}
               {isOwner && journal.status === "posted" && (
@@ -128,23 +133,23 @@ export function JournalDetail({ journalId }: { journalId: string }) {
                     setReverseOpen(true);
                   }}
                 >
-                  Reverse
+                  {t("journals.detail.reverse")}
                 </Button>
               )}
             </div>
           </Card>
 
           <Card className="flex flex-col gap-3">
-            <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+            <h2 className="text-[15px] font-semibold text-on-surface">{t("journals.detail.lines")}</h2>
             <div className="overflow-x-auto rounded-md border border-border">
               <table className="w-full text-[14px]" data-testid="journal-detail-lines">
                 <thead>
                   <tr className="border-b border-border bg-surface-sunken text-left text-on-surface-muted">
-                    <th className="px-4 py-2 font-medium">Account</th>
-                    <th className="px-4 py-2 font-medium">Description</th>
-                    <th className="px-4 py-2 text-right font-medium">Debit</th>
-                    <th className="px-4 py-2 text-right font-medium">Credit</th>
-                    <th className="px-4 py-2 font-medium">Job</th>
+                    <th className="px-4 py-2 font-medium">{t("journals.detail.colAccount")}</th>
+                    <th className="px-4 py-2 font-medium">{t("journals.detail.colDescription")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("journals.detail.colDebit")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("journals.detail.colCredit")}</th>
+                    <th className="px-4 py-2 font-medium">{t("journals.detail.colJob")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,7 +168,7 @@ export function JournalDetail({ journalId }: { journalId: string }) {
                 <tfoot>
                   <tr className="border-t border-border-strong font-semibold text-on-surface">
                     <td />
-                    <td className="px-4 py-2">Totals</td>
+                    <td className="px-4 py-2">{t("journals.detail.totals")}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{formatMoney(BigInt(journal.total), currency)}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{formatMoney(BigInt(journal.total), currency)}</td>
                     <td />
@@ -175,10 +180,10 @@ export function JournalDetail({ journalId }: { journalId: string }) {
 
           {journal.reversal && (
             <Card className="flex flex-col gap-1" data-testid="journal-reversal">
-              <h2 className="text-[15px] font-semibold text-on-surface">Reversal</h2>
+              <h2 className="text-[15px] font-semibold text-on-surface">{t("journals.detail.reversal")}</h2>
               <p className="text-[14px] text-on-surface">
-                Reversed on {day(journal.reversal.date)}
-                {journal.reversal.by ? ` by ${journal.reversal.by.name}` : ""}
+                {t("journals.detail.reversedOn", { date: day(journal.reversal.date) })}
+                {journal.reversal.by ? t("journals.detail.reversedBy", { name: journal.reversal.by.name }) : ""}
               </p>
               <p className="text-[14px] text-on-surface-muted">{journal.reversal.reason}</p>
             </Card>
@@ -200,8 +205,8 @@ export function JournalDetail({ journalId }: { journalId: string }) {
       <Dialog open={reverseOpen} onOpenChange={setReverseOpen}>
         <DialogContent size="md">
           <DialogHeader>
-            <DialogTitle>Reverse {journal?.number}</DialogTitle>
-            <DialogDescription>A reversing entry mirrors every line. The journal stays in the history as Reversed.</DialogDescription>
+            <DialogTitle>{t("journals.detail.reverseTitle", { number: journal?.number ?? "" })}</DialogTitle>
+            <DialogDescription>{t("journals.detail.reverseBody")}</DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
             {reverseError && (
@@ -210,20 +215,20 @@ export function JournalDetail({ journalId }: { journalId: string }) {
               </Alert>
             )}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="Reversal date" required>
+              <FormField label={t("journals.detail.reversalDate")} required>
                 {() => <DatePicker value={reverseDate} onChange={(d) => d && setReverseDate(d)} />}
               </FormField>
-              <FormField label="Reason" required>
-                {(field) => <Input {...field} value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} maxLength={200} placeholder="e.g. Wrong account" />}
+              <FormField label={t("journals.detail.reason")} required>
+                {(field) => <Input {...field} value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} maxLength={200} placeholder={t("journals.detail.reasonPlaceholder")} />}
               </FormField>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setReverseOpen(false)} disabled={busy}>
-              Cancel
+              {t("journals.detail.cancel")}
             </Button>
             <Button onClick={reverse} disabled={busy || !reverseReason.trim()}>
-              {busy ? <Spinner size="sm" /> : "Reverse journal"}
+              {busy ? <Spinner size="sm" /> : t("journals.detail.reverseJournal")}
             </Button>
           </DialogFooter>
         </DialogContent>

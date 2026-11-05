@@ -7,6 +7,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useT } from "../../../lib/i18n";
 import { billRecordedToast, owes } from "./vendor-bill-state";
 import type { VendorBill } from "./types";
 
@@ -26,6 +27,7 @@ export interface BillRowHandlers {
  * and Delete ask first here; Pay bill and Void open the list's dialogs.
  */
 export function VendorBillRowActions({ bill, handlers }: { bill: VendorBill; handlers: BillRowHandlers }) {
+  const t = useT();
   const router = useRouter();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const canEdit = useCanEditOwnership(bill.createdByUserId, { own: "vendor_bills.edit_own", others: "vendor_bills.edit_others" });
@@ -40,27 +42,36 @@ export function VendorBillRowActions({ bill, handlers }: { bill: VendorBill; han
 
   async function record() {
     const ok = await confirm({
-      title: "Record this bill?",
-      description: `${bill.contactName ?? "The vendor"}'s bill ${bill.billNumber} for ${formatMoney(BigInt(bill.totalAmount), bill.currency)} is posted to your books as owed. After that it can't be edited — only voided.`,
-      confirmLabel: "Record bill",
+      title: t("vendorBills.recordConfirm.title"),
+      description: t("vendorBills.recordConfirm.description", {
+        vendor: bill.contactName ?? t("vendorBills.recordConfirm.theVendor"),
+        number: bill.billNumber,
+        amount: formatMoney(BigInt(bill.totalAmount), bill.currency),
+      }),
+      confirmLabel: t("vendorBills.recordConfirm.confirmLabel"),
     });
     if (!ok) return;
     try {
       const updated = await apiClient.post<VendorBill>(`/vendor-bills/${bill.id}/record`);
       handlers.onDone(...billRecordedToast({ ...updated, contactName: bill.contactName }));
     } catch (err) {
-      handlers.onFailed(`Couldn't record ${bill.billNumber}.`, err instanceof Error ? err.message : "Try again.");
+      handlers.onFailed(t("vendorBills.rowActions.recordFailed", { number: bill.billNumber }), err instanceof Error ? err.message : t("vendorBills.rowActions.tryAgain"));
     }
   }
 
   async function remove() {
-    const ok = await confirm({ title: "Delete this draft bill?", description: `${bill.billNumber} is removed for good. This can't be undone.`, confirmLabel: "Delete draft", danger: true });
+    const ok = await confirm({
+      title: t("vendorBills.deleteConfirm.title"),
+      description: t("vendorBills.deleteConfirm.description", { number: bill.billNumber }),
+      confirmLabel: t("vendorBills.deleteConfirm.confirmLabel"),
+      danger: true,
+    });
     if (!ok) return;
     try {
       await apiClient.delete(`/vendor-bills/${bill.id}`);
-      handlers.onDone("Draft bill deleted", `${bill.billNumber} from ${bill.contactName ?? "the vendor"} has been removed.`);
+      handlers.onDone(t("vendorBills.deleteConfirm.deletedTitle"), t("vendorBills.deleteConfirm.deletedDescription", { number: bill.billNumber, vendor: bill.contactName ?? t("vendorBills.deleteConfirm.theVendor") }));
     } catch (err) {
-      handlers.onFailed(`Couldn't delete ${bill.billNumber}.`, err instanceof Error ? err.message : "Try again.");
+      handlers.onFailed(t("vendorBills.rowActions.deleteFailed", { number: bill.billNumber }), err instanceof Error ? err.message : t("vendorBills.rowActions.tryAgain"));
     }
   }
 
@@ -70,7 +81,7 @@ export function VendorBillRowActions({ bill, handlers }: { bill: VendorBill; han
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${bill.billNumber}`}
+            aria-label={t("vendorBills.rowActions.actionsFor", { number: bill.billNumber })}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
             <MoreHorizontal size={16} />
@@ -79,43 +90,43 @@ export function VendorBillRowActions({ bill, handlers }: { bill: VendorBill; han
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/${bill.id}`)}>
             <MENU_ICONS.view aria-hidden />
-            View
+            {t("vendorBills.rowActions.view")}
           </DropdownMenuItem>
           {draft && canEdit && (
             <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/${bill.id}/edit`)}>
               <MENU_ICONS.edit aria-hidden />
-              Edit
+              {t("vendorBills.rowActions.edit")}
             </DropdownMenuItem>
           )}
           {draft && canRecord && (
             <DropdownMenuItem onSelect={() => void record()}>
               <MENU_ICONS.issue aria-hidden />
-              Record
+              {t("vendorBills.rowActions.record")}
             </DropdownMenuItem>
           )}
           {owes(bill) && canPay && (
             <DropdownMenuItem onSelect={() => handlers.onPay(bill)}>
               <MENU_ICONS.recordPayment aria-hidden />
-              Pay bill
+              {t("vendorBills.rowActions.payBill")}
             </DropdownMenuItem>
           )}
           {canCreate && !bill.isOpening && (
             <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/new?from=${bill.id}`)}>
               <MENU_ICONS.duplicate aria-hidden />
-              Duplicate
+              {t("vendorBills.rowActions.duplicate")}
             </DropdownMenuItem>
           )}
           {(voidable || deletable) && <DropdownMenuSeparator />}
           {voidable && (
             <DropdownMenuItem destructive onSelect={() => handlers.onVoid(bill)}>
               <MENU_ICONS.void aria-hidden />
-              Void
+              {t("vendorBills.rowActions.void")}
             </DropdownMenuItem>
           )}
           {deletable && (
             <DropdownMenuItem destructive onSelect={() => void remove()}>
               <MENU_ICONS.delete aria-hidden />
-              Delete
+              {t("vendorBills.rowActions.delete")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

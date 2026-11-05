@@ -6,6 +6,7 @@ import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { formatMoney } from "../../../../lib/money";
+import { useT } from "../../../../lib/i18n";
 
 interface JobProfitabilityRow {
   jobId: string;
@@ -46,6 +47,7 @@ function MarginRow({ job }: { job: JobProfitabilityRow }) {
  * rule as the AR aging donut.
  */
 export function JobProfitabilityRanked() {
+  const t = useT();
   const [report, setReport] = useState<JobProfitabilityReport | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -68,9 +70,9 @@ export function JobProfitabilityRanked() {
     <Card data-testid="job-profitability">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Job profitability
+          {t("dashboard.widgets.jobProfitability")}
           <Link href="/reports/job-profitability" className="text-[13px] font-normal text-primary hover:underline">
-            View all
+            {t("dashboard.common.viewAll")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -78,18 +80,18 @@ export function JobProfitabilityRanked() {
         {!report ? (
           <WidgetSkeleton kind="bars" rows={3} />
         ) : jobs.length === 0 ? (
-          <p className="py-4 text-center text-[13px] text-on-surface-muted">No jobs yet.</p>
+          <p className="py-4 text-center text-[13px] text-on-surface-muted">{t("dashboard.jobProfitability.empty")}</p>
         ) : (
           <>
             <div className="flex flex-col gap-1">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Top performers</p>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">{t("dashboard.jobProfitability.topPerformers")}</p>
               {top.map((job) => (
                 <MarginRow key={job.jobId} job={job} />
               ))}
             </div>
             {bottom.length > 0 && (
               <div className="flex flex-col gap-1">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Needs attention</p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">{t("dashboard.jobProfitability.needsAttention")}</p>
                 {bottom.map((job) => (
                   <MarginRow key={job.jobId} job={job} />
                 ))}

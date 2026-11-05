@@ -32,6 +32,7 @@ import { AiSuggestedTag } from "../../../components/ai-suggested-tag";
 import { aiFeatureShown, useAiStatus } from "../../../lib/use-ai-status";
 import { QuoteAiLinesPanel } from "./quote-ai-lines-panel";
 import { isUntouchedBlank, rowsFromAiLines } from "./quote-ai-lines";
+import { useT } from "../../../lib/i18n";
 
 /** Client-side line shape while editing — money fields as `bigint` (never a float), matching MoneyInput's own contract. Not the same as the API's QuoteLine (which serializes bigints as strings and includes server-computed fields this component doesn't need pre-save). */
 export interface EditableQuoteLine {
@@ -166,6 +167,7 @@ export function QuoteLineEditor({
   onChange: (lines: EditableQuoteLine[]) => void;
   currency: string;
 }) {
+  const t = useT();
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
@@ -191,13 +193,13 @@ export function QuoteLineEditor({
 
   const taxOptions = useMemo(
     () => [
-      { value: "", label: "No tax" },
+      { value: "", label: t("quotes.lineEditor.noTax") },
       ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
       ...taxGroups
         .filter((g) => !g.archivedAt)
         .map((g) => ({ value: `group:${g.id}`, label: `${g.name} (${g.taxRates.map((r) => `${r.rate}%`).join("+")})` })),
     ],
-    [taxRates, taxGroups],
+    [taxRates, taxGroups, t],
   );
 
   function updateLine(index: number, patch: Partial<EditableQuoteLine>) {
@@ -226,7 +228,7 @@ export function QuoteLineEditor({
     const base = lines.length === 1 && isUntouchedBlank(lines[0]!) ? [] : lines;
     onChange([...base, ...rows]);
     aiDraft?.onAdded(rows.map((r) => r.key));
-    setAnnouncement(`${rows.length} line${rows.length === 1 ? "" : "s"} added`);
+    setAnnouncement(t("quotes.lineEditor.linesAdded", { count: rows.length }));
   }
 
   function removeLine(index: number) {
@@ -278,7 +280,7 @@ export function QuoteLineEditor({
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved!);
     onChange(next);
-    setAnnouncement(`Moved to position ${to + 1} of ${lines.length}`);
+    setAnnouncement(t("quotes.lineEditor.movedTo", { position: to + 1, total: lines.length }));
   }
 
   function dropOn(targetKey: string, before: boolean) {
@@ -290,7 +292,7 @@ export function QuoteLineEditor({
     if (!before) to += 1;
     const next = [...without.slice(0, to), lines[from]!, ...without.slice(to)];
     onChange(next);
-    setAnnouncement(`Moved to position ${to + 1} of ${lines.length}`);
+    setAnnouncement(t("quotes.lineEditor.movedTo", { position: to + 1, total: lines.length }));
   }
 
   function addAndFocus(type: QuoteLineType) {
@@ -303,12 +305,12 @@ export function QuoteLineEditor({
     <div className="flex flex-col">
       <div className={cn(ROW_GRID, "hidden border-b border-border bg-surface-sunken px-3 py-2 text-[12px] font-medium text-on-surface-muted lg:grid")} aria-hidden>
         <span />
-        <span>Item</span>
-        <span className="text-right">Qty</span>
-        <span className="text-right">Rate</span>
-        <span className="text-right">Disc. %</span>
-        <span>Tax</span>
-        <span className="text-right">Amount</span>
+        <span>{t("quotes.lineEditor.item")}</span>
+        <span className="text-right">{t("quotes.lineEditor.qty")}</span>
+        <span className="text-right">{t("quotes.lineEditor.rate")}</span>
+        <span className="text-right">{t("quotes.lineEditor.discount")}</span>
+        <span>{t("quotes.lineEditor.tax")}</span>
+        <span className="text-right">{t("quotes.lineEditor.amount")}</span>
         <span />
       </div>
       <div className="flex flex-col" data-testid="quote-lines">
@@ -316,7 +318,7 @@ export function QuoteLineEditor({
           <div
             key={line.key}
             data-line-key={line.key}
-            aria-label={`Line ${index + 1} of ${lines.length}`}
+            aria-label={t("quotes.lineEditor.lineOf", { index: index + 1, total: lines.length })}
             role="group"
             onDragOver={(e) => {
               if (!dragKey || dragKey === line.key) return;
@@ -379,17 +381,20 @@ export function QuoteLineEditor({
 
       <div className="flex flex-wrap items-center gap-2 px-3 py-3">
         <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("item")}>
-          <Plus size={14} /> Add item
+          <Plus size={14} /> {t("quotes.lineEditor.addItem")}
         </Button>
         {aiShown && <QuoteAiLinesPanel currency={currency} quoteId={aiDraft?.quoteId} catalogItems={catalogItems} bundles={bundles} pausedUntil={aiStatus?.pausedUntil ?? null} onAdd={addAiLines} />}
         <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("heading")}>
-          <Heading size={14} /> Add heading
+          <Heading size={14} /> {t("quotes.lineEditor.addHeading")}
         </Button>
         <Button type="button" variant="secondary" size="sm" onClick={() => addAndFocus("text")}>
-          <Type size={14} /> Add text line
+          <Type size={14} /> {t("quotes.lineEditor.addText")}
         </Button>
         <span className="ml-auto hidden text-[12px] text-on-surface-muted lg:inline">
-          Enter adds a row · <Kbd>Alt</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd> moves it
+          {t("quotes.lineEditor.shortcutsEnter")}
+          {/* eslint-disable-next-line i18next/no-literal-string -- key names and symbols */}
+          <Kbd>Alt</Kbd> + <Kbd>↑</Kbd>/<Kbd>↓</Kbd>
+          {t("quotes.lineEditor.shortcutsMoves")}
         </span>
       </div>
     </div>
@@ -442,6 +447,7 @@ function LineRow({
   onDragEnd: () => void;
   onEnterLast?: () => void;
 }) {
+  const t = useT();
   const [details, setDetails] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
   const handle = (
@@ -449,7 +455,7 @@ function LineRow({
       draggable
       role="button"
       tabIndex={-1}
-      aria-label={`Drag line ${index + 1}`}
+      aria-label={t("quotes.lineEditor.dragLine", { index: index + 1 })}
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", line.key);
@@ -466,28 +472,28 @@ function LineRow({
   const menu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={`Actions for line ${index + 1}`} className="flex h-9 w-8 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+        <button type="button" aria-label={t("quotes.lineEditor.lineActions", { index: index + 1 })} className="flex h-9 w-8 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
           <EllipsisVertical size={16} aria-hidden />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(index - 1)}>
           <MENU_ICONS.moveUp aria-hidden />
-          Move up
+          {t("quotes.lineEditor.moveUp")}
         </DropdownMenuItem>
         <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(index + 1)}>
           <MENU_ICONS.moveDown aria-hidden />
-          Move down
+          {t("quotes.lineEditor.moveDown")}
         </DropdownMenuItem>
         {line.type === "item" && (
           <DropdownMenuCheckboxItem checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })}>
-            Price includes tax
+            {t("quotes.lineEditor.priceIncludesTax")}
           </DropdownMenuCheckboxItem>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive onSelect={onRemove}>
           <MENU_ICONS.delete aria-hidden />
-          Remove line
+          {t("quotes.lineEditor.removeLine")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -498,10 +504,10 @@ function LineRow({
       <div ref={rowRef} className={ROW_GRID}>
         {handle}
         <Input
-          aria-label={line.type === "heading" ? "Heading" : "Text line"}
+          aria-label={line.type === "heading" ? t("quotes.lineEditor.heading") : t("quotes.lineEditor.textLine")}
           value={line.name}
           onChange={(e) => onChange({ name: e.target.value })}
-          placeholder={line.type === "heading" ? "Section heading" : "Text for the customer"}
+          placeholder={line.type === "heading" ? t("quotes.lineEditor.headingPlaceholder") : t("quotes.lineEditor.textPlaceholder")}
           className={cn("col-span-5 lg:col-span-6", line.type === "heading" ? "font-semibold" : "text-on-surface-muted")}
           required
         />
@@ -547,7 +553,7 @@ function LineRow({
           />
         </div>
         <Input
-          aria-label="Quantity"
+          aria-label={t("quotes.lineEditor.quantity")}
           type="number"
           inputMode="decimal"
           min={0}
@@ -556,9 +562,9 @@ function LineRow({
           onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })}
           className="col-start-2 text-right tabular-nums lg:col-start-auto"
         />
-        <MoneyInput aria-label="Unit price" value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
+        <MoneyInput aria-label={t("quotes.lineEditor.unitPrice")} value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
         <Input
-          aria-label="Discount %"
+          aria-label={t("quotes.lineEditor.discountLabel")}
           type="number"
           inputMode="decimal"
           min={0}
@@ -569,7 +575,7 @@ function LineRow({
           className="text-right tabular-nums"
         />
         <div onKeyDown={onEnter}>
-          <Combobox aria-label="Tax" options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
+          <Combobox aria-label={t("quotes.lineEditor.tax")} options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder={t("quotes.lineEditor.noTax")} />
         </div>
         <span className="text-right text-[13.5px] font-medium tabular-nums text-on-surface" data-testid="line-amount">
           {formatMoney(preview.total, currency)}
@@ -589,9 +595,9 @@ function LineRow({
       )}
       {line.saveToCatalogue && (
         <p className="pl-8 text-[12px] text-on-surface-muted">
-          Added to the catalogue when you save the quote{line.unitPriceAmount > 0n ? "." : " — give it a price first."}{" "}
+          {line.unitPriceAmount > 0n ? t("quotes.lineEditor.addedToCatalogue") : t("quotes.lineEditor.addedToCatalogueNeedsPrice")}{" "}
           <button type="button" className="text-primary hover:underline" onClick={() => onChange({ saveToCatalogue: false })}>
-            Don&apos;t add it
+            {t("quotes.lineEditor.dontAdd")}
           </button>
         </p>
       )}
@@ -599,10 +605,10 @@ function LineRow({
         // US-QUO-34: the details row shares the line's grid — description under Item to Disc. %, HSN/SAC under Tax, supply type beside it.
         <div className={cn(ROW_GRID, "items-start")}>
           <Input
-            aria-label="Description"
+            aria-label={t("quotes.lineEditor.description")}
             value={line.description}
             onChange={(e) => onChange({ description: e.target.value })}
-            placeholder="Description (optional)"
+            placeholder={t("quotes.lineEditor.descriptionPlaceholder")}
             className="col-[2/span_5] h-8 text-[13px] lg:col-[2/span_4]"
           />
           {showHsn && (
@@ -619,7 +625,7 @@ function LineRow({
       ) : (
         <div className={ROW_GRID}>
           <button type="button" onClick={() => setDetails(true)} className="col-[2/span_5] flex w-fit items-center gap-1 text-[12.5px] font-medium text-primary hover:underline lg:col-[2/span_4]">
-            <Plus size={13} aria-hidden /> Add description
+            <Plus size={13} aria-hidden /> {t("quotes.lineEditor.addDescription")}
           </button>
         </div>
       )}

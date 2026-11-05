@@ -142,6 +142,7 @@ export function FloatingTabBar({ state, descriptors, navigation, insets, resolve
           const color = isFocused ? colors.primary : colors.onSurfaceMuted;
 
           function onPress() {
+            // eslint-disable-next-line i18next/no-literal-string -- a navigation event name, not copy
             const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
             if (!isFocused && !event.defaultPrevented) {
               navigation.navigate(route.name);

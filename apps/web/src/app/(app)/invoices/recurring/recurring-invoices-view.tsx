@@ -6,11 +6,12 @@ import { describeRepeats, RECURRING_MODE_OPTIONS, RECURRING_STATUS_LABELS, type 
 import { Repeat } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { useToast } from "../../../../components/toast-host";
 import { RecurringInvoiceDialog } from "./recurring-invoice-dialog";
 import { RecurringRowActions } from "./recurring-row-actions";
 import { ActionError } from "../../../../components/action-error";
+import { useT } from "../../../../lib/i18n";
 
 const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
   active: "bg-paid-bg text-paid",
@@ -21,7 +22,7 @@ const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
 /** "Nov 1, 2026" for a `YYYY-MM-DD` calendar date. */
 export function formatRunDate(value: string | null): string {
   if (!value) return "—";
-  return new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10))).toLocaleDateString(undefined, {
+  return new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10))).toLocaleDateString(orgLocaleTag(), {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -34,6 +35,7 @@ export function formatRunDate(value: string | null): string {
  * every `/recurring-invoices` route.
  */
 export function RecurringInvoicesView() {
+  const t = useT();
   const canManage = useCapability("invoices.manage_recurring");
   const [schedules, setSchedules] = useState<RecurringInvoice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function RecurringInvoicesView() {
     apiClient
       .get<RecurringInvoice[]>("/recurring-invoices")
       .then(setSchedules)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load recurring invoices."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("invoices.recurring.loadFailed")));
   }, []);
 
   useEffect(() => {
@@ -55,10 +57,10 @@ export function RecurringInvoicesView() {
 
   const header = (
     <AppShellHeader
-      breadcrumb={[{ label: "Invoices", href: "/invoices" }, { label: "Recurring" }]}
-      title="Recurring invoices"
-      description="Invoices Spine creates for you on a schedule — for maintenance contracts and retainers."
-      action={canManage ? <Button onClick={() => setCreating(true)}>+ New recurring invoice</Button> : undefined}
+      breadcrumb={[{ label: t("invoices.recurring.breadcrumbInvoices"), href: "/invoices" }, { label: t("invoices.recurring.breadcrumbRecurring") }]}
+      title={t("invoices.recurring.title")}
+      description={t("invoices.recurring.description")}
+      action={canManage ? <Button onClick={() => setCreating(true)}>{t("invoices.recurring.newButton")}</Button> : undefined}
     />
   );
 
@@ -67,7 +69,7 @@ export function RecurringInvoicesView() {
       <>
         {header}
         <Alert variant="critical">
-          <AlertDescription>{error ?? "You don't have access to recurring invoices. Ask an Owner to grant “Manage recurring invoices” to your Team."}</AlertDescription>
+          <AlertDescription>{error ?? t("invoices.recurring.noAccess")}</AlertDescription>
         </Alert>
       </>
     );
@@ -76,7 +78,7 @@ export function RecurringInvoicesView() {
   const columns: TableColumn<RecurringInvoice>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t("invoices.recurring.colName"),
       render: (row) => (
         <button type="button" onClick={() => setEditing(row)} className="text-left font-medium text-on-surface hover:text-primary hover:underline">
           {row.name}
@@ -86,36 +88,36 @@ export function RecurringInvoicesView() {
     },
     {
       key: "customer",
-      header: "Customer",
+      header: t("invoices.recurring.colCustomer"),
       render: (row) => row.contactName,
       sortValue: (row) => row.contactName,
     },
     {
       key: "repeats",
-      header: "Repeats",
+      header: t("invoices.recurring.colRepeats"),
       render: (row) => describeRepeats(row.frequency, row.dayRule),
     },
     {
       key: "next",
-      header: "Next invoice",
+      header: t("invoices.recurring.colNext"),
       render: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : "—"),
       sortValue: (row) => row.nextRunOn ?? "",
     },
     {
       key: "amount",
-      header: "Amount",
+      header: t("invoices.recurring.colAmount"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.totalAmount),
     },
     {
       key: "status",
-      header: "Status",
+      header: t("invoices.recurring.colStatus"),
       render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge>,
     },
     {
       key: "mode",
-      header: "When it runs",
+      header: t("invoices.recurring.colMode"),
       render: (row) => RECURRING_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode,
     },
     {
@@ -130,16 +132,16 @@ export function RecurringInvoicesView() {
               setActionError(null);
               load();
               showToast(
-                action === "paused" ? "Schedule paused" : "Schedule resumed",
-                action === "paused" ? `${saved.name} won't create invoices until you resume it.` : `${saved.name}'s next invoice is on ${formatRunDate(saved.nextRunOn)}.`,
+                action === "paused" ? t("invoices.recurring.pausedTitle") : t("invoices.recurring.resumedTitle"),
+                action === "paused" ? t("invoices.recurring.pausedBody", { name: saved.name }) : t("invoices.recurring.resumedBody", { name: saved.name, date: formatRunDate(saved.nextRunOn) }),
               );
             }}
             onDeleted={(deleted) => {
               setActionError(null);
               load();
-              showToast("Schedule deleted", `${deleted.name} is deleted. Invoices it already created are kept.`);
+              showToast(t("invoices.recurring.deletedTitle"), t("invoices.recurring.deletedBody", { name: deleted.name }));
             }}
-            onError={(message) => setActionError({ title: "Couldn't change the schedule.", message })}
+            onError={(message) => setActionError({ title: t("invoices.recurring.changeFailedTitle"), message })}
           />
         </div>
       ),
@@ -157,16 +159,15 @@ export function RecurringInvoicesView() {
           <div className="rounded-lg border border-border bg-surface">
             <EmptyState
               icon={<Repeat />}
-              title="No recurring invoices yet"
-              description="Set one up for a maintenance contract or retainer, and Spine creates the invoice on schedule."
+              title={t("invoices.recurring.emptyTitle")}
+              description={t("invoices.recurring.emptyDescription")}
             />
           </div>
         ) : (
           <Table columns={columns} data={schedules} rowKey={(row) => row.id} />
         )}
         <p className="text-[13px] text-on-surface-muted">
-          Each run uses the schedule&apos;s lines with today&apos;s tax rates. Runs happen at 6:00 AM organisation time; a missed run (server off) catches up once when Spine
-          starts.
+          {t("invoices.recurring.runNote")}
         </p>
         <RecurringInvoiceDialog
           open={creating || !!editing}
@@ -182,10 +183,10 @@ export function RecurringInvoicesView() {
             setEditing(null);
             load();
             showToast(
-              "Schedule saved",
+              t("invoices.recurring.savedTitle"),
               wasEditing
-                ? `${saved.name} is updated. Invoices it already created stay as they are.`
-                : `${saved.name} is active. The first invoice is on ${formatRunDate(saved.nextRunOn)}.`,
+                ? t("invoices.recurring.updatedBody", { name: saved.name })
+                : t("invoices.recurring.activeBody", { name: saved.name, date: formatRunDate(saved.nextRunOn) }),
             );
           }}
         />

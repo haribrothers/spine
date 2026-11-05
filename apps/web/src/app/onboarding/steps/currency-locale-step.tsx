@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, FormField, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
+import { useT } from "../../../lib/i18n";
 
 export interface CurrencyLocaleValue {
   code: string;
@@ -22,7 +23,8 @@ export interface CurrencyLocaleStepProps {
 }
 
 /** S-12.4 (currency/locale half). Free-text fallback beneath the common-value pickers so nothing is a dead end for a currency/locale not in the short list. */
-export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: CurrencyLocaleStepProps) {
+export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel, onChange }: CurrencyLocaleStepProps) {
+  const t = useT();
   const [code, setCodeState] = useState(initialValue.code || "USD");
   const [locale, setLocaleState] = useState(initialValue.locale || "en-US");
 
@@ -48,12 +50,12 @@ export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "
 
   return (
     <div className="flex flex-col gap-4">
-      <FormField label="Currency" helperText="ISO 4217 code, e.g. USD, EUR, INR.">
+      <FormField label={t("onboarding.currency.label")} helperText={t("onboarding.currency.helper")}>
         {(field) => (
           <div className="flex gap-2">
             <Select value={COMMON_CURRENCIES.includes(code) ? code : undefined} onValueChange={setCode}>
-              <SelectTrigger className="w-40" aria-label="Common currencies">
-                <SelectValue placeholder="Choose…" />
+              <SelectTrigger className="w-40" aria-label={t("onboarding.currency.commonCurrencies")}>
+                <SelectValue placeholder={t("onboarding.common.choose")} />
               </SelectTrigger>
               <SelectContent>
                 {COMMON_CURRENCIES.map((c) => (
@@ -74,12 +76,12 @@ export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "
         )}
       </FormField>
 
-      <FormField label="Locale" helperText="Controls date and number formatting.">
+      <FormField label={t("onboarding.currency.locale")} helperText={t("onboarding.currency.localeHelper")}>
         {(field) => (
           <div className="flex gap-2">
             <Select value={COMMON_LOCALES.includes(locale) ? locale : undefined} onValueChange={setLocale}>
-              <SelectTrigger className="w-40" aria-label="Common locales">
-                <SelectValue placeholder="Choose…" />
+              <SelectTrigger className="w-40" aria-label={t("onboarding.currency.commonLocales")}>
+                <SelectValue placeholder={t("onboarding.common.choose")} />
               </SelectTrigger>
               <SelectContent>
                 {COMMON_LOCALES.map((l) => (
@@ -97,11 +99,11 @@ export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : saveLabel}
+          {saving ? <Spinner size="sm" /> : (saveLabel ?? t("onboarding.common.continue"))}
         </Button>
       </div>
     </div>

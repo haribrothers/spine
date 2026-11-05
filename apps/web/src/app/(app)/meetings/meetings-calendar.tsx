@@ -43,6 +43,7 @@ import { Building2, CalendarDays, ChevronDown, PanelRightClose, PanelRightOpen, 
 import { replaceQuery } from "../../../lib/replace-query";
 import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
+import { t as translate, useT } from "../../../lib/i18n";
 import { useCapabilities } from "../../../lib/capabilities-context";
 import type { Activity, ActivityType, Contact } from "../contacts/types";
 import { MeetingAttendeesFields } from "./meeting-attendees-fields";
@@ -88,10 +89,10 @@ interface Member {
 }
 
 const ACTIVITY_LABELS: Record<ActivityType, string> = {
-  call: "Call",
-  meeting: "Meeting",
-  note: "Note",
-  task: "Task",
+  call: translate("meetings.calendar.activityType.call"),
+  meeting: translate("meetings.calendar.activityType.meeting"),
+  note: translate("meetings.calendar.activityType.note"),
+  task: translate("meetings.calendar.activityType.task"),
 };
 
 /** Meeting (API row, string dates) -> CalendarEvent (Date objects) for the Calendar component. */
@@ -227,6 +228,7 @@ function toMeetingPayload(
  * whenever `date` moves outside the already-loaded window.
  */
 export function MeetingsCalendar() {
+  const t = useT();
   const showToast = useToast();
   const { data: session } = useSession();
   const { capabilities } = useCapabilities();
@@ -409,8 +411,8 @@ export function MeetingsCalendar() {
         setMeetings(rows);
         setLoadedWindow({ from, to });
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load meetings."));
-  }, []);
+      .catch((err) => setError(err instanceof Error ? err.message : t("meetings.calendar.loadFailed")));
+  }, [t]);
 
   useEffect(() => {
     // Runs on mount (loadedWindow is null) and again only once `date`
@@ -548,8 +550,8 @@ export function MeetingsCalendar() {
     return countByDay([...source.map(toCalendarEvent), ...activityEvents], miniGrid.start, miniGrid.end);
   }, [miniCovered, visibleMeetings, miniMeetings, miniKey, isVisible, activityEvents, miniGrid]);
   const markLabel = useCallback(
-    (n: number) => (showActivities ? `${n} ${n === 1 ? "meeting or follow-up" : "meetings and follow-ups"}` : `${n} ${n === 1 ? "meeting" : "meetings"}`),
-    [showActivities],
+    (n: number) => (showActivities ? t("meetings.calendar.markWithActivities", { count: n }) : t("meetings.calendar.mark", { count: n })),
+    [showActivities, t],
   );
 
   // US-MTG-15: the next meetings from now, refreshed whenever the calendar's meetings change.
@@ -634,7 +636,7 @@ export function MeetingsCalendar() {
     if (!pendingDelete) return;
     setDeleteBusy(true);
     setDeleteError(null);
-    const title = meetings?.find((m) => m.id === pendingDelete.eventId)?.title ?? "The meeting";
+    const title = meetings?.find((m) => m.id === pendingDelete.eventId)?.title ?? t("meetings.calendar.theMeeting");
     try {
       if (pendingDelete.scope === "occurrence" && pendingDelete.occurrenceDate) {
         await apiClient.delete(
@@ -643,15 +645,15 @@ export function MeetingsCalendar() {
         const refreshed = await apiClient.get<Meeting>(`/meetings/${pendingDelete.eventId}`);
         setMeetings((prev) => prev?.map((m) => (m.id === refreshed.id ? refreshed : m)) ?? prev);
         const day = pendingDelete.occurrenceDate.toLocaleDateString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short" });
-        showToast("Meeting deleted", `${title} on ${day} is off the calendar; the rest of the series stays.`);
+        showToast(t("meetings.calendar.deleted"), t("meetings.calendar.deletedOccurrence", { title, day }));
       } else {
         await apiClient.delete(`/meetings/${pendingDelete.eventId}`);
         setMeetings((prev) => prev?.filter((m) => m.id !== pendingDelete.eventId) ?? prev);
-        showToast("Meeting deleted", `${title} is off the calendar${pendingDelete.scope === "series" ? ", every time it repeats" : ""}.`);
+        showToast(t("meetings.calendar.deleted"), t(pendingDelete.scope === "series" ? "meetings.calendar.deletedSeries" : "meetings.calendar.deletedOne", { title }));
       }
       setPendingDelete(null);
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Could not delete this meeting.");
+      setDeleteError(err instanceof Error ? err.message : t("meetings.calendar.deleteFailed"));
     } finally {
       setDeleteBusy(false);
     }
@@ -719,7 +721,7 @@ export function MeetingsCalendar() {
             highlight={view === "week" || view === "day" ? visibleRange(view, date) : undefined}
             headerAction={
               inSheet ? undefined : (
-                <Button variant="ghost" size="sm" onClick={toggleSidebar} aria-label="Hide calendar sidebar">
+                <Button variant="ghost" size="sm" onClick={toggleSidebar} aria-label={t("meetings.calendar.hideSidebar")}>
                   <PanelRightClose size={16} />
                 </Button>
               )
@@ -728,15 +730,15 @@ export function MeetingsCalendar() {
 
           <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
             <div className="flex items-center gap-2">
-              <Checkbox checked={allOrganizersVisible} onCheckedChange={(v) => toggleAllOrganizers(v === true)} aria-label="Show every calendar" />
+              <Checkbox checked={allOrganizersVisible} onCheckedChange={(v) => toggleAllOrganizers(v === true)} aria-label={t("meetings.calendar.showEveryCalendar")} />
               <CollapsibleTrigger className="flex flex-1 items-center justify-between text-[13px] font-semibold text-on-surface">
-                Calendars
+                {t("meetings.calendar.calendars")}
                 <ChevronDown size={14} className={calendarsOpen ? "rotate-180 transition-transform" : "transition-transform"} />
               </CollapsibleTrigger>
             </div>
             <CollapsibleContent className="mt-2 flex flex-col gap-2 pl-1">
               {members.length === 0 ? (
-                <p className="text-[13px] text-on-surface-muted">No team members yet.</p>
+                <p className="text-[13px] text-on-surface-muted">{t("meetings.calendar.noMembers")}</p>
               ) : (
                 members.map((member) => (
                   <label key={member.id} className="flex items-center gap-2 text-[13px]">
@@ -756,20 +758,20 @@ export function MeetingsCalendar() {
 
           <label className="flex items-center gap-2 text-[13px] font-semibold text-on-surface">
             <Checkbox checked={hydrated ? showActivities : false} onCheckedChange={(v) => toggleActivitiesVisible(v === true)} />
-            My Activities
+            {t("meetings.calendar.myActivities")}
           </label>
 
           <section className="flex flex-col gap-1.5" aria-labelledby="upcoming-heading" data-testid="meetings-upcoming">
             <div className="flex items-baseline justify-between gap-2">
               <h3 id="upcoming-heading" className="text-[13px] font-semibold text-on-surface">
-                Upcoming
+                {t("meetings.calendar.upcoming")}
               </h3>
-              <span className="text-[12px] text-on-surface-muted">Next {UPCOMING_DAYS} days</span>
+              <span className="text-[12px] text-on-surface-muted">{t("meetings.calendar.nextDays", { days: UPCOMING_DAYS })}</span>
             </div>
             {upcoming === null ? (
-              <p className="text-[13px] text-on-surface-muted">Loading…</p>
+              <p className="text-[13px] text-on-surface-muted">{t("meetings.calendar.loading")}</p>
             ) : upcoming.length === 0 ? (
-              <p className="text-[13px] text-on-surface-muted">Nothing in the next {UPCOMING_DAYS} days.</p>
+              <p className="text-[13px] text-on-surface-muted">{t("meetings.calendar.nothingUpcoming", { days: UPCOMING_DAYS })}</p>
             ) : (
               <ul className="-mx-1.5 flex flex-col">
                 {upcoming.map(({ instance, meeting }) => {
@@ -783,15 +785,15 @@ export function MeetingsCalendar() {
                       >
                         <span className="flex min-w-0 items-center gap-1.5">
                           <span className="truncate text-[13px] font-medium text-on-surface">{meeting.title}</span>
-                          {meeting.visibility === "org" && <Badge className="shrink-0">Org</Badge>}
+                          {meeting.visibility === "org" && <Badge className="shrink-0">{t("meetings.calendar.org")}</Badge>}
                         </span>
-                        <span className={cn("text-[12px]", when.startsWith("Today") ? "font-medium text-primary" : "text-on-surface-muted")}>{when}</span>
+                        <span className={cn("text-[12px]", when.startsWith(t("meetings.upcoming.today")) ? "font-medium text-primary" : "text-on-surface-muted")}>{when}</span>
                       </button>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="mt-0.5 h-7 w-7 shrink-0 p-0"
-                        aria-label={`Attendees for ${meeting.title}`}
+                        aria-label={t("meetings.calendar.attendeesFor", { title: meeting.title })}
                         onClick={() => setAttendeesPanel(meeting)}
                       >
                         <Users size={14} />
@@ -806,20 +808,20 @@ export function MeetingsCalendar() {
           <section className="flex flex-col gap-1.5" aria-labelledby="by-contact-heading" data-testid="meetings-by-contact">
             <div className="flex items-baseline justify-between gap-2">
               <h3 id="by-contact-heading" className="text-[13px] font-semibold text-on-surface">
-                Meetings by contact
+                {t("meetings.calendar.byContact")}
               </h3>
               <span className="text-[12px] text-on-surface-muted">{rangeLabel(view, date, new Date())}</span>
             </div>
             {meetings === null ? (
-              <p className="text-[13px] text-on-surface-muted">Loading…</p>
+              <p className="text-[13px] text-on-surface-muted">{t("meetings.calendar.loading")}</p>
             ) : contactCounts.length === 0 ? (
-              <p className="text-[13px] text-on-surface-muted">No meetings linked to a contact in this range.</p>
+              <p className="text-[13px] text-on-surface-muted">{t("meetings.calendar.noByContact")}</p>
             ) : (
               <ul className="flex flex-col gap-1">
                 {contactCounts.map(([contactId, count]) => (
                   <li key={contactId} className="flex items-center justify-between gap-2 text-[13px]">
                     <SectionLink href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline">
-                      {contactsById.get(contactId)?.name ?? "Unknown contact"}
+                      {contactsById.get(contactId)?.name ?? t("meetings.calendar.unknownContact")}
                     </SectionLink>
                     <span className="shrink-0 tabular-nums text-on-surface-muted">{count}</span>
                   </li>
@@ -846,14 +848,14 @@ export function MeetingsCalendar() {
         toolbarAction={
           <>
             {compact && (
-              <Button variant="secondary" size="icon" className="h-8 w-8" aria-label="Mini calendar" onClick={() => setSheetOpen(true)}>
+              <Button variant="secondary" size="icon" className="h-8 w-8" aria-label={t("meetings.calendar.miniCalendar")} onClick={() => setSheetOpen(true)}>
                 <CalendarDays size={16} aria-hidden />
               </Button>
             )}
             {canCreateMeetings && (
-              <Button size="sm" onClick={() => setCreateRequest(newMeetingRange(date, new Date()))} aria-label="New meeting">
+              <Button size="sm" onClick={() => setCreateRequest(newMeetingRange(date, new Date()))} aria-label={t("meetings.calendar.newMeeting")}>
                 <Plus size={14} aria-hidden />
-                {narrow ? "New" : "New meeting"}
+                {narrow ? t("meetings.calendar.new") : t("meetings.calendar.newMeeting")}
               </Button>
             )}
           </>
@@ -869,7 +871,7 @@ export function MeetingsCalendar() {
           ) : (
             <span className="flex items-center gap-1">
               <Users size={12} aria-hidden />
-              Internal
+              {t("meetings.calendar.internal")}
             </span>
           );
         }}
@@ -976,7 +978,7 @@ export function MeetingsCalendar() {
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
         <DrawerContent size="sm" aria-describedby={undefined}>
           <DrawerHeader>
-            <DrawerTitle>Mini calendar</DrawerTitle>
+            <DrawerTitle>{t("meetings.calendar.miniCalendar")}</DrawerTitle>
           </DrawerHeader>
           <DrawerBody className="flex flex-col gap-5">{sheetOpen && renderSidebar(true)}</DrawerBody>
         </DrawerContent>
@@ -1010,13 +1012,13 @@ export function MeetingsCalendar() {
             variant="ghost"
             size="sm"
             onClick={toggleSidebar}
-            aria-label="Show calendar sidebar"
+            aria-label={t("meetings.calendar.showSidebar")}
           >
             <PanelRightOpen size={16} />
           </Button>
         </div>
       ) : (
-        <aside className="hidden w-72 shrink-0 flex-col gap-5 overflow-y-auto rounded-lg border border-border bg-surface p-4 lg:flex" aria-label="Calendar sidebar">
+        <aside className="hidden w-72 shrink-0 flex-col gap-5 overflow-y-auto rounded-lg border border-border bg-surface p-4 lg:flex" aria-label={t("meetings.calendar.sidebar")}>
           {renderSidebar(false)}
         </aside>
       )}
@@ -1027,21 +1029,21 @@ export function MeetingsCalendar() {
           <div className="flex flex-col gap-2 p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Badge>Activity</Badge>
+                <Badge>{t("meetings.calendar.activity")}</Badge>
                 <h3 className="text-[14px] font-semibold text-on-surface">{activityDetail?.event.title}</h3>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 shrink-0 p-0"
-                aria-label="Close"
+                aria-label={t("meetings.calendar.close")}
                 onClick={() => setActivityDetail(null)}
               >
                 <X size={14} />
               </Button>
             </div>
             <p className="text-[13px] text-on-surface-muted">
-              {activityDetail && `Due ${activityDetail.occurrenceStart.toLocaleString()}`}
+              {activityDetail && t("meetings.calendar.due", { date: activityDetail.occurrenceStart.toLocaleString(orgLocaleTag()) })}
             </p>
           </div>
         </PopoverContent>
@@ -1050,18 +1052,18 @@ export function MeetingsCalendar() {
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{pendingDelete?.scope === "occurrence" ? "Delete this occurrence?" : "Delete this meeting?"}</AlertDialogTitle>
+            <AlertDialogTitle>{pendingDelete?.scope === "occurrence" ? t("meetings.calendar.deleteOccurrenceTitle") : t("meetings.calendar.deleteMeetingTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete?.scope === "occurrence"
-                ? "This removes just this occurrence from the calendar for everyone. The rest of the series is unaffected. This cannot be undone."
-                : "This removes it from the calendar for everyone. This cannot be undone."}
+                ? t("meetings.calendar.deleteOccurrenceDescription")
+                : t("meetings.calendar.deleteMeetingDescription")}
               {deleteError && <span className="mt-2 block text-overdue">{deleteError}</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteBusy}>{t("meetings.calendar.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" disabled={deleteBusy} onClick={handleConfirmDelete}>
-              Delete
+              {t("meetings.calendar.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -7,6 +7,7 @@ import { useBusinessFormat } from "../../lib/data/business";
 import { useAssignedJobs } from "../../lib/data/jobs";
 import { EXPENSE_STATUS, expenseKey, type MyExpense } from "../../lib/data/expenses";
 import { calendarDay, money, weekdayDayMonth } from "../../lib/format";
+import { useT } from "../../lib/i18n";
 
 function Row({ label, value, first }: { label: string; value: string; first?: boolean }) {
   return (
@@ -24,6 +25,7 @@ function Row({ label, value, first }: { label: string; value: string; first?: bo
  * for anyone else's).
  */
 export function ExpenseScreen({ id }: { id: string }) {
+  const t = useT();
   const format = useBusinessFormat();
   const expense = useCachedQuery<MyExpense>(expenseKey(id), `/expenses/${id}`);
   const jobs = useAssignedJobs(false);
@@ -31,7 +33,7 @@ export function ExpenseScreen({ id }: { id: string }) {
   const jobName = e?.jobId ? (jobs.data?.find((job) => job.id === e.jobId)?.name ?? null) : null;
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 bg-background dark:bg-background-dark" contentContainerClassName="gap-4 p-4 pb-16">
-      <Stack.Screen options={{ title: e?.categoryName ?? "Expense" }} />
+      <Stack.Screen options={{ title: e?.categoryName ?? t("mobileApp.expense.title") }} />
       {e ? (
         <>
           <View className="items-center gap-2 py-4" testID="expense">
@@ -44,23 +46,23 @@ export function ExpenseScreen({ id }: { id: string }) {
             </View>
           ) : null}
           <View className="overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark">
-            <Row first label="Category" value={e.categoryName ?? "—"} />
-            <Row label="Date" value={weekdayDayMonth(calendarDay(e.date), format.locale)} />
-            {jobName ? <Row label="Job" value={jobName} /> : null}
-            {e.description ? <Row label="Description" value={e.description} /> : null}
-            {e.number ? <Row label="Number" value={e.number} /> : null}
+            <Row first label={t("mobileApp.expense.category")} value={e.categoryName ?? "—"} />
+            <Row label={t("mobileApp.expense.date")} value={weekdayDayMonth(calendarDay(e.date), format.locale)} />
+            {jobName ? <Row label={t("mobileApp.expense.job")} value={jobName} /> : null}
+            {e.description ? <Row label={t("mobileApp.expense.description")} value={e.description} /> : null}
+            {e.number ? <Row label={t("mobileApp.expense.number")} value={e.number} /> : null}
           </View>
         </>
       ) : expense.loading ? (
         <>
-          <LoadingRegion label="Loading the expense" testID="skeleton-expense" className="items-center gap-3 py-4">
+          <LoadingRegion label={t("mobileApp.expense.loading")} testID="skeleton-expense" className="items-center gap-3 py-4">
             <Skeleton className="h-10 w-40 rounded-md" />
             <Skeleton className="h-6 w-24 rounded-full" />
           </LoadingRegion>
-          <CardRowsSkeleton rows={3} label="Loading the expense details" />
+          <CardRowsSkeleton rows={3} label={t("mobileApp.expense.loadingDetails")} />
         </>
       ) : (
-        <EmptyState title="This expense isn't available" description="Only your own expenses show on your phone." />
+        <EmptyState title={t("mobileApp.expense.unavailableTitle")} description={t("mobileApp.expense.unavailableMessage")} />
       )}
     </ScrollView>
   );

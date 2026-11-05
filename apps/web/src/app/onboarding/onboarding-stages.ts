@@ -3,6 +3,8 @@
  * how long each takes and the tip shown under its form. The order is the
  * order the steps run in (US-ONB-01).
  */
+import { t } from "../../lib/i18n";
+
 export type OnboardingStepKey = "profile" | "template" | "currency" | "fiscal_year" | "tax" | "numbering" | "accounts" | "team";
 export type OnboardingStageKey = "business" | "money" | "documents" | "books";
 
@@ -26,108 +28,108 @@ export interface OnboardingStage {
 export const ONBOARDING_STAGES: OnboardingStage[] = [
   {
     key: "business",
-    label: "Business",
-    line: "Your name, logo and kind of work",
+    label: t("onboarding.stages.business.label"),
+    line: t("onboarding.stages.business.line"),
     steps: [
       {
         key: "profile",
-        label: "Details",
+        label: t("onboarding.stepList.profile.label"),
         minutes: 1,
         tip: {
-          title: "Why this matters",
-          body: "Your name, logo and address go on every quote, invoice and email from the first one. A square logo looks sharpest.",
-          where: "Change it later in Settings › Business profile.",
+          title: t("onboarding.tipTitles.whyThisMatters"),
+          body: t("onboarding.stepList.profile.tipBody"),
+          where: t("onboarding.stepList.profile.tipWhere"),
         },
       },
       {
         key: "template",
-        label: "Template",
+        label: t("onboarding.stepList.template.label"),
         minutes: 0.5,
         tip: {
-          title: "Good to know",
-          body: "A template only sets things up for you — cost categories, and whether jobs are on. It never takes anything away.",
-          where: "Change it later in Settings › Industry template.",
+          title: t("onboarding.tipTitles.goodToKnow"),
+          body: t("onboarding.stepList.template.tipBody"),
+          where: t("onboarding.stepList.template.tipWhere"),
         },
       },
     ],
   },
   {
     key: "money",
-    label: "Money",
-    line: "Currency, financial year and tax",
+    label: t("onboarding.stages.money.label"),
+    line: t("onboarding.stages.money.line"),
     steps: [
       {
         key: "currency",
-        label: "Currency",
+        label: t("onboarding.stepList.currency.label"),
         minutes: 0.5,
         tip: {
-          title: "Good to know",
-          body: "Spine uses one currency for everything. The locale decides how dates and numbers look — ₹1,25,000.00 in India, $125,000.00 in the US.",
-          where: "Change it later in Settings › Currency & locale.",
+          title: t("onboarding.tipTitles.goodToKnow"),
+          body: t("onboarding.stepList.currency.tipBody"),
+          where: t("onboarding.stepList.currency.tipWhere"),
         },
       },
       {
         key: "fiscal_year",
-        label: "Financial year",
+        label: t("onboarding.stepList.fiscalYear.label"),
         minutes: 0.5,
         tip: {
-          title: "Good to know",
-          body: "Reports and year-end use this date. Your quote and invoice numbers carry on from one year to the next.",
-          where: "Change it later in Settings › Financial year.",
+          title: t("onboarding.tipTitles.goodToKnow"),
+          body: t("onboarding.stepList.fiscalYear.tipBody"),
+          where: t("onboarding.stepList.fiscalYear.tipWhere"),
         },
       },
       {
         key: "tax",
-        label: "Tax",
+        label: t("onboarding.stepList.tax.label"),
         minutes: 1,
         tip: {
-          title: "Good to know",
-          body: "Pick your country and Spine adds its rates. You choose the rate on each line of a quote or invoice.",
-          where: "Change it later in Settings › Tax.",
+          title: t("onboarding.tipTitles.goodToKnow"),
+          body: t("onboarding.stepList.tax.tipBody"),
+          where: t("onboarding.stepList.tax.tipWhere"),
         },
       },
     ],
   },
   {
     key: "documents",
-    label: "Documents",
-    line: "How your quotes and invoices are numbered",
+    label: t("onboarding.stages.documents.label"),
+    line: t("onboarding.stages.documents.line"),
     steps: [
       {
         key: "numbering",
-        label: "Numbering",
+        label: t("onboarding.stepList.numbering.label"),
         minutes: 1,
         tip: {
-          title: "Good to know",
-          body: "Each number is given once, in order, and never reused. Moving from another system? Start where your old numbers stopped — say 1042.",
-          where: "Change it later in Settings › Numbering.",
+          title: t("onboarding.tipTitles.goodToKnow"),
+          body: t("onboarding.stepList.numbering.tipBody"),
+          where: t("onboarding.stepList.numbering.tipWhere"),
         },
       },
     ],
   },
   {
     key: "books",
-    label: "Books & team",
-    line: "Your accounts and the people you work with",
+    label: t("onboarding.stages.books.label"),
+    line: t("onboarding.stages.books.line"),
     steps: [
       {
         key: "accounts",
-        label: "Accounts",
+        label: t("onboarding.stepList.accounts.label"),
         minutes: 0.5,
         tip: {
-          title: "Good to know",
-          body: "Spine posts to these accounts for you — you never write journal entries by hand. Rename any account that isn't a system account.",
-          where: "Change it later in Settings › Chart of accounts.",
+          title: t("onboarding.tipTitles.goodToKnow"),
+          body: t("onboarding.stepList.accounts.tipBody"),
+          where: t("onboarding.stepList.accounts.tipWhere"),
         },
       },
       {
         key: "team",
-        label: "Team",
+        label: t("onboarding.stepList.team.label"),
         minutes: 1,
         tip: {
-          title: "Who sees what",
-          body: "Staff see what their Team allows. Field users get the phone app for their jobs and never see your money.",
-          where: "Invite or change people later in Team › Users.",
+          title: t("onboarding.tipTitles.whoSeesWhat"),
+          body: t("onboarding.stepList.team.tipBody"),
+          where: t("onboarding.stepList.team.tipWhere"),
         },
       },
     ],

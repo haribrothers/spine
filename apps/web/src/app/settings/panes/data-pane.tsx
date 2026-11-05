@@ -16,6 +16,7 @@ import {
 import { apiClient } from "../../../lib/api-client";
 import { DemoBusinessDialog } from "../../../components/demo-business-dialog";
 import { useToast } from "../../../components/toast-host";
+import { t, useT } from "../../../lib/i18n";
 
 /**
  * Owner-only Settings › Data. "Load demo data" opens the country and
@@ -27,6 +28,7 @@ import { useToast } from "../../../components/toast-host";
  * first (D-218) and says what happened (D-223, US-SET-08).
  */
 export function DataPane() {
+  const t = useT();
   const [status, setStatus] = useState<DemoDataStatus | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -52,11 +54,10 @@ export function DataPane() {
 
   async function handleDelete() {
     const ok = await confirm({
-      title: "Delete all demo data?",
-      description:
-        "This permanently deletes every demo contact, item, quote, invoice, payment, bill, expense, job and meeting, and the entries they made in your books. Your own records stay. The demo people lose access. This can't be undone.",
-      confirmLabel: "Delete demo data",
-      cancelLabel: "Cancel",
+      title: t("settings.demoData.deleteConfirm.title"),
+      description: t("settings.demoData.deleteConfirm.description"),
+      confirmLabel: t("settings.demoData.deleteConfirm.confirm"),
+      cancelLabel: t("settings.demoData.deleteConfirm.cancel"),
       danger: true,
     });
     if (!ok) return;
@@ -70,16 +71,16 @@ export function DataPane() {
       setKeptContacts(kept);
       setStatus(await apiClient.get<DemoDataStatus>("/demo-data/status"));
       toast(
-        "Demo data deleted",
+        t("settings.demoData.deleted"),
         kept > 0
-          ? `Your own records stay. ${keptContactsMessage(kept)}`
-          : "Your own records stay.",
+          ? t("settings.demoData.ownStayKept", { kept: keptContactsMessage(kept) })
+          : t("settings.demoData.ownStay"),
       );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "The demo data wasn't deleted. Try again.",
+          : t("settings.demoData.deleteError"),
       );
     } finally {
       setDeleting(false);
@@ -97,11 +98,9 @@ export function DataPane() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Demo data</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.demoData.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          A sample business to explore Spine before you enter your own. Deleting
-          it removes every demo record, its document numbers and its entries in
-          your books.
+          {t("settings.demoData.description")}
         </p>
       </div>
 
@@ -115,7 +114,7 @@ export function DataPane() {
         <div className="flex items-center justify-between rounded-md border border-border bg-surface p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-medium text-on-surface">
-              Demo data is loaded
+              {t("settings.demoData.loaded")}
             </span>
             {status.loaded && (
               <span
@@ -126,8 +125,7 @@ export function DataPane() {
               </span>
             )}
             <span className="text-[13px] text-on-surface-muted">
-              Removing it only deletes demo records — your real data is never
-              touched.
+              {t("settings.demoData.loadedNote")}
             </span>
           </div>
           <Button
@@ -137,10 +135,10 @@ export function DataPane() {
           >
             {deleting ? (
               <>
-                <Spinner size="sm" /> Deleting…
+                <Spinner size="sm" /> {t("settings.demoData.deleting")}
               </>
             ) : (
-              "Delete all demo data"
+              t("settings.demoData.deleteAll")
             )}
           </Button>
         </div>
@@ -148,7 +146,7 @@ export function DataPane() {
         <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface p-4">
           <div className="flex flex-col gap-1">
             <span className="text-[13px] text-on-surface-muted">
-              No demo data is currently loaded.
+              {t("settings.demoData.none")}
             </span>
             {keptContacts > 0 && (
               <span role="status" className="text-[13px] text-on-surface-muted">
@@ -157,7 +155,7 @@ export function DataPane() {
             )}
           </div>
           <Button variant="secondary" onClick={() => setPickerOpen(true)}>
-            Load demo data
+            {t("settings.demoData.load")}
           </Button>
         </div>
       )}
@@ -174,5 +172,5 @@ export function DataPane() {
 
 /** "Kept 1 demo contact that your own records use." */
 export function keptContactsMessage(n: number): string {
-  return `Kept ${n} demo ${n === 1 ? "contact" : "contacts"} that your own records use.`;
+  return t("settings.demoData.keptContacts", { count: n });
 }

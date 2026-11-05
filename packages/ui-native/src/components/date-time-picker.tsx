@@ -5,6 +5,7 @@ import ClockIcon from "lucide-react-native/icons/clock";
 import ExpoDateTimePicker, { type DateTimePickerProps as ExpoDateTimePickerProps } from "@expo/ui/community/datetime-picker";
 import { DatePicker, Host } from "@expo/ui/swift-ui";
 import { disabled as disabledMod } from "@expo/ui/swift-ui/modifiers";
+import { useT, formatLocale } from "../lib/i18n";
 import { useNativeColors } from "../theme/use-native-colors";
 import { OutlinedFrame } from "./outlined-text-field";
 
@@ -174,18 +175,18 @@ export interface DateTimePickerProps {
 
 function formatValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
   if (mode === "time") {
-    return value.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    return value.toLocaleTimeString(formatLocale(), { hour: "numeric", minute: "2-digit" });
   }
   if (mode === "datetime") {
-    return value.toLocaleString();
+    return value.toLocaleString(formatLocale());
   }
-  return value.toLocaleDateString();
+  return value.toLocaleDateString(formatLocale());
 }
 
 /** The outlined field's value as `MobExpenseNewAndroid` draws it: "8 Oct 2026" (a date spelled out, in the phone's locale order). */
 function outlinedValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
   if (mode !== "date") return formatValue(value, mode);
-  return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return value.toLocaleDateString(formatLocale(), { day: "numeric", month: "short", year: "numeric" });
 }
 
 /**
@@ -267,6 +268,7 @@ function AndroidDateTimePickerField({
   iconColor,
 }: Required<Pick<DateTimePickerProps, "value" | "onChange" | "mode" | "disabled">> &
   Pick<DateTimePickerProps, "minimumDate" | "maximumDate" | "testID"> & { outlinedLabel?: string; accentColor: string; iconColor: string }) {
+  const t = useT();
   // `false` = closed. For `date`/`time` mode, `"date"`/`"time"` is the one
   // dialog step. For `datetime` mode (no native combined dialog on Android
   // — see this file's own doc comment), this is a real two-step state
@@ -303,7 +305,7 @@ function AndroidDateTimePickerField({
   return (
     <>
       {outlined ? (
-        <Pressable disabled={disabled} onPress={handlePress} accessibilityRole="button" accessibilityLabel={`${outlinedLabel}: ${outlinedValue(value, mode)}`} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
+        <Pressable disabled={disabled} onPress={handlePress} accessibilityRole="button" accessibilityLabel={t("uiNative.select.triggerLabel", { label: outlinedLabel, value: outlinedValue(value, mode) })} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
           <OutlinedFrame label={outlinedLabel}>
             <View className="flex-row items-center justify-between gap-2">
               <Text className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark">{outlinedValue(value, mode)}</Text>

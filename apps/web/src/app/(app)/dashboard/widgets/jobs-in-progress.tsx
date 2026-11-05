@@ -8,6 +8,7 @@ import { CircleAlert } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { formatMoney } from "../../../../lib/money";
+import { useT } from "../../../../lib/i18n";
 
 interface JobRow {
   id: string;
@@ -28,6 +29,7 @@ interface JobRow {
  * `reports.view_job_profitability` (the costing fields are then absent).
  */
 export function JobsInProgress() {
+  const t = useT();
   const [jobs, setJobs] = useState<JobRow[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -44,9 +46,9 @@ export function JobsInProgress() {
     <Card data-testid="jobs-in-progress">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Jobs in progress
+          {t("dashboard.widgets.jobsInProgress")}
           <Link href="/reports/job-profitability" className="text-[13px] font-normal text-primary hover:underline">
-            Job profitability
+            {t("dashboard.widgets.jobProfitability")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -54,7 +56,7 @@ export function JobsInProgress() {
         {!jobs ? (
           <WidgetSkeleton kind="rows" rows={3} />
         ) : jobs.length === 0 ? (
-          <p className="py-4 text-center text-[13px] text-on-surface-muted">No jobs in progress.</p>
+          <p className="py-4 text-center text-[13px] text-on-surface-muted">{t("dashboard.jobsInProgress.empty")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border text-[13px]">
             {jobs.map((job) => {
@@ -69,12 +71,12 @@ export function JobsInProgress() {
                     <div className="truncate text-[12px] text-on-surface-muted">{[job.number, formatMoney(BigInt(job.contractValueAmount), job.currency)].filter(Boolean).join(" · ")}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Progress value={Math.min(billed, 100)} className="h-1.5 min-w-0 flex-1" aria-label={`${job.name}: ${billed}% billed`} />
+                    <Progress value={Math.min(billed, 100)} className="h-1.5 min-w-0 flex-1" aria-label={t("dashboard.jobsInProgress.billedAria", { name: job.name, billed })} />
                     <span className="shrink-0 whitespace-nowrap text-[12px] tabular-nums text-on-surface-muted">
-                      {billed}% billed ·{" "}
+                      {t("dashboard.jobsInProgress.billed", { billed })}{" "}
                       <span className={cn("inline-flex items-center gap-1", over ? "font-semibold text-overdue" : job.budgetState === "near" ? "text-due-soon" : "text-on-surface")}>
                         {over && <CircleAlert size={13} aria-hidden />}
-                        {job.budgetState === "none" || job.budgetState === undefined ? "No budget" : budgetUsedLabel(job.budgetState, job.budgetUsedPct)}
+                        {job.budgetState === "none" || job.budgetState === undefined ? t("dashboard.jobsInProgress.noBudget") : budgetUsedLabel(job.budgetState, job.budgetUsedPct)}
                       </span>
                     </span>
                   </div>

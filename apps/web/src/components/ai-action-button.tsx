@@ -2,6 +2,7 @@
 
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@spine/ui";
+import { useT } from "../lib/i18n";
 
 /**
  * The shared rules (D-242), US-AI-07 — the button that starts an AI
@@ -25,6 +26,7 @@ export function AiActionButton({
   onClick: () => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   return (
     <span className="inline-flex items-center gap-2" aria-live="polite">
       <Button type="button" variant="secondary" size="sm" disabled={working || disabled} aria-busy={working || undefined} onClick={onClick}>
@@ -33,7 +35,7 @@ export function AiActionButton({
       </Button>
       {working && (
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
+          {t("common.actions.cancel")}
         </Button>
       )}
     </span>

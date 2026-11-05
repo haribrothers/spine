@@ -12,6 +12,7 @@ import { useSettingsSaved } from "../../../lib/settings-dirty";
 import { ChangeEmailDialog } from "../../../components/change-email-dialog";
 import { initials } from "../../../lib/initials";
 import { AccountCard, AccountPaneHeader } from "./account-card";
+import { useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -21,6 +22,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
  * changes) and the sign-in email, changed through `ChangeEmailDialog`.
  */
 export function AccountProfilePane() {
+  const t = useT();
   const { account, setAccount } = useAccount();
   const toast = useToast();
   const markSaved = useSettingsSaved();
@@ -54,9 +56,9 @@ export function AccountProfilePane() {
     try {
       setAccount(await apiClient.put<Account>("/users/me", { name: name.trim() }));
       markSaved();
-      toast("Profile updated.", "Your team sees your new name.");
+      toast(t("settings.profile.updated"), t("settings.profile.updatedDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save your name. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.profile.nameError"));
     } finally {
       setSaving(false);
     }
@@ -79,9 +81,9 @@ export function AccountProfilePane() {
       const uploaded = await apiClient.upload<{ id: string }>("/files", file);
       setAccount(await apiClient.put<Account>("/users/me", { image: `${API_URL}/files/${uploaded.id}` }));
       closeCrop();
-      toast("Photo updated.", "It shows in the sidebar and on what you change.");
+      toast(t("settings.profile.photoUpdated"), t("settings.profile.photoUpdatedDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't upload the photo. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.profile.uploadError"));
       throw err;
     } finally {
       setUploading(false);
@@ -89,21 +91,21 @@ export function AccountProfilePane() {
   }
 
   async function removePhoto() {
-    const ok = await confirm({ title: "Remove your photo?", description: "Your initials show instead, everywhere your photo was.", confirmLabel: "Remove photo", danger: true });
+    const ok = await confirm({ title: t("settings.profile.removeConfirm.title"), description: t("settings.profile.removeConfirm.description"), confirmLabel: t("settings.profile.removePhoto"), danger: true });
     if (!ok) return;
     try {
       setAccount(await apiClient.put<Account>("/users/me", { image: null }));
-      toast("Photo removed.", "Your initials show instead.");
+      toast(t("settings.profile.photoRemoved"), t("settings.profile.photoRemovedDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove the photo. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.profile.removeError"));
     }
   }
 
   return (
     <div className="flex flex-col gap-4" data-testid="account-profile">
-      <AccountPaneHeader title="Profile" description="How you appear to your team and on what you send. Only you can change these." />
+      <AccountPaneHeader title={t("settings.profile.title")} description={t("settings.profile.description")} />
       {error && <p className="text-[13px] text-overdue" role="alert">{error}</p>}
-      <AccountCard title="Photo" description="Shown in the sidebar, on records you change and on the team list.">
+      <AccountCard title={t("settings.profile.photoTitle")} description={t("settings.profile.photoDescription")}>
         <div className="flex flex-wrap items-center gap-3">
           <Avatar size="lg" className="h-16 w-16">
             {account.image && <AvatarImage src={account.image} alt="" />}
@@ -111,40 +113,40 @@ export function AccountProfilePane() {
           </Avatar>
           <Button variant="secondary" size="sm" onClick={() => input.current?.click()} disabled={uploading}>
             {uploading ? <Spinner size="sm" /> : <Camera size={14} aria-hidden />}
-            {account.image ? "Change photo" : "Upload photo"}
+            {account.image ? t("settings.profile.changePhoto") : t("settings.profile.uploadPhoto")}
           </Button>
           {account.image && (
             <Button variant="secondary" size="sm" onClick={() => void removePhoto()}>
               <Trash2 size={14} aria-hidden />
-              Remove photo
+              {t("settings.profile.removePhoto")}
             </Button>
           )}
         </div>
-        <p className="mt-2.5 text-[12.5px] text-on-surface-muted">PNG or JPEG up to 10 MB. You can crop it after choosing.</p>
-        <input ref={input} type="file" accept={PHOTO_ACCEPT} className="hidden" aria-label="Choose a photo" onChange={pick} />
+        <p className="mt-2.5 text-[12.5px] text-on-surface-muted">{t("settings.profile.photoHint")}</p>
+        <input ref={input} type="file" accept={PHOTO_ACCEPT} className="hidden" aria-label={t("settings.profile.choosePhoto")} onChange={pick} />
         <LogoCropDialog open={picked !== null} imageSrc={picked} cropShape="round" onCancel={closeCrop} onConfirm={upload} />
       </AccountCard>
-      <AccountCard title="Name" description="Your full name, as your team knows you.">
+      <AccountCard title={t("settings.profile.nameTitle")} description={t("settings.profile.nameDescription")}>
         <form onSubmit={saveName} className="flex flex-col gap-3">
-          <FormField label="Name">{(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />}</FormField>
+          <FormField label={t("settings.profile.nameTitle")}>{(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />}</FormField>
           <div className="flex justify-end">
             <Button type="submit" size="sm" disabled={!changed || saving}>
-              {saving ? <Spinner size="sm" /> : "Save"}
+              {saving ? <Spinner size="sm" /> : t("settings.common.save")}
             </Button>
           </div>
         </form>
       </AccountCard>
-      <AccountCard title="Sign-in email" description="Where Spine sends your sign-in links, invites and digests.">
+      <AccountCard title={t("settings.profile.emailTitle")} description={t("settings.profile.emailDescription")}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13.5px] font-medium text-on-surface" data-testid="account-email">
               {account.email}
             </p>
-            <p className="text-[12.5px] text-on-surface-muted">You sign in with this address.</p>
+            <p className="text-[12.5px] text-on-surface-muted">{t("settings.profile.emailHint")}</p>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setChangingEmail(true)}>
             <Mail size={14} aria-hidden />
-            Change email
+            {t("settings.profile.changeEmail")}
           </Button>
         </div>
       </AccountCard>
@@ -153,7 +155,7 @@ export function AccountProfilePane() {
         onOpenChange={setChangingEmail}
         onChanged={(next) => {
           setAccount(next);
-          toast(`Your sign-in email is now ${next.email}.`, "We told your old address it changed.");
+          toast(t("settings.profile.emailChanged", { email: next.email }), t("settings.profile.emailChangedDescription"));
         }}
       />
       {dialog}

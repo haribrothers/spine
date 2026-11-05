@@ -5,9 +5,11 @@ import { Alert, AlertDescription, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { QuoteBuilder } from "./quote-builder";
 import type { Quote } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /** Fetches an existing quote client-side, then hands it to QuoteBuilder for editing — split out from the `/quotes/:id/edit` server component since fetching needs the browser-side `apiClient`/cookie session, matching QuoteDetail's own pattern. */
 export function QuoteEditLoader({ quoteId }: { quoteId: string }) {
+  const t = useT();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,12 +18,12 @@ export function QuoteEditLoader({ quoteId }: { quoteId: string }) {
       .get<Quote>(`/quotes/${quoteId}`)
       .then((q) => {
         if (q.status !== "draft") {
-          setError("Only a draft quote can be edited. Revise it from the quote's detail page to create a new version.");
+          setError(t("quotes.editLoader.notDraft"));
           return;
         }
         setQuote(q);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load quote."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("quotes.editLoader.loadFailed")));
   }, [quoteId]);
 
   if (error) {

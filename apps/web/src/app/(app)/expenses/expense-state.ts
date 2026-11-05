@@ -1,5 +1,6 @@
 import type { TableSort } from "@spine/ui";
 import type { Expense } from "./types";
+import { t } from "../../../lib/i18n";
 
 /**
  * US-PUR-42/43 (D-227) — where an expense stands, in words. "Billed" is
@@ -9,10 +10,10 @@ import type { Expense } from "./types";
 export type ExpenseState = "wait" | "appr" | "billed" | "rej";
 
 export const EXPENSE_STATE_LABELS: Record<ExpenseState, string> = {
-  wait: "Waiting for approval",
-  appr: "Approved",
-  billed: "Billed",
-  rej: "Rejected",
+  wait: t("expenses.state.wait"),
+  appr: t("expenses.state.appr"),
+  billed: t("expenses.state.billed"),
+  rej: t("expenses.state.rej"),
 };
 
 export const EXPENSE_STATE_CLASS: Record<ExpenseState, string> = {

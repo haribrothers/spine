@@ -62,6 +62,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 
 import { SectionLink } from "../../../components/section-link";
 import { useLoadFailure } from "../../../lib/use-load-failure";
+import { useT } from "../../../lib/i18n";
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
  * always JSON-parses responses, so this opens the route directly in a new
@@ -84,6 +85,7 @@ function invoicePdfUrl(invoiceId: string): string {
  * issue") opens that step; `?duplicated=` is handled by the builder.
  */
 export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
+  const t = useT();
   const loadFailed = useLoadFailure(invoiceId);
   const router = useRouter();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
@@ -122,7 +124,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     apiClient
       .get<Invoice>(`/invoices/${invoiceId}`)
       .then(setInvoice)
-      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Could not load invoice."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("invoices.detail.loadFailed")));
   }, [invoiceId]);
 
   useEffect(() => {
@@ -223,13 +225,13 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       const applied = BigInt(updated.amountPaid ?? "0") + BigInt(updated.creditedAmount ?? "0");
       if (applied > 0n) setPaymentsRefreshKey((key) => key + 1);
       showToast(
-        "Invoice issued",
+        t("invoices.detail.issuedTitle"),
         applied > 0n
-          ? `${updated.number} has been issued and posted to the ledger. ${formatMoney(applied, updated.currency)} of credit was applied.`
-          : `${updated.number} has been issued and posted to the ledger.`,
+          ? t("invoices.detail.issuedWithCredit", { number: updated.number, amount: formatMoney(applied, updated.currency) })
+          : t("invoices.detail.issuedBody", { number: updated.number }),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not issue this invoice.");
+      setError(err instanceof Error ? err.message : t("invoices.detail.issueFailed"));
     } finally {
       setBusy(false);
     }
@@ -246,13 +248,13 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-email`, email);
       setInvoice(updated);
       showToast(
-        "Emailing invoice",
+        t("invoices.detail.emailingTitle"),
         updated.contactName
-          ? `Sending ${updated.number} to ${updated.contactName} has been queued.`
-          : `Sending ${updated.number} has been queued.`,
+          ? t("invoices.detail.emailQueuedTo", { number: updated.number, name: updated.contactName })
+          : t("invoices.detail.emailQueued", { number: updated.number }),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not email this invoice.");
+      setError(err instanceof Error ? err.message : t("invoices.detail.emailFailed"));
       throw err;
     } finally {
       setBusy(false);
@@ -267,11 +269,11 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-reminder`, email);
       setInvoice(updated);
       showToast(
-        "Reminder sent",
-        updated.contactName ? `A reminder for ${updated.number} has been queued to ${updated.contactName}.` : `A reminder for ${updated.number} has been queued.`,
+        t("invoices.detail.reminderSentTitle"),
+        updated.contactName ? t("invoices.detail.reminderQueuedTo", { number: updated.number, name: updated.contactName }) : t("invoices.detail.reminderQueued", { number: updated.number }),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send this reminder.");
+      setError(err instanceof Error ? err.message : t("invoices.detail.reminderFailed"));
       throw err;
     } finally {
       setBusy(false);
@@ -281,7 +283,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   async function handleVoid() {
     if (!invoice) return;
     if (!voidReason.trim()) {
-      setVoidError("A reason is required to void an invoice.");
+      setVoidError(t("invoices.detail.voidReasonRequired"));
       return;
     }
     setBusy(true);
@@ -291,9 +293,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       setInvoice(updated);
       setVoidOpen(false);
       setVoidReason("");
-      showToast("Invoice voided", `${updated.number} has been voided and a reversing entry posted.`);
+      showToast(t("invoices.detail.voidedTitle"), t("invoices.detail.voidedBody", { number: updated.number }));
     } catch (err) {
-      setVoidError(err instanceof Error ? err.message : "Could not void this invoice.");
+      setVoidError(err instanceof Error ? err.message : t("invoices.detail.voidFailed"));
     } finally {
       setBusy(false);
     }
@@ -308,7 +310,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       const copy = await apiClient.post<Invoice>(`/invoices/${invoice.id}/duplicate`);
       router.push(`/invoices/${copy.id}/edit?duplicated=${encodeURIComponent(invoice.number ?? "")}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't duplicate this invoice.");
+      setError(err instanceof Error ? err.message : t("invoices.detail.duplicateFailed"));
       setBusy(false);
     }
   }
@@ -319,10 +321,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     setError(null);
     try {
       await apiClient.delete(`/invoices/${invoice.id}`);
-      showToast("Invoice deleted", `${invoice.number ?? "Draft invoice"} has been permanently removed.`);
+      showToast(t("invoices.detail.deletedTitle"), t("invoices.detail.deletedBody", { number: invoice.number ?? t("invoices.detail.draftInvoice") }));
       router.push("/invoices");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete this invoice.");
+      setError(err instanceof Error ? err.message : t("invoices.detail.deleteFailed"));
       setBusy(false);
     }
   }
@@ -380,14 +382,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   type Action = { key: string; label: string; icon: React.ReactNode; onClick?: () => void; href?: string; external?: boolean };
   // US-RPT-17: an opening invoice has no PDF in Spine — its attachments hold the original.
   const pdf: Action | null =
-    invoice.type === "opening" ? null : { key: "pdf", label: invoice.status === "draft" ? "Preview PDF" : "Download PDF", icon: <Download size={14} aria-hidden />, href: invoicePdfUrl(invoice.id), external: true };
-  const issueAction: Action = { key: "issue", label: "Issue invoice", icon: <Send size={14} aria-hidden />, onClick: () => void requestIssue() };
-  const remindAction: Action = { key: "remind", label: "Send reminder", icon: <Bell size={14} aria-hidden />, onClick: () => setSendDialog("reminder") };
-  const payAction: Action = { key: "pay", label: "Record payment", icon: <Banknote size={14} aria-hidden />, onClick: () => setPaymentOpen(true) };
+    invoice.type === "opening" ? null : { key: "pdf", label: invoice.status === "draft" ? t("invoices.detail.previewPdf") : t("invoices.detail.downloadPdf"), icon: <Download size={14} aria-hidden />, href: invoicePdfUrl(invoice.id), external: true };
+  const issueAction: Action = { key: "issue", label: t("invoices.detail.issueInvoice"), icon: <Send size={14} aria-hidden />, onClick: () => void requestIssue() };
+  const remindAction: Action = { key: "remind", label: t("invoices.detail.sendReminder"), icon: <Bell size={14} aria-hidden />, onClick: () => setSendDialog("reminder") };
+  const payAction: Action = { key: "pay", label: t("invoices.detail.recordPayment"), icon: <Banknote size={14} aria-hidden />, onClick: () => setPaymentOpen(true) };
   let primary: Action | null = null;
   const secondary: Action[] = [];
   if (invoice.status === "draft") {
-    if (canEdit) secondary.push({ key: "edit", label: "Edit", icon: <Pencil size={14} aria-hidden />, href: `/invoices/${invoice.id}/edit` });
+    if (canEdit) secondary.push({ key: "edit", label: t("invoices.detail.edit"), icon: <Pencil size={14} aria-hidden />, href: `/invoices/${invoice.id}/edit` });
     if (pdf) secondary.push(pdf);
     if (canIssue) primary = issueAction;
   } else if (canSendReminder) {
@@ -423,18 +425,21 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       </Button>
     );
 
+  const secondaryButtons = secondary.map((a) => renderAction(a, "secondary"));
+  const primaryButton = primary && renderAction(primary, "primary");
+
   // US-INV-30: Total, Paid, Retention held or Credited, Balance due — once issued.
   // D-219: the bar under Paid counts payments only; credit shows under Credited.
   const dueTotal = BigInt(invoice.totalAmount) - retentionAmount;
   const share = dueTotal > 0n ? Math.min(100, Number((amountPaid * 100n) / dueTotal)) : 0;
-  const taxNote = (invoice.taxLines ?? []).length === 1 ? `incl. ${invoice.taxLines![0]!.label} ${money(BigInt(invoice.taxLines![0]!.amount))}` : BigInt(invoice.taxAmount) > 0n ? `incl. tax ${money(BigInt(invoice.taxAmount))}` : "No tax";
+  const taxNote = (invoice.taxLines ?? []).length === 1 ? t("invoices.detail.taxNoteNamed", { label: invoice.taxLines![0]!.label, amount: money(BigInt(invoice.taxLines![0]!.amount)) }) : BigInt(invoice.taxAmount) > 0n ? t("invoices.detail.taxNoteTax", { amount: money(BigInt(invoice.taxAmount)) }) : t("invoices.detail.noTax");
   const figure = (label: string, value: string, note: React.ReactNode, testId: string, opts: { bar?: number; tone?: string } = {}) => (
     <div key={label} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className={cn("text-[19px] font-bold leading-tight tabular-nums", opts.tone ?? "text-on-surface")}>{value}</span>
       <span className="text-[12px] text-on-surface-muted">{note}</span>
       {opts.bar !== undefined && (
-        <span className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-sunken" role="img" aria-label={`${opts.bar}% paid`}>
+        <span className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-sunken" role="img" aria-label={t("invoices.detail.paidShare", { share: opts.bar })}>
           <span className="block h-full rounded-full bg-paid" style={{ width: `${opts.bar}%` }} />
         </span>
       )}
@@ -443,17 +448,17 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const figures =
     invoice.status === "issued"
       ? [
-          figure("Total", money(BigInt(invoice.totalAmount)), taxNote, "fig-total"),
-          figure("Paid", money(amountPaid), invoice.lastPaidAt ? `last on ${calendarDate(invoice.lastPaidAt, today, locale)}` : "Nothing yet", "fig-paid", { bar: share }),
+          figure(t("invoices.detail.figTotal"), money(BigInt(invoice.totalAmount)), taxNote, "fig-total"),
+          figure(t("invoices.detail.figPaid"), money(amountPaid), invoice.lastPaidAt ? t("invoices.detail.lastPaidOn", { date: calendarDate(invoice.lastPaidAt, today, locale) }) : t("invoices.detail.nothingYet"), "fig-paid", { bar: share }),
           retentionAmount > 0n
-            ? figure("Retention held", money(retentionAmount), `${invoice.retention?.percent ?? "0"}%, released from the job`, "fig-retention")
+            ? figure(t("invoices.detail.figRetention"), money(retentionAmount), t("invoices.detail.retentionNote", { percent: invoice.retention?.percent ?? "0" }), "fig-retention")
             : creditedAmount > 0n
-              ? figure("Credited", money(creditedAmount), "From credit notes and credit", "fig-credited")
+              ? figure(t("invoices.detail.figCredited"), money(creditedAmount), t("invoices.detail.creditedNote"), "fig-credited")
               : null,
           figure(
-            "Balance due",
+            t("invoices.detail.figBalance"),
             money(balanceDue),
-            due.text ? <span className={due.tone === "over" ? "font-medium text-overdue" : due.tone === "soon" ? "font-medium text-due-soon" : due.tone === "paid" ? "font-medium text-paid" : ""}>{due.tone === "" || due.tone === "soon" ? (due.text === "today" ? "Due today" : `Due ${due.text}`) : due.text}</span> : "No due date",
+            due.text ? <span className={due.tone === "over" ? "font-medium text-overdue" : due.tone === "soon" ? "font-medium text-due-soon" : due.tone === "paid" ? "font-medium text-paid" : ""}>{due.tone === "" || due.tone === "soon" ? (due.text === t("invoices.list.dueToday") ? t("invoices.detail.dueToday") : t("invoices.detail.dueNote", { note: due.text })) : due.text}</span> : t("invoices.detail.noDueDate"),
             "fig-balance",
             { tone: invoice.isOverdue ? "text-overdue" : undefined },
           ),
@@ -461,11 +466,11 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       : [];
 
   const afterTotal: AfterTotalRow[] = [
-    ...(retentionAmount > 0n ? [{ label: `Retention held (${invoice.retention?.percent ?? "0"}%)`, amount: retentionAmount, subtract: true }] : []),
-    ...(amountPaid > 0n ? [{ label: "Paid", amount: amountPaid, subtract: true, tone: "paid" as const }] : []),
-    ...(creditedAmount > 0n ? [{ label: "Credited", amount: creditedAmount, subtract: true, tone: "paid" as const }] : []),
+    ...(retentionAmount > 0n ? [{ label: t("invoices.detail.retentionHeldPercent", { percent: invoice.retention?.percent ?? "0" }), amount: retentionAmount, subtract: true }] : []),
+    ...(amountPaid > 0n ? [{ label: t("invoices.detail.paid"), amount: amountPaid, subtract: true, tone: "paid" as const }] : []),
+    ...(creditedAmount > 0n ? [{ label: t("invoices.detail.credited"), amount: creditedAmount, subtract: true, tone: "paid" as const }] : []),
     ...(invoice.status !== "void" && (retentionAmount > 0n || amountPaid > 0n || creditedAmount > 0n || invoice.status === "issued")
-      ? [{ label: "Balance due", amount: balanceDue, tone: invoice.isOverdue ? ("overdue" as const) : ("balance" as const) }]
+      ? [{ label: t("invoices.detail.balanceDue"), amount: balanceDue, tone: invoice.isOverdue ? ("overdue" as const) : ("balance" as const) }]
       : []),
   ];
 
@@ -473,43 +478,43 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     <div className="flex flex-col gap-5">
       {/* US-INV-30: the number is the page title; the breadcrumb leads back to Invoices. */}
       <div className="flex flex-col gap-3">
-        <Breadcrumb items={[{ label: "Billing" }, { label: "Invoices", href: "/invoices" }, { label: invoice.number ?? "Draft invoice" }]} />
+        <Breadcrumb items={[{ label: t("invoices.detail.breadcrumbBilling") }, { label: t("invoices.detail.breadcrumbInvoices"), href: "/invoices" }, { label: invoice.number ?? t("invoices.detail.draftInvoice") }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{invoice.number ?? "Draft invoice"}</h1>
+              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{invoice.number ?? t("invoices.detail.draftInvoice")}</h1>
               <Badge className={STATE_BADGE_CLASS[state]} data-testid="invoice-state">
                 {INVOICE_STATE_LABELS[state]}
               </Badge>
-              {invoice.type === "progress" && invoice.progressClaimNo && <Badge className="bg-info-bg text-primary">Progress claim {invoice.progressClaimNo}</Badge>}
-              {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
-              {invoice.type === "opening" && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
-              {invoice.type === "retention_release" && <Badge className="bg-draft-bg text-draft">Retention release</Badge>}
+              {invoice.type === "progress" && invoice.progressClaimNo && <Badge className="bg-info-bg text-primary">{t("invoices.detail.progressClaim", { number: invoice.progressClaimNo })}</Badge>}
+              {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">{t("invoices.detail.deposit")}</Badge>}
+              {invoice.type === "opening" && <Badge className="bg-draft-bg text-draft">{t("invoices.detail.openingBalance")}</Badge>}
+              {invoice.type === "retention_release" && <Badge className="bg-draft-bg text-draft">{t("invoices.detail.retentionRelease")}</Badge>}
             </div>
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="invoice-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
                 <SectionLink href={`/contacts/${invoice.contactId}`} className="font-medium text-primary hover:underline">
-                  {invoice.contactName ?? "Unknown contact"}
+                  {invoice.contactName ?? t("invoices.detail.unknownContact")}
                 </SectionLink>
               </span>
               {invoice.status !== "draft" && invoice.issueDate && (
                 <span className="inline-flex items-center gap-1.5">
                   <Send size={14} aria-hidden />
-                  Issued {calendarDate(invoice.issueDate, today, locale)}
+                  {t("invoices.detail.issuedOn", { date: calendarDate(invoice.issueDate, today, locale) })}
                 </span>
               )}
               {invoice.status === "draft" && !invoice.dueDate ? (
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays size={14} aria-hidden />
-                  Not issued yet · {dueDays === 0 ? "due on receipt" : `due ${dueDays} days after issue`}
+                  {t("invoices.detail.notIssuedYet", { due: dueDays === 0 ? t("invoices.detail.dueOnReceipt") : t("invoices.detail.dueDaysAfterIssue", { n: dueDays }) })}
                 </span>
               ) : (
                 invoice.dueDate &&
                 state !== "void" && (
                   <span className="inline-flex items-center gap-1.5" data-testid="invoice-due">
                     <CalendarDays size={14} aria-hidden />
-                    Due {calendarDate(invoice.dueDate, today, locale)}
+                    {t("invoices.detail.dueOn", { date: calendarDate(invoice.dueDate, today, locale) })}
                     {due.text && state !== "paid" && (
                       <>
                         {" · "}
@@ -546,26 +551,26 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               {invoice.sourceQuoteId && (
                 <span className="inline-flex items-center gap-1.5">
                   <Receipt size={14} aria-hidden />
-                  From{" "}
+                  {t("invoices.detail.from")}{" "}
                   <SectionLink href={`/quotes/${invoice.sourceQuoteId}`} className="font-medium text-primary hover:underline">
-                    {invoice.sourceQuoteNumber ?? "a quote"}
+                    {invoice.sourceQuoteNumber ?? t("invoices.detail.aQuote")}
                   </SectionLink>
                 </span>
               )}
             </p>
             {/* US-JOB-29 (D-128): the claim number is given at issue. */}
             {invoice.type === "progress" && !invoice.progressClaimNo && invoice.status === "draft" && (
-              <p className="text-[12.5px] text-on-surface-muted">Claim number is given when the invoice is issued.</p>
+              <p className="text-[12.5px] text-on-surface-muted">{t("invoices.detail.claimNumberLater")}</p>
             )}
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="invoice-actions">
-            {secondary.map((a) => renderAction(a, "secondary"))}
-            {primary && renderAction(primary, "primary")}
+            {secondaryButtons}
+            {primaryButton}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" disabled={busy}>
-                  More <ChevronDown size={14} />
+                  {t("invoices.detail.more")} <ChevronDown size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -580,53 +585,53 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 {canSendEmail && (
                   <DropdownMenuItem onSelect={() => setSendDialog("invoice")}>
                     <MENU_ICONS.email aria-hidden />
-                    Email invoice
+                    {t("invoices.detail.emailInvoice")}
                   </DropdownMenuItem>
                 )}
                 {canRecordPayment && primary?.key !== "pay" && !secondary.some((a) => a.key === "pay") && (
                   <DropdownMenuItem onSelect={() => setPaymentOpen(true)}>
                     <MENU_ICONS.recordPayment aria-hidden />
-                    Record payment
+                    {t("invoices.detail.recordPayment")}
                   </DropdownMenuItem>
                 )}
                 {canApplyCredit && (
                   <DropdownMenuItem onSelect={() => setApplyCreditOpen(true)}>
                     <MENU_ICONS.applyCredit aria-hidden />
-                    Apply credit
+                    {t("invoices.detail.applyCredit")}
                   </DropdownMenuItem>
                 )}
                 {canIssueCreditNote && (
                   <DropdownMenuItem onSelect={() => setCreditNoteOpen(true)}>
                     <MENU_ICONS.issueCreditNote aria-hidden />
-                    Issue credit note
+                    {t("invoices.detail.issueCreditNote")}
                   </DropdownMenuItem>
                 )}
                 {canDuplicate && (
                   <DropdownMenuItem onSelect={() => void handleDuplicate()}>
                     <MENU_ICONS.duplicate aria-hidden />
-                    Duplicate as new draft
+                    {t("invoices.detail.duplicateAsDraft")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
                   <MENU_ICONS.history aria-hidden />
-                  View history
+                  {t("invoices.detail.viewHistory")}
                 </DropdownMenuItem>
                 {(canVoid || canDelete) && <DropdownMenuSeparator />}
                 {canVoid && (
                   <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
                     <MENU_ICONS.void aria-hidden />
-                    Void invoice
+                    {t("invoices.detail.voidInvoice")}
                   </DropdownMenuItem>
                 )}
                 {canDelete && (
                   <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
                     <MENU_ICONS.delete aria-hidden />
-                    Delete draft
+                    {t("invoices.detail.deleteDraft")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel="this invoice" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel={t("invoices.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
           </div>
         </div>
       </div>
@@ -640,7 +645,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {invoice.status === "void" && invoice.voidReason && (
         <Alert variant="warning">
           <AlertDescription>
-            Voided{invoice.voidedAt && <> on {new Date(invoice.voidedAt).toLocaleDateString(locale)}</>}: {invoice.voidReason}
+            {invoice.voidedAt ? t("invoices.detail.voidedOnReason", { date: new Date(invoice.voidedAt).toLocaleDateString(locale), reason: invoice.voidReason }) : t("invoices.detail.voidedReason", { reason: invoice.voidReason })}
           </AlertDescription>
         </Alert>
       )}
@@ -649,7 +654,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {invoice.emailStatus === "pending" && (
         <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
           <Clock size={14} className="shrink-0" />
-          Sending email to {invoice.contactName ?? "the contact"}…
+          {t("invoices.detail.sendingEmailTo", { name: invoice.contactName ?? t("invoices.detail.theContact") })}
         </p>
       )}
       {invoice.emailStatus === "failed" && <EmailFailedAlert error={invoice.emailError} recordId={invoice.id} />}
@@ -663,14 +668,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
           {invoice.type === "opening" ? (
-            <Card className="text-[13px] text-on-surface-muted">Brought in from your old system, so it has no lines. Attach the original below to keep it with the invoice.</Card>
+            <Card className="text-[13px] text-on-surface-muted">{t("invoices.detail.openingNoLines")}</Card>
           ) : (
             <DocumentLinesTable doc={invoice} testIdPrefix="invoice" after={afterTotal} />
           )}
 
           {retentionAmount > 0n && invoice.retention && (
             <p className="text-[12px] text-on-surface-muted" data-testid="retention-note">
-              Retention is held in Retention Receivable until you release it from the job. Held on this job so far: {money(BigInt(invoice.retention.heldOnJob))}.
+              {t("invoices.detail.retentionHeldNote", { amount: money(BigInt(invoice.retention.heldOnJob)) })}
             </p>
           )}
 
@@ -678,13 +683,13 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             <Card className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {invoice.notes && (
                 <div>
-                  <h3 className="text-[12px] font-semibold text-on-surface-muted">Notes</h3>
+                  <h3 className="text-[12px] font-semibold text-on-surface-muted">{t("invoices.detail.notes")}</h3>
                   <RichTextContent html={invoice.notes} />
                 </div>
               )}
               {invoice.termsAndConditions && (
                 <div>
-                  <h3 className="text-[12px] font-semibold text-on-surface-muted">Terms &amp; conditions</h3>
+                  <h3 className="text-[12px] font-semibold text-on-surface-muted">{t("invoices.detail.terms")}</h3>
                   <RichTextContent html={invoice.termsAndConditions} />
                 </div>
               )}
@@ -715,13 +720,13 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this draft invoice?</AlertDialogTitle>
-            <AlertDialogDescription>This permanently removes the draft. This cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{t("invoices.detail.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("invoices.detail.deleteDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{t("invoices.detail.cancel")}</AlertDialogCancel>
             <Button variant="danger" onClick={handleDelete} disabled={busy}>
-              Delete draft
+              {t("invoices.detail.deleteDraft")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -731,9 +736,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Void this invoice?</DialogTitle>
+            <DialogTitle>{t("invoices.detail.voidTitle")}</DialogTitle>
             <DialogDescription>
-              Posts a reversing journal entry and marks {invoice.number} as void. This cannot be undone.
+              {t("invoices.detail.voidDescription", { number: invoice.number })}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
@@ -742,23 +747,23 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 <AlertDescription>{voidError}</AlertDescription>
               </Alert>
             )}
-            <FormField label="Reason" required>
+            <FormField label={t("invoices.detail.reason")} required>
               {(field) => (
                 <Input
                   {...field}
                   value={voidReason}
                   onChange={(e) => setVoidReason(e.target.value)}
-                  placeholder="Why is this invoice being voided?"
+                  placeholder={t("invoices.detail.voidPlaceholder")}
                 />
               )}
             </FormField>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => setVoidOpen(false)} disabled={busy}>
-              Cancel
+              {t("invoices.detail.cancel")}
             </Button>
             <Button type="button" variant="danger" onClick={handleVoid} disabled={busy}>
-              {busy ? <Spinner size="sm" /> : "Void invoice"}
+              {busy ? <Spinner size="sm" /> : t("invoices.detail.voidInvoice")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -768,28 +773,31 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       <AlertDialog open={missingHsn > 0} onOpenChange={(open) => !open && setMissingHsn(0)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Issue without HSN/SAC codes?</AlertDialogTitle>
-            <AlertDialogDescription>{missingHsnSacMessage(missingHsn)} Add them on the invoice, or issue it as it is.</AlertDialogDescription>
+            <AlertDialogTitle>{t("invoices.detail.hsnTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{missingHsnSacMessage(missingHsn)} {t("invoices.detail.hsnDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={issueAnyway}>Issue anyway</AlertDialogAction>
+            <AlertDialogCancel>{t("invoices.detail.goBack")}</AlertDialogCancel>
+            <AlertDialogAction onClick={issueAnyway}>{t("invoices.detail.issueAnyway")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={confirmIssue} onOpenChange={setConfirmIssue}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Issue this invoice?</AlertDialogTitle>
+            <AlertDialogTitle>{t("invoices.detail.confirmIssueTitle")}</AlertDialogTitle>
             <AlertDialogDescription data-testid="confirm-issue">
-              {invoice.contactName ?? "The customer"} will owe {money(BigInt(invoice.totalAmount) - retentionAmount)}, due {issueDueLabel}. Issuing gives the invoice its permanent number
-              {invoice.type === "advance" ? "" : " and posts it to your books"}. After that it can&apos;t be edited — only voided or credited.
+              {t(invoice.type === "advance" ? "invoices.detail.confirmIssueBodyAdvance" : "invoices.detail.confirmIssueBody", {
+                name: invoice.contactName ?? t("invoices.detail.theCustomer"),
+                amount: money(BigInt(invoice.totalAmount) - retentionAmount),
+                date: issueDueLabel,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Go back</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{t("invoices.detail.goBack")}</AlertDialogCancel>
             <Button onClick={() => void handleIssue(false)} disabled={busy}>
-              {busy ? <Spinner size="sm" /> : "Issue invoice"}
+              {busy ? <Spinner size="sm" /> : t("invoices.detail.issueInvoice")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -798,17 +806,17 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       <AlertDialog open={creditOffer > 0n} onOpenChange={(open) => !open && setCreditOffer(0n)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Apply this customer&apos;s credit?</AlertDialogTitle>
+            <AlertDialogTitle>{t("invoices.detail.creditOfferTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {invoice.contactName ?? "This customer"} has {formatMoney(creditOffer, invoice.currency)} of credit from payments and credit notes. Apply it as the invoice is issued, so the invoice — and its UPI QR code, if it has one — asks only for what&apos;s still owed.
+              {t("invoices.detail.creditOfferBody", { name: invoice.contactName ?? t("invoices.detail.thisCustomer"), amount: formatMoney(creditOffer, invoice.currency) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogCancel>{t("invoices.detail.goBack")}</AlertDialogCancel>
             <Button variant="secondary" onClick={() => void handleIssue(false)}>
-              Issue without credit
+              {t("invoices.detail.issueWithoutCredit")}
             </Button>
-            <AlertDialogAction onClick={issueWithCredit}>Apply credit and issue</AlertDialogAction>
+            <AlertDialogAction onClick={issueWithCredit}>{t("invoices.detail.applyCreditAndIssue")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -821,7 +829,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         onRecorded={() => {
           load();
           setPaymentsRefreshKey((key) => key + 1);
-          showToast("Payment recorded", "The invoice's balance has been updated.");
+          showToast(t("invoices.detail.paymentRecordedTitle"), t("invoices.detail.paymentRecordedBody"));
         }}
       />
 
@@ -849,7 +857,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         onApplied={(total) => {
           load();
           setPaymentsRefreshKey((key) => key + 1);
-          showToast("Credit applied", `${formatMoney(total, invoice.currency)} of credit now counts against ${invoice.number ?? "this invoice"}.`);
+          showToast(t("invoices.detail.creditAppliedTitle"), t("invoices.detail.creditAppliedBody", { amount: formatMoney(total, invoice.currency), number: invoice.number ?? t("invoices.detail.thisInvoice") }));
         }}
       />
 
@@ -857,11 +865,11 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         <SendEmailDialog
           open
           onOpenChange={(open) => !open && setSendDialog(null)}
-          title={sendDialog === "invoice" ? `Email invoice ${invoice.number ?? ""}`.trim() : `Send payment reminder — ${invoice.number ?? ""}`}
-          description={`${invoice.contactName ?? "Customer"} · ${formatMoney(balanceDue, invoice.currency)} due`}
+          title={sendDialog === "invoice" ? t("invoices.detail.emailDialogTitle", { number: invoice.number ?? "" }).trim() : t("invoices.detail.reminderDialogTitle", { number: invoice.number ?? "" })}
+          description={t("invoices.detail.sendDialogDescription", { name: invoice.contactName ?? t("invoices.detail.customer"), amount: formatMoney(balanceDue, invoice.currency) })}
           draftPath={`/email-drafts/${sendDialog}/${invoice.id}`}
-          sendLabel={sendDialog === "invoice" ? "Send invoice" : "Send reminder"}
-          pdfLabel="Attach the invoice PDF"
+          sendLabel={sendDialog === "invoice" ? t("invoices.detail.sendInvoice") : t("invoices.detail.sendReminder")}
+          pdfLabel={t("invoices.detail.attachPdf")}
           onSend={(email) => (sendDialog === "invoice" ? handleSendEmail(email) : handleSendReminder(email))}
         />
       )}

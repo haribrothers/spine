@@ -8,6 +8,7 @@ import { Alert, AlertDescription, Button, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { authClient } from "../../../lib/auth-client";
 import { AuthFrame, AuthHeading } from "../../../components/auth-frame";
+import { useT } from "../../../lib/i18n";
 
 interface InvitationInfo {
   id: string;
@@ -35,6 +36,7 @@ type PreviewState = { kind: "loading" } | { kind: "unusable" } | { kind: "usable
  * to sign out; session matching -> show the invite and accept/decline.
  */
 export function AcceptInviteView({ invitationId }: { invitationId: string }) {
+  const t = useT();
   const router = useRouter();
   const { data: session, isPending: sessionLoading } = authClient.useSession();
 
@@ -71,7 +73,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
       .getInvitation({ query: { id: invitationId } })
       .then(({ data, error }) => {
         if (error) {
-          setLoadError(error.message ?? "This invitation could not be found or has expired.");
+          setLoadError(error.message ?? t("auth.acceptInvite.notFound"));
           return;
         }
         setInvitation(data as InvitationInfo);
@@ -85,7 +87,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
     const { error } = await authClient.organization.acceptInvitation({ invitationId });
     setActing(null);
     if (error) {
-      setActionError(error.message ?? "Could not accept the invitation.");
+      setActionError(error.message ?? t("auth.acceptInvite.acceptFailed"));
       return;
     }
     router.push("/dashboard");
@@ -98,7 +100,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
     const { error } = await authClient.organization.rejectInvitation({ invitationId });
     setActing(null);
     if (error) {
-      setActionError(error.message ?? "Could not decline the invitation.");
+      setActionError(error.message ?? t("auth.acceptInvite.declineFailed"));
       return;
     }
     router.push("/login");
@@ -110,7 +112,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
 
   return (
     <AuthFrame scene="login">
-      <AuthHeading title="You've been invited">Join an organisation on Spine.</AuthHeading>
+      <AuthHeading title={t("auth.acceptInvite.title")}>{t("auth.acceptInvite.subtitle")}</AuthHeading>
       <div className="mt-6 flex flex-col gap-4">
           {sessionLoading || preview.kind === "loading" ? (
             <div className="flex justify-center py-4">
@@ -130,8 +132,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
             <>
               <Alert variant="critical">
                 <AlertDescription>
-                  This invitation was sent to {invitation.email}, but you&apos;re signed in as {session.user.email}.
-                  Sign out and sign in with the invited email to accept it.
+                  {t("auth.acceptInvite.emailMismatch", { invited: invitation.email, current: session.user.email })}
                 </AlertDescription>
               </Alert>
               <Button
@@ -141,7 +142,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
                   router.push(`/login`);
                 }}
               >
-                Sign out
+                {t("auth.actions.signOut")}
               </Button>
             </>
           ) : invitation ? (
@@ -152,15 +153,19 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
                 </Alert>
               )}
               <p className="text-[13px] text-on-surface">
-                <strong>{invitation.inviterEmail}</strong> invited you to join{" "}
-                <strong>{invitation.organizationName}</strong> as <strong>{invitation.role}</strong>.
+                <strong>{invitation.inviterEmail}</strong>
+                {t("auth.acceptInvite.invitedYouToJoin")}
+                <strong>{invitation.organizationName}</strong>
+                {t("auth.acceptInvite.as")}
+                <strong>{invitation.role}</strong>
+                {t("auth.acceptInvite.end")}
               </p>
               <div className="flex gap-2">
                 <Button onClick={handleAccept} disabled={acting !== null} className="flex-1">
-                  {acting === "accept" ? <Spinner size="sm" /> : "Accept"}
+                  {acting === "accept" ? <Spinner size="sm" /> : t("auth.acceptInvite.accept")}
                 </Button>
                 <Button variant="secondary" onClick={handleReject} disabled={acting !== null} className="flex-1">
-                  {acting === "reject" ? <Spinner size="sm" /> : "Decline"}
+                  {acting === "reject" ? <Spinner size="sm" /> : t("auth.acceptInvite.decline")}
                 </Button>
               </div>
             </>
@@ -172,17 +177,16 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
 
 /** US-AUTH-11 — never names the business, so an unknown id reveals nothing. */
 function InviteUnusable() {
+  const t = useT();
   return (
     <AuthFrame scene="login">
       <div data-testid="invite-unusable" className="flex flex-col gap-5">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-overdue-bg text-overdue" aria-hidden="true">
           <XCircle size={18} />
         </span>
-        <AuthHeading title="This invitation can't be used">
-          It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one.
-        </AuthHeading>
+        <AuthHeading title={t("auth.acceptInvite.unusableTitle")}>{t("auth.acceptInvite.unusableBody")}</AuthHeading>
         <Button asChild variant="secondary" size="touch" className="w-full">
-          <Link href="/login">Log in instead</Link>
+          <Link href="/login">{t("auth.acceptInvite.logInInstead")}</Link>
         </Button>
       </div>
     </AuthFrame>
@@ -190,6 +194,7 @@ function InviteUnusable() {
 }
 
 function NeedsAccountPrompt({ invitationId, email }: { invitationId: string; email?: string }) {
+  const t = useT();
   const signupHref = email
     ? `/signup?inviteId=${invitationId}&email=${encodeURIComponent(email)}`
     : `/signup?inviteId=${invitationId}`;
@@ -198,19 +203,21 @@ function NeedsAccountPrompt({ invitationId, email }: { invitationId: string; ema
       <p className="text-on-surface">
         {email ? (
           <>
-            Sign in or create an account as <strong>{email}</strong> to accept this invitation.
+            {t("auth.acceptInvite.signInAsBefore")}
+            <strong>{email}</strong>
+            {t("auth.acceptInvite.signInAsAfter")}
           </>
         ) : (
-          "Sign in or create an account with the email this invitation was sent to."
+          t("auth.acceptInvite.signInWithInvitedEmail")
         )}
       </p>
       <div className="flex gap-2">
         <Link href={signupHref} className="flex-1">
-          <Button className="w-full">Create account</Button>
+          <Button className="w-full">{t("auth.actions.createAccount")}</Button>
         </Link>
         <Link href={`/login?next=/accept-invite/${invitationId}`} className="flex-1">
           <Button variant="secondary" className="w-full">
-            Log in
+            {t("auth.actions.logIn")}
           </Button>
         </Link>
       </div>

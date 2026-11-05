@@ -9,6 +9,7 @@ import { apiClient } from "../../../lib/api-client";
 import { orgLocaleTag } from "../../../lib/money";
 import { AiFilledMark } from "../../../components/ai-filled-mark";
 import { AgentMark } from "../../../components/agent-mark";
+import { t, useT } from "../../../lib/i18n";
 
 /** Consecutive views of the link become one entry: "Viewed by the customer 3 times". */
 export interface ActivityItem extends QuoteActivityEntry {
@@ -36,34 +37,38 @@ function when(iso: string): string {
 export function activityText(item: ActivityItem): string {
   switch (item.type) {
     case "created":
-      return "Created";
+      return t("quotes.activity.created");
     case "edited":
-      return "Edited";
+      return t("quotes.activity.edited");
     case "discount_approved":
-      return "Discount approved";
+      return t("quotes.activity.discountApproved");
     case "sent":
-      return "Sent";
+      return t("quotes.activity.sent");
     case "emailed":
-      return item.detail ? `Emailed to ${item.detail}` : "Emailed";
+      return item.detail ? t("quotes.activity.emailedTo", { detail: item.detail }) : t("quotes.activity.emailed");
     case "email_failed":
       // US-SET-28: cancelled in the email log.
-      return item.detail === "Cancelled" ? "Email not sent — cancelled" : item.detail ? `Email failed: ${item.detail}` : "Email failed";
+      return item.detail === "Cancelled" ? t("quotes.activity.emailCancelled") : item.detail ? t("quotes.activity.emailFailedDetail", { detail: item.detail }) : t("quotes.activity.emailFailed");
     case "link_copied":
-      return "Link copied";
+      return t("quotes.activity.linkCopied");
     case "viewed":
-      return item.views && item.views > 1 ? `Viewed by the customer ${item.views} times` : "Viewed by the customer";
+      return item.views && item.views > 1 ? t("quotes.activity.viewedTimes", { views: item.views }) : t("quotes.activity.viewed");
     case "revised":
-      return item.detail ? `Revised from ${item.detail}` : "Revised";
+      return item.detail ? t("quotes.activity.revisedFrom", { detail: item.detail }) : t("quotes.activity.revised");
     case "duplicated":
-      return item.detail ? `Duplicated from ${item.detail}` : "Duplicated";
+      return item.detail ? t("quotes.activity.duplicatedFrom", { detail: item.detail }) : t("quotes.activity.duplicated");
     case "accepted":
-      return item.method === "in_person" ? `Accepted in person, recorded by ${item.actorName ?? "a team member"}` : `Accepted online by ${item.actorName ?? "the customer"}`;
+      return item.method === "in_person"
+        ? t("quotes.activity.acceptedInPerson", { name: item.actorName ?? t("quotes.acceptance.teamMember") })
+        : t("quotes.activity.acceptedOnline", { name: item.actorName ?? t("quotes.acceptance.theCustomer") });
     case "rejected":
-      return item.method === "in_person" ? `Declined in person, recorded by ${item.actorName ?? "a team member"}` : `Declined online by ${item.actorName ?? "the customer"}`;
+      return item.method === "in_person"
+        ? t("quotes.activity.declinedInPerson", { name: item.actorName ?? t("quotes.acceptance.teamMember") })
+        : t("quotes.activity.declinedOnline", { name: item.actorName ?? t("quotes.acceptance.theCustomer") });
     case "converted_to_invoice":
-      return item.detail ? `Converted to an invoice · ${item.detail}` : "Converted to an invoice";
+      return item.detail ? t("quotes.activity.convertedToInvoiceDetail", { detail: item.detail }) : t("quotes.activity.convertedToInvoice");
     case "converted_to_job":
-      return item.detail ? `Converted to a job · ${item.detail}` : "Converted to a job";
+      return item.detail ? t("quotes.activity.convertedToJobDetail", { detail: item.detail }) : t("quotes.activity.convertedToJob");
   }
 }
 
@@ -101,6 +106,7 @@ const SHOWN = 6;
  * and what it became. "View history" keeps the field-level changes.
  */
 export function QuoteActivity({ quoteId, status, refreshKey, onViewHistory }: { quoteId: string; status: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<ActivityItem[] | null>(null);
   const [all, setAll] = useState(false);
 
@@ -117,9 +123,9 @@ export function QuoteActivity({ quoteId, status, refreshKey, onViewHistory }: { 
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="quote-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("quotes.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("quotes.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -134,7 +140,7 @@ export function QuoteActivity({ quoteId, status, refreshKey, onViewHistory }: { 
           const href = linkFor(item);
           const customer = CUSTOMER.has(item.type);
           const won = item.type === "accepted";
-          const sub = item.type === "viewed" ? `last ${when(item.at)}` : [!customer && item.actorName ? item.actorName : null, when(item.at)].filter(Boolean).join(" · ");
+          const sub = item.type === "viewed" ? t("quotes.activity.lastViewed", { when: when(item.at) }) : [!customer && item.actorName ? item.actorName : null, when(item.at)].filter(Boolean).join(" · ");
           return (
             <li key={`${item.type}-${item.at}-${i}`} className="relative grid grid-cols-[26px_minmax(0,1fr)] gap-2.5 py-2">
               {i < shown.length - 1 && <span className="absolute bottom-[-8px] left-[12.5px] top-[34px] w-px bg-border" aria-hidden />}
@@ -161,7 +167,7 @@ export function QuoteActivity({ quoteId, status, refreshKey, onViewHistory }: { 
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{sub}</p>
                 {(item.type === "accepted" || item.type === "rejected") && item.detail && (
-                  <p className="mt-1.5 rounded-md bg-surface-sunken px-2.5 py-1.5 text-[12.5px] leading-snug text-on-surface">“{item.detail}”</p>
+                  <p className="mt-1.5 rounded-md bg-surface-sunken px-2.5 py-1.5 text-[12.5px] leading-snug text-on-surface">{t("quotes.acceptance.quotedComment", { comment: item.detail })}</p>
                 )}
               </div>
             </li>
@@ -170,13 +176,13 @@ export function QuoteActivity({ quoteId, status, refreshKey, onViewHistory }: { 
         {items && !all && items.length > SHOWN && (
           <li>
             <button type="button" onClick={() => setAll(true)} className="mt-1 text-[12.5px] font-medium text-primary hover:underline">
-              Show {items.length - SHOWN} earlier
+              {t("quotes.activity.showEarlier", { earlier: items.length - SHOWN })}
             </button>
           </li>
         )}
         {items && status === "sent" && !viewed && (
           <li className="mt-1 flex items-center gap-2 text-[12.5px] italic text-on-surface-muted" data-testid="quote-not-viewed">
-            <Mail size={13} aria-hidden /> Not viewed yet
+            <Mail size={13} aria-hidden /> {t("quotes.activity.notViewed")}
           </li>
         )}
       </ol>

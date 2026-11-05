@@ -31,7 +31,8 @@ test.describe("US-MTG-17", () => {
     await meetingsOrg(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/meetings");
-    await page.getByRole("button", { name: "Collapse sidebar" }).click();
+    // US-OPS-14: a phone has the top bar, not the sidebar, so the calendar has the whole width.
+    await expect(page.getByTestId("app-top-bar")).toBeVisible();
     await expect(page.getByRole("radio", { name: "Agenda view" })).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("radio", { name: "Week view" })).toHaveCount(0);
     const overflows = await page.evaluate("(() => { const c = document.querySelector('[data-testid=\"meetings-calendar\"]'); return c ? c.scrollWidth > c.clientWidth + 1 : true; })()");

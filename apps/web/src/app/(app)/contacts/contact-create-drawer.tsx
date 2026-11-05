@@ -15,6 +15,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ContactForm } from "./contact-form";
 import type { Contact } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * Phase 2's Add-Contact flow: a Drawer opened from the list page's primary
@@ -33,6 +34,7 @@ export function ContactCreateDrawer({
   onOpenChange: (open: boolean) => void;
   onCreated: (contact: Contact) => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const formId = useId();
   const [saving, setSaving] = useState(false);
@@ -49,9 +51,9 @@ export function ContactCreateDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Add contact</DrawerTitle>
+          <DrawerTitle>{t("contacts.createDrawer.title")}</DrawerTitle>
           <DrawerDescription>
-            Name, type and how to reach them — you can add contact persons and addresses after saving.
+            {t("contacts.createDrawer.description")}
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
@@ -59,10 +61,10 @@ export function ContactCreateDrawer({
         </DrawerBody>
         <DrawerFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("contacts.common.cancel")}
           </Button>
           <Button type="submit" form={formId} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save contact"}
+            {saving ? <Spinner size="sm" /> : t("contacts.createDrawer.save")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

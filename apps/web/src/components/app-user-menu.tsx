@@ -24,11 +24,12 @@ import { initials } from "../lib/initials";
 import { MENU_ICONS } from "../lib/menu-icons";
 import { useOpenSettings } from "./settings-route";
 import { useToast } from "./toast-host";
+import { t as translate, useT } from "../lib/i18n";
 
 const THEME_OPTIONS = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Laptop, aria: "Follow system" },
+  { value: "light", label: translate("common.userMenu.themeLight"), icon: Sun },
+  { value: "dark", label: translate("common.userMenu.themeDark"), icon: Moon },
+  { value: "system", label: translate("common.userMenu.themeSystem"), icon: Laptop, aria: translate("common.userMenu.themeSystemAria") },
 ] as const;
 
 /** The tab's "already applied the saved theme" mark (account-context), cleared on sign-out. */
@@ -53,6 +54,7 @@ export function AppUserMenu({
   /** Set up Spine is Owner-only (US-ONB-15); Settings shows Owners the business's groups too (US-SET-30). */
   isOwner: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const toast = useToast();
   const openSettings = useOpenSettings(isOwner);
@@ -70,7 +72,7 @@ export function AppUserMenu({
     try {
       setAccount(await apiClient.put<Account>("/users/me/preferences", { themePreference: value }));
     } catch {
-      toast("Couldn't save your theme.", "It's used on this device until you sign in again.");
+      toast(t("common.userMenu.themeSaveFailed"), t("common.userMenu.themeSaveFailedDescription"));
     }
   }
 
@@ -98,7 +100,7 @@ export function AppUserMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Your account: ${shownName}`}
+          aria-label={t("common.userMenu.label", { name: shownName })}
           className={
             collapsed
               ? "flex h-9 w-9 items-center justify-center rounded-sm transition-colors hover:bg-surface-sunken"
@@ -129,20 +131,20 @@ export function AppUserMenu({
         {/* US-SET-30: every role has Settings; it opens on their first pane. */}
         <DropdownMenuItem onSelect={() => openSettings()}>
           <MENU_ICONS.settings aria-hidden />
-          Settings
+          {t("common.userMenu.settings")}
         </DropdownMenuItem>
         {/* US-ONB-15 — Owners only. */}
         {isOwner && (
           <DropdownMenuItem onSelect={() => router.push("/setup")}>
             <MENU_ICONS.setUp aria-hidden />
-            Set up Spine
+            {t("common.userMenu.setUp")}
           </DropdownMenuItem>
         )}
         {/* US-AUTH-16: menu radio items (a menu can't hold a radiogroup), shown as a three-way switch. */}
         <DropdownMenuRadioGroup
           value={mounted ? theme : undefined}
           onValueChange={(value) => void chooseTheme(value)}
-          aria-label="Theme"
+          aria-label={t("common.userMenu.theme")}
           className="mx-1.5 my-1 flex gap-0.5 rounded-sm bg-surface-sunken p-0.5"
           data-testid="theme-switch"
         >
@@ -167,7 +169,7 @@ export function AppUserMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem destructive disabled={signingOut} onSelect={handleSignOut}>
           {signingOut ? <Spinner size="sm" /> : <MENU_ICONS.signOut aria-hidden />}
-          Sign out
+          {t("common.userMenu.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

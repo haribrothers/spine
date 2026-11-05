@@ -6,6 +6,7 @@ import { CircleCheck, CircleMinus, Eye } from "lucide-react";
 import { Alert, AlertDescription, Button, Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, Spinner } from "@spine/ui";
 import { capabilityGroupCounts, type Capability, type MemberAccess } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import { useModules } from "../../../../lib/modules-context";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import type { MemberRow } from "../../../../lib/members";
@@ -19,6 +20,7 @@ import { ROLE_LABELS } from "./users-list-state";
  * have, with links to change it on their Teams.
  */
 export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { member: MemberRow | null; onOpenChange: (open: boolean) => void; onManageTeams: (member: MemberRow) => void }) {
+  const t = useT();
   const [access, setAccess] = useState<MemberAccess | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { modules } = useModules();
@@ -30,7 +32,7 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
     apiClient
       .get<MemberAccess>(`/org/members/${member.id}/access`)
       .then(setAccess)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load what they can open. Try again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("team.accessDrawer.loadFailed")));
   }, [member]);
 
   const caps = access?.capabilities as Partial<Record<Capability, boolean>> | undefined;
@@ -42,16 +44,16 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
     <Drawer open={member !== null} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>What {member?.name} can open</DrawerTitle>
+          <DrawerTitle>{t("team.accessDrawer.title", { name: member?.name ?? "" })}</DrawerTitle>
           <DrawerDescription>
             {access?.role === "owner"
-              ? "Owner · Owners can open everything, including Users, Teams and Settings."
+              ? t("team.accessDrawer.owner")
               : access?.role === "field"
-                ? "Field · Field access is fixed: the jobs they're assigned to, their meetings and their own expenses — no money."
+                ? t("team.accessDrawer.field")
                 : access
                   ? access.teams.length
-                    ? `Staff · on ${access.teams.map((t) => t.name).join(" and ")}${access.teams.length > 1 ? " — everything any of them allows." : "."}`
-                    : "Staff · on no Team — they can't open anything until you add them to one."
+                    ? t(access.teams.length > 1 ? "team.accessDrawer.staffOnSeveral" : "team.accessDrawer.staffOnOne", { teams: access.teams.map((team) => team.name).join(t("team.common.andSeparator")) })
+                    : t("team.accessDrawer.staffNoTeam")
                   : member
                     ? ROLE_LABELS[member.role]
                     : ""}
@@ -71,35 +73,35 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
           {access && (
             <>
               <section className="flex flex-col gap-2">
-                <h3 className="text-[13px] font-semibold text-on-surface">Sections</h3>
-                <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13.5px]" aria-label="Sections">
+                <h3 className="text-[13px] font-semibold text-on-surface">{t("team.access.sections")}</h3>
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13.5px]" aria-label={t("team.access.sections")}>
                   {sections.map((item) => {
                     const Icon = item.access === "work" ? CircleCheck : item.access === "view" ? Eye : CircleMinus;
                     return (
                       <li key={item.href} className={item.access === "work" ? "flex items-center gap-2 text-on-surface" : "flex items-center gap-2 text-on-surface-muted"} data-access={item.access}>
                         <Icon size={15} aria-hidden className={item.access === "work" ? "text-paid" : undefined} />
                         {item.label}
-                        {item.access === "view" && <span className="text-[12px]">· view only</span>}
-                        <span className="sr-only">{item.access === "work" ? " — can work here" : item.access === "view" ? " — view only" : " — can't open"}</span>
+                        {item.access === "view" && <span className="text-[12px]">{t("team.access.viewOnlySuffix")}</span>}
+                        <span className="sr-only">{item.access === "work" ? t("team.access.workWords") : item.access === "view" ? t("team.access.viewWords") : t("team.access.noneWords")}</span>
                       </li>
                     );
                   })}
                 </ul>
                 <p className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-on-surface-muted" aria-hidden>
-                  <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />Can work here</span>
-                  <span className="flex items-center gap-1"><Eye size={13} />View only — can see records, not change them</span>
-                  <span className="flex items-center gap-1"><CircleMinus size={13} />Can&apos;t open</span>
+                  <span className="flex items-center gap-1"><CircleCheck size={13} className="text-paid" />{t("team.access.canWorkHere")}</span>
+                  <span className="flex items-center gap-1"><Eye size={13} />{t("team.access.viewOnlyLong")}</span>
+                  <span className="flex items-center gap-1"><CircleMinus size={13} />{t("team.access.cantOpen")}</span>
                 </p>
               </section>
               {access.role === "staff" && (
                 <section className="flex flex-col gap-1">
-                  <h3 className="text-[13px] font-semibold text-on-surface">Permissions by group</h3>
+                  <h3 className="text-[13px] font-semibold text-on-surface">{t("team.accessDrawer.permissionsByGroup")}</h3>
                   <dl className="flex flex-col text-[13.5px]" data-testid="access-groups">
                     {capabilityGroupCounts(access.capabilities).map((g) => (
                       <div key={g.group} className="flex justify-between border-t border-dashed border-border py-1.5 first:border-t-0">
                         <dt className="text-on-surface">{g.group}</dt>
                         <dd className="font-medium tabular-nums text-on-surface">
-                          {g.granted} of {g.total}
+                          {t("team.common.ofTotal", { granted: g.granted, total: g.total })}
                         </dd>
                       </div>
                     ))}
@@ -108,16 +110,16 @@ export function UserAccessDrawer({ member, onOpenChange, onManageTeams }: { memb
               )}
               {access.role === "staff" && member && (
                 <section className="flex flex-col gap-2">
-                  <h3 className="text-[13px] font-semibold text-on-surface">Change what they can do</h3>
+                  <h3 className="text-[13px] font-semibold text-on-surface">{t("team.accessDrawer.changeWhat")}</h3>
                   <div className="flex flex-col items-start gap-1.5 text-[13.5px]">
-                    {access.teams.map((t) => (
-                      <Link key={t.id} href={`/team/teams/${t.id}`} className="font-medium text-primary hover:underline">
-                        Edit on {t.name} →
+                    {access.teams.map((team) => (
+                      <Link key={team.id} href={`/team/teams/${team.id}`} className="font-medium text-primary hover:underline">
+                        {t("team.accessDrawer.editOn", { team: team.name })}
                       </Link>
                     ))}
                     <Button variant="secondary" size="sm" onClick={() => onManageTeams(member)}>
                       <MENU_ICONS.manageTeams size={14} aria-hidden />
-                      Manage Teams
+                      {t("team.common.manageTeams")}
                     </Button>
                   </div>
                 </section>

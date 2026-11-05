@@ -16,15 +16,16 @@ import { categoryIcon } from "../../components/category-icon";
 import { WaitingChip } from "../../components/waiting-chip";
 import { Fab } from "../../components/fab";
 import { useAiStatus } from "../../lib/data/ai";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const EXPENSES_EMPTY_TITLE = "No expenses yet";
-export const EXPENSES_EMPTY_MESSAGE = "Log fuel, materials or meals here with a photo of the receipt. Your office approves them before you're paid back.";
+export const EXPENSES_EMPTY_TITLE = translate("mobileApp.expenses.emptyTitle");
+export const EXPENSES_EMPTY_MESSAGE = translate("mobileApp.expenses.emptyMessage");
 
 function dayLabel(date: string, locale: string): string {
   const d = calendarDay(date);
   const days = daysUntil(d);
-  if (days === 0) return "Today";
-  if (days === -1) return "Yesterday";
+  if (days === 0) return translate("mobileApp.format.todayCapital");
+  if (days === -1) return translate("mobileApp.format.yesterday");
   return `${weekday(d, locale)} ${dayMonth(d, locale)}`;
 }
 
@@ -61,6 +62,7 @@ function Icon({ category, waiting }: { category: string | null; waiting?: boolea
  * expense. Only ever my own (the API answers nothing else to Field).
  */
 export function ExpensesScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const format = useBusinessFormat();
@@ -84,7 +86,7 @@ export function ExpensesScreen() {
       >
         {waiting.length ? (
           <View className="gap-2">
-            <SectionHeader title="Waiting to sync" />
+            <SectionHeader title={t("mobileApp.expenses.waitingSection")} />
             <View className={android ? "-mx-4" : "overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark"}>
               {waiting.map((item, index) => {
                 if (item.kind !== "expense") return null;
@@ -92,18 +94,18 @@ export function ExpensesScreen() {
                 const failed = item.status === "failed";
                 const amount = money(p.amount, { currency: p.currency, locale: format.locale });
                 return (
-                  <Row key={item.id} first={index === 0} testID={`expense-waiting-${item.id}`} onPress={() => router.push(failed ? `/sync/fix/${item.id}` : "/sync")} accessibilityLabel={`${p.categoryName}, ${amount}, ${failed ? "didn't send" : "waiting to sync"}`}>
+                  <Row key={item.id} first={index === 0} testID={`expense-waiting-${item.id}`} onPress={() => router.push(failed ? `/sync/fix/${item.id}` : "/sync")} accessibilityLabel={t("mobileApp.expenses.waitingRowLabel", { category: p.categoryName, amount, state: failed ? t("mobileApp.expenses.didntSend") : t("mobileApp.expenses.waitingToSync") })}>
                     <Icon category={p.categoryName} waiting />
                     <View className="flex-1 gap-0.5">
                       <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{p.categoryName}</Text>
                       <Text numberOfLines={1} className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">
-                        {[dayLabel(p.date, format.locale), p.jobName, android && !failed ? "waiting to sync" : null].filter(Boolean).join(" · ")}
+                        {[dayLabel(p.date, format.locale), p.jobName, android && !failed ? t("mobileApp.expenses.waitingToSync") : null].filter(Boolean).join(" · ")}
                       </Text>
                       {failed ? <Text className="text-[14px] text-overdue dark:text-overdue-dark">{item.error}</Text> : null}
                     </View>
                     <View className="items-end gap-1">
                       <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{amount}</Text>
-                      {android ? null : <WaitingChip label={failed ? "Fix" : "Waiting"} />}
+                      {android ? null : <WaitingChip label={failed ? t("mobileApp.fix.title") : t("mobileApp.expenseStatus.waiting")} />}
                     </View>
                   </Row>
                 );
@@ -114,17 +116,22 @@ export function ExpensesScreen() {
 
         {submitted.length ? (
           <View className="gap-2">
-            <SectionHeader title="Submitted by you" testID="expenses-submitted" />
+            <SectionHeader title={t("mobileApp.expenses.submittedSection")} testID="expenses-submitted" />
             <View className={android ? "-mx-4" : "overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark"}>
               {submitted.map((expense, index) => {
                 const amount = money(expense.amount, { currency: expense.currency, locale: format.locale });
                 const job = jobName(expense.jobId);
-                const reason = expense.status === "rejected" && expense.reviewComment ? `“${expense.reviewComment}”${expense.reviewerName ? ` — ${expense.reviewerName}` : ""}` : null;
+                const reason =
+                  expense.status === "rejected" && expense.reviewComment
+                    ? expense.reviewerName
+                      ? t("mobileApp.expenses.reasonBy", { comment: expense.reviewComment, name: expense.reviewerName })
+                      : t("mobileApp.expenses.reason", { comment: expense.reviewComment })
+                    : null;
                 return (
                   <Row key={expense.id} first={index === 0} testID={`expense-row-${expense.id}`} onPress={() => router.push(`/expenses/${expense.id}`)} accessibilityLabel={[expense.categoryName, amount, expenseStatusLabel(expense.status), reason].filter(Boolean).join(", ")}>
                     <Icon category={expense.categoryName} />
                     <View className="flex-1 gap-0.5">
-                      <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{expense.categoryName ?? "Expense"}</Text>
+                      <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{expense.categoryName ?? t("mobileApp.expense.title")}</Text>
                       {android ? (
                         <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">
                           {expense.status === "rejected" ? "" : `${dayLabel(expense.date, format.locale)} · `}
@@ -150,7 +157,7 @@ export function ExpensesScreen() {
             </View>
           </View>
         ) : list.loading ? (
-          <ListRowsSkeleton label="Loading your expenses" testID="skeleton-expenses" rows={4} leading trailing="amount" />
+          <ListRowsSkeleton label={t("mobileApp.expenses.loading")} testID="skeleton-expenses" rows={4} leading trailing="amount" />
         ) : !waiting.length && list.data ? (
           <EmptyState
             testID="expenses-empty"
@@ -166,7 +173,7 @@ export function ExpensesScreen() {
         ) : null}
       </ScrollView>
       {android ? (
-        <Fab testID="expenses-log" label="Log expense" icon={Plus} onPress={logExpense} />
+        <Fab testID="expenses-log" label={t("mobileApp.logExpense.label")} icon={Plus} onPress={logExpense} />
       ) : null}
     </View>
   );

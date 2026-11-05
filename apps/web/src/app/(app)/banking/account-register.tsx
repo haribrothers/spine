@@ -45,6 +45,7 @@ import {
   type RegisterType,
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { t, useT } from "../../../lib/i18n";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { formatMoney } from "../../../lib/money";
@@ -63,12 +64,12 @@ import { REGISTER_RANGES, REGISTER_RANGE_LABELS, opensDrawer, parseRegisterState
 import { useLoadFailure } from "../../../lib/use-load-failure";
 
 const TABLE_COLUMNS = [
-  { key: "date", header: "Date", width: "w-24" },
-  { key: "what", header: "What", width: "w-40" },
-  { key: "contact", header: "Contact", width: "w-40" },
-  { key: "in", header: "Money in", width: "w-24" },
-  { key: "out", header: "Money out", width: "w-24" },
-  { key: "balance", header: "Balance", width: "w-24" },
+  { key: "date", header: t("banking.register.colDate"), width: "w-24" },
+  { key: "what", header: t("banking.register.colWhat"), width: "w-40" },
+  { key: "contact", header: t("banking.register.colContact"), width: "w-40" },
+  { key: "in", header: t("banking.explorer.moneyIn"), width: "w-24" },
+  { key: "out", header: t("banking.explorer.moneyOut"), width: "w-24" },
+  { key: "balance", header: t("banking.register.colBalance"), width: "w-24" },
 ];
 
 const ALL = "__all__";
@@ -83,6 +84,7 @@ const ALL = "__all__";
  * card reads "Paid off", "Spent" and "Owed".
  */
 export function AccountRegisterView({ accountId }: { accountId: string }) {
+  const t = useT();
   const loadFailed = useLoadFailure(accountId);
   const pathname = usePathname();
   const router = useRouter();
@@ -126,7 +128,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         setNow(Date.now());
       } catch (err) {
         if (loadFailed(err)) return;
-        setError(err instanceof Error ? err.message : "Couldn't load this account. Refresh to try again.");
+        setError(err instanceof Error ? err.message : t("banking.register.loadError"));
       } finally {
         loading.current = false;
         setRefreshing(false);
@@ -166,8 +168,8 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   const account = register?.account;
   const archived = Boolean(account?.archivedAt);
   const isCard = account?.kind === "card";
-  const inLabel = isCard ? "Paid off" : "Money in";
-  const outLabel = isCard ? "Spent" : "Money out";
+  const inLabel = isCard ? t("banking.register.paidOff") : t("banking.explorer.moneyIn");
+  const outLabel = isCard ? t("banking.register.spent") : t("banking.explorer.moneyOut");
   const money = (amount: string) => formatMoney(BigInt(amount), currency);
   const rangeLabel = `${formatDay(dates.from)} – ${formatDay(dates.to)}`;
   // Newest first; each row's balance is the running balance after it.
@@ -181,10 +183,10 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   }
 
   const columns: TableColumn<AccountRegisterRow>[] = [
-    { key: "date", header: "Date", render: (row) => <span className="whitespace-nowrap">{formatDay(row.date)}</span>, sortValue: (row) => row.date },
+    { key: "date", header: t("banking.register.colDate"), render: (row) => <span className="whitespace-nowrap">{formatDay(row.date)}</span>, sortValue: (row) => row.date },
     {
       key: "what",
-      header: "What",
+      header: t("banking.register.colWhat"),
       render: (row) => {
         const href = sourceHref(row);
         const drawerKind = opensDrawer(row.sourceType);
@@ -204,7 +206,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         return (
           <span className="flex flex-wrap items-center gap-2">
             {label}
-            {showDeleted && <Badge>Deleted</Badge>}
+            {showDeleted && <Badge>{t("banking.register.deleted")}</Badge>}
           </span>
         );
       },
@@ -212,7 +214,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
     {
       key: "contact",
-      header: "Contact",
+      header: t("banking.register.colContact"),
       render: (row) =>
         row.contact ? (
           <span className="block max-w-36 truncate" title={row.contact.name}>
@@ -225,7 +227,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
     {
       key: "reference",
-      header: "Reference",
+      header: t("banking.register.colReference"),
       render: (row) => (
         <span className="block max-w-28 truncate text-on-surface-muted" title={row.reference ?? undefined}>
           {row.reference ?? "—"}
@@ -234,18 +236,18 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
     { key: "in", header: inLabel, align: "right", render: (row) => (row.in !== "0" ? <span className="tabular-nums">{money(row.in)}</span> : null), sortValue: (row) => BigInt(row.in) },
     { key: "out", header: outLabel, align: "right", render: (row) => (row.out !== "0" ? <span className="tabular-nums">{money(row.out)}</span> : null), sortValue: (row) => BigInt(row.out) },
-    { key: "balance", header: isCard ? "Owed" : "Balance", align: "right", render: (row) => <span className="tabular-nums">{money(row.balance)}</span> },
+    { key: "balance", header: isCard ? t("banking.register.colOwed") : t("banking.register.colBalance"), align: "right", render: (row) => <span className="tabular-nums">{money(row.balance)}</span> },
     {
       key: "reconciled",
-      header: "Reconciled",
+      header: t("banking.register.colReconciled"),
       render: (row) =>
         row.reconciled ? (
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-paid">
             <CircleCheck size={15} aria-hidden />
-            Reconciled
+            {t("banking.register.reconciled")}
           </span>
         ) : (
-          <span className="sr-only">Not reconciled</span>
+          <span className="sr-only">{t("banking.register.notReconciled")}</span>
         ),
     },
     {
@@ -261,7 +263,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  aria-label={`Actions for ${row.what}`}
+                  aria-label={t("banking.explorer.actionsFor", { name: row.what })}
                   className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
                 >
                   <MoreHorizontal size={16} />
@@ -271,12 +273,12 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
                 {href ? (
                   <DropdownMenuItem onSelect={() => router.push(href)}>
                     <MENU_ICONS.open aria-hidden />
-                    Open
+                    {t("banking.register.open")}
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onSelect={() => setDrawer({ kind: drawerKind!, id: row.sourceId, what: row.what })}>
                     <MENU_ICONS.openDrawer aria-hidden />
-                    View entry
+                    {t("banking.register.viewEntry")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -287,13 +289,13 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
   ];
 
-  const subtitle = account ? [account.bankName, account.last4 ? `••${account.last4}` : null, MONEY_ACCOUNT_KIND_LABELS[account.kind], `ledger ${account.code}`].filter(Boolean).join(" · ") : undefined;
+  const subtitle = account ? [account.bankName, account.last4 ? `••${account.last4}` : null, MONEY_ACCOUNT_KIND_LABELS[account.kind], t("banking.register.ledgerCode", { code: account.code })].filter(Boolean).join(" · ") : undefined;
   const exportQuery = new URLSearchParams({ from: dates.from, to: dates.to, unreconciled: String(state.unreconciled), ...(state.type ? { type: state.type } : {}) });
 
   const header = (
     <AppShellHeader
-      breadcrumb={[{ label: "Money" }, { label: "Banking", href: "/banking" }, { label: account?.name ?? "Account" }]}
-      title={account?.name ?? "Account"}
+      breadcrumb={[{ label: t("banking.page.breadcrumbMoney") }, { label: t("banking.page.title"), href: "/banking" }, { label: account?.name ?? t("banking.register.breadcrumbAccount") }]}
+      title={account?.name ?? t("banking.register.breadcrumbAccount")}
       description={subtitle}
       action={
         account ? (
@@ -301,7 +303,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
-                  More
+                  {t("banking.register.more")}
                   <ChevronDown size={14} aria-hidden />
                 </Button>
               </DropdownMenuTrigger>
@@ -309,19 +311,19 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
                 {canReconcile && !archived && (
                   <DropdownMenuItem onSelect={() => setImportOpen(true)}>
                     <MENU_ICONS.importStatement aria-hidden />
-                    Import statement
+                    {t("banking.explorer.importStatement")}
                   </DropdownMenuItem>
                 )}
                 {canReconcile && (
                   <DropdownMenuItem onSelect={() => router.push(`/banking/${accountId}/reconciliations`)}>
                     <MENU_ICONS.history aria-hidden />
-                    Reconciliations
+                    {t("banking.register.reconciliations")}
                   </DropdownMenuItem>
                 )}
                 {isOwner && !archived && (
                   <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                     <MENU_ICONS.edit aria-hidden />
-                    Edit account
+                    {t("banking.register.editAccount")}
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -331,23 +333,23 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary">
                     <Plus size={14} aria-hidden />
-                    Record
+                    {t("banking.register.record")}
                     <ChevronDown size={14} aria-hidden />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => setRecording("in")}>
                     <MENU_ICONS.moneyIn aria-hidden />
-                    Money in
+                    {t("banking.explorer.moneyIn")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setRecording("out")}>
                     <MENU_ICONS.moneyOut aria-hidden />
-                    Money out
+                    {t("banking.explorer.moneyOut")}
                   </DropdownMenuItem>
                   {accounts.length > 1 && (
                     <DropdownMenuItem onSelect={() => setRecording("transfer")}>
                       <MENU_ICONS.transfer aria-hidden />
-                      Transfer
+                      {t("banking.explorer.transfer")}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -357,7 +359,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
               <Button asChild>
                 <Link href={`/banking/${accountId}/reconcile`}>
                   <MENU_ICONS.reconcile size={14} aria-hidden />
-                  Reconcile
+                  {t("banking.explorer.reconcile")}
                 </Link>
               </Button>
             )}
@@ -381,7 +383,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   const search = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search what, contact or reference" aria-label="Search entries" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("banking.register.searchPlaceholder")} aria-label={t("banking.register.searchLabel")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
 
@@ -390,21 +392,21 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
       {header}
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="register-cards">
-          <StatCard label={isCard ? "Owed on this card" : "Balance in Spine"} value={account ? money(account.balance) : "—"} trend={{ direction: "neutral", label: `as of ${formatDay(toIsoDate(new Date()))}` }} className="h-full" />
+          <StatCard label={isCard ? t("banking.register.owedOnCard") : t("banking.explorer.colBalance")} value={account ? money(account.balance) : "—"} trend={{ direction: "neutral", label: t("banking.register.asOf", { date: formatDay(toIsoDate(new Date())) }) }} className="h-full" />
           <StatCard label={inLabel} value={register ? money(register.totalIn) : "—"} trend={{ direction: "neutral", label: rangeLabel }} className="h-full" />
           <StatCard label={outLabel} value={register ? money(register.totalOut) : "—"} trend={{ direction: "neutral", label: rangeLabel }} className="h-full" />
           <button
             type="button"
             aria-pressed={state.unreconciled}
-            aria-label="Show unreconciled entries only"
+            aria-label={t("banking.register.unreconciledAria")}
             onClick={() => update({ unreconciled: !state.unreconciled })}
             className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <StatCard
-              label="Unreconciled"
+              label={t("banking.explorer.colUnreconciled")}
               value={register ? String(unreconciledCount) : "—"}
               tone={unreconciledCount > 0 ? "warning" : "default"}
-              trend={{ direction: "neutral", label: state.unreconciled ? "Showing these · press again to clear" : "entries in this range" }}
+              trend={{ direction: "neutral", label: state.unreconciled ? t("banking.explorer.cardShowing") : t("banking.register.entriesInRange") }}
               className={cn("h-full transition-colors hover:border-border-strong", state.unreconciled && "border-primary bg-info-bg/60 ring-1 ring-primary")}
             />
             <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", state.unreconciled ? "text-primary" : "text-on-surface-muted")} />
@@ -420,7 +422,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
                 update(range === "custom" ? { range, from: dates.from, to: dates.to } : { range, from: null, to: null });
               }}
             >
-              <SelectTrigger aria-label="Date range" className="w-44">
+              <SelectTrigger aria-label={t("banking.register.dateRange")} className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -434,49 +436,49 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             {state.range === "custom" && (
               <>
                 <div className="w-40">
-                  <DatePicker value={fromIsoDate(dates.from)} onChange={(d) => d && update({ from: toIsoDate(d) })} placeholder="From" />
+                  <DatePicker value={fromIsoDate(dates.from)} onChange={(d) => d && update({ from: toIsoDate(d) })} placeholder={t("banking.register.from")} />
                 </div>
                 <div className="w-40">
-                  <DatePicker value={fromIsoDate(dates.to)} onChange={(d) => d && update({ to: toIsoDate(d) })} placeholder="To" />
+                  <DatePicker value={fromIsoDate(dates.to)} onChange={(d) => d && update({ to: toIsoDate(d) })} placeholder={t("banking.register.to")} />
                 </div>
               </>
             )}
             <Select value={state.type ?? ALL} onValueChange={(v) => update({ type: v === ALL ? null : (v as RegisterType) })}>
-              <SelectTrigger aria-label="Filter by type" className="w-48">
+              <SelectTrigger aria-label={t("banking.explorer.filterType")} className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL}>All entries</SelectItem>
-                {REGISTER_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {REGISTER_TYPE_LABELS[t]}
+                <SelectItem value={ALL}>{t("banking.register.allEntries")}</SelectItem>
+                {REGISTER_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {REGISTER_TYPE_LABELS[type]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={state.unreconciled ? "unreconciled" : "all"} onValueChange={(v) => update({ unreconciled: v === "unreconciled" })}>
-              <SelectTrigger aria-label="Which entries" className="w-44">
+              <SelectTrigger aria-label={t("banking.register.whichEntries")} className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="unreconciled">Unreconciled only</SelectItem>
+                <SelectItem value="all">{t("banking.register.all")}</SelectItem>
+                <SelectItem value="unreconciled">{t("banking.register.unreconciledOnly")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="register-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("banking.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("banking.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("banking.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             <ReportExportMenu path={`/money-accounts/${accountId}/register?${exportQuery}`} search={state.q} />
           </div>
@@ -486,7 +488,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
           <TableSkeleton columns={TABLE_COLUMNS} />
         ) : !register.hasEntries ? (
           <div className="rounded-lg border border-border bg-surface">
-            <EmptyState icon={<Landmark />} title="Nothing has gone in or out of this account yet." description="Payments, expenses and transfers on this account appear here." />
+            <EmptyState icon={<Landmark />} title={t("banking.register.emptyTitle")} description={t("banking.register.emptyBody")} />
           </div>
         ) : rows!.length === 0 ? (
           <div className="flex flex-col gap-3">
@@ -494,11 +496,11 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             <div className="rounded-lg border border-border bg-surface">
               <EmptyState
                 icon={<Landmark />}
-                title="No entries match"
-                description={`Nothing in ${rangeLabel} matches these filters.`}
+                title={t("banking.register.noMatchTitle")}
+                description={t("banking.register.noMatchBody", { range: rangeLabel })}
                 action={
                   <Button variant="secondary" onClick={() => update({ type: null, unreconciled: false, q: "" })}>
-                    Clear filters
+                    {t("banking.explorer.clearFilters")}
                   </Button>
                 }
               />
@@ -508,7 +510,8 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
           <div data-testid="register-table" className="flex flex-col gap-3">
             <DataTable columns={columns} data={rows!} rowKey={(row) => row.journalLineId} toolbarStart={search} configurablePageSize page={state.page} onPageChange={(page) => update({ page })} />
             <p className="text-[13px] text-on-surface-muted">
-              {isCard ? "Owed" : "Opening balance"} on {formatDay(register.from ?? dates.from)}: <span className="font-semibold text-on-surface">{money(register.openingBalance)}</span>
+              {t(isCard ? "banking.register.owedOn" : "banking.register.openingBalanceOn", { date: formatDay(register.from ?? dates.from) })}
+              <span className="font-semibold text-on-surface">{money(register.openingBalance)}</span>
             </p>
           </div>
         )}
@@ -522,8 +525,8 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         onDeleted={(kind) => {
           setDrawer(null);
           showToast(
-            kind === "bank_transfer" ? "Transfer deleted" : "Entry deleted",
-            kind === "bank_transfer" ? "A reversing entry was posted, so both balances are back where they were." : "A reversing entry was posted, so the balance is back where it was.",
+            kind === "bank_transfer" ? t("banking.register.transferDeleted") : t("banking.register.entryDeleted"),
+            kind === "bank_transfer" ? t("banking.register.transferDeletedBody") : t("banking.register.entryDeletedBody"),
           );
           void load("refresh");
         }}
@@ -538,7 +541,10 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             currency={currency}
             initialAccountId={accountId}
             onRecorded={(entry: BankTransaction) =>
-              recorded(`${entry.direction === "in" ? "Money in" : "Money out"} recorded`, `${formatMoney(BigInt(entry.amount), currency)} ${entry.direction === "in" ? "into" : "from"} ${entry.moneyAccount.name} — ${entry.account.name}.`)
+              recorded(
+                entry.direction === "in" ? t("banking.explorer.moneyInRecorded") : t("banking.explorer.moneyOutRecorded"),
+                t(entry.direction === "in" ? "banking.explorer.moneyInBody" : "banking.explorer.moneyOutBody", { amount: formatMoney(BigInt(entry.amount), currency), account: entry.moneyAccount.name, category: entry.account.name }),
+              )
             }
           />
           <TransferDialog
@@ -547,21 +553,26 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             accounts={accounts}
             currency={currency}
             initialAccountId={accountId}
-            onRecorded={(transfer: BankTransfer) => recorded(`Moved ${formatMoney(BigInt(transfer.amount), currency)} from ${transfer.fromMoneyAccount.name} to ${transfer.toMoneyAccount.name}`, "Both registers show the transfer.")}
+            onRecorded={(transfer: BankTransfer) =>
+              recorded(
+                t("banking.explorer.transferToastTitle", { amount: formatMoney(BigInt(transfer.amount), currency), from: transfer.fromMoneyAccount.name, to: transfer.toMoneyAccount.name }),
+                t("banking.explorer.transferToastBody"),
+              )
+            }
           />
           <StatementImportDialog
             open={importOpen}
             onOpenChange={setImportOpen}
             accountId={accountId}
             accountName={account.name}
-            onImported={(result) => showToast("Statement imported", statementImportSummary(result))}
+            onImported={(result) => showToast(t("banking.register.statementImported"), statementImportSummary(result))}
           />
           <MoneyAccountDialog
             open={editOpen}
             onOpenChange={setEditOpen}
             account={account}
             onSaved={(saved) => {
-              showToast("Account saved", `${saved.name} has been updated.`);
+              showToast(t("banking.explorer.savedTitle"), t("banking.explorer.savedBody", { name: saved.name }));
               void load("refresh");
             }}
           />

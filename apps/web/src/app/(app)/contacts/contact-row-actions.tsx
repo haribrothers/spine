@@ -22,6 +22,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { Contact } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * The row-level "more" menu shared by all three list views (table/list/
@@ -45,6 +46,7 @@ export function ContactRowActions({
   contact: Contact;
   onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,7 @@ export function ContactRowActions({
       setConfirmOpen(false);
       onChanged("deleted", contact);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete contact.");
+      setError(err instanceof Error ? err.message : t("contacts.rowActions.deleteError"));
     } finally {
       setBusy(false);
     }
@@ -87,7 +89,7 @@ export function ContactRowActions({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${contact.name}`}
+            aria-label={t("contacts.common.actionsFor", { name: contact.name })}
             onClick={(e) => e.stopPropagation()}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
@@ -98,13 +100,13 @@ export function ContactRowActions({
           {canEdit && (
             <DropdownMenuItem onSelect={() => router.push(`/contacts/${contact.id}`)}>
               <MENU_ICONS.edit aria-hidden />
-              Edit
+              {t("contacts.common.edit")}
             </DropdownMenuItem>
           )}
           {canDelete && (
             <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
               {contact.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
-              {contact.archivedAt ? "Restore" : "Archive"}
+              {contact.archivedAt ? t("contacts.common.restore") : t("contacts.common.archive")}
             </DropdownMenuItem>
           )}
           {canDelete && (
@@ -112,7 +114,7 @@ export function ContactRowActions({
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
                 <MENU_ICONS.delete aria-hidden />
-                Delete
+                {t("contacts.common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -122,17 +124,16 @@ export function ContactRowActions({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {contact.name}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("contacts.rowActions.deleteTitle", { name: contact.name })}</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the contact and its persons/addresses. This cannot be undone. If this
-              contact has any financial ledger history, deletion will be blocked — archive it instead.
+              {t("contacts.rowActions.deleteDescription")}
               {error && <span className="mt-2 block text-overdue">{error}</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("contacts.common.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
-              Delete
+              {t("contacts.common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

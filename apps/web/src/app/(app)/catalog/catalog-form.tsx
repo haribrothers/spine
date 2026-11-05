@@ -18,6 +18,7 @@ import { HSN_SAC_MESSAGE, SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, isValidHsnSac, su
 import { apiClient } from "../../../lib/api-client";
 import { supplyClassForTax } from "../../../components/supply-type-field";
 import type { AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const NO_ACCOUNT = "none";
 const NO_TAX = "";
@@ -65,6 +66,7 @@ export function CatalogForm({
   onSubmittingChange?: (saving: boolean) => void;
   onSuccess: (item: CatalogItem) => void;
 }) {
+  const t = useT();
   const source = item ?? prefill;
   const [name, setName] = useState(source?.name ?? "");
   const [description, setDescription] = useState(source?.description ?? "");
@@ -138,7 +140,7 @@ export function CatalogForm({
         setGst(true);
         if (source) return;
         // A new item starts from Settings › Tax › "Default tax preference".
-        const token = (t: TaxChoice | null | undefined) => (t?.taxRateId ? `rate:${t.taxRateId}` : t?.taxGroupId ? `group:${t.taxGroupId}` : NO_TAX);
+        const token = (choice: TaxChoice | null | undefined) => (choice?.taxRateId ? `rate:${choice.taxRateId}` : choice?.taxGroupId ? `group:${choice.taxGroupId}` : NO_TAX);
         setTaxSelection(token(profile.defaultIntraTax));
         setInterSelection(token(profile.defaultInterTax));
         if (profile.defaultIntraTax?.taxRateId || profile.defaultIntraTax?.taxGroupId) setSupplyClass("taxable");
@@ -176,7 +178,7 @@ export function CatalogForm({
         : await apiClient.post<CatalogItem>("/catalog-items", payload);
       onSuccess(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save item.");
+      setError(err instanceof Error ? err.message : t("catalog.form.saveError"));
       onSubmittingChange?.(false);
     }
   }
@@ -202,13 +204,13 @@ export function CatalogForm({
   }, [currency]);
   const taxOptions = useMemo(
     () => [
-      { value: NO_TAX, label: "No tax" },
+      { value: NO_TAX, label: t("catalog.common.noTax") },
       ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
       ...taxGroups
         .filter((g) => !g.archivedAt)
         .map((g) => ({ value: `group:${g.id}`, label: `${g.name} (${g.taxRates.map((r) => `${r.rate}%`).join("+")})` })),
     ],
-    [taxRates, taxGroups],
+    [taxRates, taxGroups, t],
   );
 
   return (
@@ -219,17 +221,17 @@ export function CatalogForm({
         </Alert>
       )}
 
-      <h3 className="text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Details</h3>
-      <FormField label="Name" required>
+      <h3 className="text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("catalog.form.details")}</h3>
+      <FormField label={t("catalog.common.name")} required>
         {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} required />}
       </FormField>
 
-      <FormField label="Description">
+      <FormField label={t("catalog.common.description")}>
         {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} />}
       </FormField>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FormField label="Unit" required helperText="e.g. hour, sq ft, each">
+        <FormField label={t("catalog.form.unit")} required helperText={t("catalog.form.unitHelper")}>
           {(field) => (
             <Combobox
               {...field}
@@ -237,13 +239,13 @@ export function CatalogForm({
               value={unit}
               onValueChange={setUnit}
               allowCreate
-              placeholder="Select or type a unit…"
-              emptyText="Type to create a new unit."
+              placeholder={t("catalog.form.unitPlaceholder")}
+              emptyText={t("catalog.form.unitEmpty")}
             />
           )}
         </FormField>
 
-        <FormField label="Category" helperText="Free text, optional">
+        <FormField label={t("catalog.common.category")} helperText={t("catalog.form.categoryHelper")}>
           {(field) => (
             <Combobox
               {...field}
@@ -251,22 +253,22 @@ export function CatalogForm({
               value={category}
               onValueChange={setCategory}
               allowCreate
-              placeholder="Select or type a category…"
-              emptyText="Type to create a new category."
+              placeholder={t("catalog.form.categoryPlaceholder")}
+              emptyText={t("catalog.form.categoryEmpty")}
             />
           )}
         </FormField>
       </div>
 
-      <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Price and tax</h3>
+      <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("catalog.form.priceAndTax")}</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FormField label="Default price" required>
+        <FormField label={t("catalog.form.defaultPrice")} required>
           {(field) => (
             <MoneyInput {...field} value={priceAmount} onValueChange={setPriceAmount} currency={currency} />
           )}
         </FormField>
 
-        <FormField label="Currency" required>
+        <FormField label={t("catalog.form.currency")} required>
           {(field) => (
             <Combobox {...field} options={currencyOptions} value={currency} onValueChange={setCurrency} />
           )}
@@ -275,8 +277,8 @@ export function CatalogForm({
 
       {gst && (
         <FormField
-          label="HSN/SAC code"
-          helperText="4, 6 or 8 digits. Copied to each line; change it there if needed."
+          label={t("catalog.common.hsnSacCode")}
+          helperText={t("catalog.form.hsnSacHelper")}
           errorText={hsnSac && !isValidHsnSac(hsnSac) ? HSN_SAC_MESSAGE : undefined}
         >
           {(field) => <Input {...field} inputMode="numeric" maxLength={8} value={hsnSac} onChange={(e) => setHsnSac(e.target.value.replace(/\D/g, ""))} />}
@@ -285,7 +287,7 @@ export function CatalogForm({
 
       {gst ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField label="Intra-state tax" helperText="Same state as your business.">
+          <FormField label={t("catalog.common.intraStateTax")} helperText={t("catalog.form.intraHelper")}>
             {(field) => (
               <Combobox
                 {...field}
@@ -295,16 +297,16 @@ export function CatalogForm({
                   setTaxSelection(v);
                   setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v), null, v.startsWith("rate:") ? taxRates.find((r) => r.id === v.slice(5))?.supplyClass : null));
                 }}
-                placeholder="No tax"
+                placeholder={t("catalog.common.noTax")}
               />
             )}
           </FormField>
-          <FormField label="Inter-state tax" helperText="Another state, export or SEZ.">
-            {(field) => <Combobox {...field} options={taxOptions} value={interSelection} onValueChange={setInterSelection} placeholder="No tax" />}
+          <FormField label={t("catalog.common.interStateTax")} helperText={t("catalog.form.interHelper")}>
+            {(field) => <Combobox {...field} options={taxOptions} value={interSelection} onValueChange={setInterSelection} placeholder={t("catalog.common.noTax")} />}
           </FormField>
         </div>
       ) : (
-        <FormField label="Default tax" helperText="Pre-fills a new quote/invoice line for this item; editable per line.">
+        <FormField label={t("catalog.form.defaultTax")} helperText={t("catalog.form.defaultTaxHelper")}>
           {(field) => (
             <Combobox
               {...field}
@@ -314,15 +316,15 @@ export function CatalogForm({
                 setTaxSelection(v);
                 setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v), null, v.startsWith("rate:") ? taxRates.find((r) => r.id === v.slice(5))?.supplyClass : null));
               }}
-              placeholder="No tax"
+              placeholder={t("catalog.common.noTax")}
             />
           )}
         </FormField>
       )}
 
       <FormField
-        label="Supply type"
-        helperText="Zero-rated, exempt and non-taxable items have no tax and are reported separately."
+        label={t("catalog.form.supplyType")}
+        helperText={t("catalog.form.supplyTypeHelper")}
         errorText={supplyError ?? undefined}
       >
         {(field) => (
@@ -341,15 +343,15 @@ export function CatalogForm({
         )}
       </FormField>
 
-      <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">Accounts</h3>
-      <FormField label="Default income account" helperText="Used when this item appears on an invoice line.">
+      <h3 className="mt-2 border-t border-border pt-4 text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("catalog.form.accounts")}</h3>
+      <FormField label={t("catalog.form.defaultIncomeAccount")} helperText={t("catalog.form.defaultIncomeAccountHelper")}>
         {(field) => (
           <Select value={incomeAccountId} onValueChange={setIncomeAccountId}>
             <SelectTrigger {...field} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={NO_ACCOUNT}>None — posts to 4100 Sales — Services</SelectItem>
+              <SelectItem value={NO_ACCOUNT}>{t("catalog.common.noIncomeAccountOption")}</SelectItem>
               {incomeAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.code} · {account.name}
@@ -360,14 +362,14 @@ export function CatalogForm({
         )}
       </FormField>
 
-      <FormField label="Default expense account" helperText="Used when this item appears on a purchase/expense line.">
+      <FormField label={t("catalog.form.defaultExpenseAccount")} helperText={t("catalog.form.defaultExpenseAccountHelper")}>
         {(field) => (
           <Select value={expenseAccountId} onValueChange={setExpenseAccountId}>
             <SelectTrigger {...field} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={NO_ACCOUNT}>None</SelectItem>
+              <SelectItem value={NO_ACCOUNT}>{t("catalog.common.none")}</SelectItem>
               {expenseAccounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.code} · {account.name}

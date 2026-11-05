@@ -6,6 +6,7 @@ import { PASSWORD_LEVEL_LABELS, PASSWORDS_DONT_MATCH_MESSAGE, passwordProblem, p
 import { ApiError } from "../../lib/api/errors";
 import { useSession, useSignedInSession } from "../../lib/session/session-provider";
 import { SignInCompactLogo } from "./sign-in-hero";
+import { useT, formatLocale } from "../../lib/i18n";
 
 type Errors = { password?: string; confirm?: string; form?: string };
 
@@ -13,7 +14,7 @@ type Errors = { password?: string; confirm?: string; form?: string };
 function shortDay(iso: string | undefined): string | null {
   if (!iso) return null;
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString(formatLocale(), { day: "numeric", month: "short" });
 }
 
 /**
@@ -25,6 +26,7 @@ function shortDay(iso: string | undefined): string | null {
  * until then, which brings them back here.
  */
 export function ChoosePasswordScreen() {
+  const t = useT();
   const { choosePassword, signOut } = useSession();
   const { member } = useSignedInSession();
   const [password, setPassword] = useState("");
@@ -34,7 +36,11 @@ export function ChoosePasswordScreen() {
 
   const setBy = member.passwordSetBy;
   const day = shortDay(setBy?.at);
-  const intro = setBy?.name ? `${setBy.name} set a password for you${day ? ` on ${day}` : ""}.` : "An owner set a password for you.";
+  const intro = setBy?.name
+    ? day
+      ? t("mobileApp.choosePassword.setByNameOn", { name: setBy.name, day })
+      : t("mobileApp.choosePassword.setByName", { name: setBy.name })
+    : t("mobileApp.choosePassword.setByOwner");
   const strength = password ? passwordStrength(password) : null;
 
   async function submit() {
@@ -49,13 +55,13 @@ export function ChoosePasswordScreen() {
       await choosePassword(password);
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) setErrors({ password: error.message });
-      else setErrors({ form: error instanceof Error ? error.message : "Couldn't save your password. Try again." });
+      else setErrors({ form: error instanceof Error ? error.message : t("mobileApp.choosePassword.saveFailed") });
     } finally {
       setBusy(false);
     }
   }
 
-  const strengthLine = strength ? `Password strength: ${PASSWORD_LEVEL_LABELS[strength.level]}` : "At least 8 characters, not the one you were given.";
+  const strengthLine = strength ? t("mobileApp.choosePassword.strength", { level: PASSWORD_LEVEL_LABELS[strength.level] }) : t("mobileApp.choosePassword.rules");
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
@@ -63,17 +69,17 @@ export function ChoosePasswordScreen() {
           <SignInCompactLogo />
           <View className="mt-4 gap-2 px-1">
             <Text accessibilityRole="header" className={`text-[28px] text-on-surface dark:text-on-surface-dark ${Platform.OS === "android" ? "" : "font-bold"}`}>
-              Choose your own password
+              {t("mobileApp.choosePassword.title")}
             </Text>
             <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark" testID="choose-password-intro">
-              {intro} Choose one only you know to keep going.
+              {t("mobileApp.choosePassword.intro", { intro })}
             </Text>
           </View>
 
           {Platform.OS === "android" ? (
             <View className="mt-6 gap-4">
               <OutlinedTextField
-                label="New password"
+                label={t("mobileApp.choosePassword.newPassword")}
                 value={password}
                 onChangeText={setPassword}
                 error={Boolean(errors.password)}
@@ -84,7 +90,7 @@ export function ChoosePasswordScreen() {
                 testID="choose-password-new"
               />
               <OutlinedTextField
-                label="Confirm password"
+                label={t("mobileApp.choosePassword.confirmPassword")}
                 value={confirm}
                 onChangeText={setConfirm}
                 error={Boolean(errors.confirm)}
@@ -98,10 +104,10 @@ export function ChoosePasswordScreen() {
             </View>
           ) : (
             <View className="mt-6 gap-2">
-              <FormSection title="New password">
+              <FormSection title={t("mobileApp.choosePassword.newPassword")}>
                 <FormRow error={errors.password}>
                   <FloatingLabelField
-                    label="New password"
+                    label={t("mobileApp.choosePassword.newPassword")}
                     value={password}
                     onChangeText={setPassword}
                     error={Boolean(errors.password)}
@@ -113,7 +119,7 @@ export function ChoosePasswordScreen() {
                 </FormRow>
                 <FormRow error={errors.confirm} last>
                   <FloatingLabelField
-                    label="Confirm password"
+                    label={t("mobileApp.choosePassword.confirmPassword")}
                     value={confirm}
                     onChangeText={setConfirm}
                     error={Boolean(errors.confirm)}
@@ -138,13 +144,13 @@ export function ChoosePasswordScreen() {
           <View className="mt-7 gap-3">
             {busy ? (
               <View className="h-12 items-center justify-center">
-                <Spinner label="Saving your password" />
+                <Spinner label={t("mobileApp.choosePassword.saving")} />
               </View>
             ) : (
-              <FullWidthButton label="Save and continue" onPress={submit} testID="choose-password-submit" />
+              <FullWidthButton label={t("mobileApp.choosePassword.save")} onPress={submit} testID="choose-password-submit" />
             )}
             <View className="items-center">
-              <Button variant="ghost" label="Sign out" onPress={() => void signOut()} testID="choose-password-sign-out" />
+              <Button variant="ghost" label={t("mobileApp.signOut.signOut")} onPress={() => void signOut()} testID="choose-password-sign-out" />
             </View>
           </View>
         </ScrollView>

@@ -8,6 +8,7 @@ import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { PASSWORDS_DONT_MATCH_MESSAGE, PASSWORD_TOO_COMMON_MESSAGE, passwordProblem } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { authClient } from "../../lib/auth-client";
+import { useT } from "../../lib/i18n";
 
 export default function ResetPasswordPage() {
   return (
@@ -25,6 +26,7 @@ type LinkState = { kind: "checking" } | { kind: "invalid" } | { kind: "valid"; e
  * then signs this browser in with the new password.
  */
 function ResetPasswordForm() {
+  const t = useT();
   const router = useRouter();
   const token = useSearchParams().get("token") ?? "";
   const [link, setLink] = useState<LinkState>({ kind: "checking" });
@@ -63,7 +65,7 @@ function ResetPasswordForm() {
       setSaving(false);
       if (resetError.code === "INVALID_TOKEN") setLink({ kind: "invalid" });
       else if (resetError.code === "PASSWORD_TOO_COMMON") setPasswordError(PASSWORD_TOO_COMMON_MESSAGE);
-      else setError(resetError.message ?? "Couldn't save the password. Try again.");
+      else setError(resetError.message ?? t("auth.resetPassword.saveFailed"));
       return;
     }
     const { error: signInError } = await authClient.signIn.email({ email: link.email, password });
@@ -78,21 +80,21 @@ function ResetPasswordForm() {
         <Spinner />
       ) : link.kind === "invalid" ? (
         <div data-testid="reset-link-invalid" className="flex flex-col gap-6">
-          <AuthHeading title="This link can't be used">Reset links work once and expire after 1 hour.</AuthHeading>
+          <AuthHeading title={t("auth.resetPassword.invalidTitle")}>{t("auth.resetPassword.invalidBody")}</AuthHeading>
           <Button asChild size="touch" className="w-full">
-            <Link href="/forgot-password">Request a new one</Link>
+            <Link href="/forgot-password">{t("auth.actions.requestNewOne")}</Link>
           </Button>
         </div>
       ) : (
         <>
-          <AuthHeading title="Choose a new password">For {link.email}. You&apos;ll be signed out on your other devices.</AuthHeading>
+          <AuthHeading title={t("auth.resetPassword.title")}>{t("auth.resetPassword.body", { email: link.email })}</AuthHeading>
           <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
             {error && (
               <Alert variant="critical">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <FormField label="New password" helperText="At least 8 characters." errorText={passwordError} required>
+            <FormField label={t("auth.fields.newPassword")} helperText={t("auth.resetPassword.helper")} errorText={passwordError} required>
               {(field) => (
                 <div className="flex flex-col gap-2">
                   <PasswordInput
@@ -110,17 +112,17 @@ function ResetPasswordForm() {
                 </div>
               )}
             </FormField>
-            <FormField label="Confirm new password" errorText={confirmError} required>
+            <FormField label={t("auth.resetPassword.confirmNewPassword")} errorText={confirmError} required>
               {(field) => <PasswordInput {...field} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
             </FormField>
             <Button type="submit" size="touch" disabled={saving} className="mt-1">
-              {saving ? <Spinner size="sm" /> : "Save password"}
+              {saving ? <Spinner size="sm" /> : t("auth.resetPassword.save")}
             </Button>
           </form>
           <p className="mt-5 text-center text-[13px] text-on-surface-muted">
-            Link expired or already used?{" "}
+            {t("auth.resetPassword.expired")}{" "}
             <Link href="/forgot-password" className="text-primary hover:underline">
-              Request a new one.
+              {t("auth.resetPassword.requestNewOneSentence")}
             </Link>
           </p>
         </>

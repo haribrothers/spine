@@ -8,6 +8,7 @@ import { ArrowRightLeft, Banknote, MailCheck, Undo2, Wallet } from "lucide-react
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
+import { t, useT } from "../../../lib/i18n";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -21,17 +22,17 @@ export function paymentActivityText(item: PaymentActivityEntry, currency: string
   const method = item.detail ? (PAYMENT_METHOD_LABELS[item.detail as PaymentMethod] ?? item.detail) : null;
   switch (item.type) {
     case "recorded":
-      return { text: ["Recorded", [money(item.amount), method ? `by ${method.toLowerCase()}` : null, item.account ? `into ${item.account}` : null].filter(Boolean).join(" ")].filter(Boolean).join(" · ") };
+      return { text: [t("payments.activity.recorded"), [money(item.amount), method ? t("payments.activity.byMethod", { method: method.toLowerCase() }) : null, item.account ? t("payments.activity.intoAccount", { account: item.account }) : null].filter(Boolean).join(" ")].filter(Boolean).join(" · ") };
     case "applied":
-      return { text: `Applied ${money(item.amount)} to`, link: item.detail ?? undefined };
+      return { text: t("payments.activity.appliedTo", { amount: money(item.amount) }), link: item.detail ?? undefined };
     case "unapplied":
-      return { text: `Moved ${money(item.amount)} off`, link: item.detail ?? undefined, after: item.reason ?? undefined };
+      return { text: t("payments.activity.movedOff", { amount: money(item.amount) }), link: item.detail ?? undefined, after: item.reason ?? undefined };
     case "emailed":
-      return { text: item.detail ? `Receipt emailed to ${item.detail}` : "Receipt emailed" };
+      return { text: item.detail ? t("payments.activity.receiptEmailedTo", { to: item.detail }) : t("payments.activity.receiptEmailed") };
     case "refunded":
-      return { text: ["Refunded", money(item.amount), method].filter(Boolean).join(" · ") };
+      return { text: [t("payments.activity.refunded"), money(item.amount), method].filter(Boolean).join(" · ") };
     case "refund_deleted":
-      return { text: ["Refund deleted", money(item.amount)].filter(Boolean).join(" · ") };
+      return { text: [t("payments.activity.refundDeleted"), money(item.amount)].filter(Boolean).join(" · ") };
   }
 }
 
@@ -53,6 +54,7 @@ const SHOWN = 6;
  * history" keeps the field-level changes.
  */
 export function PaymentActivity({ paymentId, currency, refreshKey, onViewHistory }: { paymentId: string; currency: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<PaymentActivityEntry[] | null>(null);
   const [all, setAll] = useState(false);
 
@@ -68,9 +70,9 @@ export function PaymentActivity({ paymentId, currency, refreshKey, onViewHistory
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="payment-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("payments.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("payments.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -80,7 +82,7 @@ export function PaymentActivity({ paymentId, currency, refreshKey, onViewHistory
             <Skeleton className="h-4 w-1/2" />
           </li>
         )}
-        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">Nothing has happened yet.</li>}
+        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">{t("payments.activity.empty")}</li>}
         {shown?.map((item, i) => {
           const Icon = ICONS[item.type];
           const { text, link, after } = paymentActivityText(item, currency);
@@ -112,7 +114,7 @@ export function PaymentActivity({ paymentId, currency, refreshKey, onViewHistory
                       )}
                     </>
                   )}
-                  {after && <> · “{after}”</>}
+                  {after && t("payments.activity.quotedReason", { reason: after })}
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{[item.actorName, when(item.at)].filter(Boolean).join(" · ")}</p>
               </div>
@@ -122,7 +124,7 @@ export function PaymentActivity({ paymentId, currency, refreshKey, onViewHistory
         {items && !all && items.length > SHOWN && (
           <li>
             <button type="button" onClick={() => setAll(true)} className="mt-1 text-[12.5px] font-medium text-primary hover:underline">
-              Show {items.length - SHOWN} earlier
+              {t("payments.activity.showEarlier", { n: items.length - SHOWN })}
             </button>
           </li>
         )}

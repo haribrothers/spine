@@ -34,6 +34,7 @@ import { PrintHeader } from "../../../components/print-header";
 import { AgingSummary } from "../../../components/aging-summary";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
+import { useT } from "../../../lib/i18n";
 import { RecordVendorPaymentDialog } from "../vendor-payments/record-vendor-payment-dialog";
 import { ApplyCreditToBillDialog } from "../vendor-bills/apply-credit-to-bill-dialog";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
@@ -60,6 +61,7 @@ type Dialog = { kind: "pay"; contactId: string; billIds: string[] } | { kind: "c
  * aging adds up recorded bills' balances; drafts are a note.
  */
 export function PayablesExplorer() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canPay = useCapability("vendor_payments.edit_own");
@@ -96,9 +98,9 @@ export function PayablesExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Payables updated");
+      if (mode === "refresh") setAnnouncement(t("payables.explorer.updated"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load payables.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("payables.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -145,7 +147,11 @@ export function PayablesExplorer() {
   const asOf = report ? new Date(`${report.asOf}T00:00:00`).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) : null;
   const header = (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Purchases" }, { label: "Payables" }]} title="Payables" description={`What you owe vendors, by how late it is${asOf ? ` · as of ${asOf}` : ""}`} />
+      <AppShellHeader
+        breadcrumb={[{ label: t("payables.explorer.breadcrumbPurchases") }, { label: t("payables.explorer.title") }]}
+        title={t("payables.explorer.title")}
+        description={asOf ? t("payables.explorer.descriptionAsOf", { date: asOf }) : t("payables.explorer.description")}
+      />
       <PrintHeader />
     </>
   );
@@ -169,8 +175,8 @@ export function PayablesExplorer() {
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
       <Input
         type="search"
-        placeholder={state.tab === "vendor" ? "Search vendors" : "Search bills, vendors or jobs"}
-        aria-label="Search payables"
+        placeholder={state.tab === "vendor" ? t("payables.explorer.searchVendors") : t("payables.explorer.searchBills")}
+        aria-label={t("payables.explorer.searchLabel")}
         value={state.q}
         onChange={(e) => update({ q: e.target.value })}
         className="pl-9"
@@ -182,7 +188,7 @@ export function PayablesExplorer() {
     <div className="flex flex-col gap-3">
       <div className="flex">{search}</div>
       <div className="rounded-lg border border-border bg-surface">
-        <EmptyState icon={<HandCoins />} title={message} description="Every other age is still on the cards and the bar above." action={<Button variant="secondary" onClick={clear}>{label}</Button>} />
+        <EmptyState icon={<HandCoins />} title={message} description={t("payables.explorer.emptyAgeDescription")} action={<Button variant="secondary" onClick={clear}>{label}</Button>} />
       </div>
     </div>
   );
@@ -198,9 +204,9 @@ export function PayablesExplorer() {
         overdueCount={overdueCount}
         noun="bill"
         currency={currency}
-        totalLabel="Total owed"
-        chartTitle="Owed by age"
-        totalDetail={`${report.bills.length} ${report.bills.length === 1 ? "bill" : "bills"} · ${report.vendors.length} ${report.vendors.length === 1 ? "vendor" : "vendors"}`}
+        totalLabel={t("payables.explorer.totalOwed")}
+        chartTitle={t("payables.explorer.chartTitle")}
+        totalDetail={t("payables.explorer.totalDetail", { bills: t("payables.explorer.billCount", { count: report.bills.length }), vendors: t("payables.explorer.vendorCount", { count: report.vendors.length }) })}
         dueSoon={report.dueSoon}
         age={state.age}
         onAgeChange={(age) => update({ age })}
@@ -210,7 +216,7 @@ export function PayablesExplorer() {
               <Info size={15} aria-hidden />
               {drafts}
               <SectionLink href="/vendor-bills?card=drafts" className="font-medium text-primary hover:underline">
-                See drafts
+                {t("payables.explorer.seeDrafts")}
               </SectionLink>
             </span>
           )
@@ -220,11 +226,11 @@ export function PayablesExplorer() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
           <Select value={state.age ?? ALL_AGES} onValueChange={(v) => update({ age: v === ALL_AGES ? null : (v as PayablesAge) })}>
-            <SelectTrigger aria-label="Show by age" className="w-44">
+            <SelectTrigger aria-label={t("payables.explorer.showByAge")} className="w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_AGES}>All ages</SelectItem>
+              <SelectItem value={ALL_AGES}>{t("payables.explorer.allAges")}</SelectItem>
               {PAYABLES_AGES.map((a) => (
                 <SelectItem key={a} value={a}>
                   {PAYABLES_AGE_LABELS[a]}
@@ -235,16 +241,16 @@ export function PayablesExplorer() {
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="payables-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("payables.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("payables.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("payables.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             <ReportExportMenu path={`/reports/payables${ageQuery}`} csvPath={`/reports/payables/export.csv${ageQuery}`} search={state.q} />
           </div>
@@ -255,9 +261,9 @@ export function PayablesExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("payables.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("payables.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -267,11 +273,11 @@ export function PayablesExplorer() {
 
       {report.bills.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
-          <EmptyState icon={<HandCoins />} title="Nothing outstanding" description="Every recorded vendor bill has been paid in full." />
+          <EmptyState icon={<HandCoins />} title={t("payables.explorer.nothingOutstandingTitle")} description={t("payables.explorer.nothingOutstandingDescription")} />
         </div>
       ) : state.tab === "vendor" ? (
         vendors!.length === 0 ? (
-          state.q.trim() ? empty("No vendors match your search", () => update({ q: "" }), "Clear search") : empty(emptyAge(state.age!), () => update({ age: null }), "Show all")
+          state.q.trim() ? empty(t("payables.explorer.noVendorsMatch"), () => update({ q: "" }), t("payables.explorer.clearSearch")) : empty(emptyAge(state.age!), () => update({ age: null }), t("payables.explorer.showAll"))
         ) : (
           <PayablesVendorsTable
             vendors={vendors!}
@@ -290,7 +296,7 @@ export function PayablesExplorer() {
           />
         )
       ) : bills!.length === 0 ? (
-        state.q.trim() ? empty("No bills match your search", () => update({ q: "" }), "Clear search") : empty(emptyAge(state.age!), () => update({ age: null }), "Show all")
+        state.q.trim() ? empty(t("payables.explorer.noBillsMatch"), () => update({ q: "" }), t("payables.explorer.clearSearch")) : empty(emptyAge(state.age!), () => update({ age: null }), t("payables.explorer.showAll"))
       ) : (
         <div className="flex flex-col gap-3">
           {canPay && selectedRows.length > 0 && <PayablesBulkBar selected={selectedRows} onPay={() => pay(selectedRows[0]!.contactId, selectedRows.map((b) => b.id))} onClear={() => setSelected(new Set())} />}
@@ -320,12 +326,12 @@ export function PayablesExplorer() {
       {header}
       <Tabs value={state.tab} onValueChange={(tab) => update({ tab: tab as PayablesTab, sort: null })}>
         <TabsList className="mb-4" data-print="hide">
-          <TabsTrigger value="vendor" className="group" aria-label={report ? `By vendor, ${report.vendors.length}` : "By vendor"}>
-            By vendor
+          <TabsTrigger value="vendor" className="group" aria-label={report ? t("payables.explorer.byVendorCount", { count: report.vendors.length }) : t("payables.explorer.byVendor")}>
+            {t("payables.explorer.byVendor")}
             {report && <Count n={report.vendors.length} />}
           </TabsTrigger>
-          <TabsTrigger value="bill" className="group" aria-label={report ? `By bill, ${report.bills.length}` : "By bill"}>
-            By bill
+          <TabsTrigger value="bill" className="group" aria-label={report ? t("payables.explorer.byBillCount", { count: report.bills.length }) : t("payables.explorer.byBill")}>
+            {t("payables.explorer.byBill")}
             {report && <Count n={report.bills.length} />}
           </TabsTrigger>
         </TabsList>
@@ -339,14 +345,14 @@ export function PayablesExplorer() {
         onOpenChange={(open) => !open && setDialog(null)}
         initialContactId={dialog?.kind === "pay" ? dialog.contactId : undefined}
         initialBillIds={dialog?.kind === "pay" ? dialog.billIds : undefined}
-        onRecorded={(payment) => done(payment.number ? `${payment.number} recorded` : "Payment recorded", "The bills it pays owe less, and it's posted to your books.")}
+        onRecorded={(payment) => done(payment.number ? t("payables.explorer.paymentNumberRecorded", { number: payment.number }) : t("payables.explorer.paymentRecorded"), t("payables.explorer.paymentRecordedDescription"))}
       />
       {dialog?.kind === "credit" && (
         <ApplyCreditToBillDialog
           open
           onOpenChange={(open) => !open && setDialog(null)}
           bill={dialog.row}
-          onApplied={(total) => done("Credit applied", `${formatMoney(total, dialog.row.currency)} now counts against ${dialog.row.billNumber}.`)}
+          onApplied={(total) => done(t("payables.explorer.creditApplied"), t("payables.explorer.creditAppliedDescription", { amount: formatMoney(total, dialog.row.currency), number: dialog.row.billNumber }))}
         />
       )}
     </>

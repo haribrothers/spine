@@ -1,4 +1,5 @@
 import type { AiBankSuggestion, ReconciliationEntry, StatementLine } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 
 /** US-BANK-16 (D-231) — the statement panel's tabs. */
 export type LineTab = "todo" | "suggested" | "matched" | "excluded";
@@ -47,6 +48,6 @@ export function orderEntries(
 
 /** US-AI-14 — what AI suggests creating: "Bank charges · HDFC Bank", "Customer payment · Maple Ridge". */
 export function aiCreateLabel(create: NonNullable<AiBankSuggestion["create"]>): string {
-  const what = create.kind === "money" ? create.accountName : create.kind === "payment" ? "Customer payment" : "Vendor payment";
+  const what = create.kind === "money" ? create.accountName : create.kind === "payment" ? t("banking.reconcile.aiCreateCustomerPayment") : t("banking.reconcile.aiCreateVendorPayment");
   return [what, create.contactName].filter(Boolean).join(" · ");
 }

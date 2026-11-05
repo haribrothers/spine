@@ -27,9 +27,10 @@ import {
 import type { LeadHistoryEntry, LeadStage, LostReason } from "@spine/shared";
 import { FilePlus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { MemberRow } from "../../../lib/members";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { ActivitiesSection } from "../contacts/activities-section";
 import { STAGE_DOT_CLASS } from "../contacts/use-lead-stages";
 import type { Activity, Contact, Lead } from "../contacts/types";
@@ -42,6 +43,7 @@ import { SectionLink } from "../../../components/section-link";
 // Same list quote-builder.tsx uses for its currency Combobox.
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 const UNASSIGNED = "__unassigned__";
+const DAY_MONTH: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
 
 interface CurrencyLocaleValue {
   code: string;
@@ -56,7 +58,7 @@ export function sortFollowUps(activities: Activity[]): Activity[] {
 }
 
 function historyWhen(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  return new Date(iso).toLocaleString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 export interface LeadDrawerProps {
@@ -83,6 +85,7 @@ export interface LeadDrawerProps {
  * the old lead dialog on the board (the contact page's Leads tab keeps its own).
  */
 export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, members, defaultStageId, onSaved, onDeleteRequest, onCreateQuote }: LeadDrawerProps) {
+  const t = useT();
   const [contactId, setContactId] = useState("");
   const [title, setTitle] = useState("");
   const [stageId, setStageId] = useState("");
@@ -201,7 +204,7 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
       onOpenChange(false);
       onSaved(saved, lead?.stageId ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the lead. Try again.");
+      setError(err instanceof Error ? err.message : t("leads.drawer.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -212,7 +215,7 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
       <DrawerContent size="lg" aria-describedby={lead ? "lead-drawer-summary" : undefined} data-testid="lead-drawer">
         <DrawerHeader className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <DrawerTitle className="min-w-0 truncate text-[18px]">{lead ? lead.title || contact?.name || "Untitled lead" : "Add lead"}</DrawerTitle>
+            <DrawerTitle className="min-w-0 truncate text-[18px]">{lead ? lead.title || contact?.name || t("leads.drawer.untitled") : t("leads.drawer.addLead")}</DrawerTitle>
             {lead && stage && (
               <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-sunken px-2 py-0.5 text-[12px] font-semibold text-on-surface">
                 <span aria-hidden className={cn("h-2 w-2 rounded-full", STAGE_DOT_CLASS[stage.color])} />
@@ -228,28 +231,28 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
                 </SectionLink>
               )}
               <span aria-hidden>·</span>
-              <span>{lead.stageKind === "open" ? daysLabel(daysInStage(lead, Date.now())) : `${lead.stageName} ${new Date(lead.stageChangedAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`}</span>
+              <span>{lead.stageKind === "open" ? daysLabel(daysInStage(lead, Date.now())) : `${lead.stageName} ${new Date(lead.stageChangedAt).toLocaleDateString(orgLocaleTag(), DAY_MONTH)}`}</span>
               {creator && (
                 <>
                   <span aria-hidden>·</span>
-                  <span>created by {creator}</span>
+                  <span>{t("leads.drawer.createdBy", { name: creator })}</span>
                 </>
               )}
             </DrawerDescription>
           ) : (
-            <DrawerDescription>A lead is an opportunity with a contact. You can add follow-ups once it&apos;s saved.</DrawerDescription>
+            <DrawerDescription>{t("leads.drawer.newDescription")}</DrawerDescription>
           )}
         </DrawerHeader>
 
         <DrawerBody className="flex flex-col gap-0 divide-y divide-border py-0">
-          <section aria-label="Details" className="grid grid-cols-1 gap-x-3.5 gap-y-3 py-4 md:grid-cols-2">
-            <FormField label="Title" className="sm:col-span-2">
+          <section aria-label={t("leads.drawer.details")} className="grid grid-cols-1 gap-x-3.5 gap-y-3 py-4 md:grid-cols-2">
+            <FormField label={t("leads.drawer.title")} className="sm:col-span-2">
               {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} disabled={!editable} />}
             </FormField>
-            <FormField label="Contact">
-              {(field) => <Combobox {...field} options={contactOptions} value={contactId} onValueChange={setContactId} placeholder="Select a contact…" disabled={!editable} />}
+            <FormField label={t("leads.drawer.contact")}>
+              {(field) => <Combobox {...field} options={contactOptions} value={contactId} onValueChange={setContactId} placeholder={t("leads.drawer.selectContact")} disabled={!editable} />}
             </FormField>
-            <FormField label="Stage">
+            <FormField label={t("leads.drawer.stage")}>
               {(field) => (
                 <Select value={stageId} onValueChange={setStageId} disabled={!editable}>
                   <SelectTrigger {...field} className="w-full">
@@ -265,20 +268,20 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
                 </Select>
               )}
             </FormField>
-            <FormField label="Estimated value">
+            <FormField label={t("leads.drawer.value")}>
               {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} disabled={!editable} />}
             </FormField>
-            <FormField label="Currency">
+            <FormField label={t("leads.drawer.currency")}>
               {(field) => <Combobox {...field} options={currencyOptions} value={currency} onValueChange={setCurrency} disabled={!editable} />}
             </FormField>
-            <FormField label="Owner">
+            <FormField label={t("leads.drawer.owner")}>
               {(field) => (
                 <Select value={owner} onValueChange={setOwner} disabled={!editable}>
                   <SelectTrigger {...field} className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                    <SelectItem value={UNASSIGNED}>{t("leads.drawer.unassigned")}</SelectItem>
                     {ownerOptions.map((m) => (
                       <SelectItem key={m.userId} value={m.userId}>
                         {m.name}
@@ -288,19 +291,19 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
                 </Select>
               )}
             </FormField>
-            <FormField label="Expected close">
+            <FormField label={t("leads.drawer.expectedClose")}>
               {(field) => <Input {...field} type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} disabled={!editable} />}
             </FormField>
-            <FormField label="Source" className="sm:col-span-2">
+            <FormField label={t("leads.drawer.source")} className="sm:col-span-2">
               {(field) => (
-                <Combobox {...field} options={sourceOptions} value={source} onValueChange={setSource} placeholder="Select or type a source…" allowCreate disabled={!editable} />
+                <Combobox {...field} options={sourceOptions} value={source} onValueChange={setSource} placeholder={t("leads.drawer.sourcePlaceholder")} allowCreate disabled={!editable} />
               )}
             </FormField>
             {isLostStage && (
               <div className="flex flex-col gap-2 sm:col-span-2" data-testid="lead-drawer-lost">
-                <span className="text-[13px] font-medium text-on-surface">Why was it lost?</span>
+                <span className="text-[13px] font-medium text-on-surface">{t("leads.drawer.whyLost")}</span>
                 <LostReasonChips value={lostReason} onChange={setLostReason} />
-                <FormField label="Note (optional)">
+                <FormField label={t("leads.drawer.note")}>
                   {(field) => <Textarea {...field} value={lostNote} onChange={(e) => setLostNote(e.target.value)} rows={2} maxLength={1000} disabled={!editable} />}
                 </FormField>
               </div>
@@ -310,29 +313,29 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
           {lead && (
             <>
               <div className="py-4">
-                <ActivitiesSection contactId={lead.contactId} leadId={lead.id} heading="Follow-ups" followUps activities={activities} onChanged={loadActivities} />
+                <ActivitiesSection contactId={lead.contactId} leadId={lead.id} heading={t("leads.drawer.followUps")} followUps activities={activities} onChanged={loadActivities} />
               </div>
 
-              <section aria-label="Quotes" className="flex flex-col gap-2.5 py-4">
+              <section aria-label={t("leads.drawer.quotes")} className="flex flex-col gap-2.5 py-4">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-[14px] font-semibold text-on-surface">Quotes</h3>
+                  <h3 className="text-[14px] font-semibold text-on-surface">{t("leads.drawer.quotes")}</h3>
                   {canQuote && (
                     <Button size="sm" variant="secondary" onClick={() => onCreateQuote(lead)}>
                       <FilePlus size={14} aria-hidden />
-                      Create quote
+                      {t("leads.drawer.createQuote")}
                     </Button>
                   )}
                 </div>
                 {quotes === null ? (
                   <Spinner size="sm" />
                 ) : quotes.length === 0 ? (
-                  <p className="text-[13px] text-on-surface-muted">No quotes for this lead yet.</p>
+                  <p className="text-[13px] text-on-surface-muted">{t("leads.drawer.noQuotes")}</p>
                 ) : (
                   <ul className="flex flex-col divide-y divide-border">
                     {quotes.map((q) => (
                       <li key={q.id} className="flex items-center gap-2.5 py-2 text-[13px]">
                         <SectionLink href={`/quotes/${q.id}`} className="font-medium text-primary hover:underline">
-                          {q.number ?? `Draft v${q.version}`}
+                          {q.number ?? t("leads.drawer.draftVersion", { version: q.version })}
                         </SectionLink>
                         <Badge className={STATUS_BADGE_CLASS[q.status]}>{QUOTE_STATUS_LABELS[q.status]}</Badge>
                         <span className="ml-auto font-medium tabular-nums text-on-surface">{formatMoney(q.totalAmount, q.currency)}</span>
@@ -342,12 +345,12 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
                 )}
               </section>
 
-              <section aria-label="History" className="flex flex-col gap-2 py-4">
-                <h3 className="text-[14px] font-semibold text-on-surface">History</h3>
+              <section aria-label={t("leads.drawer.history")} className="flex flex-col gap-2 py-4">
+                <h3 className="text-[14px] font-semibold text-on-surface">{t("leads.drawer.history")}</h3>
                 {history === null ? (
                   <Spinner size="sm" />
                 ) : history.length === 0 ? (
-                  <p className="text-[13px] text-on-surface-muted">No history yet.</p>
+                  <p className="text-[13px] text-on-surface-muted">{t("leads.drawer.noHistory")}</p>
                 ) : (
                   <ol className="flex flex-col gap-1" data-testid="lead-history">
                     {history.map((h, i) => (
@@ -356,17 +359,17 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
                         <span>
                           {h.kind === "created" ? (
                             <>
-                              <b className="font-medium text-on-surface">Created</b>
-                              {h.toStage && <> in {h.toStage}</>}
+                              <b className="font-medium text-on-surface">{t("leads.drawer.created")}</b>
+                              {h.toStage && <>{t("leads.drawer.inStage", { stage: h.toStage })}</>}
                             </>
                           ) : (
                             <>
-                              Moved to <b className="font-medium text-on-surface">{h.toStage ?? "a deleted stage"}</b>
-                              {h.fromStage && <> from {h.fromStage}</>}
+                              {t("leads.drawer.movedTo")} <b className="font-medium text-on-surface">{h.toStage ?? t("leads.drawer.deletedStage")}</b>
+                              {h.fromStage && <>{t("leads.drawer.fromStage", { stage: h.fromStage })}</>}
                             </>
                           )}
                           <br />
-                          {h.actorName ?? "Someone"} · {historyWhen(h.at)}
+                          {h.actorName ?? t("leads.drawer.someone")} · {historyWhen(h.at)}
                         </span>
                       </li>
                     ))}
@@ -386,18 +389,18 @@ export function LeadDrawer({ open, onOpenChange, lead, contacts, leads, stages, 
           {lead && canDeleteLead ? (
             <Button variant="ghost" onClick={() => onDeleteRequest(lead)} className="text-overdue hover:text-overdue">
               <Trash2 size={14} aria-hidden />
-              Delete
+              {t("leads.drawer.delete")}
             </Button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("leads.drawer.cancel")}
             </Button>
             {editable && (
               <Button disabled={!canSave} onClick={save}>
-                {saving ? <Spinner size="sm" /> : lead ? "Save changes" : "Add lead"}
+                {saving ? <Spinner size="sm" /> : lead ? t("leads.drawer.saveChanges") : t("leads.drawer.addLead")}
               </Button>
             )}
           </div>

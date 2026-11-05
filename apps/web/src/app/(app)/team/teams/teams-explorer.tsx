@@ -25,6 +25,7 @@ import {
   type TableColumn,
 } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import { t, useT } from "../../../../lib/i18n";
 import type { MemberRow } from "../../../../lib/members";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import { useModules } from "../../../../lib/modules-context";
@@ -36,10 +37,10 @@ import { TeamDialog, type TeamDialogMode } from "./team-dialog";
 import { filterTeams, leftWithoutTeam, peopleLabel, permissionCount, sectionsOpened, teamsTotals } from "./teams-state";
 
 const COLUMNS = [
-  { key: "name", header: "Team", width: "w-56" },
-  { key: "members", header: "Members", width: "w-40" },
-  { key: "works", header: "Works in", width: "w-32" },
-  { key: "permissions", header: "Permissions", width: "w-32" },
+  { key: "name", header: t("team.teams.columns.team"), width: "w-56" },
+  { key: "members", header: t("team.teams.columns.members"), width: "w-40" },
+  { key: "works", header: t("team.teams.columns.worksIn"), width: "w-32" },
+  { key: "permissions", header: t("team.teams.columns.permissions"), width: "w-32" },
 ];
 
 /** A small bar under a count, from tokens. */
@@ -63,6 +64,7 @@ function Meter({ value, total, label }: { value: number; total: number; label: s
  * naming anyone it would leave on no Team).
  */
 export function TeamsExplorer() {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -82,7 +84,7 @@ export function TeamsExplorer() {
       setTeams(teamRows);
       setMembers(memberRows);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Couldn't load your Teams. Refresh to try again.");
+      setLoadError(err instanceof Error ? err.message : t("team.teams.loadFailed"));
     }
   }, []);
 
@@ -101,39 +103,41 @@ export function TeamsExplorer() {
   async function remove(team: TeamSummary) {
     const stranded = leftWithoutTeam(team.id, team.members.map((m) => m.memberId), teams ?? []).map((id) => team.members.find((m) => m.memberId === id)!.name);
     const ok = await confirm({
-      title: `Delete ${team.name}?`,
+      title: t("team.teams.deleteConfirm.title", { name: team.name }),
       description: (
         <>
-          {team.members.length ? `Its ${peopleLabel(team.members.length)} ${team.members.length === 1 ? "loses" : "lose"} what it allowed.` : "No one is on it."} Its permissions and history go; nobody&apos;s login does.
+          {team.members.length ? t("team.teams.deleteConfirm.membersLose", { count: team.members.length }) : t("team.teams.deleteConfirm.noOne")}
+          {t("team.teams.deleteConfirm.permissionsGo")}
           {stranded.length > 0 && (
             <span className="mt-2 block rounded-md bg-due-soon-bg px-3 py-2 text-on-surface" data-testid="delete-team-stranded">
-              {stranded.length === 1 ? `${stranded[0]} will be on no Team` : `${stranded.join(", ")} will be on no Team`} — they can&apos;t open anything until you add them to one.
+              {t("team.teams.deleteConfirm.stranded", { names: stranded.join(", ") })}
+              {t("team.teams.deleteConfirm.strandedAfter")}
             </span>
           )}
         </>
       ),
-      confirmLabel: "Delete Team",
-      cancelLabel: "Go back",
+      confirmLabel: t("team.teams.deleteConfirm.confirm"),
+      cancelLabel: t("team.common.goBack"),
       danger: true,
     });
     if (!ok) return;
     setActionError(null);
     try {
       await apiClient.delete(`/org/teams/${team.id}`);
-      showToast(`${team.name} deleted`, team.members.length ? `${peopleLabel(team.members.length)} lost what it allowed.` : "No one was on it.");
+      showToast(t("team.teams.deletedToast.title", { name: team.name }), team.members.length ? t("team.teams.deletedToast.lost", { count: team.members.length }) : t("team.teams.deletedToast.noOne"));
       void load();
     } catch (err) {
-      setActionError(`Couldn't delete ${team.name}. ${err instanceof Error ? err.message : "Try again."}`);
+      setActionError(`${t("team.teams.deleteFailed", { name: team.name })} ${err instanceof Error ? err.message : t("team.common.tryAgain")}`);
     }
   }
 
   function saved(team: TeamSummary, mode: TeamDialogMode) {
     setDialog(null);
     if (mode.kind === "rename") {
-      showToast("Team saved", `${team.name} is up to date.`);
+      showToast(t("team.teams.savedToast.title"), t("team.teams.savedToast.description", { name: team.name }));
       void load();
     } else {
-      showToast(`${team.name} created`, "Check what it allows, then add people.");
+      showToast(t("team.teams.createdToast.title", { name: team.name }), t("team.teams.createdToast.description"));
       router.push(`/team/teams/${team.id}?tab=permissions`);
     }
   }
@@ -141,89 +145,89 @@ export function TeamsExplorer() {
   const columns: TableColumn<TeamSummary>[] = [
     {
       key: "name",
-      header: "Team",
-      render: (t) => (
+      header: t("team.teams.columns.team"),
+      render: (team) => (
         <span className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-center gap-1.5">
-            <Link href={`/team/teams/${t.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
-              {t.name}
+            <Link href={`/team/teams/${team.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
+              {team.name}
             </Link>
-            {t.isDefault && <Badge className="bg-paid-bg text-paid">Default</Badge>}
-            {t.isDemo && <Badge className="bg-due-soon-bg text-due-soon">Demo</Badge>}
+            {team.isDefault && <Badge className="bg-paid-bg text-paid">{t("team.common.default")}</Badge>}
+            {team.isDemo && <Badge className="bg-due-soon-bg text-due-soon">{t("team.common.demo")}</Badge>}
           </span>
-          {t.description && <span className="truncate text-[12.5px] text-on-surface-muted">{t.description}</span>}
+          {team.description && <span className="truncate text-[12.5px] text-on-surface-muted">{team.description}</span>}
         </span>
       ),
-      sortValue: (t) => t.name.toLowerCase(),
+      sortValue: (team) => team.name.toLowerCase(),
     },
     {
       key: "members",
-      header: "Members",
-      render: (t) =>
-        t.members.length === 0 ? (
-          <span className="text-on-surface-muted">No one yet</span>
+      header: t("team.teams.columns.members"),
+      render: (team) =>
+        team.members.length === 0 ? (
+          <span className="text-on-surface-muted">{t("team.teams.noOneYet")}</span>
         ) : (
-          <span className="flex items-center gap-2" title={t.members.map((m) => m.name).join(", ")}>
+          <span className="flex items-center gap-2" title={team.members.map((m) => m.name).join(", ")}>
             <span className="flex" aria-hidden>
-              {t.members.slice(0, 4).map((m, i) => (
+              {team.members.slice(0, 4).map((m, i) => (
                 <span key={m.memberId} className={cn("flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-surface bg-primary text-[10.5px] font-semibold text-on-primary", i > 0 && "-ml-1.5")}>
                   {initials(m.name)}
                 </span>
               ))}
             </span>
-            <span className="text-[12.5px] text-on-surface-muted">{peopleLabel(t.members.length)}</span>
+            <span className="text-[12.5px] text-on-surface-muted">{peopleLabel(team.members.length)}</span>
           </span>
         ),
-      sortValue: (t) => t.members.length,
+      sortValue: (team) => team.members.length,
     },
     {
       key: "works",
-      header: "Works in",
-      render: (t) => {
-        const s = sectionsOpened(t.granted, modules);
-        return <Meter value={s.works} total={s.total} label={`${s.works} of ${s.total} sections`} />;
+      header: t("team.teams.columns.worksIn"),
+      render: (team) => {
+        const s = sectionsOpened(team.granted, modules);
+        return <Meter value={s.works} total={s.total} label={t("team.teams.sectionsCount", { works: s.works, total: s.total })} />;
       },
-      sortValue: (t) => sectionsOpened(t.granted, modules).works,
+      sortValue: (team) => sectionsOpened(team.granted, modules).works,
     },
     {
       key: "permissions",
-      header: "Permissions",
-      render: (t) => {
-        const p = permissionCount(t.granted, modules);
-        return <Meter value={p.granted} total={p.total} label={`${p.granted} of ${p.total}`} />;
+      header: t("team.teams.columns.permissions"),
+      render: (team) => {
+        const p = permissionCount(team.granted, modules);
+        return <Meter value={p.granted} total={p.total} label={t("team.common.ofTotal", { granted: p.granted, total: p.total })} />;
       },
-      sortValue: (t) => t.granted.length,
+      sortValue: (team) => team.granted.length,
     },
     {
       key: "actions",
       header: "",
-      render: (t) => (
+      render: (team) => (
         <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" aria-label={`Actions for ${t.name}`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface">
+              <button type="button" aria-label={t("team.common.actionsFor", { name: team.name })} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface">
                 <MoreHorizontal size={16} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-48">
-              <DropdownMenuItem onSelect={() => router.push(`/team/teams/${t.id}`)}>
+              <DropdownMenuItem onSelect={() => router.push(`/team/teams/${team.id}`)}>
                 <MENU_ICONS.open aria-hidden />
-                Open
+                {t("team.teams.open")}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setDialog({ kind: "rename", team: t })}>
+              <DropdownMenuItem onSelect={() => setDialog({ kind: "rename", team })}>
                 <MENU_ICONS.edit aria-hidden />
-                Rename
+                {t("team.common.rename")}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setDialog({ kind: "create", from: t })}>
+              <DropdownMenuItem onSelect={() => setDialog({ kind: "create", from: team })}>
                 <MENU_ICONS.duplicate aria-hidden />
-                Duplicate
+                {t("team.common.duplicate")}
               </DropdownMenuItem>
-              {!t.isDefault && (teams?.length ?? 0) > 1 && (
+              {!team.isDefault && (teams?.length ?? 0) > 1 && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void remove(t)}>
+                  <DropdownMenuItem onSelect={() => void remove(team)}>
                     <MENU_ICONS.delete aria-hidden />
-                    Delete
+                    {t("team.common.delete")}
                   </DropdownMenuItem>
                 </>
               )}
@@ -236,13 +240,13 @@ export function TeamsExplorer() {
 
   const header = (
     <AppShellHeader
-      breadcrumb={[{ label: "Team" }, { label: "Teams" }]}
-      title="Teams"
-      description="What each group of Staff can open and do. Someone on several Teams gets everything any of them allows."
+      breadcrumb={[{ label: t("team.common.breadcrumbTeam") }, { label: t("team.teams.title") }]}
+      title={t("team.teams.title")}
+      description={t("team.teams.description")}
       action={
         <Button onClick={() => setDialog({ kind: "create" })}>
           <Plus size={14} aria-hidden />
-          Create Team
+          {t("team.teams.createTeam")}
         </Button>
       }
     />
@@ -262,7 +266,7 @@ export function TeamsExplorer() {
   const searchBox = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search Teams" aria-label="Search Teams" value={q} onChange={(e) => search(e.target.value)} className="pl-9" />
+      <Input type="search" placeholder={t("team.teams.searchTeams")} aria-label={t("team.teams.searchTeams")} value={q} onChange={(e) => search(e.target.value)} className="pl-9" />
     </div>
   );
 
@@ -271,10 +275,10 @@ export function TeamsExplorer() {
       {header}
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="teams-cards">
-          <StatCard label="Teams" value={totals ? String(totals.teams) : "—"} trend={totals ? { direction: "neutral", label: totals.teamsLabel } : undefined} className="h-full" />
-          <Link href="/team/users?card=no-team" aria-label="Staff on no Team — open in Users" className="relative rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <StatCard label={t("team.teams.title")} value={totals ? String(totals.teams) : "—"} trend={totals ? { direction: "neutral", label: totals.teamsLabel } : undefined} className="h-full" />
+          <Link href="/team/users?card=no-team" aria-label={t("team.teams.cards.noTeamAria")} className="relative rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <StatCard
-              label="Staff on no Team"
+              label={t("team.teams.cards.noTeam")}
               value={totals ? String(totals.noTeam) : "—"}
               tone={totals && totals.noTeam > 0 ? "warning" : "default"}
               trend={totals ? { direction: "neutral", label: totals.noTeamLabel } : undefined}
@@ -282,7 +286,7 @@ export function TeamsExplorer() {
             />
             <ArrowUpRight size={14} aria-hidden className="absolute right-4 top-4 text-on-surface-muted" />
           </Link>
-          <StatCard label="Staff on several Teams" value={totals ? String(totals.several) : "—"} trend={{ direction: "neutral", label: "they get everything any allows" }} className="h-full" />
+          <StatCard label={t("team.teams.cards.several")} value={totals ? String(totals.several) : "—"} trend={{ direction: "neutral", label: t("team.teams.cards.severalTrend") }} className="h-full" />
         </div>
 
         {actionError && (
@@ -299,11 +303,11 @@ export function TeamsExplorer() {
             <div className="rounded-lg border border-border bg-surface">
               <EmptyState
                 icon={<Shield />}
-                title="No Teams match"
-                description="Clear the search to see every Team."
+                title={t("team.teams.empty.title")}
+                description={t("team.teams.empty.description")}
                 action={
                   <Button variant="secondary" onClick={() => search("")}>
-                    Clear search
+                    {t("team.teams.empty.clearSearch")}
                   </Button>
                 }
               />
@@ -311,7 +315,7 @@ export function TeamsExplorer() {
           </div>
         ) : (
           <div data-testid="teams-table">
-            <DataTable columns={columns} data={rows} rowKey={(t) => t.id} toolbarStart={searchBox} />
+            <DataTable columns={columns} data={rows} rowKey={(team) => team.id} toolbarStart={searchBox} />
           </div>
         )}
       </div>

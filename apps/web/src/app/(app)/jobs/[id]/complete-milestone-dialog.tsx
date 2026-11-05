@@ -18,6 +18,7 @@ import {
 } from "@spine/ui";
 import { Camera, X } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import type { Job, Milestone, UploadedFile } from "../types";
 import { PHOTO_ACCEPT } from "../../../../lib/upload-types";
 
@@ -44,6 +45,7 @@ export function CompleteMilestoneDialog({
   onOpenChange: (open: boolean) => void;
   onCompleted: () => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState("");
   const [photos, setPhotos] = useState<{ id: string; previewUrl: string }[]>([]);
@@ -71,7 +73,7 @@ export function CompleteMilestoneDialog({
         setPhotos((current) => [...current, { id: uploaded.id, previewUrl: URL.createObjectURL(file) }]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload one or more photos.");
+      setError(err instanceof Error ? err.message : t("jobs.completeMilestone.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -93,7 +95,7 @@ export function CompleteMilestoneDialog({
       reset();
       onCompleted();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not mark this milestone complete.");
+      setError(err instanceof Error ? err.message : t("jobs.completeMilestone.completeFailed"));
     } finally {
       setSaving(false);
     }
@@ -109,8 +111,8 @@ export function CompleteMilestoneDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Mark "{milestone?.name}" complete</DialogTitle>
-          <DialogDescription>Add completion photos and notes so office staff can raise the invoice.</DialogDescription>
+          <DialogTitle>{t("jobs.completeMilestone.title", { name: milestone?.name ?? "" })}</DialogTitle>
+          <DialogDescription>{t("jobs.completeMilestone.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -119,11 +121,11 @@ export function CompleteMilestoneDialog({
             </Alert>
           )}
 
-          <FormField label="Completion notes" helperText="Optional — site conditions, what was done, anything worth recording.">
+          <FormField label={t("jobs.completeMilestone.notes")} helperText={t("jobs.completeMilestone.notesHelper")}>
             {(field) => <Textarea {...field} value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />}
           </FormField>
 
-          <FormField label="Photos" helperText="Optional — attach progress or completion photos.">
+          <FormField label={t("jobs.completeMilestone.photos")} helperText={t("jobs.completeMilestone.photosHelper")}>
             {() => (
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2">
@@ -133,7 +135,7 @@ export function CompleteMilestoneDialog({
                       <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
                       <button
                         type="button"
-                        aria-label="Remove photo"
+                        aria-label={t("jobs.completeMilestone.removePhoto")}
                         onClick={() => removePhoto(p.id)}
                         className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
                       >
@@ -148,7 +150,7 @@ export function CompleteMilestoneDialog({
                     className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border-strong text-on-surface-muted transition-colors hover:bg-surface-sunken"
                   >
                     {uploading ? <Spinner size="sm" /> : <Camera size={18} />}
-                    <span className="text-[10px]">Add</span>
+                    <span className="text-[10px]">{t("jobs.completeMilestone.add")}</span>
                   </button>
                 </div>
                 <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} multiple className="hidden" onChange={handleFilesSelected} />
@@ -158,10 +160,10 @@ export function CompleteMilestoneDialog({
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("jobs.completeMilestone.cancel")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving || uploading}>
-            {saving ? <Spinner size="sm" /> : "Mark complete"}
+            {saving ? <Spinner size="sm" /> : t("jobs.completeMilestone.markComplete")}
           </Button>
         </DialogFooter>
       </DialogContent>

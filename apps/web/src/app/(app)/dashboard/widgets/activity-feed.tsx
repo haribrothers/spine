@@ -8,6 +8,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { ActivityFeedList } from "../../../../components/activity-feed-list";
 import { useMyRole } from "../../../../lib/role-context";
+import { useT } from "../../../../lib/i18n";
 
 /**
  * S-09.14 (dashboard v2) — org-wide "what just happened" feed. US-DASH-19:
@@ -21,7 +22,8 @@ import { useMyRole } from "../../../../lib/role-context";
  * widget this one never renders nothing on a 403 — an empty array is the
  * only "nothing to show" case.
  */
-export function ActivityFeed({ title = "Recent activity" }: { title?: string } = {}) {
+export function ActivityFeed({ title }: { title?: string } = {}) {
+  const t = useT();
   // US-DASH-19/US-SET-11: Owners' "View all" opens the organisation audit log; everyone else the full feed.
   const viewAllHref = useMyRole() === "owner" ? "/team/audit-log" : "/activity";
   const [entries, setEntries] = useState<ActivityFeedEntry[] | null>(null);
@@ -42,9 +44,9 @@ export function ActivityFeed({ title = "Recent activity" }: { title?: string } =
     <Card data-testid="activity-feed">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          {title}
+          {title ?? t("dashboard.widgets.activityFeed")}
           <Link href={viewAllHref} className="text-[13px] font-normal text-primary hover:underline">
-            View all
+            {t("dashboard.common.viewAll")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -52,7 +54,7 @@ export function ActivityFeed({ title = "Recent activity" }: { title?: string } =
         {!entries ? (
           <WidgetSkeleton kind="rows" rows={4} />
         ) : entries.length === 0 ? (
-          <p className="py-4 text-center text-[13px] text-on-surface-muted">Nothing yet.</p>
+          <p className="py-4 text-center text-[13px] text-on-surface-muted">{t("dashboard.activityFeed.empty")}</p>
         ) : (
           <ActivityFeedList entries={entries.slice(0, 6)} />
         )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import type { MeetingAttendee } from "./types";
 
 /**
@@ -10,6 +11,7 @@ import type { MeetingAttendee } from "./types";
  * implementation instead of two copies of the same POST + refetch.
  */
 export function useMeetingRespond(meetingId: string, onResponded: (rows: MeetingAttendee[]) => void) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +23,7 @@ export function useMeetingRespond(meetingId: string, onResponded: (rows: Meeting
       const rows = await apiClient.get<MeetingAttendee[]>(`/meetings/${meetingId}/attendees`);
       onResponded(rows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save your response.");
+      setError(err instanceof Error ? err.message : t("meetings.respondFailed"));
     } finally {
       setBusy(false);
     }

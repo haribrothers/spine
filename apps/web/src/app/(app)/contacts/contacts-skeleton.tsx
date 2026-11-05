@@ -1,13 +1,14 @@
 import { Card, Skeleton, TableSkeleton } from "@spine/ui";
 import type { ContactView } from "./contacts-view-switcher";
+import { t } from "../../../lib/i18n";
 
 /** Mirrors ContactsTable's own `columns` (header text, order, alignment) so the loading state never drifts out of sync with the real table. */
 const TABLE_COLUMNS = [
-  { key: "name", header: "Name", width: "w-40" },
-  { key: "type", header: "Type", width: "w-20" },
-  { key: "email", header: "Email", width: "w-48" },
-  { key: "phone", header: "Phone", width: "w-28" },
-  { key: "status", header: "Status", width: "w-16" },
+  { key: "name", header: t("contacts.common.name"), width: "w-40" },
+  { key: "type", header: t("contacts.common.type"), width: "w-20" },
+  { key: "email", header: t("contacts.common.email"), width: "w-48" },
+  { key: "phone", header: t("contacts.common.phone"), width: "w-28" },
+  { key: "status", header: t("contacts.common.status"), width: "w-16" },
   { key: "actions", header: "", width: "w-6", align: "right" as const },
 ];
 

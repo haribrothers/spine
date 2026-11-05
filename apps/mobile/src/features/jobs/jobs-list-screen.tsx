@@ -12,10 +12,11 @@ import { SectionHeader } from "../../components/section-header";
 import { ServerErrorState } from "../errors/server-error-state";
 import { ListRowsSkeleton } from "../../components/skeletons";
 import { jobMilestoneChip } from "./milestone-chip";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const JOBS_EMPTY_TITLE = "No jobs assigned to you yet";
-export const JOBS_EMPTY_MESSAGE = "When your office adds you to a job's crew, it shows up here with its address and contact.";
-export const JOBS_FOOTNOTE = "Only jobs your office has put you on the crew for. Pull down to refresh.";
+export const JOBS_EMPTY_TITLE = translate("mobileWork.jobsList.emptyTitle");
+export const JOBS_EMPTY_MESSAGE = translate("mobileWork.jobsList.emptyMessage");
+export const JOBS_FOOTNOTE = translate("mobileWork.jobsList.footnote");
 
 function JobRow({ job, first, onOpen }: { job: FieldJob; first: boolean; onOpen: () => void }) {
   const colors = useNativeColors();
@@ -54,6 +55,7 @@ function JobRow({ job, first, onOpen }: { job: FieldJob; first: boolean; onOpen:
  * (US-JOB-16).
  */
 export function JobsListScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const jobs = useAssignedJobs();
@@ -80,7 +82,7 @@ export function JobsListScreen() {
       refreshControl={<RefreshControl refreshing={jobs.refreshing} onRefresh={jobs.refresh} tintColor={colors.onSurfaceMuted} />}
       renderItem={({ item }) => (
         <View className="gap-2 px-4">
-          <SectionHeader title="Assigned to you" count={item.length} testID="jobs-count" />
+          <SectionHeader title={t("mobileWork.jobsList.assignedToYou")} count={item.length} testID="jobs-count" />
           <View className={android ? "-mx-4" : "overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark"}>
             {item.map((job, index) => (
               <JobRow key={job.id} job={job} first={index === 0} onOpen={() => router.push(`/jobs/${job.id}`)} />
@@ -94,7 +96,7 @@ export function JobsListScreen() {
           <View className="gap-2 px-4">
             <Skeleton className="h-4 w-36 rounded-md" />
             <View className={android ? "-mx-4" : ""}>
-              <ListRowsSkeleton label="Loading your jobs" testID="skeleton-jobs" rows={4} leading={android} />
+              <ListRowsSkeleton label={t("mobileWork.jobsList.loadingJobs")} testID="skeleton-jobs" rows={4} leading={android} />
             </View>
           </View>
         ) : jobs.data ? (
@@ -107,7 +109,7 @@ export function JobsListScreen() {
             }
             title={JOBS_EMPTY_TITLE}
             description={JOBS_EMPTY_MESSAGE}
-            action={<PillButton testID="jobs-check-again" label="Check again" icon={RefreshCw} onPress={() => void jobs.refresh()} />}
+            action={<PillButton testID="jobs-check-again" label={t("mobileWork.jobsList.checkAgain")} icon={RefreshCw} onPress={() => void jobs.refresh()} />}
           />
         ) : null
       }

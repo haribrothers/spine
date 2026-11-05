@@ -50,6 +50,7 @@ import { AttachmentsSection } from "../../../components/attachments-section";
 
 import { SectionLink } from "../../../components/section-link";
 import { useLoadFailure } from "../../../lib/use-load-failure";
+import { useT } from "../../../lib/i18n";
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
  * `quote_conversion_guard` setting is "warn" and this quote already has a
@@ -103,6 +104,7 @@ function quotePdfUrl(quoteId: string): string {
  * workflow, per the task brief's own scope note.
  */
 export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; currentUserId: string | null }) {
+  const t = useT();
   const loadFailed = useLoadFailure(quoteId);
   const router = useRouter();
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -138,7 +140,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     apiClient
       .get<Quote>(`/quotes/${quoteId}`)
       .then(setQuote)
-      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : "Could not load quote."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("quotes.detail.loadFailed")));
   }, [quoteId]);
 
   useEffect(() => {
@@ -187,13 +189,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       // was *queued*, not that it succeeded (SMTP might be unconfigured,
       // or the send might still fail/retry after this response returns).
       showToast(
-        "Quote marked as sent",
+        t("quotes.detail.markedSentTitle"),
         updated.contactName
-          ? `${updated.number} is now issued, and emailing it to ${updated.contactName} has been queued.`
-          : `${updated.number} is now issued, and emailing it to the contact has been queued.`,
+          ? t("quotes.detail.markedSentTo", { number: updated.number, contact: updated.contactName })
+          : t("quotes.detail.markedSentToContact", { number: updated.number }),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not mark this quote as sent.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.markSentFailed"));
       throw err;
     } finally {
       setBusy(false);
@@ -209,7 +211,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       showToast(...QUOTE_TOASTS.duplicated(quote));
       router.push(`/quotes/${copy.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not duplicate this quote.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.duplicateFailed"));
       setBusy(false);
     }
   }
@@ -220,9 +222,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     setBusy(true);
     try {
       setQuote(await apiClient.post<Quote>(`/quotes/${quote.id}/resend`, email));
-      showToast("Email queued", `Quote ${quote.number ?? ""} is being emailed to ${quote.contactName ?? "the contact"} again.`);
+      showToast(t("quotes.detail.emailQueuedTitle"), t("quotes.detail.emailQueuedDescription", { number: quote.number ?? "", contact: quote.contactName ?? t("quotes.detail.theContact") }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not email this quote again.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.emailAgainFailed"));
       throw err;
     } finally {
       setBusy(false);
@@ -231,7 +233,14 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   async function handleRevise() {
     if (!quote) return;
-    if (!(await ask({ title: "Revise this quote?", description: `${quote.number ?? "This quote"} version ${quote.version + 1} is made as a draft from this one. Once it's sent, this version is superseded and the customer can only answer the newest.`, confirmLabel: "Revise quote" }))) return;
+    if (
+      !(await ask({
+        title: t("quotes.reviseConfirm.title"),
+        description: t("quotes.reviseConfirm.description", { number: quote.number ?? t("quotes.reviseConfirm.thisQuote"), next: quote.version + 1 }),
+        confirmLabel: t("quotes.reviseConfirm.confirm"),
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -239,7 +248,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       showToast(...QUOTE_TOASTS.revised(quote));
       router.push(`/quotes/${revised.id}/edit`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not revise this quote.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.reviseFailed"));
       setBusy(false);
     }
   }
@@ -259,9 +268,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     if (
       !confirm &&
       !(await ask({
-        title: "Convert to an invoice?",
-        description: `A draft invoice for ${formatMoney(BigInt(quote.totalAmount), quote.currency)} is made for ${quote.contactName ?? "the customer"} from ${quote.number ?? "this quote"}'s lines. Nothing is issued or posted until you issue it.`,
-        confirmLabel: "Convert to invoice",
+        title: t("quotes.detail.toInvoiceTitle"),
+        description: t("quotes.detail.toInvoiceDescription", {
+          amount: formatMoney(BigInt(quote.totalAmount), quote.currency),
+          contact: quote.contactName ?? t("quotes.detail.theCustomer"),
+          number: quote.number ?? t("quotes.detail.thisQuote"),
+        }),
+        confirmLabel: t("quotes.detail.convertToInvoice"),
       }))
     )
       return;
@@ -278,7 +291,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
         setBusy(false);
         return;
       }
-      setError(err instanceof Error ? err.message : "Could not convert this quote to an invoice.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.toInvoiceFailed"));
       setBusy(false);
     }
   }
@@ -297,9 +310,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     if (
       !confirm &&
       !(await ask({
-        title: "Convert to a job?",
-        description: `A job is made for ${quote.contactName ?? "the customer"} with a contract value of ${formatMoney(BigInt(quote.totalAmount), quote.currency)} from ${quote.number ?? "this quote"}. You set up its milestones next.`,
-        confirmLabel: "Convert to job",
+        title: t("quotes.detail.toJobTitle"),
+        description: t("quotes.detail.toJobDescription", {
+          contact: quote.contactName ?? t("quotes.detail.theCustomer"),
+          amount: formatMoney(BigInt(quote.totalAmount), quote.currency),
+          number: quote.number ?? t("quotes.detail.thisQuote"),
+        }),
+        confirmLabel: t("quotes.detail.convertToJob"),
       }))
     )
       return;
@@ -316,7 +333,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
         setBusy(false);
         return;
       }
-      setError(err instanceof Error ? err.message : "Could not convert this quote to a job.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.toJobFailed"));
       setBusy(false);
     }
   }
@@ -325,9 +342,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     if (!quote) return;
     if (
       !(await ask({
-        title: "Approve this discount?",
-        description: `${quote.number ?? "This quote"}'s discount, above your approval threshold, is approved in your name, and the quote can then be sent.`,
-        confirmLabel: "Approve discount",
+        title: t("quotes.detail.approveTitle"),
+        description: t("quotes.detail.approveDescription", { number: quote.number ?? t("quotes.reviseConfirm.thisQuote") }),
+        confirmLabel: t("quotes.detail.approveConfirm"),
       }))
     )
       return;
@@ -336,9 +353,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     try {
       const updated = await apiClient.post<Quote>(`/quotes/${quote.id}/approve-discount`);
       setQuote(updated);
-      showToast("Discount approved", "This quote can now be sent.");
+      showToast(t("quotes.detail.approvedTitle"), t("quotes.detail.approvedDescription"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not approve this quote's discount.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.approveFailed"));
     } finally {
       setBusy(false);
     }
@@ -353,7 +370,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       showToast(...QUOTE_TOASTS.deleted(quote));
       router.push("/quotes");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete this quote.");
+      setError(err instanceof Error ? err.message : t("quotes.detail.deleteFailed"));
       setBusy(false);
     }
   }
@@ -405,24 +422,37 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   // US-QUO-31: one primary button — the next step for the quote's status.
   type Action = { key: string; label: string; icon: React.ReactNode; onClick?: () => void; href?: string; external?: boolean };
-  const pdf: Action = { key: "pdf", label: quote.status === "draft" ? "Preview PDF" : "Download PDF", icon: <Download size={14} aria-hidden />, href: quotePdfUrl(quote.id), external: true };
+  const pdf: Action = { key: "pdf", label: quote.status === "draft" ? t("quotes.detail.previewPdf") : t("quotes.detail.downloadPdf"), icon: <Download size={14} aria-hidden />, href: quotePdfUrl(quote.id), external: true };
   let primary: Action | null = null;
   const secondary: Action[] = [];
   if (quote.status === "draft") {
-    if (canSendQuote && !needsApproval) primary = { key: "send", label: "Send quote", icon: <Send size={14} aria-hidden />, onClick: () => setSendDialog("send") };
-    if (canEdit) secondary.push({ key: "edit", label: "Edit", icon: <Pencil size={14} aria-hidden />, href: `/quotes/${quote.id}/edit` });
+    if (canSendQuote && !needsApproval) primary = { key: "send", label: t("quotes.detail.sendQuote"), icon: <Send size={14} aria-hidden />, onClick: () => setSendDialog("send") };
+    if (canEdit) secondary.push({ key: "edit", label: t("quotes.detail.edit"), icon: <Pencil size={14} aria-hidden />, href: `/quotes/${quote.id}/edit` });
     secondary.push(pdf);
   } else if (quote.status === "sent" && !quote.isExpired && current) {
-    if (canCopyLink) primary = { key: "link", label: "Copy customer link", icon: <Link2 size={14} aria-hidden />, onClick: () => void copyCustomerLink(quote.id, (t, d) => { showToast(t, d); setActivityKey((k) => k + 1); }, (t, m) => setError(`${t} ${m}`)) };
+    if (canCopyLink) primary = {
+        key: "link",
+        label: t("quotes.detail.copyLink"),
+        icon: <Link2 size={14} aria-hidden />,
+        onClick: () =>
+          void copyCustomerLink(
+            quote.id,
+            (title, d) => {
+              showToast(title, d);
+              setActivityKey((k) => k + 1);
+            },
+            (title, m) => setError(`${title} ${m}`),
+          ),
+      };
     secondary.push(pdf);
-    if (canRevise) secondary.push({ key: "revise", label: "Revise", icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() });
+    if (canRevise) secondary.push({ key: "revise", label: t("quotes.detail.revise"), icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() });
   } else if (quote.status === "accepted") {
-    if (canConvertToInvoice) primary = { key: "invoice", label: "Convert to invoice", icon: <Receipt size={14} aria-hidden />, onClick: () => void handleConvertToInvoice() };
+    if (canConvertToInvoice) primary = { key: "invoice", label: t("quotes.detail.convertToInvoice"), icon: <Receipt size={14} aria-hidden />, onClick: () => void handleConvertToInvoice() };
     secondary.push(pdf);
-    if (canConvertToJob) secondary.push({ key: "job", label: "Convert to job", icon: <HardHat size={14} aria-hidden />, onClick: () => void handleConvertToJob() });
+    if (canConvertToJob) secondary.push({ key: "job", label: t("quotes.detail.convertToJob"), icon: <HardHat size={14} aria-hidden />, onClick: () => void handleConvertToJob() });
   } else {
     // Declined, expired or superseded: revise it into a new version.
-    if (canRevise) primary = { key: "revise", label: "Revise", icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() };
+    if (canRevise) primary = { key: "revise", label: t("quotes.detail.revise"), icon: <GitBranch size={14} aria-hidden />, onClick: () => void handleRevise() };
     secondary.push(pdf);
   }
 
@@ -452,13 +482,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     <div className="flex flex-col gap-5">
       {/* US-QUO-31: the number is the page title; the breadcrumb leads back to Quotes. */}
       <div className="flex flex-col gap-3">
-        <Breadcrumb items={[{ label: "Sales" }, { label: "Quotes", href: "/quotes" }, { label: quote.number ?? "Draft quote" }]} />
+        <Breadcrumb items={[{ label: t("quotes.breadcrumb.sales") }, { label: t("quotes.breadcrumb.quotes"), href: "/quotes" }, { label: quote.number ?? t("quotes.detail.draftQuote") }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{quote.number ?? "Draft quote"}</h1>
+              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{quote.number ?? t("quotes.detail.draftQuote")}</h1>
               <Badge className={STATUS_BADGE_CLASS[quote.status]}>{QUOTE_STATUS_LABELS[quote.status]}</Badge>
-              {quote.isExpired && <Badge className="bg-overdue-bg text-overdue">Expired</Badge>}
+              {quote.isExpired && <Badge className="bg-overdue-bg text-overdue">{t("quotes.status.expired")}</Badge>}
               <ViewedChip quote={quote} now={today} />
             </div>
             {quote.title && (
@@ -470,19 +500,19 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
                 <SectionLink href={`/contacts/${quote.contactId}`} className="font-medium text-primary hover:underline">
-                  {quote.contactName ?? "Unknown contact"}
+                  {quote.contactName ?? t("quotes.detail.unknownContact")}
                 </SectionLink>
               </span>
               {quote.sentAt && (
                 <span className="inline-flex items-center gap-1.5">
                   <Send size={14} aria-hidden />
-                  Sent {shortDate(quote.sentAt, today, locale)}
+                  {t("quotes.detail.sentOn", { date: shortDate(quote.sentAt, today, locale) })}
                 </span>
               )}
               {quote.validUntil && (
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarDays size={14} aria-hidden />
-                  Valid until {calendarDate(quote.validUntil, today, locale)}
+                  {t("quotes.detail.validUntil", { date: calendarDate(quote.validUntil, today, locale) })}
                   {validity.text && quote.status !== "accepted" && quote.status !== "rejected" && (
                     <>
                       {" · "}
@@ -499,73 +529,75 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   {quote.supplyType ? ` (${SUPPLY_TYPE_LABELS[quote.supplyType].toLowerCase()})` : ""}
                 </span>
               )}
-              <span>Version {quote.version}</span>
+              <span>{t("quotes.detail.version", { version: quote.version })}</span>
             </p>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="quote-actions">
+            {/* eslint-disable-next-line i18next/no-literal-string -- button variants */}
             {secondary.map((a) => renderAction(a, "secondary"))}
+            {/* eslint-disable-next-line i18next/no-literal-string -- button variants */}
             {primary && renderAction(primary, "primary")}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" disabled={busy}>
-                  More <ChevronDown size={14} />
+                  {t("quotes.detail.more")} <ChevronDown size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {canDuplicate && (
                   <DropdownMenuItem onSelect={handleDuplicate}>
                     <MENU_ICONS.duplicate aria-hidden />
-                    Duplicate as new draft
+                    {t("quotes.detail.duplicateAsDraft")}
                   </DropdownMenuItem>
                 )}
                 {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
                   <DropdownMenuItem onSelect={() => setBundleOpen(true)}>
                     <MENU_ICONS.saveBundle aria-hidden />
-                    Save lines as a bundle…
+                    {t("quotes.detail.saveAsBundle")}
                   </DropdownMenuItem>
                 )}
                 {quote.status === "sent" && hasSendCapability && (
                   <DropdownMenuItem onSelect={() => setSendDialog("resend")}>
                     <MENU_ICONS.email aria-hidden />
-                    Email again
+                    {t("quotes.detail.emailAgain")}
                   </DropdownMenuItem>
                 )}
                 {canCopyLink && primary?.key !== "link" && (
-                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast, (t, m) => setError(`${t} ${m}`))}>
+                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast, (title, m) => setError(`${title} ${m}`))}>
                     <MENU_ICONS.copyLink aria-hidden />
-                    Copy customer link
+                    {t("quotes.detail.copyLink")}
                   </DropdownMenuItem>
                 )}
                 {canRevise && primary?.key !== "revise" && !secondary.some((a) => a.key === "revise") && (
                   <DropdownMenuItem onSelect={() => void handleRevise()}>
                     <MENU_ICONS.revise aria-hidden />
-                    Revise
+                    {t("quotes.detail.revise")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
                   <MENU_ICONS.history aria-hidden />
-                  View history
+                  {t("quotes.detail.viewHistory")}
                 </DropdownMenuItem>
                 {canDelete && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
                       <MENU_ICONS.delete aria-hidden />
-                      Delete draft
+                      {t("quotes.detail.deleteDraft")}
                     </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel={t("quotes.detail.thisQuote")} open={historyOpen} onOpenChange={setHistoryOpen} />
             <SaveBundleDialog
               open={bundleOpen}
               onOpenChange={setBundleOpen}
               quoteId={quote.id}
               lines={quote.lines ?? []}
               currency={quote.currency}
-              onSaved={(bundle) => showToast("Bundle saved", `“${bundle.name}” is in the catalogue under Bundles.`)}
+              onSaved={(bundle) => showToast(t("quotes.detail.bundleSavedTitle"), t("quotes.detail.bundleSavedDescription", { name: bundle.name }))}
             />
           </div>
         </div>
@@ -580,11 +612,11 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       {quote.isSuperseded && quote.supersededByQuoteId && (
         <Alert variant="info" data-testid="quote-superseded">
           <AlertDescription>
-            Superseded by{" "}
+            {t("quotes.detail.supersededBy")}
             <Link href={`/quotes/${quote.supersededByQuoteId}`} className="font-medium text-primary underline-offset-2 hover:underline">
-              v{quote.version + 1}
+              {t("quotes.table.version", { version: quote.version + 1 })}
             </Link>
-            . Customers can only answer the newest version.
+            {t("quotes.detail.supersededNewest")}
           </AlertDescription>
         </Alert>
       )}
@@ -594,10 +626,10 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           {needsApproval && (
             <Alert variant={isOwner ? "warning" : "critical"}>
               <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-                <span>This quote&apos;s discount is above the business&apos;s approval threshold and needs an owner to approve it before it can be sent.</span>
+                <span>{t("quotes.detail.needsApproval")}</span>
                 {isOwner && (
                   <Button size="sm" onClick={handleApproveDiscount} disabled={busy}>
-                    {busy ? <Spinner size="sm" /> : "Approve discount"}
+                    {busy ? <Spinner size="sm" /> : t("quotes.detail.approveConfirm")}
                   </Button>
                 )}
               </AlertDescription>
@@ -608,7 +640,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           {quote.emailStatus === "pending" && (
             <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
               <Clock size={14} className="shrink-0" />
-              Sending email to {quote.contactName ?? "the contact"}…
+              {t("quotes.detail.sendingEmail", { contact: quote.contactName ?? t("quotes.detail.theContact") })}
             </p>
           )}
           {quote.emailStatus === "failed" && <EmailFailedAlert error={quote.emailError} recordId={quote.id} />}
@@ -621,13 +653,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             <Card className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {quote.notes && (
                 <div>
-                  <h3 className="text-[12px] font-semibold text-on-surface-muted">Notes</h3>
+                  <h3 className="text-[12px] font-semibold text-on-surface-muted">{t("quotes.detail.notes")}</h3>
                   <RichTextContent html={quote.notes} />
                 </div>
               )}
               {quote.termsAndConditions && (
                 <div>
-                  <h3 className="text-[12px] font-semibold text-on-surface-muted">Terms &amp; conditions</h3>
+                  <h3 className="text-[12px] font-semibold text-on-surface-muted">{t("quotes.detail.terms")}</h3>
                   <RichTextContent html={quote.termsAndConditions} />
                 </div>
               )}
@@ -646,13 +678,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this draft quote?</AlertDialogTitle>
-            <AlertDialogDescription>This permanently removes the draft. This cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>{t("quotes.deleteConfirm.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("quotes.deleteConfirm.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{t("quotes.detail.cancel")}</AlertDialogCancel>
             <Button variant="danger" onClick={handleDelete} disabled={busy}>
-              Delete draft
+              {t("quotes.detail.deleteDraft")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -662,10 +694,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       <AlertDialog open={conversionConfirm !== null} onOpenChange={(open) => !open && setConversionConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>This quote has already been converted before</AlertDialogTitle>
+            <AlertDialogTitle>{t("quotes.detail.convertedBeforeTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Converting again creates a separate {conversionConfirm?.action ?? "job"}. The amount isn&apos;t split between them. Only do this if you
-              mean to bill or track this quote&apos;s work more than once.
+              {conversionConfirm?.action === "invoice" ? t("quotes.detail.convertedBeforeInvoice") : t("quotes.detail.convertedBeforeJob")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {/* US-QUO-23: each existing job or invoice on its own line, as a link. */}
@@ -673,7 +704,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             <div className="mb-4 flex flex-col gap-3 text-[13px]" data-testid="existing-conversions">
               {conversionConfirm.body.existing.jobs.length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <span className="font-semibold text-on-surface">Existing job{conversionConfirm.body.existing.jobs.length > 1 ? "s" : ""}</span>
+                  <span className="font-semibold text-on-surface">{t("quotes.detail.existingJobs", { count: conversionConfirm.body.existing.jobs.length })}</span>
                   <ul className="flex flex-col gap-1">
                     {conversionConfirm.body.existing.jobs.map((j) => (
                       <li key={j.id}>
@@ -688,13 +719,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               {conversionConfirm.body.existing.invoices.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <span className="font-semibold text-on-surface">
-                    Existing invoice{conversionConfirm.body.existing.invoices.length > 1 ? "s" : ""}
+                    {t("quotes.detail.existingInvoices", { count: conversionConfirm.body.existing.invoices.length })}
                   </span>
                   <ul className="flex flex-col gap-1">
                     {conversionConfirm.body.existing.invoices.map((i) => (
                       <li key={i.id}>
                         <SectionLink href={`/invoices/${i.id}`} className="text-primary hover:underline">
-                          {i.number ?? "Draft invoice"}
+                          {i.number ?? t("quotes.detail.draftInvoice")}
                         </SectionLink>
                       </li>
                     ))}
@@ -704,13 +735,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>{t("quotes.detail.cancel")}</AlertDialogCancel>
             {/* Primary, not danger: this creates something, it doesn't delete (D-058). */}
             <Button
               disabled={busy}
               onClick={() => (conversionConfirm?.action === "invoice" ? handleConvertToInvoice(true) : handleConvertToJob(true))}
             >
-              {busy ? <Spinner size="sm" /> : `Convert to ${conversionConfirm?.action} anyway`}
+              {busy ? <Spinner size="sm" /> : conversionConfirm?.action === "invoice" ? t("quotes.detail.convertInvoiceAnyway") : t("quotes.detail.convertJobAnyway")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -720,11 +751,11 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
         <SendEmailDialog
           open
           onOpenChange={(open) => !open && setSendDialog(null)}
-          title={sendDialog === "send" ? "Send quote" : `Email quote ${quote.number ?? ""} again`.trim()}
+          title={sendDialog === "send" ? t("quotes.detail.sendQuote") : t("quotes.detail.emailAgainTitle", { number: quote.number ?? "" }).trim()}
           description={quote.contactName ?? undefined}
           draftPath={`/email-drafts/quote/${quote.id}`}
-          sendLabel={sendDialog === "send" ? "Send quote" : "Send email"}
-          pdfLabel="Attach the quote PDF"
+          sendLabel={sendDialog === "send" ? t("quotes.detail.sendQuote") : t("quotes.detail.sendEmail")}
+          pdfLabel={t("quotes.detail.attachPdf")}
           onSend={(email) => (sendDialog === "send" ? handleMarkAsSent(email) : handleEmailAgain(email))}
         />
       )}

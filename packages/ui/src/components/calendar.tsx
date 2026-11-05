@@ -18,6 +18,7 @@ import {
 import { ChevronLeft, ChevronRight, Clock, MapPin, Repeat, Trash2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn";
+import { t as translate, useT } from "../lib/i18n";
 import {
   CALENDAR_EVENT_COLORS,
   type CalendarEvent,
@@ -81,15 +82,25 @@ const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 24;
 
 const COLOR_LABELS: Record<CalendarEventColor, string> = {
-  blue: "Blue",
-  green: "Green",
-  amber: "Amber",
-  red: "Red",
-  purple: "Purple",
-  teal: "Teal",
-  pink: "Pink",
-  slate: "Slate",
+  blue: translate("ui.calendar.colors.blue"),
+  green: translate("ui.calendar.colors.green"),
+  amber: translate("ui.calendar.colors.amber"),
+  red: translate("ui.calendar.colors.red"),
+  purple: translate("ui.calendar.colors.purple"),
+  teal: translate("ui.calendar.colors.teal"),
+  pink: translate("ui.calendar.colors.pink"),
+  slate: translate("ui.calendar.colors.slate"),
 };
+
+// date-fns patterns (not copy).
+const FULL_DATE_FORMAT = "EEEE, MMMM d, yyyy";
+const MONTH_YEAR_FORMAT = "MMMM yyyy";
+const TIME_FORMAT = "h:mm a";
+const COMPACT_TIME_FORMAT = "h:mma";
+const HOUR_FORMAT = "h a";
+const WEEKDAY_SHORT_FORMAT = "EEE";
+const MONTH_DAY_FORMAT = "MMM d";
+const DAY_NUMBER_FORMAT = "d";
 
 /**
  * Static per-color class lookup — not built via template-string
@@ -585,6 +596,7 @@ export function Calendar({
                 onEdit: (scope) => {
                   const instance = popoverInstance;
                   setPopoverInstance(null);
+                  // eslint-disable-next-line i18next/no-literal-string -- a state value, not copy
                   setEditorState({ mode: "edit", instance, scope });
                 },
                 onDelete: (scope) => {
@@ -631,40 +643,46 @@ interface CalendarToolbarProps {
   action?: React.ReactNode;
 }
 
-const VIEW_LABELS: Record<CalendarView, string> = { day: "Day", week: "Week", month: "Month", agenda: "Agenda" };
+const VIEW_LABELS: Record<CalendarView, string> = {
+  day: translate("ui.calendar.views.day"),
+  week: translate("ui.calendar.views.week"),
+  month: translate("ui.calendar.views.month"),
+  agenda: translate("ui.calendar.views.agenda"),
+};
 
 function toolbarLabel(date: Date, view: CalendarView): string {
   switch (view) {
     case "day":
-      return format(date, "EEEE, MMMM d, yyyy");
+      return format(date, FULL_DATE_FORMAT);
     case "week": {
       const start = startOfWeek(date);
       const end = endOfWeek(date);
       const sameMonth = isSameMonth(start, end);
       return sameMonth
-        ? `${format(start, "MMMM d")} – ${format(end, "d, yyyy")}`
-        : `${format(start, "MMM d")} – ${format(end, "MMM d, yyyy")}`;
+        ? translate("ui.calendar.range", { start: format(start, "MMMM d"), end: format(end, "d, yyyy") })
+        : translate("ui.calendar.range", { start: format(start, MONTH_DAY_FORMAT), end: format(end, "MMM d, yyyy") });
     }
     case "month":
-      return format(date, "MMMM yyyy");
+      return format(date, MONTH_YEAR_FORMAT);
     case "agenda":
-      return `Upcoming from ${format(date, "MMM d, yyyy")}`;
+      return translate("ui.calendar.upcomingFrom", { date: format(date, "MMM d, yyyy") });
   }
 }
 
 function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNext, onToday, views, action }: CalendarToolbarProps) {
+  const t = useT();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Button variant="secondary" size="sm" onClick={onToday}>
-          Today
+          {t("ui.calendar.today")}
         </Button>
         <div className="flex items-center gap-0.5">
           <button
             type="button"
-            aria-label="Previous"
+            aria-label={t("ui.calendar.previous")}
             onClick={onPrev}
             className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
@@ -672,7 +690,7 @@ function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNex
           </button>
           <button
             type="button"
-            aria-label="Next"
+            aria-label={t("ui.calendar.next")}
             onClick={onNext}
             className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
@@ -706,11 +724,11 @@ function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNex
           type="single"
           value={view}
           onValueChange={(value) => value && onViewChange(value as CalendarView)}
-          aria-label="Calendar view"
+          aria-label={t("ui.calendar.viewPicker")}
           className="rounded-md border border-border bg-surface p-0.5"
         >
           {views.map((v) => (
-            <ToggleGroupItem key={v} value={v} aria-label={`${VIEW_LABELS[v]} view`} className="h-8 px-3 text-[12.5px]">
+            <ToggleGroupItem key={v} value={v} aria-label={t("ui.calendar.viewLabel", { view: VIEW_LABELS[v] })} className="h-8 px-3 text-[12.5px]">
               {VIEW_LABELS[v]}
             </ToggleGroupItem>
           ))}
@@ -793,6 +811,7 @@ function TimeGrid({
   nonEditableEventIds,
   canCreateEvents = true,
 }: TimeGridProps) {
+  const t = useT();
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<TimeGridDragState | null>(null);
   const dragRef = useRef<TimeGridDragState | null>(null);
@@ -1042,7 +1061,7 @@ function TimeGrid({
       {allDayInstances.length > 0 && (
         <div className="flex border-b border-border">
           <div className="w-16 shrink-0 border-r border-border px-2 py-1.5 text-[11px] font-medium text-on-surface-muted">
-            All day
+            {t("ui.calendar.allDay")}
           </div>
           <div className="grid flex-1" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
             {days.map((day) => {
@@ -1084,7 +1103,7 @@ function TimeGrid({
           {hours.map((hour) => (
             <div key={hour} data-hour={hour} style={{ height: HOUR_HEIGHT }} className="relative border-r border-border">
               <span className="absolute -top-2 right-1.5 text-[10.5px] text-on-surface-muted">
-                {hour === 0 ? "" : format(new Date(2000, 0, 1, hour), "h a")}
+                {hour === 0 ? "" : format(new Date(2000, 0, 1, hour), HOUR_FORMAT)}
               </span>
             </div>
           ))}
@@ -1153,7 +1172,7 @@ function TimeGrid({
                     }}
                   >
                     <span className="block truncate px-1 pt-0.5 text-[10.5px] font-medium text-primary">
-                      {format(drag.currentStart, "h:mm a")} – {format(drag.currentEnd, "h:mm a")}
+                      {t("ui.calendar.range", { start: format(drag.currentStart, TIME_FORMAT), end: format(drag.currentEnd, TIME_FORMAT) })}
                     </span>
                   </div>
                 )}
@@ -1211,6 +1230,7 @@ function TimeGridEvent({
   onResizeStart,
   onKeyboardResize,
 }: TimeGridEventProps) {
+  const t = useT();
   const disableDragResize = isReadOnly || isNonEditable;
   const { instance, column, columnCount } = slot;
   const dayBase = startOfDay(instance.occurrenceStart);
@@ -1228,8 +1248,8 @@ function TimeGridEvent({
       data-instance-id={instance.instanceId}
       aria-label={
         disableDragResize
-          ? `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}. Press Enter to open.`
-          : `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}. Press Enter to open, or Shift plus Arrow Up or Down to change the start time, Shift plus Alt plus Arrow Up or Down to change the end time.`
+          ? t("ui.calendar.eventLabel", { title: instance.event.title, start: format(instance.occurrenceStart, TIME_FORMAT), end: format(instance.occurrenceEnd, TIME_FORMAT) })
+          : t("ui.calendar.eventLabelMovable", { title: instance.event.title, start: format(instance.occurrenceStart, TIME_FORMAT), end: format(instance.occurrenceEnd, TIME_FORMAT) })
       }
       className={cn(
         "group absolute select-none overflow-hidden rounded border px-1.5 py-0.5 text-left text-[11.5px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
@@ -1266,7 +1286,7 @@ function TimeGridEvent({
         <span className="truncate">{instance.event.title}</span>
       </div>
       {/* US-OPS-17: full-strength text; opacity-80 fell to 3.7:1 on the event colour. */}
-      {height > 32 && <span className="block truncate">{format(instance.occurrenceStart, "h:mm a")}</span>}
+      {height > 32 && <span className="block truncate">{format(instance.occurrenceStart, TIME_FORMAT)}</span>}
 
       {!disableDragResize && (
         <>
@@ -1354,14 +1374,14 @@ function CalendarWeekView({
         <div className="grid flex-1" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
           {days.map((day) => (
             <div key={day.toISOString()} className="border-r border-border px-2 py-2 text-center last:border-r-0">
-              <div className="text-[11px] font-medium text-on-surface-muted">{format(day, "EEE")}</div>
+              <div className="text-[11px] font-medium text-on-surface-muted">{format(day, WEEKDAY_SHORT_FORMAT)}</div>
               <div
                 className={cn(
                   "mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-semibold",
                   isToday(day) ? "bg-primary text-on-primary" : "text-on-surface",
                 )}
               >
-                {format(day, "d")}
+                {format(day, DAY_NUMBER_FORMAT)}
               </div>
             </div>
           ))}
@@ -1412,10 +1432,19 @@ interface MonthViewProps {
   onViewChange: (view: CalendarView) => void;
 }
 
-const WEEKDAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_HEADERS = [
+  translate("ui.calendar.weekdays.sun"),
+  translate("ui.calendar.weekdays.mon"),
+  translate("ui.calendar.weekdays.tue"),
+  translate("ui.calendar.weekdays.wed"),
+  translate("ui.calendar.weekdays.thu"),
+  translate("ui.calendar.weekdays.fri"),
+  translate("ui.calendar.weekdays.sat"),
+];
 const MAX_VISIBLE_PER_DAY = 3;
 
 function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDoubleClick, onDateChange, onViewChange }: MonthViewProps) {
+  const t = useT();
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
   const gridStart = startOfWeek(monthStart);
@@ -1439,7 +1468,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
   };
 
   return (
-    <div role="grid" aria-label={format(date, "MMMM yyyy")} className="flex h-full flex-col">
+    <div role="grid" aria-label={format(date, MONTH_YEAR_FORMAT)} className="flex h-full flex-col">
       <div role="row" className="grid grid-cols-7 border-b border-border">
         {WEEKDAY_HEADERS.map((label) => (
           <div key={label} role="columnheader" className="border-r border-border px-2 py-1.5 text-center text-[11px] font-medium text-on-surface-muted last:border-r-0">
@@ -1464,7 +1493,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
                   key={day.toISOString()}
                   role="gridcell"
                   tabIndex={isFocused ? 0 : -1}
-                  aria-label={format(day, "EEEE, MMMM d, yyyy")}
+                  aria-label={format(day, FULL_DATE_FORMAT)}
                   className={cn(
                     "flex min-h-[92px] flex-col gap-0.5 border-r border-border p-1 text-left last:border-r-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
                     !inMonth && "bg-surface-sunken/60",
@@ -1481,7 +1510,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
                 >
                   <button
                     type="button"
-                    aria-label={`Open ${format(day, "EEEE, MMMM d, yyyy")} in day view`}
+                    aria-label={t("ui.calendar.openDayView", { date: format(day, FULL_DATE_FORMAT) })}
                     className={cn(
                       "flex h-6 w-6 items-center justify-center self-start rounded-full text-[12.5px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                       isToday(day) ? "bg-primary text-on-primary" : inMonth ? "text-on-surface" : "text-on-surface-muted",
@@ -1492,7 +1521,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
                       onViewChange("day");
                     }}
                   >
-                    {format(day, "d")}
+                    {format(day, DAY_NUMBER_FORMAT)}
                   </button>
                   <div className="flex flex-col gap-0.5">
                     {visible.map((instance) => {
@@ -1518,14 +1547,14 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
                         >
                           {instance.event.recurrence && <Repeat size={9} className="shrink-0" />}
                           {!instance.event.allDay && !eventSpansMultipleDays(instance) && (
-                            <span className="shrink-0 opacity-75">{format(instance.occurrenceStart, "h:mma")}</span>
+                            <span className="shrink-0 opacity-75">{format(instance.occurrenceStart, COMPACT_TIME_FORMAT)}</span>
                           )}
                           <span className="truncate">{instance.event.title}</span>
                         </button>
                       );
                     })}
                     {overflow > 0 && (
-                      <span className="px-1 text-[10.5px] font-medium text-on-surface-muted">+{overflow} more</span>
+                      <span className="px-1 text-[10.5px] font-medium text-on-surface-muted">{t("ui.calendar.more", { n: overflow })}</span>
                     )}
                   </div>
                 </div>
@@ -1553,6 +1582,7 @@ interface AgendaViewProps {
 const AGENDA_WINDOW_DAYS = 60;
 
 function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick, details }: AgendaViewProps) {
+  const t = useT();
   const rangeStart = startOfDay(date);
   const rangeEnd = addDays(rangeStart, AGENDA_WINDOW_DAYS);
   const instances = useMemo(() => expandEventsInRange(events, rangeStart, rangeEnd), [events, rangeStart, rangeEnd]);
@@ -1571,7 +1601,7 @@ function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick, de
   if (grouped.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-10 text-center text-[13px] text-on-surface-muted">
-        No upcoming events in the next {AGENDA_WINDOW_DAYS} days.
+        {t("ui.calendar.agendaEmpty", { days: AGENDA_WINDOW_DAYS })}
       </div>
     );
   }
@@ -1583,9 +1613,9 @@ function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick, de
         return (
           <div key={key} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
             <div className="flex shrink-0 items-baseline gap-2 pt-0.5 sm:block sm:w-24">
-              <div className="text-[12px] font-medium text-on-surface-muted">{format(day, "EEE")}</div>
+              <div className="text-[12px] font-medium text-on-surface-muted">{format(day, WEEKDAY_SHORT_FORMAT)}</div>
               <div className={cn("text-[15px] font-semibold", isToday(day) ? "text-primary" : "text-on-surface")}>
-                {format(day, "MMM d")}
+                {format(day, MONTH_DAY_FORMAT)}
               </div>
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -1606,12 +1636,12 @@ function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick, de
                   >
                     <span className="flex shrink-0 items-center gap-2 text-[12.5px] text-on-surface-muted sm:w-44 sm:pt-0.5">
                       <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", colors.dot)} />
-                      {instance.event.allDay ? "All day" : `${format(instance.occurrenceStart, "h:mm a")} – ${format(instance.occurrenceEnd, "h:mm a")}`}
+                      {instance.event.allDay ? t("ui.calendar.allDay") : t("ui.calendar.range", { start: format(instance.occurrenceStart, TIME_FORMAT), end: format(instance.occurrenceEnd, TIME_FORMAT) })}
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="flex min-w-0 items-center gap-1.5">
                         <span className="truncate text-[13.5px] font-semibold text-on-surface">{instance.event.title}</span>
-                        {instance.event.recurrence && <Repeat size={12} className="shrink-0 text-on-surface-muted" aria-label="Repeats" />}
+                        {instance.event.recurrence && <Repeat size={12} className="shrink-0 text-on-surface-muted" aria-label={t("ui.calendar.repeats")} />}
                       </span>
                       {(instance.event.location || extra) && (
                         <span className="flex flex-wrap items-center gap-x-3.5 gap-y-0.5 text-[12.5px] text-on-surface-muted">
@@ -1686,6 +1716,7 @@ function CalendarEventEditor({
   renderExtraFields,
   canDelete = true,
 }: CalendarEventEditorProps) {
+  const t = useT();
   const isEdit = state?.mode === "edit";
   const baseEvent: CalendarEvent | null = isEdit ? state.instance.event : null;
   const extraRef = useRef<Record<string, unknown> | undefined>(undefined);
@@ -1823,12 +1854,12 @@ function CalendarEventEditor({
   const detailsFields = (
     <>
       <Field>
-        <Label htmlFor="calendar-event-title">Title</Label>
+        <Label htmlFor="calendar-event-title">{t("ui.calendar.editor.title")}</Label>
         <Input
           id="calendar-event-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Site visit — Acme Contracting"
+          placeholder={t("ui.calendar.editor.titlePlaceholder")}
           required
           autoFocus={!isOccurrenceScoped}
           readOnly={isOccurrenceScoped}
@@ -1839,13 +1870,13 @@ function CalendarEventEditor({
 
       {contactOptions && (
         <Field>
-          <Label htmlFor="calendar-event-contact">Contact</Label>
+          <Label htmlFor="calendar-event-contact">{t("ui.calendar.editor.contact")}</Label>
           <Combobox
             id="calendar-event-contact"
             options={contactOptions}
             value={contactId}
             onValueChange={setContactId}
-            placeholder="None"
+            placeholder={t("ui.calendar.editor.contactNone")}
             disabled={isOccurrenceScoped}
           />
         </Field>
@@ -1853,7 +1884,7 @@ function CalendarEventEditor({
 
       <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2">
         <Label htmlFor="calendar-event-allday" className="font-medium">
-          All day
+          {t("ui.calendar.allDay")}
         </Label>
         <Switch id="calendar-event-allday" checked={allDay} onCheckedChange={setAllDay} disabled={isOccurrenceScoped} />
       </div>
@@ -1862,7 +1893,7 @@ function CalendarEventEditor({
         <Field>
           <Label htmlFor="calendar-event-start">
             <Clock size={12} className="mr-1 inline" />
-            Start
+            {t("ui.calendar.editor.start")}
           </Label>
           <Input
             id="calendar-event-start"
@@ -1872,7 +1903,7 @@ function CalendarEventEditor({
           />
         </Field>
         <Field>
-          <Label htmlFor="calendar-event-end">End</Label>
+          <Label htmlFor="calendar-event-end">{t("ui.calendar.editor.end")}</Label>
           <Input
             id="calendar-event-end"
             type={allDay ? "date" : "datetime-local"}
@@ -1883,7 +1914,7 @@ function CalendarEventEditor({
       </div>
 
       <Field>
-        <Label>Category</Label>
+        <Label>{t("ui.calendar.editor.category")}</Label>
         <div className="flex flex-wrap gap-2">
           {CALENDAR_EVENT_COLORS.map((c) => {
             const colors = colorClasses(c);
@@ -1911,23 +1942,23 @@ function CalendarEventEditor({
       <Field>
         <Label htmlFor="calendar-event-location">
           <MapPin size={12} className="mr-1 inline" />
-          Location
+          {t("ui.calendar.editor.location")}
         </Label>
         <Input
           id="calendar-event-location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Optional"
+          placeholder={t("ui.calendar.editor.optional")}
         />
       </Field>
 
       <Field>
-        <Label htmlFor="calendar-event-description">Notes</Label>
+        <Label htmlFor="calendar-event-description">{t("ui.calendar.editor.notes")}</Label>
         <Textarea
           id="calendar-event-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional"
+          placeholder={t("ui.calendar.editor.optional")}
         />
       </Field>
 
@@ -1936,7 +1967,7 @@ function CalendarEventEditor({
           <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2">
             <Label htmlFor="calendar-event-recurs" className="flex items-center gap-1.5 font-medium">
               <Repeat size={12} />
-              Repeats
+              {t("ui.calendar.repeats")}
             </Label>
             <Switch id="calendar-event-recurs" checked={recurs} onCheckedChange={setRecurs} />
           </div>
@@ -1944,27 +1975,27 @@ function CalendarEventEditor({
           {recurs && (
             <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-sunken p-3">
               <Field>
-                <Label htmlFor="calendar-event-frequency">Frequency</Label>
+                <Label htmlFor="calendar-event-frequency">{t("ui.calendar.editor.frequency")}</Label>
                 <NativeSelect
                   id="calendar-event-frequency"
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as CalendarRecurrenceFrequency)}
                 >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
+                  <option value="daily">{t("ui.calendar.editor.daily")}</option>
+                  <option value="weekly">{t("ui.calendar.editor.weekly")}</option>
+                  <option value="monthly">{t("ui.calendar.editor.monthly")}</option>
                 </NativeSelect>
               </Field>
               <Field>
-                <Label>Ends</Label>
+                <Label>{t("ui.calendar.editor.ends")}</Label>
                 <div className="flex items-center gap-2">
                   <NativeSelect
                     value={endType}
                     onChange={(e) => setEndType(e.target.value as "date" | "count")}
                     className="w-36"
                   >
-                    <option value="count">After</option>
-                    <option value="date">On date</option>
+                    <option value="count">{t("ui.calendar.editor.endsAfter")}</option>
+                    <option value="date">{t("ui.calendar.editor.endsOnDate")}</option>
                   </NativeSelect>
                   {endType === "count" ? (
                     <Input
@@ -1973,7 +2004,7 @@ function CalendarEventEditor({
                       value={endCount}
                       onChange={(e) => setEndCount(Number(e.target.value) || 1)}
                       className="w-24"
-                      aria-label="Occurrence count"
+                      aria-label={t("ui.calendar.editor.occurrenceCount")}
                     />
                   ) : (
                     <Input
@@ -1981,10 +2012,10 @@ function CalendarEventEditor({
                       value={toLocalInputValue(endDate).slice(0, 10)}
                       onChange={(e) => setEndDate(fromLocalInputValue(`${e.target.value}T00:00`))}
                       className="w-40"
-                      aria-label="End date"
+                      aria-label={t("ui.calendar.editor.endDate")}
                     />
                   )}
-                  {endType === "count" && <span className="text-[13px] text-on-surface-muted">occurrences</span>}
+                  {endType === "count" && <span className="text-[13px] text-on-surface-muted">{t("ui.calendar.editor.occurrences")}</span>}
                 </div>
               </Field>
             </div>
@@ -1999,13 +2030,13 @@ function CalendarEventEditor({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Edit event" : "New event"}</DialogTitle>
+            <DialogTitle>{isEdit ? t("ui.calendar.editor.editTitle") : t("ui.calendar.editor.newTitle")}</DialogTitle>
             <DialogDescription>
               {isEdit
                 ? state.mode === "edit" && state.scope === "occurrence"
-                  ? "Editing just this occurrence — the rest of the series is unaffected."
-                  : "Editing updates the entire series."
-                : "Fill in the details below to add this to the calendar."}
+                  ? t("ui.calendar.editor.occurrenceDescription")
+                  : t("ui.calendar.editor.seriesDescription")
+                : t("ui.calendar.editor.createDescription")}
             </DialogDescription>
             {isEdit && state.mode === "edit" && state.scope === "occurrence" && state.instance.isRecurring && (
               <button
@@ -2013,7 +2044,7 @@ function CalendarEventEditor({
                 className="w-fit text-left text-[12.5px] font-medium text-primary underline-offset-2 hover:underline"
                 onClick={() => onScopeChange?.("series")}
               >
-                Edit the series instead
+                {t("ui.calendar.editor.editSeriesInstead")}
               </button>
             )}
           </DialogHeader>
@@ -2022,8 +2053,8 @@ function CalendarEventEditor({
             {renderExtraFields ? (
               <Tabs defaultValue="details">
                 <TabsList>
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="people">People</TabsTrigger>
+                  <TabsTrigger value="details">{t("ui.calendar.editor.detailsTab")}</TabsTrigger>
+                  <TabsTrigger value="people">{t("ui.calendar.editor.peopleTab")}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="flex flex-col gap-4">
                   {detailsFields}
@@ -2031,7 +2062,7 @@ function CalendarEventEditor({
                 <TabsContent value="people" className="flex flex-col gap-4">
                   {isEdit && state.mode === "edit" && state.scope === "occurrence" ? (
                     <p className="rounded-md border border-border bg-surface-sunken p-3 text-[13px] text-on-surface-muted">
-                      Visibility and invitees apply to the whole series — edit the series to change them.
+                      {t("ui.calendar.editor.peopleSeriesOnly")}
                     </p>
                   ) : (
                     renderExtraFields({
@@ -2060,16 +2091,16 @@ function CalendarEventEditor({
                   onClick={() => onDelete(baseEvent.id)}
                 >
                   <Trash2 size={14} />
-                  Delete
+                  {t("ui.calendar.editor.delete")}
                 </Button>
               )}
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="secondary" size="sm" onClick={onClose}>
-                Cancel
+                {t("ui.calendar.editor.cancel")}
               </Button>
               <Button type="submit" size="sm">
-                {isEdit ? "Save changes" : "Create event"}
+                {isEdit ? t("ui.calendar.editor.saveChanges") : t("ui.calendar.editor.createEvent")}
               </Button>
             </div>
           </DialogFooter>

@@ -19,6 +19,7 @@ import {
 import { SESSION_EXPIRED_EVENT } from "../lib/api-client";
 import { authClient } from "../lib/auth-client";
 import { loginUrlFor } from "../lib/safe-next";
+import { useT } from "../lib/i18n";
 
 /**
  * US-AUTH-12 — when the session ends:
@@ -30,6 +31,7 @@ import { loginUrlFor } from "../lib/safe-next";
  *   it waits for the save to show the dialog instead of losing the draft.
  */
 export function SessionExpiredDialog({ email }: { email: string }) {
+  const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"notice" | "login">("notice");
@@ -83,7 +85,7 @@ export function SessionExpiredDialog({ email }: { email: string }) {
     const { error: signInError } = await authClient.signIn.email({ email: email || emailInput, password });
     setLoading(false);
     if (signInError) {
-      setError(signInError.message ?? "That password didn't work. Try again.");
+      setError(signInError.message ?? t("common.sessionExpired.passwordFailed"));
       return;
     }
     setPassword("");
@@ -94,14 +96,14 @@ export function SessionExpiredDialog({ email }: { email: string }) {
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogContent data-session-expired-dialog data-testid="session-expired-dialog">
         <AlertDialogHeader>
-          <AlertDialogTitle>You&apos;ve been signed out</AlertDialogTitle>
+          <AlertDialogTitle>{t("common.sessionExpired.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Your session ended, so this change wasn&apos;t saved yet. Log in again to save it — the draft stays open in this tab.
+            {t("common.sessionExpired.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {step === "notice" ? (
           <AlertDialogFooter>
-            <Button onClick={() => setStep("login")}>Log in again</Button>
+            <Button onClick={() => setStep("login")}>{t("common.sessionExpired.logInAgain")}</Button>
           </AlertDialogFooter>
         ) : (
           <form className="flex flex-col gap-4" onSubmit={logIn}>
@@ -112,21 +114,23 @@ export function SessionExpiredDialog({ email }: { email: string }) {
             )}
             {email ? (
               <p className="text-[13px] text-on-surface">
-                Log in as <strong>{email}</strong>.
+                {t("common.sessionExpired.logInAs")}
+                <strong>{email}</strong>
+                {t("common.sessionExpired.logInAsEnd")}
               </p>
             ) : (
-              <FormField label="Email" required>
+              <FormField label={t("common.sessionExpired.email")} required>
                 {(field) => <Input {...field} type="email" autoComplete="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} />}
               </FormField>
             )}
-            <FormField label="Password" required>
+            <FormField label={t("common.sessionExpired.password")} required>
               {(field) => (
                 <Input {...field} type="password" autoComplete="current-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
               )}
             </FormField>
             <AlertDialogFooter>
               <Button type="submit" disabled={loading || !password}>
-                {loading ? <Spinner size="sm" /> : "Log in"}
+                {loading ? <Spinner size="sm" /> : t("common.sessionExpired.logIn")}
               </Button>
             </AlertDialogFooter>
           </form>

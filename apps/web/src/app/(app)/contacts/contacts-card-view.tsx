@@ -5,11 +5,12 @@ import { Badge, Card } from "@spine/ui";
 import { ContactLogo } from "./contact-logo";
 import { ContactRowActions } from "./contact-row-actions";
 import type { Contact } from "./types";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
-  customer: "Customer",
-  vendor: "Vendor",
-  both: "Customer & vendor",
+  customer: translate("contacts.common.typeCustomer"),
+  vendor: translate("contacts.common.typeVendor"),
+  both: translate("contacts.common.typeBoth"),
 };
 
 /**
@@ -25,6 +26,7 @@ export function ContactsCardView({
   contacts: Contact[];
   onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
 }) {
+  const t = useT();
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {contacts.map((contact) => (
@@ -41,10 +43,10 @@ export function ContactsCardView({
               </span>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 <Badge>{TYPE_LABELS[contact.type]}</Badge>
-                {contact.archivedAt && <Badge>Archived</Badge>}
+                {contact.archivedAt && <Badge>{t("contacts.common.archived")}</Badge>}
               </div>
               <p className="mt-2 truncate text-[12px] text-on-surface-muted" title={contact.email ?? undefined}>
-                {contact.email ?? "No email"}
+                {contact.email ?? t("contacts.common.noEmail")}
               </p>
               {contact.phone && (
                 <p className="truncate text-[12px] text-on-surface-muted" title={contact.phone}>

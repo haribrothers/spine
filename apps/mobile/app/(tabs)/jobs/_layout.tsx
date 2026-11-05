@@ -2,14 +2,16 @@ import { Stack } from "expo-router";
 import { useNativeColors } from "@spine/ui-native";
 import { useTabHeaderOptions } from "../../../src/components/header-items";
 import { androidHeaderOptions } from "../../../src/lib/android-header";
+import { useT } from "../../../src/lib/i18n";
 
 /** A job opened from Today, Search or a notification still has the list under it. */
 export const unstable_settings = { initialRouteName: "index" };
 
 /** The Jobs tab's own native stack: the list (large title, avatar), a job, its photos (US-MOB-04, US-MOB-05). */
 export default function JobsLayout() {
+  const t = useT();
   const colors = useNativeColors();
-  const tabHeader = useTabHeaderOptions("Jobs");
+  const tabHeader = useTabHeaderOptions(t("mobileWork.nav.jobs"));
   return (
     <Stack
       screenOptions={{
@@ -21,7 +23,7 @@ export default function JobsLayout() {
     >
       <Stack.Screen name="index" options={tabHeader} />
       <Stack.Screen name="[id]/index" options={{ title: "" }} />
-      <Stack.Screen name="[id]/photos" options={{ title: "Photos" }} />
+      <Stack.Screen name="[id]/photos" options={{ title: t("mobileWork.common.photos") }} />
     </Stack>
   );
 }

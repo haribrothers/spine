@@ -5,6 +5,7 @@ import { discoverServer, fetchMember, passwordSignIn, revokeSession, SignInError
 import { clearSession, loadLastSignIn, loadSession, saveSession, type StoredSession } from "./storage";
 import { cache } from "../cache/cache-store";
 import { outbox } from "../outbox/outbox";
+import { setFormatLocale } from "../i18n";
 
 export type SessionState =
   | { status: "loading" }
@@ -51,6 +52,9 @@ export function useSignedInSession(): StoredSession {
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SessionState>({ status: "loading" });
+  // US-OPS-16: dates and numbers in the app and the component library follow the business's locale.
+  const memberLocale = state.status === "signedIn" ? state.session.member.locale : undefined;
+  useEffect(() => setFormatLocale(memberLocale), [memberLocale]);
   const [updateRequired, setUpdateRequired] = useState(false);
   const [lastSession, setLastSession] = useState<StoredSession | null>(null);
   const sessionRef = useRef<StoredSession | null>(null);

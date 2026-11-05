@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Alert } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 
 interface IntegritySummary {
   problemCount: number;
@@ -19,6 +20,7 @@ const LISTED = 5;
  * `GET /files/integrity` is Owner-only, so this is never the gate.
  */
 export function StorageIntegrityAlert() {
+  const t = useT();
   const [summary, setSummary] = useState<IntegritySummary | null>(null);
 
   useEffect(() => {
@@ -37,10 +39,10 @@ export function StorageIntegrityAlert() {
       <ul className="mt-1 list-disc pl-5">
         {summary.files.slice(0, LISTED).map((file) => (
           <li key={file.id}>
-            {file.label} ({file.problem})
+            {t("dashboard.storageAlert.file", { label: file.label, problem: file.problem })}
           </li>
         ))}
-        {more > 0 && <li>and {more} more</li>}
+        {more > 0 && <li>{t("dashboard.storageAlert.more", { more })}</li>}
       </ul>
     </Alert>
   );

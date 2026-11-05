@@ -4,10 +4,11 @@ import { TooltipProvider } from "@spine/ui";
 import "./globals.css";
 import { RouteLoader } from "../components/route-loader";
 import { ThemeProvider } from "../components/theme-provider";
+import { t } from "../lib/i18n";
 
 export const metadata: Metadata = {
   title: "Spine",
-  description: "Self-hosted business management for service and project businesses.",
+  description: t("common.app.description"),
 };
 
 /** US-SET-26 — the browser's bar takes the page colour, light or dark (tokens.json background). */

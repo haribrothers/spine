@@ -4,6 +4,7 @@ import CircleAlert from "lucide-react-native/icons/circle-alert";
 import EyeIcon from "lucide-react-native/icons/eye";
 import EyeOff from "lucide-react-native/icons/eye-off";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { useNativeColors } from "../theme/use-native-colors";
 import { radius } from "../tokens";
 import { FORM_ROW_HEIGHT } from "./form-row";
@@ -82,6 +83,7 @@ export interface OutlinedTextFieldProps extends Pick<TextInputProps, "keyboardTy
 }
 
 export function OutlinedTextField({ label, value, onChangeText, placeholder, multiline = false, error = false, helperText, prefix, labelBackgroundClassName, secureTextEntry = false, inputRef, testID, ...input }: OutlinedTextFieldProps) {
+  const t = useT();
   const colors = useNativeColors();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -108,7 +110,7 @@ export function OutlinedTextField({ label, value, onChangeText, placeholder, mul
           {...input}
         />
         {secureTextEntry ? (
-          <Pressable onPress={() => setRevealed((shown) => !shown)} hitSlop={8} accessibilityRole="button" accessibilityLabel={revealed ? "Hide password" : "Show password"} className="h-11 w-11 items-center justify-center">
+          <Pressable onPress={() => setRevealed((shown) => !shown)} hitSlop={8} accessibilityRole="button" accessibilityLabel={revealed ? t("uiNative.outlinedTextField.hidePassword") : t("uiNative.outlinedTextField.showPassword")} className="h-11 w-11 items-center justify-center">
             <Eye size={22} color={colors.onSurfaceMuted} />
           </Pressable>
         ) : error && !multiline ? (

@@ -38,6 +38,7 @@ import {
   type StatementMapping,
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 
 const NONE = "__none__";
 
@@ -88,6 +89,7 @@ export function StatementImportDialog({
   accountName: string;
   onImported: (result: StatementImportResult) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -189,21 +191,21 @@ export function StatementImportDialog({
       setResult(res);
       onImported(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't import this statement. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.import.error"));
     } finally {
       setImporting(false);
     }
   }
 
   const columnSelect = (label: string, key: keyof Draft, optional = false) => (
-    <FormField label={label} required={!optional} helperText={optional && key === "balance" ? "Optional" : undefined}>
+    <FormField label={label} required={!optional} helperText={optional && key === "balance" ? t("banking.import.optional") : undefined}>
       {(field) => (
         <Select value={(draft[key] as string) || undefined} onValueChange={(v) => setDraft((d) => ({ ...d, [key]: v }))}>
           <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
-            <SelectValue placeholder="Choose a column" />
+            <SelectValue placeholder={t("banking.import.chooseColumn")} />
           </SelectTrigger>
           <SelectContent>
-            {optional && <SelectItem value={NONE}>None</SelectItem>}
+            {optional && <SelectItem value={NONE}>{t("banking.import.none")}</SelectItem>}
             {headers.map((h) => (
               <SelectItem key={h} value={h}>
                 {h}
@@ -215,12 +217,20 @@ export function StatementImportDialog({
     </FormField>
   );
 
+  const dateSelect = columnSelect(t("banking.import.date"), "date");
+  const descriptionSelect = columnSelect(t("banking.import.descriptionColumn"), "description");
+  const referenceSelect = columnSelect(t("banking.import.reference"), "reference", true);
+  const amountSelect = columnSelect(t("banking.import.amount"), "amount");
+  const moneyOutSelect = columnSelect(t("banking.import.moneyOut"), "moneyOut");
+  const moneyInSelect = columnSelect(t("banking.import.moneyIn"), "moneyIn");
+  const balanceSelect = columnSelect(t("banking.import.balance"), "balance", true);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Import statement — {accountName}</DialogTitle>
-          <DialogDescription>Export the statement from your bank as CSV. Spine remembers how its columns map for next time.</DialogDescription>
+          <DialogTitle>{t("banking.import.title", { name: accountName })}</DialogTitle>
+          <DialogDescription>{t("banking.import.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -234,10 +244,10 @@ export function StatementImportDialog({
                 <AlertDescription>{statementImportSummary(result)}</AlertDescription>
               </Alert>
               {result.failed.length > 0 && (
-                <ul className="flex flex-col gap-1 text-[13px] text-on-surface" aria-label="Rows that couldn't be read">
+                <ul className="flex flex-col gap-1 text-[13px] text-on-surface" aria-label={t("banking.import.failedRows")}>
                   {result.failed.map((f) => (
                     <li key={f.row}>
-                      Row {f.row}: {f.reason}
+                      {t("banking.import.failedRow", { row: f.row, reason: f.reason })}
                     </li>
                   ))}
                 </ul>
@@ -252,22 +262,22 @@ export function StatementImportDialog({
                     <div>
                       <p className="text-[14px] font-semibold text-on-surface">{file.name}</p>
                       <p className="text-[12px] text-on-surface-muted">
-                        {rows.length} rows · {Math.max(1, Math.round(file.size / 1024))} KB
+                        {t("banking.import.fileSummary", { rows: rows.length, kb: Math.max(1, Math.round(file.size / 1024)) })}
                       </p>
                     </div>
                   ) : (
-                    <p className="text-[13px] text-on-surface-muted">A CSV of up to 5,000 lines (2 MB).</p>
+                    <p className="text-[13px] text-on-surface-muted">{t("banking.import.fileHint")}</p>
                   )}
                 </div>
                 <Button variant={file ? "ghost" : "secondary"} className={file ? "text-primary" : undefined} onClick={() => inputRef.current?.click()}>
-                  {file ? "Choose another file" : "Choose file"}
+                  {file ? t("banking.import.chooseAnother") : t("banking.import.chooseFile")}
                 </Button>
                 <input
                   ref={inputRef}
                   type="file"
                   accept=".csv,text/csv"
                   className="sr-only"
-                  aria-label="Statement file"
+                  aria-label={t("banking.import.fileLabel")}
                   data-testid="statement-file"
                   onChange={(e) => {
                     const next = e.target.files?.[0];
@@ -279,19 +289,19 @@ export function StatementImportDialog({
 
               {file && (
                 <>
-                  <RadioGroup value={draft.amountMode} onValueChange={(v) => setDraft((d) => ({ ...d, amountMode: v as Draft["amountMode"] }))} className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Amount columns">
+                  <RadioGroup value={draft.amountMode} onValueChange={(v) => setDraft((d) => ({ ...d, amountMode: v as Draft["amountMode"] }))} className="flex flex-wrap gap-x-6 gap-y-2" aria-label={t("banking.import.amountColumns")}>
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="single" id="amount-single" />
-                      <Label htmlFor="amount-single">One amount column (money in positive)</Label>
+                      <Label htmlFor="amount-single">{t("banking.import.singleAmount")}</Label>
                     </div>
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="split" id="amount-split" />
-                      <Label htmlFor="amount-split">Separate money in and money out columns</Label>
+                      <Label htmlFor="amount-split">{t("banking.import.splitAmount")}</Label>
                     </div>
                   </RadioGroup>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {columnSelect("Date", "date")}
-                    <FormField label="Date format" required>
+                    {dateSelect}
+                    <FormField label={t("banking.import.dateFormat")} required>
                       {(field) => (
                         <Select value={draft.dateFormat} onValueChange={(v) => setDraft((d) => ({ ...d, dateFormat: v as StatementDateFormat }))}>
                           <SelectTrigger id={field.id}>
@@ -307,20 +317,20 @@ export function StatementImportDialog({
                         </Select>
                       )}
                     </FormField>
-                    {columnSelect("Description", "description")}
-                    {columnSelect("Reference", "reference", true)}
+                    {descriptionSelect}
+                    {referenceSelect}
                     {draft.amountMode === "single" ? (
-                      columnSelect("Amount", "amount")
+                      amountSelect
                     ) : (
                       <>
-                        {columnSelect("Money out", "moneyOut")}
-                        {columnSelect("Money in", "moneyIn")}
+                        {moneyOutSelect}
+                        {moneyInSelect}
                       </>
                     )}
-                    {columnSelect("Balance", "balance", true)}
+                    {balanceSelect}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <h3 className="text-[14px] font-semibold text-on-surface">First rows</h3>
+                    <h3 className="text-[14px] font-semibold text-on-surface">{t("banking.import.firstRows")}</h3>
                     <div className="overflow-x-auto rounded-md border border-border">
                       <table className="w-full text-[13px]" data-testid="statement-preview">
                         <thead>
@@ -353,14 +363,14 @@ export function StatementImportDialog({
         </DialogBody>
         <DialogFooter>
           {result ? (
-            <Button onClick={() => onOpenChange(false)}>Done</Button>
+            <Button onClick={() => onOpenChange(false)}>{t("banking.import.done")}</Button>
           ) : (
             <>
               <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={importing}>
-                Cancel
+                {t("banking.import.cancel")}
               </Button>
               <Button onClick={handleImport} disabled={!file || !mapping || importing}>
-                {importing ? <Spinner size="sm" /> : `Import ${rows.length} lines`}
+                {importing ? <Spinner size="sm" /> : t("banking.import.importLines", { n: rows.length })}
               </Button>
             </>
           )}

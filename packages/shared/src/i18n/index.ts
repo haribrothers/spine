@@ -1,19 +1,5 @@
 import i18next, { type i18n as I18n } from "i18next";
-import banking from "./en/banking.json";
-import billing from "./en/billing.json";
-import common from "./en/common.json";
-import contacts from "./en/contacts.json";
-import expenses from "./en/expenses.json";
-import mobileApp from "./en/mobileApp.json";
-import mobileWork from "./en/mobileWork.json";
-import onboarding from "./en/onboarding.json";
-import purchases from "./en/purchases.json";
-import quotes from "./en/quotes.json";
-import reports from "./en/reports.json";
-import settings from "./en/settings.json";
-import team from "./en/team.json";
-import ui from "./en/ui.json";
-import work from "./en/work.json";
+import english from "./en.json";
 
 /**
  * US-OPS-16 (D-268, D-069) — every user-facing string in the web app, the
@@ -22,23 +8,7 @@ import work from "./en/work.json";
  * interpolation is `{{name}}`, plurals are `_one`/`_other` with `count`.
  * A translation is a sibling of `en` with the same keys.
  */
-export const en = {
-  ...banking,
-  ...billing,
-  ...common,
-  ...contacts,
-  ...expenses,
-  ...mobileApp,
-  ...mobileWork,
-  ...onboarding,
-  ...purchases,
-  ...quotes,
-  ...reports,
-  ...settings,
-  ...team,
-  ...ui,
-  ...work,
-};
+export const en = english;
 
 export type EnglishStrings = typeof en;
 
@@ -65,6 +35,22 @@ void i18n.init({
   returnNull: false,
   initAsync: false,
 });
+
+let locale = "en-US";
+
+/**
+ * US-OPS-16 — the business's locale (one business per install), for dates
+ * and numbers anywhere, the component libraries included. Each app sets it
+ * once it knows the business: the web app's server layout, the field app's
+ * session.
+ */
+export function setFormatLocale(value: string | null | undefined): void {
+  locale = value || "en-US";
+}
+
+export function formatLocale(): string {
+  return locale;
+}
 
 /** Outside a component: a label map, a helper, a toast message. */
 export const t: typeof i18n.t = i18n.t.bind(i18n);

@@ -7,6 +7,8 @@ import { Alert, AlertDescription, Button, ReportToolbar, StatCard, StatementTabl
 import { FINANCIAL_STATEMENTS_NO_ACCESS } from "@spine/shared";
 import { iso, useCurrency } from "../analysis-shared";
 import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
+import { useT } from "../../../../lib/i18n";
+import { orgLocaleTag } from "../../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -31,13 +33,14 @@ function yearStart(currency: string, today = new Date()): Date {
  * downloads the ZIP (masters.xml, vouchers.xml, README.txt).
  */
 export function TallyExportView() {
+  const t = useT();
   const currency = useCurrency();
   const [from, setFrom] = useState<Date | null>(null);
   const [to, setTo] = useState<Date>(() => new Date());
   const start = from ?? yearStart(currency);
   const query = `from=${iso(start)}&to=${iso(to)}`;
   const { data, error, loading } = useReport<TallySummary>(`/exports/tally?${query}&format=summary`, FINANCIAL_STATEMENTS_NO_ACCESS);
-  const count = (n: number) => n.toLocaleString();
+  const count = (n: number) => n.toLocaleString(orgLocaleTag());
 
   return (
     <>
@@ -47,13 +50,13 @@ export function TallyExportView() {
         actions={
           <>
             <Button variant="secondary" asChild>
-              <Link href="/reports/tally/mapping">Account mapping</Link>
+              <Link href="/reports/tally/mapping">{t("reports.tally.accountMapping")}</Link>
             </Button>
             {data && !error && (
               <Button asChild>
                 <a href={`${API_URL}/exports/tally?${query}`} data-testid="tally-export">
                   <Download size={14} aria-hidden="true" />
-                  Export
+                  {t("reports.tally.export")}
                 </a>
               </Button>
             )}
@@ -70,31 +73,31 @@ export function TallyExportView() {
       {data && !error && (
         <>
           <ReportKpis count={3} data-testid="tally-cards">
-            <StatCard label="Ledgers" value={count(data.ledgers)} trend={{ direction: "neutral", label: "Accounts used, customers and vendors" }} />
-            <StatCard label="Vouchers" value={count(data.vouchers)} trend={{ direction: "neutral", label: "One per journal entry" }} />
+            <StatCard label={t("reports.tally.ledgers")} value={count(data.ledgers)} trend={{ direction: "neutral", label: t("reports.tally.ledgersHint") }} />
+            <StatCard label={t("reports.tally.vouchers")} value={count(data.vouchers)} trend={{ direction: "neutral", label: t("reports.tally.vouchersHint") }} />
             <StatCard
-              label="Accounts on default groups"
+              label={t("reports.tally.defaultGroups")}
               value={count(data.defaults.length)}
-              trend={data.defaults.length ? { direction: "down", label: "review the mapping" } : { direction: "up", label: "Every account is mapped" }}
+              trend={data.defaults.length ? { direction: "down", label: t("reports.tally.reviewMapping") } : { direction: "up", label: t("reports.tally.everyAccountMapped") }}
             />
           </ReportKpis>
 
           <StatementTable
             data-testid="tally-vouchers"
             columns={[
-              { key: "document", header: "Spine document" },
-              { key: "type", header: "Tally voucher type" },
-              { key: "count", header: "Count", align: "right" },
+              { key: "document", header: t("reports.tally.spineDocument") },
+              { key: "type", header: t("reports.tally.voucherType") },
+              { key: "count", header: t("reports.tally.count"), align: "right" },
             ]}
             rows={[
-              ...data.byType.map((t) => ({ kind: "line" as const, key: t.voucherType, cells: { document: t.label, type: t.voucherType, count: count(t.count) } })),
-              { kind: "total" as const, key: "total", cells: { document: "Total", type: "", count: count(data.vouchers) } },
+              ...data.byType.map((row) => ({ kind: "line" as const, key: row.voucherType, cells: { document: row.label, type: row.voucherType, count: count(row.count) } })),
+              { kind: "total" as const, key: "total", cells: { document: t("reports.common.total"), type: "", count: count(data.vouchers) } },
             ]}
           />
           <Alert data-testid="tally-howto">
-            <AlertDescription>The ZIP holds masters.xml, vouchers.xml and a README: in Tally, go to Gateway of Tally › Import › Masters, then Transactions.</AlertDescription>
+            <AlertDescription>{t("reports.tally.howTo")}</AlertDescription>
           </Alert>
-          <ReportFootnote>Spine prepares these files; your accountant imports and checks them in Tally.</ReportFootnote>
+          <ReportFootnote>{t("reports.tally.footnote")}</ReportFootnote>
         </>
       )}
     </>

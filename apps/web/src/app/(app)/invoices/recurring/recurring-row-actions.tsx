@@ -18,6 +18,7 @@ import {
 import type { RecurringStatus } from "@spine/shared";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 
 /**
  * US-INV-22, US-PUR-31 — a schedule's row menu: Edit, Pause or Resume, and
@@ -27,7 +28,7 @@ import { apiClient } from "../../../../lib/api-client";
 export function RecurringRowActions<T extends { id: string; name: string; status: RecurringStatus }>({
   schedule,
   endpoint = "/recurring-invoices",
-  keptText = "Invoices it already created are kept.",
+  keptText,
   onEdit,
   onChanged,
   onDeleted,
@@ -43,6 +44,8 @@ export function RecurringRowActions<T extends { id: string; name: string; status
   onDeleted: (schedule: T) => void;
   onError: (message: string) => void;
 }) {
+  const t = useT();
+  const kept = keptText ?? t("invoices.recurringRow.keptText");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -52,7 +55,7 @@ export function RecurringRowActions<T extends { id: string; name: string; status
       const saved = await apiClient.post<T>(`${endpoint}/${schedule.id}/${action}`);
       onChanged(saved, action === "pause" ? "paused" : "resumed");
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Couldn't change the schedule. Try again.");
+      onError(err instanceof Error ? err.message : t("invoices.recurringRow.changeFailed"));
     } finally {
       setBusy(false);
     }
@@ -65,7 +68,7 @@ export function RecurringRowActions<T extends { id: string; name: string; status
       setConfirmOpen(false);
       onDeleted(schedule);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Couldn't delete the schedule. Try again.");
+      onError(err instanceof Error ? err.message : t("invoices.recurringRow.deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -77,26 +80,26 @@ export function RecurringRowActions<T extends { id: string; name: string; status
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${schedule.name}`}
+            aria-label={t("invoices.recurringRow.actionsFor", { name: schedule.name })}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <MoreHorizontal size={16} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => onEdit(schedule)}>Edit</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => onEdit(schedule)}>{t("invoices.recurringRow.edit")}</DropdownMenuItem>
           {schedule.status === "active" && (
             <DropdownMenuItem disabled={busy} onSelect={() => act("pause")}>
-              Pause
+              {t("invoices.recurringRow.pause")}
             </DropdownMenuItem>
           )}
           {schedule.status === "paused" && (
             <DropdownMenuItem disabled={busy} onSelect={() => act("resume")}>
-              Resume
+              {t("invoices.recurringRow.resume")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
-            Delete
+            {t("invoices.recurringRow.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -104,13 +107,13 @@ export function RecurringRowActions<T extends { id: string; name: string; status
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this schedule?</AlertDialogTitle>
-            <AlertDialogDescription>{keptText}</AlertDialogDescription>
+            <AlertDialogTitle>{t("invoices.recurringRow.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{kept}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("invoices.recurringRow.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
-              Delete schedule
+              {t("invoices.recurringRow.deleteSchedule")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
