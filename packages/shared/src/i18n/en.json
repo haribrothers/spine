@@ -8254,7 +8254,8 @@
       "numberedList": "Numbered list",
       "removeLink": "Remove link",
       "addLink": "Add link",
-      "linkUrlPrompt": "Link URL"
+      "linkUrlPrompt": "Link URL",
+      "defaultLabel": "Text"
     },
     "sidebar": {
       "expand": "Expand sidebar",

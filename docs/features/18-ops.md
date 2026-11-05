@@ -297,6 +297,7 @@ PRD §10.3
 
 **Implementation notes**
 - NFR-SEC-04, NFR-SEC-05. In-house, against OWASP ASVS ([D-267](../prd/12-decisions.md)). Before the beta server faces the internet (US-OPS-52), at least the secret scan and `pnpm audit --prod` are clean.
+- Built: [docs/security-review.md](../security-review.md) (OWASP Top 10, dependencies, secret scan, ZAP baseline). Fixes: the API trusts only loopback and private-network proxies (`TRUST_PROXY`), so the public rate limits count each visitor. Security headers on the web app and the API. Next.js, nodemailer, Tiptap, DOMPurify and Vitest upgraded, with `pnpm.overrides` for fixed transitive versions. Build-tooling advisories are reviewed and listed in `pnpm.auditConfig.ignoreGhsas`, and `pnpm audit --prod --audit-level high` runs in CI and `pnpm verify`. `.gitleaksignore` holds the reviewed secret-scan findings. `us-ops-18.http.integration.test.ts` covers token enumeration, rate limits per visitor and headers. `SECURITY.md` says how to report. The story closes with the Owner's sign-off.
 
 ### US-OPS-19 · Ship the README, licence and contributor guide
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —

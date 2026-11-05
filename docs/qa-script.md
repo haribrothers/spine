@@ -5640,6 +5640,15 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 3. Developers: add `<p>Hello</p>` to any component and run `pnpm lint`: it fails with "User-facing text comes from @spine/shared/i18n". `t("nope.key")` fails `pnpm typecheck`.
 4. Regression: server-rendered pages (reports, the 404 page, the error page) open without errors.
 
+## 278. The security review before 1.0 (US-OPS-18, Phase 12)
+
+1. On the beta server, open any page and look at the response headers (browser dev tools › Network): `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` and, over HTTPS, `Strict-Transport-Security`. `/api/health` has `DENY`, `nosniff` and `no-referrer`, and no `X-Powered-By`.
+2. Open a quote link 21 times within a minute from one phone: the 21st says to slow down. From another device the link still opens.
+3. Change one character of a quote link, or open `/accept-invite/<anything>`: the same "link doesn't work" page as any wrong link.
+4. `pnpm audit --prod --audit-level high` passes; `docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.24.3 git /repo` reports no leaks.
+5. The Owner reads docs/security-review.md and signs it off (name and date).
+6. Regression: quote acceptance, invitations, sign-in from the phone app and file downloads work behind Caddy and on Coolify.
+
 ## Known gaps — don't file these as bugs
 
 - Status, payment-method, capability and report labels that `@spine/shared` exports are still English in code; they move with emails, PDFs and API errors in 1.1 (US-OPS-16, D-268).

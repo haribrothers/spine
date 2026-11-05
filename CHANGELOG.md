@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-05 — The security review before 1.0 (US-OPS-18, D-267)
+
+- **Review:** [docs/security-review.md](docs/security-review.md) covers the OWASP Top 10 area by area, with each finding fixed or accepted, and is ready for the Owner's sign-off. `SECURITY.md` says how to report a vulnerability (GitHub private reporting).
+- **Fixed:** the API now trusts the reverse proxy (loopback and private networks; `TRUST_PROXY` overrides). Before, every visitor behind Caddy shared one 20-a-minute public limit. The web app sends `X-Frame-Options`, `nosniff`, a referrer policy, a permissions policy and HSTS over HTTPS. The API sends `DENY`, `nosniff`, `no-referrer` and no `X-Powered-By`.
+- **Dependencies:** 9 critical and 49 high advisories fixed by upgrading Next.js (15.5.28), nodemailer (10.0.6), Tiptap (3.30.5), DOMPurify (3.4.17) and Vitest (3.2.7, with Vite 6.4), and by pinning fixed transitive versions. The rest, all build tooling linked as optional peers, are reviewed and listed by id. CI and `pnpm verify` run `pnpm audit --prod --audit-level high`. The rich-text editor is always named, since Tiptap 3.30 gives it a text-box role.
+- **Scans:** gitleaks over the whole history (10 reviewed false positives, in `.gitleaksignore`) and a ZAP baseline of the web app and the API (no failures; a Content-Security-Policy is risk R-31).
+- **Tests:** `us-ops-18` integration test (guessed and tampered quote tokens and invitation ids get the same 404, per-visitor rate limits, headers). QA section 278.
+
 ### 2026-11-04 — Every user-facing string in translation files (US-OPS-16, D-268, D-069)
 
 - **Strings:** every string the web app, the field app, `@spine/ui` and `@spine/ui-native` show now comes from `packages/shared/src/i18n/en.json`: about 7,650 strings in 34 areas, read through i18next (`react-i18next` in components). Keys are typed, so a missing or misspelled key fails typecheck. English is still the only language, and no wording changed. A translation is a sibling file with the same keys.

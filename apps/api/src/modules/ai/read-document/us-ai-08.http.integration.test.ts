@@ -34,7 +34,7 @@ describe("US-AI-08 (requires local Postgres)", () => {
   };
   const upload = async (bytes: Buffer, type: string, name: string, who: Who = owner) => {
     const form = new FormData();
-    form.append("file", new Blob([bytes], { type }), name);
+    form.append("file", new Blob([new Uint8Array(bytes)], { type }), name);
     const res = await fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: { cookie: who.cookie, "Idempotency-Key": randomUUID() }, body: form });
     return (await json<{ id: string }>(res)).id;
   };

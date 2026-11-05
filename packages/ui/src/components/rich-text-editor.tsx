@@ -10,7 +10,7 @@ import DOMPurify from "dompurify";
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { cn } from "../lib/cn";
-import { useT } from "../lib/i18n";
+import { t as translate, useT } from "../lib/i18n";
 import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
 
 export interface RichTextEditorProps {
@@ -137,8 +137,10 @@ export function RichTextEditor({
         ...(ariaInvalid !== undefined ? { "aria-invalid": String(ariaInvalid) } : {}),
         ...(ariaRequired !== undefined ? { "aria-required": String(ariaRequired) } : {}),
         ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
-        // Named, it's announced as a multi-line text box.
-        ...(ariaLabel ? { "aria-label": ariaLabel, role: "textbox", "aria-multiline": "true" } : {}),
+        // Announced as a multi-line text box, always with a name (Tiptap gives it the role itself since 3.30).
+        "aria-label": ariaLabel ?? placeholder ?? translate("ui.richTextEditor.defaultLabel"),
+        role: "textbox",
+        "aria-multiline": "true",
         class: "min-h-24 px-2.5 py-2 text-[14px] text-on-surface focus:outline-none [&_p]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline",
       },
     },

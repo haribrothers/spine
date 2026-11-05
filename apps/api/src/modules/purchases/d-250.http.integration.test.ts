@@ -32,7 +32,7 @@ describe("D-250 · a file is linked to a record only by its uploader, while noth
   };
   const upload = async (who: Who) => {
     const form = new FormData();
-    form.append("file", new Blob([billPhoto()], { type: "image/png" }), "receipt.png");
+    form.append("file", new Blob([new Uint8Array(billPhoto())], { type: "image/png" }), "receipt.png");
     return (await json<{ id: string }>(await fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: { cookie: who.cookie, "Idempotency-Key": randomUUID() }, body: form }))).id;
   };
   const expense = (receiptFileId: string | null) => ({ categoryId, date: "2026-10-16", currency: "USD", amount: "4200", receiptFileId });

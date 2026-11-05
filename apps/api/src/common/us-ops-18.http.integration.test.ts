@@ -73,7 +73,7 @@ describe("US-OPS-18 · public routes resist enumeration and rate limits hold (re
   });
 
   it("every API response says not to sniff, frame or send a referrer, and doesn't name the framework", async () => {
-    const res = await get("/health/live", visitor());
+    const res = await get("/health", visitor());
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
     expect(res.headers.get("x-frame-options")).toBe("DENY");
     expect(res.headers.get("referrer-policy")).toBe("no-referrer");
