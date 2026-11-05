@@ -37,7 +37,7 @@ US-OPS-18 · [D-267](prd/12-decisions.md): in-house, against the OWASP Top 10 (2
 
 `pnpm audit --prod` first found 9 critical and 49 high advisories. After the fixes it reports none that aren't reviewed below, and CI fails on any new high or critical one (`pnpm audit --prod --audit-level high`, also a `pnpm verify` step).
 
-**Upgraded:** Next.js 15.5.22 → 15.5.28 (remote code execution in image optimisation, a Server Actions DoS), nodemailer 9 → 10.0.6 (address-parser DoS), Tiptap 3.29 → 3.30.5 and ProseMirror view 1.42.3 (paste XSS, Markdown ReDoS), DOMPurify 3.4.17, Vitest 2 → 3.2.7 with Vite 6.4. **Pinned with `pnpm.overrides`** to fixed versions in the same major line: body-parser, brace-expansion, compression, fast-uri, js-yaml, multer, nanoid, postcss, proxy-addr, shell-quote, source-map-js and undici. The full API integration suite (1,348 tests), every unit suite and the E2E suite pass on the upgraded set.
+**Upgraded:** Next.js 15.5.22 → 15.5.28 (remote code execution in image optimisation, a Server Actions DoS), nodemailer 9 → 10.0.6 (address-parser DoS), Tiptap 3.29 → 3.30.5 and ProseMirror view 1.42.3 (paste XSS, Markdown ReDoS), DOMPurify 3.4.17, Vitest 2 → 3.2.7 with Vite 6.4. **Pinned with `pnpm.overrides`** to fixed versions in the same major line: body-parser, brace-expansion, compression, fast-uri, form-data (from the docs site's API reference), js-yaml, multer, nanoid, postcss, proxy-addr, shell-quote, source-map-js and undici. The full API integration suite (1,348 tests), every unit suite and the E2E suite pass on the upgraded set.
 
 **Accepted** (listed by id in `package.json` › `pnpm.auditConfig.ignoreGhsas`):
 
