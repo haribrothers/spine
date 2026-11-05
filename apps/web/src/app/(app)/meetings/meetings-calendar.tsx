@@ -540,10 +540,15 @@ export function MeetingsCalendar() {
     if (!hydrated || miniCovered) return;
     const from = miniGrid.start;
     const to = addDays(miniGrid.end, 1);
+    // Paging quickly asks for several months at once; an earlier month's answer arriving last mustn't replace this one's.
+    let current = true;
     apiClient
       .get<Meeting[]>(`/meetings?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`)
-      .then((rows) => setMiniMeetings({ key: miniKey, rows }))
-      .catch(() => setMiniMeetings({ key: miniKey, rows: [] }));
+      .then((rows) => current && setMiniMeetings({ key: miniKey, rows }))
+      .catch(() => current && setMiniMeetings({ key: miniKey, rows: [] }));
+    return () => {
+      current = false;
+    };
   }, [hydrated, miniCovered, miniGrid, miniKey, meetings]);
   const marks = useMemo(() => {
     const source = miniCovered ? visibleMeetings : miniMeetings?.key === miniKey ? miniMeetings.rows.filter(isVisible) : [];

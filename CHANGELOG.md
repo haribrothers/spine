@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-05 — Fix: the meetings mini calendar after paging quickly (US-MTG-13)
+
+- Paging the mini calendar several months at once could leave the month on screen without its busy-day dots: an earlier month's answer that arrived last replaced it. Answers for a month no longer on screen are now ignored. Found by the E2E suite (`us-mtg-13`), which failed now and then.
+
 ### 2026-11-05 — The README, licence and contributor guide (US-OPS-19, D-263)
 
 - **README:** what Spine does, screenshots (light and dark), installing in 5 minutes, back up and restore, updating, help, status, the repository layout, contributing and the licence. The production section now describes the published images and migrations at start.
