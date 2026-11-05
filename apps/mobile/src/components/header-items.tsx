@@ -3,13 +3,15 @@ import { useRouter } from "expo-router";
 import { Avatar } from "@spine/ui-native";
 import { useSignedInSession } from "../lib/session/session-provider";
 import { initials } from "../lib/member-display";
+import { useT } from "../lib/i18n";
 
 /** The avatar at the top right of every tab; opens Profile (D-197, the showcase-native pattern). */
 export function ProfileAvatarButton() {
+  const t = useT();
   const router = useRouter();
   const { member } = useSignedInSession();
   return (
-    <Pressable onPress={() => router.push("/profile")} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Profile, ${member.name}`}>
+    <Pressable onPress={() => router.push("/profile")} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("mobileApp.profileAvatar.label", { name: member.name })}>
       <Avatar fallback={initials(member)} size="lg" />
     </Pressable>
   );

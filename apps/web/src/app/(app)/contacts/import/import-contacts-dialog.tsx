@@ -27,6 +27,7 @@ import { apiClient } from "../../../../lib/api-client";
 import type { Contact } from "../types";
 import { buildImportRows } from "./build-rows";
 import { IMPORT_FIELD_LABELS, IMPORT_FIELDS, REQUIRED_IMPORT_FIELDS, type ColumnMapping, type ImportRow, type ImportRowResult } from "./types";
+import { useT } from "../../../../lib/i18n";
 
 type WizardStep = "upload" | "map" | "preview" | "importing" | "results";
 
@@ -54,6 +55,7 @@ export function ImportContactsDialog({
   existingContacts: Contact[];
   onImported: (createdCount: number) => void;
 }) {
+  const t = useT();
   const [step, setStep] = useState<WizardStep>("upload");
   const [fileName, setFileName] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export function ImportContactsDialog({
         }
         const cols = result.meta.fields ?? [];
         if (cols.length === 0) {
-          setParseError("No columns found — the file may be empty or not a CSV.");
+          setParseError(t("contacts.import.noColumns"));
           return;
         }
         setHeaders(cols);
@@ -163,8 +165,8 @@ export function ImportContactsDialog({
       }
       setParseError(
         err instanceof Error
-          ? `${err.message} — some rows may have already been created. Review the list below before retrying.`
-          : "Import failed — some rows may have already been created. Review the list below before retrying.",
+          ? t("contacts.import.failedWithMessage", { message: err.message })
+          : t("contacts.import.failed"),
       );
       setStep("preview");
     }
@@ -178,13 +180,13 @@ export function ImportContactsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent size="md" className="w-full max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import contacts from CSV</DialogTitle>
+          <DialogTitle>{t("contacts.import.title")}</DialogTitle>
           <DialogDescription>
-            {step === "upload" && "Upload a CSV exported from a spreadsheet or another CRM."}
-            {step === "map" && "Match your file's columns to Spine's contact fields."}
-            {step === "preview" && "Review each row before importing — uncheck any you want to skip."}
-            {step === "importing" && "Importing…"}
-            {step === "results" && "Import complete."}
+            {step === "upload" && t("contacts.import.stepUpload")}
+            {step === "map" && t("contacts.import.stepMap")}
+            {step === "preview" && t("contacts.import.stepPreview")}
+            {step === "importing" && t("contacts.import.stepImporting")}
+            {step === "results" && t("contacts.import.stepResults")}
           </DialogDescription>
         </DialogHeader>
 
@@ -211,8 +213,8 @@ export function ImportContactsDialog({
             >
               <FileUp size={32} className="text-on-surface-muted" />
               <div>
-                <p className="text-[13px] font-medium text-on-surface">Click to choose a CSV file</p>
-                <p className="text-[12px] text-on-surface-muted">or drag and drop</p>
+                <p className="text-[13px] font-medium text-on-surface">{t("contacts.import.chooseFile")}</p>
+                <p className="text-[12px] text-on-surface-muted">{t("contacts.import.dragDrop")}</p>
               </div>
               <input
                 type="file"
@@ -235,14 +237,14 @@ export function ImportContactsDialog({
           {step === "map" && (
             <div className="flex flex-col gap-4">
               <p className="text-[13px] text-on-surface-muted">
-                {fileName} — {parsedRows.length} row{parsedRows.length === 1 ? "" : "s"} found.
+                {t("contacts.import.rowsFound", { fileName, count: parsedRows.length })}
               </p>
               <div className="flex flex-col gap-2">
                 {headers.map((column) => (
                   <div key={column} className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-3 py-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-medium text-on-surface">{column}</p>
-                      <p className="truncate text-[12px] text-on-surface-muted">e.g. {parsedRows[0]?.[column] || "—"}</p>
+                      <p className="truncate text-[12px] text-on-surface-muted">{t("contacts.import.example", { value: parsedRows[0]?.[column] || "—" })}</p>
                     </div>
                     <Select
                       value={mapping[column] ?? "__skip__"}
@@ -252,11 +254,11 @@ export function ImportContactsDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__skip__">Don&apos;t import</SelectItem>
+                        <SelectItem value="__skip__">{t("contacts.import.dontImport")}</SelectItem>
                         {IMPORT_FIELDS.map((field) => (
                           <SelectItem key={field} value={field}>
                             {IMPORT_FIELD_LABELS[field]}
-                            {REQUIRED_IMPORT_FIELDS.includes(field) ? " *" : ""}
+                            {REQUIRED_IMPORT_FIELDS.includes(field) ? t("contacts.import.requiredMark") : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -267,7 +269,7 @@ export function ImportContactsDialog({
               {missingRequiredFields.length > 0 && (
                 <Alert variant="warning">
                   <AlertDescription>
-                    Map a column to {missingRequiredFields.map((f) => IMPORT_FIELD_LABELS[f]).join(" and ")} to continue — every contact needs {missingRequiredFields.length > 1 ? "these" : "this"}.
+                    {t("contacts.import.mapMissing", { count: missingRequiredFields.length, fields: missingRequiredFields.map((f) => IMPORT_FIELD_LABELS[f]).join(t("contacts.import.fieldsJoin")) })}
                   </AlertDescription>
                 </Alert>
               )}
@@ -277,21 +279,21 @@ export function ImportContactsDialog({
           {step === "preview" && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge>{includedCount} to import</Badge>
-                {errorCount > 0 && <Badge className="bg-overdue/10 text-overdue">{errorCount} with errors</Badge>}
-                {duplicateCount > 0 && <Badge className="bg-due-soon/10 text-due-soon">{duplicateCount} possible duplicates</Badge>}
+                <Badge>{t("contacts.import.toImport", { count: includedCount })}</Badge>
+                {errorCount > 0 && <Badge className="bg-overdue/10 text-overdue">{t("contacts.import.withErrors", { count: errorCount })}</Badge>}
+                {duplicateCount > 0 && <Badge className="bg-due-soon/10 text-due-soon">{t("contacts.import.possibleDuplicates", { count: duplicateCount })}</Badge>}
               </div>
               <div className="overflow-x-auto rounded-lg border border-border bg-surface">
                 <table className="w-full min-w-[720px] border-collapse text-[13px]">
                   <thead className="sticky top-0 bg-surface-sunken">
                     <tr>
                       <th className="w-10 px-3 py-2"></th>
-                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Row</th>
-                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Name</th>
-                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Type</th>
-                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Email</th>
-                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Phone</th>
-                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Status</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">{t("contacts.import.columnRow")}</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">{t("contacts.common.name")}</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">{t("contacts.common.type")}</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">{t("contacts.common.email")}</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">{t("contacts.common.phone")}</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">{t("contacts.common.status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -312,9 +314,9 @@ export function ImportContactsDialog({
                               {row.errors.join("; ")}
                             </span>
                           ) : row.duplicateOf.length > 0 ? (
-                            <span className="whitespace-nowrap text-due-soon">Possible duplicate of {row.duplicateOf.join(", ")}</span>
+                            <span className="whitespace-nowrap text-due-soon">{t("contacts.import.possibleDuplicateOf", { names: row.duplicateOf.join(", ") })}</span>
                           ) : (
-                            <span className="whitespace-nowrap text-on-surface-muted">Ready</span>
+                            <span className="whitespace-nowrap text-on-surface-muted">{t("contacts.import.ready")}</span>
                           )}
                         </td>
                       </tr>
@@ -334,28 +336,28 @@ export function ImportContactsDialog({
           {step === "results" && (
             <div className="flex flex-col gap-3">
               <p className="text-[13px] text-on-surface">
-                {results.filter((r) => r.status === "created").length} contact{results.filter((r) => r.status === "created").length === 1 ? "" : "s"} created.
+                {t("contacts.import.created", { count: results.filter((r) => r.status === "created").length })}
               </p>
               {results.some((r) => r.status === "created" && r.duplicateOf?.length) && (
                 <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-3">
-                  <p className="text-[13px] font-medium text-due-soon">Created, but possible duplicates — worth reviewing:</p>
+                  <p className="text-[13px] font-medium text-due-soon">{t("contacts.import.createdDuplicates")}</p>
                   {results
                     .filter((r) => r.status === "created" && r.duplicateOf?.length)
                     .map((r) => (
                       <p key={r.rowNumber} className="text-[12px] text-on-surface-muted">
-                        Row {r.rowNumber}: matches {r.duplicateOf!.join(", ")}
+                        {t("contacts.import.rowMatches", { row: r.rowNumber, names: r.duplicateOf!.join(", ") })}
                       </p>
                     ))}
                 </div>
               )}
               {results.some((r) => r.status === "error") && (
                 <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-3">
-                  <p className="text-[13px] font-medium text-overdue">Rows that failed:</p>
+                  <p className="text-[13px] font-medium text-overdue">{t("contacts.import.rowsFailed")}</p>
                   {results
                     .filter((r) => r.status === "error")
                     .map((r) => (
                       <p key={r.rowNumber} className="text-[12px] text-on-surface-muted">
-                        Row {r.rowNumber}: {r.message}
+                        {t("contacts.import.rowMessage", { row: r.rowNumber, message: r.message ?? "" })}
                       </p>
                     ))}
                 </div>
@@ -369,25 +371,25 @@ export function ImportContactsDialog({
             {step === "map" && (
               <>
                 <Button variant="secondary" onClick={() => setStep("upload")}>
-                  Back
+                  {t("contacts.import.back")}
                 </Button>
                 <Button onClick={handleMappingContinue} disabled={missingRequiredFields.length > 0}>
-                  Continue
+                  {t("contacts.import.continue")}
                 </Button>
               </>
             )}
             {step === "preview" && (
               <>
                 <Button variant="secondary" onClick={() => setStep("map")}>
-                  Back
+                  {t("contacts.import.back")}
                 </Button>
                 <Button onClick={handleImport} disabled={includedCount === 0}>
                   <Upload size={14} />
-                  Import {includedCount} contact{includedCount === 1 ? "" : "s"}
+                  {t("contacts.import.importCount", { count: includedCount })}
                 </Button>
               </>
             )}
-            {step === "results" && <Button onClick={() => handleOpenChange(false)}>Done</Button>}
+            {step === "results" && <Button onClick={() => handleOpenChange(false)}>{t("contacts.import.done")}</Button>}
           </DialogFooter>
         )}
       </DialogContent>

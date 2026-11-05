@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 
 export interface PaginationProps {
   page: number;
@@ -20,10 +21,10 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
   const pages = pageWindow(page, pageCount);
 
   return (
-    <nav data-print="hide" className={cn("flex items-center gap-1", className)} aria-label="Pagination">
+    <nav data-print="hide" className={cn("flex items-center gap-1", className)} aria-label={t("ui.pagination.label")}>
       <button
         type="button"
-        aria-label="Previous page"
+        aria-label={t("ui.pagination.previousPage")}
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
         className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40"
@@ -48,7 +49,7 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
       ))}
       <button
         type="button"
-        aria-label="Next page"
+        aria-label={t("ui.pagination.nextPage")}
         disabled={page >= pageCount}
         onClick={() => onPageChange(page + 1)}
         className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40"

@@ -1,0 +1,43 @@
+---
+title: Let a customer accept or decline online
+description: See what your customer sees on the quote link, how they answer, and how you're told.
+sidebar:
+  order: 9
+---
+
+The link in a quote email opens a page with your quote on it. Your customer needs no account and no download: they read it on a phone or a computer and accept or decline it there, with an optional comment. You're told as soon as they look and as soon as they answer.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Your customer, from the link in the email or a link you copied. Notifications go to everyone who can open quotes; the acceptance email goes to Owners.</Aside>
+
+## What the customer does
+
+<Steps>
+
+1. **Open the link** — The page shows your business name and logo, the quote number and title, "Awaiting your response", **Prepared for** with their name, the validity date, every line, the Subtotal, Tax and Total, your **Notes** and your **Terms & conditions**. It fits a phone screen without scrolling sideways.
+
+2. **Decide** — Under **Your decision** they can type in **Add an optional comment…**, then press **Accept quote** or **Decline**.
+
+3. **See the result** — After accepting, the page shows **Accepted** and "You accepted this quote on" the date, and the quote can't be answered again. After declining, it shows **Declined** and "You rejected this quote on" the date, with their comment.
+
+</Steps>
+
+## How you're told
+
+- **Viewed.** When the customer opens the link, the quote's **Activity** shows it and the list shows **Viewed** with a count. You get at most one "viewed" notification per quote per hour.
+- **Accepted.** Everyone who can open quotes gets an in-app notification such as "Ananya Rao accepted quote QUO-0012." Owners also get an email.
+- **Declined.** The same people get "Ananya Rao rejected quote QUO-0012."
+
+On the quote's page you see the status, "Accepted online by the customer on" the date (or "Declined online…"), and the customer's comment.
+
+## When the link doesn't open the quote
+
+- If you've revised the quote, or the link is more than 30 days old, the customer sees **This quote link has expired**, with your logo, name, address, email and phone, and a note to contact you for the latest version. [Copy a fresh link](../send-a-quote-to-a-customer/) or send the new version.
+- If the link was cut short or mistyped, they see **This quote link isn't valid**, with no business details.
+- If they try to answer a quote that's already been answered or replaced, they see "This quote could not be updated. It may have already been responded to or the link may have expired."
+- Pressing the buttons many times in a row shows "Too many attempts — please wait a minute and try again."
+
+<Aside type="caution">
+A quote past its **Valid until** date still opens from a working link and can still be accepted. If you no longer stand by the price, [revise the quote](../revise-a-sent-quote/).
+</Aside>

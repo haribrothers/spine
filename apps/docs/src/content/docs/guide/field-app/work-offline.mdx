@@ -1,0 +1,41 @@
+---
+title: Work with no signal
+description: What the field app does offline, what waits to sync, and how to check that everything reached your office.
+sidebar:
+  order: 13
+---
+
+Bad signal on site doesn't stop you. The app keeps what it last downloaded on the phone, and saves your photos, expenses and milestone completions until it can send them. Each item is sent exactly once, even if the connection drops halfway, so nothing is doubled.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone signed in to the field app.</Aside>
+
+## What works offline
+
+- **Jobs you've opened before** — their details, milestones and contact load from the phone.
+- **Site photos, expenses and milestone completions** — each saves on the phone and shows a waiting chip, such as "2 photos waiting" or **Completion waiting**.
+- **Search** — searches what's saved on the phone.
+
+What needs a connection: signing in, presenting a quote for the customer to accept or decline, and **Read receipt**.
+
+When you're offline, Today shows "You're offline" and "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of _time_." When the phone is back online, the banner goes and waiting items start sending on their own.
+
+## Check what's waiting
+
+<Steps>
+1. **Look at the pill** — At the top of Today, the pill reads **All synced** or "_n_ waiting to sync".
+2. **Open Sync** — Tap the pill, or the sync row in Profile. Sync shows how many items are waiting and why, for example "You're offline · sends automatically when you reconnect".
+3. **Check the lists** — **Waiting** lists each item, its job and when you made it. **Sent today** lists what's already reached your office. **Needs fixing** appears if the server refused something.
+4. **Send now (optional)** — Press **Try sending now** to send waiting items straight away when you're online.
+</Steps>
+
+When everything has sent, Sync says "Everything has reached your office." A batch of photos counts as one item.
+
+## If the server doesn't answer
+
+If your phone is online but the Spine server doesn't answer, Today shows "Couldn't load your jobs" and "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." Press **Try again**, or **Show jobs saved at _time_** to work from what's saved on the phone.
+
+<Aside type="caution">Signing out deletes anything still waiting from the phone. The app warns you first. See [Change your settings and sign out](../profile-and-sign-out/).</Aside>
+
+If an item shows in red under **Needs fixing**, see [Fix an item that didn't send](../fix-an-item-that-didnt-send/).

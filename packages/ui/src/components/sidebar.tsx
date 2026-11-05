@@ -3,6 +3,7 @@
 import { Slot } from "@radix-ui/react-slot";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   collapsed?: boolean;
@@ -52,6 +53,7 @@ export function SidebarHeader({
   children,
   ...props
 }: SidebarHeaderProps) {
+  const t = useT();
   // Collapsed, the header is only as wide as the rail: the logo itself is the
   // expand button, showing the expand icon on hover or keyboard focus (US-SET-26).
   if (collapsed && logo && onCollapsedChange) {
@@ -60,7 +62,7 @@ export function SidebarHeader({
         <button
           type="button"
           onClick={() => onCollapsedChange(false)}
-          aria-label="Expand sidebar"
+          aria-label={t("ui.sidebar.expand")}
           className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:bg-surface-sunken"
         >
           <span className="flex items-center justify-center group-hover:invisible group-focus-visible:invisible">{logo}</span>
@@ -86,7 +88,7 @@ export function SidebarHeader({
           <button
             type="button"
             onClick={() => onCollapsedChange(!collapsed)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("ui.sidebar.expand") : t("ui.sidebar.collapse")}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
             {collapsed ? <PanelLeftOpen size={18} strokeWidth={2} /> : <PanelLeftClose size={18} strokeWidth={2} />}

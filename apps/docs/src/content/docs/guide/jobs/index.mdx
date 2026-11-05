@@ -1,0 +1,47 @@
+---
+title: Jobs and milestones
+description: What jobs are for in Spine, the main ideas behind them, and where to find each task.
+sidebar:
+  order: 0
+---
+
+A job is the work behind an agreed price. It holds the contract value, the billing milestones you invoice as the work is done, the retention held back from each progress invoice, the variation orders that change the scope, site photos and notes, the crew working on it, and live costing from your books.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can use jobs">Jobs are part of the **Jobs & field** module. If you don't see **Jobs** in the sidebar, an Owner can switch the module on in **Settings › Modules**. Staff also need **Open Jobs** from their Team. Field crew see only the jobs they're assigned to, in the field app.</Aside>
+
+<Screenshot id="jobs-list" alt="The Jobs list with the Active, Ready to bill, Over or near budget and Retention held cards above the table of jobs" />
+
+## The main ideas
+
+- **Contract value.** What the customer agreed to pay. A job started from an accepted quote takes the quote's total. Afterwards it changes only when you apply an accepted variation order.
+- **Job number.** Every job gets a permanent number, such as JOB-007, from the Job sequence in **Settings › Numbering**.
+- **Status.** A job is **Active**, **On hold**, **Completed** or **Cancelled**.
+- **Milestones.** Stages of the work, each a share of the contract or a fixed amount, with a due date. A milestone goes from **Pending** to **Completed** to **Invoiced**.
+- **Progress invoices.** The invoice you raise from a completed milestone. Each issued one gets a progress claim number on the job.
+- **Retention.** A percentage held back from each progress invoice. It sits in Retention Receivable, not in what the customer owes now, until you release it.
+- **Variation orders.** A quote for a change to the job, linked to it. Once the customer accepts it, you apply it to add its total to the contract value.
+- **Costing.** Cost, revenue and margin for the job, worked out from bills and approved expenses tagged to it and the invoices raised on it.
+
+## Tasks
+
+- [Start a job](./start-a-job/)
+- [Find jobs in the jobs list](./find-jobs-in-the-list/)
+- [Edit a job's details](./edit-a-job/)
+- [Change a job's status or close it](./change-a-job-status/)
+- [Set up billing milestones](./set-up-billing-milestones/)
+- [Mark a milestone complete](./mark-a-milestone-complete/)
+- [Raise a progress invoice from a milestone](./raise-a-progress-invoice/)
+- [Hold and release retention](./hold-and-release-retention/)
+- [Raise a variation order](./raise-a-variation-order/)
+- [Apply an accepted variation order](./apply-a-variation-order/)
+- [Assign crew to a job](./assign-crew/)
+- [Add site photos to a job](./add-site-photos/)
+- [Add notes to a job](./add-notes/)
+- [See a job's cost and margin](./see-job-costing/)
+- [Set a cost budget and track billing progress](./track-budget-and-billing/)
+- [See what happened on a job](./see-job-activity/)
+
+Jobs start from accepted quotes, so you may also want the [Quotes](../quotes/) guide.

@@ -6,6 +6,7 @@ import { emailBodyText, unknownPlaceholder, unknownPlaceholderMessage, type Emai
 import { apiClient } from "../lib/api-client";
 import { AiField } from "./ai-suggested-tag";
 import { EmailAiDraftBar, emailMessageHelp, useEmailAiDraft } from "./email-ai-draft";
+import { useT } from "../lib/i18n";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -38,6 +39,7 @@ export function SendEmailDialog({
   pdfLabel?: string;
   onSend: (email: Required<Pick<EmailOverride, "to" | "subject" | "message">> & { attachPdf: boolean }) => Promise<void>;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<EmailDraft | null>(null);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
@@ -77,16 +79,16 @@ export function SendEmailDialog({
         setSubject(d.subject);
         setMessage(d.message);
       })
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "The email didn't load. Try again."));
-  }, [open, draftPath, resetAi]);
+      .catch((err) => setLoadError(err instanceof Error ? err.message : t("common.sendEmail.loadFailed")));
+  }, [open, draftPath, resetAi, t]);
 
   const placeholderError = (text: string) => {
     const name = draft ? unknownPlaceholder(text, draft.type) : null;
     return name === null ? undefined : unknownPlaceholderMessage(name);
   };
-  const toError = !to.trim() ? "Enter an email address." : EMAIL.test(to.trim()) ? undefined : "Enter an email address like name@example.com.";
-  const subjectError = !subject.trim() ? "Enter a subject." : placeholderError(subject);
-  const messageError = !emailBodyText(message) ? "Enter a message." : placeholderError(message);
+  const toError = !to.trim() ? t("common.sendEmail.toRequired") : EMAIL.test(to.trim()) ? undefined : t("common.sendEmail.toInvalid");
+  const subjectError = !subject.trim() ? t("common.sendEmail.subjectRequired") : placeholderError(subject);
+  const messageError = !emailBodyText(message) ? t("common.sendEmail.messageRequired") : placeholderError(message);
 
   async function send() {
     setTouched(true);
@@ -97,7 +99,7 @@ export function SendEmailDialog({
       await onSend({ to: to.trim(), subject: subject.trim(), message: message.trim(), attachPdf: draft?.hasPdf ? attachPdf : false });
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The email wasn't sent. Try again.");
+      setError(err instanceof Error ? err.message : t("common.sendEmail.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -122,23 +124,23 @@ export function SendEmailDialog({
             </div>
           ) : draft ? (
             <>
-              <FormField label="To" required errorText={touched ? toError : undefined}>
+              <FormField label={t("common.sendEmail.to")} required errorText={touched ? toError : undefined}>
                 {(field) => <Input {...field} type="email" required={false} value={to} onChange={(e) => setTo(e.target.value)} autoComplete="email" />}
               </FormField>
               <EmailAiDraftBar state={ai} type={draft.type} />
-              <AiField suggested={ai.subjectDrafted} label="Drafted by AI">
-                <FormField label="Subject" errorText={touched || placeholderError(subject) ? subjectError : undefined}>
+              <AiField suggested={ai.subjectDrafted} label={t("common.sendEmail.draftedByAi")}>
+                <FormField label={t("common.sendEmail.subject")} errorText={touched || placeholderError(subject) ? subjectError : undefined}>
                   {(field) => <Input {...field} required={false} maxLength={200} value={subject} onChange={(e) => setSubject(e.target.value)} />}
                 </FormField>
               </AiField>
-              <AiField suggested={ai.messageDrafted} label="Drafted by AI">
-                <FormField label="Message" helperText={emailMessageHelp(draft.type)} errorText={touched || placeholderError(message) ? messageError : undefined}>
+              <AiField suggested={ai.messageDrafted} label={t("common.sendEmail.draftedByAi")}>
+                <FormField label={t("common.sendEmail.message")} helperText={emailMessageHelp(draft.type)} errorText={touched || placeholderError(message) ? messageError : undefined}>
                   {(field) => (
                     <RichTextEditor
                       id={field.id}
                       aria-describedby={field["aria-describedby"]}
                       aria-invalid={field["aria-invalid"]}
-                      aria-label="Message"
+                      aria-label={t("common.sendEmail.message")}
                       className="[&_.ProseMirror]:min-h-40"
                       value={message}
                       onValueChange={setMessage}
@@ -158,7 +160,7 @@ export function SendEmailDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={sending}>
-            Cancel
+            {t("common.actions.cancel")}
           </Button>
           <Button onClick={() => void send()} disabled={!draft || sending}>
             {sending ? <Spinner size="sm" /> : sendLabel}

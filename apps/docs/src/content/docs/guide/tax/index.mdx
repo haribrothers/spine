@@ -1,0 +1,41 @@
+---
+title: Tax
+description: How Spine handles tax rates, groups, tax-inclusive prices, the Tax Summary, tax payments and India GST, and where to find each task.
+sidebar:
+  order: 0
+---
+
+Spine works out tax on every line of a quote, invoice, credit note, vendor bill and expense, using the tax rates you set up for your country. It keeps what you collected from customers and what you paid to vendors in your books, so the figures for your return are ready when you need them. Spine prepares the numbers and files to upload. It never files a return or connects to a tax portal.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can use tax settings">Only Owners can change tax rates, groups and tax settings. This is never given to a Team. Everyone who can edit a document can pick a rate or group on its lines. The Tax Summary opens for Owners, and for Staff whose Team has **View financial statements**.</Aside>
+
+<Screenshot id="tax-settings" alt="Settings › Tax with the prices-include-tax switch, the country, the return period, and the lists of tax rates and tax groups" />
+
+## The main ideas
+
+- **Tax rate.** A named percentage, such as "VAT 20%" or "Sales Tax 8.875%". Each rate has a tax type (for example VAT, GST, Sales tax, or CGST and SGST in India) so reports can split tax by kind.
+- **Tax group.** Several rates applied together as one choice on a line, for split taxes like CGST + SGST or a state surcharge on top of a sales tax.
+- **One rate or one group per line.** A line takes either a rate or a group, never both. Tax is worked out per line and rounded once, half-up.
+- **Prices that include tax.** You choose whether new lines treat the price as including tax or adding tax on top. Each line can change this.
+- **Supply type.** Why a line has no tax: zero-rated, exempt, or non-taxable (outside GST/VAT). Reports list these sales and purchases separately.
+- **Issued documents keep their tax.** Changing or archiving a rate never changes an issued invoice. Each line keeps the percentage it was issued with.
+- **Tax Summary.** The report of tax collected, tax paid and the net you owe for a period.
+- **India GST.** Your GSTIN and state, each customer's GST treatment, the place of supply, HSN/SAC codes, GST invoices and a GSTR-1 file.
+
+## Tasks
+
+- [Start from your country's tax rates](./start-from-your-country/)
+- [Add and manage tax rates](./add-and-manage-tax-rates/)
+- [Combine rates into a tax group](./combine-rates-into-a-group/)
+- [Choose whether prices include tax](./choose-whether-prices-include-tax/)
+- [Mark a line as zero-rated, exempt or non-taxable](./mark-supplies-zero-rated-or-exempt/)
+- [Read the Tax Summary](./read-the-tax-summary/)
+- [Record a tax payment or refund](./record-a-tax-payment/)
+- [Set up GST for an Indian business](./set-up-gst/)
+- [Charge the right GST on a document](./charge-the-right-gst/)
+- [Export GSTR-1 for the GST portal](./export-gstr-1/)
+
+The Tax Summary is one of the [Reports](../reports/), and the dashboard's **Tax this period** card is described in the [Dashboard](../dashboard/) guide.

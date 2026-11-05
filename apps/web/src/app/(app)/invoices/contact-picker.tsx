@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import type { ContactOption } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * Contact picker for the invoice builder — reuses `Combobox` (search-as-you-
@@ -14,12 +15,16 @@ import type { ContactOption } from "./types";
  * created against a contact the org has archived).
  */
 export function ContactPicker({
+  id,
   value,
   onValueChange,
 }: {
+  /** US-OPS-17 — the field's id, so its label names the picker. */
+  id?: string;
   value: string;
   onValueChange: (contactId: string) => void;
 }) {
+  const t = useT();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
@@ -34,5 +39,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a contact…" />;
+  return <Combobox id={id} options={options} value={value || undefined} onValueChange={onValueChange} placeholder={t("invoices.contactPicker.placeholder")} />;
 }

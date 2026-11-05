@@ -9,6 +9,7 @@ import { formatMoney } from "../../../../lib/money";
 import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { FigureTrio } from "./figure-trio";
+import { useT } from "../../../../lib/i18n";
 
 /**
  * US-DASH-25 (D-160) — `DashboardOwnerBooks` › Tax this period: tax
@@ -18,6 +19,7 @@ import { FigureTrio } from "./figure-trio";
  * statements".
  */
 export function TaxPeriodCard() {
+  const t = useT();
   const [data, setData] = useState<TaxPeriod | null>(null);
   const [failed, setFailed] = useState(false);
   const orgCurrency = useDashboardCurrency();
@@ -38,9 +40,9 @@ export function TaxPeriodCard() {
     <Card data-testid="tax-period">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Tax this period
+          {t("dashboard.widgets.taxPeriod")}
           <Link href={href} className="text-[13px] font-normal text-primary hover:underline">
-            Tax Summary
+            {t("dashboard.taxPeriod.taxSummary")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -48,17 +50,17 @@ export function TaxPeriodCard() {
         {!data || !orgCurrency ? (
           <WidgetSkeleton kind="figures" />
         ) : (
-          <Link href={href} className="flex flex-col gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Tax for ${data.label}: net payable ${money(data.net)}. Open the Tax Summary.`}>
+          <Link href={href} className="flex flex-col gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={t("dashboard.taxPeriod.ariaLabel", { label: data.label, net: money(data.net) })}>
             <FigureTrio
               className="hover:bg-surface-sunken"
               figures={[
-                { label: "Collected", value: money(data.collected) },
-                { label: "Input tax", value: money(data.input) },
-                { label: "Net payable", value: money(data.net), className: "text-primary" },
+                { label: t("dashboard.taxPeriod.collected"), value: money(data.collected) },
+                { label: t("dashboard.taxPeriod.inputTax"), value: money(data.input) },
+                { label: t("dashboard.taxPeriod.netPayable"), value: money(data.net), className: "text-primary" },
               ]}
             />
             <p className="text-[13px] text-on-surface-muted" data-testid="tax-period-note">
-              {data.label} · {data.paid ? `paid ${money(data.paid)}` : "nothing paid yet"}
+              {data.label} · {data.paid ? t("dashboard.taxPeriod.paid", { amount: money(data.paid) }) : t("dashboard.taxPeriod.nothingPaid")}
             </p>
           </Link>
         )}

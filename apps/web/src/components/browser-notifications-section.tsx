@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, Spinner } from "@spine/ui";
 import { usePushSubscription } from "../lib/use-push-subscription";
 import { SavedToast } from "../app/settings/saved-toast";
+import { useT } from "../lib/i18n";
 
 /**
  * PRD S-10.12 — the explicit, in-app-action-triggered opt-in required by
@@ -18,6 +19,7 @@ import { SavedToast } from "../app/settings/saved-toast";
  * organisation Settings.
  */
 export function BrowserNotificationsSection() {
+  const t = useT();
   const { state, loading, subscribe, unsubscribe } = usePushSubscription();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -48,40 +50,39 @@ export function BrowserNotificationsSection() {
     <section className="flex flex-col gap-3" aria-labelledby="browser-notifications-heading" data-testid="browser-notifications">
       <div className="flex flex-col gap-1">
         <h3 id="browser-notifications-heading" className="text-[14px] font-semibold text-on-surface">
-          Browser notifications
+          {t("common.browserNotifications.heading")}
         </h3>
         <p className="text-[13px] text-on-surface-muted">
-          Get a native notification on this device when something needs your attention — even if Spine isn't the tab you're looking at. Additive to
-          the in-app notification panel and email; turning this off doesn't affect either.
+          {t("common.browserNotifications.description")}
         </p>
       </div>
 
       {state === "unsupported" ? (
         <div className="rounded-md border border-border bg-surface p-4">
-          <span className="text-[13px] text-on-surface-muted">This browser doesn't support push notifications.</span>
+          <span className="text-[13px] text-on-surface-muted">{t("common.browserNotifications.unsupported")}</span>
         </div>
       ) : state === "not-configured" ? (
         <div className="rounded-md border border-border bg-surface p-4">
           <span className="text-[13px] text-on-surface-muted">
-            Browser notifications aren't configured on this Spine instance. Ask your self-hoster to set a VAPID keypair.
+            {t("common.browserNotifications.notConfigured")}
           </span>
         </div>
       ) : (
         <div className="flex items-center justify-between rounded-md border border-border bg-surface p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-medium text-on-surface">
-              {state === "subscribed" ? "Enabled on this device" : state === "denied" ? "Blocked by the browser" : "Not enabled on this device"}
+              {state === "subscribed" ? t("common.browserNotifications.enabled") : state === "denied" ? t("common.browserNotifications.blocked") : t("common.browserNotifications.notEnabled")}
             </span>
             <span className="text-[13px] text-on-surface-muted">
               {state === "denied"
-                ? "You've blocked notifications for Spine — re-enable them from your browser's site settings to turn this on."
+                ? t("common.browserNotifications.blockedHint")
                 : state === "subscribed"
-                  ? "This device will receive push notifications."
-                  : "Turn this on to receive push notifications on this device."}
+                  ? t("common.browserNotifications.enabledHint")
+                  : t("common.browserNotifications.notEnabledHint")}
             </span>
           </div>
           <Button variant={state === "subscribed" ? "secondary" : "primary"} disabled={busy || state === "denied"} onClick={handleToggle}>
-            {busy ? <Spinner size="sm" /> : state === "subscribed" ? "Turn off" : "Turn on"}
+            {busy ? <Spinner size="sm" /> : state === "subscribed" ? t("common.browserNotifications.turnOff") : t("common.browserNotifications.turnOn")}
           </Button>
         </div>
       )}

@@ -4,7 +4,9 @@ import {
   AppShell,
   AppShellContent,
   AppShellHeader,
+  AppShellMobileNav,
   AppShellSidebar,
+  AppShellTopBar,
   Avatar,
   AvatarFallback,
   SpineLogo,
@@ -181,6 +183,18 @@ export default () => (
         />
       </DocSection>
 
+      <DocSection id="phone" title="At phone width">
+        <DocLead>
+          Under 768px the sidebar is hidden. AppShellTopBar shows a menu button, the logo, notifications and the
+          avatar; the menu button opens AppShellMobileNav, the same sections sliding in from the left over a dimmed
+          page, with a close button. Tapping the dimmed area, pressing Escape or following a link closes it. Every
+          control is at least 44×44px (US-OPS-14). Resize the window below 768px to try it.
+        </DocLead>
+        <ComponentPreview>
+          <PhoneShellDemo />
+        </ComponentPreview>
+      </DocSection>
+
       <DocSection id="api-reference" title="API Reference">
         <ApiTable
           rows={[
@@ -192,6 +206,13 @@ export default () => (
             { prop: "AppShellSidebar.renderLink", type: "(item: AppShellNavItem, children: ReactNode) => ReactNode" },
             { prop: "AppShellSidebar.userMenu", type: "ReactNode" },
             { prop: "AppShellSidebar.search", type: "ReactNode", defaultValue: "—", description: "US-OPS-48: under the logo, above the nav — the app's Search… field, or its icon when collapsed." },
+            { prop: "AppShellTopBar.logo", type: "ReactNode" },
+            { prop: "AppShellTopBar.onMenuClick", type: "() => void", description: "Opens AppShellMobileNav." },
+            { prop: "AppShellTopBar.actions", type: "ReactNode", defaultValue: "—", description: "Notifications and the avatar menu." },
+            { prop: "AppShellTopBar.menuLabel", type: "string", defaultValue: '"Open navigation"' },
+            { prop: "AppShellMobileNav.open / onOpenChange", type: "boolean / (open: boolean) => void" },
+            { prop: "AppShellMobileNav.logo, sections, isActive, renderLink, search", type: "as AppShellSidebar" },
+            { prop: "AppShellMobileNav.footer", type: "ReactNode", defaultValue: "—", description: "The person's name and menu, and help." },
             { prop: "AppShellHeader.breadcrumb", type: "BreadcrumbItem[]" },
             { prop: "AppShellHeader.title", type: "string" },
             { prop: "AppShellHeader.description", type: "string" },
@@ -232,6 +253,42 @@ export default () => (
           ]}
         />
       </DocSection>
+    </div>
+  );
+}
+
+function PhoneShellDemo() {
+  const [open, setOpen] = useState(false);
+  const link = (item: { href: string; label: string }, content: React.ReactNode) => (
+    <a href={`#${item.href.slice(1)}`} aria-label={item.label} onClick={(e) => e.preventDefault()}>
+      {content}
+    </a>
+  );
+  return (
+    <div className="w-full max-w-[390px] overflow-hidden rounded-lg border border-border">
+      <AppShellTopBar
+        logo={<SpineLogo variant="horizontal" size={96} />}
+        onMenuClick={() => setOpen(true)}
+        actions={
+          <>
+            <button type="button" aria-label="Notifications" className="flex h-11 w-11 items-center justify-center rounded-md text-on-surface hover:bg-surface-sunken">
+              <Bell size={18} aria-hidden />
+            </button>
+            <Avatar size="sm">
+              <AvatarFallback>AM</AvatarFallback>
+            </Avatar>
+          </>
+        }
+      />
+      <p className="p-4 text-[13px] text-on-surface-muted">Page content. The top bar shows only under 768px.</p>
+      <AppShellMobileNav
+        open={open}
+        onOpenChange={setOpen}
+        logo={<SpineLogo variant="horizontal" size={96} />}
+        sections={DEMO_SECTIONS}
+        isActive={(href) => href === "/dashboard"}
+        renderLink={link}
+      />
     </div>
   );
 }

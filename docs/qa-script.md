@@ -5542,7 +5542,140 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 7. Behind Cloudflare Access with the Bypass application for `api/*`, `.well-known/*` and `quote/*`: `curl <address>/api/health` answers with the version, the phone app signs in, and a quote link opens without Access. The web pages still ask for Access's sign-in first.
 8. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
 
+## 267. Load demo data to explore (US-ONB-09, Phase 12)
+
+1. On a new business, on the welcome screen choose "Just show me around (use defaults)" and load United States, Construction / Contracting. Riverstone Builders loads with contacts, items, leads, quotes in several states, three jobs, invoices with payments and retention, bills, expenses, meetings and the demo people.
+2. Open every report: each shows figures, and the trial balance balances.
+3. Meetings: "Weekly crew scheduling" repeats every week for 12 weeks, starting tomorrow. Edit one occurrence: "This event" / "All events" appears. Move just this event an hour later, and the other weeks stay where they were. Every other demo business has one weekly meeting too (e.g. "Studio planning" for interior design). The other demo meetings don't repeat.
+4. Each demo job's Photos tab shows real photos, not blank tiles.
+5. Storage down: with `STORAGE_DRIVER=s3` pointed at a bucket that doesn't answer, load the demo from Settings › Data. It loads, and the picker says "Riverstone Builders is loaded. Photos skipped — file storage isn't reachable." with Continue. Jobs have no photos, expenses no receipts and the business no logo; everything else is there. Loading doesn't stop on each file: the first failure skips the rest.
+6. Settings › Data › Delete all demo data still removes only the demo, including the weekly meeting and every occurrence you changed.
+7. Regression: with storage working, the picker closes as soon as the demo loads, with no message (sections 187 and 208).
+
+## 268. Remove demo data and keep my real data (US-SET-08, Phase 12)
+
+1. With demo data loaded, as an Owner open Settings › Data. It reads "Demo data is loaded", names the demo business, and says "Removing it only deletes demo records — your real data is never touched." with "Delete all demo data".
+2. Add a customer of your own. Press "Delete all demo data": "Delete all demo data?" explains what goes (every demo record and its entries in your books), that your own records stay and the demo people lose access, with "Cancel" and "Delete demo data". Cancel deletes nothing.
+3. Press it again and choose "Delete demo data". The button shows "Deleting…", then a toast says "Demo data deleted · Your own records stay." The pane reads "No demo data is currently loaded." Your customer is still in Contacts, and the demo people (e.g. Sarah Mendes) are gone from Team › Users and can't open the business any more.
+4. If one of your own records used a demo contact, the toast and the pane also say "Kept 1 demo contact that your own records use."
+5. Stop the API and try again: the pane shows what went wrong and keeps "Demo data is loaded".
+6. Regression: Staff and Field never see Settings › Data, and `DELETE /demo-data` gives them 403 (US-OPS-20). Loading demo data from the pane still works (section 187).
+
+## 269. Start with demo data from an environment flag (US-OPS-02, Phase 12)
+
+1. On a clean install (`./install.sh`, no account yet), set `SEED_DEMO=true` in `.env` and restart (`docker compose --profile minimal up -d`). `docker compose logs api` shows "Demo data loaded — the first person to sign up becomes its owner."
+2. Open the address: the welcome page offers to create the first account. Sign up. You land on the dashboard, not onboarding, in Riverstone Builders with the demo's data. Team › Users shows you as the Primary Owner and the demo people; there's no "Spine demo" user.
+3. Sign out and try to sign up again with another email: "This Spine is invite-only".
+4. Restart the API with `SEED_DEMO=true` still set: the log shows "Demo seeding skipped — the database already has data…", and nothing changes.
+5. On another clean install, `SEED_DEMO=IN:interior_design` loads that demo business instead. `SEED_DEMO=maybe` logs that it isn't a value SEED_DEMO takes and loads nothing; sign-up works as on any new install.
+6. Settings › Data › Delete all demo data then removes the demo and keeps your account and the business.
+7. Regression: with `SEED_DEMO` unset or `false`, a new install starts empty and the first sign-up makes its own business, as before (US-AUTH-08). An invited person still joins by their invitation.
+
+## 270. Tell owners a new version is available (US-OPS-06, Phase 12)
+
+1. Sign in as an Owner on a server running an older version than the latest public release (or set `SPINE_VERSION` to an older one). Within a minute of start-up, every page shows "Spine <latest> is available. You're on <current>. Updating runs database migrations automatically and takes a backup first."
+2. "What's new" opens that release's notes on GitHub. "How to update" opens the README's Updating section.
+3. Close the banner and reload: it stays hidden. It comes back only when a newer release than that one is out.
+4. Sign in as Staff and as Field: no banner, on any page.
+5. Set `UPDATE_CHECK=off` and restart: the banner doesn't show, and `docker compose logs api` has no "Update check" lines.
+6. Regression: the storage and backup banners still show for Owners when they apply, above or beside this one; Settings › About Spine still shows the version.
+
+## 271. Respect reduced-motion settings everywhere (US-OPS-09, Phase 12)
+
+1. Turn on reduced motion: macOS System Settings › Accessibility › Display › Reduce motion (Windows: Settings › Accessibility › Visual effects › Animation effects off). Reload Spine.
+2. Open the search palette (⌘K), the account menu, a dialog (Payments › Record payment) and a menu on a list row; cause a toast (save a setting). Each appears in its final position at once, with no fade, scale or slide. Close each: it goes at once.
+3. Collapse and expand the sidebar: it changes width at once. A loading spinner (e.g. while a report loads) still turns.
+4. Turn reduced motion off and reload: the palette scales in and toasts slide in again.
+5. On iPhone, Settings › Accessibility › Motion › Reduce Motion; on Android, Settings › Accessibility › Remove animations. In the field app, change tabs and open a form with floating labels: the selection and the labels move without animating, and the selected tab is still clearly marked.
+6. Regression: with reduced motion off, dialogs, toasts, the palette and the field app's tabs look as before (section 99 for the palette, section 215 for toasts).
+
+## 272. Show a helpful page for a missing page (US-OPS-11, Phase 12)
+
+1. Signed in, open `/no-such-page`. The page says "404", "We can't find that page" and that financial documents are never deleted, with the sidebar still there.
+2. "Go back" returns to the page before; "Go to dashboard" opens the dashboard.
+3. Open an invoice, then change its address to a different id (e.g. change the last character), and to `/invoices/abc`: both show the same page. Do the same for a contact, a job and a vendor bill.
+4. As Field, open another person's expense by its address: the same 404 page (the API answers 404 for records they can't see).
+5. Sign out and open `/no-such-page`: the login page opens; after logging in you're back on the 404 page.
+6. Regression: every list and record page still opens normally, and a record you can open but not change still shows its own messages.
+
+## 273. Recover from an unexpected error (US-OPS-13, Phase 12)
+
+1. Stop the API (`docker compose stop api`) while signed in, then open an invoice: the page shows "Something went wrong on our side", that nothing saved was lost, and an error reference. (If the browser can't reach the API at all, the record page says so instead; this check needs the API to answer with an error, e.g. while the database is stopped: `docker compose stop db`.)
+2. The reference is a request id that `docker compose logs api` shows next to the error.
+3. Start it again and press "Try again": the page reloads and the invoice shows.
+4. "Go to dashboard" opens the dashboard.
+5. Regression: a refused action still shows the permission toast, and a dropped connection still shows the page's own message, not this page.
+
+## 274. Use the web app on a phone (US-OPS-14, Phase 12)
+
+1. On a phone (or the browser's device toolbar at 390×844), sign in and open the dashboard. A top bar shows ☰, the Spine logo, the bell and your initials; there's no sidebar.
+2. Tap ☰: the navigation slides in from the left over a dimmed page, with your current page marked, search at the top and your name and help at the bottom. Tap the dimmed area: it closes. Open it again and tap ✕: it closes. Open it and tap Invoices: Invoices opens and the menu closes.
+3. The dashboard shows the key figures two per row and each chart on its own row; nothing runs off the right edge and the page doesn't scroll sideways.
+4. Every button, link and field is easy to tap (at least a fingertip, 44px). The bell and your initials open their menus.
+5. Turn the phone to landscape, or widen the window past 768px: the sidebar comes back and the top bar goes.
+6. Regression, at desktop width: the sidebar, collapsing it, search (⌘K), notifications and the account menu work as before; page headers keep their actions on the right.
+
+## 275. Keep wide tables usable on small screens (US-OPS-15, Phase 12)
+
+1. At 390×844, open Invoices, Contacts, Payments and Reports › Profit & loss. A table wider than the screen scrolls sideways inside its own box; the page itself never scrolls sideways.
+2. Open Payments › Record payment: the dialog fills the width with a 16px gap each side. Open Jobs › New job: the drawer leaves a 16px strip of the dimmed page.
+3. Open Catalogue › Add item, a new invoice and a new vendor bill: fields are one under another, including Qty, Unit and Price on each line. Settings opens full-screen, as before.
+4. Regression, at desktop width: dialogs, drawers and forms keep their widths and two-column layouts.
+
+## 276. Pass an accessibility audit of every screen (US-OPS-17, Phase 12)
+
+Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and Settings pane, light and dark), `us-ops-17-keyboard.spec.ts` (quote → invoice → payment by keyboard) and the field app's `us-ops-17.test.ts`. Record the results of the manual steps below with the date and device.
+
+1. Keyboard only, on the web: from the dashboard, Tab through the sidebar, open a quote, convert it, issue the invoice and record its payment without the mouse. Every focused control shows a ring; Escape closes each dialog; focus returns to the button that opened it.
+2. With VoiceOver on a Mac (⌘F5), open Invoices, an invoice and Record payment: each button, field, tab and table header is read with its name and role; the toast after recording is announced.
+3. iPhone, VoiceOver on (Settings › Accessibility › VoiceOver): in the field app, swipe through Today, a job, Mark complete, New expense (with the receipt camera), Notifications and Profile. Every control is read with a label and a role ("button", "switch", "text field"…); decorative illustrations are skipped; the job's status is read in words.
+4. Android, TalkBack on: the same walkthrough. Tab changes, sheets and the camera's buttons are announced.
+5. Note any control read only as "button" or "unlabelled" and file it.
+6. Regression: the axe run stays clean after every screen change (the E2E fails otherwise).
+
+## 277. Every user-facing string in translation files (US-OPS-16, Phase 12)
+
+1. Click through the web app (dashboard, a quote, an invoice, a report, Settings) and the field app (Today, a job, New expense, Profile). Every screen reads exactly as before, and no raw key such as `invoices.detail.issue` shows anywhere, including dialogs, toasts, empty states, tooltips and error messages.
+2. Set the business's locale to English (India) or German in Settings › Currency & locale, then reload. Dates on the dashboard, lists, record pages, reports and the field app follow it, e.g. "4 Nov 2026" and "04.11.2026". Money follows it as before.
+3. Developers: add `<p>Hello</p>` to any component and run `pnpm lint`: it fails with "User-facing text comes from @spine/shared/i18n". `t("nope.key")` fails `pnpm typecheck`.
+4. Regression: server-rendered pages (reports, the 404 page, the error page) open without errors.
+
+## 278. The security review before 1.0 (US-OPS-18, Phase 12)
+
+1. On the beta server, open any page and look at the response headers (browser dev tools › Network): `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` and, over HTTPS, `Strict-Transport-Security`. `/api/health` has `DENY`, `nosniff` and `no-referrer`, and no `X-Powered-By`.
+2. Open a quote link 21 times within a minute from one phone: the 21st says to slow down. From another device the link still opens.
+3. Change one character of a quote link, or open `/accept-invite/<anything>`: the same "link doesn't work" page as any wrong link.
+4. `pnpm audit --prod --audit-level high` passes; `docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.24.3 git /repo` reports no leaks.
+5. The Owner reads docs/security-review.md and signs it off (name and date).
+6. Regression: quote acceptance, invitations, sign-in from the phone app and file downloads work behind Caddy and on Coolify.
+
+## 279. The website, the docs and help in the app (US-SITE-01 to US-SITE-14, Phase 12)
+
+1. `pnpm --filter @spine/docs dev` (http://localhost:4321/docs/): the sidebar has Get started, User guide (20 modules, then Keyboard shortcuts), Self-hosting and Developers (with API reference). The theme menu switches Auto, Light and Dark, and the whole site follows. Screenshots match the theme.
+2. Press Ctrl K (⌘K), type "send": results show page titles and excerpts with the match highlighted. Escape closes it and focus returns.
+3. Open a few guide pages (Quotes › Send a quote, Invoices › Record a payment, Team › Invite people): each says who can do it, numbers its steps, names buttons as the app does, shows a screenshot and ends with "Last updated with Spine <version>" and previous/next links.
+4. Self-hosting › Configuration lists every setting in `.env.example`. Backups shows the passphrase danger note and the `down -v` caution. API reference › Invoices: an operation shows who may call it, the Idempotency-Key, errors and a `curl` example.
+5. `pnpm --filter @spine/site dev` (http://localhost:4322): "Run your service business from one place", Install in 5 minutes and Read the user guide (both to the docs under /docs/), the workflow strip, the dashboard screenshot in your theme, six cards and the licence in the footer.
+6. In the app, on Invoices, press ? › Help for this page: the guide's Invoices page opens in a new tab from your own server (`/help/guide/invoices/`), with the banner "You're reading the guide for Spine <version>, served by your own server…". Turn off Wi-Fi on a server-side test: the guide and its search still work. The menu's footer reads "Spine <version> · the guide on this server matches your version". What's new opens the release notes; Online docs opens spine.h4loom.com/docs/.
+7. `/help/developers/…` doesn't exist in the bundled copy; there's no version menu.
+8. After the Owner connects Cloudflare Pages (docs/release.md): a merge that changes `apps/docs` publishes spine.h4loom.com/docs/; a branch push gets a preview address; a broken link fails the build and leaves the live site as it was.
+9. `pnpm site:build`, then `npx serve apps/site/dist`: the home page is at `/` and the docs at `/docs/`, with their styles, search and favicon; the home page's buttons, the developer docs card and the footer's Docs and Older versions links all open docs pages. The build ends "every link into /docs/ is there".
+10. View the page source of a docs page: its canonical address is `https://spine.h4loom.com/docs/…`. The bundled guide's "See the latest online docs ↗" and the app's ? › Online docs open `https://spine.h4loom.com/docs/`.
+11. Change the domain in `packages/shared/src/public-site.ts` to `example.org` and run `pnpm test:scripts`: US-SITE-14 fails, naming the README and `.github/ISSUE_TEMPLATE/config.yml`. Put it back.
+12. Regression: the app's own pages are unaffected by `/help`; unknown addresses still show the 404 page.
+
+## 280. The README, licence and contributor guide (US-OPS-19, Phase 12)
+
+1. On GitHub, the repository's front page shows the README with screenshots (they switch with GitHub's theme), the licence as "AGPL-3.0", and Contributing, Code of conduct and Security policy in the sidebar.
+2. New issue offers "Something isn't working", "An idea or a feature", and links to report a security problem and to the docs; a new pull request shows the checklist.
+3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said.
+4. docs/release.md matches what happened for the last beta release.
+
 ## Known gaps — don't file these as bugs
+
+- Status, payment-method, capability and report labels that `@spine/shared` exports are still English in code; they move with emails, PDFs and API errors in 1.1 (US-OPS-16, D-268).
+
+- While the repository is private, GitHub answers the update check with 404, so no update banner shows and the API logs "Couldn't check for a new version: GitHub answered 404" once a day (US-OPS-06).
 
 - On iOS 27 the field app's Search tab reads "search" in lower case and its field sits under the large title rather than in the tab bar; the upgrade to Expo SDK 58 after 1.0 fixes it (R-25, D-261).
 

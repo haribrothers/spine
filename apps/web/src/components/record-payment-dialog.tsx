@@ -36,6 +36,7 @@ import { localIsoDate, prefillDate, type StatementPrefill } from "./statement-pr
 import { AiField } from "./ai-suggested-tag";
 
 import { SectionLink } from "./section-link";
+import { t, useT } from "../lib/i18n";
 const METHOD_OPTIONS = (Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([value, label]) => ({ value, label }));
 const DAY_MS = 86_400_000;
 
@@ -66,11 +67,11 @@ export function paymentRecordedToast(payment: RecordedPayment): [string, string]
   const paid = (payment.appliedTo ?? []).map((a) => a.number).filter(Boolean);
   const description =
     left > 0n
-      ? `${formatMoney(left, payment.currency)} is credit for ${payment.contactName ?? "the customer"} — apply it or refund it.`
+      ? t("payments.record.toastCredit", { amount: formatMoney(left, payment.currency), name: payment.contactName ?? t("payments.record.theCustomer") })
       : paid.length === 1
-        ? `It paid ${paid[0]}.`
-        : `It paid ${paid.length} invoices.`;
-  return [`${payment.number ?? "Payment"} recorded`, description];
+        ? t("payments.record.toastPaidOne", { number: paid[0] })
+        : t("payments.record.toastPaidMany", { n: paid.length });
+  return [t("payments.record.toastTitle", { number: payment.number ?? t("payments.record.payment") }), description];
 }
 
 /** Oldest due first; no due date last. */
@@ -99,7 +100,7 @@ function lateness(dueDate: string | null, today: Date): string | null {
   if (!dueDate) return null;
   const due = new Date(`${dueDate.slice(0, 10)}T00:00:00`);
   const days = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() - due.getTime()) / DAY_MS);
-  return days > 0 ? `${days} ${days === 1 ? "day" : "days"} late` : null;
+  return days > 0 ? t("payments.record.daysLate", { count: days }) : null;
 }
 
 /**
@@ -133,6 +134,7 @@ export function RecordPaymentDialog({
   prefill?: StatementPrefill;
   onRecorded: (payment: RecordedPayment) => void;
 }) {
+  const t = useT();
   const [contactId, setContactId] = useState(presetContactId ?? "");
   const [contactName, setContactName] = useState<string | null>(presetContactName ?? null);
   const [contactEmail, setContactEmail] = useState<string | null>(null);
@@ -289,9 +291,9 @@ export function RecordPaymentDialog({
 
   async function handleSubmit() {
     setError(null);
-    if (!contactId) return setError("Choose the customer who paid.");
-    if (amount <= 0n) return setError("Enter the amount received.");
-    if (applied > amount) return setError("The invoices add up to more than the payment. Lower a line or raise the amount.");
+    if (!contactId) return setError(t("payments.record.chooseCustomer"));
+    if (amount <= 0n) return setError(t("payments.record.enterAmount"));
+    if (applied > amount) return setError(t("payments.record.overApplied"));
     setSaving(true);
     try {
       const recorded = await apiClient.post<RecordedPayment>("/payments", {
@@ -308,29 +310,32 @@ export function RecordPaymentDialog({
       onOpenChange(false);
       onRecorded(recorded);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this payment. Try again.");
+      setError(err instanceof Error ? err.message : t("payments.record.failed"));
     } finally {
       setSaving(false);
     }
   }
 
-  const who = contactName ?? "the customer";
+  const who = contactName ?? t("payments.record.theCustomer");
   const summary =
     amount <= 0n
       ? null
       : applied > amount
         ? null
         : applied === 0n
-          ? `${money(amount)} becomes credit for ${who}, to apply to an invoice later or refund.`
-          : `${money(applied)} goes on ${ticked.length === 1 ? (invoices?.find((i) => i.id === ticked[0]![0])?.number ?? "1 invoice") : `${ticked.length} invoices`}; ${credit > 0n ? `${money(credit)} becomes credit for ${who}.` : "nothing becomes credit."}`;
+          ? t("payments.record.allCredit", { amount: money(amount), who })
+          : (() => {
+              const target = ticked.length === 1 ? (invoices?.find((i) => i.id === ticked[0]![0])?.number ?? t("payments.record.oneInvoice")) : t("payments.record.nInvoices", { n: ticked.length });
+              return credit > 0n ? t("payments.record.goesOnWithCredit", { applied: money(applied), target, credit: money(credit), who }) : t("payments.record.goesOnNoCredit", { applied: money(applied), target });
+            })();
   const duplicate = duplicates[0];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Record a payment</DialogTitle>
-          <DialogDescription>Tick what it pays; anything over becomes the customer&apos;s credit, to apply later or refund.</DialogDescription>
+          <DialogTitle>{t("payments.record.title")}</DialogTitle>
+          <DialogDescription>{t("payments.record.description")}</DialogDescription>
         </DialogHeader>
 
         <DialogBody className="flex flex-col gap-4">
@@ -340,9 +345,9 @@ export function RecordPaymentDialog({
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <AiField suggested={!presetContactId && Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
-            <FormField label="Customer" required>
+            <FormField label={t("payments.record.customer")} required>
               {() =>
                 presetContactId ? (
                   <p className="flex min-h-10 items-center text-[14px] font-medium text-on-surface" data-testid="record-payment-customer">
@@ -354,16 +359,16 @@ export function RecordPaymentDialog({
               }
             </FormField>
             </AiField>
-            <FormField label="Amount" required>
-              {() => <MoneyInput aria-label="Amount" value={amount} onValueChange={typeAmount} currency={currency} disabled={!contactId || Boolean(prefill)} />}
+            <FormField label={t("payments.record.amount")} required>
+              {() => <MoneyInput aria-label={t("payments.record.amount")} value={amount} onValueChange={typeAmount} currency={currency} disabled={!contactId || Boolean(prefill)} />}
             </FormField>
-            <FormField label="Date" required>
+            <FormField label={t("payments.record.date")} required>
               {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
-            <FormField label="Method" required>
+            <FormField label={t("payments.record.method")} required>
               {() => (
                 <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-                  <SelectTrigger aria-label="Method">
+                  <SelectTrigger aria-label={t("payments.record.method")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -377,14 +382,14 @@ export function RecordPaymentDialog({
               )}
             </FormField>
             {prefill ? (
-              <FormField label="Paid into" required>
+              <FormField label={t("payments.record.paidInto")} required>
                 {() => <p className="py-2 text-[14px] text-on-surface">{prefill.moneyAccountName}</p>}
               </FormField>
             ) : (
               <MoneyAccountPicker form="payment" direction="in" value={moneyAccountId} onValueChange={setMoneyAccountId} />
             )}
-            <FormField label="Reference">
-              {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Cheque number, UTR, transaction ID" />}
+            <FormField label={t("payments.record.reference")}>
+              {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder={t("payments.record.referencePlaceholder")} />}
             </FormField>
           </div>
 
@@ -392,10 +397,15 @@ export function RecordPaymentDialog({
             <div className="flex items-start gap-2.5 rounded-md border border-due-soon/30 bg-due-soon-bg px-3 py-2.5 text-[13px] text-on-surface" role="status" data-testid="possible-duplicate">
               <TriangleAlert size={16} className="mt-0.5 shrink-0 text-due-soon" aria-hidden />
               <span>
-                <strong className="font-semibold">This looks like {duplicate.number ?? "a payment already recorded"}</strong> — {formatMoney(BigInt(duplicate.amount), duplicate.currency)} from {who} on{" "}
-                {new Date(`${duplicate.date}T00:00:00`).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" })} ({[PAYMENT_METHOD_LABELS[duplicate.method as PaymentMethod] ?? duplicate.method, duplicate.reference].filter(Boolean).join(" · ")}). Record it anyway if it&apos;s a second payment.{" "}
+                <strong className="font-semibold">{t("payments.record.dupTitle", { number: duplicate.number ?? t("payments.record.dupAlready") })}</strong>
+                {t("payments.record.dupBody", {
+                  amount: formatMoney(BigInt(duplicate.amount), duplicate.currency),
+                  who,
+                  date: new Date(`${duplicate.date}T00:00:00`).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" }),
+                  details: [PAYMENT_METHOD_LABELS[duplicate.method as PaymentMethod] ?? duplicate.method, duplicate.reference].filter(Boolean).join(" · "),
+                })}{" "}
                 <SectionLink href={`/payments/${duplicate.id}`} target="_blank" className="font-medium text-primary hover:underline">
-                  Open {duplicate.number ?? "it"}
+                  {t("payments.record.dupOpen", { number: duplicate.number ?? t("payments.record.dupIt") })}
                 </SectionLink>
               </span>
             </div>
@@ -404,10 +414,10 @@ export function RecordPaymentDialog({
           {contactId && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-[13px] font-semibold text-on-surface">What it pays</h3>
+                <h3 className="text-[13px] font-semibold text-on-surface">{t("payments.record.whatItPays")}</h3>
                 {invoices && invoices.length > 0 && (
                   <button type="button" onClick={payAll} className="text-[13px] font-medium text-primary hover:underline">
-                    Pay all
+                    {t("payments.record.payAll")}
                   </button>
                 )}
               </div>
@@ -416,35 +426,35 @@ export function RecordPaymentDialog({
                   <Spinner size="sm" />
                 </div>
               ) : invoices.length === 0 ? (
-                <p className="rounded-md border border-border px-3 py-3 text-[13px] text-on-surface-muted">{who} has no open invoices. The whole payment becomes their credit, to apply to a later invoice or refund.</p>
+                <p className="rounded-md border border-border px-3 py-3 text-[13px] text-on-surface-muted">{t("payments.record.noOpenInvoices", { who })}</p>
               ) : (
                 <div className="overflow-hidden rounded-md border border-border" data-testid="record-payment-invoices">
                   <div className="grid grid-cols-[28px_minmax(0,1fr)_150px_120px_140px] items-center gap-2 bg-surface-sunken px-3 py-2 text-[12px] font-medium text-on-surface-muted">
                     <span />
-                    <span>Invoice</span>
-                    <span>Due</span>
-                    <span className="text-right">Balance</span>
-                    <span className="text-right">Pay</span>
+                    <span>{t("payments.record.colInvoice")}</span>
+                    <span>{t("payments.record.colDue")}</span>
+                    <span className="text-right">{t("payments.record.colBalance")}</span>
+                    <span className="text-right">{t("payments.record.colPay")}</span>
                   </div>
                   {invoices.map((inv) => {
                     const value = lines.get(inv.id) ?? 0n;
                     const late = lateness(inv.dueDate, today);
                     return (
                       <div key={inv.id} className="grid grid-cols-[28px_minmax(0,1fr)_150px_120px_140px] items-center gap-2 border-t border-border px-3 py-2 text-[13px]" data-testid="record-payment-invoice">
-                        <Checkbox checked={value > 0n} onCheckedChange={(c) => toggle(inv, c === true)} aria-label={`Pay ${inv.number ?? "this invoice"}`} />
-                        <span className="font-semibold text-on-surface">{inv.number ?? "Invoice"}</span>
+                        <Checkbox checked={value > 0n} onCheckedChange={(c) => toggle(inv, c === true)} aria-label={t("payments.record.payAria", { number: inv.number ?? t("payments.record.thisInvoice") })} />
+                        <span className="font-semibold text-on-surface">{inv.number ?? t("payments.record.invoice")}</span>
                         <span className="flex flex-col">
-                          <span className="text-on-surface">{inv.type === "advance" ? "Deposit" : inv.dueDate ? `Due ${new Date(`${inv.dueDate}T00:00:00`).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" })}` : "No due date"}</span>
+                          <span className="text-on-surface">{inv.type === "advance" ? t("payments.record.deposit") : inv.dueDate ? t("payments.record.dueOn", { date: new Date(`${inv.dueDate}T00:00:00`).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" }) }) : t("payments.record.noDueDate")}</span>
                           {late && <span className="text-[12px] font-medium text-overdue">{late}</span>}
                         </span>
                         <span className="text-right tabular-nums text-on-surface">{money(inv.balance)}</span>
-                        <MoneyInput aria-label={`Amount to pay on ${inv.number ?? "this invoice"}`} value={value} onValueChange={(v) => setLine(inv, v)} currency={currency} />
+                        <MoneyInput aria-label={t("payments.record.amountToPay", { number: inv.number ?? t("payments.record.thisInvoice") })} value={value} onValueChange={(v) => setLine(inv, v)} currency={currency} />
                       </div>
                     );
                   })}
                 </div>
               )}
-              {applied > amount && amount > 0n && <p className="text-[13px] text-overdue">The invoices add up to more than the payment. Lower a line or raise the amount.</p>}
+              {applied > amount && amount > 0n && <p className="text-[13px] text-overdue">{t("payments.record.overApplied")}</p>}
               {summary && (
                 <p className="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2.5 text-[13px] text-on-surface" data-testid="record-payment-summary">
                   <Info size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden />
@@ -453,8 +463,8 @@ export function RecordPaymentDialog({
               )}
               {contactEmail && (
                 <label className="flex items-center gap-2.5 text-[13px] text-on-surface">
-                  <Switch checked={sendReceipt} onCheckedChange={setSendReceipt} aria-label={`Email a receipt to ${contactEmail}`} />
-                  Email a receipt to {contactEmail}
+                  <Switch checked={sendReceipt} onCheckedChange={setSendReceipt} aria-label={t("payments.record.emailReceipt", { email: contactEmail })} />
+                  {t("payments.record.emailReceipt", { email: contactEmail })}
                 </label>
               )}
             </div>
@@ -462,12 +472,12 @@ export function RecordPaymentDialog({
         </DialogBody>
 
         <DialogFooter className="items-center">
-          <span className="mr-auto hidden text-[12px] text-on-surface-muted sm:block">It gets a receipt number and is posted to your books when recorded.</span>
+          <span className="mr-auto hidden text-[12px] text-on-surface-muted sm:block">{t("payments.record.footerNote")}</span>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("payments.record.cancel")}
           </Button>
           <Button type="button" onClick={() => void handleSubmit()} disabled={saving || (applied > amount && amount > 0n)}>
-            {saving ? <Spinner size="sm" /> : "Record payment"}
+            {saving ? <Spinner size="sm" /> : t("payments.record.record")}
           </Button>
         </DialogFooter>
       </DialogContent>

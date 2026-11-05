@@ -2,6 +2,7 @@ import * as Network from "expo-network";
 import { ACCESS_REMOVED_ERROR, CLIENT_TOO_OLD_ERROR, CLIENT_VERSION_HEADER, PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared/mobile";
 import { AI_TIMEOUT_ERROR, AI_UNAVAILABLE_ERROR } from "@spine/shared/schemas";
 import { APP_VERSION } from "../app-version";
+import { t } from "../i18n";
 import { AccessRemovedError, ApiError, CancelledError, OfflineError, PasswordChangeRequiredError, ServerUnreachableError, SessionExpiredError, UpdateRequiredError } from "./errors";
 
 export type Method = "GET" | "POST" | "PUT" | "DELETE";
@@ -88,11 +89,11 @@ export async function apiRequest<T>(
     body = undefined;
   }
   if (res.status === 426 || body?.error === CLIENT_TOO_OLD_ERROR) throw new UpdateRequiredError(body?.minimumVersion);
-  if (res.status === 403 && body?.error === ACCESS_REMOVED_ERROR) throw new AccessRemovedError(body.message ?? "Your access was removed.");
-  if (res.status === 403 && body?.error === PASSWORD_CHANGE_REQUIRED_ERROR) throw new PasswordChangeRequiredError(body.message ?? "Choose your own password to keep going.");
+  if (res.status === 403 && body?.error === ACCESS_REMOVED_ERROR) throw new AccessRemovedError(body.message ?? t("mobileApp.errors.accessRemoved"));
+  if (res.status === 403 && body?.error === PASSWORD_CHANGE_REQUIRED_ERROR) throw new PasswordChangeRequiredError(body.message ?? t("mobileApp.errors.passwordChangeRequired"));
   if (res.status === 401) throw new SessionExpiredError();
   // US-AI-07: the server answered, but its AI provider didn't — "AI didn't answer…", not "the server didn't".
-  if (body?.error === AI_UNAVAILABLE_ERROR || body?.error === AI_TIMEOUT_ERROR) throw new ApiError(body.message ?? "AI didn't answer.", res.status, body.error, body);
+  if (body?.error === AI_UNAVAILABLE_ERROR || body?.error === AI_TIMEOUT_ERROR) throw new ApiError(body.message ?? t("mobileApp.errors.aiDidntAnswer"), res.status, body.error, body);
   if (res.status === 502 || res.status === 503 || res.status === 504) throw new ServerUnreachableError();
-  throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status, body?.error, body);
+  throw new ApiError(body?.message ?? t("mobileApp.errors.requestFailed", { status: res.status }), res.status, body?.error, body);
 }

@@ -22,6 +22,7 @@ import { BUNDLE_NAME_REQUIRED, BUNDLE_ONE_CURRENCY, MAX_BUNDLE_ITEMS, type Catal
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import type { CatalogItem } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /** US-CAT-14 — a line's amount before tax: quantity × default price, rounded half-up once. */
 export function lineAmount(item: CatalogItem, quantity: number): bigint {
@@ -49,6 +50,7 @@ export function MakeBundleDialog({
   onOpenChange: (open: boolean) => void;
   onSaved: (bundle: CatalogBundle) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [quantities, setQuantities] = useState<Record<string, string>>({});
@@ -70,7 +72,7 @@ export function MakeBundleDialog({
   const quantityOf = (id: string) => Number(quantities[id] ?? "1");
   const total = items.reduce((sum, item) => sum + lineAmount(item, quantityOf(item.id)), 0n);
   const badQuantity = items.some((item) => !(quantityOf(item.id) > 0));
-  const blocked = currencies.size > 1 ? BUNDLE_ONE_CURRENCY : items.length > MAX_BUNDLE_ITEMS ? `A bundle holds up to ${MAX_BUNDLE_ITEMS} items.` : null;
+  const blocked = currencies.size > 1 ? BUNDLE_ONE_CURRENCY : items.length > MAX_BUNDLE_ITEMS ? t("catalog.makeBundle.tooMany", { max: MAX_BUNDLE_ITEMS }) : null;
 
   async function save() {
     if (!name.trim()) {
@@ -89,7 +91,7 @@ export function MakeBundleDialog({
       onOpenChange(false);
       onSaved(bundle);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the bundle. Try again.");
+      setError(err instanceof Error ? err.message : t("catalog.makeBundle.saveError"));
     } finally {
       setSaving(false);
     }
@@ -99,8 +101,8 @@ export function MakeBundleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Make a bundle</DialogTitle>
-          <DialogDescription>Group these items so they&apos;re one pick on a quote or invoice. Prices and tax come from each item; you can change them on the document.</DialogDescription>
+          <DialogTitle>{t("catalog.common.makeBundle")}</DialogTitle>
+          <DialogDescription>{t("catalog.makeBundle.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           {(error || blocked) && (
@@ -108,17 +110,17 @@ export function MakeBundleDialog({
               <AlertDescription>{blocked ?? error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Name" errorText={nameError} required>
-            {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="For example, Bathroom refit" />}
+          <FormField label={t("catalog.common.name")} errorText={nameError} required>
+            {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("catalog.makeBundle.namePlaceholder")} />}
           </FormField>
-          <FormField label="Description (optional)">
-            {(field) => <Textarea {...field} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's included, for your team" />}
+          <FormField label={t("catalog.makeBundle.descriptionLabel")}>
+            {(field) => <Textarea {...field} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("catalog.makeBundle.descriptionPlaceholder")} />}
           </FormField>
           <div className="overflow-hidden rounded-md border border-border" data-testid="bundle-lines">
             <div className="grid grid-cols-[minmax(0,1fr)_6.5rem_8rem] gap-3 border-b border-border bg-surface-sunken px-3 py-2 text-[12px] font-semibold text-on-surface-muted">
-              <span>Item</span>
-              <span className="text-right">Quantity</span>
-              <span className="text-right">Amount</span>
+              <span>{t("catalog.makeBundle.columnItem")}</span>
+              <span className="text-right">{t("catalog.makeBundle.columnQuantity")}</span>
+              <span className="text-right">{t("catalog.makeBundle.columnAmount")}</span>
             </div>
             <ul className="max-h-64 overflow-y-auto">
               {items.map((item) => (
@@ -135,7 +137,7 @@ export function MakeBundleDialog({
                     inputMode="decimal"
                     min={0}
                     step="any"
-                    aria-label={`Quantity of ${item.name}`}
+                    aria-label={t("catalog.makeBundle.quantityOf", { name: item.name })}
                     aria-invalid={!(quantityOf(item.id) > 0) || undefined}
                     value={quantities[item.id] ?? "1"}
                     onChange={(e) => setQuantities((q) => ({ ...q, [item.id]: e.target.value }))}
@@ -146,20 +148,20 @@ export function MakeBundleDialog({
               ))}
             </ul>
             <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-3 border-t border-border bg-surface-sunken px-3 py-2 text-[13.5px] font-semibold">
-              <span>Total before tax</span>
+              <span>{t("catalog.makeBundle.totalBeforeTax")}</span>
               <span className="text-right tabular-nums" data-testid="bundle-total">
                 {formatMoney(total, currency)}
               </span>
             </div>
           </div>
-          {badQuantity && <HelperText error>Give each item a quantity above 0.</HelperText>}
+          {badQuantity && <HelperText error>{t("catalog.makeBundle.badQuantity")}</HelperText>}
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("catalog.common.cancel")}
           </Button>
           <Button onClick={save} disabled={saving || badQuantity || Boolean(blocked)}>
-            {saving ? <Spinner size="sm" /> : "Save bundle"}
+            {saving ? <Spinner size="sm" /> : t("catalog.makeBundle.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

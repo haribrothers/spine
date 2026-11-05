@@ -112,6 +112,6 @@ export const CONSTRUCTION: IndustryPack = {
     { title: "Slab pour review — office block", slot: "anchor", startInDays: -3, durationHours: 1, atSite: true, description: "Check cube results before the next pour." },
     { title: "Handover snag list — clinic", slot: "institution", startInDays: -12, durationHours: 2, atSite: true, description: "Walk the clinic with the administrator and agree the snag list." },
     { title: "Progress meeting — warehouse extension", slot: "regional", startInDays: 3, durationHours: 1, atSite: false, description: null },
-    { title: "Weekly site planning", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — crews and deliveries for next week." },
+    { title: "Weekly site planning", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — crews and deliveries for next week.", weekly: true },
   ],
 };

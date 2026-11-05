@@ -1,0 +1,47 @@
+---
+title: Send a remittance advice
+description: Tell a vendor what a payment paid, bill by bill, as a PDF you download or email.
+sidebar:
+  order: 9
+---
+
+A remittance advice tells a vendor what you paid and against which of their invoices, so they can match your payment without calling you. Spine makes it from the payment when you ask for it — as a PDF to download, or emailed to the vendor with the PDF attached.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Vendor Payments**. Emailing it also needs **Create own vendor payments**, an email address for the vendor, and email sending set up on your server. Field users can't send one.
+</Aside>
+
+## Download it
+
+Open the payment and press **Download remittance advice** (or choose it from the row's menu on the list). The PDF, named like `remittance-VPY-0012.pdf`, shows your business, the vendor, the payment's number, date, method, reference and amount, and each bill paid: the vendor's invoice number, its date, its total, what was paid now and what's still owed. It's always light, in your business's formats.
+
+## Email it
+
+<Steps>
+
+1. **Open the payment** — Go to **Vendor Payments** and open the payment.
+
+2. **Choose Email remittance advice** — It's the main action on the page when it can be sent. Otherwise, find it under **More**. From the list, the row's menu opens the payment's page with the dialog.
+
+3. **Check the email** — **To** is filled in with the vendor's address. The **Subject** reads "Remittance advice — VPY-0012 from &lt;your business&gt;". Change the **Message** if you like. The PDF is attached.
+
+4. **Send** — Press **Send**. The dialog is the check, so nothing more is asked.
+
+</Steps>
+
+A toast says "Remittance advice sent", and who it went to. The payment's Activity adds "Remittance advice emailed to …", and the email shows in your email log.
+
+## When Email isn't offered
+
+The menu item says why:
+
+- "Add an email address for &lt;vendor&gt;" — add one on the vendor's contact.
+- "Set up email sending first" — your server needs email set up. See [Email](../../../self-hosting/email/).
+
+<Aside type="tip">
+  The remittance advice isn't stored or numbered. It's made fresh each time from the payment, so it always matches what the payment paid.
+</Aside>
+
+If sending fails, the dialog says "Couldn't send it. Try again." and stays open with your message.

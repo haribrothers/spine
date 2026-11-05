@@ -2,16 +2,17 @@ import { Alert, Linking } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { outbox } from "./outbox";
 import type { LocalPhoto } from "./types";
+import { t } from "../i18n";
 
-export const CAMERA_DENIED_TITLE = "Allow camera access";
-export const CAMERA_DENIED_MESSAGE = "Turn on camera access for Spine in Settings to take the photo.";
-export const PHOTOS_DENIED_TITLE = "Allow photo access";
-export const PHOTOS_DENIED_MESSAGE = "Turn on photo access for Spine in Settings to choose a photo.";
+export const CAMERA_DENIED_TITLE = t("mobileApp.photoAccess.cameraTitle");
+export const CAMERA_DENIED_MESSAGE = t("mobileApp.photoAccess.cameraMessage");
+export const PHOTOS_DENIED_TITLE = t("mobileApp.photoAccess.photosTitle");
+export const PHOTOS_DENIED_MESSAGE = t("mobileApp.photoAccess.photosMessage");
 
 function askForSettings(title: string, message: string) {
   Alert.alert(title, message, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Open Settings", onPress: () => void Linking.openSettings() },
+    { text: t("mobileApp.common.cancel"), style: "cancel" },
+    { text: t("mobileApp.photoAccess.openSettings"), onPress: () => void Linking.openSettings() },
   ]);
 }
 

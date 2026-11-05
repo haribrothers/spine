@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, Dialog, DialogBody, DialogContent, Dia
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
+import { useT } from "../../../lib/i18n";
 import type { VendorBill } from "./types";
 
 interface OpenCredit {
@@ -34,6 +35,7 @@ export function fillCredits(credits: { id: string; balanceAmount: string }[], ba
  * nothing (P24a) — one `POST /vendor-credits/:id/apply` per credit used.
  */
 export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }: { bill: Pick<VendorBill, "id" | "billNumber" | "contactId" | "contactName" | "currency" | "balanceDue">; open: boolean; onOpenChange: (open: boolean) => void; onApplied: (total: bigint) => void }) {
+  const t = useT();
   const [credits, setCredits] = useState<OpenCredit[] | null>(null);
   const [amounts, setAmounts] = useState<Record<string, bigint>>({});
   const [error, setError] = useState<string | null>(null);
@@ -58,8 +60,8 @@ export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }:
   const money = (v: bigint) => formatMoney(v, bill.currency);
 
   async function apply() {
-    if (total <= 0n) return setError("Enter how much to apply.");
-    if (total > balance) return setError(`You can apply up to ${money(balance)} to this bill.`);
+    if (total <= 0n) return setError(t("vendorBills.applyCredit.enterAmount"));
+    if (total > balance) return setError(t("vendorBills.applyCredit.upTo", { amount: money(balance) }));
     setSaving(true);
     setError(null);
     try {
@@ -70,7 +72,7 @@ export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }:
       onOpenChange(false);
       onApplied(total);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't apply the credit. Try again.");
+      setError(err instanceof Error ? err.message : t("vendorBills.applyCredit.applyFailed"));
     } finally {
       setSaving(false);
     }
@@ -80,9 +82,9 @@ export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Apply credit to {bill.billNumber}</DialogTitle>
+          <DialogTitle>{t("vendorBills.applyCredit.title", { number: bill.billNumber })}</DialogTitle>
           <DialogDescription>
-            {bill.contactName ?? "The vendor"}&apos;s open credit, oldest first, up to the {money(balance)} still owed. Nothing is posted — the bill owes less and the credit has less left.
+            {t("vendorBills.applyCredit.description", { vendor: bill.contactName ?? t("vendorBills.applyCredit.theVendor"), amount: money(balance) })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
@@ -96,19 +98,19 @@ export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }:
               <Spinner size="sm" />
             </div>
           ) : credits.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">This vendor has no open credit.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("vendorBills.applyCredit.noCredit")}</p>
           ) : (
             <div className="flex flex-col divide-y divide-border rounded-lg border border-border" data-testid="bill-credits">
               {credits.map((c) => (
                 <div key={c.id} className="grid grid-cols-[minmax(0,1fr)_auto_10rem] items-center gap-3 px-3 py-2 text-[13px]">
                   <span>
-                    <span className="font-medium text-on-surface">{c.number ?? "Credit"}</span>
-                    {c.vendorReference && <span className="text-on-surface-muted"> · their {c.vendorReference}</span>}
+                    <span className="font-medium text-on-surface">{c.number ?? t("vendorBills.applyCredit.credit")}</span>
+                    {c.vendorReference && <span className="text-on-surface-muted">{t("vendorBills.applyCredit.theirReference", { reference: c.vendorReference })}</span>}
                     <span className="block text-[12px] text-on-surface-muted">{calendarDate(c.date, new Date(), orgLocaleTag())}</span>
                   </span>
-                  <span className="whitespace-nowrap text-on-surface-muted">{money(BigInt(c.balanceAmount))} left</span>
+                  <span className="whitespace-nowrap text-on-surface-muted">{t("vendorBills.applyCredit.left", { amount: money(BigInt(c.balanceAmount)) })}</span>
                   <MoneyInput
-                    aria-label={`Apply from ${c.number ?? "this credit"}`}
+                    aria-label={t("vendorBills.applyCredit.applyFrom", { number: c.number ?? t("vendorBills.applyCredit.thisCredit") })}
                     value={amounts[c.id] ?? 0n}
                     currency={bill.currency}
                     onValueChange={(v) => setAmounts((cur) => ({ ...cur, [c.id]: v > BigInt(c.balanceAmount) ? BigInt(c.balanceAmount) : v }))}
@@ -120,10 +122,10 @@ export function ApplyCreditToBillDialog({ bill, open, onOpenChange, onApplied }:
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Go back
+            {t("vendorBills.applyCredit.goBack")}
           </Button>
           <Button type="button" onClick={() => void apply()} disabled={saving || !credits?.length || total <= 0n}>
-            {saving ? <Spinner size="sm" /> : `Apply ${money(total)}`}
+            {saving ? <Spinner size="sm" /> : t("vendorBills.applyCredit.apply", { amount: money(total) })}
           </Button>
         </DialogFooter>
       </DialogContent>

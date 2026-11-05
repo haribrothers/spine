@@ -1,0 +1,41 @@
+---
+title: Add an item
+description: Save a service or material with its unit, default price and tax, so quoting it is one pick.
+sidebar:
+  order: 1
+---
+
+Add the things you sell and buy most often to the catalogue. When you pick an item on a quote or invoice line, its name, description, price and tax fill in for you, so you quote faster and the same way every time.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own catalogue**. Without it, **Add item** isn't shown.</Aside>
+
+<Steps>
+1. **Open the drawer** — Go to **Catalogue** and press **Add item**. The **Add item** drawer opens: "Goods or services with a default price and tax rate — you can override the price on a quote later."
+2. **Fill in the details** — Under **Details**, fill in **Name** and, if you like, a **Description**. In **Unit**, choose one such as hour, sq ft or each, or type a new one. In **Category**, pick one or type a new one; it's optional.
+3. **Set the price** — Under **Price and tax**, fill in **Default price** and choose the **Currency**.
+4. **Set the tax** — Choose the **Default tax**, or leave it as **No tax**. Choose the **Supply type** if the item isn't taxable.
+5. **Choose the accounts** — Under **Accounts**, choose the **Default income account** and **Default expense account**, or leave them as they are.
+6. **Save** — Press **Save item**. An "Item created" toast shows and the item is listed with its default price.
+</Steps>
+
+<Screenshot id="catalogue-add" alt="The Add item drawer with Details, Price and tax, and Accounts sections and Save item at the bottom" />
+
+For what the tax and account fields do, see [Set an item's tax and accounts](../set-an-items-tax-and-accounts/).
+
+## If something goes wrong
+
+- A price below zero shows an error on **Default price**, and nothing is saved.
+- If saving fails, you see "Could not save item." and what you typed stays in the drawer.
+
+## Add an item while you quote
+
+You don't have to stop building a quote to add an item. Type a name that isn't in the catalogue on a quote line, tick **Also save to catalogue**, and choose the one-off line. See [Use catalogue items on quotes and invoices](../use-catalogue-items-on-quotes-and-invoices/).
+
+## Add a similar item
+
+To add an item that's nearly the same as one you have, choose **Duplicate** from that item's menu. See [Edit, duplicate, archive or delete an item](../edit-duplicate-archive-or-delete-an-item/).
+
+<Aside type="tip">With no items yet, the Catalogue says "No catalogue items yet" with **Add item**. To bring in a whole price list, see [Import and export catalogue items](../import-and-export-catalogue-items/).</Aside>

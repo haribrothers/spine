@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, FormField, Input, Spinner } from "@spine/ui";
+import { t as translate, useT } from "../../../lib/i18n";
 
 export interface NumberingSequenceValue {
   documentType: string;
@@ -11,15 +12,15 @@ export interface NumberingSequenceValue {
 }
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
-  quote: "Quote",
-  invoice: "Invoice",
-  credit_note: "Credit Note",
-  receipt: "Receipt",
-  expense: "Expense",
-  job: "Job",
-  vendor_payment: "Vendor Payment",
-  vendor_credit: "Vendor Credit",
-  journal: "Journal",
+  quote: translate("onboarding.numbering.types.quote"),
+  invoice: translate("onboarding.numbering.types.invoice"),
+  credit_note: translate("onboarding.numbering.types.creditNote"),
+  receipt: translate("onboarding.numbering.types.receipt"),
+  expense: translate("onboarding.numbering.types.expense"),
+  job: translate("onboarding.numbering.types.job"),
+  vendor_payment: translate("onboarding.numbering.types.vendorPayment"),
+  vendor_credit: translate("onboarding.numbering.types.vendorCredit"),
+  journal: translate("onboarding.numbering.types.journal"),
 };
 
 export interface NumberingStepProps {
@@ -33,7 +34,8 @@ export interface NumberingStepProps {
 }
 
 /** S-10.5 / numbering step of the wizard — prefix + padding + starting number per document type, per §14.3's canonical list. */
-export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: NumberingStepProps) {
+export function NumberingStep({ initialValue, onSave, onSkip, saveLabel, onChange }: NumberingStepProps) {
+  const t = useT();
   const [rows, setRows] = useState<NumberingSequenceValue[]>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -58,10 +60,10 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
         <table className="w-full min-w-[480px] text-[13px]">
           <thead>
             <tr className="border-b border-border-strong bg-surface-muted text-left text-on-surface-muted">
-              <th className="px-3 py-2 font-medium">Document</th>
-              <th className="px-3 py-2 font-medium">Prefix</th>
-              <th className="px-3 py-2 font-medium">Padding</th>
-              <th className="px-3 py-2 font-medium">Starting number</th>
+              <th className="px-3 py-2 font-medium">{t("onboarding.numbering.document")}</th>
+              <th className="px-3 py-2 font-medium">{t("onboarding.numbering.prefix")}</th>
+              <th className="px-3 py-2 font-medium">{t("onboarding.numbering.padding")}</th>
+              <th className="px-3 py-2 font-medium">{t("onboarding.numbering.startingNumber")}</th>
             </tr>
           </thead>
           <tbody>
@@ -73,6 +75,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
                     {(field) => (
                       <Input
                         {...field}
+                        aria-label={t("onboarding.numbering.prefixLabel", { type: DOCUMENT_TYPE_LABELS[row.documentType] ?? row.documentType })}
                         value={row.prefix}
                         onChange={(e) => updateRow(row.documentType, { prefix: e.target.value.toUpperCase() })}
                         className="w-24"
@@ -88,6 +91,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
                         type="number"
                         min={1}
                         max={8}
+                        aria-label={t("onboarding.numbering.paddingLabel", { type: DOCUMENT_TYPE_LABELS[row.documentType] ?? row.documentType })}
                         value={row.padding}
                         onChange={(e) => updateRow(row.documentType, { padding: Number(e.target.value) || 1 })}
                         className="w-20"
@@ -102,6 +106,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
                         {...field}
                         type="number"
                         min={1}
+                        aria-label={t("onboarding.numbering.startingNumberLabel", { type: DOCUMENT_TYPE_LABELS[row.documentType] ?? row.documentType })}
                         value={row.nextValue}
                         onChange={(e) => updateRow(row.documentType, { nextValue: Number(e.target.value) || 1 })}
                         className="w-24"
@@ -118,11 +123,11 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (
           <Button type="button" variant="ghost" onClick={onSkip}>
-            Skip to dashboard
+            {t("onboarding.common.skipToDashboard")}
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : saveLabel}
+          {saving ? <Spinner size="sm" /> : (saveLabel ?? t("onboarding.common.continue"))}
         </Button>
       </div>
     </div>

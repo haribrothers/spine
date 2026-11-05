@@ -1,0 +1,41 @@
+---
+title: Find a report
+description: Open any report from the Reports page, search for one, and star the ones you use most.
+sidebar:
+  order: 1
+---
+
+The Reports page lists every report you can open, grouped by what it's about. Reports you don't have access to aren't listed at all, so what you see is what you can use.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone who can open at least one report: Owners, and Staff whose Team grants one of the report rights. Field crew don't have Reports.</Aside>
+
+<Steps>
+
+1. **Open Reports** — Choose **Reports** in the sidebar.
+2. **Find the group** — Reports are grouped as **Business overview** (Profit & Loss, Balance Sheet, Trial Balance, Cash Flow), **Sales** (Sales by customer, Sales by item), **Receivables** (Receivables, Payments received, Credit notes and refunds), **Purchases** (Expenses by category, Purchases by vendor, Payments made, Vendor credits, Payables), **Tax** (Tax Summary, and GSTR-1 for an Indian GST business), **Jobs** (Job profitability) and **Accountant** (General ledger, Day book, Journals, Export to Tally).
+3. **Or search** — Type in **Search reports**. Typing "ledger" shows only the reports that match.
+4. **Star your favourites** — Press the star next to a report. It joins **Favourites** at the top of the page, on every device you sign in on. Press it again to remove it.
+
+</Steps>
+
+<Screenshot id="reports-favourites" alt="The Search reports box above the report groups, with a star beside each report" />
+
+## Every report is laid out the same way
+
+Once you've learned one report, you know them all:
+
+1. The header: the report's name, what it shows and the range it covers, plus any comparison or basis, such as "Accrual basis".
+2. Tabs, where reports belong together. Profit & Loss, Balance Sheet, Trial Balance and Cash Flow share tabs; so do General ledger and Day book.
+3. A toolbar: filters on the left, **Export** on the right.
+4. A row of figure cards.
+5. A chart, where one helps.
+6. The table, then a short footnote.
+
+When you change a filter, the report reloads straight away. There's no Refresh button; a spinner shows in the toolbar while it loads.
+
+<Aside type="tip">If a report doesn't load, you see "This report didn't load. Try again." If you open a report you don't have access to, you see "You don't have access to this report. Ask an owner."</Aside>
+
+Job profitability is part of the **Jobs & field** module. If that module is switched off in **Settings › Modules**, the report isn't listed.

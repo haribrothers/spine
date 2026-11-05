@@ -1,0 +1,50 @@
+---
+title: Change a job's status or close it
+description: Put a job on hold, mark it completed when the work is done, or cancel it.
+sidebar:
+  order: 4
+---
+
+A job's status tells everyone where it stands: **Active**, **On hold**, **Completed** or **Cancelled**. Marking a job completed lets the office know the work is done, and it's when Spine offers to release the retention you've held.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners. Staff whose Team has **Create/edit own jobs** can change the status of jobs they created; **Edit others' jobs** covers everyone else's. Without the right, the status shows as a plain badge you can't open.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs** and open the job.
+2. **Open the status** — Press the status badge beside the job number.
+3. **Choose a status** — Pick **Active**, **On hold**, **Completed** or **Cancelled**. The change saves at once and a toast says "Status changed".
+4. **Confirm a cancellation** — For **Cancelled**, Spine asks "Cancel this job?" first. Press **Cancel the job** to go ahead, or **Keep the job**.
+</Steps>
+
+<Screenshot id="jobs-detail" alt="A job's page with its number, status, contact, site address and dates, the next-step button and the strip of figures" />
+
+You can also change the status in **Edit job**.
+
+## Closing a job
+
+When the work is done:
+
+1. Make sure every milestone is invoiced. The **Milestones** tab shows what's still **Completed** but not invoiced.
+2. Set the status to **Completed**. The office gets a notification that the job is completed.
+3. If retention is held on the job, the page's main button becomes **Release retention**. Release it when the defect period ends: see [Hold and release retention](../hold-and-release-retention/).
+
+<Aside type="tip">Setting a job to **Completed** doesn't change its **Percent complete**. Set that yourself in **Edit job** if you track it.</Aside>
+
+## What cancelling does
+
+A cancelled job keeps its milestones, invoices and costs as they are. Nothing is deleted or reversed. You can set it back to **Active** later.
+
+<Aside type="caution">There's no way to delete a job. Use **Cancelled** for work that won't go ahead.</Aside>
+
+## The next-step button
+
+Beside **Edit job** and **Raise variation**, one main button offers the next thing to do on the job:
+
+- **Invoice _milestone_** when a milestone is completed but not invoiced.
+- Otherwise **Complete _milestone_** for the next pending milestone, while the job isn't completed or cancelled.
+- Otherwise **Release retention** when the job is completed with retention held.
+
+**More** holds **Add photos** and **View history**, and **Release retention** when it isn't the main button.

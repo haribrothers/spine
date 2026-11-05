@@ -13,9 +13,10 @@ import { SectionHeader } from "../../components/section-header";
 import { CardRowsSkeleton } from "../../components/skeletons";
 import { NeedsConnection } from "./needs-connection";
 import { htmlToText, quantityLabel, validUntilLabel } from "./quote-format";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const HAND_OVER = "Hand the phone to your customer";
-export const NOT_WAITING = "This quote isn't waiting for the customer any more. Go back to the job to see what's changed.";
+export const HAND_OVER = translate("mobileWork.present.handOver");
+export const NOT_WAITING = translate("mobileWork.present.notWaiting");
 
 function Row({ label, value, strong = false, testID }: { label: string; value: string; strong?: boolean; testID?: string }) {
   return (
@@ -44,6 +45,7 @@ function Line({ line, fmt, locale }: { line: PresentedLine; fmt: (minor: string)
 
 /** The quote as the customer reads it — the same figures as the PDF, each tax on its own line. */
 function QuoteCard({ quote }: { quote: PresentedQuote }) {
+  const t = useT();
   const android = Platform.OS === "android";
   const { locale } = useBusinessFormat();
   const fmt = (minor: string) => money(minor, { currency: quote.currency, locale });
@@ -57,19 +59,19 @@ function QuoteCard({ quote }: { quote: PresentedQuote }) {
         </View>
         {android ? null : (
           <View className="items-end">
-            <Text className="text-[12px] font-medium uppercase tracking-widest text-on-surface-muted dark:text-on-surface-muted-dark">Quote</Text>
+            <Text className="text-[12px] font-medium uppercase tracking-widest text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.present.quote")}</Text>
             <Text className="text-[22px] font-bold text-on-surface dark:text-on-surface-dark">{quote.number}</Text>
           </View>
         )}
       </View>
       <View className="flex-row justify-between gap-3 border-t border-border pt-4 dark:border-border-dark">
         <View className="flex-1 gap-0.5">
-          <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Prepared for</Text>
+          <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.present.preparedFor")}</Text>
           <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{quote.contactName ?? "—"}</Text>
         </View>
         {quote.validUntil ? (
           <View className="items-end gap-0.5">
-            <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Valid until</Text>
+            <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.present.validUntil")}</Text>
             <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{validUntilLabel(quote.validUntil, locale)}</Text>
           </View>
         ) : null}
@@ -80,13 +82,13 @@ function QuoteCard({ quote }: { quote: PresentedQuote }) {
         ))}
       </View>
       <View className="gap-2 border-t border-border pt-4 dark:border-border-dark">
-        <Row label="Subtotal" value={fmt(quote.subtotalAmount)} />
-        {discount > 0n ? <Row label="Discount" value={fmt((-discount).toString())} /> : null}
+        <Row label={t("mobileWork.present.subtotal")} value={fmt(quote.subtotalAmount)} />
+        {discount > 0n ? <Row label={t("mobileWork.present.discount")} value={fmt((-discount).toString())} /> : null}
         {quote.taxLines.map((tax) => (
           <Row key={tax.label} label={tax.label} value={fmt(tax.amount)} />
         ))}
         <View className="pt-2">
-          <Row label="Total" value={fmt(quote.totalAmount)} strong testID="quote-total" />
+          <Row label={t("mobileWork.common.total")} value={fmt(quote.totalAmount)} strong testID="quote-total" />
         </View>
       </View>
     </View>
@@ -100,6 +102,7 @@ function QuoteCard({ quote }: { quote: PresentedQuote }) {
  * goes back to the job.
  */
 export function PresentScreen({ id, jobId, onClose }: { id: string; jobId?: string; onClose: () => void }) {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const insets = useSafeAreaInsets();
@@ -125,17 +128,17 @@ export function PresentScreen({ id, jobId, onClose }: { id: string; jobId?: stri
     <View testID="quote-present" className="flex-1 bg-background dark:bg-background-dark" style={{ paddingTop: insets.top }}>
       {android ? (
         <View className="flex-row items-center gap-4 px-2 py-2">
-          <Pressable testID="quote-done" onPress={onClose} accessibilityRole="button" accessibilityLabel="Done" hitSlop={8} className="h-12 w-12 items-center justify-center">
+          <Pressable testID="quote-done" onPress={onClose} accessibilityRole="button" accessibilityLabel={t("mobileWork.common.done")} hitSlop={8} className="h-12 w-12 items-center justify-center">
             <X size={24} color={colors.onSurface} />
           </Pressable>
           <Text accessibilityRole="header" className="text-[22px] text-on-surface dark:text-on-surface-dark">
-            {quote?.number ?? "Quote"}
+            {quote?.number ?? t("mobileWork.present.quote")}
           </Text>
         </View>
       ) : (
         <View className="flex-row items-center justify-between gap-3 px-4 py-2">
           <Pressable testID="quote-done" onPress={onClose} accessibilityRole="button" className="min-h-[44px] justify-center rounded-full bg-surface px-5 dark:bg-surface-dark">
-            <Text className="text-[17px] text-on-surface dark:text-on-surface-dark">Done</Text>
+            <Text className="text-[17px] text-on-surface dark:text-on-surface-dark">{t("mobileWork.common.done")}</Text>
           </Pressable>
           {handOver}
         </View>
@@ -143,13 +146,13 @@ export function PresentScreen({ id, jobId, onClose }: { id: string; jobId?: stri
 
       <ScrollView contentInsetAdjustmentBehavior="never" contentContainerClassName="gap-5 px-4 pb-8 pt-2">
         {android ? handOver : null}
-        {live.status === "loading" ? <CardRowsSkeleton rows={6} label="Loading the quote" testID="skeleton-quote" /> : null}
+        {live.status === "loading" ? <CardRowsSkeleton rows={6} label={t("mobileWork.present.loading")} testID="skeleton-quote" /> : null}
         {live.status === "error" ? (
           <View testID="quote-error" className="gap-3 rounded-2xl bg-surface p-5 dark:bg-surface-dark">
-            <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{"Couldn't open the quote"}</Text>
+            <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{t("mobileWork.present.couldntOpen")}</Text>
             <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">{live.message}</Text>
             <Pressable onPress={live.retry} accessibilityRole="button" className="min-h-[44px] justify-center self-start">
-              <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Try again</Text>
+              <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{t("mobileWork.common.tryAgain")}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -157,7 +160,7 @@ export function PresentScreen({ id, jobId, onClose }: { id: string; jobId?: stri
         {quote ? <QuoteCard quote={quote} /> : null}
         {quote?.notes ? (
           <View className="gap-2">
-            <SectionHeader title="Notes" />
+            <SectionHeader title={t("mobileWork.present.notes")} />
             <Text className="px-1 text-[16px] leading-6 text-on-surface dark:text-on-surface-dark">{htmlToText(quote.notes)}</Text>
           </View>
         ) : null}
@@ -173,7 +176,7 @@ export function PresentScreen({ id, jobId, onClose }: { id: string; jobId?: stri
               android ? "border border-border-strong dark:border-border-strong-dark" : "bg-surface-sunken dark:bg-surface-sunken-dark"
             }`}
           >
-            <Text className={`text-[17px] font-semibold ${android ? "text-primary dark:text-primary-dark" : "text-on-surface dark:text-on-surface-dark"}`}>Decline</Text>
+            <Text className={`text-[17px] font-semibold ${android ? "text-primary dark:text-primary-dark" : "text-on-surface dark:text-on-surface-dark"}`}>{t("mobileWork.present.decline")}</Text>
           </Pressable>
           <Pressable
             testID="quote-accept"
@@ -182,7 +185,7 @@ export function PresentScreen({ id, jobId, onClose }: { id: string; jobId?: stri
             className="min-h-[52px] flex-[1.4] flex-row items-center justify-center gap-2 rounded-full bg-primary dark:bg-primary-dark"
           >
             {android ? null : <Signature size={20} color={colors.onPrimary} />}
-            <Text className="text-[17px] font-semibold text-on-primary dark:text-on-primary-dark">Accept quote</Text>
+            <Text className="text-[17px] font-semibold text-on-primary dark:text-on-primary-dark">{t("mobileWork.present.acceptQuote")}</Text>
           </Pressable>
         </View>
       ) : null}

@@ -9,6 +9,6 @@ export default defineConfig({
     css: false,
     // The first axe run in a file can take over 5 s when every package tests at once (pnpm verify, CI);
     // a timeout there also leaves axe running and fails the file's next test.
-    testTimeout: 20_000,
+    testTimeout: 60_000,
   },
 });

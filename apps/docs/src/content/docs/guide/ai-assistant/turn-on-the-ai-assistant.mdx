@@ -1,0 +1,51 @@
+---
+title: Turn on the AI assistant
+description: Connect a local or cloud AI provider, test it, and switch the AI assistant on or off for the whole business.
+sidebar:
+  order: 2
+---
+
+AI is off until an Owner connects a provider and switches it on. You choose where AI requests go: a model running on your own network, or a cloud service paid for with your business's own key.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Staff and Field don't see **AI assistant** in Settings.</Aside>
+
+<Steps>
+
+1. **Open the AI settings** — Open your user menu, choose **Settings**, then **AI assistant** under **Business**. Searching settings for "AI", "provider" or "model" finds it too.
+
+2. **Choose a provider** — Under **Provider**, pick:
+   - **Local or OpenAI-compatible** — a model on your own network (such as Ollama or vLLM) or any OpenAI-compatible service. Enter the **Server address**, for example `http://192.168.1.20:11434/v1`, and an **API key (optional)** if your server asks for one.
+   - **Anthropic Claude** — enter your business's **API key**.
+
+3. **Choose the model** — **Model** lists the models the provider reports. You can type one it doesn't list.
+
+4. **Test the connection** — Press **Test connection**. It shows "Connected · *model* · reads images: yes" (or no). If it can't connect, it says why and asks you to check the address and key.
+
+5. **Save** — Press **Save**. The toast says "AI provider saved".
+
+6. **Switch AI on** — Use the switch at the top of the pane. For a provider outside your own network, "Turn on AI?" says business data will be sent to that host when people use AI features, and lists what each feature sends. Press **Turn on AI**. The toast says "AI assistant is on".
+
+</Steps>
+
+<Screenshot id="ai-assistant-settings" alt="Settings, AI assistant: the on/off switch and the Provider card with Local or OpenAI-compatible and Anthropic Claude" />
+
+If you switch AI on before saving a provider, Spine says "Connect a provider first." and the switch stays off.
+
+## About the API key
+
+The key is stored encrypted. It's never shown again, written to logs or included in data exports. After saving, it shows only its last four characters, with **Replace key**.
+
+<Aside type="caution">A model that can't read images can still read PDFs with text, but not photos or scans. The pane notes this under **Read bills and receipts**.</Aside>
+
+## Switch AI off
+
+Use the same switch. "Turn off AI?" says AI buttons disappear for everyone and nothing already saved changes. Press **Turn off AI**.
+
+The **AI assistant** row in **Settings › Modules** shows the same setting — "Off" or "On" with the provider's host — and **Set up in AI assistant** opens this pane.
+
+## Changing the provider later
+
+Changing the provider, model or key is recorded in the audit log, without the key. If you move AI to a cloud host while it's on, Spine asks "Send AI requests here?" first; press **Use this provider**.

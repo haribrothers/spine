@@ -1,0 +1,44 @@
+---
+title: Add your own account
+description: Add an income, expense or other account so your categories and reports match your business.
+sidebar:
+  order: 3
+---
+
+If the standard chart doesn't have an account you report on — "Software Subscriptions", say, or a second sales account — add it. Once it's added, you can pick it on catalogue items, expense categories and bill lines, and it shows on your reports.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Chart of accounts** — Open your user menu, choose **Settings**, and pick **Chart of accounts** under **Money & tax**.
+
+2. **Press Add account** — It's at the top right of the pane. The **Add account** dialog opens.
+
+3. **Enter a code** — **Code** is a number that isn't used yet, such as `6950`. The standard chart uses 1000s for assets, 2000s for liabilities, 3000s for equity, 4000s for income and 5000s–6000s for expenses, so a code in the right range keeps your list tidy.
+
+4. **Enter a name** — **Name** is what you'll see in pickers and on reports, such as "Software Subscriptions".
+
+5. **Choose a type** — **Type** is **Asset**, **Liability**, **Equity**, **Income** or **Expense**. It starts on Expense.
+
+6. **Press Add account** — The account is listed in its group straight away.
+
+</Steps>
+
+<Screenshot id="accounts-add-account" alt="The Add account dialog with Code, Name and Type, and Cancel and Add account" />
+
+## If something goes wrong
+
+- **The code is already in use** — you see "Could not create this account." with the reason. Pick another code.
+- **Code or name is empty** — **Add account** stays turned off until both are filled in.
+
+## Good to know
+
+- New accounts aren't system accounts, so you can rename them later.
+- Accounts can't be deleted, so check the code and type before you add one.
+- An account's balance comes from the entries posted to it; there's no balance to type in here. To start an account with a balance from your old books, see [Enter your opening balances](../opening-balances/).
+
+<Aside type="tip">To post a one-off correction between accounts, use a manual journal — see [Reports](../../reports/).</Aside>

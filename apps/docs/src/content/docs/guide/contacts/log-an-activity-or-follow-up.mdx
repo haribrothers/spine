@@ -1,0 +1,43 @@
+---
+title: Log an activity or follow-up
+description: Record a call, meeting, note or task with a contact, set a date to follow up, and tick it off when it's done.
+sidebar:
+  order: 6
+---
+
+Log what happened each time you speak to a customer or vendor, and set a follow-up date when there's something to do next. Open follow-ups turn **Overdue** when their date passes, so nothing slips.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own activities**. Editing or ticking off an activity someone else logged needs **Edit others' activities**.</Aside>
+
+<Steps>
+1. **Open the tab** — Open the contact and choose the **Activities** tab.
+2. **Start the activity** — Press **Log activity**.
+3. **Fill it in** — Choose a **Type**: call, meeting, note or task. Add **Notes** about what happened. Set a **Follow-up date** if there's something to follow up on; leave it blank if there's nothing.
+4. **Save** — Press **Log activity**. An "Activity logged" toast shows and the activity appears at the top of the list with its type and follow-up date.
+</Steps>
+
+An activity is assigned to the person who logs it.
+
+## Tick off a follow-up
+
+Tick the box at the start of the activity's row when you've done it. It shows as done and leaves your overdue follow-ups. Untick it to open it again: its follow-up comes back, and it's overdue again if the date has passed.
+
+If you can't change an activity (it's a colleague's and you don't have **Edit others' activities**), its box is greyed out.
+
+## Change an activity
+
+Press **Edit activity** (the pencil) on the row, change the type, notes or date, and press **Save changes**. Ticking an activity done or changing it never changes who logged it.
+
+## Overdue follow-ups
+
+- An open activity whose follow-up date has passed shows an **Overdue** chip.
+- Your own overdue follow-ups also show on your dashboard, so you see them when you sign in.
+- With **My Activities** ticked on the meetings calendar, your follow-ups show on their days. See [Meetings](../../meetings/).
+
+## Activities on a lead
+
+A lead has follow-ups too. Open the lead on the pipeline and use **Log activity** or **Add follow-up** in its **Follow-ups** section. See [Work a lead from its drawer](../work-a-lead-from-its-drawer/).
+
+A contact with no activities shows "No activities logged."

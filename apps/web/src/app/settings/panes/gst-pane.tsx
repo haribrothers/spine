@@ -5,6 +5,7 @@ import { Button, Checkbox, DatePicker, FormField, Input, Select, SelectContent, 
 import { GST_STATES, gstinError, gstinStateCode, normaliseGstin, type ReturnPeriod, type TaxProfile } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
 
 function toIsoDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -18,7 +19,7 @@ function toIsoDate(date: Date): string {
 export function GstRegistrationForm({
   initial,
   onSaved,
-  saveLabel = "Save",
+  saveLabel,
   secondary,
 }: {
   initial: TaxProfile;
@@ -27,6 +28,7 @@ export function GstRegistrationForm({
   /** Rendered left of the save button (the wizard's "Skip to dashboard"). */
   secondary?: React.ReactNode;
 }) {
+  const t = useT();
   const [gstin, setGstin] = useState(typeof initial.registrationNumber === "string" ? initial.registrationNumber : "");
   const [stateCode, setStateCode] = useState(typeof initial.stateCode === "string" ? initial.stateCode : "");
   const [legalName, setLegalName] = useState(typeof initial.legalName === "string" ? initial.legalName : "");
@@ -40,7 +42,7 @@ export function GstRegistrationForm({
   const [error, setError] = useState<string | null>(null);
   const registeredOnLabel = useId();
 
-  const gstinMessage = gstin ? gstinError(gstin, stateCode || null) : touched ? "Enter your GSTIN." : null;
+  const gstinMessage = gstin ? gstinError(gstin, stateCode || null) : touched ? t("settings.gst.gstinRequired") : null;
   const canSave = gstin !== "" && !gstinMessage && stateCode !== "" && legalName.trim() !== "";
 
   function changeGstin(value: string) {
@@ -68,7 +70,7 @@ export function GstRegistrationForm({
       });
       onSaved(res.profile);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save your GST details.");
+      setError(err instanceof Error ? err.message : t("settings.gst.saveError"));
     } finally {
       setSaving(false);
     }
@@ -76,15 +78,15 @@ export function GstRegistrationForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <FormField label="GSTIN" required errorText={gstinMessage ?? undefined}>
+      <div className="grid gap-3 md:grid-cols-2">
+        <FormField label={t("settings.gst.gstin")} required errorText={gstinMessage ?? undefined}>
           {(field) => <Input {...field} value={gstin} maxLength={15} autoCapitalize="characters" onChange={(e) => changeGstin(e.target.value)} onBlur={() => setTouched(true)} />}
         </FormField>
-        <FormField label="State" required>
+        <FormField label={t("settings.gst.state")} required>
           {(field) => (
             <Select value={stateCode} onValueChange={setStateCode}>
               <SelectTrigger {...field}>
-                <SelectValue placeholder="Choose a state" />
+                <SelectValue placeholder={t("settings.gst.chooseState")} />
               </SelectTrigger>
               <SelectContent>
                 {GST_STATES.map((s) => (
@@ -96,25 +98,25 @@ export function GstRegistrationForm({
             </Select>
           )}
         </FormField>
-        <FormField label="Legal name" required errorText={touched && !legalName.trim() ? "Enter the legal name on your GST certificate." : undefined}>
+        <FormField label={t("settings.gst.legalName")} required errorText={touched && !legalName.trim() ? t("settings.gst.legalNameRequired") : undefined}>
           {(field) => <Input {...field} value={legalName} onChange={(e) => setLegalName(e.target.value)} />}
         </FormField>
-        <FormField label="Trade name">{(field) => <Input {...field} value={tradeName} onChange={(e) => setTradeName(e.target.value)} />}</FormField>
+        <FormField label={t("settings.gst.tradeName")}>{(field) => <Input {...field} value={tradeName} onChange={(e) => setTradeName(e.target.value)} />}</FormField>
         <div className="flex flex-col gap-1.5" role="group" aria-labelledby={registeredOnLabel}>
           <span id={registeredOnLabel} className="text-[13px] font-medium text-on-surface">
-            Registered on
+            {t("settings.gst.registeredOn")}
           </span>
           <DatePicker value={registeredOn} onChange={setRegisteredOn} />
         </div>
-        <FormField label="Return period">
+        <FormField label={t("settings.gst.returnPeriod")}>
           {(field) => (
             <Select value={returnPeriod} onValueChange={(v) => setReturnPeriod(v as ReturnPeriod)}>
               <SelectTrigger {...field}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="quarterly">Quarterly</SelectItem>
+                <SelectItem value="monthly">{t("settings.gst.monthly")}</SelectItem>
+                <SelectItem value="quarterly">{t("settings.gst.quarterly")}</SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -123,16 +125,16 @@ export function GstRegistrationForm({
       <label htmlFor="gst-export-lut" className="flex cursor-pointer items-start gap-2">
         <Checkbox id="gst-export-lut" checked={exportUnderLut} onCheckedChange={(v) => setExportUnderLut(v === true)} className="mt-0.5" />
         <span className="flex flex-col">
-          <span className="text-[13px] font-medium text-on-surface">We export under LUT</span>
-          <span className="text-[12px] text-on-surface-muted">Exports go out zero-rated, with no IGST. Leave this off to charge IGST on exports.</span>
+          <span className="text-[13px] font-medium text-on-surface">{t("settings.gst.lut")}</span>
+          <span className="text-[12px] text-on-surface-muted">{t("settings.gst.lutHelp")}</span>
         </span>
       </label>
-      <p className="text-[13px] text-on-surface-muted">Spine prepares GST invoices and a GSTR-1 file to upload. It never files your return or connects to the GST portal.</p>
+      <p className="text-[13px] text-on-surface-muted">{t("settings.gst.filingNote")}</p>
       {error && <p className="text-[13px] text-overdue">{error}</p>}
       <div className="flex items-center justify-between gap-2">
         {secondary}
         <Button onClick={save} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : saveLabel}
+          {saving ? <Spinner size="sm" /> : (saveLabel ?? t("settings.common.save"))}
         </Button>
       </div>
     </div>
@@ -141,6 +143,7 @@ export function GstRegistrationForm({
 
 /** Settings › GST (US-TAX-12). */
 export function GstPane() {
+  const t = useT();
   const [profile, setProfile] = useState<TaxProfile | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -162,8 +165,8 @@ export function GstPane() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">GST</h2>
-        <p className="text-[13px] text-on-surface-muted">Your GST registration. Spine uses your state to pick intra- or inter-state tax.</p>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.gst.title")}</h2>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.gst.description")}</p>
       </div>
       <GstRegistrationForm
         initial={profile}

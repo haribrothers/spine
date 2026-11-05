@@ -3,9 +3,22 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
+import { t as translate, useT, formatLocale } from "../lib/i18n";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 
-const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WEEKDAY_LABELS = [
+  translate("ui.calendarMini.weekdays.su"),
+  translate("ui.calendarMini.weekdays.mo"),
+  translate("ui.calendarMini.weekdays.tu"),
+  translate("ui.calendarMini.weekdays.we"),
+  translate("ui.calendarMini.weekdays.th"),
+  translate("ui.calendarMini.weekdays.fr"),
+  translate("ui.calendarMini.weekdays.sa"),
+];
+
+const MONTH_YEAR: Intl.DateTimeFormatOptions = { month: "long", year: "numeric" };
+const FULL_DATE: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric", year: "numeric" };
+const DAY_DATE: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" };
 
 function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -42,7 +55,7 @@ export interface MiniCalendarProps {
   highlight?: { start: Date; end: Date };
 }
 
-const defaultMarkLabel = (count: number) => `${count} ${count === 1 ? "event" : "events"}`;
+const defaultMarkLabel = (count: number) => translate("ui.calendarMini.eventCount", { count });
 
 /**
  * A minimal month-grid calendar, no external date library — DatePicker
@@ -54,6 +67,7 @@ const defaultMarkLabel = (count: number) => `${count} ${count === 1 ? "event" : 
  * controlled month (US-MTG-13, D-212).
  */
 export function MiniCalendar({ selected, onSelect, className, headerAction, month, onMonthChange, marks, markLabel = defaultMarkLabel, highlight }: MiniCalendarProps) {
+  const t = useT();
   const [ownViewDate, setOwnViewDate] = useState(selected ?? new Date());
   const controlled = month !== undefined && onMonthChange !== undefined;
   const viewDate = controlled ? month : ownViewDate;
@@ -81,7 +95,7 @@ export function MiniCalendar({ selected, onSelect, className, headerAction, mont
         <div className="flex items-center gap-1">
           <button
             type="button"
-            aria-label="Previous month"
+            aria-label={t("ui.calendarMini.previousMonth")}
             onClick={() => setViewDate(new Date(year, monthIndex - 1, 1))}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
@@ -89,19 +103,19 @@ export function MiniCalendar({ selected, onSelect, className, headerAction, mont
           </button>
           <button
             type="button"
-            aria-label="Next month"
+            aria-label={t("ui.calendarMini.nextMonth")}
             onClick={() => setViewDate(new Date(year, monthIndex + 1, 1))}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ChevronRight size={16} />
           </button>
           <span className="text-[13px] font-semibold text-on-surface" aria-live="polite">
-            {viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+            {viewDate.toLocaleDateString(formatLocale(), MONTH_YEAR)}
           </span>
         </div>
         {headerAction}
       </div>
-      <div role="grid" aria-label={viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })} className="flex flex-col gap-1">
+      <div role="grid" aria-label={viewDate.toLocaleDateString(formatLocale(), MONTH_YEAR)} className="flex flex-col gap-1">
         <div role="row" className="grid grid-cols-7 gap-1">
           {WEEKDAY_LABELS.map((label) => (
             <div key={label} role="columnheader" className="flex h-7 items-center justify-center text-[11px] font-medium text-on-surface-muted">
@@ -126,7 +140,7 @@ export function MiniCalendar({ selected, onSelect, className, headerAction, mont
               const isToday = isSameDay(date, today);
               const count = marks?.get(miniCalendarDayKey(date)) ?? 0;
               const inRange = inBand[index] ?? false;
-              const name = date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+              const name = date.toLocaleDateString(formatLocale(), FULL_DATE);
               const button = (
                 <button
                   key={date.toISOString()}
@@ -134,7 +148,7 @@ export function MiniCalendar({ selected, onSelect, className, headerAction, mont
                   role="gridcell"
                   aria-selected={isSelected}
                   aria-current={isToday ? "date" : undefined}
-                  aria-label={count > 0 ? `${name}, ${markLabel(count)}` : name}
+                  aria-label={count > 0 ? t("ui.calendarMini.dayWithMarks", { name, marks: markLabel(count) }) : name}
                   data-marked={count > 0 || undefined}
                   data-in-range={inRange || undefined}
                   onClick={() => onSelect(date)}
@@ -154,7 +168,7 @@ export function MiniCalendar({ selected, onSelect, className, headerAction, mont
               return count > 0 ? (
                 <Tooltip key={date.toISOString()}>
                   <TooltipTrigger asChild>{button}</TooltipTrigger>
-                  <TooltipContent>{`${date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })} · ${markLabel(count)}`}</TooltipContent>
+                  <TooltipContent>{t("ui.calendarMini.dayTooltip", { date: date.toLocaleDateString(formatLocale(), DAY_DATE), marks: markLabel(count) })}</TooltipContent>
                 </Tooltip>
               ) : (
                 button

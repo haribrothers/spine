@@ -25,14 +25,21 @@ import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-co
 import { useModule } from "../../../lib/modules-context";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { Quote } from "./types";
+import { t, useT } from "../../../lib/i18n";
 
 /** US-OPS-38 — the toasts for a quote's actions that open another page, shown there (D-223). */
 export const QUOTE_TOASTS = {
-  revised: (quote: Quote): [string, string] => [`${quote.number ?? "Quote"} revised`, `Version ${quote.version + 1} is a draft — edit it, then send it to replace version ${quote.version}.`],
-  duplicated: (quote: Quote): [string, string] => ["Quote duplicated", `A new draft from ${quote.number ?? "the quote"} — change what you need, then send it.`],
-  toInvoice: (quote: Quote): [string, string] => [`${quote.number ?? "Quote"} converted to an invoice`, "The draft invoice is open — check it, then issue it."],
-  toJob: (quote: Quote, jobNumber: string | null): [string, string] => [`${quote.number ?? "Quote"} converted to a job`, `${jobNumber ?? "The job"} is open — set up its milestones next.`],
-  deleted: (quote: Quote): [string, string] => ["Quote deleted", `${quote.number ?? "Draft quote"} has been permanently removed.`],
+  revised: (quote: Quote): [string, string] => [
+    t("quotes.toasts.revisedTitle", { number: quote.number ?? t("quotes.toasts.quote") }),
+    t("quotes.toasts.revisedDescription", { next: quote.version + 1, version: quote.version }),
+  ],
+  duplicated: (quote: Quote): [string, string] => [t("quotes.toasts.duplicatedTitle"), t("quotes.toasts.duplicatedDescription", { number: quote.number ?? t("quotes.toasts.theQuote") })],
+  toInvoice: (quote: Quote): [string, string] => [t("quotes.toasts.toInvoiceTitle", { number: quote.number ?? t("quotes.toasts.quote") }), t("quotes.toasts.toInvoiceDescription")],
+  toJob: (quote: Quote, jobNumber: string | null): [string, string] => [
+    t("quotes.toasts.toJobTitle", { number: quote.number ?? t("quotes.toasts.quote") }),
+    t("quotes.toasts.toJobDescription", { job: jobNumber ?? t("quotes.toasts.theJob") }),
+  ],
+  deleted: (quote: Quote): [string, string] => [t("quotes.toasts.deletedTitle"), t("quotes.toasts.deletedDescription", { number: quote.number ?? t("quotes.toasts.draftQuote") })],
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -43,12 +50,12 @@ export async function copyCustomerLink(quoteId: string, notify: (title: string, 
     const link = await apiClient.post<QuoteCustomerLink>(`/quotes/${quoteId}/link`);
     try {
       await navigator.clipboard.writeText(link.url);
-      notify("Link copied", "It works for 30 days, or until you revise the quote.");
+      notify(t("quotes.toasts.linkCopied"), t("quotes.toasts.linkCopiedDescription"));
     } catch {
-      notify("Here's the customer link", link.url);
+      notify(t("quotes.toasts.hereIsLink"), link.url);
     }
   } catch (err) {
-    fail("Couldn't make a link.", err instanceof Error ? err.message : "Try again.");
+    fail(t("quotes.toasts.linkFailed"), err instanceof Error ? err.message : t("quotes.toasts.tryAgain"));
   }
 }
 
@@ -71,6 +78,7 @@ export function QuoteRowActions({
   /** An action failed: shown above the list (US-OPS-38). */
   onFailed: (title: string, message: string) => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -94,7 +102,7 @@ export function QuoteRowActions({
       setConfirmOpen(false);
       onDeleted(quote);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete quote.");
+      setError(err instanceof Error ? err.message : t("quotes.rowActions.deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -106,7 +114,7 @@ export function QuoteRowActions({
       onNotify(...done);
       router.push(`/quotes/${next.id}`);
     } catch (err) {
-      onFailed(failure, err instanceof Error ? err.message : "Try again.");
+      onFailed(failure, err instanceof Error ? err.message : t("quotes.toasts.tryAgain"));
     }
   }
 
@@ -116,7 +124,7 @@ export function QuoteRowActions({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${quote.number ?? "this draft quote"}`}
+            aria-label={t("quotes.rowActions.menuLabel", { number: quote.number ?? t("quotes.rowActions.thisDraftQuote") })}
             onClick={(e) => e.stopPropagation()}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
@@ -126,48 +134,48 @@ export function QuoteRowActions({
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}`)}>
             <MENU_ICONS.view aria-hidden />
-            View
+            {t("quotes.rowActions.view")}
           </DropdownMenuItem>
           {draft && canEdit && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}/edit`)}>
               <MENU_ICONS.edit aria-hidden />
-              Edit
+              {t("quotes.rowActions.edit")}
             </DropdownMenuItem>
           )}
           {draft && canSend && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}?action=send`)}>
               <MENU_ICONS.send aria-hidden />
-              Send
+              {t("quotes.rowActions.send")}
             </DropdownMenuItem>
           )}
           {quote.status === "sent" && current && canSend && (
             <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, onNotify, onFailed)}>
               <MENU_ICONS.copyLink aria-hidden />
-              Copy customer link
+              {t("quotes.rowActions.copyLink")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
             <a href={`${API_URL}/quotes/${quote.id}/pdf`} target="_blank" rel="noreferrer">
               <MENU_ICONS.download aria-hidden />
-              {draft ? "Preview PDF" : "Download PDF"}
+              {draft ? t("quotes.rowActions.previewPdf") : t("quotes.rowActions.downloadPdf")}
             </a>
           </DropdownMenuItem>
           {canCreate && (
-            <DropdownMenuItem onSelect={() => void post(`/quotes/${quote.id}/duplicate`, "Couldn't duplicate the quote.", QUOTE_TOASTS.duplicated(quote))}>
+            <DropdownMenuItem onSelect={() => void post(`/quotes/${quote.id}/duplicate`, t("quotes.rowActions.duplicateFailed"), QUOTE_TOASTS.duplicated(quote))}>
               <MENU_ICONS.duplicate aria-hidden />
-              Duplicate
+              {t("quotes.rowActions.duplicate")}
             </DropdownMenuItem>
           )}
           {quote.status === "accepted" && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}?action=convert-invoice`)}>
               <MENU_ICONS.convertToInvoice aria-hidden />
-              Convert to invoice
+              {t("quotes.rowActions.convertToInvoice")}
             </DropdownMenuItem>
           )}
           {quote.status === "accepted" && canCreateJob && jobsOn && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}?action=convert-job`)}>
               <MENU_ICONS.convertToJob aria-hidden />
-              Convert to job
+              {t("quotes.rowActions.convertToJob")}
             </DropdownMenuItem>
           )}
           {!draft && current && canRevise && (
@@ -175,12 +183,16 @@ export function QuoteRowActions({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onSelect={async () => {
-                  const ok = await confirm({ title: "Revise this quote?", description: `${quote.number ?? "This quote"} version ${quote.version + 1} is made as a draft from this one. Once it's sent, this version is superseded and the customer can only answer the newest.`, confirmLabel: "Revise quote" });
-                  if (ok) void post(`/quotes/${quote.id}/revise`, "Couldn't revise the quote.", QUOTE_TOASTS.revised(quote));
+                  const ok = await confirm({
+                    title: t("quotes.reviseConfirm.title"),
+                    description: t("quotes.reviseConfirm.description", { number: quote.number ?? t("quotes.reviseConfirm.thisQuote"), next: quote.version + 1 }),
+                    confirmLabel: t("quotes.reviseConfirm.confirm"),
+                  });
+                  if (ok) void post(`/quotes/${quote.id}/revise`, t("quotes.rowActions.reviseFailed"), QUOTE_TOASTS.revised(quote));
                 }}
               >
                 <MENU_ICONS.revise aria-hidden />
-                Revise
+                {t("quotes.rowActions.revise")}
               </DropdownMenuItem>
             </>
           )}
@@ -189,7 +201,7 @@ export function QuoteRowActions({
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
                 <MENU_ICONS.delete aria-hidden />
-                Delete
+                {t("quotes.rowActions.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -199,16 +211,16 @@ export function QuoteRowActions({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this draft quote?</AlertDialogTitle>
+            <AlertDialogTitle>{t("quotes.deleteConfirm.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the draft. This cannot be undone.
+              {t("quotes.deleteConfirm.description")}
               {error && <span className="mt-2 block text-overdue">{error}</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("quotes.rowActions.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
-              Delete
+              {t("quotes.rowActions.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

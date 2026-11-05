@@ -12,6 +12,9 @@ export interface TrioFigure {
   "aria-label"?: string;
 }
 
+/** One figure's cell: label and value on a line, stacked when the trio fits. */
+const CELL = "flex items-baseline justify-between gap-3 px-3 py-2.5 @[30rem]:block @[30rem]:p-3";
+
 /**
  * US-DASH-28 (D-209) — three figures side by side when they fit, and
  * stacked, each with its label, when they don't (Payables, Tax this
@@ -28,7 +31,7 @@ export function FigureTrio({ figures, className }: { figures: TrioFigure[]; clas
               <span className={cn("whitespace-nowrap text-[16px] font-semibold tabular-nums text-on-surface @[30rem]:mt-0.5 @[30rem]:block @[30rem]:text-[18px]", f.className)}>{f.value}</span>
             </>
           );
-          const cell = "flex items-baseline justify-between gap-3 px-3 py-2.5 @[30rem]:block @[30rem]:p-3";
+          const cell = CELL;
           return f.href ? (
             <Link key={f.label} href={f.href} className={cn(cell, "hover:bg-surface-sunken")} aria-label={f["aria-label"]}>
               {body}

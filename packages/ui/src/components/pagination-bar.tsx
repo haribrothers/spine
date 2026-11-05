@@ -3,6 +3,7 @@
 import { NativeSelect } from "./native-select";
 import { Pagination } from "./pagination";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export interface PaginationBarProps {
   page: number;
@@ -29,6 +30,7 @@ export function PaginationBar({
   onPageSizeChange,
   className,
 }: PaginationBarProps) {
+  const t = useT();
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(total, page * pageSize);
@@ -37,13 +39,13 @@ export function PaginationBar({
     <div data-print="hide" className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
       <div className="flex items-center gap-2 text-[13px] text-on-surface-muted">
         <span>
-          {start}–{end} of {total}
+          {t("ui.paginationBar.range", { start, end, total })}
         </span>
         <span className="flex items-center gap-1.5">
           <label htmlFor="pagination-bar-page-size" className="sr-only">
-            Rows per page
+            {t("ui.paginationBar.rowsPerPage")}
           </label>
-          per page
+          {t("ui.paginationBar.perPage")}
           <NativeSelect
             id="pagination-bar-page-size"
             className="h-8 w-[68px] px-2 text-[13px]"

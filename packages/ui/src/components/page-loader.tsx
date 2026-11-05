@@ -1,4 +1,5 @@
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 import { Spinner } from "./spinner";
 
 export interface PageLoaderProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -15,7 +16,7 @@ export interface PageLoaderProps extends React.HTMLAttributes<HTMLDivElement> {
  * a Dialog/Drawer never outranks it, matching the elevation order in
  * docs/DESIGN.md.
  */
-export function PageLoader({ label = "Loading", fullScreen = false, className, ...props }: PageLoaderProps) {
+export function PageLoader({ label, fullScreen = false, className, ...props }: PageLoaderProps) {
   return (
     <div
       className={cn(
@@ -25,7 +26,7 @@ export function PageLoader({ label = "Loading", fullScreen = false, className, .
       )}
       {...props}
     >
-      <Spinner size="lg" label={label} />
+      <Spinner size="lg" label={label ?? t("ui.spinner.loading")} />
     </div>
   );
 }

@@ -28,6 +28,7 @@ import { Info, Send } from "lucide-react";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import type { CreditNote, Creditable, CreditNotePreview } from "./types";
+import { t, useT } from "../../../lib/i18n";
 
 type Mode = "lines" | "amount";
 
@@ -54,7 +55,10 @@ export function creditNoteLines(creditable: Creditable, mode: Mode, quantities: 
 /** US-OPS-38 — what an issued credit note's toast says, from the invoice or the credit notes list. */
 export function creditNoteIssuedToast(note: CreditNote, customerName: string | null): [string, string] {
   const left = BigInt(note.creditRemainingAmount ?? "0");
-  return [`${note.number ?? "Credit note"} issued`, left > 0n ? `${formatMoney(left, note.currency)} became credit for ${customerName ?? "the customer"}.` : "The invoice's balance has been updated."];
+  return [
+    t("invoices.createCreditNote.issuedToastTitle", { number: note.number ?? t("invoices.createCreditNote.creditNote") }),
+    left > 0n ? t("invoices.createCreditNote.becameCredit", { amount: formatMoney(left, note.currency), name: customerName ?? t("invoices.createCreditNote.theCustomer") }) : t("invoices.createCreditNote.balanceUpdated"),
+  ];
 }
 
 /**
@@ -82,6 +86,7 @@ export function CreateCreditNoteDialog({
   customerName: string | null;
   onIssued: (note: CreditNote) => void;
 }) {
+  const t = useT();
   const [creditable, setCreditable] = useState<Creditable | null>(null);
   const [mode, setMode] = useState<Mode>("lines");
   const [ticked, setTicked] = useState<Set<string>>(new Set());
@@ -109,7 +114,7 @@ export function CreateCreditNoteDialog({
         setCreditable(c);
         setQuantities(Object.fromEntries(c.lines.map((l) => [l.invoiceLineId, String(l.leftQuantity)])));
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load the invoice's lines."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("invoices.createCreditNote.loadFailed")));
   }, [open, invoiceId]);
 
   const currency = creditable?.currency ?? "USD";
@@ -123,14 +128,14 @@ export function CreateCreditNoteDialog({
     setPreviewError(null);
     if (!lines) return;
     if (lines === "too-much") {
-      setPreviewError(`You can credit up to ${money(creditable!.leftToCredit)} on this invoice.`);
+      setPreviewError(t("invoices.createCreditNote.tooMuch", { amount: money(creditable!.leftToCredit) }));
       return;
     }
     const timer = window.setTimeout(() => {
       apiClient
         .post<CreditNotePreview>("/credit-notes/preview", { invoiceId, lines })
         .then(setPreview)
-        .catch((err) => setPreviewError(err instanceof ApiError || err instanceof Error ? err.message : "Couldn't work out the totals."));
+        .catch((err) => setPreviewError(err instanceof ApiError || err instanceof Error ? err.message : t("invoices.createCreditNote.previewFailed")));
     }, 250);
     return () => window.clearTimeout(timer);
     // payloadKey stands for `lines` (a new array each render).
@@ -148,7 +153,7 @@ export function CreateCreditNoteDialog({
       onOpenChange(false);
       onIssued(note);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't issue this credit note.");
+      setError(err instanceof Error ? err.message : t("invoices.createCreditNote.issueFailed"));
     } finally {
       setSaving(false);
     }
@@ -160,11 +165,12 @@ export function CreateCreditNoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Issue a credit note</DialogTitle>
+          <DialogTitle>{t("invoices.createCreditNote.title")}</DialogTitle>
           <DialogDescription>
-            Against <span className="font-semibold text-on-surface">{invoiceNumber ?? "this invoice"}</span>
+            {t("invoices.createCreditNote.against")} <span className="font-semibold text-on-surface">{invoiceNumber ?? t("invoices.createCreditNote.thisInvoice")}</span>
             {customerName ? ` · ${customerName}` : ""}
-            {creditable ? ` · ${money(creditable.balanceDue)} still owed` : ""}. Takes back the tax with the amount, without editing the issued invoice.
+            {creditable ? t("invoices.createCreditNote.stillOwed", { amount: money(creditable.balanceDue) }) : ""}
+            {t("invoices.createCreditNote.descriptionTail")}
           </DialogDescription>
         </DialogHeader>
 
@@ -182,23 +188,23 @@ export function CreateCreditNoteDialog({
               </div>
             )
           ) : leftOnInvoice <= 0n ? (
-            <p className="text-[13.5px] text-on-surface-muted">Everything on this invoice has been credited already.</p>
+            <p className="text-[13.5px] text-on-surface-muted">{t("invoices.createCreditNote.allCredited")}</p>
           ) : (
             <>
               <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                <TabsList aria-label="How to credit">
-                  <TabsTrigger value="lines">Credit lines</TabsTrigger>
-                  <TabsTrigger value="amount">Credit an amount</TabsTrigger>
+                <TabsList aria-label={t("invoices.createCreditNote.howToCredit")}>
+                  <TabsTrigger value="lines" aria-controls={undefined}>{t("invoices.createCreditNote.creditLines")}</TabsTrigger>
+                  <TabsTrigger value="amount" aria-controls={undefined}>{t("invoices.createCreditNote.creditAmount")}</TabsTrigger>
                 </TabsList>
               </Tabs>
 
               {mode === "amount" && (
                 <div className="flex flex-wrap items-end gap-4">
-                  <FormField label="Amount" helperText="Tax included." className="w-60">
-                    {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} aria-label="Amount to credit" />}
+                  <FormField label={t("invoices.createCreditNote.amount")} helperText={t("invoices.createCreditNote.taxIncluded")} className="w-60">
+                    {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} aria-label={t("invoices.createCreditNote.amountToCredit")} />}
                   </FormField>
                   <p className="mb-6 max-w-sm flex-1 text-[12.5px] leading-snug text-on-surface-muted">
-                    Spread over the invoice&apos;s lines by what&apos;s left to credit on each; each part&apos;s tax is taken back at that line&apos;s rate.
+                    {t("invoices.createCreditNote.spreadNote")}
                   </p>
                 </div>
               )}
@@ -208,13 +214,13 @@ export function CreateCreditNoteDialog({
                   <thead>
                     <tr className="bg-surface-sunken text-left text-[12px] text-on-surface-muted">
                       <th scope="col" className="w-9 px-3 py-2 font-medium">
-                        <span className="sr-only">Credit</span>
+                        <span className="sr-only">{t("invoices.createCreditNote.colCredit")}</span>
                       </th>
-                      <th scope="col" className="px-2 py-2 font-medium">Invoice line</th>
-                      <th scope="col" className="w-36 px-2 py-2 font-medium">{mode === "lines" ? "Credit" : "Left to credit"}</th>
-                      <th scope="col" className="w-28 px-2 py-2 text-right font-medium">{mode === "lines" ? "Rate" : "Before tax"}</th>
-                      <th scope="col" className="w-20 px-2 py-2 text-right font-medium">Tax</th>
-                      <th scope="col" className="w-28 px-3 py-2 text-right font-medium">{mode === "lines" ? "Amount" : "Part"}</th>
+                      <th scope="col" className="px-2 py-2 font-medium">{t("invoices.createCreditNote.colInvoiceLine")}</th>
+                      <th scope="col" className="w-36 px-2 py-2 font-medium">{mode === "lines" ? t("invoices.createCreditNote.colCredit") : t("invoices.createCreditNote.colLeftToCredit")}</th>
+                      <th scope="col" className="w-28 px-2 py-2 text-right font-medium">{mode === "lines" ? t("invoices.createCreditNote.colRate") : t("invoices.createCreditNote.colBeforeTax")}</th>
+                      <th scope="col" className="w-20 px-2 py-2 text-right font-medium">{t("invoices.createCreditNote.colTax")}</th>
+                      <th scope="col" className="w-28 px-3 py-2 text-right font-medium">{mode === "lines" ? t("invoices.createCreditNote.colAmount") : t("invoices.createCreditNote.colPart")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -229,7 +235,7 @@ export function CreateCreditNoteDialog({
                               <Checkbox
                                 checked={on}
                                 disabled={done}
-                                aria-label={`Credit ${line.name}`}
+                                aria-label={t("invoices.createCreditNote.creditLine", { name: line.name })}
                                 onCheckedChange={(v) =>
                                   setTicked((current) => {
                                     const next = new Set(current);
@@ -244,13 +250,13 @@ export function CreateCreditNoteDialog({
                           <td className="px-2 py-2.5">
                             <span className={cn("block font-medium", done ? "text-on-surface-muted" : "text-on-surface")}>{line.name}</span>
                             <span className="block text-[12px] text-on-surface-muted">
-                              {done ? "Fully credited" : [mode === "amount" ? `${line.taxRatePercentage}%` : null, line.hsnSac ? `HSN/SAC ${line.hsnSac}` : null].filter(Boolean).join(" · ")}
+                              {done ? t("invoices.createCreditNote.fullyCredited") : [mode === "amount" ? `${line.taxRatePercentage}%` : null, line.hsnSac ? t("invoices.createCreditNote.hsnSac", { code: line.hsnSac }) : null].filter(Boolean).join(" · ")}
                             </span>
                           </td>
                           <td className="px-2 py-2.5">
                             {mode === "lines" ? (
                               done ? (
-                                <span className="text-[12px]">0 of {line.quantity} left</span>
+                                <span className="text-[12px]">{t("invoices.createCreditNote.leftOf", { left: 0, total: line.quantity })}</span>
                               ) : on ? (
                                 <span className="flex items-center gap-1.5 text-[12px] text-on-surface-muted">
                                   <Input
@@ -261,14 +267,14 @@ export function CreateCreditNoteDialog({
                                     step="any"
                                     value={quantities[line.invoiceLineId] ?? ""}
                                     onChange={(e) => setQuantities((q) => ({ ...q, [line.invoiceLineId]: e.target.value }))}
-                                    aria-label={`How many of ${line.name} to credit`}
+                                    aria-label={t("invoices.createCreditNote.howMany", { name: line.name })}
                                     className="h-8 w-16 text-right tabular-nums"
                                   />
-                                  of {line.leftQuantity} left
+                                  {t("invoices.createCreditNote.ofLeft", { n: line.leftQuantity })}
                                 </span>
                               ) : (
                                 <span className="text-[12px] text-on-surface-muted">
-                                  {line.leftQuantity} of {line.quantity} left
+                                  {t("invoices.createCreditNote.leftOf", { left: line.leftQuantity, total: line.quantity })}
                                 </span>
                               )
                             ) : (
@@ -285,8 +291,8 @@ export function CreateCreditNoteDialog({
                 </table>
               </div>
 
-              <FormField label="Reason" helperText="Shown to the customer on the credit note.">
-                {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Canopy reduced from 36 to 24 m² — 12 m² not built." />}
+              <FormField label={t("invoices.createCreditNote.reason")} helperText={t("invoices.createCreditNote.reasonHelp")}>
+                {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("invoices.createCreditNote.reasonPlaceholder")} />}
               </FormField>
 
               {previewError && (
@@ -301,21 +307,21 @@ export function CreateCreditNoteDialog({
                     <div className="flex items-start gap-2.5 rounded-md bg-info-bg px-3 py-2.5 text-[13px] leading-snug text-on-surface" data-testid="credit-split">
                       <Info size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden />
                       <span>
-                        {money(preview.owedPart)} reduces what&apos;s owed on {invoiceNumber ?? "this invoice"}; {money(preview.creditPart)} becomes credit for {customerName ?? "the customer"}.
+                        {t("invoices.createCreditNote.split", { owed: money(preview.owedPart), number: invoiceNumber ?? t("invoices.createCreditNote.thisInvoice"), credit: money(preview.creditPart), name: customerName ?? t("invoices.createCreditNote.theCustomer") })}
                       </span>
                     </div>
                   )}
                 </div>
                 <dl className="ml-auto grid w-72 grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 text-[13px]" data-testid="credit-totals">
-                  <dt className="text-on-surface-muted">Subtotal</dt>
+                  <dt className="text-on-surface-muted">{t("invoices.createCreditNote.subtotal")}</dt>
                   <dd className="text-right tabular-nums">{preview ? money(preview.subtotalAmount) : "—"}</dd>
-                  {(preview?.taxLines.length ? preview.taxLines : [{ label: "Tax", amount: preview?.taxAmount ?? "0" }]).map((t) => (
-                    <div key={t.label} className="contents">
-                      <dt className="text-on-surface-muted">{t.label}</dt>
-                      <dd className="text-right tabular-nums">{preview ? money(t.amount) : "—"}</dd>
+                  {(preview?.taxLines.length ? preview.taxLines : [{ label: t("invoices.createCreditNote.tax"), amount: preview?.taxAmount ?? "0" }]).map((taxLine) => (
+                    <div key={taxLine.label} className="contents">
+                      <dt className="text-on-surface-muted">{taxLine.label}</dt>
+                      <dd className="text-right tabular-nums">{preview ? money(taxLine.amount) : "—"}</dd>
                     </div>
                   ))}
-                  <dt className="mt-1 border-t border-border pt-2 text-[14px] font-semibold text-on-surface">Total</dt>
+                  <dt className="mt-1 border-t border-border pt-2 text-[14px] font-semibold text-on-surface">{t("invoices.createCreditNote.total")}</dt>
                   <dd className="mt-1 border-t border-border pt-2 text-right text-[15px] font-bold tabular-nums text-on-surface">{preview ? money(preview.totalAmount) : "—"}</dd>
                 </dl>
               </div>
@@ -324,13 +330,13 @@ export function CreateCreditNoteDialog({
         </DialogBody>
 
         <DialogFooter className="flex-wrap items-center">
-          <span className="mr-auto max-w-xs text-[12px] text-on-surface-muted">It gets a number and is posted to your books when issued; it can&apos;t be edited after.</span>
+          <span className="mr-auto max-w-xs text-[12px] text-on-surface-muted">{t("invoices.createCreditNote.footerNote")}</span>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("invoices.createCreditNote.cancel")}
           </Button>
           <Button type="button" onClick={() => void issue()} disabled={saving || !preview || BigInt(preview.totalAmount) <= 0n}>
             {saving ? <Spinner size="sm" /> : <Send size={14} aria-hidden />}
-            Issue credit note
+            {t("invoices.createCreditNote.issue")}
           </Button>
         </DialogFooter>
       </DialogContent>

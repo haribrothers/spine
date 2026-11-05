@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, cn } from "@spine/ui";
 import { buildToday, type TodayEntry, type TodayFollowup, type TodayKind, type TodayMeeting, type TodayMilestone } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { WidgetSkeleton } from "./dashboard-skeleton";
 
 /** The bar beside each entry; the kind is also written out, so colour is never the only cue. */
@@ -23,6 +24,7 @@ const BAR: Record<TodayKind, string> = {
  * counts as empty.
  */
 export function TodayCard({ className }: { className?: string }) {
+  const t = useT();
   const [entries, setEntries] = useState<TodayEntry[] | null>(null);
   const { modules } = useModules();
 
@@ -40,10 +42,10 @@ export function TodayCard({ className }: { className?: string }) {
   return (
     <Card className={cn("flex flex-col gap-2", className)} data-testid="today-card">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[16px] font-semibold text-on-surface">Today</h2>
+        <h2 className="text-[16px] font-semibold text-on-surface">{t("dashboard.today.title")}</h2>
         {modules?.leadsMeetings && (
           <Link href="/meetings?view=day" className="text-[13px] text-primary hover:underline">
-            Open calendar
+            {t("dashboard.today.openCalendar")}
           </Link>
         )}
       </div>
@@ -52,7 +54,7 @@ export function TodayCard({ className }: { className?: string }) {
           <WidgetSkeleton kind="rows" rows={2} />
         </div>
       ) : entries.length === 0 ? (
-        <p className="py-4 text-center text-[13px] text-on-surface-muted">Nothing scheduled today.</p>
+        <p className="py-4 text-center text-[13px] text-on-surface-muted">{t("dashboard.today.empty")}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {entries.map((entry) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { AI_FEATURE_OFF_ERROR, MODULE_OFF_ERROR, PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared";
+import { t } from "./i18n";
 
 /**
  * Thin browser-side fetch wrapper for `/org/*` endpoints — first of its
@@ -25,7 +26,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
  */
 /** Fired on `window` when the API refuses an action (403); `PermissionToast` listens for it. */
 export const FORBIDDEN_EVENT = "spine:forbidden";
-export const FORBIDDEN_MESSAGE = "You don't have permission to do that. If you need to, ask an owner.";
+export const FORBIDDEN_MESSAGE = t("common.apiErrors.forbidden");
 
 /**
  * Fired on `window` when the API answers 401 (the session ended);
@@ -33,7 +34,7 @@ export const FORBIDDEN_MESSAGE = "You don't have permission to do that. If you n
  * create, change or delete, which is never retried automatically.
  */
 export const SESSION_EXPIRED_EVENT = "spine:session-expired";
-export const SESSION_EXPIRED_MESSAGE = "You've been signed out. Log in again to save this change.";
+export const SESSION_EXPIRED_MESSAGE = t("common.apiErrors.sessionExpired");
 
 function signalSessionExpired(mutation: boolean) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { mutation } }));
@@ -44,6 +45,8 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly body: unknown,
+    /** US-OPS-13 — the API's `X-Request-Id` (US-OPS-07), the error page's reference. */
+    public readonly requestId?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -77,7 +80,8 @@ async function request<T>(
   });
 
   if (!res.ok) {
-    let message = `Request failed (${res.status})`;
+    const requestId = res.headers.get("X-Request-Id") ?? undefined;
+    let message = t("common.apiErrors.requestFailed", { status: res.status });
     let data: unknown;
     try {
       data = await res.json();
@@ -89,7 +93,7 @@ async function request<T>(
     // US-TEAM-24: an Owner set this password — choose your own first.
     if (res.status === 403 && (data as { error?: string } | undefined)?.error === PASSWORD_CHANGE_REQUIRED_ERROR) {
       sendToChoosePassword();
-      throw new ApiError(message, res.status, data);
+      throw new ApiError(message, res.status, data, requestId);
     }
     // US-SET-24, US-AI-03: a switched-off module or AI feature isn't a permission problem — its own message says what to do.
     const refusal = (data as { error?: string } | undefined)?.error;
@@ -104,7 +108,7 @@ async function request<T>(
       if (method !== "GET") message = SESSION_EXPIRED_MESSAGE;
       signalSessionExpired(method !== "GET");
     }
-    throw new ApiError(message, res.status, data);
+    throw new ApiError(message, res.status, data, requestId);
   }
 
   if (res.status === 204) {
@@ -135,7 +139,7 @@ async function upload<T>(path: string, file: File, fields?: Record<string, strin
   });
 
   if (!res.ok) {
-    let message = `Upload failed (${res.status})`;
+    let message = t("common.apiErrors.uploadFailed", { status: res.status });
     try {
       const data = await res.json();
       message = data?.message ?? message;
@@ -168,7 +172,7 @@ async function download(path: string, body?: unknown): Promise<{ blob: Blob; hea
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    let message = `Download failed (${res.status})`;
+    let message = t("common.apiErrors.downloadFailed", { status: res.status });
     try {
       const data = await res.json();
       message = data?.message ?? message;

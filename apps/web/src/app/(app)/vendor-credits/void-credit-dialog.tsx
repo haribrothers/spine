@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import type { VendorCredit } from "./types";
 
 /**
@@ -12,6 +13,7 @@ import type { VendorCredit } from "./types";
  * Used from the credit's page and a row's menu.
  */
 export function VoidCreditDialog({ credit, open, onOpenChange, onVoided }: { credit: VendorCredit; open: boolean; onOpenChange: (open: boolean) => void; onVoided: (credit: VendorCredit) => void }) {
+  const t = useT();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,7 +27,7 @@ export function VoidCreditDialog({ credit, open, onOpenChange, onVoided }: { cre
 
   async function submit() {
     if (!reason.trim()) {
-      setError("Give a reason for voiding this credit.");
+      setError(t("vendorCredits.voidDialog.reasonRequired"));
       return;
     }
     setBusy(true);
@@ -35,7 +37,7 @@ export function VoidCreditDialog({ credit, open, onOpenChange, onVoided }: { cre
       onOpenChange(false);
       onVoided(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not void this vendor credit.");
+      setError(err instanceof Error ? err.message : t("vendorCredits.voidDialog.voidFailed"));
     } finally {
       setBusy(false);
     }
@@ -45,9 +47,9 @@ export function VoidCreditDialog({ credit, open, onOpenChange, onVoided }: { cre
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Void {credit.number ?? "this credit"}?</DialogTitle>
+          <DialogTitle>{t("vendorCredits.voidDialog.title", { number: credit.number ?? t("vendorCredits.voidDialog.thisCredit") })}</DialogTitle>
           <DialogDescription>
-            A reversing entry takes the {formatMoney(BigInt(credit.totalAmount), credit.currency)} credit off your books, so what you owe {credit.contactName ?? "the vendor"} goes back up. The credit stays, marked void. This can&apos;t be undone.
+            {t("vendorCredits.voidDialog.description", { amount: formatMoney(BigInt(credit.totalAmount), credit.currency), vendor: credit.contactName ?? t("vendorCredits.voidDialog.theVendor") })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
@@ -56,16 +58,16 @@ export function VoidCreditDialog({ credit, open, onOpenChange, onVoided }: { cre
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Reason" required>
-            {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder="Why is this credit being voided?" />}
+          <FormField label={t("vendorCredits.voidDialog.reason")} required>
+            {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder={t("vendorCredits.voidDialog.reasonPlaceholder")} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-            Go back
+            {t("vendorCredits.voidDialog.goBack")}
           </Button>
           <Button type="button" variant="danger" onClick={() => void submit()} disabled={busy}>
-            {busy ? <Spinner size="sm" /> : "Void credit"}
+            {busy ? <Spinner size="sm" /> : t("vendorCredits.voidDialog.voidCredit")}
           </Button>
         </DialogFooter>
       </DialogContent>

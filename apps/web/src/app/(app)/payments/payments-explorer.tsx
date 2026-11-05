@@ -47,6 +47,7 @@ import {
   type PaymentsListState,
 } from "./payments-list-state";
 import { PAYMENT_METHOD_LABELS, type Payment, type PaymentMethod } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const ALL_CONTACTS = "__all__";
 const METHOD_OPTIONS = (Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([value, label]) => ({ value, label }));
@@ -61,6 +62,7 @@ const METHOD_OPTIONS = (Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod,
  * `?id=` link (notifications, the bank register) opens the payment's page.
  */
 export function PaymentsExplorer() {
+  const t = useT();
   const canCreate = useCapability("payments.edit_own");
   const router = useRouter();
   const pathname = usePathname();
@@ -111,9 +113,9 @@ export function PaymentsExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Payments updated");
+      if (mode === "refresh") setAnnouncement(t("payments.explorer.updatedAnnouncement"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load payments.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("payments.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -155,7 +157,7 @@ export function PaymentsExplorer() {
   const stats = useMemo(() => (payments ? paymentStats(payments, orgCurrency, today) : null), [payments, orgCurrency, today]);
   const refunded = useMemo(() => (refunds ? paymentRefundsThisMonth(refunds, orgCurrency, today) : null), [refunds, orgCurrency, today]);
   const rows = useMemo(() => (payments ? filterPayments(payments, state, today, yearStart) : null), [payments, state, today, yearStart]);
-  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: "All contacts" }, ...paymentContacts(payments ?? [])], [payments]);
+  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: t("payments.explorer.allContacts") }, ...paymentContacts(payments ?? [])], [payments, t]);
 
   if (error) {
     return (
@@ -165,8 +167,7 @@ export function PaymentsExplorer() {
     );
   }
 
-  const money = (s: MoneySum) => `${formatMoney(s.amount, orgCurrency)}${s.otherCurrencies ? " + other currencies" : ""}`;
-  const countOf = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  const money = (s: MoneySum) => (s.otherCurrencies ? t("payments.explorer.otherCurrencies", { amount: formatMoney(s.amount, orgCurrency) }) : formatMoney(s.amount, orgCurrency));
   // Shown once data has loaded (in the browser), so the server's HTML has no date to disagree with.
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" });
   const pressed = state.card === "credit";
@@ -174,7 +175,7 @@ export function PaymentsExplorer() {
   const search = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search receipts, references, customers or invoices" aria-label="Search payments" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("payments.explorer.searchPlaceholder")} aria-label={t("payments.explorer.searchAria")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
   const filtersOn = hasPaymentFilters(state);
@@ -184,33 +185,33 @@ export function PaymentsExplorer() {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="payment-stats">
         <StatCard
-          label="Received this month"
+          label={t("payments.explorer.receivedThisMonth")}
           value={stats ? money(stats.received) : "—"}
-          detail={stats ? countOf(stats.received.count, "payment") : undefined}
-          trend={{ direction: "neutral", label: stats ? `Received since ${monthStart}` : "Received this month" }}
+          detail={stats ? t("payments.explorer.paymentCount", { count: stats.received.count }) : undefined}
+          trend={{ direction: "neutral", label: stats ? t("payments.explorer.receivedSince", { date: monthStart }) : t("payments.explorer.receivedThisMonth") }}
           className="h-full"
         />
         <button
           type="button"
           aria-pressed={pressed}
-          aria-label={`Show payments with credit left, ${stats ? stats.credit.count : 0} customers`}
+          aria-label={t("payments.explorer.showCreditAria", { n: stats ? stats.credit.count : 0 })}
           onClick={() => update({ card: pressed ? "" : "credit" })}
           className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <StatCard
-            label="Credit to use"
+            label={t("payments.explorer.creditToUse")}
             value={stats ? money(stats.credit) : "—"}
-            detail={stats ? countOf(stats.credit.count, "customer") : undefined}
+            detail={stats ? t("payments.explorer.customerCount", { count: stats.credit.count }) : undefined}
             tone={stats && stats.credit.amount > 0n ? "warning" : "default"}
-            trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : "Show these payments" }}
+            trend={{ direction: "neutral", label: pressed ? t("payments.explorer.showingThese") : t("payments.explorer.showThese") }}
             className={cn("h-full transition-colors hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
           />
         </button>
         <StatCard
-          label="Refunded this month"
+          label={t("payments.explorer.refundedThisMonth")}
           value={refunded ? money(refunded) : "—"}
-          detail={refunded ? countOf(refunded.count, "refund") : undefined}
-          trend={{ direction: "neutral", label: refunded ? `Paid back since ${monthStart}` : "Paid back this month" }}
+          detail={refunded ? t("payments.explorer.refundCount", { count: refunded.count }) : undefined}
+          trend={{ direction: "neutral", label: refunded ? t("payments.explorer.paidBackSince", { date: monthStart }) : t("payments.explorer.paidBackThisMonth") }}
           className="h-full"
         />
       </div>
@@ -218,10 +219,10 @@ export function PaymentsExplorer() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Combobox options={contactOptions} value={state.contact || ALL_CONTACTS} onValueChange={(v) => update({ contact: v === ALL_CONTACTS ? "" : v })} placeholder="All contacts" aria-label="Filter by contact" className="w-56" />
-            <MultiSelect options={METHOD_OPTIONS} value={state.method} onValueChange={(v) => update({ method: v as PaymentMethod[] })} placeholder="Method" aria-label="Filter by method" className="w-40" />
+            <Combobox options={contactOptions} value={state.contact || ALL_CONTACTS} onValueChange={(v) => update({ contact: v === ALL_CONTACTS ? "" : v })} placeholder={t("payments.explorer.allContacts")} aria-label={t("payments.explorer.filterByContact")} className="w-56" />
+            <MultiSelect options={METHOD_OPTIONS} value={state.method} onValueChange={(v) => update({ method: v as PaymentMethod[] })} placeholder={t("payments.explorer.methodPlaceholder")} aria-label={t("payments.explorer.filterByMethod")} className="w-40" />
             <Select value={state.range} onValueChange={(v) => update({ range: v as PaymentRange })}>
-              <SelectTrigger aria-label="Show payments from" className="w-44">
+              <SelectTrigger aria-label={t("payments.explorer.showFrom")} className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -234,28 +235,28 @@ export function PaymentsExplorer() {
             </Select>
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("payments.explorer.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="payments-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("payments.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("payments.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("payments.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             {canCreate && (
               <Button onClick={() => setRecordOpen(true)}>
                 <Plus size={14} aria-hidden />
-                Record payment
+                {t("payments.explorer.recordPayment")}
               </Button>
             )}
           </div>
@@ -266,9 +267,9 @@ export function PaymentsExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("payments.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("payments.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -284,20 +285,20 @@ export function PaymentsExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<Banknote />}
-                title="No payments match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("payments.explorer.noMatchTitle")}
+                description={t("payments.explorer.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("payments.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<Banknote />}
-                title="No payments recorded yet"
-                description="Record a payment against one or more invoices, or hold it as unallocated customer credit."
-                action={canCreate ? <Button onClick={() => setRecordOpen(true)}>Record payment</Button> : undefined}
+                title={t("payments.explorer.emptyTitle")}
+                description={t("payments.explorer.emptyDescription")}
+                action={canCreate ? <Button onClick={() => setRecordOpen(true)}>{t("payments.explorer.recordPayment")}</Button> : undefined}
               />
             )}
           </div>

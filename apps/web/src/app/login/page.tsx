@@ -13,6 +13,7 @@ import { TOO_MANY_ATTEMPTS_MESSAGE, WRONG_CREDENTIALS_MESSAGE } from "../../lib/
 import { agentSignInNote, type AgentIdentity } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { AgentScene } from "../oauth/agent-scene";
+import { useT } from "../../lib/i18n";
 
 export default function LoginPage() {
   return (
@@ -27,6 +28,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const t = useT();
   const signupStatus = useSignupStatus();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -84,7 +86,7 @@ function LoginForm() {
           {agentSignInNote(agent)}
         </p>
       )}
-      <AuthHeading title="Log in">Welcome back to Spine.</AuthHeading>
+      <AuthHeading title={t("auth.login.title")}>{t("auth.login.subtitle")}</AuthHeading>
       <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
         {error && (
           <Alert variant="critical">
@@ -92,26 +94,26 @@ function LoginForm() {
           </Alert>
         )}
 
-        <FormField label="Email" required>
+        <FormField label={t("auth.fields.email")} required>
           {(field) => <Input {...field} type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required />}
         </FormField>
 
-        <FormField label="Password" required>
+        <FormField label={t("auth.fields.password")} required>
           {(field) => <PasswordInput {...field} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}
         </FormField>
 
         {/* US-AUTH-09 */}
         <Link href="/forgot-password" className="-mt-2 self-end text-[13px] text-primary hover:underline">
-          Forgot password?
+          {t("auth.login.forgotPassword")}
         </Link>
 
         <Button type="submit" size="touch" disabled={loading} className="mt-1">
-          {loading ? "Logging in…" : "Log in"}
+          {loading ? t("auth.login.loggingIn") : t("auth.actions.logIn")}
         </Button>
         {agent && (
           <p className="flex items-center gap-2 text-[13px] text-on-surface-muted">
             <ShieldCheck size={16} aria-hidden className="shrink-0 text-paid" />
-            Your password stays with Spine. {agent.verified ? agent.name : "The agent"} never sees it.
+            {t("auth.login.agentPasswordNote", { agent: agent.verified ? agent.name : t("auth.login.theAgent") })}
           </p>
         )}
       </form>
@@ -119,9 +121,9 @@ function LoginForm() {
       {/* US-AUTH-08: only while the instance still takes a first account. */}
       {signupStatus?.open && (
         <p className="mt-5 text-center text-[13px] text-on-surface-muted">
-          Don&apos;t have an account?{" "}
+          {t("auth.login.noAccount")}{" "}
           <Link href="/signup" className="text-primary hover:underline">
-            Sign up
+            {t("auth.login.signUp")}
           </Link>
         </p>
       )}

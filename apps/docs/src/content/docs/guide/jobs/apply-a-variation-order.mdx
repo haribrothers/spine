@@ -1,0 +1,37 @@
+---
+title: Apply an accepted variation order
+description: Add an accepted variation's total to the job's contract value so milestones and costing use the new figure.
+sidebar:
+  order: 10
+---
+
+Once the customer has accepted a variation quote, apply it to the job. Its total is added to the job's contract value, percentage milestones are worked out again on the new value, and costing and billing progress measure against it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Apply variation order**.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs**, open the job and choose the **Variation orders** tab.
+2. **Find the accepted variation** — A variation whose quote shows **Accepted** and isn't applied yet has an **Apply to job** button.
+3. **Apply it** — Press **Apply to job**. Spine asks "Apply this variation to the job?" and says how much is added to the contract value from which quote.
+4. **Confirm** — Press **Apply to job** again. A toast says "Variation applied".
+</Steps>
+
+<Screenshot id="jobs-variations" alt="A job's Variation orders tab listing each variation quote with its status, raised date and total" />
+
+## What changes
+
+- The job's contract value goes up by the variation's total. The job's figures strip shows **Contract** with how many variations are included and their total.
+- The variation shows **Applied** with the date it was applied.
+- Percentage milestones are worked out again on the new contract value. Fixed-amount milestones keep their amounts.
+- The cost budget doesn't change. If the extra work costs more, update **Cost budget** in **Edit job**.
+
+<Aside type="danger">Applying a variation can't be undone, and an applied variation can't be applied again.</Aside>
+
+## When you can't apply it
+
+**Apply to job** isn't offered until the variation's quote is accepted. A draft, sent or rejected variation can't be applied. If applying fails, you see "Could not apply this variation order."
+
+<Aside type="tip">To bill the extra work in stages, add milestones for it after applying: see [Set up billing milestones](../set-up-billing-milestones/). Milestones that are already invoiced stay locked, but you can add new ones alongside them.</Aside>

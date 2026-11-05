@@ -8,6 +8,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { ExpenseRowActions, type ExpenseRowHandlers } from "./expense-row-actions";
 import { EXPENSE_STATES, EXPENSE_STATE_CLASS, EXPENSE_STATE_LABELS, expenseState, readyToBill } from "./expense-state";
 import type { Expense } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * US-PUR-42 (D-227) — the expenses list: the date (opening the expense),
@@ -42,6 +43,7 @@ export function ExpensesTable({
   selection?: { selected: ReadonlySet<string>; canSelect: (expense: Expense) => boolean; onToggle: (expense: Expense, on: boolean) => void };
   handlers: ExpenseRowHandlers;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const muted = <span className="text-on-surface-muted">—</span>;
   const columns: TableColumn<Expense>[] = [
@@ -55,7 +57,7 @@ export function ExpensesTable({
                 checked={selection.selected.has(row.id)}
                 disabled={!selection.canSelect(row)}
                 onCheckedChange={(v) => selection.onToggle(row, v === true)}
-                aria-label={`Select ${row.categoryName ?? "expense"} ${formatMoney(BigInt(row.amount), row.currency)}`}
+                aria-label={t("expenses.table.selectAria", { name: row.categoryName ?? t("expenses.table.expenseLower"), amount: formatMoney(BigInt(row.amount), row.currency) })}
               />
             ),
           },
@@ -63,7 +65,7 @@ export function ExpensesTable({
       : []),
     {
       key: "date",
-      header: "Date",
+      header: t("expenses.columns.date"),
       render: (row) => (
         <Link href={`/expenses/${row.id}`} className="whitespace-nowrap font-medium text-on-surface hover:text-primary hover:underline">
           {calendarDate(row.date.slice(0, 10), now, locale)}
@@ -71,32 +73,32 @@ export function ExpensesTable({
       ),
       sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}`,
     },
-    { key: "number", header: "Number", render: (row) => (row.number ? <span className="font-semibold">{row.number}</span> : muted), sortValue: (row) => row.number ?? "" },
+    { key: "number", header: t("expenses.columns.number"), render: (row) => (row.number ? <span className="font-semibold">{row.number}</span> : muted), sortValue: (row) => row.number ?? "" },
     {
       key: "description",
-      header: "Description",
+      header: t("expenses.columns.description"),
       render: (row) => (
         <Link href={`/expenses/${row.id}`} className="flex min-w-0 max-w-72 flex-col hover:text-primary">
           <span className="flex items-center gap-2 truncate font-medium text-on-surface">
-            <span className="truncate">{row.description || row.categoryName || "Expense"}</span>
+            <span className="truncate">{row.description || row.categoryName || t("expenses.common.expense")}</span>
             <AttachmentCount count={row.attachmentCount} />
           </span>
-          <span className="truncate text-[12px] text-on-surface-muted">{row.entryMode === "labour" ? `${row.categoryName ?? "Labour"} · headcount × day rate` : (row.categoryName ?? "")}</span>
+          <span className="truncate text-[12px] text-on-surface-muted">{row.entryMode === "labour" ? t("expenses.table.labourLine", { category: row.categoryName ?? t("expenses.labour.fallbackCategory") }) : (row.categoryName ?? "")}</span>
         </Link>
       ),
       sortValue: (row) => row.description ?? row.categoryName ?? "",
     },
     {
       key: "job",
-      header: "Job",
+      header: t("expenses.columns.job"),
       render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : muted),
       sortValue: (row) => row.jobName ?? "",
     },
-    { key: "submittedBy", header: "Submitted by", render: (row) => (row.submittedByUserId === me ? "You" : (row.submittedByName ?? "—")), sortValue: (row) => row.submittedByName ?? "" },
-    { key: "paidBy", header: "Paid by", render: (row) => (row.paidBy === "employee" ? "Employee" : "Company"), sortValue: (row) => row.paidBy },
+    { key: "submittedBy", header: t("expenses.columns.submittedBy"), render: (row) => (row.submittedByUserId === me ? t("expenses.table.you") : (row.submittedByName ?? "—")), sortValue: (row) => row.submittedByName ?? "" },
+    { key: "paidBy", header: t("expenses.columns.paidBy"), render: (row) => (row.paidBy === "employee" ? t("expenses.table.employee") : t("expenses.table.company")), sortValue: (row) => row.paidBy },
     {
       key: "state",
-      header: "State",
+      header: t("expenses.columns.state"),
       render: (row) => {
         const state = expenseState(row);
         return (
@@ -104,13 +106,13 @@ export function ExpensesTable({
             <Badge className={EXPENSE_STATE_CLASS[state]} data-testid="expense-row-state">
               {EXPENSE_STATE_LABELS[state]}
             </Badge>
-            {readyToBill(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">Billable</Badge>}
+            {readyToBill(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">{t("expenses.common.billable")}</Badge>}
           </span>
         );
       },
       sortValue: (row) => EXPENSE_STATES.indexOf(expenseState(row)),
     },
-    { key: "amount", header: "Amount", align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
+    { key: "amount", header: t("expenses.columns.amount"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
     {
       key: "actions",
       header: "",

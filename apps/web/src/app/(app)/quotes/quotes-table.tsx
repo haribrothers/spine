@@ -7,6 +7,7 @@ import { QuoteRowActions } from "./quote-row-actions";
 import { calendarDate, shortDate, validityNote } from "./quotes-list-state";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 /** Item 4, user feedback — the newest version of a quote family is always the primary/collapsed row; older, superseded versions expand underneath it. */
 function groupPrimary(rows: Quote[]): Quote {
@@ -22,14 +23,15 @@ export const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
 
 /** US-QUO-29 — "Viewed 3×", with the last view on hover and for screen readers. */
 export function ViewedChip({ quote, now }: { quote: Quote; now: Date }) {
+  const t = useT();
   if (!quote.viewCount) return null;
-  const last = quote.lastViewedAt ? `Last viewed ${shortDate(quote.lastViewedAt, now, orgLocaleTag())}, ${new Date(quote.lastViewedAt).toLocaleTimeString(orgLocaleTag(), { hour: "numeric", minute: "2-digit" })}` : "";
+  const last = quote.lastViewedAt ? t("quotes.table.lastViewed", { date: shortDate(quote.lastViewedAt, now, orgLocaleTag()), time: new Date(quote.lastViewedAt).toLocaleTimeString(orgLocaleTag(), { hour: "numeric", minute: "2-digit" }) }) : "";
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span tabIndex={0} className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm text-[12px] font-medium text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-testid="quote-viewed" aria-label={`Viewed ${quote.viewCount} ${quote.viewCount === 1 ? "time" : "times"}. ${last}`}>
+        <span tabIndex={0} className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm text-[12px] font-medium text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-testid="quote-viewed" aria-label={t("quotes.table.viewedAria", { count: quote.viewCount, last })}>
           <Eye size={13} aria-hidden />
-          Viewed {quote.viewCount}×
+          {t("quotes.table.viewed", { views: quote.viewCount })}
         </span>
       </TooltipTrigger>
       {last && <TooltipContent>{last}</TooltipContent>}
@@ -66,16 +68,17 @@ export function QuotesTable({
   onNotify: (title: string, description: string) => void;
   onActionFailed: (title: string, message: string) => void;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const columns: TableColumn<Quote>[] = [
     {
       key: "number",
-      header: "Number",
+      header: t("quotes.table.number"),
       render: (row) => (
         <div className="flex max-w-[22rem] flex-col whitespace-normal">
           <Link href={`/quotes/${row.id}`} className="flex items-center gap-1.5 font-semibold text-on-surface hover:text-primary hover:underline">
-            {row.number ?? <span className="font-medium italic text-on-surface-muted">Draft</span>}
-            {row.version > 1 && <span className="text-[11.5px] font-medium text-on-surface-muted">v{row.version}</span>}
+            {row.number ?? <span className="font-medium italic text-on-surface-muted">{t("quotes.status.draft")}</span>}
+            {row.version > 1 && <span className="text-[11.5px] font-medium text-on-surface-muted">{t("quotes.table.version", { version: row.version })}</span>}
           </Link>
           {row.title && (
             <span className="truncate text-[12.5px] text-on-surface-muted" title={row.title}>
@@ -88,18 +91,18 @@ export function QuotesTable({
     },
     {
       key: "contact",
-      header: "Contact",
+      header: t("quotes.table.contact"),
       render: (row) => <span className="block max-w-[16rem] truncate" title={row.contactName ?? undefined}>{row.contactName ?? "—"}</span>,
       sortValue: (row) => row.contactName ?? "",
     },
     {
       key: "status",
-      header: "Status",
+      header: t("quotes.table.status"),
       render: (row) => (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge className={STATUS_BADGE_CLASS[row.status]}>{QUOTE_STATUS_LABELS[row.status]}</Badge>
-          {row.isExpired && <Badge className="bg-overdue-bg text-overdue">Expired</Badge>}
-          {row.isSuperseded && <Badge className="bg-transparent text-on-surface-muted">Superseded</Badge>}
+          {row.isExpired && <Badge className="bg-overdue-bg text-overdue">{t("quotes.status.expired")}</Badge>}
+          {row.isSuperseded && <Badge className="bg-transparent text-on-surface-muted">{t("quotes.status.superseded")}</Badge>}
           <ViewedChip quote={row} now={now} />
         </div>
       ),
@@ -107,13 +110,13 @@ export function QuotesTable({
     },
     {
       key: "sent",
-      header: "Sent",
+      header: t("quotes.table.sent"),
       render: (row) => (row.sentAt ? shortDate(row.sentAt, now, locale) : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.sentAt ?? "",
     },
     {
       key: "validUntil",
-      header: "Valid until",
+      header: t("quotes.table.validUntil"),
       render: (row) => {
         const note = validityNote(row, now, locale);
         return (
@@ -131,7 +134,7 @@ export function QuotesTable({
     },
     {
       key: "total",
-      header: "Total",
+      header: t("quotes.table.total"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.totalAmount),
@@ -160,7 +163,7 @@ export function QuotesTable({
       onPageChange={onPageChange}
       groupBy={(row) => row.rootQuoteId}
       groupPrimary={groupPrimary}
-      groupMemberLabel={(row) => <Badge className="bg-transparent text-on-surface-muted">v{row.version}</Badge>}
+      groupMemberLabel={(row) => <Badge className="bg-transparent text-on-surface-muted">{t("quotes.table.version", { version: row.version })}</Badge>}
     />
   );
 }

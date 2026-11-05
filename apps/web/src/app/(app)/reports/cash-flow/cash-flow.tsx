@@ -7,6 +7,7 @@ import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
 import { RangeFilters, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "../report-kit";
+import { useT } from "../../../../lib/i18n";
 
 /**
  * US-RPT-26 — `ReportsCashFlow`: cash at start, operating, investing and
@@ -14,6 +15,7 @@ import { RangeFilters, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } f
  * accounts behind it.
  */
 export function CashFlow() {
+  const t = useT();
   const currency = useCurrency();
   const [from, setFrom] = useState<Date>(quarterStart);
   const [to, setTo] = useState<Date>(() => new Date());
@@ -38,26 +40,26 @@ export function CashFlow() {
       {report && !error && (
         <>
           <ReportKpis count={3} data-testid="cash-flow-cards">
-            <StatCard label="Cash at start" value={money(report.cashAtStart)} trend={{ direction: "neutral", label: day(report.from) }} />
+            <StatCard label={t("reports.cashFlow.cashAtStart")} value={money(report.cashAtStart)} trend={{ direction: "neutral", label: day(report.from) }} />
             <StatCard
-              label="Net change"
+              label={t("reports.cashFlow.netChange")}
               value={money(change)}
-              trend={{ direction: change > 0n ? "up" : change < 0n ? "down" : "neutral", label: change > 0n ? "▲ more cash than at the start" : change < 0n ? "▼ less cash than at the start" : "no change in the period" }}
+              trend={{ direction: change > 0n ? "up" : change < 0n ? "down" : "neutral", label: change > 0n ? t("reports.cashFlow.moreCash") : change < 0n ? t("reports.cashFlow.lessCash") : t("reports.cashFlow.noChange") }}
             />
-            <StatCard label="Cash at end" value={money(report.cashAtEnd)} trend={{ direction: "neutral", label: day(report.to) }} />
+            <StatCard label={t("reports.cashFlow.cashAtEnd")} value={money(report.cashAtEnd)} trend={{ direction: "neutral", label: day(report.to) }} />
           </ReportKpis>
 
           <StatementTable
             data-testid="cash-flow-table"
             columns={[
-              { key: "label", header: "Activity" },
-              { key: "amount", header: "Amount", align: "right" },
+              { key: "label", header: t("reports.cashFlow.activity") },
+              { key: "amount", header: t("reports.common.amount"), align: "right" },
             ]}
             rows={[
               ...report.sections.flatMap((section): StatementRow[] => [
                 { kind: "section", key: `${section.key}-heading`, label: section.label },
                 ...(section.lines.length === 0
-                  ? [{ kind: "empty" as const, key: `${section.key}-empty`, label: "Nothing in this period." }]
+                  ? [{ kind: "empty" as const, key: `${section.key}-empty`, label: t("reports.cashFlow.nothingInPeriod") }]
                   : section.lines.map((line) => ({
                       kind: "line" as const,
                       key: line.key,
@@ -72,15 +74,15 @@ export function CashFlow() {
                     }))),
                 { kind: "subtotal", key: `${section.key}-total`, testId: `cash-flow-total-${section.key}`, cells: { label: section.totalLabel, amount: money(section.total) } },
               ]),
-              { kind: "total", key: "net-change", cells: { label: "Net change in cash", amount: money(change) } },
+              { kind: "total", key: "net-change", cells: { label: t("reports.cashFlow.netChangeInCash"), amount: money(change) } },
             ]}
           />
 
           {report.ties ? (
-            <ReportFootnote data-testid="cash-flow-check">✓ Cash at end equals the total of your bank and cash accounts on {day(report.to)}. Card accounts are liabilities, not cash.</ReportFootnote>
+            <ReportFootnote data-testid="cash-flow-check">{t("reports.cashFlow.ties", { date: day(report.to) })}</ReportFootnote>
           ) : (
             <Alert variant="critical" data-testid="cash-flow-check">
-              <AlertDescription>Cash at end doesn&apos;t match your bank and cash accounts on {day(report.to)}. This has been logged; check the Trial Balance and tell your administrator.</AlertDescription>
+              <AlertDescription>{t("reports.cashFlow.doesNotTie", { date: day(report.to) })}</AlertDescription>
             </Alert>
           )}
         </>
@@ -90,17 +92,17 @@ export function CashFlow() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{drill?.label}</DialogTitle>
-            <DialogDescription>The accounts behind this line. A positive amount brought cash in.</DialogDescription>
+            <DialogDescription>{t("reports.cashFlow.drillDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             {drill && drill.accounts.length === 0 ? (
-              <p className="text-[14px] text-on-surface-muted">No account moved in this period.</p>
+              <p className="text-[14px] text-on-surface-muted">{t("reports.cashFlow.drillEmpty")}</p>
             ) : (
               <table className="w-full text-[14px]" data-testid="cash-flow-drilldown">
                 <thead>
                   <tr className="border-b border-border text-left text-on-surface-muted">
-                    <th className="py-2 font-medium">Account</th>
-                    <th className="py-2 text-right font-medium">Amount</th>
+                    <th className="py-2 font-medium">{t("reports.common.account")}</th>
+                    <th className="py-2 text-right font-medium">{t("reports.common.amount")}</th>
                   </tr>
                 </thead>
                 <tbody>

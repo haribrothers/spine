@@ -20,6 +20,7 @@ import { Drawer, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, Drawer
 ## Rules and behaviour
 
 - Anchors to the left or right edge via the side prop on DrawerContent.
+- Under 768px it fills the screen width but leaves a 16px gutter of the dimmed page on its open side (US-OPS-15).
 - Three widths via the size prop on DrawerContent — sm, md (default), lg — same naming convention as Dialog's size prop.
 - DrawerHeader and DrawerFooter are fixed (shrink-0) and never scroll; DrawerBody is the only scrollable region, so a tall form's header/footer stay pinned while its middle content scrolls.
 - Same focus-trap and Escape-to-close behavior as Dialog.

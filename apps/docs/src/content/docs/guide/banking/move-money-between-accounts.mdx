@@ -1,0 +1,45 @@
+---
+title: Move money between accounts
+description: Record a transfer between your own accounts, such as a cash deposit, a top-up or paying off a card.
+sidebar:
+  order: 5
+---
+
+When money moves between your own accounts — you bank the cash box, top up a reserve account or pay off the business card — record a transfer. Both accounts' balances change and both registers show it. Nothing is counted as income or spending.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Record transfers and other money in or out**. You need at least two active accounts.
+</Aside>
+
+<Steps>
+
+1. **Open the dialog** — On **Banking**, press **Transfer**. You can also choose **Transfer** from an account's row menu, or from **Record** in its register; that account is already chosen as **From**.
+
+2. **Choose the accounts** — Under **From**, pick the account the money left. Under **To**, pick the account it went to. To pay off a card, choose the bank as **From** and the card as **To**.
+
+3. **Enter the details** — Fill in the **Amount**, the **Date** and an optional **Reference**.
+
+4. **Press Move money** — Spine asks first: "Move $500.00 from Cash in Hand to Bank Account?" with your amount and accounts, and says both balances change on that date.
+
+5. **Confirm** — Press **Move money**. The toast says what moved, from where and to where.
+
+</Steps>
+
+<Screenshot id="banking-transfer" alt="The Transfer between accounts dialog with From, To, Amount, Date and Reference" />
+
+## What happens next
+
+The transfer appears in both registers. If a register is open, it refreshes in place.
+
+<Aside type="caution" title="Check the accounts">
+  The same account can't be on both sides; Spine says "Choose two different accounts." A transfer dated in a closed period is refused, because that period's books are locked.
+</Aside>
+
+## Delete a transfer
+
+Open the transfer from either register and press **Delete transfer** in its drawer. Spine asks first. Confirm, and a reversing entry is posted today, so both accounts go back to their balances before it. The transfer stays in both registers, marked deleted.
+
+A transfer that's part of a finished reconciliation can't be deleted until you [undo that reconciliation](../review-or-undo-a-reconciliation/).

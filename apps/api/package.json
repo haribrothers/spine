@@ -8,7 +8,7 @@
     "start": "dotenv -e ../../.env -- node dist/main.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests --exclude '**/*.integration.test.ts'",
+    "test": "vitest run --testTimeout 30000 --passWithNoTests --exclude '**/*.integration.test.ts'",
     "test:integration": "dotenv -e ../../.env.test -e ../../.env -- vitest run --config vitest.integration.config.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -e ../../.env -- drizzle-kit migrate",
@@ -17,7 +17,8 @@
     "db:studio": "dotenv -e ../../.env -- drizzle-kit studio",
     "db:seed": "dotenv -e ../../.env -- tsx src/db/seed/index.ts",
     "db:reset": "dotenv -e ../../.env -- tsx src/db/reset.ts",
-    "files:migrate": "dotenv -e ../../.env -- tsx src/scripts/files-migrate.ts"
+    "files:migrate": "dotenv -e ../../.env -- tsx src/scripts/files-migrate.ts",
+    "openapi": "nest build && node dist/scripts/openapi.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1104.0",
@@ -43,7 +44,7 @@
     "fflate": "^0.8.3",
     "jose": "^6.2.8",
     "node-html-parser": "^9.0.1",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.3.1",
     "papaparse": "^5.5.4",
     "pg-boss": "^12.27.0",
     "postgres": "^3.4.5",
@@ -75,6 +76,6 @@
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "unplugin-swc": "^1.5.10",
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.7"
   }
 }

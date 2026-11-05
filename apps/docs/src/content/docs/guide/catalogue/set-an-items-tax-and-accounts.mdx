@@ -1,0 +1,41 @@
+---
+title: Set an item's tax and accounts
+description: Choose the tax a new line for an item starts with, its supply type, and the income and expense accounts it posts to.
+sidebar:
+  order: 2
+---
+
+An item's tax and accounts decide what a new line for it charges and where it lands in your books. Set them once on the item and every quote, invoice and bill line starts right. You can still change them on any single line.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own catalogue** (for items they added) or **Edit others' catalogue**. Tax rates and accounts themselves are set up by an Owner.</Aside>
+
+<Steps>
+1. **Open the item** — Go to **Catalogue**, open the item's menu and choose **Edit**. The **Edit item** drawer opens.
+2. **Choose the tax** — Under **Price and tax**, choose a **Default tax** rate or group, or **No tax**. It "pre-fills a new quote/invoice line for this item; editable per line."
+3. **Choose the supply type** — In **Supply type**, choose **Taxable**, **Zero-rated**, **Exempt** or **Non-taxable (outside GST/VAT)**. Zero-rated, exempt and non-taxable items have no tax and are reported separately.
+4. **Choose the income account** — Under **Accounts**, choose the **Default income account**. It's used when the item appears on an invoice line.
+5. **Choose the expense account** — Choose the **Default expense account**. It's used when the item appears on a vendor bill or expense line.
+6. **Save** — Press **Save item**. An "Item updated" toast shows.
+</Steps>
+
+## If you leave the income account empty
+
+Choose **None — posts to 4100 Sales — Services**, and the item's sales post to 4100 Sales — Services. To see your sales by type of work, give each item its own income account, such as Sales — Goods for materials.
+
+## For a GST business
+
+The drawer asks for two taxes instead of one:
+
+- **Intra-state tax**, used when the customer is in the same state as your business, such as GST 18%.
+- **Inter-state tax**, used for another state, an export or an SEZ, such as IGST 18%.
+
+It also asks for the **HSN/SAC code**: 4, 6 or 8 digits. The code is copied to each line, and you can change it there.
+
+## What changes and what doesn't
+
+- New lines use the item's tax and accounts from now on.
+- Lines already on quotes and invoices keep the tax and account they were made with, and issued documents never change.
+
+<Aside type="tip">Items without a tax rate or an income account are easy to find: press **Missing tax rate** or **No income account** above the list. See [Find items and fix missing setup](../find-items-and-fix-missing-setup/). To set up tax rates, see [Tax](../../tax/); for accounts, see [Chart of accounts and opening balances](../../accounts/).</Aside>

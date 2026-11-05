@@ -13,15 +13,55 @@ the owner never has to think in debits and credits. See
 [`docs/README.md`](docs/README.md) for the full product spec, and
 [`CLAUDE.md`](CLAUDE.md) for the architecture rules that govern implementation.
 
+## What it does
+
+- **Sales:** contacts, a lead pipeline, meetings, a catalogue, and quotes your customers accept online.
+- **Jobs:** turn an accepted quote into a job with milestones, variations, crew and costs, and invoice it as you go, retention included.
+- **Billing:** invoices, credit notes, payments, reminders and statements, with tax per line (GST in India).
+- **Purchases:** vendor bills, expenses with receipts and approvals, and vendor payments.
+- **Books:** every document posts its own balanced entries, so the profit and loss, balance sheet, cash flow, aging and job profitability are always up to date. Exports to Tally.
+- **Field app:** crews see their jobs, mark milestones done, and send photos and expenses, offline too (Android and iPhone).
+- **Your server, your data:** it runs on your own machine with Docker. Nothing calls home, and backups, restores and upgrades are one command each.
+
+## Screenshots
+
+| | |
+|---|---|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="apps/site/src/assets/screens/dashboard-dark.webp"><img alt="The dashboard: cash, receivables, overdue invoices and revenue, with what needs attention" src="apps/site/src/assets/screens/dashboard-light.webp"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/jobs-detail-dark.webp"><img alt="A job with its milestones, costs and retention" src="apps/docs/src/assets/screens/jobs-detail-light.webp"></picture> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/invoices-list-dark.webp"><img alt="The invoices list with what's outstanding and overdue" src="apps/docs/src/assets/screens/invoices-list-light.webp"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/reports-profit-and-loss-dark.webp"><img alt="Profit and loss, straight from the books" src="apps/docs/src/assets/screens/reports-profit-and-loss-light.webp"></picture> |
+
+Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More in the [user guide](https://spine.h4loom.com/docs/guide/).
+
+## Install in 5 minutes
+
+The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
+
+```bash
+./install.sh --app-url https://spine.example.com
+```
+
+It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
+
+## Back up and restore
+
+```bash
+./backup.sh --passphrase        # one encrypted file with the database and every attachment
+./restore.sh backups/spine-backup-<date>.tar.gz.enc
+```
+
+`./backup.sh --help` shows how to run it nightly and keep a copy off the machine (`BACKUP_REMOTE`). Owners see a banner when the last backup is more than two days old.
+
+## Update
+
+Owners see "Spine <version> is available" when a new release is out. `./upgrade.sh` backs up, pulls the new version and restarts; the database is migrated automatically after a snapshot. See [Updating](#updating).
+
+## Help
+
+The user guide and the self-hosting guide are at [spine.h4loom.com/docs](https://spine.h4loom.com/docs/), and in the app (the **?** button). Found a bug or want something? [Open an issue](https://github.com/haribrothers/spine/issues/new/choose). Found a security problem? Please report it privately, as [SECURITY.md](SECURITY.md) explains.
+
 ## Status
 
-Phase 0 (Foundation) is complete — monorepo scaffold, auth, the `@spine/ui`
-component library and its docs app, the ledger/money/tax core, onboarding,
-Settings, and Files. Phase 1 (Sales Spine) is underway: Contacts & CRM,
-Catalogue, and Quotes (including PDF rendering, email sending, and the
-public accept/reject link) are complete, plus an in-app notification centre
-and browser push notifications. See [`CHANGELOG.md`](CHANGELOG.md) for the
-full phase-by-phase breakdown of what's landed vs. planned.
+Spine is at 1.0 beta: every module above is built and in use, and the 1.0 release is being finished (packaging, the docs site, translations). [`CHANGELOG.md`](CHANGELOG.md) lists what landed in each phase, and [`docs/progress.md`](docs/progress.md) what's open.
 
 ## Tech stack
 
@@ -46,18 +86,24 @@ Full rationale for each choice is in PRD §5.
 ```
 spine/
 ├─ apps/
-│  ├─ api/            # NestJS — REST API, Drizzle schema & migrations
-│  ├─ web/            # Next.js
-│  ├─ design-system/  # @spine/ui's living docs app (component pages, not Storybook)
-│  └─ mobile/         # Expo (not yet scaffolded)
+│  ├─ api/             # NestJS — REST API, Drizzle schema & migrations
+│  ├─ web/             # Next.js — the web app
+│  ├─ mobile/          # Expo — the field app
+│  ├─ e2e/             # Playwright end-to-end tests and the guide's screenshots
+│  ├─ docs/            # Astro + Starlight — the docs at spine.h4loom.com/docs, and the /help guide in each install
+│  ├─ site/            # Astro — the home page, spine.h4loom.com
+│  ├─ design-system/   # @spine/ui's living docs
+│  └─ showcase-native/ # @spine/ui-native's living docs
 ├─ packages/
-│  ├─ shared/     # money, tax engine, zod schemas, shared types
+│  ├─ shared/     # money, tax engine, zod schemas, shared types, the English strings (i18n)
 │  ├─ ui/         # @spine/ui — Radix + Tailwind component library
+│  ├─ ui-native/  # @spine/ui-native — the field app's components
+│  ├─ sdk/        # typed API client
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
-├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile (production)
+├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile, Coolify compose
 ├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
-├─ scripts/       # seed.ts
-├─ docker-compose.yml       # production stack (builds api/web, runs behind Caddy)
+├─ scripts/       # install, backup, restore, upgrade, verify, release and mobile scripts
+├─ docker-compose.yml       # production stack (published images, behind Caddy)
 ├─ docker-compose.dev.yml   # local dev infra only (Postgres, MailDev; optional RustFS)
 └─ .env.example
 ```
@@ -70,7 +116,7 @@ below instead — that path never requires Node or pnpm on the host.)
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 22+ and pnpm 9
 - [pnpm](https://pnpm.io/installation) (`corepack enable` is the easiest way to get the pinned version)
 - Docker (for Postgres and MailDev — you do not need either installed locally)
 
@@ -241,24 +287,42 @@ pnpm db:seed:dev
 
 ## Production / self-hosting
 
-The production path uses `docker-compose.yml`, which builds `api` and `web`
-as containers and serves everything behind Caddy — no Node or pnpm needed on
-the host.
-
-```bash
-cp .env.example .env      # edit the 3 required values
-docker compose --profile minimal up -d
-docker compose exec api pnpm --filter @spine/api db:migrate
-```
+The release's `docker-compose.yml` runs the published images
+(`ghcr.io/haribrothers/spine-api` and `spine-web`) behind Caddy, so the host
+needs only Docker. `install.sh` sets it up (see [Install in 5 minutes](#install-in-5-minutes));
+from a clone it's `./scripts/install.sh`, with the same published images.
 
 The app boots with only three required environment variables
-(`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`) — see `docs/prd/01-tech-stack.md`.
-Attachments work out of the box: the API stores them on the `spine_files`
-volume (`STORAGE_DRIVER=local`). `docker compose down -v` deletes that
-volume along with the database, so don't use `-v` unless you mean it. To
-keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and the `S3_*`
-values; add `--profile rustfs` to run a self-hosted S3 store. Use the
-`full` profile instead of `minimal` to add the Cloudflare Tunnel sidecar.
+(`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`); everything else in
+[`.env.example`](.env.example) is optional and degrades gracefully. The API
+applies database migrations when it starts. Attachments live on the API's
+`spine_files` volume (`STORAGE_DRIVER=local`); `docker compose down -v`
+deletes that volume along with the database, so don't use `-v` unless you
+mean it. To keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and
+the `S3_*` values; add `--profile rustfs` to run a self-hosted S3 store. Use
+`--profile full` to add the Cloudflare Tunnel sidecar.
+
+### Updating
+
+When a new version is out, Owners see "Spine <version> is available" at the
+top of every page (the server checks GitHub Releases once a day and sends
+nothing about your install; set `UPDATE_CHECK=off` in `.env` to turn that
+off). To update, from the folder with your `.env`:
+
+```bash
+./upgrade.sh                    # to the latest release
+./upgrade.sh --version 1.0.1    # to a given version
+```
+
+(In a clone of this repo it's `./scripts/upgrade.sh`, after checking out the
+version's tag.)
+
+It backs up first, pulls the new version's images and restarts. The API
+takes a database snapshot, then applies the new version's migrations before
+it serves anyone; if a migration fails it stops and names the snapshot to
+restore. Your `.env` is kept, apart from `SPINE_VERSION`. On Coolify, see
+[the Coolify guide](docs/self-hosting-coolify.md#upgrading-to-a-new-beta).
+Settings › About Spine shows the version you're on.
 
 ### Upgrading an install that used MinIO
 
@@ -280,14 +344,6 @@ MinIO. You can either:
   run MinIO yourself, for example from your old compose file or as its own
   service. Spine works unchanged.
 
-The `db:migrate` step is currently manual (run it once after the first
-`up`, and again after pulling any update that adds a migration) — a
-one-command install script (S-10.7) and automatic migrate-on-upgrade
-(S-10.9) are planned for Phase 6, once the rest of the product exists to
-install. `scripts/backup.sh`/`restore.sh` (S-10.8) don't exist yet either;
-until Phase 6, back up by running `pg_dump` against the `db` container and
-copying the `spine_files` volume (or your S3 bucket) yourself.
-
 ## Architecture notes worth knowing before contributing
 
 These are enforced, not just conventions — see `CLAUDE.md` for the complete
@@ -303,9 +359,13 @@ list:
   time. Corrections are reversing entries.
 - **Money is `bigint` minor units + currency code.** Never floats.
 
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up, the rules every change follows, and signing off your commits (Developer Certificate of Origin). Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). How releases are made: [docs/release.md](docs/release.md).
+
 ## License
 
-Not yet decided.
+Spine is free software under the [GNU Affero General Public License v3.0 only](LICENSE) (AGPL-3.0-only), copyright (C) 2026 Hari Prasad. You can self-host it, change it and share it; if you run a modified copy as a service for others, you must offer them its source.
 
 ### Artwork
 

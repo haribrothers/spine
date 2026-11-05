@@ -1,0 +1,53 @@
+---
+title: Move a lead through the pipeline
+description: Move a lead to its next stage, record why a lost lead was lost, start a quote from a won lead, or delete a lead.
+sidebar:
+  order: 11
+---
+
+As a lead progresses, move it to the next stage so the board and its totals stay true. When a lead closes, Spine asks why it was lost, or offers to start the quote for a lead you've won.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners. Staff need **Create/edit own leads** to move leads they created, and **Edit others' leads** for the rest. Deleting needs **Delete own leads** or **Delete others' leads**. Starting a quote from a won lead needs **Create/edit own quotes**.</Aside>
+
+## Move a lead
+
+<Steps>
+1. **Find the lead** — Go to **Pipeline** and find its card.
+2. **Move it** — Drag the card to another column. Or open the card's **⋯** menu, choose **Move to…** and pick the stage.
+3. **Check the totals** — Both columns' counts and totals update, and a toast says "Moved to …".
+</Steps>
+
+To move a lead with the keyboard, press Tab until the card is focused, open its menu with the menu key, and choose **Move to…**. You can also open the lead's drawer and change its **Stage**.
+
+If you can't change a lead, you see "You can't move this lead." and it stays where it was.
+
+## When a lead is lost
+
+When you move a lead to a Lost stage, Spine asks **Why was it lost?**
+
+<Steps>
+1. **Choose a reason** — Choose Price, Timing, Went with a competitor, No response or Other.
+2. **Add a note** — Optionally, add a **Note (optional)**.
+3. **Save it** — Press **Save reason**. A "Lead marked lost" toast shows with the reason. Or press **Skip** to move the lead without one; you can add the reason later in the lead's drawer.
+</Steps>
+
+The reason shows on the card and in the drawer. If the lead later moves back to an open or Won stage, its lost reason is cleared.
+
+## When a lead is won
+
+When you move a lead to a Won stage, a dialog says "Won — …" with the lead's contact, value and owner. Press **Create quote** to start a quote for the contact, in the lead's currency. The quote says which lead it's for, and it's listed in the lead's **Quotes**. Press **Not now** to carry on without one.
+
+Without the right to create quotes, there's no quote offer. To build the quote, see [Quotes](../../quotes/).
+
+## Delete a lead
+
+<Steps>
+1. **Choose Delete** — Open the card's **⋯** menu and choose **Delete**, or press **Delete** in the lead's drawer.
+2. **Confirm** — Spine asks "Delete this lead?". Press **Delete lead** to go ahead, or **Cancel**.
+</Steps>
+
+A "Lead deleted" toast shows and the column totals update.
+
+<Aside type="danger" title="Deleting a lead can't be undone">The lead's follow-ups and activities are deleted with it. The contact and any quotes stay. To keep a record of a lead you didn't win, move it to Lost instead.</Aside>

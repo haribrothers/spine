@@ -4,8 +4,9 @@ import { Bot, CircleCheck, Eye, FilePlus, Terminal, TriangleAlert, Unplug } from
 import { Button, useConfirm } from "@spine/ui";
 import { AGENT_DISCONNECT_MESSAGE, AGENT_SCOPES, agentCanLabel, agentDisconnectTitle, type AgentConnection } from "@spine/shared";
 import { lastActiveLabel, shortDate } from "../../(app)/team/users/users-list-state";
+import { t, useT } from "../../../lib/i18n";
 
-const ROLE_LABEL = { owner: "Owner", staff: "Staff", field: "Field" } as const;
+const ROLE_LABEL = { owner: t("settings.agentConnections.roles.owner"), staff: t("settings.agentConnections.roles.staff"), field: t("settings.agentConnections.roles.field") } as const;
 
 /**
  * US-MCP-04 — connected agents as a list: the agent and the host it signs
@@ -14,10 +15,11 @@ const ROLE_LABEL = { owner: "Owner", staff: "Staff", field: "Field" } as const;
  * `showPerson`, the Owner's list also says whose each one is.
  */
 export function AgentConnectionsTable({ connections, showPerson = false, onDisconnect }: { connections: AgentConnection[]; showPerson?: boolean; onDisconnect: (c: AgentConnection) => Promise<void> }) {
+  const t = useT();
   const { confirm, dialog } = useConfirm();
 
   async function disconnect(c: AgentConnection) {
-    const ok = await confirm({ title: agentDisconnectTitle(c.clientName), description: showPerson && c.user ? `${AGENT_DISCONNECT_MESSAGE} ${c.user.name} is told.` : `${AGENT_DISCONNECT_MESSAGE} To use it again, connect it from ${c.clientName}.`, confirmLabel: "Disconnect", danger: true });
+    const ok = await confirm({ title: agentDisconnectTitle(c.clientName), description: showPerson && c.user ? t("settings.agentConnections.disconnectPersonTold", { message: AGENT_DISCONNECT_MESSAGE, person: c.user.name }) : t("settings.agentConnections.disconnectReconnect", { message: AGENT_DISCONNECT_MESSAGE, client: c.clientName }), confirmLabel: t("settings.agentConnections.disconnect"), danger: true });
     if (ok) await onDisconnect(c);
   }
 
@@ -26,13 +28,13 @@ export function AgentConnectionsTable({ connections, showPerson = false, onDisco
       <table className="w-full text-left text-[13px] text-on-surface">
         <thead className="bg-surface-sunken text-[12px] font-medium text-on-surface-muted">
           <tr>
-            <th className="px-3 py-2.5 font-medium">Agent</th>
-            {showPerson && <th className="px-3 py-2.5 font-medium">Person</th>}
-            <th className="px-3 py-2.5 font-medium">Can</th>
-            {!showPerson && <th className="px-3 py-2.5 font-medium">Connected</th>}
-            <th className="px-3 py-2.5 font-medium">Last used</th>
+            <th className="px-3 py-2.5 font-medium">{t("settings.agentConnections.columns.agent")}</th>
+            {showPerson && <th className="px-3 py-2.5 font-medium">{t("settings.agentConnections.columns.person")}</th>}
+            <th className="px-3 py-2.5 font-medium">{t("settings.agentConnections.columns.can")}</th>
+            {!showPerson && <th className="px-3 py-2.5 font-medium">{t("settings.agentConnections.columns.connected")}</th>}
+            <th className="px-3 py-2.5 font-medium">{t("settings.agentConnections.columns.lastUsed")}</th>
             <th className="px-3 py-2.5">
-              <span className="sr-only">Actions</span>
+              <span className="sr-only">{t("settings.agentConnections.columns.actions")}</span>
             </th>
           </tr>
         </thead>
@@ -58,7 +60,7 @@ export function AgentConnectionsTable({ connections, showPerson = false, onDisco
                           <>
                             <span className="inline-flex items-center gap-1 rounded-full bg-due-soon-bg px-1.5 py-px text-[11px] font-semibold text-due-soon">
                               <TriangleAlert size={11} aria-hidden />
-                              Unverified name
+                              {t("settings.agentConnections.unverified")}
                             </span>
                             {c.clientHost}
                           </>
@@ -71,7 +73,7 @@ export function AgentConnectionsTable({ connections, showPerson = false, onDisco
                   <td className="px-3 py-2.5">
                     {c.user?.name}
                     <small className="block text-[12px] text-on-surface-muted">
-                      {c.user ? ROLE_LABEL[c.user.role] : ""} · since {shortDate(c.connectedAt)}
+                      {c.user ? ROLE_LABEL[c.user.role] : ""}{t("settings.agentConnections.since", { date: shortDate(c.connectedAt) })}
                     </small>
                   </td>
                 )}
@@ -82,11 +84,11 @@ export function AgentConnectionsTable({ connections, showPerson = false, onDisco
                   </span>
                 </td>
                 {!showPerson && <td className="px-3 py-2.5">{shortDate(c.connectedAt)}</td>}
-                <td className="px-3 py-2.5">{c.lastUsedAt ? lastActiveLabel(c.lastUsedAt) : "Not used yet"}</td>
+                <td className="px-3 py-2.5">{c.lastUsedAt ? lastActiveLabel(c.lastUsedAt) : t("settings.agentConnections.notUsedYet")}</td>
                 <td className="px-3 py-2.5 text-right">
-                  <Button variant="secondary" size="sm" onClick={() => void disconnect(c)} aria-label={`Disconnect ${c.clientName}${showPerson && c.user ? ` (${c.user.name})` : ""}`}>
+                  <Button variant="secondary" size="sm" onClick={() => void disconnect(c)} aria-label={showPerson && c.user ? t("settings.agentConnections.disconnectLabelPerson", { client: c.clientName, person: c.user.name }) : t("settings.agentConnections.disconnectLabel", { client: c.clientName })}>
                     <Unplug size={14} aria-hidden />
-                    Disconnect
+                    {t("settings.agentConnections.disconnect")}
                   </Button>
                 </td>
               </tr>

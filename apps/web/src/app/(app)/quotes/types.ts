@@ -1,4 +1,5 @@
 import type { SupplyClass } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 /** Mirrors apps/api/src/db/schema/quotes.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following contacts/catalog's own precedent. */
 export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected";
 export type QuoteLineType = "item" | "heading" | "text";
@@ -93,10 +94,10 @@ export interface Quote {
 }
 
 export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
-  draft: "Draft",
-  sent: "Sent",
-  accepted: "Accepted",
-  rejected: "Rejected",
+  draft: t("quotes.status.draft"),
+  sent: t("quotes.status.sent"),
+  accepted: t("quotes.status.accepted"),
+  rejected: t("quotes.status.rejected"),
 };
 
 /** Minimal shape used by the contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */

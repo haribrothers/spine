@@ -1,0 +1,45 @@
+---
+title: Find a contact
+description: Search, filter and switch views on the Contacts list, and find a contact from anywhere with search.
+sidebar:
+  order: 2
+---
+
+The Contacts list shows every active contact. Search and filters narrow it down, and the address in your browser keeps them, so Back and bookmarks bring you to the same list.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Open Contacts**. Everyone who can open Contacts can read every contact, whoever added it.</Aside>
+
+<Steps>
+1. **Open Contacts** — Go to **Contacts**. The cards at the top count all your active contacts: **Total contacts**, **Customers**, **Vendors** and **Active leads**.
+2. **Search** — Type in **Search contacts**. The list narrows to contacts whose name, email or phone matches, as you type.
+3. **Filter** — Choose a type (**All types**, **Customer**, **Vendor**, **Customer & vendor**) or a status (**Active**, **Archived**). Archived contacts show only when you choose **Archived**.
+4. **Use the cards** — Press **Customers** or **Vendors** to filter to that type; press it again to clear it. **Total contacts** clears the type filter. **Active leads** opens the pipeline.
+5. **Choose a view** — Use the view switcher to choose **Table view**, **List view** or **Card view**. Spine remembers your choice on this device.
+</Steps>
+
+<Screenshot id="contacts-list-cards" alt="The Contacts list in Card view, with the search box under the filters" />
+
+## Refresh the list
+
+Press **Refresh list** beside the view switcher to see contacts your colleagues have just added or changed. "Updated just now" (then "Updated 2 min ago" and so on) says when the list last loaded. The list also refreshes when you come back to the browser tab after 30 seconds or more away. If a refresh fails, the list you had stays and you see "Couldn't refresh the list. Check your connection and try again." with **Try again**.
+
+## When nothing matches
+
+- A search with no match says "No contacts match "…"" with **Clear search**.
+- Filters with no match say "No contacts match these filters" with **Clear filters**, which also clears the search.
+- With no contacts at all, you see "No contacts yet" and **Add contact**.
+
+## Find a contact from anywhere
+
+Press **Search…** at the top of any page and type. Besides a name or email, you can find a contact by:
+
+- **4 or more digits of a phone number**, in any format ("555 0107", "(555) 0107"). This also matches the phones of the contact's people.
+- **A tax ID or GSTIN**, or part of one. Case and spaces don't matter.
+- **The name or email of one of its people**, such as "Priya".
+
+When a contact is found by something other than its name or email, the second line says what matched, such as "Contact: Priya Nair".
+
+<Aside type="tip">Long names and emails are cut short with "…" so the list stays tidy. Hover over one to see it in full.</Aside>

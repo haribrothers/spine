@@ -24,6 +24,7 @@ import {
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
 import { ChartOfAccountsStep, type AccountsByType } from "../../onboarding/steps/chart-of-accounts-step";
+import { useT } from "../../../lib/i18n";
 
 const ACCOUNT_TYPES = ["asset", "liability", "equity", "income", "expense"] as const;
 
@@ -44,6 +45,7 @@ interface FiscalPeriod {
  * Relocated from the old routed `settings/accounts/page.tsx` — content/logic unchanged.
  */
 export function AccountsPane() {
+  const t = useT();
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -69,11 +71,11 @@ export function AccountsPane() {
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col gap-1">
-            <h2 className="text-[15px] font-semibold text-on-surface">Chart of accounts</h2>
-            <p className="text-[13px] text-on-surface-muted">System accounts can&apos;t be renamed.</p>
+            <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.accounts.title")}</h2>
+            <p className="text-[13px] text-on-surface-muted">{t("settings.accounts.description")}</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => setAddOpen(true)}>
-            Add account
+            {t("settings.accounts.addAccount")}
           </Button>
         </div>
         <ChartOfAccountsStep
@@ -91,7 +93,7 @@ export function AccountsPane() {
           }}
           // Renames save as they're made; "Save" just confirms it (US-SET-14).
           onContinue={() => setSaved(true)}
-          saveLabel="Save"
+          saveLabel={t("settings.common.save")}
         />
         <SavedToast open={saved} onOpenChange={setSaved} />
       </div>
@@ -112,6 +114,7 @@ export function AccountsPane() {
 }
 
 function AddAccountDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const t = useT();
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<(typeof ACCOUNT_TYPES)[number]>("expense");
@@ -125,7 +128,7 @@ function AddAccountDialog({ onClose, onCreated }: { onClose: () => void; onCreat
       await apiClient.post("/org/accounts", { code, name, type });
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create this account.");
+      setError(err instanceof Error ? err.message : t("settings.accounts.createError"));
     } finally {
       setSaving(false);
     }
@@ -135,27 +138,27 @@ function AddAccountDialog({ onClose, onCreated }: { onClose: () => void; onCreat
     <AlertDialog open onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Add account</AlertDialogTitle>
+          <AlertDialogTitle>{t("settings.accounts.addAccount")}</AlertDialogTitle>
           <AlertDialogDescription>
             <div className="flex flex-col gap-3 pt-2 text-left">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="new-account-code">Code</Label>
-                <Input id="new-account-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. 6950" />
+                <Label htmlFor="new-account-code">{t("settings.accounts.code")}</Label>
+                <Input id="new-account-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("settings.accounts.codePlaceholder")} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="new-account-name">Name</Label>
-                <Input id="new-account-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Software Subscriptions" />
+                <Label htmlFor="new-account-name">{t("settings.accounts.name")}</Label>
+                <Input id="new-account-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("settings.accounts.namePlaceholder")} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="new-account-type">Type</Label>
+                <Label htmlFor="new-account-type">{t("settings.accounts.type")}</Label>
                 <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
                   <SelectTrigger id="new-account-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ACCOUNT_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t[0]!.toUpperCase() + t.slice(1)}
+                    {ACCOUNT_TYPES.map((accountType) => (
+                      <SelectItem key={accountType} value={accountType}>
+                        {t(`settings.accounts.types.${accountType}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -166,9 +169,9 @@ function AddAccountDialog({ onClose, onCreated }: { onClose: () => void; onCreat
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose}>{t("settings.accounts.cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={submit} disabled={saving || !code.trim() || !name.trim()}>
-            {saving ? <Spinner size="sm" /> : "Add account"}
+            {saving ? <Spinner size="sm" /> : t("settings.accounts.addAccount")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -186,6 +189,7 @@ function AddAccountDialog({ onClose, onCreated }: { onClose: () => void; onCreat
  * nothing new would post into the past anyway.
  */
 function PeriodCloseSection() {
+  const t = useT();
   const [periods, setPeriods] = useState<FiscalPeriod[] | null>(null);
   const [startDate, setStartDate] = useState<Date>(startOfMonth());
   const [endDate, setEndDate] = useState<Date>(endOfMonth());
@@ -197,7 +201,7 @@ function PeriodCloseSection() {
     apiClient
       .get<FiscalPeriod[]>("/org/fiscal-periods")
       .then(setPeriods)
-      .catch((err) => setError(err instanceof ApiError && err.status === 403 ? "Owner-only." : "Could not load fiscal periods."));
+      .catch((err) => setError(err instanceof ApiError && err.status === 403 ? t("settings.accounts.ownerOnly") : t("settings.accounts.periodsLoadError")));
   }
 
   useEffect(() => {
@@ -211,7 +215,7 @@ function PeriodCloseSection() {
       await apiClient.post("/org/fiscal-periods", { startDate: toDateParam(startDate), endDate: toDateParam(endDate) });
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create this period.");
+      setError(err instanceof Error ? err.message : t("settings.accounts.periodCreateError"));
     } finally {
       setCreating(false);
     }
@@ -230,9 +234,9 @@ function PeriodCloseSection() {
   return (
     <div className="flex flex-col gap-3 border-t border-border pt-6">
       <div className="flex flex-col gap-1">
-        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Period close</h3>
+        <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("settings.accounts.periodClose")}</h3>
         <p className="text-[13px] text-on-surface-muted">
-          Close a period so nobody can post a new journal entry dated inside it — filed figures stay filed.
+          {t("settings.accounts.periodCloseDescription")}
         </p>
       </div>
 
@@ -240,15 +244,15 @@ function PeriodCloseSection() {
 
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1.5">
-          <Label>Start</Label>
+          <Label>{t("settings.accounts.start")}</Label>
           <DatePicker value={startDate} onChange={setStartDate} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label>End</Label>
+          <Label>{t("settings.accounts.end")}</Label>
           <DatePicker value={endDate} onChange={setEndDate} />
         </div>
         <Button size="sm" onClick={createPeriod} disabled={creating}>
-          {creating ? <Spinner size="sm" /> : "Add period"}
+          {creating ? <Spinner size="sm" /> : t("settings.accounts.addPeriod")}
         </Button>
       </div>
 
@@ -260,9 +264,9 @@ function PeriodCloseSection() {
                 {period.startDate} — {period.endDate}
               </span>
               <div className="flex items-center gap-2">
-                <span className={period.isClosed ? "text-overdue" : "text-on-surface-muted"}>{period.isClosed ? "Closed" : "Open"}</span>
+                <span className={period.isClosed ? "text-overdue" : "text-on-surface-muted"}>{period.isClosed ? t("settings.accounts.closed") : t("settings.accounts.open")}</span>
                 <Button size="sm" variant="ghost" onClick={() => toggleClose(period)} disabled={busyId === period.id}>
-                  {busyId === period.id ? <Spinner size="sm" /> : period.isClosed ? "Reopen" : "Close"}
+                  {busyId === period.id ? <Spinner size="sm" /> : period.isClosed ? t("settings.accounts.reopen") : t("settings.accounts.close")}
                 </Button>
               </div>
             </div>

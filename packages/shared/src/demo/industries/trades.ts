@@ -113,6 +113,6 @@ export const TRADES: IndustryPack = {
     { title: "Shutdown planning — office tower", slot: "anchor", startInDays: -3, durationHours: 1, atSite: true, description: "Agree the weekend shutdown for the ducting works." },
     { title: "Handover — school plumbing", slot: "institution", startInDays: -9, durationHours: 1, atSite: true, description: "Pressure test witnessed by the business manager." },
     { title: "Panel delivery — factory upgrade", slot: "regional", startInDays: 2, durationHours: 2, atSite: true, description: null },
-    { title: "Crew roster", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — call-outs and installs for next week." },
+    { title: "Crew roster", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — call-outs and installs for next week.", weekly: true },
   ],
 };

@@ -3,6 +3,8 @@
 import { BookOpen, Eye, ListChecks, Sparkles, Users } from "lucide-react";
 import { formatMoney, taxPreset, type TaxCountry } from "@spine/shared";
 import type { OnboardingStepKey } from "./onboarding-stages";
+import { t as translate, useT } from "../../lib/i18n";
+import { orgLocaleTag } from "../../lib/money";
 
 export interface PreviewData {
   business: { name?: string; logoUrl?: string; address?: string };
@@ -29,7 +31,7 @@ export function presetTaxLine(country: TaxCountry | null | undefined): { label: 
   if (!country) return null;
   const preset = taxPreset(country);
   if (!preset) return null;
-  if (country === "IN") return { label: "CGST 9% + SGST 9%", percentage: 18 };
+  if (country === "IN") return { label: translate("onboarding.preview.indiaTaxLine"), percentage: 18 };
   const standard = preset.rates.filter((r) => !r.archived && r.rate > 0).sort((a, b) => b.rate - a.rate)[0];
   return standard ? { label: standard.name, percentage: standard.rate } : null;
 }
@@ -45,7 +47,7 @@ function formatToday(locale: string): string {
   try {
     return new Intl.DateTimeFormat(locale, options).format(new Date());
   } catch {
-    return new Intl.DateTimeFormat("en-US", options).format(new Date());
+    return new Intl.DateTimeFormat(orgLocaleTag(), options).format(new Date());
   }
 }
 
@@ -55,11 +57,11 @@ function initials(name: string): string {
 }
 
 const ACCOUNT_GROUPS: { type: string; label: string }[] = [
-  { type: "asset", label: "Assets" },
-  { type: "liability", label: "Liabilities" },
-  { type: "equity", label: "Equity" },
-  { type: "income", label: "Income" },
-  { type: "expense", label: "Expenses" },
+  { type: "asset", label: translate("onboarding.accountTypes.asset") },
+  { type: "liability", label: translate("onboarding.accountTypes.liability") },
+  { type: "equity", label: translate("onboarding.accountTypes.equity") },
+  { type: "income", label: translate("onboarding.accountTypes.income") },
+  { type: "expense", label: translate("onboarding.accountTypes.expense") },
 ];
 
 /** What the current step changes on the invoice, ringed so the owner sees it. */
@@ -79,13 +81,14 @@ const RING = "rounded-md ring-2 ring-primary/55 ring-offset-2 ring-offset-surfac
  * as on every document. Decorative: the form says everything this does.
  */
 export function OnboardingPreview({ step, data }: { step: OnboardingStepKey; data: PreviewData }) {
+  const t = useT();
   const books = step === "accounts" || step === "team";
   return (
     <section aria-hidden data-testid="onboarding-preview" className="flex flex-col gap-3.5">
       <div className="flex items-center gap-2 text-[13px] font-semibold text-on-surface">
         <Eye size={15} className="text-primary" aria-hidden />
-        {books ? "Preview · your books and team" : "Preview · your first invoice"}
-        <span className="ml-auto text-[12px] font-normal text-on-surface-muted">{books ? "Updates as you go" : "Updates as you type"}</span>
+        {books ? t("onboarding.preview.booksHeading") : t("onboarding.preview.invoiceHeading")}
+        <span className="ml-auto text-[12px] font-normal text-on-surface-muted">{books ? t("onboarding.preview.updatesAsYouGo") : t("onboarding.preview.updatesAsYouType")}</span>
       </div>
       {books ? <BooksAndTeam data={data} /> : <InvoicePaper step={step} data={data} />}
     </section>
@@ -93,15 +96,16 @@ export function OnboardingPreview({ step, data }: { step: OnboardingStepKey; dat
 }
 
 function InvoicePaper({ step, data }: { step: OnboardingStepKey; data: PreviewData }) {
+  const t = useT();
   const ring = HIGHLIGHT[step];
   const { code, locale } = data.currency;
   const tax = data.tax ? taxOn(EXAMPLE_AMOUNT, data.tax.percentage) : 0n;
-  const name = data.business.name?.trim() || "Your business";
+  const name = data.business.name?.trim() || t("onboarding.preview.yourBusiness");
   const note = {
-    brand: "Your name, logo and address appear as you type.",
-    money: "Amounts and dates use your currency and locale.",
-    tax: "Your tax shows on each line.",
-    number: `Your first invoice will be ${data.invoiceNumber}.`,
+    brand: t("onboarding.preview.noteBrand"),
+    money: t("onboarding.preview.noteMoney"),
+    tax: t("onboarding.preview.noteTax"),
+    number: t("onboarding.preview.noteNumber", { number: data.invoiceNumber }),
   }[ring ?? "brand"];
 
   return (
@@ -122,31 +126,31 @@ function InvoicePaper({ step, data }: { step: OnboardingStepKey; data: PreviewDa
             </div>
           </div>
           <div className="shrink-0 pl-2 text-right">
-            <div className="text-[12px] font-bold tracking-[0.08em] text-on-surface-muted">INVOICE</div>
+            <div className="text-[12px] font-bold tracking-[0.08em] text-on-surface-muted">{t("onboarding.preview.invoice")}</div>
             <div className={`mt-0.5 font-mono text-[14px] font-semibold ${ring === "number" ? RING : ""}`}>{data.invoiceNumber}</div>
-            <div className={`mt-0.5 text-[11px] text-on-surface-muted ${ring === "money" ? RING : ""}`}>Issued {formatToday(locale)}</div>
+            <div className={`mt-0.5 text-[11px] text-on-surface-muted ${ring === "money" ? RING : ""}`}>{t("onboarding.preview.issued", { date: formatToday(locale) })}</div>
           </div>
         </div>
-        <div className="mt-4 text-[10px] font-medium uppercase tracking-[0.06em] text-on-surface-muted">Bill to</div>
+        <div className="mt-4 text-[10px] font-medium uppercase tracking-[0.06em] text-on-surface-muted">{t("onboarding.preview.billTo")}</div>
         <i className="mt-1.5 block h-[7px] w-[46%] rounded-full bg-border" />
         <i className="mt-1.5 block h-[7px] w-[30%] rounded-full bg-border" />
         <div className="mt-4 border-t border-border text-[12px]">
           <div className="flex items-center gap-2.5 border-b border-border py-2.5">
-            <span>Example item</span>
+            <span>{t("onboarding.preview.exampleItem")}</span>
             <span className="text-on-surface-muted">1</span>
             <span className={`ml-auto font-medium tabular-nums ${ring === "money" ? RING : ""}`}>{formatMoney(EXAMPLE_AMOUNT, code, locale)}</span>
           </div>
           <div className={`flex items-center gap-2.5 border-b border-border py-2.5 ${data.tax ? "" : "italic text-on-surface-muted"} ${ring === "tax" ? `${RING} px-1.5` : ""}`}>
-            <span>{data.tax ? data.tax.label : "Tax — set in the Tax step"}</span>
+            <span>{data.tax ? data.tax.label : t("onboarding.preview.taxNotSet")}</span>
             <span className="ml-auto font-medium tabular-nums">{data.tax ? formatMoney(tax, code, locale) : "—"}</span>
           </div>
         </div>
         <div className="mt-3 flex justify-between text-[14px] font-bold tabular-nums">
-          <span>Total</span>
+          <span>{t("onboarding.preview.total")}</span>
           <span className={ring === "money" ? RING : ""}>{formatMoney(EXAMPLE_AMOUNT + tax, code, locale)}</span>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4">
-          {["Payment details", "Notes"].map((title) => (
+          {[t("onboarding.preview.paymentDetails"), t("onboarding.preview.notes")].map((title) => (
             <div key={title}>
               <div className="text-[10px] font-medium uppercase tracking-[0.06em] text-on-surface-muted">{title}</div>
               <i className="mt-1.5 block h-[7px] w-[80%] rounded-full bg-border" />
@@ -176,11 +180,12 @@ function Box({ icon, title, children }: { icon: React.ReactNode; title: string; 
 }
 
 function BooksAndTeam({ data }: { data: PreviewData }) {
+  const t = useT();
   const most = Math.max(1, ...ACCOUNT_GROUPS.map((g) => data.accounts?.[g.type] ?? 0));
-  const ownerInitials = initials(data.owner || "You");
+  const ownerInitials = initials(data.owner || t("onboarding.preview.you"));
   return (
     <>
-      <Box icon={<BookOpen size={15} className="text-primary" aria-hidden />} title="Your books">
+      <Box icon={<BookOpen size={15} className="text-primary" aria-hidden />} title={t("onboarding.preview.yourBooks")}>
         {ACCOUNT_GROUPS.map((group) => {
           const count = data.accounts?.[group.type] ?? 0;
           return (
@@ -192,27 +197,27 @@ function BooksAndTeam({ data }: { data: PreviewData }) {
           );
         })}
       </Box>
-      <Box icon={<Users size={15} className="text-primary" aria-hidden />} title="Your team">
-        <Member initials={ownerInitials} tone="mint" name={data.owner || "You"} role="Owner · you" />
+      <Box icon={<Users size={15} className="text-primary" aria-hidden />} title={t("onboarding.preview.yourTeam")}>
+        <Member initials={ownerInitials} tone="mint" name={data.owner || t("onboarding.preview.you")} role={t("onboarding.preview.ownerYou")} />
         {data.invites.map((invite) => (
           <Member
             key={invite.email}
             initials={invite.email[0]!.toUpperCase()}
             tone={invite.role === "staff" ? "sky" : "periwinkle"}
             name={invite.email}
-            role={invite.role === "staff" ? "Staff" : "Field"}
+            role={invite.role === "staff" ? t("onboarding.common.staff") : t("onboarding.common.field")}
             invited
           />
         ))}
       </Box>
-      <Box icon={<ListChecks size={15} className="text-primary" aria-hidden />} title="Set so far">
-        <Recap label="Business" value={data.business.name?.trim() || "—"} />
-        <Recap label="Money" value={[data.currency.code, data.taxCountryLabel].filter(Boolean).join(" · ")} />
-        <Recap label="Documents" value={`First invoice ${data.invoiceNumber}`} />
+      <Box icon={<ListChecks size={15} className="text-primary" aria-hidden />} title={t("onboarding.preview.setSoFar")}>
+        <Recap label={t("onboarding.preview.business")} value={data.business.name?.trim() || "—"} />
+        <Recap label={t("onboarding.preview.money")} value={[data.currency.code, data.taxCountryLabel].filter(Boolean).join(" · ")} />
+        <Recap label={t("onboarding.preview.documents")} value={t("onboarding.preview.firstInvoice", { number: data.invoiceNumber })} />
       </Box>
       <p className="flex items-center gap-1.5 text-[12px] text-on-surface-muted">
         <Sparkles size={14} className="shrink-0 text-primary" aria-hidden />
-        Spine posts to these accounts for you — no journal entries by hand.
+        {t("onboarding.preview.postsForYou")}
       </p>
     </>
   );
@@ -225,6 +230,7 @@ const MEMBER_TONE = {
 } as const;
 
 function Member({ initials: letters, tone, name, role, invited = false }: { initials: string; tone: keyof typeof MEMBER_TONE; name: string; role: string; invited?: boolean }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-2.5 border-t border-border py-1.5 text-[12px] font-medium text-on-surface first-of-type:border-t-0">
       <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-[var(--color-illustration-ink)] ${MEMBER_TONE[tone]}`}>{letters}</span>
@@ -232,7 +238,7 @@ function Member({ initials: letters, tone, name, role, invited = false }: { init
         <div className="truncate">{name}</div>
         <div className="text-[11px] font-normal text-on-surface-muted">{role}</div>
       </div>
-      {invited && <span className="ml-auto inline-flex h-5 items-center rounded-full bg-due-soon-bg px-2 text-[11px] font-medium text-due-soon">Invited</span>}
+      {invited && <span className="ml-auto inline-flex h-5 items-center rounded-full bg-due-soon-bg px-2 text-[11px] font-medium text-due-soon">{t("onboarding.preview.invited")}</span>}
     </div>
   );
 }

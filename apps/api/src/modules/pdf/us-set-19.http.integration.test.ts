@@ -75,7 +75,7 @@ describe("US-SET-19 · add a signature and the amount in words (requires local P
     await call(owner, "PUT", "/org/settings/business_profile", { value: { name: "Kaveri Interiors" } });
     await call(owner, "PUT", "/org/settings/currency", { value: { code: "INR", locale: "en-IN" } });
     const form = new FormData();
-    form.append("file", new Blob([tinyPng()], { type: "image/png" }), "signature.png");
+    form.append("file", new Blob([new Uint8Array(tinyPng())], { type: "image/png" }), "signature.png");
     const res = await fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: { cookie: owner.cookie, "Idempotency-Key": randomUUID() }, body: form });
     expect(res.status, await res.clone().text()).toBeLessThan(300);
     signatureId = ((await res.json()) as { id: string }).id;

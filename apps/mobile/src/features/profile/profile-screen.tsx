@@ -13,14 +13,15 @@ import { SectionHeader } from "../../components/section-header";
 import { initials, roleLine } from "../../lib/member-display";
 import { versionLine } from "../../lib/app-version";
 import { confirmSignOut } from "./sign-out";
+import { t as translate, useT, formatLocale } from "../../lib/i18n";
 
 const APPEARANCE: { label: string; value: ThemePreference }[] = [
-  { label: "System", value: "system" },
-  { label: "Light", value: "light" },
-  { label: "Dark", value: "dark" },
+  { label: translate("mobileApp.profile.system"), value: "system" },
+  { label: translate("mobileApp.profile.light"), value: "light" },
+  { label: translate("mobileApp.profile.dark"), value: "dark" },
 ];
 
-export const FIELD_NOTE = "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account.";
+export const FIELD_NOTE = translate("mobileApp.profile.fieldNote");
 
 function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
@@ -44,13 +45,13 @@ export function profileScreenOptions(os: typeof Platform.OS, colors: { backgroun
       sheetAllowedDetents: [1],
       sheetGrabberVisible: true,
       headerShown: true,
-      title: "Profile",
+      title: translate("mobileApp.profile.title"),
       unstable_headerRightItems: () => [
-        { type: "button" as const, label: "Close", icon: { type: "sfSymbol" as const, name: "xmark" as const }, accessibilityLabel: "Close", onPress: onClose },
+        { type: "button" as const, label: translate("mobileApp.common.close"), icon: { type: "sfSymbol" as const, name: "xmark" as const }, accessibilityLabel: translate("mobileApp.common.close"), onPress: onClose },
       ],
     };
   }
-  return { headerShown: true, title: "Profile", headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false };
+  return { headerShown: true, title: translate("mobileApp.profile.title"), headerStyle: { backgroundColor: colors.background }, headerShadowVisible: false };
 }
 
 /**
@@ -60,6 +61,7 @@ export function profileScreenOptions(os: typeof Platform.OS, colors: { backgroun
  * (which warns when items are still waiting to sync).
  */
 export function ProfileScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const { signOut } = useSession();
@@ -70,8 +72,8 @@ export function ProfileScreen() {
 
   const items = useOutboxItems();
   const waiting = pendingItems(items);
-  const selected = APPEARANCE.find((option) => option.value === preference)?.label ?? "System";
-  const syncLabel = waiting === 0 ? "All synced" : `${waiting} waiting to sync`;
+  const selected = APPEARANCE.find((option) => option.value === preference)?.label ?? t("mobileApp.profile.system");
+  const syncLabel = waiting === 0 ? t("mobileApp.syncPill.allSynced") : t("mobileApp.syncPill.waiting", { n: waiting });
   const sentAt = lastSentAt(items);
   const signOutPress = () =>
     confirmSignOut(pending, {
@@ -111,10 +113,10 @@ export function ProfileScreen() {
         </View>
         <View>
           {[
-            { icon: Mail, value: member.email, label: "Email" },
-            { icon: Server, value: session.server.replace(/^https?:\/\//, ""), label: "Server" },
+            { icon: Mail, value: member.email, label: t("mobileApp.signIn.email") },
+            { icon: Server, value: session.server.replace(/^https?:\/\//, ""), label: t("mobileApp.signIn.server") },
           ].map(({ icon: Icon, value, label }) => (
-            <View key={label} accessible accessibilityLabel={`${label}: ${value}`} className="min-h-[64px] flex-row items-center gap-4 px-4 py-2">
+            <View key={label} accessible accessibilityLabel={t("mobileApp.profile.infoLabel", { label, value })} className="min-h-[64px] flex-row items-center gap-4 px-4 py-2">
               <Icon size={22} color={colors.onSurfaceMuted} />
               <View className="flex-1">
                 <Text numberOfLines={1} className="text-[16px] text-on-surface dark:text-on-surface-dark">{value}</Text>
@@ -122,13 +124,13 @@ export function ProfileScreen() {
               </View>
             </View>
           ))}
-          <Pressable testID="profile-sync" onPress={() => router.push("/sync")} accessibilityRole="button" accessibilityLabel={`${syncLabel}. Open Sync`} className="min-h-[64px] flex-row items-center gap-4 px-4 py-2">
+          <Pressable testID="profile-sync" onPress={() => router.push("/sync")} accessibilityRole="button" accessibilityLabel={t("mobileApp.syncPill.label", { label: syncLabel })} className="min-h-[64px] flex-row items-center gap-4 px-4 py-2">
             {waiting === 0 ? <CircleCheck size={22} color={colors.paid} /> : <CloudUpload size={22} color={colors.dueSoon} />}
             <View className="flex-1">
               <Text className="text-[16px] text-on-surface dark:text-on-surface-dark">{syncLabel}</Text>
               {sentAt ? (
                 <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-                  Last sent {new Date(sentAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  {t("mobileApp.profile.lastSent", { time: new Date(sentAt).toLocaleTimeString(formatLocale(), { hour: "numeric", minute: "2-digit" }) })}
                 </Text>
               ) : null}
             </View>
@@ -136,7 +138,7 @@ export function ProfileScreen() {
           </Pressable>
         </View>
         <View className="gap-3 px-4">
-          <SectionHeader title="Appearance" />
+          <SectionHeader title={t("mobileApp.profile.appearance")} />
           {appearance}
         </View>
         {member.role === "field" ? <Text className="px-5 text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{FIELD_NOTE}</Text> : null}
@@ -148,7 +150,7 @@ export function ProfileScreen() {
             className="min-h-[48px] flex-row items-center justify-center gap-2 rounded-full border border-border-strong dark:border-border-strong-dark"
           >
             <LogOut size={18} color={colors.overdue} />
-            <Text className="text-[16px] font-semibold text-overdue dark:text-overdue-dark">Sign out</Text>
+            <Text className="text-[16px] font-semibold text-overdue dark:text-overdue-dark">{t("mobileApp.signOut.signOut")}</Text>
           </Pressable>
         </View>
         {version}
@@ -170,23 +172,23 @@ export function ProfileScreen() {
         <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{roleLine(member)}</Text>
       </View>
 
-      <FormSection title="Account">
-        <InfoRow label="Email" value={member.email} />
-        <InfoRow label="Server" value={session.server.replace(/^https?:\/\//, "")} last />
+      <FormSection title={t("mobileApp.profile.account")}>
+        <InfoRow label={t("mobileApp.signIn.email")} value={member.email} />
+        <InfoRow label={t("mobileApp.signIn.server")} value={session.server.replace(/^https?:\/\//, "")} last />
       </FormSection>
 
       <View className="gap-2">
-        <Text className="px-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">Appearance</Text>
+        <Text className="px-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileApp.profile.appearance")}</Text>
         {appearance}
       </View>
 
-      <FormSection title="Sync">
+      <FormSection title={t("mobileApp.sync.title")}>
         <FormRow last>
           <Pressable
             testID="profile-sync"
             onPress={() => router.push("/sync")}
             accessibilityRole="button"
-            accessibilityLabel={`${syncLabel}. Open Sync`}
+            accessibilityLabel={t("mobileApp.syncPill.label", { label: syncLabel })}
             className="min-h-[44px] flex-1 flex-row items-center gap-3"
           >
             {waiting === 0 ? <CircleCheck size={20} color={colors.paid} /> : <CloudUpload size={20} color={colors.dueSoon} />}
@@ -198,7 +200,7 @@ export function ProfileScreen() {
 
       {member.role === "field" ? <Text className="px-1 text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{FIELD_NOTE}</Text> : null}
 
-      <FullWidthButton variant="danger" label="Sign out" testID="profile-sign-out" onPress={signOutPress} />
+      <FullWidthButton variant="danger" label={t("mobileApp.signOut.signOut")} testID="profile-sign-out" onPress={signOutPress} />
 
       {version}
     </ScrollView>

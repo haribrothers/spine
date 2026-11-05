@@ -9,12 +9,13 @@ import { useToast } from "../../../components/toast-host";
 import { useSettingsSaved } from "../../../lib/settings-dirty";
 import { lastActiveLabel } from "../../(app)/team/users/users-list-state";
 import { AccountCard, AccountPaneHeader } from "./account-card";
+import { t, useT } from "../../../lib/i18n";
 
 /** "Last active 2 hours ago", "Last active yesterday", "Last active on 12 Oct". */
 function lastActive(at: string): string {
   const label = lastActiveLabel(at);
-  if (/^(Just now|Yesterday)$/.test(label)) return `Last active ${label.toLowerCase()}`;
-  return /ago$/.test(label) ? `Last active ${label}` : `Last active on ${label}`;
+  if (/^(Just now|Yesterday)$/.test(label)) return t("settings.security.lastActive", { label: label.toLowerCase() });
+  return /ago$/.test(label) ? t("settings.security.lastActive", { label }) : t("settings.security.lastActiveOn", { label });
 }
 
 const deviceIcon = (device: string) => (/iPhone|Android|phone/.test(device) ? Smartphone : /macOS|Windows|Linux|ChromeOS/.test(device) ? Laptop : Monitor);
@@ -25,6 +26,7 @@ const deviceIcon = (device: string) => (/iPhone|Android|phone/.test(device) ? Sm
  * where the account is signed in, ending one session or all the others.
  */
 export function AccountSecurityPane() {
+  const t = useT();
   const toast = useToast();
   const markSaved = useSettingsSaved();
   const { confirm, dialog } = useConfirm();
@@ -62,23 +64,23 @@ export function AccountSecurityPane() {
       setNext("");
       setAgain("");
       markSaved();
-      toast(signOutOthers ? "Password changed. Your other devices are signed out." : "Password changed.", "Use it the next time you sign in.");
+      toast(signOutOthers ? t("settings.security.changedSignedOut") : t("settings.security.changed"), t("settings.security.changedDescription"));
       load();
     } catch (err) {
-      setErrors({ current: err instanceof Error ? err.message : "Couldn't change your password. Check your current password and try again." });
+      setErrors({ current: err instanceof Error ? err.message : t("settings.security.changeError") });
     } finally {
       setSaving(false);
     }
   }
 
   async function endOne(session: AccountSession) {
-    const ok = await confirm({ title: `Sign out ${session.device}?`, description: "It'll need to sign in again.", confirmLabel: "Sign out", danger: true });
+    const ok = await confirm({ title: t("settings.security.endOneConfirm.title", { device: session.device }), description: t("settings.security.endOneConfirm.description"), confirmLabel: t("settings.security.signOut"), danger: true });
     if (!ok) return;
     try {
       await apiClient.delete(`/users/me/sessions/${session.id}`);
-      toast(`${session.device} signed out.`, "It needs to sign in again to use Spine.");
+      toast(t("settings.security.endOneDone", { device: session.device }), t("settings.security.endOneDoneDescription"));
     } catch (err) {
-      toast("Couldn't sign that device out.", err instanceof Error ? err.message : "Try again.");
+      toast(t("settings.security.endOneError"), err instanceof Error ? err.message : t("settings.security.tryAgain"));
     }
     load();
   }
@@ -86,17 +88,17 @@ export function AccountSecurityPane() {
   async function endOthers() {
     const others = (sessions ?? []).filter((s) => !s.current);
     const ok = await confirm({
-      title: `Sign out of ${others.length === 1 ? "1 other device" : `${others.length} other devices`}?`,
-      description: `${others.map((s) => s.device).join(" and ")} will need to sign in again. You stay signed in here.`,
-      confirmLabel: `Sign out ${others.length === 1 ? "1 device" : `${others.length} devices`}`,
+      title: t("settings.security.endOthersConfirm.title", { count: others.length }),
+      description: t("settings.security.endOthersConfirm.description", { devices: others.map((s) => s.device).join(t("settings.security.listJoin")) }),
+      confirmLabel: t("settings.security.endOthersConfirm.confirm", { count: others.length }),
       danger: true,
     });
     if (!ok) return;
     try {
       const res = await apiClient.post<{ signedOut: number }>("/users/me/sessions/sign-out-others");
-      toast(`Signed out of ${res.signedOut === 1 ? "1 other device" : `${res.signedOut} other devices`}.`, "You're still signed in here.");
+      toast(t("settings.security.endOthersDone", { count: res.signedOut }), t("settings.security.endOthersDoneDescription"));
     } catch (err) {
-      toast("Couldn't sign out your other devices.", err instanceof Error ? err.message : "Try again.");
+      toast(t("settings.security.endOthersError"), err instanceof Error ? err.message : t("settings.security.tryAgain"));
     }
     load();
   }
@@ -105,14 +107,14 @@ export function AccountSecurityPane() {
 
   return (
     <div className="flex flex-col gap-4" data-testid="account-security">
-      <AccountPaneHeader title="Password & security" description="Change your password and see where your account is signed in." />
+      <AccountPaneHeader title={t("settings.security.title")} description={t("settings.security.description")} />
       <div className="flex flex-col gap-4">
-        <AccountCard title="Change password" description="At least 8 characters. Use one you don't use anywhere else.">
+        <AccountCard title={t("settings.security.changePassword")} description={t("settings.security.changePasswordDescription")}>
           <form onSubmit={changePassword} className="flex flex-col gap-4">
-            <FormField label="Current password" errorText={errors.current}>
+            <FormField label={t("settings.security.currentPassword")} errorText={errors.current}>
               {(field) => <PasswordInput {...field} autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} required />}
             </FormField>
-            <FormField label="New password" errorText={errors.next}>
+            <FormField label={t("settings.security.newPassword")} errorText={errors.next}>
               {(field) => (
                 <div className="flex flex-col gap-2">
                   <PasswordInput
@@ -127,35 +129,35 @@ export function AccountSecurityPane() {
                 </div>
               )}
             </FormField>
-            <FormField label="Confirm new password" errorText={errors.again}>
+            <FormField label={t("settings.security.confirmPassword")} errorText={errors.again}>
               {(field) => <PasswordInput {...field} autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} required />}
             </FormField>
             <label className="flex items-center gap-2 text-[13px] font-medium text-on-surface">
-              <Checkbox checked={signOutOthers} onCheckedChange={(on) => setSignOutOthers(on === true)} aria-label="Sign out of my other devices" />
-              Sign out of my other devices
+              <Checkbox checked={signOutOthers} onCheckedChange={(on) => setSignOutOthers(on === true)} aria-label={t("settings.security.signOutOthersOption")} />
+              {t("settings.security.signOutOthersOption")}
             </label>
             <div>
               <Button type="submit" disabled={saving || !current || !next || !again}>
                 {saving ? <Spinner size="sm" /> : null}
-                Change password
+                {t("settings.security.changePassword")}
               </Button>
             </div>
           </form>
         </AccountCard>
         <AccountCard
-          title="Where you're signed in"
-          description={sessions ? `${sessions.length === 1 ? "1 device" : `${sessions.length} devices`}. Sign out one you don't recognise or no longer use.` : undefined}
+          title={t("settings.security.sessionsTitle")}
+          description={sessions ? t("settings.security.sessionsDescription", { count: sessions.length }) : undefined}
           action={
             others > 0 ? (
               <Button variant="secondary" size="sm" onClick={() => void endOthers()}>
                 <LogOut size={14} aria-hidden />
-                Sign out of other devices
+                {t("settings.security.signOutOthersButton")}
               </Button>
             ) : undefined
           }
         >
           {failed ? (
-            <p className="text-[13px] text-on-surface-muted">Couldn&apos;t load your devices. Refresh to try again.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("settings.security.loadError")}</p>
           ) : !sessions ? (
             <Spinner />
           ) : (
@@ -170,13 +172,13 @@ export function AccountSecurityPane() {
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-2 text-[13.5px] font-semibold text-on-surface">
                         {s.device}
-                        {s.current && <Badge className="bg-paid-bg text-paid">This device</Badge>}
+                        {s.current && <Badge className="bg-paid-bg text-paid">{t("settings.security.thisDevice")}</Badge>}
                       </p>
-                      <p className="text-[12.5px] text-on-surface-muted">{[s.ipAddress, s.current ? "Active now" : lastActive(s.lastActiveAt)].filter(Boolean).join(" · ")}</p>
+                      <p className="text-[12.5px] text-on-surface-muted">{[s.ipAddress, s.current ? t("settings.security.activeNow") : lastActive(s.lastActiveAt)].filter(Boolean).join(" · ")}</p>
                     </div>
                     {!s.current && (
-                      <Button variant="secondary" size="sm" onClick={() => void endOne(s)} aria-label={`Sign out ${s.device}`}>
-                        Sign out
+                      <Button variant="secondary" size="sm" onClick={() => void endOne(s)} aria-label={t("settings.security.signOutDevice", { device: s.device })}>
+                        {t("settings.security.signOut")}
                       </Button>
                     )}
                   </li>

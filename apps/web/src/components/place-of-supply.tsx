@@ -18,6 +18,7 @@ import {
   type TaxProfile,
 } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
+import { t as translate, useT } from "../lib/i18n";
 
 interface ContactForPlaceOfSupply {
   gstTreatment: GstTreatment | null;
@@ -28,11 +29,11 @@ interface ContactForPlaceOfSupply {
 type SwitchableLine = TaxChoice & { key: string; type: string; catalogItemId: string | null };
 
 const SOURCE_LABELS: Record<PlaceOfSupplySource, string> = {
-  site: "From the site address",
-  shipping: "From the shipping address",
-  billing: "From the billing address",
-  contact: "From the contact's state",
-  overseas: "The customer is overseas",
+  site: translate("catalog.placeOfSupply.sourceSite"),
+  shipping: translate("catalog.placeOfSupply.sourceShipping"),
+  billing: translate("catalog.placeOfSupply.sourceBilling"),
+  contact: translate("catalog.placeOfSupply.sourceContact"),
+  overseas: translate("catalog.placeOfSupply.sourceOverseas"),
 };
 
 /**
@@ -96,12 +97,12 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
       }
       setLines(result.lines);
       setFlagged(new Set(result.flagged));
-      const to = nextType === "intra" ? "CGST + SGST" : nextType === "export" && exportUnderLut ? "no tax (export under LUT)" : "IGST";
+      const to = nextType === "intra" ? translate("catalog.placeOfSupply.toIntra") : nextType === "export" && exportUnderLut ? translate("catalog.placeOfSupply.toExportLut") : translate("catalog.placeOfSupply.toIgst");
       const parts = [
-        result.switched ? `${result.switched} ${result.switched === 1 ? "line" : "lines"} switched to ${to}` : null,
-        result.flagged.length ? `${result.flagged.length} ${result.flagged.length === 1 ? "line you changed by hand keeps its" : "lines you changed by hand keep their"} tax — check ${result.flagged.length === 1 ? "it" : "them"}` : null,
+        result.switched ? translate("catalog.placeOfSupply.switched", { count: result.switched, to }) : null,
+        result.flagged.length ? translate("catalog.placeOfSupply.flagged", { count: result.flagged.length }) : null,
       ].filter(Boolean);
-      setNotice(`The place of supply changed to ${placeOfSupplyLabel(next)}: ${parts.join("; ")}.`);
+      setNotice(translate("catalog.placeOfSupply.notice", { label: placeOfSupplyLabel(next), parts: parts.join("; ") }));
     },
     [items, lines, setLines, exportUnderLut],
   );
@@ -168,14 +169,15 @@ export function PlaceOfSupplyField({
   supplyType: SupplyType | null;
   exportUnderLut?: boolean;
 }) {
-  const kind = supplyType === "intra" ? "Intra-state, so items use their CGST + SGST rate." : supplyType === "export" ? (exportUnderLut ? "Export under LUT, so items have no IGST." : "Export, so items use their IGST rate.") : supplyType === "inter" ? "Inter-state, so items use their IGST rate." : undefined;
-  const helper = [source ? SOURCE_LABELS[source] : null, kind].filter(Boolean).join(" · ") || "The state the supply is made to.";
+  const t = useT();
+  const kind = supplyType === "intra" ? t("catalog.placeOfSupply.kindIntra") : supplyType === "export" ? (exportUnderLut ? t("catalog.placeOfSupply.kindExportLut") : t("catalog.placeOfSupply.kindExport")) : supplyType === "inter" ? t("catalog.placeOfSupply.kindInter") : undefined;
+  const helper = [source ? SOURCE_LABELS[source] : null, kind].filter(Boolean).join(" · ") || t("catalog.placeOfSupply.defaultHelper");
   return (
-    <FormField label="Place of supply" required helperText={helper}>
+    <FormField label={t("catalog.placeOfSupply.label")} required helperText={helper}>
       {(field) => (
         <Select value={value ?? ""} onValueChange={onChange}>
           <SelectTrigger {...field}>
-            <SelectValue placeholder="Choose a state" />
+            <SelectValue placeholder={t("catalog.placeOfSupply.placeholder")} />
           </SelectTrigger>
           <SelectContent>
             {GST_STATES.map((s) => (
@@ -199,10 +201,11 @@ export function PlaceOfSupplyNotice({ notice }: { notice: string | null }) {
 
 /** On a line whose tax was changed by hand when the place of supply changed. */
 export function LineTaxWarning() {
+  const t = useT();
   return (
     <p role="status" className="flex items-center gap-1.5 rounded-sm bg-due-soon-bg px-2 py-1 text-[12px] text-on-surface">
       <AlertTriangle size={14} aria-hidden className="shrink-0" />
-      Check this line&apos;s tax — the place of supply changed.
+      {t("catalog.placeOfSupply.lineTaxWarning")}
     </p>
   );
 }

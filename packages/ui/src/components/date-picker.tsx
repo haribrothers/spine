@@ -3,6 +3,7 @@
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
+import { useT, formatLocale } from "../lib/i18n";
 import { MiniCalendar } from "./calendar-mini";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
@@ -14,7 +15,8 @@ export interface DatePickerProps {
   disabled?: boolean;
 }
 
-export function DatePicker({ value, onChange, placeholder = "Pick a date", className, disabled }: DatePickerProps) {
+export function DatePicker({ value, onChange, placeholder, className, disabled }: DatePickerProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -31,7 +33,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", class
             className,
           )}
         >
-          {value ? value.toLocaleDateString() : placeholder}
+          {value ? value.toLocaleDateString(formatLocale()) : (placeholder ?? t("ui.datePicker.placeholder"))}
           <CalendarIcon size={16} className="shrink-0 text-on-surface-muted" />
         </button>
       </PopoverTrigger>

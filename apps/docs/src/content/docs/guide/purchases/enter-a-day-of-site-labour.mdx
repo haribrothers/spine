@@ -1,0 +1,44 @@
+---
+title: Enter a day of site labour
+description: Enter a day's labour on a job as workers per trade times their day rate, and let Spine add it up.
+sidebar:
+  order: 18
+---
+
+For a day's labour on site, you don't need to work the total out by hand. Enter each trade with how many workers and their day rate, and Spine adds it up. The labour is an expense like any other: it waits for approval, then posts to the category's account and counts as the job's cost.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Everyone who can submit expenses: Owners, Staff whose Team has **Submit/edit own expenses**, and Field users for their own. Labour is always for a job, so you need a job to put it on.
+</Aside>
+
+<Steps>
+
+1. **Open the form** — Go to **Expenses** and press **Submit expense**.
+
+2. **Switch to labour** — Under **Enter as**, choose **Headcount × day rate**. If you have a category posting to 5200 Direct Labour, it's chosen for you ("Preselected: posts to 5200 Direct Labour."); you can choose another.
+
+3. **Choose the job** — **Job** is now required: labour is always for a job.
+
+4. **Add the trades** — For each trade, enter the **Trade** (for example Mason), the number of **Workers** and the **Day rate**. Each row shows its total. Press **Add trade** for another row. A trade you've used before is suggested as you type, with its last day rate filled in; you can change it.
+
+5. **Check the total** — **Total for the day** adds up every row. For example, 4 masons at 950.00, 3 carpenters at 900.00 and 8 helpers at 650.00 come to 11,700.00.
+
+6. **Submit** — Add a muster sheet or site photo if you have one (it's optional for labour), then press **Submit expense**.
+
+</Steps>
+
+The expense amount is the total for the day. When it's approved, the expense's page lists each row, for example "4 Mason × 950.00 = 3,800.00", and it posts like any expense, tagged to the job.
+
+If a row has no trade, no workers or no day rate, you see "Every row needs a trade, at least one worker and a day rate." and nothing is saved.
+
+<Aside type="note">
+  Only headcounts and day rates are recorded — no names, attendance or hours.
+</Aside>
+
+<Aside type="tip">
+  Field crew can enter labour the same way in the field app: on **New expense**, switch to **Headcount × day rate**. It's saved and sent later if there's no signal.
+</Aside>
+
+To change the rows while it's waiting, edit the expense: changing the rows changes the amount. **Read receipt** isn't offered for labour.

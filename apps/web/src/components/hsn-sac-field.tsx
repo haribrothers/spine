@@ -3,9 +3,11 @@
 import { useId } from "react";
 import { Input } from "@spine/ui";
 import { HSN_SAC_MESSAGE, isValidHsnSac } from "@spine/shared";
+import { useT } from "../lib/i18n";
 
 /** US-TAX-14 — a document line's HSN/SAC code (4, 6 or 8 digits), copied from its item. */
 export function HsnSacField({ value, onChange, compact = false }: { value: string; onChange: (value: string) => void; compact?: boolean }) {
+  const t = useT();
   const id = useId();
   const error = value && !isValidHsnSac(value) ? HSN_SAC_MESSAGE : null;
   if (compact) {
@@ -14,11 +16,11 @@ export function HsnSacField({ value, onChange, compact = false }: { value: strin
       <div className="flex min-w-0 flex-col gap-1">
         <div className="relative">
           <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] font-medium text-on-surface-muted" aria-hidden>
-            HSN/SAC
+            {t("catalog.hsnSacField.label")}
           </span>
           <Input
             id={id}
-            aria-label="HSN/SAC"
+            aria-label={t("catalog.hsnSacField.label")}
             value={value}
             inputMode="numeric"
             maxLength={8}
@@ -39,7 +41,7 @@ export function HsnSacField({ value, onChange, compact = false }: { value: strin
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-[11px] font-medium text-on-surface-muted">
-        HSN/SAC
+        {t("catalog.hsnSacField.label")}
       </label>
       <Input
         id={id}

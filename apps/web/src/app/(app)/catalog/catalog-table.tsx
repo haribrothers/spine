@@ -6,6 +6,7 @@ import { CatalogRowActions } from "./catalog-row-actions";
 import { taxLabel } from "./catalog-list-state";
 import type { CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 /**
  * The (only) list view for Catalogue — a flat table, no card/list-view
@@ -46,10 +47,11 @@ export function CatalogTable({
   onDuplicate?: (item: CatalogItem) => void;
   onChanged: (action: "archived" | "restored" | "deleted", item: CatalogItem) => void;
 }) {
+  const t = useT();
   const columns: TableColumn<CatalogItem>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t("catalog.common.name"),
       render: (row) => (
         <div className="flex max-w-[22rem] flex-col whitespace-normal wide-plus:max-w-[28rem]">
           <span className="flex items-start gap-1.5">
@@ -61,7 +63,7 @@ export function CatalogTable({
             >
               {row.name}
             </button>
-            {row.archivedAt && <Badge className="shrink-0">Archived</Badge>}
+            {row.archivedAt && <Badge className="shrink-0">{t("catalog.common.archived")}</Badge>}
           </span>
           {row.description && (
             <span className="truncate text-[12.5px] text-on-surface-muted" title={row.description}>
@@ -74,31 +76,31 @@ export function CatalogTable({
     },
     {
       key: "category",
-      header: "Category",
+      header: t("catalog.common.category"),
       render: (row) => row.category ?? "—",
       sortValue: (row) => row.category ?? "",
     },
     {
       key: "unit",
-      header: "Unit",
+      header: t("catalog.table.unit"),
       render: (row) => row.unit,
     },
     {
       key: "hsnSac",
-      header: "HSN/SAC",
+      header: t("catalog.table.hsnSac"),
       render: (row) => <span className={cn("tabular-nums", !row.hsnSac && "text-on-surface-muted")}>{row.hsnSac ?? "—"}</span>,
       sortValue: (row) => row.hsnSac ?? "",
     },
     {
       key: "defaultPrice",
-      header: "Default price",
+      header: t("catalog.table.defaultPrice"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.defaultPriceAmount), row.defaultPriceCurrency)}</span>,
       sortValue: (row) => BigInt(row.defaultPriceAmount),
     },
     {
       key: "tax",
-      header: "Tax",
+      header: t("catalog.common.tax"),
       render: (row) => {
         const label = taxLabel(row, rates, groups, gst);
         if (label.kind === "none") {

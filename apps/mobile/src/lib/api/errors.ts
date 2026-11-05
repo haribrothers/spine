@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 /**
  * What can go wrong talking to the Spine server, as the screens need to
  * tell it apart (US-MOB-10): no network at all is "You're offline" (the
@@ -20,7 +22,7 @@ export class ApiError extends Error {
 /** The phone has no network. */
 export class OfflineError extends Error {
   constructor() {
-    super("You're offline.");
+    super(t("mobileApp.errors.offline"));
     this.name = "OfflineError";
   }
 }
@@ -28,7 +30,7 @@ export class OfflineError extends Error {
 /** The phone is online but the server didn't answer (timeout, refused, 502–504). */
 export class ServerUnreachableError extends Error {
   constructor() {
-    super("The Spine server didn't answer.");
+    super(t("mobileApp.errors.serverUnreachable"));
     this.name = "ServerUnreachableError";
   }
 }
@@ -36,7 +38,7 @@ export class ServerUnreachableError extends Error {
 /** The person stopped the request ("Cancel" while AI reads a receipt, US-AI-10). Nothing to show. */
 export class CancelledError extends Error {
   constructor() {
-    super("Cancelled.");
+    super(t("mobileApp.errors.cancelled"));
     this.name = "CancelledError";
   }
 }
@@ -44,7 +46,7 @@ export class CancelledError extends Error {
 /** 426 CLIENT_TOO_OLD — the server needs a newer app (D-071). */
 export class UpdateRequiredError extends Error {
   constructor(readonly minimumVersion?: string) {
-    super("Update Spine to keep going");
+    super(t("mobileApp.updateRequired.title"));
     this.name = "UpdateRequiredError";
   }
 }
@@ -68,7 +70,7 @@ export class PasswordChangeRequiredError extends Error {
 /** 401 — the session expired or was revoked elsewhere. */
 export class SessionExpiredError extends Error {
   constructor() {
-    super("Your session ended. Sign in again.");
+    super(t("mobileApp.errors.sessionEnded"));
     this.name = "SessionExpiredError";
   }
 }

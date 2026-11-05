@@ -1,0 +1,124 @@
+[
+  {
+    "id": "reports-centre",
+    "path": "/reports",
+    "alt": "The Reports page with reports grouped under Business overview, Sales, Receivables, Purchases, Tax, Jobs and Accountant",
+    "wait": "Business overview"
+  },
+  {
+    "id": "reports-favourites",
+    "path": "/reports",
+    "alt": "The Search reports box above the report groups, with a star beside each report",
+    "wait": "Search reports"
+  },
+  {
+    "id": "reports-profit-and-loss",
+    "path": "/reports/profit-and-loss",
+    "alt": "Profit & Loss with the Total income, Total expenses, Net profit and Net margin cards, the monthly chart and the income and expenses table",
+    "wait": "Net margin"
+  },
+  {
+    "id": "reports-balance-sheet",
+    "path": "/reports/balance-sheet",
+    "alt": "The Balance Sheet with Assets, Liabilities and Equity by account and Total liabilities + equity",
+    "wait": "Total liabilities + equity"
+  },
+  {
+    "id": "reports-cash-flow",
+    "path": "/reports/cash-flow",
+    "alt": "The Cash Flow report with Cash at start, Net change and Cash at end, and the operating, investing and financing sections",
+    "wait": "Cash at end"
+  },
+  {
+    "id": "reports-trial-balance",
+    "path": "/reports/trial-balance",
+    "alt": "The Trial Balance with the Difference card reading balanced and the table of accounts with debit and credit balances",
+    "wait": "Difference"
+  },
+  {
+    "id": "reports-drilldown",
+    "path": "/reports/profit-and-loss",
+    "alt": "Profit & Loss with the note Click an account to see every journal entry behind its figure above the income and expenses table",
+    "wait": "Click an account to see every journal entry behind its figure."
+  },
+  {
+    "id": "reports-general-ledger",
+    "path": "/reports/general-ledger",
+    "alt": "The General ledger with the Accounts filter, the figure cards and an account's opening balance, entries and closing balance",
+    "wait": "Closing balance"
+  },
+  {
+    "id": "reports-day-book",
+    "path": "/reports/day-book",
+    "alt": "The Day book with the Source filter and each journal entry listed with its lines",
+    "wait": "All sources"
+  },
+  {
+    "id": "reports-sales-by-customer",
+    "path": "/reports/sales-by-customer",
+    "alt": "Sales by customer with the figure cards and a table of customers, largest first, with invoices, sales before tax, tax and share of sales",
+    "wait": "% of sales"
+  },
+  {
+    "id": "reports-expenses-by-category",
+    "path": "/reports/expenses-by-category",
+    "alt": "Expenses by category with each expense account's amount, share of total and a bar, largest first",
+    "wait": "% of total"
+  },
+  {
+    "id": "reports-payments-received",
+    "path": "/reports/payments-received",
+    "alt": "Payments received with the figure cards and a table of payments showing method, account, amount and the invoices each was allocated to",
+    "wait": "Allocated to"
+  },
+  {
+    "id": "reports-credits",
+    "path": "/reports/credit-notes-and-refunds",
+    "alt": "Credit notes and refunds with each credit note's amount and the Applied, Refunded and Still held columns",
+    "wait": "Still held"
+  },
+  {
+    "id": "reports-job-profitability",
+    "path": "/reports/job-profitability",
+    "alt": "Job profitability with the Jobs filter, the figure cards, the Contract, billed and cost by job chart and the table of jobs",
+    "wait": "Contract, billed and cost by job"
+  },
+  {
+    "id": "reports-export-menu",
+    "path": "/reports/profit-and-loss",
+    "alt": "The Export menu open on Profit & Loss, offering CSV, Excel (.xlsx), PDF and Print",
+    "click": "Export",
+    "wait": "Excel (.xlsx)"
+  },
+  {
+    "id": "reports-tally-export",
+    "path": "/reports/tally",
+    "alt": "Export to Tally with the Ledgers, Vouchers and Accounts on default groups cards and the table of Spine documents and their Tally voucher types",
+    "wait": "Tally voucher type"
+  },
+  {
+    "id": "reports-tally-mapping",
+    "path": "/reports/tally/mapping",
+    "alt": "The Account mapping page listing each account's code, name, Spine type and Tally group picker",
+    "wait": "Tally group"
+  },
+  {
+    "id": "reports-journals",
+    "path": "/journals",
+    "alt": "The Journals list with the Total journals and Posted this year cards and a table of journals with number, date, reason, total, status and who posted them",
+    "wait": "Posted this year"
+  },
+  {
+    "id": "reports-new-journal",
+    "path": "/journals",
+    "alt": "The New journal dialog with Date, Reason, lines of account, description, debit and credit, and the Totals row",
+    "click": "New journal",
+    "wait": "Post journal"
+  },
+  {
+    "id": "reports-team-permissions",
+    "path": "/team/teams/{team}",
+    "alt": "A Team's page with its Members, Permissions and History tabs",
+    "wait": "Permissions"
+  }
+]

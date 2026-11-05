@@ -1,0 +1,57 @@
+---
+title: Control who can work on purchases
+description: Choose which Teams can enter, record, pay, void and approve purchases, and who can touch other people's records.
+sidebar:
+  order: 25
+---
+
+Purchases move money out of the business, so each step is its own right. You can let a junior enter bills but not record them, or let someone approve expenses without being able to edit them. Rights for bills, credits, payments, expenses and categories are set separately, and the app and the server check the same list.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners only. Owners always have every right. Field users have a fixed set that no Team can change: they submit, edit and delete their own waiting expenses, and never see bills, credits, payments or Payables.
+</Aside>
+
+<Steps>
+
+1. **Open the Team** — Go to Settings › **Teams** and open the Team.
+
+2. **Open its permissions** — Choose the **Permissions** tab. The rights are grouped, each group collapsed with a switch to grant all of it.
+
+3. **Expand a group** — For purchases: **Manage Vendor Bills**, **Vendor credits**, **Manage Vendor Payments**, **Manage Expenses** and **Manage Expense Categories**. **View payables** is under **Reports & Ledger**.
+
+4. **Switch the rights** — Each right shows its label, a one-line description and its own switch.
+
+5. **Save** — Press **Save changes** and confirm. The Team's members get the new rights at their next request.
+
+</Steps>
+
+<Screenshot id="purchases-team-permissions" alt="A Team's Permissions tab with its groups of rights, each with a switch to grant all of it" />
+
+## Own and others' records
+
+For bills, credits, payments, expenses and categories, editing and deleting come in pairs: one for records the person created (or submitted) and one for everyone else's. With **Create/edit own vendor bills** only, someone can enter and change their own drafts but can't change a colleague's. Each of these also needs the Team's right to open the section — **Open Vendor Bills**, **Open Vendor Credits** or **Open Vendor Payments**. For expenses, **See everyone's expenses** lets someone see other people's; without it, they see only their own.
+
+## Steps that are their own right
+
+These never come with editing, so you choose who has that authority:
+
+- **Record a vendor bill** and **Void a vendor bill**
+- **Manage recurring bills**
+- **Record vendor credits**, **Apply and refund vendor credits** and **Void vendor credits**
+- **Create own vendor payments** (recording a payment), **Delete own vendor payments** and **Delete others' vendor payments**
+- **Approve expense** and **Reject expense** — an approver doesn't need **Edit others' expenses**
+- **Bill expense to customer**
+- **View payables**
+
+A button someone hasn't the right for doesn't show, and the server refuses the action too.
+
+<Aside type="caution">
+  Staff can never approve or reject their own expenses, whatever their Team grants. Someone else must review them. Owners can approve their own.
+</Aside>
+
+<Aside type="tip">
+  A new business starts with one Team, General Staff, that grants all of these. Narrow it, or make a second Team, if you want separate people to enter and approve.
+</Aside>

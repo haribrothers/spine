@@ -14,10 +14,11 @@ import { PayablesCard } from "./widgets/payables-card";
 import { TopExpensesCard } from "./widgets/top-expenses";
 import { ReadyToBillCard } from "./widgets/ready-to-bill";
 import { TaxPeriodCard } from "./widgets/tax-period";
+import { t } from "../../../lib/i18n";
 
 /** US-DASH-18 — Field's feed: events on their assigned jobs (the server filters it). */
 function MyActivity() {
-  return <ActivityFeed title="Recent activity on my jobs" />;
+  return <ActivityFeed title={t("dashboard.widgets.myActivity")} />;
 }
 
 /**
@@ -31,22 +32,22 @@ function MyActivity() {
  * kept out of the registry itself, not just filtered from these maps.
  */
 export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
-  accounts: "Accounts",
-  payables: "Payables",
-  "top-expenses": "Top expenses",
-  "ready-to-bill": "Ready to bill",
-  "tax-period": "Tax this period",
-  "money-in-out": "Money in and out",
-  "pipeline-by-stage": "Pipeline by stage",
-  "retention-held": "Retention held",
-  "jobs-in-progress": "Jobs in progress",
-  "ar-aging": "Receivables aging",
-  "job-profitability": "Job profitability",
-  "invoices-due": "Invoices due this week",
-  "activity-feed": "Recent activity",
-  "my-jobs": "My jobs",
-  "my-expenses": "My expenses",
-  "my-activity": "Recent activity on my jobs",
+  accounts: t("dashboard.widgets.accounts"),
+  payables: t("dashboard.widgets.payables"),
+  "top-expenses": t("dashboard.widgets.topExpenses"),
+  "ready-to-bill": t("dashboard.widgets.readyToBill"),
+  "tax-period": t("dashboard.widgets.taxPeriod"),
+  "money-in-out": t("dashboard.widgets.moneyInOut"),
+  "pipeline-by-stage": t("dashboard.widgets.pipelineByStage"),
+  "retention-held": t("dashboard.widgets.retentionHeld"),
+  "jobs-in-progress": t("dashboard.widgets.jobsInProgress"),
+  "ar-aging": t("dashboard.widgets.arAging"),
+  "job-profitability": t("dashboard.widgets.jobProfitability"),
+  "invoices-due": t("dashboard.widgets.invoicesDue"),
+  "activity-feed": t("dashboard.widgets.activityFeed"),
+  "my-jobs": t("dashboard.widgets.myJobs"),
+  "my-expenses": t("dashboard.widgets.myExpenses"),
+  "my-activity": t("dashboard.widgets.myActivity"),
 };
 
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {

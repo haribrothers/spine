@@ -1,0 +1,37 @@
+---
+title: Compare profitability across jobs
+description: See contract value, billed to date, cost and margin for every job in one chart and table, so you know which work pays.
+sidebar:
+  order: 10
+---
+
+Job profitability puts every job side by side: what it's worth, how much you've billed, what it has cost and the margin left. The chart shows at a glance which jobs are under-billed or eating their margin. The figures are the same ones each job's Costing tab shows.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View job profitability**. The report needs the **Jobs & field** module switched on in **Settings › Modules**; otherwise it isn't listed.</Aside>
+
+<Steps>
+
+1. **Open the report** — Go to **Reports** and choose **Job profitability** under Jobs.
+2. **Choose which jobs** — Under **Jobs**, pick **Active and on hold** (the default), **Active**, **On hold**, **Completed** or **All**. The chart and the table both follow it.
+3. **Read the cards** — The number of **Jobs**, total **Contract value**, **Billed to date** (with its share of contract value) and **Margin** (with its share of revenue).
+4. **Read the chart** — "Contract, billed and cost by job" shows three bars per job: **Contract value**, **Billed to date** and **Cost**, largest contract first, for up to 10 jobs. A marker on the cost bar shows the job's budget. Hover over or focus a job to see its figures, such as "Budget 32,000.00 · 78% used".
+5. **Read the table** — Every job with **Job**, **Status**, **Contract value**, **Billed to date**, **Billed %**, **Budget used**, **Revenue**, **Cost**, **Margin** and **Margin %**, with a **Total** row.
+
+</Steps>
+
+<Screenshot id="reports-job-profitability" alt="Job profitability with the Jobs filter, the figure cards, the Contract, billed and cost by job chart and the table of jobs" />
+
+When there are more than 10 jobs, the chart says "Showing 10 of *n* jobs — the table lists them all." Use **Search jobs** to find one in the table.
+
+A negative margin shows in red with a minus sign, so you can tell it apart without relying on colour.
+
+## Where the figures come from
+
+Revenue and cost come from your books, and billed to date from issued invoices: the same figures as each job's Costing tab. To dig into one job, open it from [Jobs](../../jobs/).
+
+<Aside type="tip">Press **Export** for a CSV with one row per job, including billed to date, billed % and budget used as plain numbers. See [Export or print a report](../export-or-print-a-report/).</Aside>
+
+The dashboard's **Job profitability** and **Jobs in progress** cards draw on the same figures.

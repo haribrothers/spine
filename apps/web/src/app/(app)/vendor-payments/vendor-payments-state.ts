@@ -1,5 +1,6 @@
 import type { TableSort } from "@spine/ui";
 import { PAYMENT_RANGES, PAYMENT_RANGE_LABELS, rangeBounds, type PaymentRange } from "../payments/payments-list-state";
+import { t } from "../../../lib/i18n";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod, type VendorPaymentRow } from "./types";
 
 export { PAYMENT_RANGE_LABELS as VENDOR_PAYMENT_RANGE_LABELS };
@@ -82,7 +83,7 @@ export function filterVendorPayments(list: VendorPaymentRow[], state: VendorPaym
 /** The vendors with a payment, for the Vendor filter. */
 export function paymentVendors(list: VendorPaymentRow[]): { value: string; label: string }[] {
   const seen = new Map<string, string>();
-  for (const p of list) if (!seen.has(p.contactId)) seen.set(p.contactId, p.contactName ?? "Unknown vendor");
+  for (const p of list) if (!seen.has(p.contactId)) seen.set(p.contactId, p.contactName ?? t("vendorPayments.state.unknownVendor"));
   return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }
 
@@ -90,7 +91,7 @@ export function paymentVendors(list: VendorPaymentRow[]): { value: string; label
 export function billsPaidLabel(paidTo: { number: string }[]): string {
   if (paidTo.length === 0) return "—";
   if (paidTo.length <= 2) return paidTo.map((b) => b.number).join(", ");
-  return `${paidTo.length} bills`;
+  return t("vendorPayments.state.billCount", { count: paidTo.length });
 }
 
 /**
@@ -102,9 +103,9 @@ export function paysSentence(lines: { number: string; amount: bigint; balance: b
   const used = lines.filter((l) => l.amount > 0n);
   if (!used.length) return "";
   const total = used.reduce((s, l) => s + l.amount, 0n);
-  const parts = used.map((l) => (l.amount >= l.balance ? `${l.number} in full` : `${money(l.amount)} of ${l.number}`));
-  const list = parts.length <= 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
-  return `${money(total)} pays ${list}.`;
+  const parts = used.map((l) => (l.amount >= l.balance ? t("vendorPayments.state.inFull", { number: l.number }) : t("vendorPayments.state.partOf", { amount: money(l.amount), number: l.number })));
+  const list = parts.length <= 1 ? parts[0] : t("vendorPayments.state.listAnd", { rest: parts.slice(0, -1).join(", "), last: parts.at(-1) ?? "" });
+  return t("vendorPayments.state.pays", { total: money(total), list: list ?? "" });
 }
 
 /** Spreads an amount over bills oldest due first (the dialog's order), each up to its balance. */

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "team-users-list",
+    "path": "/team/users",
+    "alt": "The Users page with the Active, Deactivated and Invites tabs, the People, Staff without a Team and Pending invites cards, and the list of people with their role, Teams and Last active",
+    "wait": "Invite people"
+  },
+  {
+    "id": "team-invite-people",
+    "path": "/team/users",
+    "alt": "The Invite people dialog with the Emails box, the Staff and Field role choice and the Teams they'll join list",
+    "click": "Invite people",
+    "wait": "Owners are made by promoting Staff, not by invite."
+  },
+  {
+    "id": "team-invites-tab",
+    "path": "/team/users?tab=invites",
+    "alt": "The Invites tab of Users with each invite's email, role, Teams on joining, who invited them and when it expires",
+    "wait": "Teams on joining"
+  },
+  {
+    "id": "team-teams-list",
+    "path": "/team/teams",
+    "alt": "The Teams list with the Teams, Staff on no Team and Staff on several Teams cards, and each Team's members, Works in and Permissions",
+    "wait": "Staff on several Teams"
+  },
+  {
+    "id": "team-create-team",
+    "path": "/team/teams",
+    "alt": "The Create Team dialog with the Name, Description and Start from fields",
+    "click": "Create Team",
+    "wait": "Start from"
+  },
+  {
+    "id": "team-team-members",
+    "path": "/team/teams/{team}",
+    "alt": "A Team's page on the Members tab with each member's other Teams, when they were last active and the Add people button",
+    "wait": "Add people"
+  },
+  {
+    "id": "team-add-people",
+    "path": "/team/teams/{team}",
+    "alt": "The Add people dialog listing Staff to add with their current Teams",
+    "click": "Add people",
+    "wait": "Owners and Field aren't listed — only Staff are on Teams."
+  },
+  {
+    "id": "team-team-permissions",
+    "path": "/team/teams/{team}?tab=permissions",
+    "alt": "A Team's Permissions tab with the Sections card, grouped permissions with their counts, and the What members will open panel",
+    "wait": "What members will open"
+  },
+  {
+    "id": "team-team-history",
+    "path": "/team/teams/{team}?tab=history",
+    "alt": "A Team's History tab listing who changed the Team and how, with Open in audit log",
+    "wait": "Open in audit log"
+  },
+  {
+    "id": "team-audit-log",
+    "path": "/team/audit-log",
+    "alt": "The Audit log page with the From, To, Person, Record type and Action filters, Export CSV and the When, Who, Action, Record and Details columns",
+    "wait": "Export CSV"
+  }
+]

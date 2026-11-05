@@ -1,0 +1,45 @@
+---
+title: Set meeting defaults for the business
+description: Choose which meetings the dashboard shows and how long before a meeting Spine reminds people.
+sidebar:
+  order: 16
+---
+
+Two settings shape meetings for everyone: which meetings each person's dashboard shows, and the default reminder before a meeting starts. Each person can still pick their own reminder time.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Both panes only show while the **Leads & meetings** module is on (**Settings › Modules**).</Aside>
+
+## Choose which meetings the dashboard shows
+
+<Steps>
+
+1. **Open Settings › Upcoming meetings** — Open your user menu, choose **Settings**, and pick **Upcoming meetings** under **Sales & meetings**. It says "Choose which meetings the dashboard's "Today" card shows."
+
+2. **Pick one** — **Only my meetings**: "Each person's dashboard shows only the meetings they organize." Or **Every org meeting**: "Everyone's dashboard shows every meeting in the org, not just their own — useful for a small team that plans as one calendar."
+
+3. **Press Save** — A "Saved" message appears.
+
+</Steps>
+
+<Screenshot id="settings-upcoming-meetings" alt="Settings, Upcoming meetings: Only my meetings and Every org meeting, with Save" />
+
+"Field users always see only their own meetings, regardless of this setting."
+
+## Set the default meeting reminder
+
+<Steps>
+
+1. **Open Settings › Meeting reminders** — Pick **Meeting reminders** under **Sales & meetings**. It sets the "Default lead time for the "meeting starting soon" notification, before someone has set their own override."
+
+2. **Pick a time** — **5 minutes before**, **15 minutes before**, **30 minutes before** or **60 minutes before**. It's 15 minutes until you change it.
+
+3. **Press Save** — A "Saved" message appears.
+
+</Steps>
+
+<Aside type="tip">"Anyone can choose their own in Settings › Your account › Notifications." See [Choose how Spine notifies you](../notifications/).</Aside>
+
+For the calendar itself, see [Meetings](../../meetings/).

@@ -4,11 +4,18 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, DatePicker, MoneyInput, Spinner, StatCard, StatusChip } from "@spine/ui";
 import { OPENING_ADJUSTMENT_NOTE, dayBefore, type OpeningBalanceAccountRow, type OpeningBalancesView } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
-import { formatMoney } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 
-const TYPE_LABELS: Record<OpeningBalanceAccountRow["type"], string> = { asset: "Assets", liability: "Liabilities", equity: "Equity", income: "Income", expense: "Expenses" };
+const TYPE_LABELS: Record<OpeningBalanceAccountRow["type"], string> = {
+  asset: t("openingBalances.accounts.typeAsset"),
+  liability: t("openingBalances.accounts.typeLiability"),
+  equity: t("openingBalances.accounts.typeEquity"),
+  income: t("openingBalances.accounts.typeIncome"),
+  expense: t("openingBalances.accounts.typeExpense"),
+};
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 
 type Entered = Record<string, { debit: bigint; credit: bigint }>;
 
@@ -19,6 +26,7 @@ type Entered = Record<string, { debit: bigint; credit: bigint }>;
  * difference sits in Opening Balance Adjustments.
  */
 export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningBalancesView; currency: string; onSaved: (view: OpeningBalancesView) => void }) {
+  const t = useT();
   const locked = view.status === "locked";
   const [cutover, setCutover] = useState(view.cutoverDate);
   const [entered, setEntered] = useState<Entered>({});
@@ -64,7 +72,7 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
       onSaved(await apiClient.put<OpeningBalancesView>("/opening-balances", { cutoverDate: cutover, lines }));
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the opening balances. Try again.");
+      setError(err instanceof Error ? err.message : t("openingBalances.accounts.saveError"));
     } finally {
       setSaving(false);
     }
@@ -75,13 +83,13 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Cutover date" value={day(cutover)} trend={{ direction: "neutral", label: `balances as of ${day(dayBefore(cutover))}` }} />
-        <StatCard label="Debits" value={money(debits)} />
-        <StatCard label="Credits" value={money(credits)} />
+        <StatCard label={t("openingBalances.accounts.cutoverDate")} value={day(cutover)} trend={{ direction: "neutral", label: t("openingBalances.accounts.balancesAsOf", { date: day(dayBefore(cutover)) }) }} />
+        <StatCard label={t("openingBalances.accounts.debits")} value={money(debits)} />
+        <StatCard label={t("openingBalances.accounts.credits")} value={money(credits)} />
         <div className="rounded-lg border border-border bg-surface p-5" data-testid="opening-adjustment">
-          <p className="text-[14px] font-medium text-on-surface">Opening Balance Adjustments</p>
+          <p className="text-[14px] font-medium text-on-surface">{t("openingBalances.common.adjustments")}</p>
           <p className={`mt-2 text-[28px] font-semibold tabular-nums ${adjustment === 0n ? "text-paid" : "text-due-soon"}`}>{money(adjustment < 0n ? -adjustment : adjustment)}</p>
-          <p className="mt-1 text-[13px] text-on-surface-muted">{adjustment === 0n ? "nothing left to explain" : "your old books don't balance yet"}</p>
+          <p className="mt-1 text-[13px] text-on-surface-muted">{adjustment === 0n ? t("openingBalances.common.nothingLeft") : t("openingBalances.common.notBalanced")}</p>
         </div>
       </div>
 
@@ -97,10 +105,10 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
             disabled={locked}
           />
         </div>
-        {locked ? <StatusChip status="paid">Locked</StatusChip> : <StatusChip status="due-soon">Draft — not locked</StatusChip>}
+        {locked ? <StatusChip status="paid">{t("openingBalances.common.locked")}</StatusChip> : <StatusChip status="due-soon">{t("openingBalances.accounts.draft")}</StatusChip>}
         {!locked && (
           <Button className="ml-auto" onClick={save} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save balances"}
+            {saving ? <Spinner size="sm" /> : t("openingBalances.accounts.save")}
           </Button>
         )}
       </div>
@@ -111,7 +119,7 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
       )}
       {saved && (
         <Alert variant="success">
-          <AlertDescription>Saved. The Balance Sheet on {day(dayBefore(cutover))} shows these balances.</AlertDescription>
+          <AlertDescription>{t("openingBalances.accounts.saved", { date: day(dayBefore(cutover)) })}</AlertDescription>
         </Alert>
       )}
 
@@ -119,10 +127,10 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
         <table className="w-full text-[14px]" data-testid="opening-grid">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
-              <th className="px-4 py-3 font-medium">Code</th>
-              <th className="px-4 py-3 font-medium">Account</th>
-              <th className="px-4 py-3 text-right font-medium">Debit</th>
-              <th className="px-4 py-3 text-right font-medium">Credit</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.colCode")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.colAccount")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.colDebit")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.colCredit")}</th>
             </tr>
           </thead>
           <tbody>
@@ -149,12 +157,12 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
                         <>
                           <td className="px-4 py-2">
                             <div className="ml-auto w-36">
-                              <MoneyInput aria-label={`${a.name} debit`} value={value.debit} onValueChange={(v) => set(a.accountId, "debit", v)} currency={currency} disabled={locked} />
+                              <MoneyInput aria-label={t("openingBalances.accounts.debitAria", { name: a.name })} value={value.debit} onValueChange={(v) => set(a.accountId, "debit", v)} currency={currency} disabled={locked} />
                             </div>
                           </td>
                           <td className="px-4 py-2">
                             <div className="ml-auto w-36">
-                              <MoneyInput aria-label={`${a.name} credit`} value={value.credit} onValueChange={(v) => set(a.accountId, "credit", v)} currency={currency} disabled={locked} />
+                              <MoneyInput aria-label={t("openingBalances.accounts.creditAria", { name: a.name })} value={value.credit} onValueChange={(v) => set(a.accountId, "credit", v)} currency={currency} disabled={locked} />
                             </div>
                           </td>
                         </>
@@ -168,7 +176,7 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
           <tfoot>
             <tr className="border-t border-border-strong font-semibold text-on-surface">
               <td />
-              <td className="px-4 py-3">Totals</td>
+              <td className="px-4 py-3">{t("openingBalances.common.totals")}</td>
               <td className="px-4 py-3 text-right tabular-nums">{money(debits)}</td>
               <td className="px-4 py-3 text-right tabular-nums">{money(credits)}</td>
             </tr>
@@ -178,7 +186,10 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
       {adjustment !== 0n && (
         <Alert variant="warning">
           <AlertDescription>
-            Opening Balance Adjustments {money(adjustment < 0n ? -adjustment : adjustment)} — {OPENING_ADJUSTMENT_NOTE.charAt(0).toLowerCase() + OPENING_ADJUSTMENT_NOTE.slice(1)}
+            {t("openingBalances.accounts.adjustmentNote", {
+              amount: money(adjustment < 0n ? -adjustment : adjustment),
+              note: OPENING_ADJUSTMENT_NOTE.charAt(0).toLowerCase() + OPENING_ADJUSTMENT_NOTE.slice(1),
+            })}
           </AlertDescription>
         </Alert>
       )}

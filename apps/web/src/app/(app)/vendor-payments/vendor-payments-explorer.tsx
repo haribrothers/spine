@@ -12,6 +12,7 @@ import { replaceQuery } from "../../../lib/replace-query";
 import { filenameFrom, saveBlob } from "../../../lib/save-file";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
+import { useT } from "../../../lib/i18n";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
 import { PAYMENT_RANGES, type PaymentRange } from "../payments/payments-list-state";
 import { RecordVendorPaymentDialog } from "./record-vendor-payment-dialog";
@@ -43,6 +44,7 @@ const RANGE_OPTIONS = PAYMENT_RANGES.map((r) => ({ value: r, label: VENDOR_PAYME
  * `?contactId=<vendor>&pay=1` opens the record dialog on that vendor.
  */
 export function VendorPaymentsExplorer() {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -91,7 +93,7 @@ export function VendorPaymentsExplorer() {
       setUpdatedAt(Date.now());
       setNow(Date.now());
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Couldn't load vendor payments.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("vendorPayments.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -124,11 +126,10 @@ export function VendorPaymentsExplorer() {
 
   const today = useMemo(() => new Date(now), [now]);
   const rows = useMemo(() => (payments ? filterVendorPayments(payments, state, today, yearStart) : null), [payments, state, today, yearStart]);
-  const vendors = useMemo(() => [{ value: ALL, label: "All vendors" }, ...(payments ? paymentVendors(payments) : [])], [payments]);
+  const vendors = useMemo(() => [{ value: ALL, label: t("vendorPayments.explorer.allVendors") }, ...(payments ? paymentVendors(payments) : [])], [payments]);
   const filtersOn = hasVendorPaymentFilters(state);
   const clearAll = () => update({ q: "", vendor: "", method: [], range: "all" });
   const money = (v: string) => formatMoney(BigInt(v), summary?.currency ?? "USD");
-  const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
   async function download(p: VendorPaymentRow) {
     setActionError(null);
@@ -136,7 +137,7 @@ export function VendorPaymentsExplorer() {
       const { blob, headers } = await apiClient.download(`/vendor-payments/${p.id}/remittance.pdf`);
       saveBlob(blob, filenameFrom(headers, `remittance-${p.number ?? "payment"}.pdf`));
     } catch (err) {
-      setActionError({ title: "Couldn't download the remittance advice.", message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("vendorPayments.explorer.downloadFailed"), message: err instanceof Error ? err.message : t("vendorPayments.explorer.tryAgain") });
     }
   }
 
@@ -151,25 +152,25 @@ export function VendorPaymentsExplorer() {
   const search = (
     <div className="relative w-full max-w-md">
       <Search size={16} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" />
-      <Input value={state.q} onChange={(e) => update({ q: e.target.value })} placeholder="Search numbers, references, vendors or bills" aria-label="Search vendor payments" className="pl-9" />
+      <Input value={state.q} onChange={(e) => update({ q: e.target.value })} placeholder={t("vendorPayments.explorer.searchPlaceholder")} aria-label={t("vendorPayments.explorer.searchLabel")} className="pl-9" />
     </div>
   );
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="vendor-payment-stats">
-        <StatCard label="Paid this month" value={summary ? money(summary.paidThisMonth) : "—"} trend={{ direction: "neutral", label: summary ? count(summary.paidThisMonthCount, "payment") : "" }} className="h-full" />
-        <StatCard label="Paid last month" value={summary ? money(summary.paidLastMonth) : "—"} trend={{ direction: "neutral", label: summary ? count(summary.paidLastMonthCount, "payment") : "" }} className="h-full" />
+        <StatCard label={t("vendorPayments.explorer.paidThisMonth")} value={summary ? money(summary.paidThisMonth) : "—"} trend={{ direction: "neutral", label: summary ? t("vendorPayments.explorer.payments", { count: summary.paidThisMonthCount }) : "" }} className="h-full" />
+        <StatCard label={t("vendorPayments.explorer.paidLastMonth")} value={summary ? money(summary.paidLastMonth) : "—"} trend={{ direction: "neutral", label: summary ? t("vendorPayments.explorer.payments", { count: summary.paidLastMonthCount }) : "" }} className="h-full" />
         <button
           type="button"
           className="h-full rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           onClick={() => router.push("/vendor-bills?card=overdue")}
-          aria-label="To pay — open overdue vendor bills"
+          aria-label={t("vendorPayments.explorer.toPayLabel")}
         >
           <StatCard
-            label="To pay"
+            label={t("vendorPayments.explorer.toPay")}
             value={summary ? money(summary.toPay) : "—"}
-            trend={{ direction: "neutral", label: summary ? `${count(summary.toPayCount, "overdue bill")} · open Vendor bills` : "" }}
+            trend={{ direction: "neutral", label: summary ? t("vendorPayments.explorer.toPayTrend", { bills: t("vendorPayments.explorer.overdueBills", { count: summary.toPayCount }) }) : "" }}
             tone={summary && BigInt(summary.toPay) > 0n ? "critical" : "default"}
             className="h-full"
           />
@@ -179,29 +180,29 @@ export function VendorPaymentsExplorer() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Combobox options={vendors} value={state.vendor || ALL} onValueChange={(v) => update({ vendor: v === ALL ? "" : v })} placeholder="All vendors" aria-label="Filter by vendor" className="w-56" />
-            <MultiSelect options={METHOD_OPTIONS} value={state.method} onValueChange={(v) => update({ method: v as PaymentMethod[] })} placeholder="Method" aria-label="Filter by method" className="w-40" />
-            <Combobox options={RANGE_OPTIONS} value={state.range} onValueChange={(v) => update({ range: v as PaymentRange })} aria-label="Filter by date" className="w-44" />
+            <Combobox options={vendors} value={state.vendor || ALL} onValueChange={(v) => update({ vendor: v === ALL ? "" : v })} placeholder={t("vendorPayments.explorer.allVendors")} aria-label={t("vendorPayments.explorer.filterByVendor")} className="w-56" />
+            <MultiSelect options={METHOD_OPTIONS} value={state.method} onValueChange={(v) => update({ method: v as PaymentMethod[] })} placeholder={t("vendorPayments.explorer.methodPlaceholder")} aria-label={t("vendorPayments.explorer.filterByMethod")} className="w-40" />
+            <Combobox options={RANGE_OPTIONS} value={state.range} onValueChange={(v) => update({ range: v as PaymentRange })} aria-label={t("vendorPayments.explorer.filterByDate")} className="w-44" />
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("vendorPayments.explorer.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {updatedAt !== null && <span className="whitespace-nowrap text-[12px] text-on-surface-muted">{refreshing ? "Updating…" : updatedLabel(updatedAt, now)}</span>}
+            {updatedAt !== null && <span className="whitespace-nowrap text-[12px] text-on-surface-muted">{refreshing ? t("vendorPayments.explorer.updating") : updatedLabel(updatedAt, now)}</span>}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("vendorPayments.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("vendorPayments.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             {canCreate && (
               <Button onClick={() => setRecordOpen(true)}>
                 <Plus size={14} aria-hidden />
-                Record payment
+                {t("vendorPayments.explorer.recordPayment")}
               </Button>
             )}
           </div>
@@ -209,9 +210,9 @@ export function VendorPaymentsExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("vendorPayments.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("vendorPayments.explorer.tryAgainButton")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -228,20 +229,20 @@ export function VendorPaymentsExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<HandCoins />}
-                title="No vendor payments match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("vendorPayments.explorer.noMatchTitle")}
+                description={t("vendorPayments.explorer.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("vendorPayments.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<HandCoins />}
-                title="No vendor payments recorded yet"
-                description="Record a payment against one or more of a vendor's recorded bills."
-                action={canCreate ? <Button onClick={() => setRecordOpen(true)}>Record payment</Button> : undefined}
+                title={t("vendorPayments.explorer.emptyTitle")}
+                description={t("vendorPayments.explorer.emptyDescription")}
+                action={canCreate ? <Button onClick={() => setRecordOpen(true)}>{t("vendorPayments.explorer.recordPayment")}</Button> : undefined}
               />
             )}
           </div>
@@ -264,7 +265,7 @@ export function VendorPaymentsExplorer() {
         onOpenChange={setRecordOpen}
         initialContactId={payFor}
         onRecorded={(p) => {
-          showToast(`${p.number ?? "Payment"} recorded`, "It's posted to your books, and the bills it paid owe less.");
+          showToast(t("vendorPayments.explorer.recordedToast", { number: p.number ?? t("vendorPayments.explorer.payment") }), t("vendorPayments.explorer.recordedToastDescription"));
           router.push(`/vendor-payments/${p.id}`);
         }}
       />

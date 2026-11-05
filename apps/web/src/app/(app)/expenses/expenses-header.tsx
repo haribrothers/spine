@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AppShellHeader, cn } from "@spine/ui";
 import { useCapability } from "../../../lib/capabilities-context";
+import { t as translate, useT } from "../../../lib/i18n";
 
 /** US-PUR-19 — who may open Expenses › Categories (Owners have every capability). */
 export function useCanManageExpenseCategories(): boolean {
@@ -13,8 +14,8 @@ export function useCanManageExpenseCategories(): boolean {
 
 export function expensesDescription(canManageCategories: boolean): string {
   return canManageCategories
-    ? "Submit an expense for approval. Categories are managed from Expenses › Categories."
-    : "Submit an expense for approval.";
+    ? translate("expenses.header.descriptionWithCategories")
+    : translate("expenses.header.description");
 }
 
 /**
@@ -22,20 +23,21 @@ export function expensesDescription(canManageCategories: boolean): string {
  * Categories tab shows only to members who can manage categories.
  */
 export function ExpensesHeader({ active }: { active: "expenses" | "categories" }) {
+  const t = useT();
   const canManage = useCanManageExpenseCategories();
   const tabs = [
-    { key: "expenses", label: "Expenses", href: "/expenses" },
-    ...(canManage ? [{ key: "categories", label: "Categories", href: "/expenses/categories" }] : []),
+    { key: "expenses", label: t("expenses.common.expenses"), href: "/expenses" },
+    ...(canManage ? [{ key: "categories", label: t("expenses.common.categories"), href: "/expenses/categories" }] : []),
   ];
   return (
     <>
       <AppShellHeader
-        breadcrumb={active === "categories" ? [{ label: "Purchases" }, { label: "Expenses", href: "/expenses" }, { label: "Categories" }] : [{ label: "Purchases" }, { label: "Expenses" }]}
-        title="Expenses"
+        breadcrumb={active === "categories" ? [{ label: t("expenses.common.purchases") }, { label: t("expenses.common.expenses"), href: "/expenses" }, { label: t("expenses.common.categories") }] : [{ label: t("expenses.common.purchases") }, { label: t("expenses.common.expenses") }]}
+        title={t("expenses.common.expenses")}
         description={expensesDescription(canManage)}
       />
       {tabs.length > 1 && (
-        <nav aria-label="Expenses sections" className="mb-4 flex gap-6 border-b border-border">
+        <nav aria-label={t("expenses.header.sectionsAria")} className="mb-4 flex gap-6 border-b border-border">
           {tabs.map((tab) => (
             <Link
               key={tab.key}

@@ -2,6 +2,7 @@
 
 import * as RechartsPrimitive from "recharts";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./chart";
 
 export interface DonutChartSegment {
@@ -46,10 +47,11 @@ export interface DonutChartProps {
  * for anything else.
  */
 export function DonutChart({ segments, centerLabel, emptyState, legend = true, "aria-label": ariaLabel, className }: DonutChartProps) {
+  const t = useT();
   const visible = segments.filter((s) => s.value > 0);
 
   if (visible.length === 0) {
-    return <div className={cn("flex h-40 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? "No data."}</div>;
+    return <div className={cn("flex h-40 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? t("ui.chart.noData")}</div>;
   }
 
   const config: ChartConfig = Object.fromEntries(segments.map((s) => [s.key, { label: s.label, color: s.color }]));

@@ -1,0 +1,41 @@
+---
+title: Raise a variation order
+description: Quote a change to a job's scope as a linked variation, and send it to the customer for acceptance.
+sidebar:
+  order: 9
+---
+
+When the customer asks for extra work, or the scope changes, raise a variation order. It's a quote linked to the job, so the change is priced, accepted and billed on its own, and the job's history shows where the extra money came from.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create own variation orders**. Sending the variation quote to the customer needs **Send a quote**.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs**, open the job and choose the **Variation orders** tab.
+2. **Start the variation** — Press **Raise variation order** on the tab, or **Raise variation** at the top of the job.
+3. **Add the lines** — In "Raise a variation order", use **Add item**, **Add heading** and **Add text line**. Each item has a name, **Qty**, **Unit price**, **Discount %** and **Tax**, and you can tick **Price includes tax**. Use **Prefill from catalogue…** to copy an item from your catalogue.
+4. **Create it** — Press **Create variation order**. A draft variation quote, linked to the job, is listed on the tab.
+5. **Send it** — Click the variation's quote number to open it, then send it to the customer as you would any quote.
+</Steps>
+
+<Screenshot id="jobs-raise-variation" alt="The Raise a variation order dialog with the quote line editor for items, headings and text lines" />
+
+Every item line needs a name. If one doesn't have one, you see "Every line needs a name." and nothing is created.
+
+## Following it on the job
+
+Each variation on the **Variation orders** tab shows its quote number, its quote status (**Draft**, **Sent**, **Accepted** or **Rejected**), when it was raised and its total. The tab's count shows how many variations the job has.
+
+<Screenshot id="jobs-variations" alt="A job's Variation orders tab listing each variation quote with its status, raised date and total" />
+
+## What happens next
+
+- The customer accepts or declines the variation quote in the usual ways: from the quote link you send, or in person with your crew in the field app.
+- When it's accepted, the office gets a notification.
+- An accepted variation doesn't change the job by itself. Apply it to add its total to the contract value: see [Apply an accepted variation order](../apply-a-variation-order/).
+
+For sending, following up and revising the quote, see the [Quotes](../../quotes/) guide.
+
+<Aside type="tip">There's no edit or delete action for a variation order itself. To change a draft, open its quote and edit the quote.</Aside>

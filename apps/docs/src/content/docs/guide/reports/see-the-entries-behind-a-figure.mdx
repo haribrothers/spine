@@ -1,0 +1,36 @@
+---
+title: See the entries behind a figure
+description: Click an account on a report to list the journal entries behind its figure, then open the document each one came from.
+sidebar:
+  order: 6
+---
+
+Every figure on a report is a total of journal entries, and every entry was posted by a document: an invoice, a payment, a bill, an expense or a journal. When a number looks wrong, click it. Spine lists the entries that make it up, and each one opens the document that posted it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View ledger / journals**. Staff without it can still read the reports their Team grants, but the account names aren't clickable.</Aside>
+
+<Steps>
+
+1. **Open a report** — For example **Reports › Profit & Loss**, **Balance Sheet** or **Trial Balance**. The note under the table reads "Click an account to see every journal entry behind its figure."
+2. **Click the account** — Accounts show as code and name, such as "4100 · Sales — Services". A dialog opens titled with the account.
+3. **Read the entries** — Each entry in the report's range shows its description, its date, and its amount marked **Dr** (debit) or **Cr** (credit).
+4. **Open the source** — Click an entry from an invoice, payment, bill or expense to open that document.
+
+</Steps>
+
+<Screenshot id="reports-drilldown" alt="Profit & Loss with the note Click an account to see every journal entry behind its figure above the income and expenses table" />
+
+If nothing was posted to the account in the range, the dialog says "No journal entries posted to this account in range."
+
+## Other places you can drill down
+
+- **Cash Flow**: click a line to see the accounts behind it. A positive amount brought cash in.
+- **Expenses by category**: click a category to see every journal entry behind it.
+- **Sales by customer**, **Sales by item** and **Purchases by vendor**: click a row to list its invoices or bills.
+
+<Aside type="tip">Your bookkeeper can investigate with **View ledger / journals** alone. That right opens the entries, the [General ledger, Day book and Journals](../see-the-general-ledger-and-day-book/), but not Profit & Loss or the Balance Sheet. See [Give your accountant access to reports](../give-your-accountant-access/).</Aside>
+
+Entries are never edited. If one is wrong, correct the document that posted it, for example by voiding or crediting an invoice, or [post an adjusting journal](../post-an-adjusting-journal/).

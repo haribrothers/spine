@@ -1,0 +1,72 @@
+/* US-SITE-02 — the home page's parts; every value is a token from tokens.css. */
+.hero {
+  text-align: center;
+}
+.workflow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0;
+}
+.workflow li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--sl-color-accent);
+  font-weight: 600;
+}
+.workflow li::before {
+  content: none;
+}
+.workflow li {
+  background: var(--sl-color-accent-low);
+  border-radius: var(--spine-radius-lg);
+  padding: 0.25rem 0.875rem;
+}
+.workflow li span {
+  color: var(--sl-color-gray-3);
+  margin-inline-end: -0.25rem;
+}
+.workflow .workflow__books {
+  background: var(--sl-color-green-low);
+  color: var(--sl-color-green);
+}
+.home-shot {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: var(--spine-radius-lg);
+  overflow: hidden;
+  margin: 2.5rem 0;
+}
+.home-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.home-shot__placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 18rem;
+  color: var(--sl-color-gray-3);
+  background: var(--sl-color-gray-7);
+}
+:root[data-theme="light"] .home-shot__dark,
+:root:not([data-theme="light"]) .home-shot__light {
+  display: none;
+}
+.card {
+  border-radius: var(--spine-radius-lg);
+}
+.home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--sl-color-hairline);
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-sm);
+  padding-block: 1.5rem;
+  margin-top: 3rem;
+}

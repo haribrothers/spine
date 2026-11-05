@@ -33,17 +33,17 @@ import { ServerErrorState } from "../errors/server-error-state";
 import { TodayJobCard } from "./job-card";
 import { CARD } from "../../lib/card";
 import { TodayLargeTitle, useTodayAndroidHeader } from "./today-header";
+import { t as translate, useT } from "../../lib/i18n";
 
 const KPI_CARD_WIDTH = 168;
 const KPI_CARD_GAP = 12;
-const PERIOD_WORD: Record<TodayPeriod, string> = { week: "week", month: "month", year: "year" };
-
-const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+const periodWord = (period: TodayPeriod): string => translate(`mobileWork.today.period.${period}`);
 
 /** US-MOB-07 — what still works offline, and how fresh the saved jobs are. */
 export function offlineMessage(savedAt: number | null, locale: string): string {
-  const base = "Photos, expenses and milestone updates are saved on this phone and sync when you're back online.";
-  return savedAt ? `${base} Showing jobs as of ${new Date(savedAt).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}.` : base;
+  return savedAt
+    ? translate("mobileWork.today.offlineMessageSavedAt", { time: new Date(savedAt).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" }) })
+    : translate("mobileWork.today.offlineMessage");
 }
 
 interface Kpi {
@@ -57,24 +57,26 @@ interface Kpi {
 
 /** US-MOB-03 — the swipeable cards: milestones due and overdue, photos, my expenses. No other money (D-048). */
 export function todayKpis(summary: TodaySummary, waitingPhotos: number, format: BusinessFormat, now: Date = new Date()): Kpi[] {
-  const word = PERIOD_WORD[summary.period];
+  const word = periodWord(summary.period);
   const cards: Kpi[] = [];
   const m = summary.milestones;
   if (m) {
     cards.push({
       key: "due",
-      label: `Due this ${word}`,
+      label: translate("mobileWork.today.kpi.dueLabel", { period: word }),
       value: String(m.due),
-      trend: `${plural(m.due, "milestone", "milestones")}${m.nextDueDate ? ` · next ${shortWhen(m.nextDueDate, format.locale, now)}` : ""}`,
+      trend: `${translate("mobileWork.today.kpi.milestones", { count: m.due })}${m.nextDueDate ? translate("mobileWork.today.kpi.nextDue", { when: shortWhen(m.nextDueDate, format.locale, now) }) : ""}`,
       icon: Flag,
       tone: "dueSoon",
     });
     const late = m.oldestOverdueDate ? Math.max(1, -Math.round((calendarDay(m.oldestOverdueDate).getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86_400_000)) : 0;
     cards.push({
       key: "overdue",
-      label: "Overdue",
+      label: translate("mobileWork.today.kpi.overdueLabel"),
       value: String(m.overdue),
-      trend: m.overdue ? `${plural(m.overdue, "milestone", "milestones")} · ${late} ${plural(late, "day", "days")} late` : "Nothing late",
+      trend: m.overdue
+        ? translate("mobileWork.today.kpi.overdueTrend", { milestones: translate("mobileWork.today.kpi.milestones", { count: m.overdue }), late: translate("mobileWork.today.kpi.daysLate", { count: late }) })
+        : translate("mobileWork.today.kpi.nothingLate"),
       icon: TriangleAlert,
       tone: "overdue",
     });
@@ -82,9 +84,9 @@ export function todayKpis(summary: TodaySummary, waitingPhotos: number, format: 
   if (summary.photos) {
     cards.push({
       key: "photos",
-      label: "Photos",
+      label: translate("mobileWork.today.kpi.photosLabel"),
       value: String(summary.photos.taken + waitingPhotos),
-      trend: waitingPhotos ? `taken · ${waitingPhotos} waiting` : `taken this ${word}`,
+      trend: waitingPhotos ? translate("mobileWork.today.kpi.photosTakenWaiting", { n: waitingPhotos }) : translate("mobileWork.today.kpi.photosTakenThis", { period: word }),
       icon: Images,
       tone: "primary",
     });
@@ -92,9 +94,9 @@ export function todayKpis(summary: TodaySummary, waitingPhotos: number, format: 
   const e = summary.expenses;
   cards.push({
     key: "expenses",
-    label: "My expenses",
+    label: translate("mobileWork.today.kpi.expensesLabel"),
     value: money(e.total, { currency: e.currency, locale: format.locale }),
-    trend: e.awaitingApproval ? `${e.awaitingApproval} waiting for approval` : `${e.count} this ${word}`,
+    trend: e.awaitingApproval ? translate("mobileWork.today.kpi.expensesWaiting", { n: e.awaitingApproval }) : translate("mobileWork.today.kpi.expensesCount", { n: e.count, period: word }),
     icon: Wallet,
     tone: "paid",
   });
@@ -102,6 +104,7 @@ export function todayKpis(summary: TodaySummary, waitingPhotos: number, format: 
 }
 
 function WelcomeCard({ summary, loading, period }: { summary: TodaySummary | null; loading: boolean; period: TodayPeriod }) {
+  const t = useT();
   const colors = useNativeColors();
   const { member } = useSignedInSession();
   const format = useBusinessFormat();
@@ -111,7 +114,7 @@ function WelcomeCard({ summary, loading, period }: { summary: TodaySummary | nul
       <View className="w-full">
         <Text className="text-[26px] font-semibold text-on-surface dark:text-on-surface-dark">{greeting(member)}</Text>
         <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-          {member.organizationName} · {longDate(new Date(), format.locale)}
+          {t("mobileWork.today.welcome.subtitle", { organization: member.organizationName, date: longDate(new Date(), format.locale) })}
         </Text>
       </View>
       {loading ? (
@@ -119,9 +122,9 @@ function WelcomeCard({ summary, loading, period }: { summary: TodaySummary | nul
       ) : m ? (
         <>
           <GaugeIndicator progress={m.total ? m.done / m.total : 0} trackColor={colors.overlaySubtle} fillGradient={colors.gradients.primary} textColorClass="text-on-surface dark:text-on-surface-dark" />
-          <View className="items-center gap-0.5" testID="today-gauge" accessible accessibilityLabel={`Milestones this ${PERIOD_WORD[period]}: ${m.done} of ${m.total} done`}>
-            <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">Milestones this {PERIOD_WORD[period]}</Text>
-            <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{m.total ? `${m.done} of ${m.total} done` : "None due"}</Text>
+          <View className="items-center gap-0.5" testID="today-gauge" accessible accessibilityLabel={t("mobileWork.today.welcome.gaugeA11y", { period: periodWord(period), done: m.done, total: m.total })}>
+            <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.today.welcome.gaugeLabel", { period: periodWord(period) })}</Text>
+            <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{m.total ? t("mobileWork.today.welcome.gaugeDone", { done: m.done, total: m.total }) : t("mobileWork.today.welcome.noneDue")}</Text>
           </View>
         </>
       ) : null}
@@ -160,6 +163,7 @@ function NextMeetingCard({ meeting, locale, onOpen }: { meeting: Meeting; locale
  * (D-198); Leads & meetings off hides the meeting.
  */
 export function TodayScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const format = useBusinessFormat();
@@ -194,11 +198,11 @@ export function TodayScreen() {
   const firstSite = forToday.find((job) => job.siteAddress)?.siteAddress ?? null;
   const actions = [
     ...(modules.jobsField
-      ? [{ label: "Add photo", icon: Camera, onPress: () => router.push(`/camera?mode=photos${(forToday[0] ?? jobs.data?.[0]) ? `&jobId=${(forToday[0] ?? jobs.data![0])!.id}` : ""}`) }]
+      ? [{ label: t("mobileWork.today.actions.addPhoto"), icon: Camera, onPress: () => router.push(`/camera?mode=photos${(forToday[0] ?? jobs.data?.[0]) ? `&jobId=${(forToday[0] ?? jobs.data![0])!.id}` : ""}`) }]
       : []),
-    { label: "Log expense", icon: ReceiptText, onPress: () => router.push("/expense-new") },
-    { label: "Scan receipt", icon: ScanLine, onPress: () => router.push("/expense-new?scan=1") },
-    ...(modules.jobsField ? [{ label: "Directions", icon: Navigation, disabled: !firstSite, onPress: () => firstSite && void openDirections(firstSite) }] : []),
+    { label: t("mobileWork.today.actions.logExpense"), icon: ReceiptText, onPress: () => router.push("/expense-new") },
+    { label: t("mobileWork.today.actions.scanReceipt"), icon: ScanLine, onPress: () => router.push("/expense-new?scan=1") },
+    ...(modules.jobsField ? [{ label: t("mobileWork.today.actions.directions"), icon: Navigation, disabled: !firstSite, onPress: () => firstSite && void openDirections(firstSite) }] : []),
   ];
 
   const content = unreachable ? (
@@ -213,7 +217,7 @@ export function TodayScreen() {
         <View testID="offline-banner" accessibilityRole="alert" className="flex-row items-start gap-3 rounded-lg bg-draft-bg px-4 py-3.5 dark:bg-draft-bg-dark">
           <CloudOff size={20} color={colors.onSurfaceMuted} />
           <View className="flex-1 gap-1">
-            <Text className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">{"You're offline"}</Text>
+            <Text className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">{t("mobileWork.today.offlineTitle")}</Text>
             <Text testID="offline-banner-text" className="text-[13px] text-on-surface dark:text-on-surface-dark">
               {offlineMessage(savedAt, format.locale)}
             </Text>
@@ -244,7 +248,7 @@ export function TodayScreen() {
           contentContainerClassName="px-4"
         >
           {kpis.map((kpi) => (
-            <View key={kpi.key} testID={`today-kpi-${kpi.key}`} accessible accessibilityLabel={`${kpi.label}: ${kpi.value}, ${kpi.trend}`}>
+            <View key={kpi.key} testID={`today-kpi-${kpi.key}`} accessible accessibilityLabel={t("mobileWork.today.kpi.a11y", { label: kpi.label, value: kpi.value, trend: kpi.trend })}>
               <KpiCard label={kpi.label} value={kpi.value} trend={kpi.trend} icon={kpi.icon} gradient={colors.gradients[kpi.tone]} gradientId={kpi.key} width={KPI_CARD_WIDTH} />
             </View>
           ))}
@@ -252,7 +256,7 @@ export function TodayScreen() {
       ) : null}
 
       <View className="gap-3">
-        <SectionHeader title="Quick actions" />
+        <SectionHeader title={t("mobileWork.today.quickActions")} />
         <View className="flex-row flex-wrap gap-3">
           {actions.map(({ label, icon, onPress, ...rest }) => (
             <ActionTile key={label} testID={`today-action-${label.toLowerCase().replace(/\s+/g, "-")}`} label={label} icon={icon} iconColor={colors.primary} onPress={onPress} disabled={"disabled" in rest ? rest.disabled : false} />
@@ -262,27 +266,27 @@ export function TodayScreen() {
 
       {modules.jobsField ? (
         <View className="gap-3" testID="today-jobs">
-          <SectionHeader title="Your jobs today" count={jobs.loading ? undefined : forToday.length} action={{ label: "All jobs", arrow: true, onPress: () => router.navigate("/jobs") }} />
+          <SectionHeader title={t("mobileWork.today.yourJobsToday")} count={jobs.loading ? undefined : forToday.length} action={{ label: t("mobileWork.today.allJobs"), arrow: true, onPress: () => router.navigate("/jobs") }} />
           {jobs.loading ? <JobCardsSkeleton /> : null}
           {forToday.map((job) => (
             <TodayJobCard key={job.id} job={job} locale={format.locale} now={now} waiting={waitingChips(jobWaiting(queued, job.id))} onOpen={() => router.push(`/jobs/${job.id}`)} />
           ))}
           {jobs.data && forToday.length === 0 ? (
-            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Nothing due on your jobs in the next 7 days.</Text>
+            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.today.nothingDue")}</Text>
           ) : null}
         </View>
       ) : null}
 
       {modules.leadsMeetings && meetings.loading ? (
         <View className="gap-3">
-          <SectionHeader title="Next meeting" />
+          <SectionHeader title={t("mobileWork.today.nextMeeting")} />
           <MeetingCardSkeleton />
         </View>
       ) : null}
 
       {meeting ? (
         <View className="gap-3">
-          <SectionHeader title="Next meeting" />
+          <SectionHeader title={t("mobileWork.today.nextMeeting")} />
           <NextMeetingCard meeting={meeting} locale={format.locale} onOpen={() => router.push(`/meetings/${meeting.id}`)} />
         </View>
       ) : null}

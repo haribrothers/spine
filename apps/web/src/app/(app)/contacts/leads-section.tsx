@@ -26,6 +26,7 @@ import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-co
 import { type Lead } from "./types";
 import { useLeadStages } from "./use-lead-stages";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 /**
  * S-01.4 — "create a lead with an estimated value and stage." This is the
@@ -54,6 +55,7 @@ export function LeadsSection({
   onChanged: () => void;
   onCreated?: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -112,7 +114,7 @@ export function LeadsSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-[14px] font-semibold text-on-surface">Leads</h3>
+      <h3 className="text-[14px] font-semibold text-on-surface">{t("contacts.leads.heading")}</h3>
       {leads === null ? (
         <Spinner size="sm" />
       ) : leads.length > 0 ? (
@@ -122,24 +124,24 @@ export function LeadsSection({
           ))}
         </ul>
       ) : (
-        <p className="text-[13px] text-on-surface-muted">No leads yet.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("contacts.leads.empty")}</p>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         {canCreate && (
           <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-            Add lead
+            {t("contacts.leads.add")}
           </Button>
         )}
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "Edit lead" : "Add lead"}</DialogTitle>
+            <DialogTitle>{editingId ? t("contacts.leads.edit") : t("contacts.leads.add")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-3">
-            <FormField label="Title">
+            <FormField label={t("contacts.leads.title")}>
               {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} />}
             </FormField>
-            <FormField label="Stage">
+            <FormField label={t("contacts.leads.stage")}>
               {(field) => (
                 <Select value={stageId} onValueChange={setStageId}>
                   <SelectTrigger {...field} className="w-full">
@@ -155,19 +157,19 @@ export function LeadsSection({
                 </Select>
               )}
             </FormField>
-            <FormField label="Estimated value">
+            <FormField label={t("contacts.leads.estimatedValue")}>
               {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} />}
             </FormField>
-            <FormField label="Currency">
+            <FormField label={t("contacts.leads.currency")}>
               {(field) => <Input {...field} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="w-24" />}
             </FormField>
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
+              {t("contacts.common.cancel")}
             </Button>
             <Button disabled={saving} onClick={handleSave}>
-              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Add lead"}
+              {saving ? <Spinner size="sm" /> : editingId ? t("contacts.common.saveChanges") : t("contacts.leads.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -178,12 +180,13 @@ export function LeadsSection({
 
 /** Extracted per-row so useCanEditOwnership can be called normally — calling it once per item inside the parent's .map() would violate the Rules of Hooks the moment the lead count changes between renders. Same pattern as activities-section.tsx's ActivityRow. */
 function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
+  const t = useT();
   const canEdit = useCanEditOwnership(lead.createdByUserId, { own: "leads.edit_own", others: "leads.edit_others" });
 
   return (
     <li className="flex items-center justify-between rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
       <div>
-        <span className="font-medium text-on-surface">{lead.title ?? "Untitled lead"}</span>
+        <span className="font-medium text-on-surface">{lead.title ?? t("contacts.leads.untitled")}</span>
         <span className="text-on-surface-muted">
           {" "}
           · {formatMoney(lead.valueAmount, lead.valueCurrency)}
@@ -194,7 +197,7 @@ function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void })
         {canEdit && (
           <button
             type="button"
-            aria-label={`Edit ${lead.title ?? "lead"}`}
+            aria-label={t("contacts.leads.editAria", { name: lead.title ?? t("contacts.leads.leadFallback") })}
             onClick={() => onEdit(lead)}
             className="text-on-surface-muted transition-colors hover:text-on-surface"
           >

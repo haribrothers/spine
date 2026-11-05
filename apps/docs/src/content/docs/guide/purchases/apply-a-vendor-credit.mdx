@@ -1,0 +1,49 @@
+---
+title: Apply a vendor credit to bills
+description: Use a vendor's open credit against their bills, so you only pay what's really owed.
+sidebar:
+  order: 11
+---
+
+Applying a vendor credit puts it against one or more of the vendor's open bills. Each bill owes less and the credit has less left to use. Nothing new is posted to your books — the credit was posted when you recorded it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Apply and refund vendor credits**. Field users can't work with vendor credits.
+</Aside>
+
+## From the credit
+
+<Steps>
+
+1. **Open the credit** — Go to **Vendor Credits** and open a credit that's **Open** or **Partly used**.
+
+2. **Choose Apply to bills** — It's the main action while credit is left.
+
+3. **Check the amounts** — The vendor's open bills are listed oldest first, each with its date, due date (and how late) and balance. If the credit was raised against a bill, that bill comes first, marked **Against this credit**, and is filled first. The amounts to apply are filled in for you; change any of them.
+
+4. **Apply** — The dialog reads "Applying … · … left" as you change the amounts. Press **Apply** with the total to confirm.
+
+</Steps>
+
+The toast says how much went to how many bills. When nothing is left, the credit reads **Used**.
+
+## From the bill
+
+On a recorded bill's page, **Apply credit** shows when the vendor has open credit. It lists the vendor's credits, oldest first, filled up to the bill's balance. Press **Apply** with the total, and the toast says how much now counts against the bill.
+
+You'll also see "&lt;Vendor&gt; has … of credit. Apply it first?" when you pay one of their bills, with a link here.
+
+## Limits
+
+- You can't apply more than the credit has left, or more than a bill still owes. If you try, you see "You can apply up to … to bill RTE-3302." and nothing is saved.
+- Only bills in the credit's currency are offered.
+
+## Undo an application
+
+On the credit's page, **Applied to bills** lists each bill and amount. Open the row's menu and choose **Remove from bill**. Spine asks first: the bill owes that much again and the credit has it back to use.
+
+<Aside type="tip">
+  A bill's page lists every credit applied under **Credits applied**, so you can see why it owes less.
+</Aside>

@@ -35,6 +35,8 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { CREDIT_NOTE_STATE_LABELS, creditNoteState } from "./credit-notes-list-state";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
+import { useT } from "../../../lib/i18n";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
@@ -55,6 +57,8 @@ const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
  * row's menu) opens that dialog.
  */
 export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
+  const t = useT();
+  const loadFailed = useLoadFailure(creditNoteId);
   const router = useRouter();
   const [note, setNote] = useState<CreditNote | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +78,7 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
     apiClient
       .get<CreditNote>(`/credit-notes/${creditNoteId}`)
       .then(setNote)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this credit note."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("creditNotes.detail.loadFailed")));
   }, [creditNoteId]);
 
   useEffect(() => {
@@ -119,13 +123,13 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
   const applied = BigInt(note.appliedAmount ?? "0");
   const refunded = BigInt(note.refundedAmount ?? "0");
   const pdfUrl = `${API_URL}/credit-notes/${note.id}/pdf`;
-  const title = note.number ?? "Draft credit note";
+  const title = note.number ?? t("creditNotes.detail.draftCreditNote");
 
   type Action = { key: string; label: string; icon: React.ReactNode; onClick?: () => void; href?: string };
-  const pdf: Action = { key: "pdf", label: issued ? "Download PDF" : "Preview PDF", icon: <Download size={14} aria-hidden />, href: pdfUrl };
-  const apply: Action = { key: "apply", label: "Apply credit", icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) };
-  const email: Action = { key: "email", label: "Email credit note", icon: <Mail size={14} aria-hidden />, onClick: () => setEmailOpen(true) };
-  const refund: Action = { key: "refund", label: "Refund", icon: <Banknote size={14} aria-hidden />, onClick: () => setRefundOpen(true) };
+  const pdf: Action = { key: "pdf", label: issued ? t("creditNotes.detail.downloadPdf") : t("creditNotes.detail.previewPdf"), icon: <Download size={14} aria-hidden />, href: pdfUrl };
+  const apply: Action = { key: "apply", label: t("creditNotes.detail.applyCredit"), icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) };
+  const email: Action = { key: "email", label: t("creditNotes.detail.emailCreditNote"), icon: <Mail size={14} aria-hidden />, onClick: () => setEmailOpen(true) };
+  const refund: Action = { key: "refund", label: t("creditNotes.detail.refund"), icon: <Banknote size={14} aria-hidden />, onClick: () => setRefundOpen(true) };
   const canApplyNow = issued && left > 0n && canApply;
   const canRefundNow = issued && left > 0n && canRefund;
   const canEmailNow = issued && canSend;
@@ -151,7 +155,14 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
       </Button>
     );
 
-  const taxNote = note.taxLines?.length ? `incl. ${note.taxLines.map((t) => t.label.replace(/\s*\(.*\)$/, "").replace(/\s*\d+(\.\d+)?%$/, "")).join(" + ")} ${money(note.taxAmount)}` : BigInt(note.taxAmount) > 0n ? `incl. tax ${money(note.taxAmount)}` : "No tax";
+  const secondaryButtons = secondary.map((a) => render(a, "secondary"));
+  const primaryButton = render(primary, "primary");
+
+  const taxNote = note.taxLines?.length
+    ? t("creditNotes.detail.taxNoteNamed", { label: note.taxLines.map((taxLine) => taxLine.label.replace(/\s*\(.*\)$/, "").replace(/\s*\d+(\.\d+)?%$/, "")).join(" + "), amount: money(note.taxAmount) })
+    : BigInt(note.taxAmount) > 0n
+      ? t("creditNotes.detail.taxNoteTax", { amount: money(note.taxAmount) })
+      : t("creditNotes.detail.noTax");
   const figure = (label: string, value: string, sub: React.ReactNode, testId: string, tone?: string) => (
     <div key={testId} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
@@ -162,27 +173,27 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
   const appliedTo = note.allocations ?? [];
   const figures = issued
     ? [
-        figure("Credited", money(note.totalAmount), taxNote, "fig-credited"),
-        off > 0n ? figure(`Off ${note.invoiceNumber ?? "the invoice"}`, money(off), "What was still owed on it", "fig-off") : null,
-        applied > 0n ? figure("Applied", money(applied), appliedTo.length === 1 ? `To ${appliedTo[0]!.invoiceNumber}` : `To ${appliedTo.length} invoices`, "fig-applied") : null,
-        refunded > 0n ? figure("Refunded", money(refunded), "Paid back to the customer", "fig-refunded") : null,
-        figure("Credit left", money(left), left > 0n ? "To apply or refund" : "All of it is used", "fig-left", left > 0n ? "text-due-soon" : undefined),
+        figure(t("creditNotes.detail.figCredited"), money(note.totalAmount), taxNote, "fig-credited"),
+        off > 0n ? figure(t("creditNotes.detail.figOff", { number: note.invoiceNumber ?? t("creditNotes.detail.theInvoice") }), money(off), t("creditNotes.detail.stillOwed"), "fig-off") : null,
+        applied > 0n ? figure(t("creditNotes.detail.figApplied"), money(applied), appliedTo.length === 1 ? t("creditNotes.detail.toInvoice", { number: appliedTo[0]!.invoiceNumber }) : t("creditNotes.detail.toInvoices", { n: appliedTo.length }), "fig-applied") : null,
+        refunded > 0n ? figure(t("creditNotes.detail.figRefunded"), money(refunded), t("creditNotes.detail.paidBack"), "fig-refunded") : null,
+        figure(t("creditNotes.detail.figLeft"), money(left), left > 0n ? t("creditNotes.detail.toApplyOrRefund") : t("creditNotes.detail.allUsed"), "fig-left", left > 0n ? "text-due-soon" : undefined),
       ].filter(Boolean)
     : [];
 
   const after: AfterTotalRow[] = issued
     ? [
-        ...(off > 0n ? [{ label: `Off ${note.invoiceNumber ?? "the invoice"}`, amount: off, subtract: true }] : []),
-        ...appliedTo.map((a) => ({ label: `Applied to ${a.invoiceNumber ?? "an invoice"}`, amount: BigInt(a.amount), subtract: true, tone: "paid" as const })),
-        ...(refunded > 0n ? [{ label: "Refunded", amount: refunded, subtract: true }] : []),
-        { label: "Credit left", amount: left, tone: "balance" as const },
+        ...(off > 0n ? [{ label: t("creditNotes.detail.figOff", { number: note.invoiceNumber ?? t("creditNotes.detail.theInvoice") }), amount: off, subtract: true }] : []),
+        ...appliedTo.map((a) => ({ label: t("creditNotes.detail.appliedTo", { number: a.invoiceNumber ?? t("creditNotes.detail.anInvoice") }), amount: BigInt(a.amount), subtract: true, tone: "paid" as const })),
+        ...(refunded > 0n ? [{ label: t("creditNotes.detail.refunded"), amount: refunded, subtract: true }] : []),
+        { label: t("creditNotes.detail.creditLeft"), amount: left, tone: "balance" as const },
       ]
     : [];
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <Breadcrumb items={[{ label: "Billing" }, { label: "Credit notes", href: "/credit-notes" }, { label: title }]} />
+        <Breadcrumb items={[{ label: t("creditNotes.detail.breadcrumbBilling") }, { label: t("creditNotes.detail.breadcrumbCreditNotes"), href: "/credit-notes" }, { label: title }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -195,20 +206,20 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
                 <SectionLink href={`/contacts/${note.contactId}`} className="font-medium text-primary hover:underline">
-                  {note.contactName ?? "Unknown contact"}
+                  {note.contactName ?? t("creditNotes.detail.unknownContact")}
                 </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Receipt size={14} aria-hidden />
-                Against{" "}
+                {t("creditNotes.detail.against")}{" "}
                 <SectionLink href={`/invoices/${note.invoiceId}`} className="font-medium text-primary hover:underline">
-                  {note.invoiceNumber ?? "the invoice"}
+                  {note.invoiceNumber ?? t("creditNotes.detail.theInvoice")}
                 </SectionLink>
               </span>
               {note.issuedAt && (
                 <span className="inline-flex items-center gap-1.5">
                   <Send size={14} aria-hidden />
-                  Issued {calendarDate(note.issuedAt.slice(0, 10), today, locale)}
+                  {t("creditNotes.detail.issuedOn", { date: calendarDate(note.issuedAt.slice(0, 10), today, locale) })}
                 </span>
               )}
               {note.placeOfSupply && (
@@ -226,12 +237,12 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="credit-note-actions">
-            {secondary.map((a) => render(a, "secondary"))}
-            {render(primary, "primary")}
+            {secondaryButtons}
+            {primaryButton}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
-                  More <ChevronDown size={14} />
+                  {t("creditNotes.detail.more")} <ChevronDown size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -243,17 +254,17 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
                 ))}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
                   <MENU_ICONS.history aria-hidden />
-                  View history
+                  {t("creditNotes.detail.viewHistory")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <HistorySection endpoint={`/credit-notes/${note.id}/history`} subjectLabel="this credit note" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <HistorySection endpoint={`/credit-notes/${note.id}/history`} subjectLabel={t("creditNotes.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
           </div>
         </div>
       </div>
 
       {figures.length > 0 && (
-        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "sm:grid-cols-4" : figures.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")} data-testid="credit-note-figures">
+        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "md:grid-cols-4" : figures.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2")} data-testid="credit-note-figures">
           {figures}
         </div>
       )}
@@ -296,35 +307,35 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
         creditLeft={left}
         onApplied={(total, count) => {
           setRefreshKey((k) => k + 1);
-          showToast("Credit applied", `${money(total)} now counts against ${count === 1 ? "the invoice" : `${count} invoices`}.`);
+          showToast(t("creditNotes.detail.appliedTitle"), t("creditNotes.detail.appliedBody", { amount: money(total), count }));
         }}
       />
       <CustomerRefundDialog
         open={refundOpen}
         onOpenChange={setRefundOpen}
         contactId={note.contactId}
-        contactName={note.contactName ?? "the customer"}
+        contactName={note.contactName ?? t("creditNotes.detail.theCustomer")}
         currency={note.currency}
         sourceId={note.id}
         onRefunded={(r) => {
           setRefreshKey((k) => k + 1);
-          const { title: t, description } = refundToast(r);
-          showToast(t, description);
+          const { title: toastTitle, description } = refundToast(r);
+          showToast(toastTitle, description);
         }}
       />
       {emailOpen && (
         <SendEmailDialog
           open
           onOpenChange={(open) => !open && setEmailOpen(false)}
-          title={`Email credit note ${note.number ?? ""}`.trim()}
+          title={t("creditNotes.detail.emailTitle", { number: note.number ?? "" }).trim()}
           description={money(note.totalAmount)}
           draftPath={`/email-drafts/credit_note/${note.id}`}
-          sendLabel="Send credit note"
-          pdfLabel="Attach the credit note PDF"
+          sendLabel={t("creditNotes.detail.sendLabel")}
+          pdfLabel={t("creditNotes.detail.pdfLabel")}
           onSend={async (body) => {
             const result = await apiClient.post<{ sentTo: string }>(`/credit-notes/${note.id}/send-email`, body);
             setRefreshKey((k) => k + 1);
-            showToast("Credit note emailed", `${note.number ?? "The credit note"} was sent to ${result.sentTo}.`);
+            showToast(t("creditNotes.detail.emailedTitle"), t("creditNotes.detail.emailedBody", { number: note.number ?? t("creditNotes.detail.theCreditNote"), to: result.sentTo }));
           }}
         />
       )}

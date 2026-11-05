@@ -7,7 +7,8 @@ import { CalendarDays, CheckSquare, FileText, History, Phone, StickyNote, Users 
 import { apiClient } from "../../../lib/api-client";
 import type { Meeting } from "../meetings/types";
 import type { Activity, ActivityType } from "./types";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t as translate, useT } from "../../../lib/i18n";
 
 /** Mirrors apps/web/src/app/(app)/quotes/types.ts's Quote shape — a local subset, since this section only needs a handful of fields. */
 interface QuoteSummary {
@@ -30,7 +31,7 @@ const ACTIVITY_ICONS: Record<ActivityType, React.ReactNode> = {
 
 
 function quoteLabel(quote: QuoteSummary) {
-  return quote.number ?? "Draft quote";
+  return quote.number ?? translate("contacts.timeline.draftQuote");
 }
 
 /**
@@ -55,6 +56,7 @@ function quoteLabel(quote: QuoteSummary) {
  * stand," matching how a quote's own events use their real event times.
  */
 export function TimelineSection({ contactId }: { contactId: string }) {
+  const t = useT();
   const [quotes, setQuotes] = useState<QuoteSummary[] | null>(null);
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
@@ -83,7 +85,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
       events.push({
         id: `quote-${quote.id}-created`,
         icon: <FileText size={14} />,
-        title: `Quote ${quoteLabel(quote)} created`,
+        title: t("contacts.timeline.quoteCreated", { label: quoteLabel(quote) }),
         description: total,
         at: quote.createdAt,
       });
@@ -91,7 +93,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
         events.push({
           id: `quote-${quote.id}-sent`,
           icon: <FileText size={14} />,
-          title: `Quote ${quoteLabel(quote)} sent`,
+          title: t("contacts.timeline.quoteSent", { label: quoteLabel(quote) }),
           description: total,
           at: quote.sentAt,
         });
@@ -101,7 +103,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
           id: `quote-${quote.id}-accepted`,
           icon: <FileText size={14} />,
           tone: "success",
-          title: `Quote ${quoteLabel(quote)} accepted`,
+          title: t("contacts.timeline.quoteAccepted", { label: quoteLabel(quote) }),
           description: total,
           at: quote.updatedAt,
         });
@@ -110,7 +112,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
           id: `quote-${quote.id}-rejected`,
           icon: <FileText size={14} />,
           tone: "critical",
-          title: `Quote ${quoteLabel(quote)} rejected`,
+          title: t("contacts.timeline.quoteRejected", { label: quoteLabel(quote) }),
           description: total,
           at: quote.updatedAt,
         });
@@ -124,12 +126,12 @@ export function TimelineSection({ contactId }: { contactId: string }) {
         icon: ACTIVITY_ICONS[activity.type],
         title: (
           <span className="capitalize">
-            {activity.type}
-            {activity.type === "task" && done ? " completed" : ""}
+            {t(`contacts.activities.types.${activity.type}`)}
+            {activity.type === "task" && done ? t("contacts.timeline.completedSuffix") : ""}
           </span>
         ),
         description: activity.notes ?? undefined,
-        meta: activity.type === "task" ? <Badge>{done ? "Done" : "Open"}</Badge> : undefined,
+        meta: activity.type === "task" ? <Badge>{done ? t("contacts.timeline.done") : t("contacts.timeline.open")}</Badge> : undefined,
         at: activity.createdAt,
       });
     }
@@ -138,7 +140,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
       events.push({
         id: `meeting-${meeting.id}`,
         icon: <CalendarDays size={14} />,
-        title: `Meeting: ${meeting.title}`,
+        title: t("contacts.timeline.meeting", { title: meeting.title }),
         description: meeting.location ?? meeting.description ?? undefined,
         at: meeting.startAt,
       });
@@ -149,14 +151,14 @@ export function TimelineSection({ contactId }: { contactId: string }) {
       .map(({ at, ...item }) => ({
         ...item,
         timestamp: (
-          <span title={new Date(at).toLocaleString()}>{formatDistanceToNow(new Date(at), { addSuffix: true })}</span>
+          <span title={new Date(at).toLocaleString(orgLocaleTag())}>{formatDistanceToNow(new Date(at), { addSuffix: true })}</span>
         ),
       }));
-  }, [quotes, activities, meetings]);
+  }, [quotes, activities, meetings, t]);
 
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-[14px] font-semibold text-on-surface">Timeline</h3>
+      <h3 className="text-[14px] font-semibold text-on-surface">{t("contacts.timeline.heading")}</h3>
       {items === null ? (
         <Spinner size="sm" />
       ) : items.length > 0 ? (
@@ -165,8 +167,8 @@ export function TimelineSection({ contactId }: { contactId: string }) {
         <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<History />}
-            title="Nothing yet"
-            description="Quotes, logged activities, and scheduled meetings for this contact will show up here."
+            title={t("contacts.timeline.emptyTitle")}
+            description={t("contacts.timeline.emptyDescription")}
           />
         </div>
       )}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Badge, DataTable, cn, type TableColumn, type TableSort } from "@spine/ui";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import { AttachmentCount } from "../../../components/attachments-section";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { VendorBillRowActions, type BillRowHandlers } from "./vendor-bill-row-actions";
@@ -39,18 +40,19 @@ export function VendorBillsTable({
   onSelectedChange?: (next: Set<string>) => void;
   handlers: BillRowHandlers;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const date = (iso: string | null) => (iso ? calendarDate(iso.slice(0, 10), now, locale) : "—");
   const columns: TableColumn<VendorBill>[] = [
     {
       key: "billNumber",
-      header: "Bill",
+      header: t("vendorBills.table.bill"),
       render: (row) => (
         <span className="flex items-center gap-2">
           <Link href={`/vendor-bills/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
             {row.billNumber}
           </Link>
-          {row.isOpening && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
+          {row.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorBills.table.openingBalance")}</Badge>}
           <AttachmentCount count={row.attachmentCount} />
         </span>
       ),
@@ -58,7 +60,7 @@ export function VendorBillsTable({
     },
     {
       key: "contact",
-      header: "Vendor",
+      header: t("vendorBills.table.vendor"),
       render: (row) => (
         <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -66,10 +68,10 @@ export function VendorBillsTable({
       ),
       sortValue: (row) => row.contactName ?? "",
     },
-    { key: "date", header: "Bill date", render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
+    { key: "date", header: t("vendorBills.table.billDate"), render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
     {
       key: "dueDate",
-      header: "Due",
+      header: t("vendorBills.table.due"),
       render: (row) => {
         const late = lateLabel(row, now);
         const over = (daysLate(row.dueDate, now) ?? 0) > 0;
@@ -84,13 +86,13 @@ export function VendorBillsTable({
     },
     {
       key: "job",
-      header: "Job",
+      header: t("vendorBills.table.job"),
       render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.jobName ?? "",
     },
     {
       key: "state",
-      header: "State",
+      header: t("vendorBills.table.state"),
       render: (row) => {
         const state = billState(row, now);
         return (
@@ -101,10 +103,10 @@ export function VendorBillsTable({
       },
       sortValue: (row) => BILL_STATES.indexOf(billState(row, now)),
     },
-    { key: "total", header: "Total", align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "total", header: t("vendorBills.table.total"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
     {
       key: "balanceDue",
-      header: "Balance",
+      header: t("vendorBills.table.balance"),
       align: "right",
       render: (row) => (row.status === "void" ? <span className="text-on-surface-muted">—</span> : <span className="tabular-nums">{formatMoney(BigInt(row.balanceDue), row.currency)}</span>),
       sortValue: (row) => (row.status === "void" ? -1n : BigInt(row.balanceDue)),

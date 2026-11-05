@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { Checkbox } from "./checkbox";
 import { Pagination } from "./pagination";
 import { PaginationBar } from "./pagination-bar";
@@ -111,6 +112,7 @@ export function Table<T>({
   renderExpanded,
   expandLabel,
 }: TableProps<T>) {
+  const t = useT();
   const [sortState, setSortState] = useState<TableSort | null>(null);
   const sortControlled = sortProp !== undefined;
   const sort = sortControlled ? sortProp : sortState;
@@ -239,13 +241,13 @@ export function Table<T>({
             <tr>
               {expandable && (
                 <th className="w-10 px-2 py-2">
-                  <span className="sr-only">Open</span>
+                  <span className="sr-only">{t("ui.table.open")}</span>
                 </th>
               )}
               {selectable && !groupBy && (
                 <th className="w-10 px-3 py-2">
                   <Checkbox
-                    aria-label="Select every row on this page"
+                    aria-label={t("ui.table.selectPage")}
                     checked={pageSelected === 0 ? false : pageSelected === pageKeys.length ? true : "indeterminate"}
                     onCheckedChange={togglePage}
                     disabled={pageKeys.length === 0}
@@ -317,7 +319,7 @@ export function Table<T>({
                                   type="button"
                                   onClick={() => toggleExpanded(group.key)}
                                   aria-expanded={isExpanded}
-                                  aria-label={isExpanded ? "Collapse other versions" : `Show ${group.rest.length} other version${group.rest.length === 1 ? "" : "s"}`}
+                                  aria-label={isExpanded ? t("ui.table.collapseVersions") : t("ui.table.showVersions", { count: group.rest.length })}
                                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                 >
                                   <ChevronRight size={14} className={cn("transition-transform", isExpanded && "rotate-90")} />
@@ -373,7 +375,7 @@ export function Table<T>({
                           onClick={() => toggleExpanded(key)}
                           aria-expanded={isOpen}
                           aria-controls={`${key}-more`}
-                          aria-label={expandLabel ? expandLabel(row, isOpen) : isOpen ? "Show less" : "Show more"}
+                          aria-label={expandLabel ? expandLabel(row, isOpen) : isOpen ? t("ui.table.showLess") : t("ui.table.showMore")}
                           className="flex h-7 w-7 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                           <ChevronRight size={16} aria-hidden className={cn("motion-safe:transition-transform", isOpen && "rotate-90")} />
@@ -382,7 +384,7 @@ export function Table<T>({
                     )}
                     {selectable && (
                       <td className="w-10 px-3 py-2">
-                        <Checkbox aria-label={selectLabel ? `Select ${selectLabel(row)}` : "Select row"} checked={isSelected} onCheckedChange={() => toggleRow(key)} />
+                        <Checkbox aria-label={selectLabel ? t("ui.table.selectNamed", { name: selectLabel(row) }) : t("ui.table.selectRow")} checked={isSelected} onCheckedChange={() => toggleRow(key)} />
                       </td>
                     )}
                     {columns.map((column) => (

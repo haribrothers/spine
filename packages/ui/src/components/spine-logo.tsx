@@ -72,6 +72,7 @@ export function SpineLogo({ variant = "mark", size, decorative = false, classNam
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("block shrink-0", className)}
+      // eslint-disable-next-line i18next/no-literal-string -- the brand name
       {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": "Spine" })}
     >
       <defs>

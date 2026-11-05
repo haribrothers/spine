@@ -3,6 +3,7 @@
 import { ArrowBigUp } from "lucide-react";
 import { forwardRef, useId, useState } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { PasswordToggleField, PasswordToggleFieldInput, PasswordToggleFieldToggle } from "./password-toggle-field";
 
 export interface PasswordInputProps extends Omit<React.ComponentPropsWithoutRef<typeof PasswordToggleFieldInput>, "type"> {
@@ -18,6 +19,7 @@ export interface PasswordInputProps extends Omit<React.ComponentPropsWithoutRef<
  */
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ className, capsLockHint = true, onKeyDown, onKeyUp, onBlur, "aria-describedby": describedBy, ...props }, ref) => {
+    const t = useT();
     const [capsLock, setCapsLock] = useState(false);
     const hintId = `${useId()}-caps`;
     const track = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -50,7 +52,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         {capsLock ? (
           <p id={hintId} className="flex items-center gap-1.5 text-[12px] text-due-soon">
             <ArrowBigUp size={14} aria-hidden />
-            Caps Lock is on.
+            {t("ui.passwordInput.capsLockOn")}
           </p>
         ) : null}
       </div>

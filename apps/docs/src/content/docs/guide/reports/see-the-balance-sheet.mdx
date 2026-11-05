@@ -1,0 +1,36 @@
+---
+title: See the balance sheet
+description: See what the business owns, owes and is worth on any date, and compare it with the previous year end.
+sidebar:
+  order: 3
+---
+
+The Balance Sheet shows, on one date, what the business owns (assets), what it owes (liabilities) and what's left for the owners (equity). Total assets always equal total liabilities plus equity, because every entry in your books balances.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**.</Aside>
+
+<Steps>
+
+1. **Open the report** — Go to **Reports › Balance Sheet**, or use the tabs from Profit & Loss.
+2. **Choose the date** — Set **As of**.
+3. **Read it** — **Assets** (what the business owns), **Liabilities** (what it owes) and **Equity** (assets less liabilities), each by account with its total, and **Total liabilities + equity** at the end.
+4. **Click an account** — See the entries behind its balance.
+
+</Steps>
+
+<Screenshot id="reports-balance-sheet" alt="The Balance Sheet with Assets, Liabilities and Equity by account and Total liabilities + equity" />
+
+## Profit not yet closed
+
+Profit you've made but not closed into retained earnings shows in equity as "Retained Earnings (current period)". That's why the sheet balances before any year-end entry.
+
+## Compare with last year
+
+Under **Compare with**, choose **Previous year end** to show the balance at the end of your previous financial year beside the date you picked.
+
+<Aside type="tip">Money in a bank or cash account shows as an asset. A credit card account is a liability: it's money you owe.</Aside>
+
+The Balance Sheet has no cash-basis switch. To export it, press **Export** (see [Export or print a report](../export-or-print-a-report/)).

@@ -1,0 +1,25 @@
+name: An idea or a feature
+description: Something Spine should do
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: Spine's scope and non-goals are in docs/prd/00-overview.md, and what's planned after 1.0 in docs/prd/16-roadmap.md. Please check them first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you're trying to do
+      description: The job your business needs done, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+    validations:
+      required: true
+  - type: input
+    id: business
+    attributes:
+      label: Your kind of business and country
+      placeholder: Interior design studio, India

@@ -26,7 +26,7 @@ describe("US-MOB-09 · send each item exactly once and fix failures (requires lo
 
   const upload = (key: string, bytes: Buffer = PNG) => {
     const form = new FormData();
-    form.append("file", new Blob([bytes], { type: "image/jpeg" }), "site.jpg");
+    form.append("file", new Blob([new Uint8Array(bytes)], { type: "image/jpeg" }), "site.jpg");
     return fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: bearer(token, { "Idempotency-Key": key }), body: form });
   };
   const post = (path: string, key: string, body: unknown, auth: Record<string, string> = bearer(token)) =>

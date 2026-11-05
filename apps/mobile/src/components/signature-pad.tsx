@@ -3,6 +3,7 @@ import { PanResponder, View, type LayoutChangeEvent } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useNativeColors } from "@spine/ui-native";
 import type { Point, Stroke } from "../lib/signature/png";
+import { useT } from "../lib/i18n";
 
 export const PEN_WIDTH = 2.5;
 
@@ -35,6 +36,7 @@ export function SignaturePad({
   label: string;
   testID?: string;
 }) {
+  const t = useT();
   const colors = useNativeColors();
   const [current, setCurrent] = useState<Stroke | null>(null);
   const live = useRef<{ strokes: Stroke[]; current: Stroke | null }>({ strokes, current: null });
@@ -81,8 +83,8 @@ export function SignaturePad({
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
-      accessibilityHint="Draw your signature with your finger."
-      accessibilityValue={{ text: strokes.length ? "Signed" : "Empty" }}
+      accessibilityHint={t("mobileApp.signaturePad.hint")}
+      accessibilityValue={{ text: strokes.length ? t("mobileApp.signaturePad.signed") : t("mobileApp.signaturePad.empty") }}
       onLayout={(event: LayoutChangeEvent) => onSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
       className="h-40 overflow-hidden rounded-2xl border border-dashed border-border-strong bg-surface dark:border-border-strong-dark dark:bg-surface-dark"
       {...responder.panHandlers}

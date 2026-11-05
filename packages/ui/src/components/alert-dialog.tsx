@@ -36,7 +36,7 @@ export const AlertDialogContent = forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-[var(--z-modal)] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-5 shadow-overlay focus:outline-none",
+        "fixed left-1/2 top-1/2 z-[var(--z-modal)] w-[calc(100%-32px)] max-w-md md:w-full -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-5 shadow-overlay focus:outline-none",
         className,
       )}
       {...props}

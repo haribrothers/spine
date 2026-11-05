@@ -7,6 +7,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { formatMoney, formatMoneyCompact } from "../../../../lib/money";
 import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
+import { t as translate, useT } from "../../../../lib/i18n";
 
 type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -17,11 +18,11 @@ interface ReceivablesReport {
 
 const BUCKET_ORDER: AgingBucket[] = ["current", "0-30", "31-60", "61-90", "90+"];
 const BUCKET_LABELS: Record<AgingBucket, string> = {
-  current: "Current",
-  "0-30": "1–30 days",
-  "31-60": "31–60 days",
-  "61-90": "61–90 days",
-  "90+": "90+ days",
+  current: translate("dashboard.arAging.current"),
+  "0-30": translate("dashboard.arAging.days1to30"),
+  "31-60": translate("dashboard.arAging.days31to60"),
+  "61-90": translate("dashboard.arAging.days61to90"),
+  "90+": translate("dashboard.arAging.days90plus"),
 };
 /** Semantic financial-status palette — never the categorical accent, per chart.tsx's own doc-comment rule against mixing palettes. */
 const BUCKET_COLORS: Record<AgingBucket, string> = {
@@ -44,6 +45,7 @@ const BUCKET_COLORS: Record<AgingBucket, string> = {
  * title; a narrow card puts the legend under the ring.
  */
 export function ArAgingDonut() {
+  const t = useT();
   const orgCurrency = useDashboardCurrency();
   const currency = orgCurrency ?? "USD";
   const [report, setReport] = useState<ReceivablesReport | null>(null);
@@ -73,14 +75,14 @@ export function ArAgingDonut() {
     <Card data-testid="ar-aging">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Receivables aging
+          {t("dashboard.widgets.arAging")}
           <Link href="/receivables" className="text-[13px] font-normal text-primary hover:underline">
-            View all
+            {t("dashboard.common.viewAll")}
           </Link>
         </CardTitle>
         {report && orgCurrency && (
           <CardDescription data-testid="aging-total">
-            Total <span className="font-semibold tabular-nums text-on-surface">{money(report.totalOutstanding)}</span>
+            {t("dashboard.arAging.total")} <span className="font-semibold tabular-nums text-on-surface">{money(report.totalOutstanding)}</span>
           </CardDescription>
         )}
       </CardHeader>
@@ -88,7 +90,7 @@ export function ArAgingDonut() {
         {!report || !orgCurrency ? (
           <WidgetSkeleton kind="ring" />
         ) : (
-          <DonutChart segments={segments} centerLabel={formatMoneyCompact(report.totalOutstanding, currency)} emptyState="Nothing outstanding." />
+          <DonutChart segments={segments} centerLabel={formatMoneyCompact(report.totalOutstanding, currency)} emptyState={t("dashboard.arAging.empty")} />
         )}
       </CardContent>
     </Card>

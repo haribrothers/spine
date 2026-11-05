@@ -9,21 +9,22 @@ import { aiFeatureShown, useAiStatus } from "../lib/use-ai-status";
 import { useAiRequest } from "../lib/use-ai-request";
 import { AiActionButton } from "./ai-action-button";
 import { AiUnavailableNotice } from "./ai-unavailable-notice";
+import { t as translate, useT } from "../lib/i18n";
 
 /** "this invoice's details" — what each email is about. */
 export const EMAIL_DOCUMENT_NOUN: Record<EmailTemplateType, string> = {
-  quote: "quote",
-  invoice: "invoice",
-  reminder: "invoice",
-  receipt: "receipt",
-  credit_note: "credit note",
-  statement: "statement",
+  quote: translate("common.emailAi.nouns.quote"),
+  invoice: translate("common.emailAi.nouns.invoice"),
+  reminder: translate("common.emailAi.nouns.invoice"),
+  receipt: translate("common.emailAi.nouns.receipt"),
+  credit_note: translate("common.emailAi.nouns.creditNote"),
+  statement: translate("common.emailAi.nouns.statement"),
 };
 
 /** US-AI-11 — the Message's helper text: where the words come from, and what the highlights are. */
 export function emailMessageHelp(type: EmailTemplateType | undefined): string {
-  const noun = type ? EMAIL_DOCUMENT_NOUN[type] : "document";
-  return `Starts from your template in Settings › Emails. Highlighted words are this ${noun}'s details — Spine fills them in. Changes here apply to this email only.`;
+  const noun = type ? EMAIL_DOCUMENT_NOUN[type] : translate("common.emailAi.nouns.document");
+  return translate("common.emailAi.messageHelp", { noun });
 }
 
 type Fields = { subject: string; message: string };
@@ -101,15 +102,16 @@ export type EmailAiDraft = ReturnType<typeof useEmailAiDraft>;
 
 /** US-AI-12 — Friendly, Formal or Firm, for reminders and statements. */
 function TonePicker({ state, redraft }: { state: EmailAiDraft; redraft?: boolean }) {
+  const t = useT();
   if (!state.toned) return null;
   return (
     <span className="inline-flex items-center gap-2">
       <span className="text-[12.5px] font-medium text-on-surface-muted" aria-hidden>
-        Tone
+        {t("common.emailAi.tone")}
       </span>
       <ToggleGroup
         type="single"
-        aria-label="Tone"
+        aria-label={t("common.emailAi.tone")}
         value={state.tone}
         disabled={state.ai.working}
         onValueChange={(value: string) => {
@@ -118,9 +120,9 @@ function TonePicker({ state, redraft }: { state: EmailAiDraft; redraft?: boolean
           if (redraft) state.draft(value as AiEmailTone);
         }}
       >
-        {AI_EMAIL_TONES.map((t) => (
-          <ToggleGroupItem key={t} value={t} size="sm">
-            {AI_EMAIL_TONE_LABELS[t]}
+        {AI_EMAIL_TONES.map((tone) => (
+          <ToggleGroupItem key={tone} value={tone} size="sm">
+            {AI_EMAIL_TONE_LABELS[tone]}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
@@ -130,6 +132,7 @@ function TonePicker({ state, redraft }: { state: EmailAiDraft; redraft?: boolean
 
 /** Between To and Subject: the button, AI's draft as a suggestion, or — once used — the note with Undo. Nothing when AI can't be used here. */
 export function EmailAiDraftBar({ state, type }: { state: EmailAiDraft; type: EmailTemplateType }) {
+  const t = useT();
   if (!state.shown) return null;
   const noun = EMAIL_DOCUMENT_NOUN[type];
   const { ai, suggestion } = state;
@@ -137,61 +140,63 @@ export function EmailAiDraftBar({ state, type }: { state: EmailAiDraft; type: Em
   return (
     <div className="flex flex-col gap-3">
       {suggestion ? (
-        <section aria-label="AI's draft" data-testid="ai-email-suggestion" className="flex flex-col rounded-md border border-primary/30 bg-info-bg/50">
+        <section aria-label={t("common.emailAi.aiDraft")} data-testid="ai-email-suggestion" className="flex flex-col rounded-md border border-primary/30 bg-info-bg/50">
           <div className="flex flex-wrap items-center gap-2.5 border-b border-primary/20 px-3.5 py-2.5 text-[13px] text-on-surface-muted">
             <Sparkles size={16} aria-hidden className="shrink-0 text-primary" />
             <span className="flex-1">
-              <strong className="font-semibold text-on-surface">AI&apos;s draft</strong> — check it, then use it. Your email below doesn&apos;t change until you do.
+              <strong className="font-semibold text-on-surface">{t("common.emailAi.aiDraft")}</strong>
+              {t("common.emailAi.aiDraftHint")}
             </span>
             <TonePicker state={state} redraft />
           </div>
           <div className="flex max-h-80 flex-col gap-2.5 overflow-auto px-3.5 py-3">
-            <span className="text-[11.5px] font-semibold uppercase tracking-wide text-on-surface-muted">Subject</span>
+            <span className="text-[11.5px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("common.emailAi.subject")}</span>
             <RichTextContent className="font-medium [&_p]:my-0" html={plainTextToHtml(suggestion.subject)} highlights={suggestion.values} />
-            <span className="text-[11.5px] font-semibold uppercase tracking-wide text-on-surface-muted">Message</span>
+            <span className="text-[11.5px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("common.emailAi.message")}</span>
             <RichTextContent className="rounded-sm border border-border bg-surface px-3 py-2" html={suggestion.message} highlights={suggestion.values} />
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-primary/20 px-3.5 py-2.5" aria-live="polite">
             <Button type="button" size="sm" onClick={state.useDraft} disabled={ai.working}>
               <Check size={14} aria-hidden />
-              Use this draft
+              {t("common.emailAi.useDraft")}
             </Button>
             <Button type="button" size="sm" variant="secondary" onClick={() => state.draft()} disabled={ai.working} aria-busy={ai.working || undefined}>
               {ai.working ? <Loader2 size={14} aria-hidden className="animate-spin motion-reduce:hidden" /> : <RotateCw size={14} aria-hidden />}
-              {ai.working ? "Drafting…" : "Try again"}
+              {ai.working ? t("common.emailAi.drafting") : t("common.actions.tryAgain")}
             </Button>
             {ai.working ? (
               <Button type="button" size="sm" variant="ghost" onClick={ai.cancel}>
-                Cancel
+                {t("common.actions.cancel")}
               </Button>
             ) : (
               <Button type="button" size="sm" variant="ghost" onClick={state.discard}>
-                Discard
+                {t("common.emailAi.discard")}
               </Button>
             )}
-            <span className="ml-auto text-[12.5px] text-on-surface-muted">Highlighted details are this {noun}&apos;s — AI can&apos;t change them.</span>
+            <span className="ml-auto text-[12.5px] text-on-surface-muted">{t("common.emailAi.highlightedNote", { noun })}</span>
           </div>
         </section>
       ) : state.used ? (
         <Alert variant="info" icon={<Sparkles className="text-primary" />} data-testid="ai-email-used">
           <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span className="flex-1">
-              <strong className="font-semibold">Using AI&apos;s draft — check it before sending.</strong> The highlighted details are this {noun}&apos;s; edit anything else as you like.
+              <strong className="font-semibold">{t("common.emailAi.usingDraft")}</strong>
+              {t("common.emailAi.usingDraftHint", { noun })}
             </span>
             <Button type="button" variant="secondary" size="sm" onClick={state.undo}>
               <Undo2 size={14} aria-hidden />
-              Undo
+              {t("common.emailAi.undo")}
             </Button>
           </AlertDescription>
         </Alert>
       ) : (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <AiActionButton label="Draft with AI" workingLabel="Drafting…" working={ai.working} disabled={Boolean(state.pausedUntil)} onClick={() => state.draft()} onCancel={ai.cancel} />
+          <AiActionButton label={t("common.emailAi.draftWithAi")} workingLabel={t("common.emailAi.drafting")} working={ai.working} disabled={Boolean(state.pausedUntil)} onClick={() => state.draft()} onCancel={ai.cancel} />
           <TonePicker state={state} />
-          <span className="text-[12.5px] text-on-surface-muted">{state.pausedUntil ? aiPausedMessage(state.pausedUntil) : "Shows AI's draft first — your email stays as it is."}</span>
+          <span className="text-[12.5px] text-on-surface-muted">{state.pausedUntil ? aiPausedMessage(state.pausedUntil) : t("common.emailAi.showsFirst")}</span>
         </div>
       )}
-      {ai.state.status === "failed" && <AiUnavailableNotice message={ai.state.message} detail="Your email is as it was." onRetry={ai.state.canRetry ? ai.retry : undefined} />}
+      {ai.state.status === "failed" && <AiUnavailableNotice message={ai.state.message} detail={t("common.emailAi.unchanged")} onRetry={ai.state.canRetry ? ai.retry : undefined} />}
     </div>
   );
 }

@@ -29,9 +29,9 @@ test.describe("US-SET-09", () => {
 
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-brand", "harbour-teal");
-    expect(await cssVar(page, "--color-primary")).toBe("#0d6e6e");
-    expect(await cssVar(page, "--color-paid")).toBe(paidBefore);
-    expect(await cssVar(page, "--color-overdue")).toBe("#b3261e");
+    await expect.poll(() => cssVar(page, "--color-primary")).toBe("#0d6e6e");
+    await expect.poll(() => cssVar(page, "--color-paid")).toBe(paidBefore);
+    await expect.poll(() => cssVar(page, "--color-overdue")).toBe("#b3261e");
 
     // Another member of the organisation, in dark mode.
     const context = await browser.newContext();
@@ -42,8 +42,8 @@ test.describe("US-SET-09", () => {
     await other.getByTestId("theme-switch").getByRole("menuitemradio", { name: "Dark" }).click();
     await expect(other.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(other.locator("html")).toHaveAttribute("data-brand", "harbour-teal");
-    expect(await cssVar(other, "--color-primary")).toBe("#4fd1d1");
-    expect(await cssVar(other, "--color-paid")).toBe("#4ade94");
+    await expect.poll(() => cssVar(other, "--color-primary")).toBe("#4fd1d1");
+    await expect.poll(() => cssVar(other, "--color-paid")).toBe("#4ade94");
     await other.getByTestId("theme-switch").getByRole("menuitemradio", { name: "Follow system" }).click();
     await context.close();
 
@@ -55,6 +55,6 @@ test.describe("US-SET-09", () => {
     await expect(page.getByText("Saved", { exact: true }).first()).toBeVisible();
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-brand", "spine-blue");
-    expect(await cssVar(page, "--color-primary")).toBe("#2954e5");
+    await expect.poll(() => cssVar(page, "--color-primary")).toBe("#2954e5");
   });
 });

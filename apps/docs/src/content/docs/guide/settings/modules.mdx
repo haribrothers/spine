@@ -1,0 +1,47 @@
+---
+title: Switch modules on or off
+description: Turn off the parts of Spine your business doesn't use, so everyone sees a simpler app — and turn them back on with nothing lost.
+sidebar:
+  order: 6
+---
+
+Not every business needs a sales pipeline, jobs, approvals or recurring invoices. Switching a module off hides it for everyone in the business. "Nothing is deleted. Switch it back on any time and everything is where you left it."
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Everyone else sees the result: a switched-off module disappears for them too.</Aside>
+
+<Steps>
+
+1. **Open Settings › Modules** — Open your user menu, choose **Settings**, and pick **Modules** under **Business**.
+
+2. **Find the module** — Each row has a switch and says what it includes:
+   - **Leads & meetings** — the pipeline board, lead stages, the meetings calendar and their dashboard widgets.
+   - **Jobs & field** — jobs, milestones, retention, variation orders, job costing, crew and the field app.
+   - **Approvals** — expense approval and quote discount approval.
+   - **Recurring documents** — recurring invoices and recurring bills.
+
+3. **Turn the switch off** — Spine asks first, for example "Switch off jobs & field?", says what disappears for everyone, and offers **Keep it on** or **Switch off**.
+
+4. **Press Save** — A "Saved" message appears and the change applies to everyone.
+
+</Steps>
+
+<Screenshot id="settings-modules" alt="Settings, Modules: switches for Leads & meetings, Jobs & field, Approvals and Recurring documents, plus the AI assistant and Connected agents rows" />
+
+## What happens when a module is off
+
+- **It disappears everywhere.** Its sidebar items, dashboard cards, search results, notifications, digest sections, settings panes and Team rights are hidden.
+- **Old links explain.** A link to one of its pages shows, for example, "Jobs & field is switched off. An owner can switch it on in Settings › Modules."
+- **Approvals off** — submitted expenses are approved and posted at once, and quote discounts need no approval.
+- **Recurring documents off** — no recurring invoices or bills are created. The row shows when it was switched off and that schedules are paused.
+- **Some parts are always on:** "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on."
+
+## Switching a module back on
+
+Turn the switch on and press **Save**. Its records, Team rights, settings and pages come back as they were. Recurring schedules carry on from their next future date — dates missed while it was off aren't created. Expenses approved while Approvals was off stay approved.
+
+<Aside type="caution">You can't switch **Jobs & field** off while people use the field app. Spine says, for example, "2 people use the field app. Change their role or deactivate them first." and the switch stays on. Change their role in **Team › Users** first — see [Team and permissions](../../team/).</Aside>
+
+The **AI assistant** and **Connected agents** rows show whether they're on. They're switched on in their own panes: press **Set up in AI assistant** or **Set up in Connected agents**. See [The AI assistant](../../ai-assistant/) and [Connected agents](../../connected-agents/).

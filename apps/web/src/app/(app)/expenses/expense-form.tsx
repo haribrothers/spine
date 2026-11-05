@@ -49,6 +49,7 @@ import { AiUnavailableNotice } from "../../../components/ai-unavailable-notice";
 import { useAiRequest } from "../../../lib/use-ai-request";
 import { useAiStatus } from "../../../lib/use-ai-status";
 import { planExpenseFill, receiptTaxNote, type ExpenseField, type ExpenseValues } from "./expense-ai-fill";
+import { useT } from "../../../lib/i18n";
 
 const NO_JOB = "__none__";
 const NO_TAX = "";
@@ -96,6 +97,7 @@ export function ExpenseForm({
   /** Where focus goes when the form closes — for a form opened from a menu item, which is gone by then. */
   returnFocusTo?: React.RefObject<HTMLElement | null>;
 }) {
+  const t = useT();
   const jobsOn = useModule("jobsField");
   const [categoryId, setCategoryId] = useState("");
   const [jobId, setJobId] = useState(NO_JOB);
@@ -267,8 +269,8 @@ export function ExpenseForm({
     }
   }
   const jobOptions = useMemo(
-    () => [{ value: NO_JOB, label: "No job" }, ...jobs.map((j) => ({ value: j.id, label: j.name }))],
-    [jobs],
+    () => [{ value: NO_JOB, label: t("expenses.form.noJob") }, ...jobs.map((j) => ({ value: j.id, label: j.name }))],
+    [jobs, t],
   );
   const currencyOptions = useMemo(() => (COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES]).map((c) => ({ value: c, label: c })), [currency]);
   const total = entryMode === "labour" ? rowsTotal(labourRows) : amount;
@@ -298,8 +300,8 @@ export function ExpenseForm({
   }, [open, total, date, expense]);
 
   const taxOptions = useMemo(
-    () => [{ value: NO_TAX, label: "No tax" }, ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: r.id, label: `${r.name} (${r.rate}%)` }))],
-    [taxRates],
+    () => [{ value: NO_TAX, label: t("expenses.form.noTax") }, ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: r.id, label: `${r.name} (${r.rate}%)` }))],
+    [taxRates, t],
   );
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -333,7 +335,7 @@ export function ExpenseForm({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload the receipt.");
+      setError(err instanceof Error ? err.message : t("expenses.form.uploadFailed"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -401,7 +403,7 @@ export function ExpenseForm({
   async function handleSubmit(addAnother = false) {
     setError(null);
     if (!categoryId) {
-      setError("Select a category before saving.");
+      setError(t("expenses.form.selectCategoryFirst"));
       return;
     }
     const labour = entryMode === "labour";
@@ -415,7 +417,7 @@ export function ExpenseForm({
         return;
       }
     } else if (amount <= 0n) {
-      setError("Enter an amount greater than zero.");
+      setError(t("expenses.form.amountRequired"));
       return;
     }
     setSaving(true);
@@ -462,7 +464,7 @@ export function ExpenseForm({
         onOpenChange(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save this expense.");
+      setError(err instanceof Error ? err.message : t("expenses.form.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -479,16 +481,16 @@ export function ExpenseForm({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{resubmitting ? "Fix and resubmit" : expense ? "Edit expense" : "Submit an expense"}</DialogTitle>
+          <DialogTitle>{resubmitting ? t("expenses.common.fixAndResubmit") : expense ? t("expenses.form.editTitle") : t("expenses.form.newTitle")}</DialogTitle>
           <DialogDescription>
             {resubmitting
-              ? `Rejected${expense?.reviewerName ? ` by ${expense.reviewerName}` : ""}: “${expense?.reviewComment ?? ""}” Fix it, then resubmit — it goes back for approval.`
+              ? t("expenses.form.resubmitDescription", { by: expense?.reviewerName ? t("expenses.common.byName", { name: expense.reviewerName }) : "", comment: expense?.reviewComment ?? "" })
               : expense
                 ? entryMode === "labour"
-                  ? "It stays waiting for approval. Changing the rows changes the amount."
-                  : "It stays waiting for approval. Only a waiting or rejected expense can be edited — an approved expense has already posted to the ledger."
+                  ? t("expenses.form.editLabourDescription")
+                  : t("expenses.form.editDescription")
                 : entryMode === "labour"
-                  ? "A day's labour on site: workers per trade × their day rate."
+                  ? t("expenses.form.newLabourDescription")
                   : expensesDescription(canManageCategories)}
           </DialogDescription>
         </DialogHeader>
@@ -511,7 +513,7 @@ export function ExpenseForm({
             }}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[12.5px] font-medium text-on-surface">Receipt and files</span>
+              <span className="text-[12.5px] font-medium text-on-surface">{t("expenses.form.receiptAndFiles")}</span>
               <Button
                 type="button"
                 variant="secondary"
@@ -523,7 +525,7 @@ export function ExpenseForm({
                 }}
               >
                 <Plus size={13} aria-hidden />
-                Add files
+                {t("expenses.form.addFiles")}
               </Button>
             </div>
             {receiptFileId ? (
@@ -532,8 +534,8 @@ export function ExpenseForm({
                 {aiReceipt && entryMode === "amount" && (
                   <div className="flex w-full flex-col items-center gap-1" data-testid="expense-ai-read">
                     <AiActionButton
-                      label={readFileId === receiptFileId ? "Read again" : "Read receipt"}
-                      workingLabel="Reading…"
+                      label={readFileId === receiptFileId ? t("expenses.form.readAgain") : t("expenses.form.readReceipt")}
+                      workingLabel={t("expenses.form.reading")}
                       working={ai.working}
                       disabled={Boolean(aiStatus?.pausedUntil)}
                       onClick={readReceipt}
@@ -553,7 +555,7 @@ export function ExpenseForm({
                     }}
                   >
                     <RefreshCw size={13} aria-hidden />
-                    Replace
+                    {t("expenses.form.replace")}
                   </Button>
                   <Button
                     type="button"
@@ -569,34 +571,34 @@ export function ExpenseForm({
                     }}
                   >
                     <Trash2 size={13} aria-hidden />
-                    Remove
+                    {t("expenses.form.remove")}
                   </Button>
                 </div>
                 <p className="text-center text-[11.5px] text-on-surface-muted">
-                  {receiptFilename ? `${receiptFilename} · ` : ""}the receipt{readFileId === receiptFileId ? " · read by AI" : ""}
+                  {receiptFilename ? `${receiptFilename} · ` : ""}{t("expenses.form.theReceipt")}{readFileId === receiptFileId ? t("expenses.form.readByAi") : ""}
                 </p>
               </div>
             ) : (
               <div className="flex min-h-48 flex-col items-center justify-center gap-2 text-center">
                 <ImagePlus size={26} aria-hidden className="text-on-surface-muted" />
                 <p className="text-[12px] text-on-surface-muted">
-                  {entryMode === "labour" ? "Drop a muster sheet or site photo here, or " : "Drop the receipt here, or "}
+                  {entryMode === "labour" ? t("expenses.form.dropLabour") : t("expenses.form.dropReceipt")}
                   <button type="button" className="font-medium text-primary hover:underline" onClick={() => fileInputRef.current?.click()}>
-                    choose files
+                    {t("expenses.form.chooseFiles")}
                   </button>
-                  {entryMode === "labour" ? ". Optional for labour." : "."}
+                  {entryMode === "labour" ? t("expenses.form.optionalForLabour") : "."}
                 </p>
               </div>
             )}
             {extraFiles.length > 0 && (
-              <ul className="flex flex-col gap-1.5" aria-label="More files" data-testid="expense-extra-files">
+              <ul className="flex flex-col gap-1.5" aria-label={t("expenses.form.moreFilesAria")} data-testid="expense-extra-files">
                 {extraFiles.map((f) => (
                   <li key={f.fileId} className="flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1.5 text-[12px] text-on-surface">
                     <FileIcon size={14} aria-hidden className="shrink-0 text-on-surface-muted" />
                     <span className="min-w-0 flex-1 truncate" title={f.name}>
                       {f.name}
                     </span>
-                    <button type="button" aria-label={`Remove ${f.name}`} className="flex h-6 w-6 items-center justify-center rounded text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface" onClick={() => setExtraFiles((current) => current.filter((x) => x.fileId !== f.fileId))}>
+                    <button type="button" aria-label={t("expenses.form.removeFileAria", { name: f.name })} className="flex h-6 w-6 items-center justify-center rounded text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface" onClick={() => setExtraFiles((current) => current.filter((x) => x.fileId !== f.fileId))}>
                       <XIcon size={13} aria-hidden />
                     </button>
                   </li>
@@ -608,8 +610,8 @@ export function ExpenseForm({
                 <Spinner size="sm" />
               </div>
             )}
-            {receiptFileId && <p className="text-center text-[11.5px] text-on-surface-muted">Drop more photos or PDFs to add them.</p>}
-            <input ref={fileInputRef} type="file" multiple accept={PHOTO_OR_PDF_ACCEPT} className="hidden" aria-label="Choose receipt and files" onChange={handleFileChange} />
+            {receiptFileId && <p className="text-center text-[11.5px] text-on-surface-muted">{t("expenses.form.dropMore")}</p>}
+            <input ref={fileInputRef} type="file" multiple accept={PHOTO_OR_PDF_ACCEPT} className="hidden" aria-label={t("expenses.form.chooseFilesAria")} onChange={handleFileChange} />
           </div>
           <div className="flex min-w-0 flex-col gap-4 md:min-h-0 md:overflow-y-auto md:pr-1">
           {error && (
@@ -617,20 +619,20 @@ export function ExpenseForm({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          {ai.state.status === "failed" && <AiUnavailableNotice message={ai.state.message} detail="The receipt stays on the expense." onRetry={ai.state.canRetry ? ai.retry : undefined} />}
+          {ai.state.status === "failed" && <AiUnavailableNotice message={ai.state.message} detail={t("expenses.form.aiDetail")} onRetry={ai.state.canRetry ? ai.retry : undefined} />}
           {aiFields.size > 0 && (
             <Alert variant="info" icon={<Sparkles className="text-primary" />} data-testid="expense-ai-filled">
               <AlertDescription>
-                Filled in from the receipt. Check the fields marked <span className="font-semibold">Suggested by AI</span> before you submit.
+                {t("expenses.form.aiFilledBefore")}<span className="font-semibold">{t("expenses.form.aiFilledMark")}</span>{t("expenses.form.aiFilledAfter")}
               </AlertDescription>
             </Alert>
           )}
           {replaceOffer && (
             <Alert variant="info" data-testid="ai-replace-offer">
               <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="flex-1">AI read something different for what you&apos;d already entered. Your entries are kept.</span>
+                <span className="flex-1">{t("expenses.form.aiDifferent")}</span>
                 <Button type="button" variant="secondary" size="sm" onClick={replaceMine}>
-                  Replace my entries ({replaceOffer.count})
+                  {t("expenses.form.replaceMine", { n: replaceOffer.count })}
                 </Button>
               </AlertDescription>
             </Alert>
@@ -638,50 +640,51 @@ export function ExpenseForm({
 
           <div className="flex flex-col gap-1.5">
             <span id="entry-mode-label" className="text-[13px] font-medium text-on-surface">
-              Enter as
+              {t("expenses.form.enterAs")}
             </span>
             <ToggleGroup type="single" value={entryMode} onValueChange={changeEntryMode} aria-labelledby="entry-mode-label" className="w-full">
               <ToggleGroupItem value="amount" className="flex-1">
-                Amount
+                {t("expenses.form.amount")}
               </ToggleGroupItem>
               <ToggleGroupItem value="labour" className="flex-1">
-                Headcount × day rate
+                {t("expenses.form.headcountDayRate")}
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <AiField suggested={aiFields.has("category")}>
               <FormField
-                label="Category"
+                label={t("expenses.form.category")}
                 required
                 helperText={
                   entryMode === "labour" && labourCategory && categoryId === labourCategory.id
-                    ? `Preselected: posts to ${labourCategory.accountCode} ${labourCategory.accountName}.`
+                    ? t("expenses.form.preselected", { code: labourCategory.accountCode ?? "", name: labourCategory.accountName ?? "" })
                     : (categoryNote ?? chosenCategory?.description ?? undefined)
                 }
               >
-                {() => (
+                {(field) => (
                   <Combobox
+                    id={field.id}
                     options={categoryOptions}
                     value={categoryId}
                     onValueChange={(id) => {
                       markMine("category");
                       chooseCategory(id);
                     }}
-                    placeholder="Select a category…"
+                    placeholder={t("expenses.form.selectCategory")}
                   />
                 )}
               </FormField>
             </AiField>
             {/* US-SET-24: no jobs while Jobs & field is switched off. */}
             {jobsOn && (
-              <FormField label="Job" required={entryMode === "labour"} helperText={entryMode === "labour" ? "Labour is always for a job." : "Optional — flows into job costing once approved."}>
-                {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
+              <FormField label={t("expenses.form.job")} required={entryMode === "labour"} helperText={entryMode === "labour" ? t("expenses.form.labourNeedsJob") : t("expenses.form.jobOptional")}>
+                {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={setJobId} />}
               </FormField>
             )}
             <AiField suggested={aiFields.has("date")}>
-              <FormField label="Date" required>
+              <FormField label={t("expenses.form.date")} required>
                 {() => (
                   <DatePicker
                     value={date}
@@ -694,23 +697,24 @@ export function ExpenseForm({
               </FormField>
             </AiField>
             <AiField suggested={aiFields.has("currency")}>
-              <FormField label="Currency" required>
-                {() => (
+              <FormField label={t("expenses.form.currency")} required>
+                {(field) => (
                   <Combobox
+                    id={field.id}
                     options={currencyOptions}
                     value={currency}
                     onValueChange={(v) => {
                       markMine("currency");
                       setCurrency(v);
                     }}
-                    aria-label="Currency"
+                    aria-label={t("expenses.form.currency")}
                   />
                 )}
               </FormField>
             </AiField>
             {entryMode === "amount" && (
               <AiField suggested={aiFields.has("amount")}>
-                <FormField label="Amount" required>
+                <FormField label={t("expenses.form.amount")} required>
                   {(field) => (
                     <MoneyInput
                       id={field.id}
@@ -727,9 +731,10 @@ export function ExpenseForm({
               </AiField>
             )}
             <AiField suggested={aiFields.has("taxRate")}>
-              <FormField label="Tax rate" helperText={rateFromCategory && taxRateSelection ? `${possessive(rateFromCategory)} usual rate — change it if this receipt differs.` : undefined}>
-                {() => (
+              <FormField label={t("expenses.form.taxRate")} helperText={rateFromCategory && taxRateSelection ? t("expenses.form.usualRate", { owner: possessive(rateFromCategory) }) : undefined}>
+                {(field) => (
                   <Combobox
+                    id={field.id}
                     options={taxOptions}
                     value={taxRateSelection}
                     onValueChange={(v) => {
@@ -738,13 +743,13 @@ export function ExpenseForm({
                       setRateChosen(true);
                       setRateFromCategory(null);
                     }}
-                    placeholder="No tax"
+                    placeholder={t("expenses.form.noTax")}
                   />
                 )}
               </FormField>
             </AiField>
             <AiField suggested={aiFields.has("taxAmount")}>
-              <FormField label="Tax amount" helperText={taxNote ?? (!taxTouched && chosenRate ? `Worked out from ${chosenRate.name}, included in the amount.` : "Included in the amount above, not added on top.")}>
+              <FormField label={t("expenses.form.taxAmount")} helperText={taxNote ?? (!taxTouched && chosenRate ? t("expenses.form.workedOut", { rate: chosenRate.name }) : t("expenses.form.includedAbove"))}>
                 {(field) => (
                   <MoneyInput
                     id={field.id}
@@ -760,7 +765,7 @@ export function ExpenseForm({
                 )}
               </FormField>
             </AiField>
-            <FormField label="Paid by" required>
+            <FormField label={t("expenses.form.paidBy")} required>
               {() => (
                 <Select value={paidBy} onValueChange={(v) => setPaidBy(v as ExpensePaidBy)}>
                   <SelectTrigger>
@@ -783,7 +788,7 @@ export function ExpenseForm({
             <>
               <LabourRows rows={labourRows} onChange={setLabourRows} currency={currency} trades={trades} />
               <Alert variant="info">
-                <AlertDescription>Only headcounts and day rates are recorded — no names, attendance or hours.</AlertDescription>
+                <AlertDescription>{t("expenses.labour.privacyNote")}</AlertDescription>
               </Alert>
             </>
           )}
@@ -792,18 +797,18 @@ export function ExpenseForm({
             <Alert variant="warning" data-testid="expense-duplicate-warning">
               <AlertDescription>
                 <span className="font-semibold">
-                  You submitted {formatMoney(BigInt(duplicates[0].amount), duplicates[0].currency)} on {calendarDate(duplicates[0].date, new Date(), orgLocaleTag())} already
+                  {t("expenses.form.duplicate", { amount: formatMoney(BigInt(duplicates[0].amount), duplicates[0].currency), date: calendarDate(duplicates[0].date, new Date(), orgLocaleTag()) })}
                 </span>{" "}
-                — {duplicates[0].categoryName ?? "an expense"}, {duplicates[0].status === "submitted" ? "waiting for approval" : "approved"}. Check it isn&apos;t the same receipt before you submit.{" "}
+                {t("expenses.form.duplicateDetail", { category: duplicates[0].categoryName ?? t("expenses.form.anExpense"), status: duplicates[0].status === "submitted" ? t("expenses.form.waitingForApproval") : t("expenses.form.approved") })}{" "}
                 <Link href={`/expenses/${duplicates[0].id}`} target="_blank" className="font-medium text-primary hover:underline">
-                  Open it
+                  {t("expenses.form.openIt")}
                 </Link>
               </AlertDescription>
             </Alert>
           )}
 
           <AiField suggested={aiFields.has("description")}>
-            <FormField label="Description">
+            <FormField label={t("expenses.form.description")}>
               {(field) => (
                 <Input
                   {...field}
@@ -812,7 +817,7 @@ export function ExpenseForm({
                     markMine("description");
                     setDescription(e.target.value);
                   }}
-                  placeholder="What was this for?"
+                  placeholder={t("expenses.form.descriptionPlaceholder")}
                 />
               )}
             </FormField>
@@ -820,24 +825,24 @@ export function ExpenseForm({
 
           <label className="flex w-fit cursor-pointer items-center gap-2">
             <Checkbox checked={isBillable} onCheckedChange={(v) => setIsBillable(v === true)} />
-            <span className="text-[13px] text-on-surface">Billable to a customer</span>
+            <span className="text-[13px] text-on-surface">{t("expenses.form.billableToCustomer")}</span>
           </label>
           </div>
         </DialogBody>
 
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("expenses.common.cancel")}
           </Button>
           {!expense && (
             <Button type="button" variant="secondary" onClick={() => void handleSubmit(true)} disabled={saving || uploading}>
               <Plus size={14} aria-hidden />
-              Submit and add another
+              {t("expenses.form.submitAndAddAnother")}
             </Button>
           )}
           <Button type="button" onClick={() => void handleSubmit()} disabled={saving || uploading}>
             {saving ? <Spinner size="sm" /> : <Send size={14} aria-hidden />}
-            {resubmitting ? "Resubmit" : expense ? "Save changes" : "Submit expense"}
+            {resubmitting ? t("expenses.form.resubmit") : expense ? t("expenses.common.saveChanges") : t("expenses.common.submitExpense")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,0 +1,46 @@
+---
+title: Mark a line as zero-rated, exempt or non-taxable
+description: Say why a line has no tax, so your Tax Summary and returns report zero-rated, exempt and non-taxable supplies correctly.
+sidebar:
+  order: 5
+---
+
+A line with no tax can mean different things to a tax authority. A zero-rated sale is taxable at 0%; an exempt sale is outside the tax but still reported; a non-taxable supply is outside GST or VAT altogether. Spine records which one each untaxed line is, so the Tax Summary and GSTR-1 list them separately.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone who can edit the catalogue item or the document. Staff need the matching edit rights from their Team, for example to edit catalogue items or their own quotes.</Aside>
+
+The supply types are **Taxable**, **Zero-rated**, **Exempt** and **Non-taxable (outside GST/VAT)**.
+
+## Set it on a catalogue item
+
+<Steps>
+
+1. **Open the item** — Go to **Catalogue** and open the item.
+2. **Choose the Supply type** — Pick one of the four. The helper reads "Zero-rated, exempt and non-taxable items have no tax and are reported separately."
+3. **Save** — Lines added from this item start with its supply type.
+
+</Steps>
+
+## Change it on a line
+
+<Steps>
+
+1. **Open the draft** — Open the quote, invoice, vendor bill or variation order.
+2. **Find the line's Supply type** — When a line's tax is 0%, it shows **Supply type**, taken from the item, or **Zero-rated** when there's no item.
+3. **Change it if needed** — Pick the type that fits this sale.
+
+</Steps>
+
+## Exempt and non-taxable lines have no tax
+
+If a line is exempt or non-taxable and you pick a rate above 0%, Spine stops you: "An exempt line has no tax. Change the supply type to Taxable to add tax." Change the supply type to **Taxable** first, then pick the rate.
+
+<Aside type="tip">A tax rate can carry a supply type too (**Lines with this rate are** in the rate dialog), so picking "VAT 0%" or "Exempt" on a line gives the line that type straight away.</Aside>
+
+## After you issue
+
+An issued document keeps the supply type each line had when it was issued. Changing the catalogue item later doesn't change it.
+
+The [Tax Summary](../read-the-tax-summary/) lists zero-rated, exempt and non-taxable sales and purchases with their values.

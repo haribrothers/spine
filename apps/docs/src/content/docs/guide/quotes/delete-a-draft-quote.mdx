@@ -1,0 +1,36 @@
+---
+title: Delete a draft quote
+description: Remove a draft quote you don't need, so the list stays tidy.
+sidebar:
+  order: 15
+---
+
+You can delete a quote while it's still a draft and the customer has never seen it. Once a quote is sent it can't be deleted, so the record of what you offered is always kept.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Delete own quotes** (for drafts they created) or **Delete others' quotes** (for colleagues' drafts).</Aside>
+
+<Steps>
+
+1. **Open the draft** — Go to **Quotes** and open the draft.
+
+2. **Choose Delete draft** — Press **More** and choose **Delete draft**. On the Quotes list, you can choose **Delete** from the row's **…** menu instead.
+
+3. **Confirm** — Spine asks **Delete this draft quote?** and says this permanently removes the draft. Press **Delete draft**.
+
+4. **Check** — A toast says **Quote deleted**, and you're back on the Quotes list.
+
+</Steps>
+
+<Screenshot id="quotes-delete" alt="A draft quote's More menu with Delete draft at the bottom" />
+
+<Aside type="danger">
+Deleting a draft can't be undone. Its lines, notes and terms are gone. If you might want them later, [duplicate the quote](../duplicate-a-quote/) or [save its lines as a bundle](../save-and-reuse-lines-as-a-bundle/) first.
+</Aside>
+
+## When there's no Delete
+
+- **Sent, accepted, declined and expired quotes** have no delete. To replace a sent quote, [revise it](../revise-a-sent-quote/). An unanswered quote expires on its **Valid until** date.
+- **You don't see Delete** on a draft when your Team doesn't give you the right to delete it, for example a colleague's draft when you only have **Delete own quotes**.

@@ -1,0 +1,49 @@
+---
+title: Find and review payments
+description: Search and filter your payments, and open one to see what it paid and what happened to it.
+sidebar:
+  order: 8
+---
+
+The **Payments** list answers "did they pay?" quickly. Each payment also has its own page that shows what it paid, the credit it has left and everything that happened to it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Payments**. Field users can't open payments.
+</Aside>
+
+## Find a payment
+
+<Steps>
+
+1. **Open Payments** — Choose **Payments** in the sidebar. The newest payment is first.
+
+2. **Read the cards** — **Received this month** totals what came in. **Credit to use** shows credit left on payments and for how many customers; press it to show only those payments, and press again to clear. **Refunded this month** totals refunds of payment credit.
+
+3. **Filter the list** — Use the contact, **Method** and date range filters (**All time**, **This month**, **Last month**, **Last 90 days** or **This financial year**). **Clear filters** removes them.
+
+4. **Search** — Type in **Search receipts, references, customers or invoices**.
+
+</Steps>
+
+<Screenshot id="payments-list-filters" alt="The Payments list showing only payments with credit left, with the contact, method and date filters and the search bar" />
+
+Each row shows the receipt number with its reference, the date, the customer, the method with the account it went into, the amount, **Applied to** (the invoice numbers, or **Not applied**) and **Credit left**. The row menu offers **View**, **Apply credit**, **Refund**, **Email receipt**, **Download PDF** and **Delete payment**, each only when you have the right. Actions that change anything open the payment's page with that dialog, so nothing happens in one click.
+
+Your search and filters are kept in the address, so going Back or opening a bookmark brings back the same list. Press **Refresh list** to reload it.
+
+<Aside type="tip">
+  Press ⌘K (Ctrl+K on Windows) and type a receipt number, reference or customer name. Matching payments appear under **Payments**.
+</Aside>
+
+## Read a payment's page
+
+The title is the receipt number with its state: **Fully applied**, **Credit left** or **Refunded**. Under it are the customer, the date, the method, **Paid into** the account and the reference.
+
+- The strip reads **Received**, **Applied**, **Refunded** (when any) and **Credit left**.
+- **Applied to** lists each invoice with its total, what this payment put on it, what it **Still owes** (or **Paid**) and when it was applied.
+- **Activity** lists, newest first, when it was recorded, applied, receipted, moved off an invoice or refunded, and by whom. **View history** under **More** shows field-level changes.
+
+<Screenshot id="payments-detail" alt="A payment's page with its state, the Received, Applied and Credit left strip, and the Applied to table" />

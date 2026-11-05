@@ -52,10 +52,11 @@ import { MakeBundleDialog } from "./make-bundle-dialog";
 import type { Account, AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
 import { useToast } from "../../../components/toast-host";
 import { ActionError } from "../../../components/action-error";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
+  { value: "active", label: translate("catalog.common.active") },
+  { value: "archived", label: translate("catalog.common.archived") },
 ];
 
 /**
@@ -78,6 +79,7 @@ export function CatalogExplorer({
   onActiveCountChange?: (count: number) => void;
   onBundleSaved?: (bundle: CatalogBundle) => void;
 }) {
+  const t = useT();
   const canCreate = useCapability("catalog.edit_own");
   const canDelete = useCapability("catalog.delete_own");
   const pathname = usePathname();
@@ -127,9 +129,9 @@ export function CatalogExplorer({
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Catalogue updated");
+      if (mode === "refresh") setAnnouncement(translate("catalog.explorer.updatedAnnouncement"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load catalogue items.");
+      if (mode === "first") setError(err instanceof Error ? err.message : translate("catalog.explorer.loadError"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -211,20 +213,20 @@ export function CatalogExplorer({
   // US-CAT-12 — Duplicate opens Add item filled from this one.
   function openDuplicate(item: CatalogItem) {
     setEditingItem(undefined);
-    setPrefill({ ...item, name: `${item.name} (copy)` });
+    setPrefill({ ...item, name: t("catalog.explorer.copyName", { name: item.name }) });
     setDrawerOpen(true);
   }
 
   function handleSaved(item: CatalogItem, mode: "created" | "updated") {
     void load("refresh");
-    showToast(mode === "created" ? "Item created" : "Item updated", `${item.name} has been saved.`);
+    showToast(mode === "created" ? t("catalog.explorer.itemCreated") : t("catalog.explorer.itemUpdated"), t("catalog.explorer.itemSavedDescription", { name: item.name }));
   }
 
   function handleRowChanged(action: "archived" | "restored" | "deleted", item: CatalogItem) {
     void load("refresh");
-    if (action === "archived") showToast("Item archived", `${item.name} has been archived.`);
-    else if (action === "restored") showToast("Item restored", `${item.name} is active again.`);
-    else showToast("Item deleted", `${item.name} has been permanently removed.`);
+    if (action === "archived") showToast(t("catalog.explorer.itemArchived"), t("catalog.explorer.itemArchivedDescription", { name: item.name }));
+    else if (action === "restored") showToast(t("catalog.explorer.itemRestored"), t("catalog.explorer.itemRestoredDescription", { name: item.name }));
+    else showToast(t("catalog.explorer.itemDeleted"), t("catalog.explorer.itemDeletedDescription", { name: item.name }));
   }
 
   function handleBulkFinished(title: string, description: string) {
@@ -240,7 +242,7 @@ export function CatalogExplorer({
     const csv = Papa.unparse({ fields: [...EXPORT_COLUMNS], data: exportRows(items, rateMap, groupMap, accountMap).map((row) => EXPORT_COLUMNS.map((c) => row[c])) });
     const filename = exportFileName(new Date());
     saveBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
-    showToast("Catalogue exported", `${items.length} ${items.length === 1 ? "item" : "items"} in ${filename}.`);
+    showToast(t("catalog.explorer.exportedTitle"), t("catalog.explorer.exportedDescription", { count: items.length, filename }));
   }
 
   function applyPrice() {
@@ -262,8 +264,8 @@ export function CatalogExplorer({
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
       <Input
         type="search"
-        placeholder="Search items"
-        aria-label="Search items"
+        placeholder={t("catalog.common.searchItems")}
+        aria-label={t("catalog.common.searchItems")}
         value={state.q}
         onChange={(event) => update({ q: event.target.value })}
         className="pl-9"
@@ -277,7 +279,7 @@ export function CatalogExplorer({
       <button
         type="button"
         aria-pressed={setup ? pressed : undefined}
-        aria-label={`${ariaHint}, ${value ?? "loading"}`}
+        aria-label={t("catalog.explorer.statAria", { hint: ariaHint, value: value ?? t("catalog.explorer.statLoading") })}
         onClick={() =>
           setup ? update({ setup: pressed ? "" : setup }) : update({ q: "", status: ["active"], categories: [], min: "", max: "", setup: "" })
         }
@@ -286,7 +288,7 @@ export function CatalogExplorer({
         <StatCard
           label={label}
           value={value === null ? "—" : String(value)}
-          trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : hint }}
+          trend={{ direction: "neutral", label: pressed ? t("catalog.explorer.statPressed") : hint }}
           className={cn("h-full transition-colors hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
         />
       </button>
@@ -300,32 +302,34 @@ export function CatalogExplorer({
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="catalog-stats">
-        {statButton("Total items", stats?.total ?? null, null, "Clear the filters", "Clear the filters")}
+        {statButton(t("catalog.explorer.statTotal"), stats?.total ?? null, null, t("catalog.explorer.statClearHint"), t("catalog.explorer.statClearHint"))}
         <StatCard
-          label="Categories"
+          label={t("catalog.explorer.statCategories")}
           value={stats ? String(stats.categories.length) : "—"}
           trend={{ direction: "neutral", label: stats ? categoriesNote(stats.categories) : "" }}
           className="h-full"
         />
-        {statButton("Missing tax rate", stats?.missingTax ?? null, "tax", "Show these items", "Show items missing a tax rate")}
-        {statButton("No income account", stats?.noIncomeAccount ?? null, "account", "Posts to 4100 Sales — Services", "Show items with no income account")}
+        {/* eslint-disable-next-line i18next/no-literal-string -- "tax" is a setup filter value, not copy */}
+        {statButton(t("catalog.explorer.statMissingTax"), stats?.missingTax ?? null, "tax", t("catalog.explorer.statMissingTaxHint"), t("catalog.explorer.statMissingTaxAria"))}
+        {/* eslint-disable-next-line i18next/no-literal-string -- "account" is a setup filter value, not copy */}
+        {statButton(t("catalog.explorer.statNoIncome"), stats?.noIncomeAccount ?? null, "account", t("catalog.explorer.statNoIncomeHint"), t("catalog.explorer.statNoIncomeAria"))}
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status })} placeholder="Status" aria-label="Filter by status" className="w-36" />
+            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status })} placeholder={t("catalog.explorer.statusPlaceholder")} aria-label={t("catalog.common.filterByStatus")} className="w-36" />
             <MultiSelect
               options={categoryOptions}
               value={state.categories}
               onValueChange={(categories) => update({ categories })}
-              placeholder="Category"
-              aria-label="Filter by category"
+              placeholder={t("catalog.common.category")}
+              aria-label={t("catalog.common.filterByCategory")}
               className="w-40"
             />
             <Popover onOpenChange={(open) => open && setPriceDraft({ min: state.min, max: state.max })}>
               <PopoverTrigger asChild>
-                <Button variant="secondary" aria-label={priceSet ? `Price filter: ${priceLabel(state.min, state.max, currency, formatMoney)}` : "Filter by price"} className={cn(priceSet && "border-primary text-primary")}>
+                <Button variant="secondary" aria-label={priceSet ? t("catalog.explorer.priceFilterAria", { label: priceLabel(state.min, state.max, currency, formatMoney) }) : t("catalog.explorer.filterByPrice")} className={cn(priceSet && "border-primary text-primary")}>
                   <Wallet size={14} aria-hidden />
                   {priceLabel(state.min, state.max, currency, formatMoney)}
                   <ChevronDown size={14} aria-hidden className="text-on-surface-muted" />
@@ -339,14 +343,14 @@ export function CatalogExplorer({
                     applyPrice();
                   }}
                 >
-                  <p className="text-[13px] text-on-surface-muted">Default price, in each item&apos;s own currency.</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-[13px] text-on-surface-muted">{t("catalog.explorer.priceHelp")}</p>
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div className="flex flex-col gap-1">
-                      <Label htmlFor="catalog-price-min">Min</Label>
+                      <Label htmlFor="catalog-price-min">{t("catalog.explorer.min")}</Label>
                       <Input id="catalog-price-min" type="number" inputMode="decimal" min={0} step="0.01" value={priceDraft.min} onChange={(e) => setPriceDraft((d) => ({ ...d, min: e.target.value }))} />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label htmlFor="catalog-price-max">Max</Label>
+                      <Label htmlFor="catalog-price-max">{t("catalog.explorer.max")}</Label>
                       <Input id="catalog-price-max" type="number" inputMode="decimal" min={0} step="0.01" value={priceDraft.max} onChange={(e) => setPriceDraft((d) => ({ ...d, max: e.target.value }))} />
                     </div>
                   </div>
@@ -360,10 +364,10 @@ export function CatalogExplorer({
                         update({ min: "", max: "" });
                       }}
                     >
-                      Clear
+                      {t("catalog.common.clear")}
                     </Button>
                     <Button type="submit" size="sm">
-                      Apply
+                      {t("catalog.explorer.apply")}
                     </Button>
                   </div>
                 </form>
@@ -371,38 +375,38 @@ export function CatalogExplorer({
             </Popover>
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={() => update({ q: "", status: ["active"], categories: [], min: "", max: "", setup: "" })}>
-                Clear filters
+                {t("catalog.common.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="catalog-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("catalog.common.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !all} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("catalog.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !all} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("catalog.common.refreshList")}</TooltipContent>
             </Tooltip>
             <Button variant="secondary" onClick={exportCsv} disabled={!items || items.length === 0}>
               <Download size={14} aria-hidden />
-              Export
+              {t("catalog.common.export")}
             </Button>
             {canCreate && (
               <>
                 {/* US-CAT-09 — import from a CSV; same right as adding an item. */}
                 <Button variant="secondary" onClick={() => setImportOpen(true)}>
                   <Upload size={14} aria-hidden />
-                  Import
+                  {t("catalog.common.import")}
                 </Button>
                 <Button onClick={openCreate}>
                   <Plus size={14} aria-hidden />
-                  Add item
+                  {t("catalog.common.addItem")}
                 </Button>
               </>
             )}
@@ -414,9 +418,9 @@ export function CatalogExplorer({
         {refreshFailed && (
           <Alert variant="critical" data-testid="catalog-refresh-failed">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("catalog.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("catalog.common.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -447,20 +451,20 @@ export function CatalogExplorer({
             {filtersOn ? (
               <EmptyState
                 icon={state.q.trim() ? <Search /> : <Package />}
-                title={state.q.trim() && !hasCatalogFilters({ ...state, q: "" }) ? `No items match "${state.q.trim()}"` : "No items match these filters"}
-                description="Try adjusting or clearing the filters above."
+                title={state.q.trim() && !hasCatalogFilters({ ...state, q: "" }) ? t("catalog.explorer.noMatchQuery", { query: state.q.trim() }) : t("catalog.explorer.noMatchFilters")}
+                description={t("catalog.explorer.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={() => update({ q: "", status: ["active"], categories: [], min: "", max: "", setup: "" })}>
-                    Clear filters
+                    {t("catalog.common.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<Package />}
-                title="No catalogue items yet"
-                description="Add your first good or service to quote faster — default price and tax rate prefill every new quote line."
-                action={canCreate ? <Button onClick={openCreate}>Add item</Button> : undefined}
+                title={t("catalog.explorer.emptyTitle")}
+                description={t("catalog.explorer.emptyDescription")}
+                action={canCreate ? <Button onClick={openCreate}>{t("catalog.common.addItem")}</Button> : undefined}
               />
             )}
           </div>
@@ -493,7 +497,7 @@ export function CatalogExplorer({
         onOpenChange={setBundleOpen}
         onSaved={(bundle) => {
           setSelected(new Set());
-          showToast("Bundle saved", `${bundle.name} is under Bundles, ready to add to a quote.`);
+          showToast(t("catalog.common.bundleSaved"), t("catalog.explorer.bundleSavedDescription", { name: bundle.name }));
           onBundleSaved?.(bundle);
         }}
       />

@@ -43,15 +43,16 @@ import { useContactStats } from "./use-contact-stats";
 import { useToast } from "../../../components/toast-host";
 
 import { SectionLink } from "../../../components/section-link";
+import { t as translate, useT } from "../../../lib/i18n";
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
-  { value: "customer", label: "Customer" },
-  { value: "vendor", label: "Vendor" },
-  { value: "both", label: "Customer & vendor" },
+  { value: "customer", label: translate("contacts.common.typeCustomer") },
+  { value: "vendor", label: translate("contacts.common.typeVendor") },
+  { value: "both", label: translate("contacts.common.typeBoth") },
 ];
 
 const ARCHIVED_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
+  { value: "active", label: translate("contacts.common.active") },
+  { value: "archived", label: translate("contacts.common.archived") },
 ];
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -69,6 +70,7 @@ const DEFAULT_PAGE_SIZE = 25;
  * place, keeping the list on screen.
  */
 export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
+  const t = useT();
   const canCreate = useCapability("contacts.edit_own");
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -123,9 +125,9 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Contacts updated");
+      if (mode === "refresh") setAnnouncement(translate("contacts.explorer.updatedAnnouncement"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load contacts.");
+      if (mode === "first") setError(err instanceof Error ? err.message : translate("contacts.explorer.loadError"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
@@ -166,19 +168,19 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
 
   function handleCreated(contact: Contact) {
     void load("refresh");
-    showToast("Contact created", `${contact.name} has been added to your contacts.`);
+    showToast(t("contacts.form.createdTitle"), t("contacts.form.createdDescription", { name: contact.name }));
   }
 
   function handleRowChanged(action: "archived" | "restored" | "deleted", contact: Contact) {
     void load("refresh");
-    if (action === "archived") showToast("Contact archived", `${contact.name} has been archived.`);
-    else if (action === "restored") showToast("Contact restored", `${contact.name} is active again.`);
-    else showToast("Contact deleted", `${contact.name} has been permanently removed.`);
+    if (action === "archived") showToast(t("contacts.detail.archivedTitle"), t("contacts.detail.archivedDescription", { name: contact.name }));
+    else if (action === "restored") showToast(t("contacts.detail.restoredTitle"), t("contacts.detail.restoredDescription", { name: contact.name }));
+    else showToast(t("contacts.detail.deletedTitle"), t("contacts.detail.deletedDescription", { name: contact.name }));
   }
 
   function handleImported(createdCount: number) {
     void load("refresh");
-    showToast("Contacts imported", `${createdCount} contact${createdCount === 1 ? "" : "s"} added from CSV.`);
+    showToast(t("contacts.explorer.importedTitle"), t("contacts.explorer.importedDescription", { count: createdCount }));
   }
 
   function toggleStatType(set: ContactType[]) {
@@ -198,8 +200,8 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
       <Input
         type="search"
-        placeholder="Search contacts"
-        aria-label="Search contacts"
+        placeholder={t("contacts.explorer.search")}
+        aria-label={t("contacts.explorer.search")}
         value={state.q}
         onChange={(event) => update({ q: event.target.value })}
         className="pl-9"
@@ -213,14 +215,14 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
       <button
         type="button"
         aria-pressed={set ? pressed : undefined}
-        aria-label={`${hint}, ${value ?? "loading"}`}
+        aria-label={t("contacts.explorer.statAria", { hint, value: value ?? t("contacts.explorer.statLoading") })}
         onClick={() => (set ? toggleStatType(set) : update({ types: [] }))}
         className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <StatCard
           label={label}
           value={value === null ? "—" : String(value)}
-          trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : hint }}
+          trend={{ direction: "neutral", label: pressed ? t("contacts.explorer.statPressed") : hint }}
           className={cn("h-full transition-colors hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
         />
       </button>
@@ -233,14 +235,14 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="contact-stats">
-        {statButton("Total contacts", stats.total, null, "Clear the type filter")}
-        {statButton("Customers", stats.customers, STAT_TYPES.customers, "Show customers")}
-        {statButton("Vendors", stats.vendors, STAT_TYPES.vendors, "Show vendors")}
-        <SectionLink href="/leads" aria-label={`Open the pipeline, ${stats.activeLeads ?? "loading"} active leads`} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        {statButton(t("contacts.explorer.statTotal"), stats.total, null, t("contacts.explorer.statTotalHint"))}
+        {statButton(t("contacts.explorer.statCustomers"), stats.customers, STAT_TYPES.customers, t("contacts.explorer.statCustomersHint"))}
+        {statButton(t("contacts.explorer.statVendors"), stats.vendors, STAT_TYPES.vendors, t("contacts.explorer.statVendorsHint"))}
+        <SectionLink href="/leads" aria-label={t("contacts.explorer.pipelineAria", { count: stats.activeLeads ?? t("contacts.explorer.statLoading") })} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <StatCard
-            label="Active leads"
+            label={t("contacts.explorer.statActiveLeads")}
             value={stats.activeLeads === null ? "—" : String(stats.activeLeads)}
-            trend={{ direction: "neutral", label: "Open the pipeline" }}
+            trend={{ direction: "neutral", label: t("contacts.explorer.openPipeline") }}
             className="h-full transition-colors hover:border-border-strong"
           />
         </SectionLink>
@@ -253,23 +255,23 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
               options={TYPE_OPTIONS}
               value={state.types}
               onValueChange={(types) => update({ types: types as ContactType[] })}
-              placeholder="All types"
-              aria-label="Filter by type"
+              placeholder={t("contacts.explorer.allTypes")}
+              aria-label={t("contacts.explorer.filterByType")}
               className="w-44"
             />
             <MultiSelect
               options={ARCHIVED_OPTIONS}
               value={state.status}
               onValueChange={(status) => update({ status })}
-              placeholder="Status"
-              aria-label="Filter by status"
+              placeholder={t("contacts.explorer.statusPlaceholder")}
+              aria-label={t("contacts.explorer.filterByStatus")}
               className="w-36"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="contacts-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("contacts.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
@@ -277,7 +279,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
                 <Button
                   variant="secondary"
                   size="icon"
-                  aria-label="Refresh list"
+                  aria-label={t("contacts.explorer.refreshList")}
                   aria-busy={refreshing}
                   disabled={refreshing || !all}
                   onClick={() => void load("refresh")}
@@ -285,17 +287,17 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("contacts.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
             {canCreate && <span className="mx-0.5 h-6 w-px bg-border" aria-hidden />}
             {canCreate && (
               <Button variant="secondary" onClick={() => setImportOpen(true)}>
                 <Upload size={14} />
-                Import CSV
+                {t("contacts.explorer.importCsv")}
               </Button>
             )}
-            {canCreate && <Button onClick={() => setDrawerOpen(true)}>Add contact</Button>}
+            {canCreate && <Button onClick={() => setDrawerOpen(true)}>{t("contacts.explorer.addContact")}</Button>}
           </div>
         </div>
         <p role="status" className="sr-only">
@@ -304,9 +306,9 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
         {refreshFailed && (
           <Alert variant="critical" data-testid="contacts-refresh-failed">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("contacts.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("contacts.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -322,31 +324,31 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
             {filtersOn ? (
               <EmptyState
                 icon={<Users />}
-                title="No contacts match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("contacts.explorer.noMatchFilters")}
+                description={t("contacts.explorer.noMatchFiltersDescription")}
                 action={
                   <Button variant="secondary" onClick={() => update({ types: [], status: ["active"], q: "" })}>
-                    Clear filters
+                    {t("contacts.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : searching ? (
               <EmptyState
                 icon={<Search />}
-                title={`No contacts match "${state.q.trim()}"`}
-                description="Check the spelling, or search by email or phone."
+                title={t("contacts.explorer.noMatchQuery", { query: state.q.trim() })}
+                description={t("contacts.explorer.noMatchQueryDescription")}
                 action={
                   <Button variant="secondary" onClick={() => update({ q: "" })}>
-                    Clear search
+                    {t("contacts.explorer.clearSearch")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<Users />}
-                title="No contacts yet"
-                description="Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
-                action={canCreate ? <Button onClick={() => setDrawerOpen(true)}>Add contact</Button> : undefined}
+                title={t("contacts.explorer.emptyTitle")}
+                description={t("contacts.explorer.emptyDescription")}
+                action={canCreate ? <Button onClick={() => setDrawerOpen(true)}>{t("contacts.explorer.addContact")}</Button> : undefined}
               />
             )}
           </div>

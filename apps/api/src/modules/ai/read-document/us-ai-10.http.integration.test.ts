@@ -35,7 +35,7 @@ describe("US-AI-10 · read my receipt on the phone (requires local Postgres)", (
   /** The outbox's upload: multipart, bearer, an Idempotency-Key per photo. */
   const uploadPhoto = async () => {
     const form = new FormData();
-    form.append("file", new Blob([billPhoto()], { type: "image/png" }), "receipt.jpg");
+    form.append("file", new Blob([new Uint8Array(billPhoto())], { type: "image/png" }), "receipt.jpg");
     return (await json<{ id: string }>(await fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: bearer(token, { "Idempotency-Key": randomUUID() }), body: form }))).id;
   };
   const expense = (extra: Record<string, unknown>) => ({ categoryId, jobId: null, date: "2026-10-08", currency: "USD", amount: "6420", description: "Shell Harbor Rd — diesel, 15.2 gal", paidBy: "employee", ...extra });
@@ -96,7 +96,7 @@ describe("US-AI-10 · read my receipt on the phone (requires local Postgres)", (
   it("the phone can read only its own photos", async () => {
     // A photo the owner uploaded isn't Marcus's to read, nor to use as his receipt (D-250).
     const form = new FormData();
-    form.append("file", new Blob([billPhoto()], { type: "image/png" }), "receipt.jpg");
+    form.append("file", new Blob([new Uint8Array(billPhoto())], { type: "image/png" }), "receipt.jpg");
     const ownersFile = (await json<{ id: string }>(await fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: { cookie: ctx.ownerCookie, "Idempotency-Key": randomUUID() }, body: form }))).id;
     expect((await phone("POST", "/ai/read-document", { fileId: ownersFile, target: "expense" })).status).toBe(404);
     expect((await phone("POST", "/expenses", expense({ receiptFileId: ownersFile }))).status).toBe(400);

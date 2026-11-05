@@ -1,0 +1,41 @@
+---
+title: Check the trial balance
+description: See every account's debit or credit balance on a date and confirm the books balance.
+sidebar:
+  order: 5
+---
+
+The Trial Balance lists every account with its debit or credit balance on a date. Total debits always equal total credits, which proves your books balance. Accountants start here at year end.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**.</Aside>
+
+<Steps>
+
+1. **Open the report** — Go to **Reports › Trial Balance**, or use the tabs from Profit & Loss.
+2. **Choose the date** — Set **As of**.
+3. **Read the table** — **Code**, **Account**, **Debit** and **Credit** for every account with a balance, and a **Total** row.
+4. **Check the Difference card** — It reads "✓ balanced" when debits equal credits, and the footnote says "Balanced — total debits equal total credits."
+5. **Show every account** — Untick **Hide accounts with no balance** to list zero-balance accounts too.
+6. **Click an account** — See every journal entry behind its balance.
+
+</Steps>
+
+<Screenshot id="reports-trial-balance" alt="The Trial Balance with the Difference card reading balanced and the table of accounts with debit and credit balances" />
+
+Use **Search accounts** to find one account in a long list.
+
+## If the books ever stop balancing
+
+Spine won't post an entry that doesn't balance, so this should never happen. As a safeguard it checks every night. If total debits and credits ever differ:
+
+- The Trial Balance shows a red alert: "Out of balance by *amount*. This has been logged; tell your administrator."
+- Owners see a banner on the dashboard, "Your books are out of balance by *amount*. Contact the person who runs Spine.", and get a notification.
+
+The banner goes away after the next check passes.
+
+<Aside type="danger">Don't try to fix an out-of-balance difference with a journal. Tell the person who runs your Spine install: it usually means data was changed outside the app.</Aside>
+
+To export, press **Export** (see [Export or print a report](../export-or-print-a-report/)).

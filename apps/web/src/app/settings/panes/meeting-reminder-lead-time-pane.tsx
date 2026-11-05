@@ -5,6 +5,7 @@ import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { useSettingsValue } from "../use-settings-value";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
 
 const LEAD_TIME_OPTIONS = [5, 15, 30, 60] as const;
 
@@ -31,6 +32,7 @@ export function MeetingReminderLeadTimePane() {
 }
 
 function MeetingReminderLeadTimeForm({ initialMinutes }: { initialMinutes: number }) {
+  const t = useT();
   const [minutes, setMinutes] = useState(initialMinutes);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -48,10 +50,9 @@ function MeetingReminderLeadTimeForm({ initialMinutes }: { initialMinutes: numbe
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Meeting reminders</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.meetingReminderLeadTime.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Default lead time for the &quot;meeting starting soon&quot; notification, before someone has set their own
-          override.
+          {t("settings.meetingReminderLeadTime.description")}
         </p>
       </div>
 
@@ -66,17 +67,17 @@ function MeetingReminderLeadTimeForm({ initialMinutes }: { initialMinutes: numbe
             )}
           >
             <RadioGroupItem value={String(option)} id={`meeting-reminder-lead-${option}`} />
-            <p className="text-[14px] font-medium text-on-surface">{option} minutes before</p>
+            <p className="text-[14px] font-medium text-on-surface">{t("settings.meetingReminderLeadTime.option", { minutes: option })}</p>
           </label>
         ))}
       </RadioGroup>
 
       <p className="text-[12px] text-on-surface-muted">
-        Anyone can choose their own in Settings › Your account › Notifications.
+        {t("settings.meetingReminderLeadTime.note")}
       </p>
 
       <Button onClick={handleSave} disabled={saving} className="ml-auto">
-        {saving ? <Spinner size="sm" /> : "Save"}
+        {saving ? <Spinner size="sm" /> : t("settings.common.save")}
       </Button>
 
       <SavedToast open={saved} onOpenChange={setSaved} />

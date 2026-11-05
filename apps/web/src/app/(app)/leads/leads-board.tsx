@@ -46,6 +46,7 @@ import { type Contact, type Lead } from "../contacts/types";
 import { STAGE_DOT_CLASS, useLeadStages } from "../contacts/use-lead-stages";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { authClient } from "../../../lib/auth-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import type { MemberRow } from "../../../lib/members";
@@ -113,6 +114,7 @@ function Totals({ leads, empty }: { leads: Lead[]; empty?: string }) {
  * returns every lead in the organisation.
  */
 export function LeadsBoard() {
+  const t = useT();
   const router = useRouter();
   const showToast = useToast();
   const pathname = usePathname();
@@ -214,17 +216,17 @@ export function LeadsBoard() {
         setNow(Date.now());
         if (mode === "refresh") {
           reloadStages();
-          setAnnouncement("Pipeline updated");
+          setAnnouncement(t("leads.board.updated"));
         }
       } catch (err) {
-        if (mode === "first") setError(err instanceof Error ? err.message : "Could not load the pipeline.");
+        if (mode === "first") setError(err instanceof Error ? err.message : t("leads.board.loadFailed"));
         else setRefreshFailed(true);
       } finally {
         loading.current = false;
         setRefreshing(false);
       }
     },
-    [reloadStages],
+    [reloadStages, t],
   );
 
   useEffect(() => {
@@ -302,12 +304,12 @@ export function LeadsBoard() {
   async function moveLead(lead: Lead, stage: LeadStage) {
     if (lead.stageId === stage.id) return;
     if (!canEdit(lead)) {
-      setAnnouncement("You can't move this lead.");
+      setAnnouncement(t("leads.board.cantMove"));
       return;
     }
     const moved: Lead = { ...lead, stageId: stage.id, stageName: stage.name, stageKind: stage.kind, stageChangedAt: new Date().toISOString(), lostReason: null, lostNote: null };
     replaceLead(moved);
-    setAnnouncement(`Moved to ${stage.name}`);
+    setAnnouncement(t("leads.board.movedTo", { stage: stage.name }));
     try {
       const saved = await apiClient.put<Lead>(`/leads/${lead.id}`, { stageId: stage.id });
       replaceLead(saved);
@@ -315,14 +317,14 @@ export function LeadsBoard() {
       afterMove(saved);
     } catch {
       replaceLead(lead);
-      setAnnouncement(`Couldn't move ${lead.title ?? "the lead"}. Try again.`);
+      setAnnouncement(t("leads.board.moveFailed", { title: lead.title ?? t("leads.board.theLead") }));
     }
   }
 
   /** US-OPS-38: a lead marked lost says so — with its reason, or where to add one. */
   function toastLost(lead: Lead, reason: LostReason | null) {
-    const title = lead.title ?? "The lead";
-    showToast("Lead marked lost", reason ? `${title} — reason: ${LOST_REASON_LABELS[reason].toLowerCase()}.` : `${title} is in ${lead.stageName}; add why from the lead when you know.`);
+    const title = lead.title ?? t("leads.board.theLeadCapital");
+    showToast(t("leads.board.markedLost"), reason ? t("leads.board.lostWithReason", { title, reason: LOST_REASON_LABELS[reason].toLowerCase() }) : t("leads.board.lostWithoutReason", { title, stage: lead.stageName }));
   }
 
   async function saveLostReason(reason: LostReason | null, note: string) {
@@ -362,8 +364,8 @@ export function LeadsBoard() {
     try {
       await apiClient.delete(`/leads/${deleteLead.id}`);
       setLeads((prev) => prev?.filter((l) => l.id !== deleteLead.id) ?? prev);
-      setAnnouncement(`Deleted ${deleteLead.title ?? "the lead"}`);
-      showToast("Lead deleted", `“${deleteLead.title ?? "The lead"}” is gone from the pipeline.`);
+      setAnnouncement(t("leads.board.deletedAnnouncement", { title: deleteLead.title ?? t("leads.board.theLead") }));
+      showToast(t("leads.board.deleted"), t("leads.board.deletedDescription", { title: deleteLead.title ?? t("leads.board.theLeadCapital") }));
       if (drawerLeadId === deleteLead.id) setDrawerOpen(false);
       setDeleteLead(null);
     } finally {
@@ -390,7 +392,7 @@ export function LeadsBoard() {
 
   if (!leads || !stages) {
     return (
-      <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading the pipeline">
+      <div className="flex flex-col gap-4" aria-busy="true" aria-label={t("leads.board.loading")}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-[84px] rounded-lg" />
@@ -424,33 +426,33 @@ export function LeadsBoard() {
             <Input
               value={state.q}
               onChange={(e) => update({ q: e.target.value })}
-              placeholder="Search leads or contacts…"
-              aria-label="Search leads or contacts"
+              placeholder={t("leads.board.searchPlaceholder")}
+              aria-label={t("leads.board.searchAria")}
               className="w-48 pl-8"
             />
           </div>
-          <MultiSelect options={stageOptions} value={state.stages} onValueChange={(next) => update({ stages: next })} placeholder="All stages" aria-label="Filter by stage" className="w-32" />
+          <MultiSelect options={stageOptions} value={state.stages} onValueChange={(next) => update({ stages: next })} placeholder={t("leads.board.allStages")} aria-label={t("leads.board.filterByStage")} className="w-32" />
           <Select value={ownerValue} onValueChange={(v) => update({ owner: v === ALL ? "" : v })}>
-            <SelectTrigger aria-label="Filter by owner" className="w-32">
+            <SelectTrigger aria-label={t("leads.board.filterByOwner")} className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All owners</SelectItem>
-              <SelectItem value="me">My leads</SelectItem>
+              <SelectItem value={ALL}>{t("leads.board.allOwners")}</SelectItem>
+              <SelectItem value="me">{t("leads.board.myLeads")}</SelectItem>
               {activeMembers.map((m) => (
                 <SelectItem key={m.userId} value={m.userId}>
                   {m.name}
                 </SelectItem>
               ))}
-              <SelectItem value="unassigned">Unassigned</SelectItem>
+              <SelectItem value="unassigned">{t("leads.board.unassigned")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={state.source || ALL} onValueChange={(v) => update({ source: v === ALL ? "" : v })}>
-            <SelectTrigger aria-label="Filter by source" className="w-32">
+            <SelectTrigger aria-label={t("leads.board.filterBySource")} className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All sources</SelectItem>
+              <SelectItem value={ALL}>{t("leads.board.allSources")}</SelectItem>
               {sources.map((s) => (
                 <SelectItem key={s} value={s}>
                   {s}
@@ -467,7 +469,7 @@ export function LeadsBoard() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("leads.board.sortBy")}</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={state.sort} onValueChange={(v) => update({ sort: v as SortKey })}>
                 {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
                   <DropdownMenuRadioItem key={key} value={key}>
@@ -481,19 +483,19 @@ export function LeadsBoard() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary">
                 <SlidersHorizontal size={14} aria-hidden />
-                View
+                {t("leads.board.view")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Card details</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("leads.board.cardDetails")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <label className="flex items-center gap-2 px-2 py-1.5 text-[13px] text-on-surface">
                 <input type="checkbox" checked={viewSettings.showValue} onChange={(e) => updateViewSetting("showValue", e.target.checked)} />
-                Show value
+                {t("leads.board.showValue")}
               </label>
               <label className="flex items-center gap-2 px-2 py-1.5 text-[13px] text-on-surface">
                 <input type="checkbox" checked={viewSettings.showSource} onChange={(e) => updateViewSetting("showSource", e.target.checked)} />
-                Show source
+                {t("leads.board.showSource")}
               </label>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -501,21 +503,21 @@ export function LeadsBoard() {
         <div className="ml-auto flex items-center gap-2">
           {updatedAt !== null && (
             <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="pipeline-updated">
-              {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+              {refreshing ? t("leads.board.updating") : updatedLabel(updatedAt, now)}
             </span>
           )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="secondary" size="icon" aria-label="Refresh pipeline" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+              <Button variant="secondary" size="icon" aria-label={t("leads.board.refresh")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
                 <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Refresh pipeline</TooltipContent>
+            <TooltipContent>{t("leads.board.refresh")}</TooltipContent>
           </Tooltip>
           {canCreate && (
             <Button onClick={() => openCreate()}>
               <Plus size={14} aria-hidden />
-              Add lead
+              {t("leads.board.addLead")}
             </Button>
           )}
         </div>
@@ -526,7 +528,7 @@ export function LeadsBoard() {
       </p>
       {refreshFailed && (
         <Alert variant="critical">
-          <AlertDescription>Couldn&apos;t refresh the pipeline. Check your connection and try again.</AlertDescription>
+          <AlertDescription>{t("leads.board.refreshFailed")}</AlertDescription>
         </Alert>
       )}
 
@@ -534,20 +536,20 @@ export function LeadsBoard() {
         <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Target />}
-            title="No leads yet"
-            description="Add your first lead to start tracking your pipeline."
-            action={canCreate ? <Button onClick={() => openCreate()}>Add lead</Button> : undefined}
+            title={t("leads.board.emptyTitle")}
+            description={t("leads.board.emptyDescription")}
+            action={canCreate ? <Button onClick={() => openCreate()}>{t("leads.board.addLead")}</Button> : undefined}
           />
         </div>
       ) : filtered && visible.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Target />}
-            title="No leads match these filters"
-            description="Try a different search, or clear the filters to see the whole pipeline."
+            title={t("leads.board.noMatchTitle")}
+            description={t("leads.board.noMatchDescription")}
             action={
               <Button variant="secondary" onClick={() => update({ q: "", stages: [], owner: "", source: "", overdue: false })}>
-                Clear filters
+                {t("leads.board.clearFilters")}
               </Button>
             }
           />
@@ -569,7 +571,7 @@ export function LeadsBoard() {
 
               if (recent && !expanded.has(stage.id)) {
                 const totals = totalsByCurrency(stageLeads);
-                const totalText = totals.map(([c, t]) => formatMoney(t, c)).join(" + ");
+                const totalText = totals.map(([c, amount]) => formatMoney(amount, c)).join(" + ");
                 return (
                   <KanbanColumn
                     key={stage.id}
@@ -577,8 +579,8 @@ export function LeadsBoard() {
                     title={stage.name}
                     accent={dot}
                     meta={stageLeads.length}
-                    subtitle={`${totalText || formatMoney(0n, currency)} · ${CLOSED_WINDOW_DAYS} days`}
-                    expandLabel={`Show ${stage.name}: ${stageLeads.length} ${stageLeads.length === 1 ? "lead" : "leads"} in the last ${CLOSED_WINDOW_DAYS} days${totalText ? `, ${totalText}` : ""}`}
+                    subtitle={t("leads.board.closedSubtitle", { total: totalText || formatMoney(0n, currency), days: CLOSED_WINDOW_DAYS })}
+                    expandLabel={`${t("leads.board.expand", { stage: stage.name, count: stageLeads.length, days: CLOSED_WINDOW_DAYS })}${totalText ? `, ${totalText}` : ""}`}
                     onExpand={() => toggleExpanded(stage.id)}
                     onDrop={onDrop}
                     data-stage={stage.name}
@@ -589,14 +591,14 @@ export function LeadsBoard() {
               return (
                 <KanbanColumn
                   key={stage.id}
-                  title={recent ? `${stage.name} · last ${CLOSED_WINDOW_DAYS} days` : stage.name}
+                  title={recent ? t("leads.board.recentTitle", { stage: stage.name, days: CLOSED_WINDOW_DAYS }) : stage.name}
                   accent={dot}
                   meta={stageLeads.length}
                   subtitle={<Totals leads={stageLeads} empty={formatMoney(0n, currency)} />}
                   minWidth={closed ? CLOSED_COLUMN_MIN_WIDTH : OPEN_COLUMN_MIN_WIDTH}
                   headerAction={
                     recent ? (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-on-surface-muted" aria-label={`Hide ${stage.name}`} onClick={() => toggleExpanded(stage.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-on-surface-muted" aria-label={t("leads.board.hide", { stage: stage.name })} onClick={() => toggleExpanded(stage.id)}>
                         <ChevronsRightLeft size={15} aria-hidden />
                       </Button>
                     ) : undefined
@@ -626,16 +628,16 @@ export function LeadsBoard() {
                   ))}
                   {stageLeads.length === 0 && (
                     <p className="rounded-md border border-dashed border-border-strong px-2 py-3.5 text-center text-[12.5px] text-on-surface-muted">
-                      {recent ? `Nothing ${stage.kind === "won" ? "won" : "lost"} in the last ${CLOSED_WINDOW_DAYS} days` : "No leads in this stage"}
+                      {recent ? t(stage.kind === "won" ? "leads.board.nothingWon" : "leads.board.nothingLost", { days: CLOSED_WINDOW_DAYS }) : t("leads.board.noLeadsInStage")}
                     </p>
                   )}
                   {recent && stageLeads.length > 0 && (
-                    <p className="px-1 py-1.5 text-[12px] text-on-surface-muted">Older {stage.kind === "won" ? "won" : "lost"} leads: choose {stage.name} in the stage filter.</p>
+                    <p className="px-1 py-1.5 text-[12px] text-on-surface-muted">{t(stage.kind === "won" ? "leads.board.olderWon" : "leads.board.olderLost", { stage: stage.name })}</p>
                   )}
                   {canCreate && stage.kind === "open" && (
                     <Button variant="ghost" size="sm" className="justify-start text-on-surface-muted" onClick={() => openCreate(stage.id)}>
                       <Plus size={14} aria-hidden />
-                      Add lead
+                      {t("leads.board.addLead")}
                     </Button>
                   )}
                 </KanbanColumn>
@@ -678,13 +680,13 @@ export function LeadsBoard() {
       <AlertDialog open={deleteLead !== null} onOpenChange={(open) => !open && setDeleteLead(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
-            <AlertDialogDescription>This can&apos;t be undone. The lead&apos;s follow-ups and activities go with it; the contact and any quotes stay.</AlertDialogDescription>
+            <AlertDialogTitle>{t("leads.board.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("leads.board.deleteDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("leads.board.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" disabled={deleting} onClick={confirmDelete}>
-              {deleting ? <Spinner size="sm" /> : "Delete lead"}
+              {deleting ? <Spinner size="sm" /> : t("leads.board.deleteLead")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,3 +1,5 @@
+import { t } from "../../../lib/i18n";
+
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
 export interface PayablesBillRow {
@@ -42,9 +44,9 @@ export interface PayablesReport {
 }
 
 export const AGING_BUCKET_LABELS: Record<AgingBucket, string> = {
-  current: "Current",
-  "0-30": "1–30 days",
-  "31-60": "31–60 days",
-  "61-90": "61–90 days",
-  "90+": "90+ days",
+  current: t("payables.agingBuckets.current"),
+  "0-30": t("payables.agingBuckets.days0to30"),
+  "31-60": t("payables.agingBuckets.days31to60"),
+  "61-90": t("payables.agingBuckets.days61to90"),
+  "90+": t("payables.agingBuckets.days90plus"),
 };

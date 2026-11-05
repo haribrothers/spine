@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { Fragment } from "react";
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 
 export interface BreadcrumbItem {
   label: string;
@@ -9,7 +10,7 @@ export interface BreadcrumbItem {
 
 export function Breadcrumb({ items, className }: { items: BreadcrumbItem[]; className?: string }) {
   return (
-    <nav aria-label="Breadcrumb" className={cn("flex items-center gap-1.5 text-[13px]", className)}>
+    <nav aria-label={t("ui.breadcrumb.label")} className={cn("flex items-center gap-1.5 text-[13px]", className)}>
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         return (

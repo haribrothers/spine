@@ -104,6 +104,6 @@ export const PROFESSIONAL_SERVICES: IndustryPack = {
     { title: "Audit planning — annual audit", slot: "anchor", startInDays: -3, durationHours: 1, atSite: true, description: "Agree the timetable and the list of schedules." },
     { title: "Board update — market entry", slot: "overseas", startInDays: -10, durationHours: 1, atSite: false, description: "Video call with the client's board." },
     { title: "Month-end close — bookkeeping", slot: "regional", startInDays: 3, durationHours: 1, atSite: false, description: null },
-    { title: "Partners' meeting", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — workload and billing review." },
+    { title: "Partners' meeting", slot: null, startInDays: 1, durationHours: 1, atSite: false, description: "Internal — workload and billing review.", weekly: true },
   ],
 };

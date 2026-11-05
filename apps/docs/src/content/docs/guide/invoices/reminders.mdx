@@ -1,0 +1,59 @@
+---
+title: Turn on automatic payment reminders
+description: Have Spine email customers about unpaid invoices on a schedule, so you don't have to chase.
+sidebar:
+  order: 8
+---
+
+Automatic reminders email customers about unpaid invoices on the days you choose around the due date. Once they're on, every issued invoice with a balance due is covered. You set them up once, and Spine sends them each day at the time you pick.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners only. Staff and Field users can't change this setting.
+</Aside>
+
+<Steps>
+
+1. **Open the setting** — Open **Settings** and go to **Documents & emails › Automatic reminders**.
+
+2. **Switch them on** — Turn on **Send reminders automatically**. It's off until you do.
+
+3. **Choose the schedule** — Under **Schedule**, tick when reminders go: **3 days before the due date**, **On the due date**, **7 days after the due date**, **14 days after the due date**, and **Every 14 days after that, up to 3 more times**.
+
+4. **Pick the time** — Choose **Send at**. Times are in your organisation's time zone.
+
+5. **Check the email** — Press **Preview email** to see the reminder for your most overdue invoice, or a sample if none is overdue.
+
+6. **Save** — Press **Save**.
+
+</Steps>
+
+<Screenshot id="invoices-reminders-settings" alt="Settings, Automatic reminders, with the Send reminders automatically switch, the Schedule checkboxes and Send at" />
+
+If you switch reminders on with nothing ticked, you'll see "Pick at least one reminder."
+
+## What the customer gets
+
+One email per invoice on each scheduled day. The subject reads, for example, "Reminder: invoice INV-0012 is 7 days overdue", "is due today" or "is due in 3 days". The email shows the invoice, its due date, the balance due, a **View invoice** link and your [payment instructions](../payment-instructions/).
+
+Each reminder shows in the invoice's **Activity** as **Automatic reminder sent**.
+
+## When nothing is sent
+
+- The invoice is paid, voided or credited in full.
+- The invoice already got a reminder today, by hand or automatically.
+- The customer has reminders paused (see below).
+
+If the server was off at send time, that day's reminders go once when it starts again. Missed days aren't sent one by one.
+
+## Pause reminders for one customer
+
+Open the customer's contact page and turn on **Pause automatic reminders**. Their invoices are skipped until you turn it off. This needs the right to edit that contact. See [Contacts and pipeline](../../contacts/).
+
+<Aside type="caution">
+  Reminders are emails, so they need working email. If customers say they never get them, ask whoever runs your Spine to check [email settings](../../../self-hosting/email/).
+</Aside>
+
+To send a reminder now, see [Send a payment reminder](../send-a-payment-reminder/).

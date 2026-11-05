@@ -17,7 +17,7 @@ Spine is a self-hosted business management app for small service and project bus
 - If you change a contract (API route, table, column, event, error code, capability, posting rule), update `docs/prd/05-api.md`, `04-data-model.md`, `07-security.md` or `06-ledger-posting-rules.md` in the same change.
 - If a story, a screen and the architecture disagree: the story wins over the screen; the architecture and decisions win over the story. If it's still unclear, stop and ask; add the question to `docs/prd/13-risks-open-questions.md`.
 - Controls that depend on a later phase are hidden behind flags in `packages/shared/src/feature-flags.ts` until that phase ships.
-- User-facing help lives in the docs site (`apps/docs/src/content/docs/guide/`, published at `docs.h4loom.com`), not in `docs/` (that's the spec). From Phase 12, when a story changes what people see, update its guide page in the same change.
+- User-facing help lives in the docs site (`apps/docs/src/content/docs/guide/`, published at `spine.h4loom.com/docs/`; the domain is set in `packages/shared/src/public-site.ts`), not in `docs/` (that's the spec). From Phase 12, when a story changes what people see, update its guide page in the same change.
 - Don't build beyond the story. Non-goals in `docs/prd/00-overview.md` are out of scope (no multi-tenant SaaS, multi-org, payroll, inventory valuation, multi-currency, live bank feeds, filing returns). Work planned after 1.0 is in `docs/prd/16-roadmap.md` — don't build it early.
 
 ## Stack (don't substitute)
@@ -46,6 +46,7 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 - Use the design-system components (`docs/design/components/`). A component change ships with its doc page (`apps/design-system`, or `apps/showcase-native` for native) and its a11y test in the same change.
 - Lucide icons only, per-icon imports on native; native themed classes always carry their `dark:` pair. Every menu action gets its icon from `lib/menu-icons.ts` (D-222); never add spacing around a menu icon. See `docs/prd/09-design-system.md`.
 - Copy: sentence case, verbs on buttons, say what happens to people's data, errors say what to do next.
+- Copy lives in `packages/shared/src/i18n/en.json`, never in a component: `const t = useT()` in a client component, `t` from `lib/i18n` everywhere else (server components included). Keys are typed, and the `i18next/no-literal-string` lint rule fails on a hard-coded string (D-268).
 - A major action (issuing, recording, voiding, deleting, removing, emailing a customer, bulk changes) asks first with `useConfirm()` from `@spine/ui`; never one click from a menu (D-218). When it succeeds, `useToast()` (the app's one `ToastHost`) says what happened — call it before `router.push` and it shows on the next page (D-223).
 - Every screen works in light and dark mode: colours only from tokens (web CSS variables, native `dark:` pairs or `useNativeColors()`), text on filled controls uses `on-primary`/`on-danger`. PDFs and emails stay light.
 - Accessibility is required: WCAG 2.1 AA, keyboard, focus rings, 4.5:1 text contrast, reduce motion, no colour-only state, 44px touch targets on phone.

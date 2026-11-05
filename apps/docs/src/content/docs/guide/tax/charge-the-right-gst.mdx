@@ -1,0 +1,47 @@
+---
+title: Charge the right GST on a document
+description: How the place of supply picks intra- or inter-state GST, how to add HSN/SAC codes, and what a GST invoice shows.
+sidebar:
+  order: 9
+---
+
+On an Indian GST business, every quote, invoice, credit note and vendor bill has a place of supply. Spine compares it with your own state to choose each line's tax: CGST + SGST within your state, IGST outside it. You don't pick the split by hand.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone who can edit the document. GST needs your tax country set to India and your GST registration recorded (see [Set up GST for an Indian business](../set-up-gst/)).</Aside>
+
+## Give items both taxes and a code
+
+On each catalogue item, set the **Intra-state tax** (same state as your business) and the **Inter-state tax** (another state, export or SEZ), and the **HSN/SAC code**: 4, 6 or 8 digits. Anything else shows "Enter 4, 6 or 8 digits." A catalogue import maps an HSN/SAC column too.
+
+## Check the place of supply
+
+<Steps>
+
+1. **Choose the customer and address** — On the draft, **Place of supply** fills in with the state from the site or shipping address, or else the billing address. A line under it says where it came from.
+2. **Change it if needed** — Pick another state.
+3. **Add lines** — In your state, an item uses its intra-state tax. In another state, overseas or SEZ, it uses its inter-state tax.
+4. **Check any warnings** — If you change the place of supply on a draft between intra- and inter-state, every line still on the item's default switches. Lines you changed by hand keep their tax and show "Check this line's tax — the place of supply changed."
+
+</Steps>
+
+Each line copies the item's HSN/SAC code, and you can change it on the line. Vendor bills follow the same rule: a vendor in another state gets inter-state tax.
+
+## Issue it
+
+If an invoice for a registered business has lines with no HSN/SAC code, Spine asks "Issue without HSN/SAC codes?" and says how many lines have no code, because GSTR-1 needs them. Add the codes, or issue it as it is.
+
+<Aside type="note">An issued document keeps the place of supply and supply types it had when it was issued.</Aside>
+
+## What the PDF shows
+
+- The title **Tax Invoice**, or **Bill of Supply** when every line is exempt or non-taxable.
+- Your GSTIN and state, the customer's GSTIN when they're registered, and "Place of supply" with the state and its code.
+- The HSN/SAC code on each line, and the tax split as CGST and SGST, or IGST, with rates.
+- For exports, a note that the supply is meant for export and the overseas address.
+- A credit note shows the same details plus the original invoice's number and date.
+- An HSN-wise tax summary table after the lines, when **Tax summary table** is on in **Settings › Documents**.
+
+Without a GST profile none of this shows, and documents look as they do elsewhere.

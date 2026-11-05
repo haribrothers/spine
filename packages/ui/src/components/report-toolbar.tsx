@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { Checkbox } from "./checkbox";
 import { Label } from "./label";
 import { Spinner } from "./spinner";
@@ -23,12 +24,13 @@ export interface ReportToolbarProps {
  * change, so there's no Refresh button; `loading` says it's updating.
  */
 export function ReportToolbar({ filters, actions, loading = false, className }: ReportToolbarProps) {
+  const t = useT();
   return (
     <div className={cn("flex flex-wrap items-end gap-3", className)} data-print="hide" data-testid="report-toolbar">
       {filters}
       {loading && (
         <span className="flex h-10 items-center">
-          <Spinner size="sm" label="Updating the report" />
+          <Spinner size="sm" label={t("ui.reportToolbar.updating")} />
         </span>
       )}
       {actions && <div className="ml-auto flex flex-wrap items-end gap-3">{actions}</div>}

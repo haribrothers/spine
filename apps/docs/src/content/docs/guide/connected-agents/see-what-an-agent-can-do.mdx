@@ -1,0 +1,50 @@
+---
+title: See what an agent can do
+description: What a connected agent can find, read and report on, the drafts it can create, its ready-made tasks and its limits.
+sidebar:
+  order: 4
+---
+
+A connected agent works as you, and can only read and draft. Ask in your own words; the agent chooses which of Spine's tools to use.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone with a connected agent. What it can do depends on your role, your Teams' permissions and the modules that are on. Report tools need the matching report permission, such as **View receivables**.</Aside>
+
+## Find and read records
+
+- **Search** — like Spine's own search: contacts by name, phone, tax ID or person; documents by number or amount; leads, jobs and catalogue items.
+- **Lists** — of any kind of record you can open, filtered by status, contact, job, dates or overdue. Newest first, 25 at a time and at most 100.
+- **One record** — by its number or link, as its page shows it: lines, tax, totals, balance, status, dates and its Spine link.
+
+Anything you can't open in Spine, the agent can't either. If your Teams can't open invoices, it's told "You don't have permission to open invoices."
+
+## Ask about money and the business
+
+With the matching permission, the agent can read **receivables** (who owes you, by age), **payables**, **profit and loss** and the **balance sheet** for a period, **job profitability**, **bank balances** and the **dashboard summary**. The figures are exactly the report's in Spine, for the same period and basis.
+
+## Start work as drafts
+
+If you allowed drafts when you connected, and the Owner allows them, the agent can:
+
+- **Create a lead**, with the enquiry as its first note, adding the contact if it's new.
+- **Draft a quote** — catalogue items take their price and tax unless a price is given, and Spine works out the totals. The agent gives you the link to open it, check it and send it.
+- **Draft a vendor bill** — never recorded, so nothing reaches the books.
+- **Add a note** to a contact, lead or job you can change. Field users can add notes to their assigned jobs.
+
+Each draft is yours, and its Activity names the agent.
+
+<Aside type="caution">Agents can't issue, send, record, approve, void, match, delete or change an existing record. There's no tool for it. You finish every draft in Spine, with that screen's own confirm.</Aside>
+
+## Ready-made tasks
+
+Agents that show ready-made prompts offer **Chase overdue invoices** (it suggests what to send; you send it from Spine), **Summarise a job** and **This week in the business**, where your permissions allow them.
+
+## Field users
+
+A Field user's agent reads only contacts, the catalogue, their assigned jobs without money, and their own expenses. It never gets a money figure or a report.
+
+## Limits
+
+One agent can create up to 30 drafts an hour ("Too many drafts from this agent. Try again later.") and make up to 120 requests a minute. A repeated request never creates a second draft.

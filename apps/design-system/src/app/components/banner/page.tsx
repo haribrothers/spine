@@ -1,3 +1,5 @@
+"use client";
+
 import { Banner } from "@spine/ui";
 import { HardDrive } from "lucide-react";
 import { ComponentPreview } from "@/components/component-preview";

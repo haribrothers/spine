@@ -8,6 +8,7 @@ import { Ban, Banknote, Bell, BellRing, Copy, FileMinus, HardHat, MailCheck, Mai
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
+import { t, useT } from "../../../lib/i18n";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -20,36 +21,36 @@ export function invoiceActivityText(item: InvoiceActivityEntry, currency: string
   const money = item.amount ? formatMoney(BigInt(item.amount), currency) : null;
   switch (item.type) {
     case "created":
-      return { text: "Created" };
+      return { text: t("invoices.activity.created") };
     case "created_from_quote":
-      return { text: "Created from quote", link: item.detail ?? undefined };
+      return { text: t("invoices.activity.createdFromQuote"), link: item.detail ?? undefined };
     case "created_from_milestone":
-      return { text: "Created from milestone", link: item.detail ?? undefined };
+      return { text: t("invoices.activity.createdFromMilestone"), link: item.detail ?? undefined };
     case "duplicated":
-      return { text: "Duplicated from", link: item.detail ?? undefined };
+      return { text: t("invoices.activity.duplicatedFrom"), link: item.detail ?? undefined };
     case "edited":
-      return { text: "Edited" };
+      return { text: t("invoices.activity.edited") };
     case "issued":
-      return { text: "Issued" };
+      return { text: t("invoices.activity.issued") };
     case "emailed":
-      return { text: item.detail ? `Emailed to ${item.detail}` : "Emailed" };
+      return { text: item.detail ? t("invoices.activity.emailedTo", { to: item.detail }) : t("invoices.activity.emailed") };
     case "email_failed":
       // US-SET-28: cancelled in the email log.
-      return { text: item.detail === "Cancelled" ? "Email not sent — cancelled" : item.detail ? `Email failed: ${item.detail}` : "Email failed" };
+      return { text: item.detail === "Cancelled" ? t("invoices.activity.emailCancelled") : item.detail ? t("invoices.activity.emailFailedDetail", { detail: item.detail }) : t("invoices.activity.emailFailed") };
     case "reminder_sent":
-      return { text: "Reminder sent" };
+      return { text: t("invoices.activity.reminderSent") };
     case "auto_reminder_sent":
-      return { text: "Automatic reminder sent" };
+      return { text: t("invoices.activity.autoReminderSent") };
     case "payment_recorded": {
       const method = item.method ? PAYMENT_METHOD_LABELS[item.method as PaymentMethod] : null;
-      return { text: ["Payment recorded", money, method].filter(Boolean).join(" · "), link: item.detail ?? undefined };
+      return { text: [t("invoices.activity.paymentRecorded"), money, method].filter(Boolean).join(" · "), link: item.detail ?? undefined };
     }
     case "credit_applied":
-      return { text: ["Credit applied", money].filter(Boolean).join(" · "), link: item.detail ?? undefined };
+      return { text: [t("invoices.activity.creditApplied"), money].filter(Boolean).join(" · "), link: item.detail ?? undefined };
     case "credit_note_issued":
-      return { text: "Credit note issued", link: item.detail ?? undefined };
+      return { text: t("invoices.activity.creditNoteIssued"), link: item.detail ?? undefined };
     case "voided":
-      return { text: item.detail ? `Voided: ${item.detail}` : "Voided" };
+      return { text: item.detail ? t("invoices.activity.voidedDetail", { detail: item.detail }) : t("invoices.activity.voided") };
   }
 }
 
@@ -97,6 +98,7 @@ const SHOWN = 6;
  * "View history" keeps the field-level changes.
  */
 export function InvoiceActivity({ invoiceId, currency, refreshKey, onViewHistory }: { invoiceId: string; currency: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<InvoiceActivityEntry[] | null>(null);
   const [all, setAll] = useState(false);
 
@@ -112,9 +114,9 @@ export function InvoiceActivity({ invoiceId, currency, refreshKey, onViewHistory
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="invoice-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("invoices.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("invoices.activity.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -124,7 +126,7 @@ export function InvoiceActivity({ invoiceId, currency, refreshKey, onViewHistory
             <Skeleton className="h-4 w-1/2" />
           </li>
         )}
-        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">Nothing has happened yet.</li>}
+        {shown?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">{t("invoices.activity.empty")}</li>}
         {shown?.map((item, i) => {
           const Icon = ICONS[item.type];
           const href = hrefFor(item);
@@ -160,7 +162,7 @@ export function InvoiceActivity({ invoiceId, currency, refreshKey, onViewHistory
         {items && !all && items.length > SHOWN && (
           <li>
             <button type="button" onClick={() => setAll(true)} className="mt-1 text-[12.5px] font-medium text-primary hover:underline">
-              Show {items.length - SHOWN} earlier
+              {t("invoices.activity.showEarlier", { n: items.length - SHOWN })}
             </button>
           </li>
         )}

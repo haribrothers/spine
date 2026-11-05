@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, useConfirm } from "@spine/ui";
 import { X } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import { useCapability } from "../../../../lib/capabilities-context";
 import type { MemberRow } from "../../../../lib/members";
 import type { Job, JobAssignee } from "../types";
@@ -20,6 +21,7 @@ import { useToast } from "../../../../components/toast-host";
  */
 /** `onChanged` lets the job page refresh its tab count and Activity (US-JOB-35, US-JOB-37). */
 export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => void }) {
+  const t = useT();
   const canAssign = useCapability("jobs.assign");
   const showToast = useToast();
   const [assignees, setAssignees] = useState<JobAssignee[] | null>(null);
@@ -33,8 +35,8 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
     apiClient
       .get<JobAssignee[]>(`/jobs/${job.id}/assignees`)
       .then(setAssignees)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load this job's crew."));
-  }, [job.id]);
+      .catch((err) => setError(err instanceof Error ? err.message : t("jobs.crew.loadFailed")));
+  }, [job.id, t]);
 
   useEffect(() => {
     load();
@@ -58,18 +60,18 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
       load();
       onChanged?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not assign this user to the job.");
+      setError(err instanceof Error ? err.message : t("jobs.crew.assignFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleUnassign(userId: string) {
-    const name = assignees?.find((a) => a.userId === userId)?.name ?? "This person";
+    const name = assignees?.find((a) => a.userId === userId)?.name ?? t("jobs.crew.thisPerson");
     const ok = await confirm({
-      title: `Remove ${name} from this job?`,
-      description: `${name} stops seeing ${job.name} — on the web and in the field app — and isn't notified about it any more. You can add them back.`,
-      confirmLabel: "Remove from job",
+      title: t("jobs.crew.removeTitle", { name }),
+      description: t("jobs.crew.removeDescription", { name, job: job.name }),
+      confirmLabel: t("jobs.crew.removeConfirm"),
       danger: true,
     });
     if (!ok) return;
@@ -77,11 +79,11 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
     setError(null);
     try {
       await apiClient.delete(`/jobs/${job.id}/assignees/${userId}`);
-      showToast(`${name} removed`, `They no longer see ${job.name}.`);
+      showToast(t("jobs.crew.removed", { name }), t("jobs.crew.removedDescription", { job: job.name }));
       load();
       onChanged?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not remove this user from the job.");
+      setError(err instanceof Error ? err.message : t("jobs.crew.removeFailed"));
     } finally {
       setBusy(false);
     }
@@ -98,16 +100,16 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
         </Alert>
       )}
 
-      <h3 className="text-[14px] font-semibold text-on-surface">Crew</h3>
+      <h3 className="text-[14px] font-semibold text-on-surface">{t("jobs.crew.title")}</h3>
       <p className="text-[13px] text-on-surface-muted">
-        Assigned users see this job on their mobile home screen.
+        {t("jobs.crew.intro")}
       </p>
 
       {canAssign && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Select value={selectedUserId} onValueChange={setSelectedUserId}>
             <SelectTrigger className="sm:w-64">
-              <SelectValue placeholder="Add a user…" />
+              <SelectValue placeholder={t("jobs.crew.addUser")} />
             </SelectTrigger>
             <SelectContent>
               {assignableMembers.map((m) => (
@@ -118,7 +120,7 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
             </SelectContent>
           </Select>
           <Button type="button" onClick={handleAssign} disabled={busy || !selectedUserId}>
-            {busy ? <Spinner size="sm" /> : "Assign"}
+            {busy ? <Spinner size="sm" /> : t("jobs.crew.assign")}
           </Button>
         </div>
       )}
@@ -128,7 +130,7 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
           <Spinner />
         </div>
       ) : assignees.length === 0 ? (
-        <p className="text-[13px] text-on-surface-muted">No one is assigned to this job yet.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("jobs.crew.empty")}</p>
       ) : (
         <div className="flex flex-col divide-y divide-border">
           {assignees.map((a) => (
@@ -142,7 +144,7 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
                   type="button"
                   onClick={() => handleUnassign(a.userId)}
                   disabled={busy}
-                  aria-label={`Remove ${a.name} from this job`}
+                  aria-label={t("jobs.crew.removeAria", { name: a.name })}
                   className="text-on-surface-muted transition-colors hover:text-critical disabled:opacity-50"
                 >
                   <X size={16} />

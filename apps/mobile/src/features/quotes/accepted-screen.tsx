@@ -6,12 +6,13 @@ import type { PresentedQuote } from "../../lib/data/quotes";
 import { money } from "../../lib/format";
 import { useBusinessFormat } from "../../lib/data/business";
 import { possessive, timeLabel } from "./quote-format";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const METHOD_ON_PHONE = "In person, on this phone";
+export const METHOD_ON_PHONE = translate("mobileWork.accepted.methodOnPhone");
 
 /** "Signed by Alan Reyes at 10:42 AM. Riverstone Builders' office has been told and the quote is now locked." */
 export function acceptedMessage(signer: string, at: string, business: string): string {
-  return `Signed by ${signer} at ${at}. ${possessive(business)} office has been told and the quote is now locked.`;
+  return translate("mobileWork.accepted.message", { signer, at, business: possessive(business) });
 }
 
 function InfoRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
@@ -30,6 +31,7 @@ function InfoRow({ label, value, last = false }: { label: string; value: string;
  * the presentation.
  */
 export function AcceptedScreen({ quote, onDone }: { quote: PresentedQuote; onDone: () => void }) {
+  const t = useT();
   const colors = useNativeColors();
   const insets = useSafeAreaInsets();
   const { locale } = useBusinessFormat();
@@ -44,22 +46,22 @@ export function AcceptedScreen({ quote, onDone }: { quote: PresentedQuote; onDon
             <Check size={36} color={colors.paid} />
           </View>
           <Text accessibilityRole="header" className={`text-center text-[28px] text-on-surface dark:text-on-surface-dark ${android ? "" : "font-bold"}`}>
-            Quote accepted
+            {t("mobileWork.accepted.title")}
           </Text>
           <Text className="text-center text-[17px] font-semibold text-on-surface dark:text-on-surface-dark">
             {quote.number} · {total}
           </Text>
           <Text testID="accepted-message" className="px-4 text-center text-[15px] leading-[22px] text-on-surface-muted dark:text-on-surface-muted-dark">
-            {acceptedMessage(quote.acceptedSignerName ?? "the customer", at, quote.business.name)}
+            {acceptedMessage(quote.acceptedSignerName ?? t("mobileWork.common.theCustomer"), at, quote.business.name)}
           </Text>
         </View>
         <View className={`overflow-hidden rounded-2xl ${android ? "bg-surface-sunken dark:bg-surface-sunken-dark" : "bg-surface dark:bg-surface-dark"}`}>
-          <InfoRow label="Customer" value={quote.contactName ?? "—"} />
-          <InfoRow label="Witnessed by" value={quote.acceptedByName ?? "—"} />
-          <InfoRow label="Method" value={METHOD_ON_PHONE} last />
+          <InfoRow label={t("mobileWork.common.customer")} value={quote.contactName ?? "—"} />
+          <InfoRow label={t("mobileWork.accepted.witnessedBy")} value={quote.acceptedByName ?? "—"} />
+          <InfoRow label={t("mobileWork.accepted.method")} value={METHOD_ON_PHONE} last />
         </View>
       </View>
-      <FullWidthButton testID="accepted-back" label="Back to job" onPress={onDone} />
+      <FullWidthButton testID="accepted-back" label={t("mobileWork.common.backToJob")} onPress={onDone} />
     </View>
   );
 }

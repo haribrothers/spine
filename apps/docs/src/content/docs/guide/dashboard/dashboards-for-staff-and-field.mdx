@@ -1,0 +1,33 @@
+---
+title: Dashboards for Staff and Field crew
+description: What the dashboard shows office staff and field crew, and how their Teams and role decide it.
+sidebar:
+  order: 10
+---
+
+Spine builds each person's dashboard from their own work and their rights. Staff see what their Teams let them act on; Field crew see their jobs, their expenses and what needs them, with no money figures. A card someone can't use is left out entirely, never shown locked or empty, and the server refuses its data even if asked directly.
+
+import { Aside } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who decides">Owners, by choosing each Team's rights in **Teams**. The Field role is fixed and can't be given financial rights. See [Give your accountant access to reports](../../reports/give-your-accountant-access/) for the report rights.</Aside>
+
+## The Staff dashboard
+
+- **Needs your attention** shows "Only things you can act on": only the kinds of item their rights allow, plus their own overdue follow-ups ("*n* follow-ups are overdue") and their own quotes about to expire ("Your quote *number* expires *day*"). An expense they submitted never appears in their own list, because someone else approves it.
+- **Key figures**: with **View dashboard summary**, the same four as an Owner. Without it, Staff see the figures they can view instead, such as **Receivables**, **Overdue**, **Open pipeline** and **Quotes won this month**.
+- **Cards**: each card needs the same right as its full report, for example **View receivables** for Receivables aging or **View payables** for Payables. **Pipeline by stage** and **Recent activity** need no right.
+- The sidebar has no Team section for Staff.
+
+## The Field dashboard on the web
+
+Field crew use the field app on their phones, but they can also sign in on the web. There, the header reads "*n* jobs on your list · *n* things need you", and the dashboard shows:
+
+- **Needs your attention**: milestones due within 7 days on their assigned jobs, with **Mark complete**, and their rejected expenses with the reviewer's reason, with **Fix and resubmit**. With nothing waiting, it says "Milestones due on your jobs and expenses sent back to you will show up here."
+- **Today**: their own meetings only, whatever the business's meeting setting.
+- **My jobs**: each assigned job's name and number, customer, site address, next milestone and **Directions**.
+- **My expenses**: their last 5 expenses with category, date, amount and a status chip: **Approved**, **Rejected** or **Submitted**.
+- **Recent activity on my jobs**: non-financial events on their assigned jobs.
+
+<Aside type="caution">No contract value, invoice, payment or report figure appears anywhere on a Field user's dashboard. Field crew never reach financial reports, on the web or on a phone.</Aside>
+
+For the phone app, see [The field app](../../field-app/).

@@ -57,7 +57,8 @@ Legacy: S-10.10
 - **Given** `SEED_DEMO=IN:interior_design` (a country and an industry from D-192), **when** the API starts on an empty database, **then** it loads that demo business; `SEED_DEMO=true` loads the default (United States, Construction / Contracting).
 
 **Implementation notes**
-- Today `SEED_DEMO` is in `.env.example` but not read by any code.
+- `DemoBootstrapService` (`apps/api/src/modules/demo-data`) runs on application bootstrap, after migrations. With no users and no organisations it creates the business as sign-up does (chart of accounts, default Team, pipeline stages) with a placeholder Owner (`Spine demo`, no password), sets `demo_awaiting_owner`, loads the demo through `DemoDataService.seed`, then marks onboarding skipped. Values: unset/`false` off, `true` the default, `<country>:<industry>`; anything else logs a warning and loads nothing. A failure is logged and never stops the API; the business stays claimable, without the demo.
+- Sign-up (`signup-policy.ts`): open while there are no users or a demo is waiting; `claimDemoBusiness` in `user.create.after` takes the marker under a row lock, replaces the placeholder's membership with the new Primary Owner's and returns, so no second organisation is made. See `07-security.md` › Sign-up.
 
 ### US-OPS-03 · Back up everything into one file
 **Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
@@ -115,6 +116,7 @@ Legacy: PRD F10 · Decision: D-055
 
 **Implementation notes**
 - API: `GET /org/update-status` (contract addition); `settings.update_check`. The check reads the GitHub Releases API for the latest release, ignoring pre-releases ([D-269](../prd/12-decisions.md)).
+- Built: `UpdateCheckWorker` runs at 04:17 server time, and at start-up when the last result is missing or a day old. The request is `GET https://api.github.com/repos/haribrothers/spine/releases/latest` with only `Accept` and `User-Agent: Spine`. A failed check keeps the last result. `UPDATE_CHECK=off` schedules nothing. Versions compare the semantic-version way, so a beta is older than its release. The banner sits with the storage and backup banners. Closing it saves the version in that browser, so it shows again for the next version. "How to update" opens the README's Updating section until the docs site ships (Q-15).
 
 ### US-OPS-07 · Log every request with an id
 **Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
@@ -157,6 +159,7 @@ Finding: C25
 
 **Implementation notes**
 - Collapse `--duration-*` in the Tailwind preset under the media query; check `AccessibilityInfo.isReduceMotionEnabled` in native springs ([motion.md](../design/motion.md)).
+- Built: the preset also ends every transition and animation at 0.01ms (not 0, so `transitionend` still fires), except `animate-spin`, because a spinner is the only sign that work is going on. `@spine/ui-native` exports `useReduceMotion()` and `isReduceMotionEnabled()`. `GaugeIndicator`, `FloatingTabBar` and `FloatingLabelField` set the final value instead of animating. The field app's native tabs are system-owned and already follow the setting.
 
 ### US-OPS-10 · Style confirmations by what they do
 **Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** 6 · **Screens:** `MeetingScopeChoice`, `ExpenseBillToCustomer`
@@ -186,6 +189,7 @@ Finding: G8
 
 **Implementation notes**
 - Next.js `not-found.tsx` under `(app)`.
+- Built: a catch-all `(app)/[...missing]` sends signed-out visitors to `/login?next=…` and otherwise shows the 404 inside the shell. Record pages load in the browser, so `useLoadFailure(id)` (`apps/web/src/lib/use-load-failure.ts`) shows the 404 for an id that isn't a UUID, without calling the API, and for an API 404. It shows US-OPS-13's error page for a 5xx. The 13 record pages use it: contacts, quotes, invoices, credit notes, payments, jobs, expenses, vendor bills, vendor credits, vendor payments, journals, bank accounts and Teams.
 
 ### US-OPS-12 · Explain why I can't open a page
 **Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 6 · **Screens:** `NoAccess`
@@ -215,6 +219,7 @@ Finding: G8
 
 **Implementation notes**
 - Next.js `error.tsx`; request id from US-OPS-07.
+- Built: `app/error.tsx` (outside the shell, as drawn) and `global-error.tsx` for a failing root layout. The reference is the API's `X-Request-Id`, which `ApiError.requestId` now carries. Without one, it's Next.js's digest (logged with the server error), or else the time. "Try again" reloads the page; "Go to dashboard" is a full page load.
 
 ### US-OPS-14 · Use the web app on a phone
 **Feature:** F-OPS-06 · **Priority:** P1 · **Phase:** 12 · **Screens:** `AppShellPhone`, `AppShellPhoneNav`
@@ -230,6 +235,7 @@ Finding: C19 · Decision: D-066
 
 **Implementation notes**
 - `@spine/ui` `AppShell` responsive mode.
+- Built: `AppShellTopBar` and `AppShellMobileNav` in `@spine/ui`. The web layout renders them instead of the sidebar while `useIsPhone()` matches, so notifications and the account menu aren't mounted twice. `AppShellHeader`'s actions wrap under the title. The Tailwind preset gives every control a 44px minimum under 768px (`:where()`, so components keep their sizes above it). Links in running text keep their line height, and checkboxes, radios and switches get a 44px tap area drawn around them. The dashboard's key figures are two per row, and content padding is 16px.
 
 ### US-OPS-15 · Keep wide tables usable on small screens
 **Feature:** F-OPS-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** `AppShellPhone`
@@ -242,6 +248,7 @@ Finding: C19 · Decision: D-066
 
 **Implementation notes**
 - Playwright checks at 390×844 for every route (NFR-COMP-02).
+- Built: `Table` already scrolls inside its card, and `main` is `min-w-0`. `DialogContent` (md, lg) and `AlertDialogContent` are `calc(100% - 32px)` wide under 768px; xl stays full-screen (D-236). `DrawerContent` is `calc(100% - 16px)`. Form grids that went to two columns at `sm:` now wait for `md:`, and the bare two- to four-column grids in the line editors, catalogue form and job dates stack. `us-ops-15.spec.ts` checks 19 routes at 390×844.
 
 ### US-OPS-16 · Move every user-facing string into translation files
 **Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
@@ -257,6 +264,8 @@ PRD §10.8 · Decision: D-069
 **Implementation notes**
 - English only ships in v1.
 - Library and scope: `i18next` / `react-i18next` with one shared `packages/shared/src/i18n/en.json`; web and field app in 1.0, emails, PDFs and API errors in 1.1 ([D-268](../prd/12-decisions.md)).
+- Built: `@spine/shared/i18n` holds the one i18next instance, ready on import, with `en.json` (about 7,650 strings in 34 areas, keys typed through `CustomTypeOptions`). It also holds `t`, and `setFormatLocale()`/`formatLocale()`, the business's locale for dates and numbers. Each package has `lib/i18n.ts` re-exporting `t` and `useT()`. In the web app and `@spine/ui`, `useT` is its own `"use client"` module, because react-i18next creates a React context on load, which the server build can't. Server components use `t`. The `i18next/no-literal-string` rule (`@spine/config/eslint/i18n`, jsx-only, the visible attributes) runs as an error in the web app, the field app, `@spine/ui` and `@spine/ui-native`. Web dates and numbers use `orgLocaleTag()` (44 files moved off the browser's locale or a fixed `en-GB`). The field app sets the format locale from the member's business, and the libraries read `formatLocale()`. The conversion ran as 15 parallel agents, one per area. Every removed literal was then checked against `en.json`; the remaining differences are sentences now built from plural or interpolated keys, with the same English.
+- Not moved, with the API in 1.1 (D-268): labels exported by `@spine/shared` that the server also uses in emails and PDFs (status, payment method, capability and report labels, setup cards). A few sentences are still assembled from pieces in code, or matched with a regex on English output (e.g. the vendor-payment confirmation). A translation will want those as whole keys.
 
 ### US-OPS-17 · Pass an accessibility audit of every screen
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
@@ -271,6 +280,7 @@ PRD §10.8
 
 **Implementation notes**
 - Extends `apps/e2e`; results recorded in `docs/qa-script.md`.
+- Built: `us-ops-17.spec.ts` runs axe (WCAG 2.1 A/AA) in light and dark mode on 54 pages, one demo record of each of 9 kinds and 27 Settings panes, and fails on any violation. `us-ops-17-keyboard.spec.ts` takes an accepted quote to a paid invoice with Tab and Enter alone and checks every control passed on the way shows a focus ring. The field app's `us-ops-17.test.ts` checks every touchable has a role and a label or text. VoiceOver and TalkBack are QA section 276. First run's fixes: panel-less tabs (Reports, Documents, credit-note mode) dropped `aria-controls`. Comboboxes and contact pickers in labelled fields take the field's id. The onboarding steps' paired selects, the Meetings "all calendars" checkbox and the prices-include-tax switch got names. The numbering table's inputs are named per document. The calendar's event time is full strength (it was 3.7:1). The expense detail's receipt note moved out of its `<dl>`.
 
 ### US-OPS-18 · Complete a security review before 1.0
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
@@ -287,6 +297,7 @@ PRD §10.3
 
 **Implementation notes**
 - NFR-SEC-04, NFR-SEC-05. In-house, against OWASP ASVS ([D-267](../prd/12-decisions.md)). Before the beta server faces the internet (US-OPS-52), at least the secret scan and `pnpm audit --prod` are clean.
+- Built: [docs/security-review.md](../security-review.md) (OWASP Top 10, dependencies, secret scan, ZAP baseline). Fixes: the API trusts only loopback and private-network proxies (`TRUST_PROXY`), so the public rate limits count each visitor. Security headers on the web app and the API. Next.js, nodemailer, Tiptap, DOMPurify and Vitest upgraded, with `pnpm.overrides` for fixed transitive versions. Build-tooling advisories are reviewed and listed in `pnpm.auditConfig.ignoreGhsas`, and `pnpm audit --prod --audit-level high` runs in CI and `pnpm verify`. `.gitleaksignore` holds the reviewed secret-scan findings. `us-ops-18.http.integration.test.ts` covers token enumeration, rate limits per visitor and headers. `SECURITY.md` says how to report. The story closes with the Owner's sign-off.
 
 ### US-OPS-19 · Ship the README, licence and contributor guide
 **Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 12 · **Screens:** —

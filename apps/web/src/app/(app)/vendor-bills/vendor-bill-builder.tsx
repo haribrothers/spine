@@ -9,6 +9,7 @@ import { FILE_TOO_LARGE, MAX_ATTACHMENT_BYTES, type DocumentSuggestion, type Pos
 import { FileCheck, Plus } from "lucide-react";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useToast } from "../../../components/toast-host";
+import { t as translate, useT } from "../../../lib/i18n";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { DUE_PICKS, daysAfter, pickedDueDays } from "../invoices/due-terms";
@@ -32,7 +33,7 @@ import { isBlankLine, planBillFill, type BillField, type BillHeader } from "./bi
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 const NO_JOB = "__none__";
-const NO_DUE_DATE = "The document has no due date — choose one.";
+const NO_DUE_DATE = translate("vendorBills.builder.noDueDate");
 
 interface CurrencyLocaleValue {
   code: string;
@@ -84,6 +85,7 @@ function toEditableLines(bill: VendorBill): EditableVendorBillLine[] {
  * sole source of truth for stored totals per CLAUDE.md.
  */
 export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?: VendorBill }) {
+  const t = useT();
   const router = useRouter();
   const jobsOn = useModule("jobsField");
   const canRecord = useCapability("vendor_bills.record");
@@ -194,7 +196,7 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   }, [currency]);
 
   const jobOptions = useMemo(
-    () => [{ value: NO_JOB, label: "No job" }, ...jobs.map((j) => ({ value: j.id, label: j.name }))],
+    () => [{ value: NO_JOB, label: t("vendorBills.builder.noJob") }, ...jobs.map((j) => ({ value: j.id, label: j.name }))],
     [jobs],
   );
 
@@ -273,12 +275,12 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       setLines(plan.lines);
       setAiLineKeys(new Set(plan.lines.map((l) => l.key)));
       const fromLastBill = suggestion.lines.some((l) => l.accountFrom === "last_bill");
-      setLinesNote(fromLastBill ? "Accounts come from this vendor's last bill · rates matched to yours by percentage" : "Rates matched to yours by percentage");
+      setLinesNote(fromLastBill ? t("vendorBills.builder.accountsFromLastBill") : t("vendorBills.builder.ratesMatched"));
     }
     setAiFields((prev) => new Set([...prev, ...plan.filled]));
     setNewVendor(plan.newVendor);
     setDocumentTotal(suggestion.documentTotal ? BigInt(suggestion.documentTotal) : null);
-    if (plan.header.dueDate && suggestion.dueNote) setDueNote(`From the document: “${suggestion.dueNote}”.`);
+    if (plan.header.dueDate && suggestion.dueNote) setDueNote(t("vendorBills.builder.fromDocument", { note: suggestion.dueNote }));
     else if (!suggestion.dueDate && !entered.current.has("dueDate")) setDueNote(NO_DUE_DATE);
     setReplaceOffer(plan.replaceCount ? { header: plan.kept, lines: plan.keptLines, count: plan.replaceCount } : null);
     touch(setAiAssisted)(true);
@@ -341,7 +343,7 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       }
       if (token === readToken.current) readStored(stored.id, stored.originalFilename);
     } catch (err) {
-      if (token === readToken.current) setReadError(err instanceof Error ? err.message : "Couldn't add this file. Try again.");
+      if (token === readToken.current) setReadError(err instanceof Error ? err.message : t("vendorBills.builder.addFileFailed"));
     } finally {
       if (token === readToken.current) setReading(null);
     }
@@ -357,15 +359,15 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   async function addNewVendor() {
     if (!newVendor) return;
     const name = newVendor;
-    const ok = await confirm({ title: `Add ${name} as a vendor?`, description: `${name} is added to your contacts as a vendor and chosen for this bill. You can add their details later.`, confirmLabel: "Add vendor" });
+    const ok = await confirm({ title: t("vendorBills.builder.addVendorTitle", { name }), description: t("vendorBills.builder.addVendorDescription", { name }), confirmLabel: t("vendorBills.builder.addVendor") });
     if (!ok) return;
     try {
       const created = await apiClient.post<{ id: string }>("/contacts", { type: "vendor", name });
-      showToast("Vendor added", `${name} is in your contacts.`);
+      showToast(t("vendorBills.builder.vendorAdded"), t("vendorBills.builder.vendorAddedDescription", { name }));
       setVendorsVersion((v) => v + 1);
       mine("vendor", setContactId)(created.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't add the vendor. Try again.");
+      setError(err instanceof Error ? err.message : t("vendorBills.builder.addVendorFailed"));
     }
   }
 
@@ -381,11 +383,11 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   function validate(): boolean {
     setError(null);
     if (!contactId) {
-      setError("Select a vendor before saving.");
+      setError(t("vendorBills.builder.selectVendor"));
       return false;
     }
     if (!billNumber.trim()) {
-      setError("Enter the vendor's bill number before saving.");
+      setError(t("vendorBills.builder.enterBillNumber"));
       return false;
     }
     return true;
@@ -407,7 +409,7 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       markSaved();
       router.push(`/vendor-bills/${saved.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save vendor bill.");
+      setError(err instanceof Error ? err.message : t("vendorBills.builder.saveFailed"));
       setSaving(false);
     }
   }
@@ -415,11 +417,11 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   /** US-PUR-35 — asks as Record does, then saves the draft and records it; the bill's page opens with its toast. */
   async function handleSaveAndRecord() {
     if (!validate()) return;
-    const vendor = contactName ?? "the vendor";
+    const vendor = contactName ?? t("vendorBills.builder.theVendor");
     const ok = await confirm({
-      title: "Record this bill?",
-      description: `${vendor}'s bill ${billNumber.trim()} for ${formatMoney(totals.total, currency)} is saved and posted to your books as owed. After that it can't be edited — only voided.`,
-      confirmLabel: "Save and record",
+      title: t("vendorBills.builder.saveRecordTitle"),
+      description: t("vendorBills.builder.saveRecordDescription", { vendor, number: billNumber.trim(), amount: formatMoney(totals.total, currency) }),
+      confirmLabel: t("vendorBills.builder.saveAndRecord"),
     });
     if (!ok) return;
     setSaving(true);
@@ -431,8 +433,8 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       markSaved();
       router.push(`/vendor-bills/${saved.id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Try again.";
-      setError(saved ? `Saved as a draft, but it couldn't be recorded: ${message}` : message);
+      const message = err instanceof Error ? err.message : t("vendorBills.builder.tryAgain");
+      setError(saved ? t("vendorBills.builder.savedNotRecorded", { message }) : message);
       setSaving(false);
     }
   }
@@ -452,16 +454,17 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
   const today = new Date();
   const picked = pickedDueDays(date, dueDate);
   const suggesting = !dueTouched.current && suggestedDays !== null && Boolean(dueDate);
-  const dueHelper = suggesting ? `Suggested: ${suggestedDays} ${suggestedDays === 1 ? "day" : "days"}, as on this vendor's last bill` : (dueNote ?? undefined);
+  const dueHelper = suggesting ? t("vendorBills.builder.suggestedDue", { count: suggestedDays ?? 0 }) : (dueNote ?? undefined);
   const readView: BillReadState = readError
     ? { status: "failed", fileName: null, message: readError, canRetry: false }
     : ai.state.status === "failed"
       ? { status: "failed", fileName: readName.current, message: ai.state.message, canRetry: ai.state.canRetry }
       : reading || ai.working
-        ? { status: "working", fileName: reading ?? readName.current ?? "the document" }
+        ? { status: "working", fileName: reading ?? readName.current ?? t("vendorBills.builder.theDocument") }
         : lastRead
           ? { status: "done", ...lastRead }
           : { status: "idle" };
+  const vendorHelper = aiFields.has("vendor") && contactId ? t("vendorBills.builder.matchedVendor") : undefined;
   const totalDiffers = documentTotal !== null && lines.some((l) => !isBlankLine(l)) && documentTotal !== totals.total;
 
   return (
@@ -472,59 +475,59 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
         </Alert>
       )}
 
-      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {aiShown && <BillAiReader state={readView} pausedUntil={aiStatus?.pausedUntil ?? null} attachedNote="attached to this bill" onChoose={(file) => void readFile(file)} onCancel={cancelRead} onRetry={ai.retry} />}
+      <Card className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {aiShown && <BillAiReader state={readView} pausedUntil={aiStatus?.pausedUntil ?? null} attachedNote={t("vendorBills.builder.attachedToBill")} onChoose={(file) => void readFile(file)} onCancel={cancelRead} onRetry={ai.retry} />}
         {replaceOffer && (
           <Alert variant="info" className="sm:col-span-2 xl:col-span-4" data-testid="ai-replace-offer">
             <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="flex-1">AI read something different for what you&apos;d already entered. Your entries are kept.</span>
+              <span className="flex-1">{t("vendorBills.builder.replaceOffer")}</span>
               <Button type="button" variant="secondary" size="sm" onClick={replaceMine}>
-                Replace my entries ({replaceOffer.count})
+                {t("vendorBills.builder.replaceMine", { count: replaceOffer.count })}
               </Button>
             </AlertDescription>
           </Alert>
         )}
         <AiField suggested={aiFields.has("vendor")}>
-          <FormField label="Vendor" required helperText={aiFields.has("vendor") && contactId ? "Matched to your vendor." : undefined}>
-            {() => <ContactPicker value={contactId} onValueChange={mine("vendor", setContactId)} refreshKey={vendorsVersion} />}
+          <FormField label={t("vendorBills.builder.vendor")} required helperText={vendorHelper}>
+            {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={mine("vendor", setContactId)} refreshKey={vendorsVersion} />}
           </FormField>
           {newVendor && (
             <p className="mt-1.5 text-[12.5px] text-on-surface-muted" data-testid="ai-new-vendor">
               {canAddVendor ? (
                 <button type="button" onClick={() => void addNewVendor()} className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                   <Plus size={12} aria-hidden />
-                  New vendor: {newVendor}
+                  {t("vendorBills.builder.newVendor", { name: newVendor })}
                 </button>
               ) : (
-                <span className="font-medium text-on-surface">Not one of your vendors: {newVendor}</span>
+                <span className="font-medium text-on-surface">{t("vendorBills.builder.notYourVendor", { name: newVendor })}</span>
               )}{" "}
-              — added only if you choose it.
+              {t("vendorBills.builder.addedOnlyIfChosen")}
             </p>
           )}
         </AiField>
         <AiField suggested={aiFields.has("billNumber")}>
-          <FormField label="Bill number" required helperText="The vendor's own number.">
-            {(field) => <Input {...field} value={billNumber} onChange={(e) => mine("billNumber", setBillNumber)(e.target.value)} placeholder="e.g. INV-1042" />}
+          <FormField label={t("vendorBills.builder.billNumber")} required helperText={t("vendorBills.builder.billNumberHelper")}>
+            {(field) => <Input {...field} value={billNumber} onChange={(e) => mine("billNumber", setBillNumber)(e.target.value)} placeholder={t("vendorBills.builder.billNumberPlaceholder")} />}
           </FormField>
         </AiField>
         {/* US-SET-24: no jobs while Jobs & field is switched off. */}
         {jobsOn && (
-          <FormField label="Job" helperText="Flows into job costing once recorded.">
-            {() => <Combobox options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label="Job" />}
+          <FormField label={t("vendorBills.builder.job")} helperText={t("vendorBills.builder.jobHelper")}>
+            {(field) => <Combobox id={field.id} options={jobOptions} value={jobId} onValueChange={touch(setJobId)} aria-label={t("vendorBills.builder.job")} />}
           </FormField>
         )}
         <AiField suggested={aiFields.has("currency")}>
-          <FormField label="Currency" required>
-            {() => <Combobox options={currencyOptions} value={currency} onValueChange={mine("currency", setCurrency)} aria-label="Currency" />}
+          <FormField label={t("vendorBills.builder.currency")} required>
+            {(field) => <Combobox id={field.id} options={currencyOptions} value={currency} onValueChange={mine("currency", setCurrency)} aria-label={t("vendorBills.builder.currency")} />}
           </FormField>
         </AiField>
         {totalDiffers && (
           <Alert variant="warning" className="sm:col-span-2 xl:col-span-4" data-testid="bill-total-differs">
             <AlertDescription>
               <span className="font-semibold">
-                The document says {formatMoney(documentTotal, currency)}; the lines add up to {formatMoney(totals.total, currency)}.
+                {t("vendorBills.builder.totalDiffers", { documentTotal: formatMoney(documentTotal, currency), linesTotal: formatMoney(totals.total, currency) })}
               </span>{" "}
-              Check the lines before saving.
+              {t("vendorBills.builder.checkLines")}
             </AlertDescription>
           </Alert>
         )}
@@ -532,30 +535,33 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
           <Alert variant="warning" className="sm:col-span-2 xl:col-span-4" data-testid="bill-duplicate-warning">
             <AlertDescription className="flex flex-wrap items-center gap-x-1">
               <span className="font-semibold">
-                {contactName ?? "This vendor"} already has bill {duplicates[0].billNumber}
+                {t("vendorBills.builder.duplicateLead", { vendor: contactName ?? t("vendorBills.builder.thisVendor"), number: duplicates[0].billNumber })}
               </span>
-              — {calendarDate(duplicates[0].date, today, locale)}, {formatMoney(BigInt(duplicates[0].totalAmount), duplicates[0].currency)},{" "}
-              {BILL_STATE_LABELS[duplicates[0].status === "draft" ? "draft" : billState({ status: duplicates[0].status, dueDate: null, balanceDue: duplicates[0].totalAmount, amountPaid: "0" }, today)].toLowerCase()}. Check it isn&apos;t the same bill before you save.{" "}
+              {t("vendorBills.builder.duplicateBody", {
+                date: calendarDate(duplicates[0].date, today, locale),
+                amount: formatMoney(BigInt(duplicates[0].totalAmount), duplicates[0].currency),
+                state: BILL_STATE_LABELS[duplicates[0].status === "draft" ? "draft" : billState({ status: duplicates[0].status, dueDate: null, balanceDue: duplicates[0].totalAmount, amountPaid: "0" }, today)].toLowerCase(),
+              })}{" "}
               <Link href={`/vendor-bills/${duplicates[0].id}`} target="_blank" className="font-medium text-primary hover:underline">
-                Open {duplicates[0].billNumber}
+                {t("vendorBills.builder.openBill", { number: duplicates[0].billNumber })}
               </Link>
             </AlertDescription>
           </Alert>
         )}
         <AiField suggested={aiFields.has("date")}>
-          <FormField label="Bill date" required>
-            {() => <DatePicker value={date} onChange={mine("date", setDate)} aria-label="Bill date" />}
+          <FormField label={t("vendorBills.builder.billDate")} required>
+            {() => <DatePicker value={date} onChange={mine("date", setDate)} aria-label={t("vendorBills.builder.billDate")} />}
           </FormField>
         </AiField>
         {/* The tag ends where the date input (w-48) does, as on the canvas. */}
         <AiField suggested={aiFields.has("dueDate")} className="flex flex-col gap-1.5 sm:col-span-2" tagClassName="left-48 right-auto -translate-x-full">
-          <FormField label="Due date" helperText={dueHelper}>
+          <FormField label={t("vendorBills.builder.dueDate")} helperText={dueHelper}>
             {() => (
               <div className="flex flex-wrap items-center gap-2.5">
                 <div className="w-48">
-                  <DatePicker value={dueDate} onChange={pickDue} aria-label="Due date" />
+                  <DatePicker value={dueDate} onChange={pickDue} aria-label={t("vendorBills.builder.dueDate")} />
                 </div>
-                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Due in">
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("vendorBills.builder.dueIn")}>
                   {DUE_PICKS.map((days) => (
                     <button
                       key={days}
@@ -567,7 +573,7 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
                         picked === days ? "border-primary bg-info-bg text-primary" : "border-border bg-surface-sunken text-on-surface hover:border-border-strong",
                       )}
                     >
-                      {days === 0 ? "On receipt" : `+${days} days`}
+                      {days === 0 ? t("vendorBills.builder.onReceipt") : t("vendorBills.builder.plusDays", { days })}
                     </button>
                   ))}
                 </div>
@@ -586,9 +592,9 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
 
       <Card className="flex flex-col gap-0 overflow-hidden p-0">
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
-          <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+          <h2 className="text-[15px] font-semibold text-on-surface">{t("vendorBills.builder.lines")}</h2>
           <a href="#bill-notes" className="text-[12.5px] font-medium text-primary hover:underline">
-            Notes and attachments ↓
+            {t("vendorBills.builder.notesAndAttachments")}
           </a>
         </div>
         <VendorBillLines
@@ -605,8 +611,8 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       </Card>
 
       <Card id="bill-notes" className="flex flex-col gap-4">
-        <FormField label="Notes" helperText="For your team; the vendor never sees them.">
-          {(field) => <Textarea {...field} value={notes} onChange={(e) => touch(setNotes)(e.target.value)} placeholder="Internal notes…" />}
+        <FormField label={t("vendorBills.builder.notes")} helperText={t("vendorBills.builder.notesHelper")}>
+          {(field) => <Textarea {...field} value={notes} onChange={(e) => touch(setNotes)(e.target.value)} placeholder={t("vendorBills.builder.notesPlaceholder")} />}
         </FormField>
       </Card>
 
@@ -621,17 +627,17 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       />
 
       {/* US-PUR-35: totals and actions stay in view, as on invoices. */}
-      <DocumentBuilderBar totals={totals} currency={currency} taxLabel={pos.active ? "GST" : "Tax"} dirty={dirty} testIdPrefix="bill">
+      <DocumentBuilderBar totals={totals} currency={currency} taxLabel={pos.active ? "GST" : t("vendorBills.builder.tax")} dirty={dirty} testIdPrefix="bill">
         <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
-          Cancel
+          {t("vendorBills.builder.cancel")}
         </Button>
         <Button type="button" variant={canRecord ? "secondary" : "primary"} onClick={handleSaveDraft} disabled={saving}>
-          {saving ? <Spinner size="sm" /> : bill ? "Save draft" : "Save as draft"}
+          {saving ? <Spinner size="sm" /> : bill ? t("vendorBills.builder.saveDraft") : t("vendorBills.builder.saveAsDraft")}
         </Button>
         {canRecord && (
           <Button type="button" onClick={() => void handleSaveAndRecord()} disabled={saving}>
             <FileCheck size={14} aria-hidden />
-            Save and record
+            {t("vendorBills.builder.saveAndRecord")}
           </Button>
         )}
       </DocumentBuilderBar>

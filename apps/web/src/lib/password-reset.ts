@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "./auth-client";
+import { t } from "./i18n";
 
 /** US-AUTH-09 — the resend button stays disabled this long after a request. */
 export const RESEND_AFTER_SECONDS = 60;
@@ -43,12 +44,12 @@ export async function requestResetLink(email: string): Promise<string | null> {
   try {
     const { error } = await authClient.requestPasswordReset({ email });
     if (error) {
-      if (error.status === 429) return error.message ?? "Too many reset requests. Wait 15 minutes and try again.";
-      if (error.status === 400) return "Enter a valid email address.";
-      return "Couldn't send the reset link. Try again in a minute.";
+      if (error.status === 429) return error.message ?? t("auth.passwordReset.tooManyRequests");
+      if (error.status === 400) return t("auth.passwordReset.invalidEmail");
+      return t("auth.passwordReset.sendFailed");
     }
   } catch {
-    return "Couldn't reach Spine. Check your connection and try again.";
+    return t("auth.passwordReset.unreachable");
   }
   saveResetRequest({ email, sentAt: Date.now() });
   return null;

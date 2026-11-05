@@ -9,6 +9,7 @@ import { authClient } from "../../lib/auth-client";
 import { apiClient } from "../../lib/api-client";
 import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { useSignupStatus } from "../../lib/signup-status";
+import { t as translate, useT } from "../../lib/i18n";
 
 export default function SignupPage() {
   return (
@@ -20,12 +21,13 @@ export default function SignupPage() {
   );
 }
 
-const ROLE_LABELS: Record<string, string> = { owner: "Owner", staff: "Staff", field: "Field" };
+const ROLE_LABELS: Record<string, string> = { owner: translate("auth.roles.owner"), staff: translate("auth.roles.staff"), field: translate("auth.roles.field") };
 
 /** `GET /public/invitations/:id` while the invitation can still be used (US-AUTH-11). */
 type InvitationPreview = { status: "pending"; email: string; role: string; organizationName: string } | { status: string };
 
 function SignupForm() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   // Set by accept-invite's "Create account" link — when present, this
@@ -77,7 +79,7 @@ function SignupForm() {
 
     if (signUpError) {
       if (signUpError.code === "PASSWORD_TOO_COMMON") setPasswordError(PASSWORD_TOO_COMMON_MESSAGE);
-      else setError(signUpError.message ?? "Could not create your account. Please try again.");
+      else setError(signUpError.message ?? t("auth.signup.failed"));
       return;
     }
 
@@ -105,14 +107,13 @@ function SignupForm() {
     return (
       <AuthFrame scene="login">
         <div data-testid="signup-closed" className="flex flex-col gap-6">
-          <AuthHeading title="This Spine is invite-only">
-            {signupStatus?.businessName ?? "This business"} already has an owner, so new accounts are created by invitation. Ask an owner to
-            invite you — you&apos;ll get an email with a link to join.
+          <AuthHeading title={t("auth.signup.closedTitle")}>
+            {t("auth.signup.closedBody", { business: signupStatus?.businessName ?? t("auth.signup.thisBusiness") })}
           </AuthHeading>
           <Button asChild size="touch">
-            <Link href="/login">Log in</Link>
+            <Link href="/login">{t("auth.actions.logIn")}</Link>
           </Button>
-          <p className="text-center text-[13px] text-on-surface-muted">Already have an invite? Open the link in your email.</p>
+          <p className="text-center text-[13px] text-on-surface-muted">{t("auth.signup.haveInvite")}</p>
         </div>
       </AuthFrame>
     );
@@ -121,13 +122,13 @@ function SignupForm() {
   return (
     <AuthFrame scene={inviteId ? "login" : "welcome"}>
       {inviteId ? (
-        <AuthHeading title={invitation ? `Join ${invitation.organizationName} on Spine` : "Create your account"}>
+        <AuthHeading title={invitation ? t("auth.signup.joinTitle", { organization: invitation.organizationName }) : t("auth.signup.createTitle")}>
           {invitation
-            ? `You've been invited as ${ROLE_LABELS[invitation.role] ?? invitation.role}. Create your account to accept.`
-            : "Finish creating your account to accept the invitation."}
+            ? t("auth.signup.invitedAs", { role: ROLE_LABELS[invitation.role] ?? invitation.role })
+            : t("auth.signup.finishToAccept")}
         </AuthHeading>
       ) : (
-        <AuthHeading title="Create your account">Sets up a new organisation with you as the owner.</AuthHeading>
+        <AuthHeading title={t("auth.signup.createTitle")}>{t("auth.signup.newOrganisation")}</AuthHeading>
       )}
 
       <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
@@ -137,17 +138,17 @@ function SignupForm() {
           </Alert>
         )}
 
-        <FormField label="Name" required>
+        <FormField label={t("auth.fields.name")} required>
           {(field) => <Input {...field} type="text" autoComplete="name" autoFocus value={name} onChange={(e) => setName(e.target.value)} required />}
         </FormField>
 
-        <FormField label="Email" required>
+        <FormField label={t("auth.fields.email")} required>
           {(field) => (
             <Input {...field} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={Boolean(invitedEmail)} required />
           )}
         </FormField>
 
-        <FormField label="Password" errorText={passwordError} required>
+        <FormField label={t("auth.fields.password")} errorText={passwordError} required>
           {(field) => (
             <div className="flex flex-col gap-2">
               <PasswordInput
@@ -166,7 +167,7 @@ function SignupForm() {
           )}
         </FormField>
 
-        <FormField label="Confirm password" errorText={confirmError} required>
+        <FormField label={t("auth.fields.confirmPassword")} errorText={confirmError} required>
           {(field) => (
             <PasswordInput
               {...field}
@@ -183,14 +184,14 @@ function SignupForm() {
         </FormField>
 
         <Button type="submit" size="touch" disabled={loading} className="mt-1">
-          {loading ? "Creating your account…" : "Create account"}
+          {loading ? t("auth.signup.creating") : t("auth.actions.createAccount")}
         </Button>
       </form>
 
       <p className="mt-5 text-center text-[13px] text-on-surface-muted">
-        Already have an account?{" "}
+        {t("auth.signup.haveAccount")}{" "}
         <Link href={inviteId ? `/login?next=/accept-invite/${inviteId}` : "/login"} className="text-primary hover:underline">
-          Log in
+          {t("auth.actions.logIn")}
         </Link>
       </p>
     </AuthFrame>

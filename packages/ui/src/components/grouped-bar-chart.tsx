@@ -2,6 +2,7 @@
 
 import * as RechartsPrimitive from "recharts";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "./chart";
 
 export interface GroupedBarChartSeries {
@@ -46,11 +47,12 @@ export interface GroupedBarChartProps {
  * table that lists them.
  */
 export function GroupedBarChart({ data, series, marker, formatTick, renderTooltip, "aria-label": ariaLabel, description, emptyState, className }: GroupedBarChartProps) {
+  const t = useT();
   const values = data.flatMap((row) => [...series.map((s) => Number(row[s.key] ?? 0)), marker ? Number(row[marker.key] ?? 0) : 0]);
   const max = Math.max(0, ...values);
 
   if (data.length === 0 || max === 0) {
-    return <div className={cn("flex h-48 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? "No data."}</div>;
+    return <div className={cn("flex h-48 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? t("ui.chart.noData")}</div>;
   }
 
   // Four even steps of a round size, so the ticks read cleanly.
@@ -100,6 +102,7 @@ export function GroupedBarChart({ data, series, marker, formatTick, renderToolti
               maxBarSize={28}
               {...(marker?.seriesKey === s.key
                 ? {
+                    // eslint-disable-next-line i18next/no-literal-string -- a colour, not copy
                     background: { fill: "transparent" },
                     shape: (props: unknown) => <BarWithMarker {...(props as BarShapeProps)} markerKey={marker.key} top={top} />,
                   }

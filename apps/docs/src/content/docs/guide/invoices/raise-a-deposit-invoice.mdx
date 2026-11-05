@@ -1,0 +1,43 @@
+---
+title: Raise a deposit invoice
+description: Ask a customer for a deposit before work starts, record it when it arrives, and take it off the final invoice.
+sidebar:
+  order: 11
+---
+
+A deposit invoice (type **Advance**) asks the customer for money up front. It isn't revenue yet, so issuing it posts nothing to your books. When the customer pays, the money is held as their credit until you take it off a later invoice.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Create/edit own invoices** and **Issue an invoice**. Recording the deposit needs **Record own payments**, and using it on the final invoice needs **Apply payment credit**.
+</Aside>
+
+<Steps>
+
+1. **Start a new invoice** — Go to **Invoices** and press **New invoice**. Pick the **Contact**.
+
+2. **Choose Advance** — Set **Type** to **Advance**.
+
+3. **Add the deposit line** — Add a line for the deposit, for example "Deposit — 20% of contract". A deposit carries no tax, so Spine removes any tax from its lines when you save. The final invoice carries the full tax.
+
+4. **Save and issue it** — Press **Save as draft**, check it, then press **Issue invoice**. **Issue this invoice?** says who will owe what and when. Press **Issue invoice** to confirm.
+
+</Steps>
+
+<Screenshot id="invoices-builder" alt="The New invoice builder with the contact, type and dates at the top, the lines below, and the bar with Subtotal, Tax, Total, Preview PDF and Save as draft" />
+
+In the Invoices list it shows "Deposit" under its number.
+
+## Record the deposit when it arrives
+
+A deposit invoice's page has no **Record payment** button. Record the money from **Payments** instead: press **Record payment**, pick the customer and put the amount against the deposit invoice. It then shows **Paid** (or **Part paid** if they paid some of it). The money is held as the customer's credit, ready for the final invoice. See [Payments and receivables](../../payments/).
+
+## Take the deposit off the final invoice
+
+When you issue the customer's next invoice, Spine asks **Apply this customer's credit?**. Press **Apply credit and issue**, and the invoice asks only for what's still owed. You can also do it later with **Apply credit**. See [Apply a customer's credit to an invoice](../apply-credit-to-an-invoice/).
+
+<Aside type="caution">
+  A deposit invoice can't be credited with a credit note, because nothing was posted for it. If it was raised by mistake and hasn't been paid, [void it](../void-an-invoice/).
+</Aside>

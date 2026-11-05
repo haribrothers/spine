@@ -36,6 +36,7 @@ import {
   type ExpensesListState,
 } from "./expense-state";
 import type { Expense, ExpenseCategory } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const ALL = "__all__";
 const STATE_OPTIONS = EXPENSE_STATES.map((s) => ({ value: s, label: EXPENSE_STATE_LABELS[s] }));
@@ -52,6 +53,7 @@ const STATE_OPTIONS = EXPENSE_STATES.map((s) => ({ value: s, label: EXPENSE_STAT
  * (US-PUR-43); old `?id=` links go there.
  */
 export function ExpensesExplorer({ currentUserId }: { currentUserId: string | null }) {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -109,16 +111,16 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         setRefreshFailed(false);
         setUpdatedAt(Date.now());
         setNow(Date.now());
-        if (mode === "refresh") setAnnouncement("Expenses updated");
+        if (mode === "refresh") setAnnouncement(t("expenses.explorer.updated"));
       } catch (err) {
-        if (mode === "first") setError(err instanceof Error ? err.message : "Couldn't load expenses.");
+        if (mode === "first") setError(err instanceof Error ? err.message : t("expenses.explorer.loadFailed"));
         else setRefreshFailed(true);
       } finally {
         loading.current = false;
         setRefreshing(false);
       }
     },
-    [jobQuery],
+    [jobQuery, t],
   );
 
   useEffect(() => {
@@ -164,11 +166,11 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const selectedExpenses = useMemo(() => (expenses ?? []).filter((e) => selected.has(e.id) && canReviewThis(e, currentUserId, isOwner)), [expenses, selected, currentUserId, isOwner]);
   const people = useMemo(() => {
     const byId = new Map<string, string>();
-    for (const e of expenses ?? []) if (e.submittedByUserId && e.submittedByUserId !== currentUserId) byId.set(e.submittedByUserId, e.submittedByName ?? "Someone");
-    return [{ value: ALL, label: "Anyone" }, { value: ME, label: "Me" }, ...[...byId.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ value, label }))];
-  }, [expenses, currentUserId]);
+    for (const e of expenses ?? []) if (e.submittedByUserId && e.submittedByUserId !== currentUserId) byId.set(e.submittedByUserId, e.submittedByName ?? t("expenses.explorer.someone"));
+    return [{ value: ALL, label: t("expenses.explorer.anyone") }, { value: ME, label: t("expenses.explorer.me") }, ...[...byId.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([value, label]) => ({ value, label }))];
+  }, [expenses, currentUserId, t]);
   // US-PUR-46: archived categories can still be filtered on (the Categories table links to them).
-  const categoryOptions = useMemo(() => [{ value: ALL, label: "All categories" }, ...categories.map((c) => ({ value: c.id, label: c.archivedAt ? `${c.name} (archived)` : c.name }))], [categories]);
+  const categoryOptions = useMemo(() => [{ value: ALL, label: t("expenses.explorer.allCategories") }, ...categories.map((c) => ({ value: c.id, label: c.archivedAt ? t("expenses.explorer.archivedCategory", { name: c.name }) : c.name }))], [categories, t]);
 
   /** After an action: what happened (D-223), and the list again. */
   function done(title: string, description: string) {
@@ -196,14 +198,14 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   }
 
   const money = (v: bigint) => formatMoney(v, orgCurrency);
-  const countOf = (n: number) => `${n} ${n === 1 ? "expense" : "expenses"}`;
+  const countOf = (n: number) => t("expenses.explorer.count", { count: n });
   const card = (key: Exclude<ExpenseCard, "">, label: string, value: string, hint: string, tone: "default" | "warning" = "default") => {
     const on = state.card === key;
     return (
       <button
         type="button"
         aria-pressed={on}
-        aria-label={`Show ${label.toLowerCase()} only`}
+        aria-label={t("expenses.explorer.showOnly", { label: label.toLowerCase() })}
         onClick={() => update({ card: on ? "" : key })}
         className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
@@ -211,7 +213,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
           label={label}
           value={value}
           tone={tone}
-          trend={{ direction: "neutral", label: on ? "Showing these · press again to clear" : hint }}
+          trend={{ direction: "neutral", label: on ? t("expenses.explorer.showingThese") : hint }}
           className={cn("h-full transition-colors hover:border-border-strong", on && "border-primary bg-info-bg/60 ring-1 ring-primary")}
         />
         <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", on ? "text-primary" : "text-on-surface-muted")} />
@@ -222,7 +224,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const search = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search numbers, descriptions, jobs or people" aria-label="Search expenses" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("expenses.explorer.searchPlaceholder")} aria-label={t("expenses.explorer.searchAria")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
   const filtersOn = hasExpenseFilters(state) || job.filtering;
@@ -234,39 +236,41 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="expense-stats">
-        {card("wait", "Waiting for approval", stats ? money(stats.waiting.amount) : "—", stats ? `${countOf(stats.waiting.count)}${canApprove && !isOwner ? " from others" : ""}` : "", stats && stats.waiting.count > 0 ? "warning" : "default")}
-        <StatCard label="Approved this month" value={stats ? money(stats.approvedThisMonth.amount) : "—"} trend={{ direction: "neutral", label: stats ? countOf(stats.approvedThisMonth.count) : "" }} className="h-full" />
-        {card("bill", "Ready to bill", stats ? money(stats.toBill.amount) : "—", stats ? `${countOf(stats.toBill.count)} · billable, not invoiced` : "")}
-        {card("rej", "Rejected", stats ? String(stats.rejected.count) : "—", "to fix and resubmit")}
+        {/* eslint-disable i18next/no-literal-string -- card()'s keys and tones are codes, not copy */}
+        {card("wait", t("expenses.state.wait"), stats ? money(stats.waiting.amount) : "—", stats ? `${countOf(stats.waiting.count)}${canApprove && !isOwner ? t("expenses.explorer.fromOthers") : ""}` : "", stats && stats.waiting.count > 0 ? "warning" : "default")}
+        <StatCard label={t("expenses.explorer.approvedThisMonth")} value={stats ? money(stats.approvedThisMonth.amount) : "—"} trend={{ direction: "neutral", label: stats ? countOf(stats.approvedThisMonth.count) : "" }} className="h-full" />
+        {card("bill", t("expenses.explorer.readyToBill"), stats ? money(stats.toBill.amount) : "—", stats ? `${countOf(stats.toBill.count)}${t("expenses.explorer.toBillHint")}` : "")}
+        {card("rej", t("expenses.explorer.rejected"), stats ? String(stats.rejected.count) : "—", t("expenses.explorer.toFix"))}
+        {/* eslint-enable i18next/no-literal-string */}
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as ExpenseState[] })} placeholder="State" aria-label="Filter by state" className="w-44" />
-            <Combobox options={categoryOptions} value={state.category || ALL} onValueChange={(v) => update({ category: v === ALL ? "" : v })} placeholder="All categories" aria-label="Filter by category" className="w-48" />
-            {role !== "field" && <Combobox options={people} value={state.by || ALL} onValueChange={(v) => update({ by: v === ALL ? "" : v })} placeholder="Submitted by" aria-label="Filter by who submitted" className="w-44" />}
+            <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as ExpenseState[] })} placeholder={t("expenses.explorer.statePlaceholder")} aria-label={t("expenses.common.filterByState")} className="w-44" />
+            <Combobox options={categoryOptions} value={state.category || ALL} onValueChange={(v) => update({ category: v === ALL ? "" : v })} placeholder={t("expenses.explorer.allCategories")} aria-label={t("expenses.explorer.filterByCategory")} className="w-48" />
+            {role !== "field" && <Combobox options={people} value={state.by || ALL} onValueChange={(v) => update({ by: v === ALL ? "" : v })} placeholder={t("expenses.explorer.submittedByPlaceholder")} aria-label={t("expenses.explorer.filterBySubmitter")} className="w-44" />}
             {/* US-SET-24 */}
             {jobsOn && <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />}
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("expenses.common.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="expenses-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("expenses.common.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !expenses} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("expenses.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !expenses} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("expenses.common.refreshList")}</TooltipContent>
             </Tooltip>
             {canCreate && (
               <Button
@@ -276,7 +280,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
                 }}
               >
                 <Plus size={14} aria-hidden />
-                Submit expense
+                {t("expenses.common.submitExpense")}
               </Button>
             )}
           </div>
@@ -287,9 +291,9 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("expenses.common.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("expenses.common.tryAgainButton")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -308,18 +312,18 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             {filtersOn ? (
               <EmptyState
                 icon={<Receipt />}
-                title={job.filtering && !hasExpenseFilters(state) ? "No expenses on this job" : "No expenses match these filters"}
-                description={job.filtering && !hasExpenseFilters(state) ? "Expenses tagged to this job show up here." : "Try adjusting or clearing the filters above."}
+                title={job.filtering && !hasExpenseFilters(state) ? t("expenses.explorer.noneOnJob") : t("expenses.explorer.noneMatch")}
+                description={job.filtering && !hasExpenseFilters(state) ? t("expenses.explorer.noneOnJobDescription") : t("expenses.explorer.noneMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("expenses.common.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<Receipt />}
-                title="No expenses yet"
+                title={t("expenses.explorer.noneYet")}
                 description={expensesDescription(canManageCategories)}
                 action={
                   canCreate ? (
@@ -329,7 +333,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
                         setFormOpen(true);
                       }}
                     >
-                      Submit expense
+                      {t("expenses.common.submitExpense")}
                     </Button>
                   ) : undefined
                 }
@@ -377,7 +381,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             handlers={handlers}
           />
           {(canApprove || canReject) && !isOwner && (expenses ?? []).some((e) => e.status === "submitted" && e.submittedByUserId === currentUserId) && (
-            <p className="text-[13px] text-on-surface-muted">Your own expenses can&apos;t be selected for approval — someone else approves them.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("expenses.explorer.ownNote")}</p>
           )}
         </div>
       )}
@@ -390,7 +394,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
           void load("refresh");
           const label = expenseLabel(expense);
           const amount = formatMoney(BigInt(expense.amount), expense.currency);
-          showToast(mode === "created" ? "Expense submitted" : mode === "resubmitted" ? "Expense resubmitted" : "Expense updated", mode === "updated" ? `${label} is still waiting for approval.` : `${label} for ${amount} is waiting for approval.`);
+          showToast(mode === "created" ? t("expenses.explorer.submitted") : mode === "resubmitted" ? t("expenses.common.expenseResubmitted") : t("expenses.common.expenseUpdated"), mode === "updated" ? t("expenses.common.stillWaiting", { label }) : t("expenses.explorer.waitingWithAmount", { label, amount }));
         }}
       />
       {approving && (
@@ -400,7 +404,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
           onOpenChange={(open) => !open && setApproving(null)}
           onApproved={(updated) => {
             setApproving(null);
-            done(`${updated.number ?? "Expense"} approved`, `${formatMoney(BigInt(updated.amount), updated.currency)} is posted to your books.`);
+            done(t("expenses.common.approvedName", { name: updated.number ?? t("expenses.common.expense") }), t("expenses.common.postedToBooks", { amount: formatMoney(BigInt(updated.amount), updated.currency) }));
           }}
         />
       )}
@@ -411,7 +415,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
           onOpenChange={(open) => !open && setRejecting(null)}
           onRejected={(updated) => {
             setRejecting(null);
-            done("Expense rejected", `${expenseLabel(updated)} isn't posted; ${updated.submittedByName ?? "the submitter"} can fix it and resubmit.`);
+            done(t("expenses.common.expenseRejected"), t("expenses.common.rejectedDescription", { label: expenseLabel(updated), who: updated.submittedByName ?? t("expenses.common.theSubmitter") }));
           }}
         />
       )}

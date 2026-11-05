@@ -5,11 +5,12 @@ import { Badge } from "@spine/ui";
 import { ContactLogo } from "./contact-logo";
 import { ContactRowActions } from "./contact-row-actions";
 import type { Contact } from "./types";
+import { t as translate, useT } from "../../../lib/i18n";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
-  customer: "Customer",
-  vendor: "Vendor",
-  both: "Customer & vendor",
+  customer: translate("contacts.common.typeCustomer"),
+  vendor: translate("contacts.common.typeVendor"),
+  both: translate("contacts.common.typeBoth"),
 };
 
 /**
@@ -25,6 +26,7 @@ export function ContactsListView({
   contacts: Contact[];
   onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
 }) {
+  const t = useT();
   return (
     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
       {contacts.map((contact) => (
@@ -36,10 +38,10 @@ export function ContactsListView({
                 {contact.name}
               </span>
               <Badge>{TYPE_LABELS[contact.type]}</Badge>
-              {contact.archivedAt && <Badge>Archived</Badge>}
+              {contact.archivedAt && <Badge>{t("contacts.common.archived")}</Badge>}
             </div>
             <p className="truncate text-[12px] text-on-surface-muted" title={[contact.email, contact.phone].filter(Boolean).join(" · ") || undefined}>
-              {contact.email ?? "No email"} {contact.phone ? `· ${contact.phone}` : ""}
+              {contact.email ?? t("contacts.common.noEmail")} {contact.phone ? t("contacts.listView.phoneSuffix", { phone: contact.phone }) : ""}
             </p>
           </Link>
           <ContactRowActions contact={contact} onChanged={onChanged} />

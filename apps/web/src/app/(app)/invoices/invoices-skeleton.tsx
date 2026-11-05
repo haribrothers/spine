@@ -1,13 +1,14 @@
 import { Skeleton, TableSkeleton } from "@spine/ui";
+import { t } from "../../../lib/i18n";
 
 /** Mirrors InvoicesTable's own `columns` (header text, order, alignment) so the loading state never drifts out of sync with the real table. */
 const TABLE_COLUMNS = [
-  { key: "number", header: "Number", width: "w-20" },
-  { key: "contact", header: "Contact", width: "w-32" },
-  { key: "status", header: "Status", width: "w-20" },
-  { key: "dueDate", header: "Due date", width: "w-24" },
-  { key: "total", header: "Total", width: "w-24" },
-  { key: "balanceDue", header: "Balance due", width: "w-24" },
+  { key: "number", header: t("invoices.columns.number"), width: "w-20" },
+  { key: "contact", header: t("invoices.columns.contact"), width: "w-32" },
+  { key: "status", header: t("invoices.columns.status"), width: "w-20" },
+  { key: "dueDate", header: t("invoices.columns.dueDate"), width: "w-24" },
+  { key: "total", header: t("invoices.columns.total"), width: "w-24" },
+  { key: "balanceDue", header: t("invoices.columns.balanceDue"), width: "w-24" },
   { key: "actions", header: "", width: "w-6", align: "right" as const },
 ];
 

@@ -1,4 +1,5 @@
 import { formatMoney } from "@spine/shared/money";
+import { t } from "./i18n";
 
 /**
  * Formatting for the field app: money and dates the business's way
@@ -32,8 +33,6 @@ export function daysUntil(date: Date, now: Date = new Date()): number {
   return Math.round((startOfDay(date).getTime() - startOfDay(now).getTime()) / 86_400_000);
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 export function weekday(date: Date, locale: string): string {
   return date.toLocaleDateString(locale, { weekday: "short" });
 }
@@ -62,19 +61,19 @@ export type ChipStatus = "paid" | "due-soon" | "overdue" | "draft";
 export function dueChip(dueDate: string, locale: string, now: Date = new Date()): { label: string; status: ChipStatus } {
   const due = calendarDay(dueDate);
   const days = daysUntil(due, now);
-  if (days < 0) return { label: `${plural(-days, "day", "days")} late`, status: "overdue" };
-  if (days === 0) return { label: "Due today", status: "due-soon" };
-  if (days === 1) return { label: "Due tomorrow", status: "due-soon" };
-  if (days < 7) return { label: `Due ${weekday(due, locale)}`, status: "due-soon" };
-  return { label: `Due ${dayMonth(due, locale)}`, status: "draft" };
+  if (days < 0) return { label: t("mobileApp.format.daysLate", { count: -days }), status: "overdue" };
+  if (days === 0) return { label: t("mobileApp.format.dueToday"), status: "due-soon" };
+  if (days === 1) return { label: t("mobileApp.format.dueTomorrow"), status: "due-soon" };
+  if (days < 7) return { label: t("mobileApp.format.dueOn", { when: weekday(due, locale) }), status: "due-soon" };
+  return { label: t("mobileApp.format.dueOn", { when: dayMonth(due, locale) }), status: "draft" };
 }
 
 /** "Sat" within the week, else "10 Oct" — for "next Sat" on the KPI card. */
 export function shortWhen(dueDate: string, locale: string, now: Date = new Date()): string {
   const due = calendarDay(dueDate);
   const days = daysUntil(due, now);
-  if (days === 0) return "today";
-  if (days === 1) return "tomorrow";
+  if (days === 0) return t("mobileApp.format.today");
+  if (days === 1) return t("mobileApp.format.tomorrow");
   return days > 1 && days < 7 ? weekday(due, locale) : dayMonth(due, locale);
 }
 
@@ -82,11 +81,11 @@ export function shortWhen(dueDate: string, locale: string, now: Date = new Date(
 export function relativeTime(iso: string, locale: string, now: Date = new Date(), compact = false): string {
   const at = new Date(iso);
   const minutes = Math.floor((now.getTime() - at.getTime()) / 60_000);
-  if (minutes < 1) return compact ? "now" : "Just now";
-  if (minutes < 60) return compact ? `${minutes}m` : `${minutes} min ago`;
+  if (minutes < 1) return compact ? t("mobileApp.format.nowCompact") : t("mobileApp.format.justNow");
+  if (minutes < 60) return compact ? t("mobileApp.format.minutesCompact", { n: minutes }) : t("mobileApp.format.minutesAgo", { n: minutes });
   const days = -daysUntil(at, now);
-  if (days === 0) return compact ? `${Math.floor(minutes / 60)}h` : `${Math.floor(minutes / 60)} h ago`;
-  if (days === 1) return "Yesterday";
+  if (days === 0) return compact ? t("mobileApp.format.hoursCompact", { n: Math.floor(minutes / 60) }) : t("mobileApp.format.hoursAgo", { n: Math.floor(minutes / 60) });
+  if (days === 1) return t("mobileApp.format.yesterday");
   if (days < 7) return weekday(at, locale);
   return dayMonth(at, locale);
 }

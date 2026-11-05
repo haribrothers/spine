@@ -1,0 +1,122 @@
+[
+  {
+    "id": "settings-automatic-reminders",
+    "path": "/dashboard?settings=reminders",
+    "alt": "Settings, Automatic reminders: the on switch, the schedule options, Send at and Preview email",
+    "wait": "Send reminders automatically"
+  },
+  {
+    "id": "settings-branding",
+    "path": "/dashboard?settings=branding",
+    "alt": "Settings, Branding: the four app themes, document colour with its contrast check, document footer and a preview",
+    "wait": "App theme"
+  },
+  {
+    "id": "settings-business-profile",
+    "path": "/dashboard?settings=business",
+    "alt": "Settings, Business profile: business name, logo square, address, business email, phone and industry, with Save",
+    "wait": "Business name"
+  },
+  {
+    "id": "settings-currency",
+    "path": "/dashboard?settings=currency",
+    "alt": "Settings, Currency & locale: the currency and locale fields with their common choices, and Save",
+    "wait": "Used for every document and report."
+  },
+  {
+    "id": "settings-data-export",
+    "path": "/dashboard?settings=data-export",
+    "alt": "Settings, Data export: Records as CSV, Records as JSON and Files, with Prepare export",
+    "wait": "Prepare export"
+  },
+  {
+    "id": "settings-documents",
+    "path": "/dashboard?settings=documents",
+    "alt": "Settings, Documents: tabs for each document type, paper size, title, columns and terms beside a live sample invoice",
+    "wait": "Paper size"
+  },
+  {
+    "id": "settings-email-log",
+    "path": "/emails",
+    "alt": "The Email log: Waiting, Failed in the last 7 days and Sent today cards above the list of emails with their status and attempts",
+    "wait": "Sent today"
+  },
+  {
+    "id": "settings-emails",
+    "path": "/dashboard?settings=emails",
+    "alt": "Settings, Emails: the list of customer emails, the subject and message editor with placeholders, and Preview and Send me a test",
+    "wait": "Customer emails"
+  },
+  {
+    "id": "settings-financial-year",
+    "path": "/dashboard?settings=fiscal-year",
+    "alt": "Settings, Financial year: Financial year starts on, with Month and Day pickers and Save",
+    "wait": "Financial year starts on"
+  },
+  {
+    "id": "settings-overview",
+    "path": "/dashboard?settings=business",
+    "alt": "The Settings dialog, its grouped list on the left and Business profile open on the right",
+    "wait": "Business profile"
+  },
+  {
+    "id": "settings-industry-template",
+    "path": "/dashboard?settings=template",
+    "alt": "Settings, Industry template: the template cards with Construction / Contracting selected",
+    "wait": "Construction / Contracting"
+  },
+  {
+    "id": "settings-upcoming-meetings",
+    "path": "/dashboard?settings=dashboard-meetings-scope",
+    "alt": "Settings, Upcoming meetings: Only my meetings and Every org meeting, with Save",
+    "wait": "Every org meeting"
+  },
+  {
+    "id": "settings-modules",
+    "path": "/dashboard?settings=modules",
+    "alt": "Settings, Modules: switches for Leads & meetings, Jobs & field, Approvals and Recurring documents, plus the AI assistant and Connected agents rows",
+    "wait": "Leads & meetings"
+  },
+  {
+    "id": "settings-notifications",
+    "path": "/dashboard?settings=notifications",
+    "alt": "Settings, Notifications: Browser notifications, Daily digest and Meeting reminders",
+    "wait": "Daily digest"
+  },
+  {
+    "id": "settings-numbering",
+    "path": "/dashboard?settings=numbering",
+    "alt": "Settings, Numbering: a row per document type with Prefix, Padding and Starting number, and Save",
+    "wait": "Starting number"
+  },
+  {
+    "id": "settings-password-security",
+    "path": "/dashboard?settings=security",
+    "alt": "Settings, Password & security: Change password and the list of devices you're signed in on",
+    "wait": "Where you're signed in"
+  },
+  {
+    "id": "settings-payment-instructions",
+    "path": "/dashboard?settings=payment-instructions",
+    "alt": "Settings, Payment instructions: the How customers can pay box, its 600-character limit and Save",
+    "wait": "How customers can pay"
+  },
+  {
+    "id": "settings-pipeline-stages",
+    "path": "/dashboard?settings=lead-stages",
+    "alt": "Settings, Pipeline stages: a row per stage with its kind and lead count, + Add stage and Save",
+    "wait": "+ Add stage"
+  },
+  {
+    "id": "settings-repeat-quote-conversion",
+    "path": "/dashboard?settings=quote-conversion-guard",
+    "alt": "Settings, Repeat quote conversion: Warn (recommended), Block and Off, with Save",
+    "wait": "Warn (recommended)"
+  },
+  {
+    "id": "settings-profile",
+    "path": "/dashboard?settings=profile",
+    "alt": "Settings, Profile: photo, name and sign-in email, each in its own card",
+    "wait": "Sign-in email"
+  }
+]

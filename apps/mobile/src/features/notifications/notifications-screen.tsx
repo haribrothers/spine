@@ -21,9 +21,10 @@ import { NOTIFICATIONS_KEY, NOTIFICATIONS_PATH, routeForLink, splitByRead, UNREA
 import { newIdempotencyKey } from "../../lib/api/idempotency";
 import { relativeTime } from "../../lib/format";
 import { ListRowsSkeleton } from "../../components/skeletons";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const NOTIFICATIONS_EMPTY_TITLE = "You're all caught up";
-export const NOTIFICATIONS_EMPTY_MESSAGE = "Expense decisions, crew changes and meeting invitations show up here.";
+export const NOTIFICATIONS_EMPTY_TITLE = translate("mobileApp.notifications.emptyTitle");
+export const NOTIFICATIONS_EMPTY_MESSAGE = translate("mobileApp.notifications.emptyMessage");
 
 type Tone = "primary" | "paid" | "dueSoon" | "overdue" | "draft";
 const TONE_BOX: Record<Tone, string> = {
@@ -75,6 +76,7 @@ export function notificationIcon(type: string): { icon: React.ComponentType<{ si
  * (no push in 1.0, D-200).
  */
 export function NotificationsScreen() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const { request } = useSession();
@@ -114,8 +116,8 @@ export function NotificationsScreen() {
   };
 
   const sections = [
-    ...(fresh.length ? [{ key: "new", title: "New", data: fresh }] : []),
-    ...(earlier.length ? [{ key: "earlier", title: "Earlier", data: earlier }] : []),
+    ...(fresh.length ? [{ key: "new", title: t("mobileApp.notifications.new"), data: fresh }] : []),
+    ...(earlier.length ? [{ key: "earlier", title: t("mobileApp.notifications.earlier"), data: earlier }] : []),
   ];
 
   return (
@@ -124,17 +126,17 @@ export function NotificationsScreen() {
         options={
           android
             ? {
-                title: "Notifications",
+                title: t("mobileApp.bellButton.label"),
                 headerRight: () =>
                   fresh.length ? (
                     <Pressable testID="notifications-read-all" onPress={() => void readAll()} accessibilityRole="button" hitSlop={10} className="min-h-[44px] justify-center px-2">
-                      <Text className="text-[15px] font-semibold text-primary dark:text-primary-dark">Read all</Text>
+                      <Text className="text-[15px] font-semibold text-primary dark:text-primary-dark">{t("mobileApp.notifications.readAll")}</Text>
                     </Pressable>
                   ) : null,
               }
             : {
-                title: "Notifications",
-                unstable_headerRightItems: () => (fresh.length ? [{ type: "button" as const, label: "Read all", onPress: () => void readAll() }] : []),
+                title: t("mobileApp.bellButton.label"),
+                unstable_headerRightItems: () => (fresh.length ? [{ type: "button" as const, label: t("mobileApp.notifications.readAll"), onPress: () => void readAll() }] : []),
               }
         }
       />
@@ -173,7 +175,7 @@ export function NotificationsScreen() {
               testID={`notification-${item.id}`}
               onPress={() => void openOne(item)}
               accessibilityRole="button"
-              accessibilityLabel={[unread ? "Unread" : null, item.message, item.detail, time].filter(Boolean).join(", ")}
+              accessibilityLabel={[unread ? t("mobileApp.notifications.unread") : null, item.message, item.detail, time].filter(Boolean).join(", ")}
               className={`flex-row items-start gap-3 px-4 py-3.5 active:opacity-80 ${shape}`}
             >
               <View className={`h-11 w-11 items-center justify-center rounded-xl ${TONE_BOX[tone]}`}>
@@ -191,7 +193,7 @@ export function NotificationsScreen() {
         ListEmptyComponent={
           list.loading ? (
             <View className={android ? "" : "pt-4"}>
-              <ListRowsSkeleton label="Loading notifications" testID="skeleton-notifications" rows={5} leading />
+              <ListRowsSkeleton label={t("mobileApp.notifications.loading")} testID="skeleton-notifications" rows={5} leading />
             </View>
           ) : list.data ? (
             <EmptyState

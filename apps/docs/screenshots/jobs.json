@@ -1,0 +1,84 @@
+[
+  {
+    "id": "jobs-list",
+    "path": "/jobs",
+    "alt": "The Jobs list with the Active, Ready to bill, Over or near budget and Retention held cards above the table of jobs",
+    "wait": "Ready to bill"
+  },
+  {
+    "id": "jobs-new-job",
+    "path": "/jobs",
+    "alt": "The New job drawer with Start from an accepted quote at the top and the job's fields below",
+    "click": "New job",
+    "wait": "Start from an accepted quote"
+  },
+  {
+    "id": "jobs-detail",
+    "path": "/jobs/{job}",
+    "alt": "A job's page with its number, status, contact, site address and dates, the next-step button and the strip of figures",
+    "wait": "Milestones"
+  },
+  {
+    "id": "jobs-edit",
+    "path": "/jobs/{job}",
+    "alt": "The Edit job dialog with the job name, site address, status, dates, notes, retention and the Budget and progress fields",
+    "click": "Edit job",
+    "wait": "Budget and progress"
+  },
+  {
+    "id": "jobs-milestones",
+    "path": "/jobs/{job}?tab=milestones",
+    "alt": "A job's Milestones tab showing billed so far, a progress bar and each milestone with its status, amount, due date and action",
+    "wait": "milestones done"
+  },
+  {
+    "id": "jobs-milestones-editor",
+    "path": "/jobs/{job}?tab=milestones",
+    "alt": "The milestones editor with rows for name, type, percent or amount and due date, and the running percent total",
+    "click": "Edit milestones",
+    "wait": "Save milestones"
+  },
+  {
+    "id": "jobs-variations",
+    "path": "/jobs/{job}?tab=variations",
+    "alt": "A job's Variation orders tab listing each variation quote with its status, raised date and total",
+    "wait": "Raise variation order"
+  },
+  {
+    "id": "jobs-raise-variation",
+    "path": "/jobs/{job}?tab=variations",
+    "alt": "The Raise a variation order dialog with the quote line editor for items, headings and text lines",
+    "click": "Raise variation order",
+    "wait": "Create variation order"
+  },
+  {
+    "id": "jobs-crew",
+    "path": "/jobs/{job}?tab=crew",
+    "alt": "A job's Crew tab with the Add a user picker, the Assign button and the people on the crew",
+    "wait": "Assigned users see this job on their mobile home screen."
+  },
+  {
+    "id": "jobs-photos",
+    "path": "/jobs/{job}?tab=photos",
+    "alt": "A job's Photos tab with photos grouped under Site photos and under the milestones they were added with",
+    "wait": "Add photos"
+  },
+  {
+    "id": "jobs-notes",
+    "path": "/jobs/{job}?tab=notes",
+    "alt": "A job's Notes tab with the note box, the Add button and earlier notes with their authors and times",
+    "wait": "Notes"
+  },
+  {
+    "id": "jobs-costing",
+    "path": "/jobs/{job}?tab=costing",
+    "alt": "A job's Costing tab with the job costing figures, the Budget and Billing cards and cost by category",
+    "wait": "Job costing"
+  },
+  {
+    "id": "jobs-activity",
+    "path": "/jobs/{job}?tab=milestones",
+    "alt": "A job's Milestones tab with the Activity panel beside it listing what happened on the job, newest first",
+    "wait": "Activity"
+  }
+]

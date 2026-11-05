@@ -32,6 +32,7 @@ import {
   type CatalogImportRow,
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 
 /** How each field's column is guessed from the file's headings. */
 const GUESS: Record<CatalogImportField, RegExp> = {
@@ -58,6 +59,7 @@ type Step = "choose" | "map" | "preview" | "done";
  * to download.
  */
 export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: boolean; onOpenChange: (open: boolean) => void; onImported: () => void }) {
+  const t = useT();
   const [step, setStep] = useState<Step>("choose");
   const [fileName, setFileName] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
@@ -86,11 +88,11 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
       complete: (parsed) => {
         const cols = parsed.meta.fields ?? [];
         if (!cols.length) {
-          setError("That file has no columns. Save it from your spreadsheet as CSV.");
+          setError(t("catalog.import.noColumns"));
           return;
         }
         if (parsed.data.length > MAX_CATALOG_IMPORT_ROWS) {
-          setError(`Import ${MAX_CATALOG_IMPORT_ROWS} rows or fewer at a time — split the file.`);
+          setError(t("catalog.import.tooManyRows", { max: MAX_CATALOG_IMPORT_ROWS }));
           return;
         }
         setFileName(file.name);
@@ -104,7 +106,7 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
         setMapping(guess);
         setStep("map");
       },
-      error: () => setError("That file couldn't be read. Save it from your spreadsheet as CSV."),
+      error: () => setError(t("catalog.import.unreadable")),
     });
   }
 
@@ -128,7 +130,7 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
       setStep(dryRun ? "preview" : "done");
       if (!dryRun) onImported();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The import didn't work. Try again.");
+      setError(err instanceof Error ? err.message : t("catalog.import.failed"));
     } finally {
       setBusy(false);
     }
@@ -166,8 +168,8 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
     >
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Import catalogue items</DialogTitle>
-          <DialogDescription>From a CSV saved from your spreadsheet or old system. Items already in the catalogue are skipped, never changed.</DialogDescription>
+          <DialogTitle>{t("catalog.import.title")}</DialogTitle>
+          <DialogDescription>{t("catalog.import.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -179,13 +181,13 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
           {step === "choose" && (
             <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-border-strong px-6 py-10 text-center hover:bg-surface-sunken focus-within:ring-2 focus-within:ring-primary">
               <FileUp className="size-6 text-on-surface-muted" aria-hidden />
-              <span className="text-[14px] font-medium text-on-surface">Choose a CSV file</span>
-              <span className="text-[13px] text-on-surface-muted">One item per row, with a heading row.</span>
+              <span className="text-[14px] font-medium text-on-surface">{t("catalog.import.chooseFile")}</span>
+              <span className="text-[13px] text-on-surface-muted">{t("catalog.import.chooseHint")}</span>
               <input
                 type="file"
                 accept=".csv,text/csv"
                 className="sr-only"
-                aria-label="Choose a CSV file"
+                aria-label={t("catalog.import.chooseFile")}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) choose(file);
@@ -197,21 +199,21 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
           {step === "map" && (
             <>
               <p className="text-[14px] text-on-surface">
-                {fileName} · {data.length} {data.length === 1 ? "row" : "rows"}. Match each field to a column; only Name is required.
+                {t("catalog.import.mapIntro", { fileName, count: data.length })}
               </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {CATALOG_IMPORT_FIELDS.map((f) => (
                   <div key={f} className="flex flex-col gap-1.5">
                     <span className="text-[13px] font-medium text-on-surface" id={`map-${f}`}>
                       {CATALOG_IMPORT_FIELD_LABELS[f]}
-                      {f === "name" ? " (required)" : ""}
+                      {f === "name" ? t("catalog.import.required") : ""}
                     </span>
                     <Select value={mapping[f] ?? NONE} onValueChange={(v) => setMapping((m) => ({ ...m, [f]: v === NONE ? undefined : v }))}>
                       <SelectTrigger aria-labelledby={`map-${f}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NONE}>Not in the file</SelectItem>
+                        <SelectItem value={NONE}>{t("catalog.import.notInFile")}</SelectItem>
                         {headers.map((h) => (
                           <SelectItem key={h} value={h}>
                             {h}
@@ -222,22 +224,22 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
                   </div>
                 ))}
               </div>
-              <p className="text-[13px] text-on-surface-muted">Tax is matched to a tax rate or group by name; accounts by code or name. Unit defaults to &quot;each&quot;.</p>
+              <p className="text-[13px] text-on-surface-muted">{t("catalog.import.mapHint")}</p>
             </>
           )}
 
           {step === "preview" && result && counts && (
             <>
               <p className="text-[14px] text-on-surface" data-testid="import-preview-summary">
-                {counts.ok} ready to import · {counts.duplicates} {counts.duplicates === 1 ? "duplicate" : "duplicates"} to skip · {counts.failed} {counts.failed === 1 ? "row" : "rows"} with problems
+                {t("catalog.import.previewSummary", { ok: counts.ok, duplicates: t("catalog.import.duplicates", { count: counts.duplicates }), failed: t("catalog.import.rows", { count: counts.failed }) })}
               </p>
               <div className="max-h-80 overflow-auto rounded-lg border border-border">
                 <table className="w-full text-[13px]" data-testid="import-preview">
                   <thead>
                     <tr className="border-b border-border text-left text-on-surface-muted">
-                      <th className="px-3 py-2 font-medium">Row</th>
-                      <th className="px-3 py-2 font-medium">Name</th>
-                      <th className="px-3 py-2 font-medium">Result</th>
+                      <th className="px-3 py-2 font-medium">{t("catalog.import.columnRow")}</th>
+                      <th className="px-3 py-2 font-medium">{t("catalog.common.name")}</th>
+                      <th className="px-3 py-2 font-medium">{t("catalog.import.columnResult")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -247,9 +249,9 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
                         <td className="px-3 py-2 text-on-surface">{r.name || "—"}</td>
                         <td className="px-3 py-2">
                           {r.status === "ok" ? (
-                            <StatusChip status="paid">Ready</StatusChip>
+                            <StatusChip status="paid">{t("catalog.import.ready")}</StatusChip>
                           ) : r.status === "duplicate" ? (
-                            <StatusChip status="draft">Duplicate — skipped</StatusChip>
+                            <StatusChip status="draft">{t("catalog.import.duplicateSkipped")}</StatusChip>
                           ) : (
                             <StatusChip status="overdue">{r.reason}</StatusChip>
                           )}
@@ -259,8 +261,8 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
                   </tbody>
                 </table>
               </div>
-              {result.rows.length > 20 && <p className="text-[13px] text-on-surface-muted">Showing the first 20 of {result.rows.length} rows.</p>}
-              {counts.failed > 0 && <p className="text-[13px] text-on-surface-muted">Rows with problems are skipped. Fix them in the file and import it again, or go ahead without them.</p>}
+              {result.rows.length > 20 && <p className="text-[13px] text-on-surface-muted">{t("catalog.import.showingFirst", { count: result.rows.length })}</p>}
+              {counts.failed > 0 && <p className="text-[13px] text-on-surface-muted">{t("catalog.import.problemsNote")}</p>}
             </>
           )}
 
@@ -271,7 +273,7 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
           )}
           {step === "done" && result && counts && counts.duplicates > 0 && (
             <p className="text-[13px] text-on-surface-muted">
-              Skipped as duplicates: {result.rows.filter((r) => r.status === "duplicate").map((r) => r.name).join(", ")}
+              {t("catalog.import.skippedDuplicates", { names: result.rows.filter((r) => r.status === "duplicate").map((r) => r.name).join(", ") })}
             </p>
           )}
         </DialogBody>
@@ -279,20 +281,20 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
           {step === "map" && (
             <>
               <Button variant="secondary" onClick={reset} disabled={busy}>
-                Choose another file
+                {t("catalog.import.chooseAnother")}
               </Button>
               <Button onClick={() => send(true)} disabled={busy || !mapping.name}>
-                {busy ? <Spinner size="sm" /> : "Preview"}
+                {busy ? <Spinner size="sm" /> : t("catalog.import.preview")}
               </Button>
             </>
           )}
           {step === "preview" && counts && (
             <>
               <Button variant="secondary" onClick={() => setStep("map")} disabled={busy}>
-                Back
+                {t("catalog.import.back")}
               </Button>
               <Button onClick={() => send(false)} disabled={busy || counts.ok === 0}>
-                {busy ? <Spinner size="sm" /> : `Import ${counts.ok} ${counts.ok === 1 ? "item" : "items"}`}
+                {busy ? <Spinner size="sm" /> : t("catalog.import.importItems", { count: counts.ok })}
               </Button>
             </>
           )}
@@ -300,10 +302,10 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
             <>
               {counts.failed > 0 && (
                 <Button variant="secondary" onClick={downloadFailed}>
-                  Download failed rows
+                  {t("catalog.import.downloadFailed")}
                 </Button>
               )}
-              <Button onClick={() => onOpenChange(false)}>Done</Button>
+              <Button onClick={() => onOpenChange(false)}>{t("catalog.import.done")}</Button>
             </>
           )}
         </DialogFooter>

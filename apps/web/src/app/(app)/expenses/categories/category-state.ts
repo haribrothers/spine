@@ -1,5 +1,6 @@
 import type { ExpenseCategoryUsage } from "@spine/shared";
 import type { ExpenseCategory } from "../types";
+import { t } from "../../../../lib/i18n";
 
 /**
  * US-PUR-46 (D-228) — Expenses › Categories: Active, Archived or All, and a
@@ -14,9 +15,9 @@ export interface CategoriesListState {
 }
 
 export const CATEGORY_STATE_OPTIONS: { value: CategoryStateFilter; label: string }[] = [
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
-  { value: "all", label: "All" },
+  { value: "active", label: t("expenses.categories.active") },
+  { value: "archived", label: t("expenses.categories.archived") },
+  { value: "all", label: t("expenses.categories.all") },
 ];
 
 export function parseCategoriesState(params: URLSearchParams): CategoriesListState {

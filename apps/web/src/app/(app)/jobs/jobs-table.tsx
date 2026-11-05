@@ -8,6 +8,7 @@ import { JOB_STATUS_LABELS, type Job } from "./types";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { completePct, nextMilestoneNote } from "./jobs-list-state";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 export const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
@@ -20,6 +21,7 @@ const TONE_CLASS = { "": "text-on-surface-muted", soon: "font-medium text-due-so
 
 /** A short labelled bar: "Complete ▬▬ 35%". */
 function ProgressRow({ label, pct, tone = "" }: { label: string; pct: number | null; tone?: "" | "done" | "over" }) {
+  const t = useT();
   const width = pct === null ? 0 : Math.max(0, Math.min(100, pct));
   return (
     <>
@@ -31,12 +33,12 @@ function ProgressRow({ label, pct, tone = "" }: { label: string; pct: number | n
         // US-JOB-33: billing over the contract, said in words as well as colour.
         <Tooltip>
           <TooltipTrigger asChild>
-            <span tabIndex={0} className="inline-flex items-center gap-1 rounded-sm text-[12px] font-medium tabular-nums text-overdue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`${pct}%, billed over the contract`}>
+            <span tabIndex={0} className="inline-flex items-center gap-1 rounded-sm text-[12px] font-medium tabular-nums text-overdue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={t("jobs.table.billedOverAria", { pct: String(pct) })}>
               {pct}%
               <AlertTriangle size={12} aria-hidden />
             </span>
           </TooltipTrigger>
-          <TooltipContent>Billed over the contract</TooltipContent>
+          <TooltipContent>{t("jobs.table.billedOver")}</TooltipContent>
         </Tooltip>
       ) : (
         <span className="text-[12px] font-medium tabular-nums text-on-surface">{pct === null ? "—" : `${pct}%`}</span>
@@ -69,13 +71,14 @@ export function JobsTable({
   onPageChange?: (page: number) => void;
   toolbarStart?: React.ReactNode;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const withMoney = jobs.some((job) => job.contractValueAmount !== undefined);
   const withBilling = jobs.some((job) => job.billedPct !== undefined);
   const columns: TableColumn<Job>[] = [
     {
       key: "name",
-      header: "Job",
+      header: t("jobs.table.job"),
       render: (row) => (
         <div className="flex max-w-52 flex-col whitespace-normal">
           <Link href={`/jobs/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
@@ -90,7 +93,7 @@ export function JobsTable({
     },
     {
       key: "contact",
-      header: "Contact",
+      header: t("jobs.table.contact"),
       render: (row) => (
         <span className="block max-w-40 truncate" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -100,13 +103,13 @@ export function JobsTable({
     },
     {
       key: "status",
-      header: "Status",
+      header: t("jobs.table.status"),
       render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{JOB_STATUS_LABELS[row.status]}</Badge>,
       sortValue: (row) => row.status,
     },
     {
       key: "next",
-      header: "Next milestone",
+      header: t("jobs.table.nextMilestone"),
       render: (row) => {
         const note = nextMilestoneNote(row, now, locale);
         return (
@@ -120,15 +123,15 @@ export function JobsTable({
     },
     {
       key: "progress",
-      header: "Progress",
+      header: t("jobs.table.progress"),
       render: (row) => {
         const complete = completePct(row);
         const billed = row.billedPct ?? null;
         const over = billed !== null && billed > 100;
         return (
           <div className="grid w-48 grid-cols-[3.75rem_minmax(0,1fr)_3.5rem] items-center gap-x-2 gap-y-1" data-testid="job-progress">
-            <ProgressRow label="Complete" pct={complete} tone={complete === 100 ? "done" : ""} />
-            {withBilling && <ProgressRow label="Billed" pct={billed} tone={over ? "over" : ""} />}
+            <ProgressRow label={t("jobs.table.complete")} pct={complete} tone={complete === 100 ? "done" : ""} />
+            {withBilling && <ProgressRow label={t("jobs.table.billed")} pct={billed} tone={over ? "over" : ""} />}
           </div>
         );
       },
@@ -136,7 +139,7 @@ export function JobsTable({
     },
     {
       key: "endDate",
-      header: "End date",
+      header: t("jobs.table.endDate"),
       render: (row) => (row.endDate ? calendarDate(row.endDate, now, locale) : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.endDate ?? "",
     },
@@ -145,14 +148,14 @@ export function JobsTable({
     columns.push(
       {
         key: "contractValue",
-        header: "Contract",
+        header: t("jobs.table.contract"),
         align: "right",
         render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.contractValueAmount ?? 0), row.currency)}</span>,
         sortValue: (row) => BigInt(row.contractValueAmount ?? 0),
       },
       {
         key: "retentionPct",
-        header: "Retention",
+        header: t("jobs.table.retention"),
         render: (row) => ((row.retentionPct ?? 0) > 0 ? `${row.retentionPct}%` : "—"),
         sortValue: (row) => row.retentionPct ?? 0,
       },
@@ -162,7 +165,7 @@ export function JobsTable({
   if (jobs.some((job) => job.budgetState !== undefined)) {
     columns.push({
       key: "budgetUsed",
-      header: "Budget used",
+      header: t("jobs.table.budgetUsed"),
       align: "right",
       render: (row) => (
         <span className={cn("inline-flex items-center gap-1 tabular-nums", row.budgetState === "over" ? "text-overdue" : row.budgetState === "near" ? "text-due-soon" : "text-on-surface")}>

@@ -43,6 +43,7 @@ import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/p
 import { formatMoney } from "../../../../lib/money";
 import { ContactPicker } from "../contact-picker";
 import { blankLine, computeLinePreview, InvoiceLineEditor, type EditableInvoiceLine } from "../invoice-line-editor";
+import { t, useT } from "../../../../lib/i18n";
 
 type Ends = "never" | "on_date" | "after_count";
 
@@ -80,7 +81,8 @@ function linesSummary(lines: EditableInvoiceLine[], currency: string): string | 
   if (!items.length) return null;
   const subtotal = items.reduce((sum, l) => sum + computeLinePreview(l, currency).subtotal, 0n);
   const taxed = items.some((l) => l.taxRateId || l.taxGroupId || l.taxRatePercentage > 0);
-  return `${items.map((l) => `${l.name} × ${l.quantity}`).join(", ")} · ${formatMoney(subtotal, currency)}${taxed ? " + tax" : ""}`;
+  const parts = { lines: items.map((l) => `${l.name} × ${l.quantity}`).join(", "), amount: formatMoney(subtotal, currency) };
+  return taxed ? t("invoices.recurringDialog.summaryTaxed", parts) : t("invoices.recurringDialog.summary", parts);
 }
 
 /**
@@ -100,6 +102,7 @@ export function RecurringInvoiceDialog({
   schedule?: RecurringInvoice | null;
   onSaved: (saved: RecurringInvoice) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [contactId, setContactId] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -173,11 +176,11 @@ export function RecurringInvoiceDialog({
     const today = toIsoDate(new Date());
     const starts = startsOn ? toIsoDate(startsOn) : "";
     if (!name.trim()) found.name = RECURRING_NAME_REQUIRED;
-    if (!contactId) found.contact = "Pick a customer.";
-    if (!starts) found.starts = "Pick a start date.";
+    if (!contactId) found.contact = t("invoices.recurringDialog.pickCustomer");
+    if (!starts) found.starts = t("invoices.recurringDialog.pickStart");
     else if (starts < today && starts !== schedule?.startsOn) found.starts = START_IN_PAST;
-    if (ends === "on_date" && (!endsOn || toIsoDate(endsOn) < starts)) found.ends = endsOn ? ENDS_BEFORE_START : "Pick an end date.";
-    if (ends === "after_count" && !(Number(maxCount) >= 1)) found.ends = "End after at least 1 invoice.";
+    if (ends === "on_date" && (!endsOn || toIsoDate(endsOn) < starts)) found.ends = endsOn ? ENDS_BEFORE_START : t("invoices.recurringDialog.pickEnd");
+    if (ends === "after_count" && !(Number(maxCount) >= 1)) found.ends = t("invoices.recurringDialog.endAfterOne");
     if (!lines.some((l) => l.type === "item" && l.name.trim())) found.lines = RECURRING_NEEDS_LINE;
     setProblems(found);
     if (Object.keys(found).length) {
@@ -221,7 +224,7 @@ export function RecurringInvoiceDialog({
         : await apiClient.post<RecurringInvoice>("/recurring-invoices", payload);
       onSaved(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the schedule. Try again.");
+      setError(err instanceof Error ? err.message : t("invoices.recurringDialog.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -231,11 +234,11 @@ export function RecurringInvoiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={editingLines ? "max-w-5xl" : "max-w-2xl"}>
         <DialogHeader>
-          <DialogTitle>{schedule ? "Edit recurring invoice" : "New recurring invoice"}</DialogTitle>
+          <DialogTitle>{schedule ? t("invoices.recurringDialog.editTitle") : t("invoices.recurringDialog.newTitle")}</DialogTitle>
           <DialogDescription>
             {schedule
-              ? "Changes apply to invoices it creates from now on. Invoices it already created stay as they are."
-              : "Spine creates this invoice automatically. You can pause or stop it at any time."}
+              ? t("invoices.recurringDialog.editDescription")
+              : t("invoices.recurringDialog.newDescription")}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
@@ -244,16 +247,16 @@ export function RecurringInvoiceDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Name" errorText={problems.name}>
-              {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Monthly maintenance — Hotel lobby" />}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label={t("invoices.recurringDialog.name")} errorText={problems.name}>
+              {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("invoices.recurringDialog.namePlaceholder")} />}
             </FormField>
-            <FormField label="Customer" errorText={problems.contact}>
-              {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+            <FormField label={t("invoices.recurringDialog.customer")} errorText={problems.contact}>
+              {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={setContactId} />}
             </FormField>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <FormField label="Repeats">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <FormField label={t("invoices.recurringDialog.repeats")}>
               {(field) => (
                 <Select value={frequency} onValueChange={(v) => changeFrequency(v as RecurringFrequency)}>
                   <SelectTrigger {...field}>
@@ -269,7 +272,7 @@ export function RecurringInvoiceDialog({
                 </Select>
               )}
             </FormField>
-            <FormField label="On">
+            <FormField label={t("invoices.recurringDialog.on")}>
               {(field) => (
                 <Select value={dayRule} onValueChange={setDayRule}>
                   <SelectTrigger {...field}>
@@ -285,34 +288,34 @@ export function RecurringInvoiceDialog({
                 </Select>
               )}
             </FormField>
-            <FormField label="Starts" errorText={problems.starts}>
+            <FormField label={t("invoices.recurringDialog.starts")} errorText={problems.starts}>
               {() => <DatePicker value={startsOn} onChange={setStartsOn} />}
             </FormField>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <FormField label="Ends" errorText={ends === "never" ? undefined : problems.ends}>
+              <FormField label={t("invoices.recurringDialog.ends")} errorText={ends === "never" ? undefined : problems.ends}>
                 {(field) => (
                   <Select value={ends} onValueChange={(v) => setEnds(v as Ends)}>
                     <SelectTrigger {...field}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="never">Never</SelectItem>
-                      <SelectItem value="on_date">On a date</SelectItem>
-                      <SelectItem value="after_count">After a number of invoices</SelectItem>
+                      <SelectItem value="never">{t("invoices.recurringDialog.endsNever")}</SelectItem>
+                      <SelectItem value="on_date">{t("invoices.recurringDialog.endsOnDate")}</SelectItem>
+                      <SelectItem value="after_count">{t("invoices.recurringDialog.endsAfterCount")}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
               </FormField>
-              {ends === "on_date" && <FormField label="End date">{() => <DatePicker value={endsOn} onChange={setEndsOn} />}</FormField>}
+              {ends === "on_date" && <FormField label={t("invoices.recurringDialog.endDate")}>{() => <DatePicker value={endsOn} onChange={setEndsOn} />}</FormField>}
               {ends === "after_count" && (
-                <FormField label="Number of invoices">
+                <FormField label={t("invoices.recurringDialog.numberOfInvoices")}>
                   {(field) => <Input {...field} type="number" min={1} value={maxCount} onChange={(e) => setMaxCount(e.target.value)} />}
                 </FormField>
               )}
             </div>
-            <FormField label="Payment due">
+            <FormField label={t("invoices.recurringDialog.paymentDue")}>
               {(field) => (
                 <Select value={String(dueDays)} onValueChange={(v) => setDueDays(Number(v))}>
                   <SelectTrigger {...field}>
@@ -331,8 +334,8 @@ export function RecurringInvoiceDialog({
           </div>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-2 text-[13px] font-semibold text-on-surface">When it runs</legend>
-            <RadioGroup value={mode} onValueChange={(v) => setMode(v as RecurringMode)} aria-label="When it runs">
+            <legend className="mb-2 text-[13px] font-semibold text-on-surface">{t("invoices.recurringDialog.whenItRuns")}</legend>
+            <RadioGroup value={mode} onValueChange={(v) => setMode(v as RecurringMode)} aria-label={t("invoices.recurringDialog.whenItRuns")}>
               {RECURRING_MODE_OPTIONS.map((o) => (
                 <div key={o.value} className="flex items-center gap-2">
                   <RadioGroupItem id={`mode-${o.value}`} value={o.value} />
@@ -347,10 +350,10 @@ export function RecurringInvoiceDialog({
           {editingLines ? (
             <div className="flex flex-col gap-3 rounded-md border border-border p-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-[13px] font-semibold text-on-surface">Lines</h3>
+                <h3 className="text-[13px] font-semibold text-on-surface">{t("invoices.recurringDialog.lines")}</h3>
                 {summary && (
                   <Button type="button" variant="ghost" size="sm" onClick={() => setEditingLines(false)}>
-                    Done
+                    {t("invoices.recurringDialog.done")}
                   </Button>
                 )}
               </div>
@@ -360,23 +363,23 @@ export function RecurringInvoiceDialog({
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-3">
-              <span className="text-[14px] text-on-surface">Lines: {summary}</span>
+              <span className="text-[14px] text-on-surface">{t("invoices.recurringDialog.linesSummary", { summary: summary ?? "" })}</span>
               <button
                 type="button"
                 onClick={() => setEditingLines(true)}
                 className="shrink-0 rounded-sm text-[14px] font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                Edit lines
+                {t("invoices.recurringDialog.editLines")}
               </button>
             </div>
           )}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("invoices.recurringDialog.cancel")}
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save schedule"}
+            {saving ? <Spinner size="sm" /> : t("invoices.recurringDialog.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

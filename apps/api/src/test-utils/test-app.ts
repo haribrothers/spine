@@ -3,6 +3,8 @@ import { Test } from "@nestjs/testing";
 import { AppModule } from "../app.module";
 import { installBigIntJsonSerialization } from "../common/bigint-json";
 import { requestLogging } from "../common/logging/request-logging";
+import { trustProxy } from "../common/trust-proxy";
+import { securityHeaders } from "../common/security-headers";
 
 export interface TestApp {
   app: INestApplication;
@@ -29,6 +31,8 @@ export async function createTestApp(options: { port?: number } = {}): Promise<Te
   installBigIntJsonSerialization();
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication({ bodyParser: false });
+  trustProxy(app);
+  app.use(securityHeaders());
   // As main.ts: every request gets an id (US-OPS-07); its log line only with LOG_REQUESTS=on.
   app.use(requestLogging());
   await app.init();

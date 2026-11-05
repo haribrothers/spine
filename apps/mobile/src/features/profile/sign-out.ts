@@ -1,5 +1,6 @@
 import { ActionSheetIOS, Alert, Platform } from "react-native";
 import { pendingTotal, signOutWarning, type PendingSummary } from "../../lib/outbox/pending";
+import { t } from "../../lib/i18n";
 
 /**
  * US-MOB-02 · `MobSignOutConfirm` — signing out with items still waiting
@@ -16,7 +17,7 @@ export function confirmSignOut(summary: PendingSummary, actions: { signOut: () =
   const { title, message } = signOutWarning(summary);
   if (Platform.OS === "ios") {
     ActionSheetIOS.showActionSheetWithOptions(
-      { title, message, options: ["Send them first", "Sign out anyway", "Cancel"], destructiveButtonIndex: 1, cancelButtonIndex: 2 },
+      { title, message, options: [t("mobileApp.signOut.sendThemFirst"), t("mobileApp.signOut.signOutAnyway"), t("mobileApp.common.cancel")], destructiveButtonIndex: 1, cancelButtonIndex: 2 },
       (index) => {
         if (index === 0) actions.sendFirst();
         if (index === 1) actions.signOut();
@@ -25,8 +26,8 @@ export function confirmSignOut(summary: PendingSummary, actions: { signOut: () =
     return;
   }
   Alert.alert(title, message, [
-    { text: "Cancel", style: "cancel" },
-    { text: "Send first", onPress: actions.sendFirst },
-    { text: "Sign out", style: "destructive", onPress: actions.signOut },
+    { text: t("mobileApp.common.cancel"), style: "cancel" },
+    { text: t("mobileApp.signOut.sendFirst"), onPress: actions.sendFirst },
+    { text: t("mobileApp.signOut.signOut"), style: "destructive", onPress: actions.signOut },
   ]);
 }

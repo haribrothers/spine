@@ -1,0 +1,42 @@
+---
+title: Change many items at once
+description: Tick several items to set their category, tax or income account in one go, or archive or restore them together.
+sidebar:
+  order: 5
+---
+
+When the tax rate changes or you reorganise your categories, change every item it affects in one go instead of opening each one. Spine asks before it changes anything, so a slip on the selection can't re-tax half the catalogue.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own catalogue** (to set a category, tax or income account) or **Archive/delete own catalogue** (to archive or restore). To change items a colleague added, they also need the matching "others'" right.</Aside>
+
+<Steps>
+1. **Tick the items** — Go to **Catalogue** and tick the box on each item's row, or the header box for every row on the page. A bar shows "… selected".
+2. **Choose a change** — In the bar, press **Set category**, **Set tax** or **Set income account**, and choose the new value.
+3. **Confirm** — Spine asks first and says what will change:
+   - "Change the tax on 12 items?", with **Change tax**.
+   - "Move 12 items to "Labour"?", with **Move items**. Leave the category empty to remove it instead.
+   - "Change the income account on 12 items?", with **Change account**.
+
+   Press **Go back** to change nothing and keep your selection.
+4. **Check the result** — A toast says "Updated 12 items".
+</Steps>
+
+Changing filters or the page clears the selection. Press **Clear** in the bar to untick everything.
+
+## What a bulk change affects
+
+The new tax or income account applies to new quotes and invoices. Quotes and invoices already issued keep their own tax and account.
+
+For a GST business, **Set tax** sets the **Intra-state tax**, and each item's inter-state tax follows: the one active IGST rate at the same total (for example IGST 18% with GST 18%). Without exactly one matching IGST rate, each item keeps its own inter-state tax. **No tax** clears both.
+
+## Archive or restore many items
+
+Tick the items and press **Archive** in the bar, or **Restore** for archived items. Spine doesn't ask first, because you can restore them. A toast says "Archived 12 items" or "Restored 12 items".
+
+## When some items can't be changed
+
+A bulk change is all or nothing. If you're not allowed to change some of the items, for example ones a colleague added, nothing changes and Spine says "You can't change 3 of these items. Unselect them and try again."
+
+<Aside type="tip">To group the ticked items into a bundle, press **Make a bundle** in the same bar. See [Make a bundle](../make-a-bundle/).</Aside>

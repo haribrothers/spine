@@ -1,0 +1,54 @@
+---
+title: Show payment instructions on invoices
+description: Print your bank details and how to pay on every invoice, and add a UPI QR code in India.
+sidebar:
+  order: 9
+---
+
+Payment instructions tell customers how to pay you: your bank account, a payment reference, or anything else they need. You enter them once, and Spine prints them on every invoice you issue from then on and in every invoice email. In India you can also add a UPI QR code that customers scan to pay.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners only, in Settings. The UPI fields appear only when your business currency is Indian rupees (INR).
+</Aside>
+
+<Steps>
+
+1. **Open the setting** — Open **Settings** and go to **Money & tax › Payment instructions**.
+
+2. **Write the instructions** — In **How customers can pay**, enter your bank details and anything else customers need. Keep it to 600 characters. Leave it empty to hide the block.
+
+3. **Add UPI (India only)** — Enter your **UPI ID**, for example riverstone@okhdfc. **Payee name** starts as your business name. **Show a UPI QR code on invoices** is on once a UPI ID is saved.
+
+4. **Save** — Press **Save**.
+
+</Steps>
+
+<Screenshot id="invoices-payment-instructions" alt="Settings, Payment instructions, with the How customers can pay box and the note that issued invoices keep their instructions" />
+
+## Where they appear
+
+- **On the invoice PDF**, in a "How to pay" block under the totals.
+- **In invoice emails and reminders**, in a "How to pay" box above the closing note.
+- **On customer statements**, at the bottom.
+
+With no instructions set, no empty block appears.
+
+## The UPI QR code
+
+Each issued invoice gets a QR code for its balance due, with "Scan to pay" and the amount, and your UPI ID beside it. Any UPI app that scans it opens with your payee name, the amount and the invoice number as the note. An invoice with nothing due when it's issued (for example, fully covered by a deposit) gets no QR code.
+
+<Aside type="caution">
+  A payment made by scanning the code isn't recorded by itself. Record it yourself, or match it when you reconcile your bank account. See [Payments and receivables](../../payments/).
+</Aside>
+
+<Aside type="note">
+  Issued invoices keep the instructions and QR code they were issued with. Changing this setting only affects invoices issued from now on.
+</Aside>
+
+## If Spine won't save
+
+- More than 600 characters: "Keep this under 600 characters."
+- A UPI ID with spaces or without "@": "Enter a UPI ID like name@bank."

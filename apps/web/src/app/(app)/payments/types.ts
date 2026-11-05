@@ -1,15 +1,16 @@
 import type { PaymentAppliedTo } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 
 /** Mirrors apps/api/src/db/schema/payments.ts's row shapes — hand-written to match the API's JSON response, following invoices/quotes' types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  cash: "Cash",
-  bank_transfer: "Bank transfer",
-  cheque: "Cheque",
-  card: "Card",
-  upi: "UPI",
-  other: "Other",
+  cash: t("payments.method.cash"),
+  bank_transfer: t("payments.method.bankTransfer"),
+  cheque: t("payments.method.cheque"),
+  card: t("payments.method.card"),
+  upi: t("payments.method.upi"),
+  other: t("payments.method.other"),
 };
 
 export interface PaymentAllocation {

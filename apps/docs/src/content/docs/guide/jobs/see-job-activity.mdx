@@ -1,0 +1,44 @@
+---
+title: See what happened on a job
+description: Follow a job's story in its Activity panel, and open its full history of changes.
+sidebar:
+  order: 16
+---
+
+Every job keeps its own story: when it was created, who changed its status, which milestones were completed and invoiced, what was added and who was put on the crew. Use it to catch up on a job you haven't looked at for a while, or to find out who changed something.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners and Staff who can open the job. Field crew don't see the Activity panel.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs** and open the job.
+2. **Read the Activity panel** — On the **Milestones** tab, the **Activity** panel sits beside the milestones, newest first.
+3. **See older entries** — With more than eight entries, press **Show _N_ earlier**.
+4. **Open the full history** — Press **View history** in the panel, or choose **More › View history** at the top of the job.
+</Steps>
+
+<Screenshot id="jobs-activity" alt="A job's Milestones tab with the Activity panel beside it listing what happened on the job, newest first" />
+
+## What the panel lists
+
+Each entry shows who did it and when:
+
+- **Created**, and the quote it came from.
+- **Status changed**, and the new status.
+- **Job details edited**.
+- **Milestones set**, with how many milestones.
+- **Milestone completed** and **Milestone invoiced**, with the invoice number.
+- **Variation raised** and **Variation applied**.
+- **Photo added** (photos added together by one person count as one entry, such as "3 photos added") and **Note added**.
+- **Crew assigned** and **Removed from crew**.
+- **Retention released**.
+
+A new job's panel says "Nothing has happened on this job yet."
+
+## The full history
+
+**View history** opens every recorded change to the job's own fields, with the old and new values, who made the change and when. For example, setting a cost budget for the first time shows the change from "—" to the new amount. Each milestone and each note also has its own history, opened from the history button on its row.
+
+<Aside type="tip">The Activity panel is a summary. Use **View history** when you need the exact old and new values of a change.</Aside>

@@ -1,0 +1,45 @@
+---
+title: Start a job
+description: Create a job from an accepted quote, or fill one in yourself for work agreed another way.
+sidebar:
+  order: 1
+---
+
+Most jobs start from a quote the customer has accepted, so the job begins with the real contract value and links back to the quote. When work was agreed on the phone or on a site visit, you can start a job without a quote.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own jobs**. The **Jobs & field** module must be on (**Settings › Modules**).</Aside>
+
+## From an accepted quote
+
+<Steps>
+1. **Open the quote** — Go to **Quotes** and open a quote with the status Accepted.
+2. **Convert it** — Press **Convert to job**. "Convert to a job?" says who the job is for and its contract value. Press **Convert to job** again to confirm.
+3. **Set up billing** — The new job opens. A toast says the quote was converted. Add its milestones next: see [Set up billing milestones](../set-up-billing-milestones/).
+</Steps>
+
+## From the jobs list
+
+<Steps>
+1. **Open the drawer** — Go to **Jobs** and press **New job**.
+2. **Choose how to start** — Under **Start from an accepted quote**, press **Choose a quote** and pick one in **Accepted quote**: it fills in the contact, name and contract value, and links the quote. Quotes that already have a job aren't offered. Or press **Fill it in myself**.
+3. **Fill in the job** — Enter **Contact**, **Job name**, **Site address**, **Currency** (your business's, to start with), **Contract value**, **Retention %**, **Start date**, **End date** and **Notes**. Contact and Job name are required.
+4. **Create it** — Press **Create job**. A toast says "Job JOB-007 created" (with your number), and the job opens on **Milestones**.
+</Steps>
+
+<Screenshot id="jobs-new-job" alt="The New job drawer with Start from an accepted quote at the top and the job's fields below" />
+
+## What the job gets
+
+- **A permanent number** from the Job sequence ("JOB" by default; change it in **Settings › Numbering**).
+- **A name.** From a quote, it's the quote's first item followed by the customer's name. You can rename it.
+- **The site address**, from the contact's site address, else their billing address.
+- **The contract value.** From a quote, it's the quote's total and can't be typed over. It changes only when you [apply a variation order](../apply-a-variation-order/).
+
+<Aside type="caution" title="Converting a quote twice">Each conversion creates a separate job for the quote's whole amount; it isn't split. If the quote was converted before, Spine warns you first (**Convert to job anyway**, or **Create another job** in the drawer). An Owner sets this to warn, block or off in **Settings › Repeat quote conversion**. A second job from the same quote ends its name with " (2)".</Aside>
+
+## If the job won't save
+
+The drawer says what to fix beside the field, and nothing is saved until you do: "Choose who the job is for.", "Give the job a name.", "Enter a contract value of zero or more.", "Enter a percentage from 0 to 100." (for retention) or "End the job on or after its start date."

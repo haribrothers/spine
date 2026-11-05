@@ -3,6 +3,7 @@
 import { PageLoader } from "@spine/ui";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "../lib/i18n";
 
 /**
  * Shows a full-screen PageLoader while a route transition is under way,
@@ -19,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
  * itself once `usePathname`/`useSearchParams` reflect the new route.
  */
 export function RouteLoader() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pending, setPending] = useState(false);
@@ -83,5 +85,5 @@ export function RouteLoader() {
   }, [pathname, searchParams]);
 
   if (!pending) return null;
-  return <PageLoader fullScreen label="Loading" />;
+  return <PageLoader fullScreen label={t("common.routeLoader.loading")} />;
 }

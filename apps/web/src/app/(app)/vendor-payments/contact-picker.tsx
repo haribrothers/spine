@@ -3,16 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import type { ContactOption } from "./types";
 
 /** Filtered to vendor-type contacts only (`?type=vendor&type=both`), mirroring vendor-bills/contact-picker.tsx's identical reasoning — a vendor payment can only ever go to a contact the org can actually pay. Duplicated rather than shared, matching this codebase's established per-feature-folder convention. */
 export function ContactPicker({
+  id,
   value,
   onValueChange,
 }: {
+  /** US-OPS-17 — the field's id, so its label names the picker. */
+  id?: string;
   value: string;
   onValueChange: (contactId: string) => void;
 }) {
+  const t = useT();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
@@ -27,5 +32,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a vendor…" />;
+  return <Combobox id={id} options={options} value={value || undefined} onValueChange={onValueChange} placeholder={t("vendorPayments.contactPicker.placeholder")} />;
 }

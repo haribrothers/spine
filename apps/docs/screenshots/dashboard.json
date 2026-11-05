@@ -1,0 +1,69 @@
+[
+  {
+    "id": "dashboard-owner",
+    "path": "/dashboard",
+    "alt": "An Owner's dashboard with the greeting, Needs your attention, Today, the four key figures and the cards below",
+    "wait": "Needs your attention"
+  },
+  {
+    "id": "dashboard-attention",
+    "path": "/dashboard",
+    "alt": "The Needs your attention card with rows for overdue invoices, expenses waiting for approval and vendor bills due, each with its action button",
+    "wait": "Needs your attention"
+  },
+  {
+    "id": "dashboard-key-figures",
+    "path": "/dashboard",
+    "alt": "The key figures row with Cash position, Profit this month, Receivables and Overdue, each with its 8-week line and change against last month",
+    "wait": "Profit this month"
+  },
+  {
+    "id": "dashboard-today",
+    "path": "/dashboard",
+    "alt": "The Today card listing a meeting, a milestone and a follow-up in time order, with Open calendar",
+    "wait": "Open calendar"
+  },
+  {
+    "id": "dashboard-meetings-scope",
+    "path": "/dashboard?settings=dashboard-meetings-scope",
+    "alt": "Settings, Upcoming meetings, with the choices Only my meetings and Every org meeting",
+    "wait": "Every org meeting"
+  },
+  {
+    "id": "dashboard-money-in-out",
+    "path": "/dashboard",
+    "alt": "The Income and expenses chart with 3M, 6M and 12M, the totals and net above it, and a pair of bars for each month",
+    "wait": "Income and expenses"
+  },
+  {
+    "id": "dashboard-books-cards",
+    "path": "/dashboard",
+    "alt": "The Payables, Accounts, Ready to bill, Tax this period and Top expenses cards on an Owner's dashboard",
+    "wait": "Tax this period"
+  },
+  {
+    "id": "dashboard-receivables-jobs",
+    "path": "/dashboard",
+    "alt": "The Receivables aging ring, Pipeline by stage and Job profitability cards on an Owner's dashboard",
+    "wait": "Receivables aging"
+  },
+  {
+    "id": "dashboard-activity",
+    "path": "/dashboard",
+    "alt": "The Recent activity card with entries naming who did what, amounts in bold and relative times",
+    "wait": "Recent activity"
+  },
+  {
+    "id": "dashboard-basis",
+    "path": "/dashboard",
+    "alt": "The dashboard header with the Accrual and Cash switch beside Edit layout",
+    "wait": "Edit layout"
+  },
+  {
+    "id": "dashboard-edit-layout",
+    "path": "/dashboard",
+    "alt": "The dashboard in edit mode, with each card showing its name, a hide button and a drag handle, and the Done button in the header",
+    "click": "Edit layout",
+    "wait": "Done"
+  }
+]

@@ -6,6 +6,7 @@ import { describeAttention, type AttentionItem, type AttentionKind } from "@spin
 import { ArrowUpRight, Check, CircleAlert, Clock, DollarSign, MailX, OctagonAlert, Percent } from "lucide-react";
 import { formatMoney } from "../../../lib/money";
 import { WidgetSkeleton } from "./dashboard-skeleton";
+import { useT } from "../../../lib/i18n";
 
 const KIND_STYLE: Record<AttentionKind, { icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>; tone: string }> = {
   invoices_overdue: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
@@ -70,7 +71,7 @@ export function AttentionCard({
   note,
   today,
   actionFor,
-  emptyText = "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you.",
+  emptyText,
   className,
 }: {
   /** Null while loading. */
@@ -84,14 +85,15 @@ export function AttentionCard({
   emptyText?: string;
   className?: string;
 }) {
+  const t = useT();
   if (items !== null && items.length === 0) {
     return (
       <Card className={cn("flex flex-col items-center justify-center gap-2 py-8 text-center", className)} data-testid="attention-card">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-paid-bg text-paid">
           <Check size={20} aria-hidden />
         </span>
-        <h2 className="text-[16px] font-semibold text-on-surface">You&apos;re all caught up</h2>
-        <p className="max-w-sm text-[13px] text-on-surface-muted">{emptyText}</p>
+        <h2 className="text-[16px] font-semibold text-on-surface">{t("dashboard.attention.caughtUp")}</h2>
+        <p className="max-w-sm text-[13px] text-on-surface-muted">{emptyText ?? t("dashboard.attention.emptyText")}</p>
       </Card>
     );
   }
@@ -100,9 +102,9 @@ export function AttentionCard({
     <Card className={cn("@container flex flex-col gap-2", className)} data-testid="attention-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-[16px] font-semibold text-on-surface">
-          Needs your attention
+          {t("dashboard.attention.title")}
           {items && (
-            <span className="rounded-full bg-overdue-bg px-2 py-0.5 text-[12px] font-semibold text-overdue" aria-label={`${items.length} items`}>
+            <span className="rounded-full bg-overdue-bg px-2 py-0.5 text-[12px] font-semibold text-overdue" aria-label={t("dashboard.attention.itemsAria", { n: items.length })}>
               {items.length}
             </span>
           )}

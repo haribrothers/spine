@@ -5,6 +5,7 @@ import { DOCUMENT_TYPE_LABELS, amountInWords, resolveDocumentBranding, type Docu
 import { cn } from "@spine/ui";
 import { formatMoney } from "../../../lib/money";
 import { useSettingsValue } from "../use-settings-value";
+import { useT } from "../../../lib/i18n";
 
 /** The page's shape (A4 is 1 : 1.414, Letter 1 : 1.294), drawn 460 px wide so the sample stays readable when scaled to the column. */
 const PAGE: Record<PaperSize, { width: number; height: number }> = { A4: { width: 460, height: 650 }, LETTER: { width: 460, height: 595 } };
@@ -24,6 +25,9 @@ const TOTAL = SUBTOTAL + TAX;
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const NUMBERS: Record<DocumentType, string> = { quote: "QUO-0042", invoice: "INV-0118", credit_note: "CRN-0009", receipt: "RCT-0087", statement: "" };
+
+/** Sample data, not copy: the customer and dates the preview shows. */
+const SAMPLE = { customer: "Harbourview Apartments", issued: "13 Oct", period: "1 Sep – 30 Sep", due: "12 Nov", opened: "1 Sep", invoiced: "4 Sep", paid: "21 Sep" };
 
 export interface DocumentSampleOptions {
   type: DocumentType;
@@ -50,6 +54,7 @@ export interface DocumentSampleOptions {
  * do, with nothing to load. Light in both themes, like the PDF.
  */
 export function DocumentSample(props: DocumentSampleOptions) {
+  const t = useT();
   const profile = useSettingsValue<{ name?: string; logoUrl?: string; address?: string }>("business_profile", {});
   const brandingSetting = useSettingsValue<unknown>("branding", {});
   const currencySetting = useSettingsValue<{ code?: string }>("currency", { code: "USD" });
@@ -69,20 +74,20 @@ export function DocumentSample(props: DocumentSampleOptions) {
   }, [page.width]);
 
   const money = (amount: bigint) => formatMoney(amount, currency);
-  const business = profile.value.name?.trim() || "Your business";
+  const business = profile.value.name?.trim() || t("settings.documentSample.yourBusiness");
   const lineDocument = props.type === "quote" || props.type === "invoice" || props.type === "credit_note";
   const discount = props.columns.discount && props.type !== "credit_note";
   const hsn = props.gst && props.columns.hsnSac;
 
   return (
-    <figure className="flex flex-col gap-2" aria-label={`${DOCUMENT_TYPE_LABELS[props.type]} preview`} data-testid="document-sample">
+    <figure className="flex flex-col gap-2" aria-label={t("settings.documentSample.previewLabel", { type: DOCUMENT_TYPE_LABELS[props.type] })} data-testid="document-sample">
       <div ref={box} className="w-full overflow-hidden rounded-md border border-border shadow-sm" style={{ height: page.height * scale }}>
         <div
           data-surface="document"
           className="origin-top-left bg-surface text-on-surface"
           style={{ width: page.width, height: page.height, transform: `scale(${scale})` }}
           role="img"
-          aria-label={`A sample ${DOCUMENT_TYPE_LABELS[props.type].toLowerCase()} with these options`}
+          aria-label={t("settings.documentSample.sampleLabel", { type: DOCUMENT_TYPE_LABELS[props.type].toLowerCase() })}
         >
           <div className="h-1.5" style={{ backgroundColor: branding.color }} />
           <div className="flex h-[calc(100%-6px)] flex-col gap-4 px-8 pb-6 pt-6 text-[10.5px] leading-snug">
@@ -95,23 +100,23 @@ export function DocumentSample(props: DocumentSampleOptions) {
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1 text-right">
                 <span className="text-[17px] font-bold uppercase tracking-wide" style={{ color: branding.color }} data-testid="document-sample-title">
-                  {props.type === "statement" ? props.title || "Statement" : props.title}
+                  {props.type === "statement" ? props.title || t("settings.documentSample.statement") : props.title}
                 </span>
                 {NUMBERS[props.type] && <span className="font-semibold">{NUMBERS[props.type]}</span>}
-                <span className="text-on-surface-muted">{props.type === "statement" ? "1 Sep – 30 Sep" : "13 Oct"}</span>
+                <span className="text-on-surface-muted">{props.type === "statement" ? SAMPLE.period : SAMPLE.issued}</span>
               </div>
             </div>
 
             <div className="flex justify-between gap-6">
               <div className="flex flex-col gap-0.5">
-                <span className="text-[8.5px] font-semibold uppercase tracking-wide text-on-surface-muted">{props.type === "receipt" ? "Received from" : "Bill to"}</span>
-                <span className="font-semibold">Harbourview Apartments</span>
+                <span className="text-[8.5px] font-semibold uppercase tracking-wide text-on-surface-muted">{props.type === "receipt" ? t("settings.documentSample.receivedFrom") : t("settings.documentSample.billTo")}</span>
+                <span className="font-semibold">{SAMPLE.customer}</span>
                 <Bars widths={["w-32", "w-24"]} />
               </div>
               {props.type === "invoice" && (
                 <div className="flex flex-col items-end gap-0.5 text-right">
-                  <span className="text-[8.5px] font-semibold uppercase tracking-wide text-on-surface-muted">Due</span>
-                  <span className="font-semibold">12 Nov</span>
+                  <span className="text-[8.5px] font-semibold uppercase tracking-wide text-on-surface-muted">{t("settings.documentSample.due")}</span>
+                  <span className="font-semibold">{SAMPLE.due}</span>
                 </div>
               )}
             </div>
@@ -120,13 +125,13 @@ export function DocumentSample(props: DocumentSampleOptions) {
               <table className="w-full border-collapse" data-testid="document-sample-lines">
                 <thead>
                   <tr className="border-b border-on-surface text-left text-[9px] font-semibold uppercase tracking-wide">
-                    <th className="py-1.5 pr-2">Item</th>
-                    {hsn && <th className="py-1.5 pr-2">HSN/SAC</th>}
-                    {props.columns.quantity && <th className="py-1.5 pr-2 text-right">Qty</th>}
-                    <th className="py-1.5 pr-2 text-right">Rate</th>
-                    {discount && <th className="py-1.5 pr-2 text-right">Disc.</th>}
-                    {props.columns.lineTax && <th className="py-1.5 pr-2 text-right">Tax</th>}
-                    <th className="py-1.5 text-right">Amount</th>
+                    <th className="py-1.5 pr-2">{t("settings.documentSample.columns.item")}</th>
+                    {hsn && <th className="py-1.5 pr-2">{t("settings.documentSample.columns.hsnSac")}</th>}
+                    {props.columns.quantity && <th className="py-1.5 pr-2 text-right">{t("settings.documentSample.columns.qty")}</th>}
+                    <th className="py-1.5 pr-2 text-right">{t("settings.documentSample.columns.rate")}</th>
+                    {discount && <th className="py-1.5 pr-2 text-right">{t("settings.documentSample.columns.discount")}</th>}
+                    {props.columns.lineTax && <th className="py-1.5 pr-2 text-right">{t("settings.documentSample.columns.tax")}</th>}
+                    <th className="py-1.5 text-right">{t("settings.documentSample.columns.amount")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,13 +172,13 @@ export function DocumentSample(props: DocumentSampleOptions) {
                     <table className="w-full max-w-60 border-collapse text-[8.5px]" data-testid="document-sample-tax-summary">
                       <thead>
                         <tr className="border-b border-border text-left text-on-surface-muted">
-                          <th className="py-1 pr-2 font-semibold">Tax</th>
-                          <th className="py-1 pr-2 text-right font-semibold">Taxable</th>
-                          <th className="py-1 text-right font-semibold">Amount</th>
+                          <th className="py-1 pr-2 font-semibold">{t("settings.documentSample.columns.tax")}</th>
+                          <th className="py-1 pr-2 text-right font-semibold">{t("settings.documentSample.columns.taxable")}</th>
+                          <th className="py-1 text-right font-semibold">{t("settings.documentSample.columns.amount")}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(props.gst ? ["CGST 9%", "SGST 9%"] : ["Tax 18%"]).map((label) => (
+                        {(props.gst ? [t("settings.documentSample.cgst", { rate: 9 }), t("settings.documentSample.sgst", { rate: 9 })] : [t("settings.documentSample.taxAt", { rate: 18 })]).map((label) => (
                           <tr key={label} className="border-b border-border">
                             <td className="py-1 pr-2">{label}</td>
                             <td className="py-1 pr-2 text-right">{money(SUBTOTAL)}</td>
@@ -186,22 +191,22 @@ export function DocumentSample(props: DocumentSampleOptions) {
                   {props.amountInWords && <p className="italic text-on-surface-muted" data-testid="document-sample-words">{amountInWords(TOTAL, currency)}</p>}
                 </div>
                 <dl className="grid w-48 shrink-0 grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-                  <dt className="text-on-surface-muted">Subtotal</dt>
+                  <dt className="text-on-surface-muted">{t("settings.documentSample.subtotal")}</dt>
                   <dd className="text-right">{money(SUBTOTAL)}</dd>
                   {props.gst ? (
                     <>
-                      <dt className="text-on-surface-muted">CGST 9%</dt>
+                      <dt className="text-on-surface-muted">{t("settings.documentSample.cgst", { rate: 9 })}</dt>
                       <dd className="text-right">{money(TAX / 2n)}</dd>
-                      <dt className="text-on-surface-muted">SGST 9%</dt>
+                      <dt className="text-on-surface-muted">{t("settings.documentSample.sgst", { rate: 9 })}</dt>
                       <dd className="text-right">{money(TAX / 2n)}</dd>
                     </>
                   ) : (
                     <>
-                      <dt className="text-on-surface-muted">Tax</dt>
+                      <dt className="text-on-surface-muted">{t("settings.documentSample.columns.tax")}</dt>
                       <dd className="text-right">{money(TAX)}</dd>
                     </>
                   )}
-                  <dt className="border-t border-on-surface pt-1 text-[11px] font-bold">{props.type === "credit_note" ? "Credit" : "Total"}</dt>
+                  <dt className="border-t border-on-surface pt-1 text-[11px] font-bold">{props.type === "credit_note" ? t("settings.documentSample.credit") : t("settings.documentSample.total")}</dt>
                   <dd className="border-t border-on-surface pt-1 text-right text-[11px] font-bold" style={{ color: branding.color }}>
                     {money(TOTAL)}
                   </dd>
@@ -212,13 +217,13 @@ export function DocumentSample(props: DocumentSampleOptions) {
             {props.type === "receipt" && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-baseline justify-between border-b border-on-surface pb-2">
-                  <span className="text-[11px] font-semibold">Payment received</span>
+                  <span className="text-[11px] font-semibold">{t("settings.documentSample.paymentReceived")}</span>
                   <span className="text-[14px] font-bold" style={{ color: branding.color }}>
                     {money(TOTAL)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Paid against INV-0118</span>
+                  <span>{t("settings.documentSample.paidAgainst", { number: NUMBERS.invoice })}</span>
                   <span>{money(TOTAL)}</span>
                 </div>
                 {props.amountInWords && <p className="italic text-on-surface-muted">{amountInWords(TOTAL, currency)}</p>}
@@ -229,17 +234,17 @@ export function DocumentSample(props: DocumentSampleOptions) {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-on-surface text-left text-[9px] font-semibold uppercase tracking-wide">
-                    <th className="py-1.5 pr-2">Date</th>
-                    <th className="py-1.5 pr-2">Details</th>
-                    <th className="py-1.5 pr-2 text-right">Amount</th>
-                    <th className="py-1.5 text-right">Balance</th>
+                    <th className="py-1.5 pr-2">{t("settings.documentSample.columns.date")}</th>
+                    <th className="py-1.5 pr-2">{t("settings.documentSample.columns.details")}</th>
+                    <th className="py-1.5 pr-2 text-right">{t("settings.documentSample.columns.amount")}</th>
+                    <th className="py-1.5 text-right">{t("settings.documentSample.columns.balance")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    ["1 Sep", "Opening balance", "", 0n],
-                    ["4 Sep", "Invoice INV-0118", money(TOTAL), TOTAL],
-                    ["21 Sep", "Payment RCT-0087", `−${money(TOTAL / 2n)}`, TOTAL - TOTAL / 2n],
+                    [SAMPLE.opened, t("settings.documentSample.openingBalance"), "", 0n],
+                    [SAMPLE.invoiced, t("settings.documentSample.statementInvoice", { number: NUMBERS.invoice }), money(TOTAL), TOTAL],
+                    [SAMPLE.paid, t("settings.documentSample.statementPayment", { number: NUMBERS.receipt }), `−${money(TOTAL / 2n)}`, TOTAL - TOTAL / 2n],
                   ].map(([date, details, amount, balance]) => (
                     <tr key={String(details)} className="border-b border-border">
                       <td className="py-1.5 pr-2">{String(date)}</td>
@@ -254,13 +259,13 @@ export function DocumentSample(props: DocumentSampleOptions) {
 
             <div className="mt-auto flex items-end justify-between gap-6">
               <div className="flex min-w-0 flex-1 flex-col gap-2">
-                {props.terms.trim() && <SampleText label="Terms" text={props.terms} />}
-                {props.notes.trim() && <SampleText label="Notes" text={props.notes} />}
+                {props.terms.trim() && <SampleText label={t("settings.documentSample.terms")} text={props.terms} />}
+                {props.notes.trim() && <SampleText label={t("settings.documentSample.notes")} text={props.notes} />}
               </div>
               {props.signature && props.signatureFileId && (
                 <div className="flex w-36 shrink-0 flex-col items-center gap-1" data-testid="document-sample-signature">
-                  <img src={`${API_URL}/files/${props.signatureFileId}`} alt="Your signature" className="h-10 w-full border-b border-on-surface object-contain object-bottom pb-0.5" />
-                  <span className="text-on-surface-muted">Authorised signatory</span>
+                  <img src={`${API_URL}/files/${props.signatureFileId}`} alt={t("settings.documentSample.signatureAlt")} className="h-10 w-full border-b border-on-surface object-contain object-bottom pb-0.5" />
+                  <span className="text-on-surface-muted">{t("settings.documentSample.signatory")}</span>
                 </div>
               )}
             </div>
@@ -268,7 +273,7 @@ export function DocumentSample(props: DocumentSampleOptions) {
           </div>
         </div>
       </div>
-      <figcaption className="text-[12px] text-on-surface-muted">Sample data, with these options. Issued documents keep how they were issued.</figcaption>
+      <figcaption className="text-[12px] text-on-surface-muted">{t("settings.documentSample.caption")}</figcaption>
     </figure>
   );
 }

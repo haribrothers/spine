@@ -24,6 +24,7 @@ import { applyThemePreset } from "../../../components/org-theme-preset";
 import type { BusinessProfileValue } from "../../onboarding/steps/business-profile-step";
 import { useSettingsValue } from "../use-settings-value";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
 
 /** A sample total for the preview: 2,185.00 in the organisation's currency. */
 const PREVIEW_TOTAL = 218_500n;
@@ -37,6 +38,7 @@ const PREVIEW_TOTAL = 218_500n;
  * light (`data-surface="document"`) like the PDFs it stands for.
  */
 export function BrandingPane() {
+  const t = useT();
   const branding = useSettingsValue<Branding>("branding", {});
   const profile = useSettingsValue<BusinessProfileValue>("business_profile", { name: "" });
   const currency = useSettingsValue<{ code?: string }>("currency", { code: "USD" });
@@ -75,7 +77,7 @@ export function BrandingPane() {
       applyThemePreset(preset);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the branding. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.branding.saveError"));
     } finally {
       setSaving(false);
     }
@@ -89,14 +91,14 @@ export function BrandingPane() {
     );
   }
 
-  const business = profile.value.name?.trim() || "your organisation";
+  const business = profile.value.name?.trim() || t("settings.branding.yourOrganisation");
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSave} noValidate>
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Branding</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.branding.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Pick a theme for everyone in {business} and the colour your quotes, invoices and receipts use. Your logo is set in Business profile.
+          {t("settings.branding.description", { business })}
         </p>
       </div>
       {error && (
@@ -106,7 +108,7 @@ export function BrandingPane() {
       )}
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-[13px] font-medium text-on-surface">App theme</legend>
+        <legend className="mb-2 text-[13px] font-medium text-on-surface">{t("settings.branding.appTheme")}</legend>
         <RadioGroup value={preset} onValueChange={(v) => setPreset(v as ThemePreset)} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {THEME_PRESETS.map((option) => (
             <label
@@ -123,22 +125,22 @@ export function BrandingPane() {
               <span data-brand={option.id} aria-hidden="true" className="h-10 w-full rounded-md bg-primary" />
               <span className="flex flex-col">
                 <span className="text-[14px] font-medium text-on-surface">{option.label}</span>
-                <span className="text-[12px] text-on-surface-muted">{option.id === DEFAULT_THEME_PRESET ? "Default" : "Preset"}</span>
+                <span className="text-[12px] text-on-surface-muted">{option.id === DEFAULT_THEME_PRESET ? t("settings.branding.default") : t("settings.branding.preset")}</span>
               </span>
             </label>
           ))}
         </RadioGroup>
-        <p className="text-[13px] text-on-surface-muted">Each person still chooses light or dark mode from their user menu.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.branding.modeNote")}</p>
       </fieldset>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-3">
-          <FormField label="Document colour" errorText={colorError}>
+          <FormField label={t("settings.branding.documentColour")} errorText={colorError}>
             {(field) => (
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  aria-label="Pick the document colour"
+                  aria-label={t("settings.branding.pickColour")}
                   value={previewColor}
                   onChange={(e) => setColor(e.target.value.toUpperCase())}
                   className="h-10 w-10 shrink-0 cursor-pointer rounded-md border border-border-strong bg-surface p-0.5"
@@ -147,10 +149,10 @@ export function BrandingPane() {
               </div>
             )}
           </FormField>
-          {!colorError && <p className="-mt-1 text-[13px] text-paid">✓ Readable on white ({formatContrast(ratio)}, passes AA)</p>}
+          {!colorError && <p className="-mt-1 text-[13px] text-paid">{t("settings.branding.readable", { ratio: formatContrast(ratio) })}</p>}
           <FormField
-            label="Document footer"
-            helperText="On every quote, invoice, credit note and receipt, and in emails. Up to 300 characters."
+            label={t("settings.branding.documentFooter")}
+            helperText={t("settings.branding.documentFooterHelp")}
             errorText={footerError}
           >
             {(field) => <Textarea {...field} rows={3} value={footer} onChange={(e) => setFooter(e.target.value)} />}
@@ -159,7 +161,7 @@ export function BrandingPane() {
 
         <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface-sunken p-3">
           <span className="text-[13px] font-medium text-on-surface-muted" id="branding-preview-label">
-            Preview
+            {t("settings.branding.preview")}
           </span>
           <div
             data-surface="document"
@@ -169,22 +171,22 @@ export function BrandingPane() {
           >
             <span className="-mx-3 h-1" style={{ backgroundColor: previewColor }} />
             <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="text-[13px] font-semibold text-on-surface">{business === "your organisation" ? "Your business" : business}</span>
+              <span className="text-[13px] font-semibold text-on-surface">{business === t("settings.branding.yourOrganisation") ? t("settings.branding.yourBusiness") : business}</span>
               <span className="text-[12px] font-bold" style={{ color: previewColor }}>
-                INVOICE
+                {t("settings.branding.previewInvoice")}
               </span>
             </div>
             <span className="h-1.5 w-3/4 rounded-full bg-border" />
             <span className="h-1.5 w-1/2 rounded-full bg-border" />
             <div className="mt-1 flex items-center justify-between border-t border-border pt-2">
-              <span className="text-[12px] font-semibold text-on-surface">Total</span>
+              <span className="text-[12px] font-semibold text-on-surface">{t("settings.branding.previewTotal")}</span>
               <span className="text-[12px] font-semibold" style={{ color: previewColor }}>
                 {formatMoney(PREVIEW_TOTAL, currency.value.code ?? "USD")}
               </span>
             </div>
             {footer.trim() && <p className="text-[11px] leading-snug text-on-surface-muted">{footer.trim()}</p>}
           </div>
-          <p className="text-[12px] text-on-surface-muted">Issued documents keep the colour and footer they were issued with.</p>
+          <p className="text-[12px] text-on-surface-muted">{t("settings.branding.issuedNote")}</p>
         </div>
       </div>
 
@@ -198,10 +200,10 @@ export function BrandingPane() {
             setColor(DEFAULT_DOCUMENT_COLOR);
           }}
         >
-          Reset to Spine defaults
+          {t("settings.branding.reset")}
         </Button>
         <Button type="submit" disabled={saving || !!colorError || !!footerError}>
-          {saving ? <Spinner size="sm" /> : "Save"}
+          {saving ? <Spinner size="sm" /> : t("settings.common.save")}
         </Button>
       </div>
       <SavedToast open={saved} onOpenChange={setSaved} />

@@ -1,0 +1,41 @@
+---
+title: Write the emails customers get
+description: Put your own words in the quote, invoice, reminder, receipt, credit note and statement emails, preview them and send yourself a test.
+sidebar:
+  order: 11
+---
+
+Every email Spine sends a customer uses words you can change: "Your own words in the emails customers get. The branded layout around them stays the same." Placeholders fill in the customer's name, the document number, the amount and more for each email.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Emails** — Open your user menu, choose **Settings**, and pick **Emails** under **Documents & emails**.
+
+2. **Pick an email** — Under **Customer emails**, choose **Quote**, **Invoice**, **Payment reminder**, **Receipt**, **Credit note** or **Statement**. Each shows its subject and the start of its message.
+
+3. **Edit the subject and message** — Change **Subject** and **Message**. "Bold, italics, lists and links show in the email. Web addresses become links."
+
+4. **Insert placeholders** — Press a placeholder under **Insert** to add it where your cursor is: `{customer_name}`, `{document_number}`, `{amount}`, `{balance_due}`, `{due_date}` and `{business_name}`. The quote email also has `{link}` (the quote's page), and the payment reminder has `{due_status}` ("is 7 days overdue", "is due today").
+
+5. **Check it** — **Preview** shows the email in its branded layout, made from a recent real document or sample details. **Send me a test** emails it to you only: "Test sent to … Only you get it."
+
+6. **Press Save** — A "Saved" message appears.
+
+</Steps>
+
+<Screenshot id="settings-emails" alt="Settings, Emails: the list of customer emails, the subject and message editor with placeholders, and Preview and Send me a test" />
+
+## Good to know
+
+- **Only new emails change.** "Changes apply to emails sent from now on. Emails already sent don't change."
+- **You can still change one email.** The send dialogs start from your words, and you can edit them for that one email.
+- **Unknown placeholders are refused.** Typing `{invoice_no}` shows "\{invoice_no\} isn't a placeholder Spine knows. Use one from the list." A subject and a message are both needed.
+- **Reset to default** asks "Reset the … email?" first. Spine's original words come back and are saved; your other emails keep theirs. Press **Keep my text** to back out.
+- **Email log** at the top opens the list of every email Spine has sent. See [Check the emails Spine has sent](../email-log/).
+
+<Aside type="caution">If email isn't set up on the server, the pane warns "Email isn't set up" with how many emails are waiting. Whoever runs Spine sets it up — see [Email](../../../self-hosting/email/).</Aside>

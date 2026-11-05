@@ -7,6 +7,8 @@ import { AppShellHeader, Button, Input, Label, Select, SelectContent, SelectItem
 import { auditActionLabel, auditActionTone, auditDetails, auditEntityLabel, AUDIT_PAGE_SIZE, type AuditLogPage } from "@spine/shared";
 import { Download } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { t, useT } from "../../../../lib/i18n";
+import { orgLocaleTag } from "../../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const ALL = "all";
@@ -25,11 +27,11 @@ function isoDay(d: Date): string {
 /** "Today, 10:42 AM", "Yesterday, 4:12 PM", "3 Oct, 2:30 PM". */
 function when(iso: string): string {
   const d = new Date(iso);
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const time = d.toLocaleTimeString(orgLocaleTag(), { hour: "numeric", minute: "2-digit" });
   const days = Math.round((new Date(isoDay(new Date())).getTime() - new Date(isoDay(d)).getTime()) / 86_400_000);
-  if (days === 0) return `Today, ${time}`;
-  if (days === 1) return `Yesterday, ${time}`;
-  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(d.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}) })}, ${time}`;
+  if (days === 0) return t("team.auditLog.today", { time });
+  if (days === 1) return t("team.auditLog.yesterday", { time });
+  return `${d.toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short", ...(d.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}) })}, ${time}`;
 }
 
 /**
@@ -39,6 +41,7 @@ function when(iso: string): string {
  * the filtered entries.
  */
 export function AuditLogExplorer() {
+  const t = useT();
   const params = useSearchParams();
   const monthAgo = new Date();
   monthAgo.setMonth(monthAgo.getMonth() - 1);
@@ -52,7 +55,7 @@ export function AuditLogExplorer() {
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<AuditLogPage | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [business, setBusiness] = useState("your organisation");
+  const [business, setBusiness] = useState(() => t("team.auditLog.yourOrganisation"));
 
   const query = useMemo(() => {
     const p = new URLSearchParams();
@@ -80,7 +83,7 @@ export function AuditLogExplorer() {
     apiClient
       .get<AuditLogPage>(`/org/audit-log?${query}&cursor=${offset}`)
       .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load the audit log. Refresh to try again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("team.auditLog.loadFailed")));
   }, [query, offset]);
 
   const facets = data?.facets;
@@ -91,32 +94,32 @@ export function AuditLogExplorer() {
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Team" }, { label: "Audit log" }]}
-        title="Audit log"
-        description={`Every change to records in ${business}, newest first. Only owners can see this page.`}
+        breadcrumb={[{ label: t("team.common.breadcrumbTeam") }, { label: t("team.auditLog.title") }]}
+        title={t("team.auditLog.title")}
+        description={t("team.auditLog.description", { business })}
       />
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="audit-from">From</Label>
+            <Label htmlFor="audit-from">{t("team.auditLog.from")}</Label>
             <Input id="audit-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="audit-to">To</Label>
+            <Label htmlFor="audit-to">{t("team.auditLog.to")}</Label>
             <Input id="audit-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
           </div>
-          <FilterSelect id="audit-person" label="Person" value={person} onChange={setPerson} allLabel="Everyone" options={(facets?.people ?? []).map((p) => ({ value: p.userId, label: p.name }))} />
-          <FilterSelect id="audit-type" label="Record type" value={entityType} onChange={setEntityType} allLabel="All types" options={(facets?.entityTypes ?? []).map((t) => ({ value: t, label: auditEntityLabel(t) }))} />
-          <FilterSelect id="audit-action" label="Action" value={action} onChange={setAction} allLabel="All actions" options={(facets?.actions ?? []).map((a) => ({ value: a, label: auditActionLabel(a) }))} />
+          <FilterSelect id="audit-person" label={t("team.auditLog.person")} value={person} onChange={setPerson} allLabel={t("team.auditLog.everyone")} options={(facets?.people ?? []).map((p) => ({ value: p.userId, label: p.name }))} />
+          <FilterSelect id="audit-type" label={t("team.auditLog.recordType")} value={entityType} onChange={setEntityType} allLabel={t("team.auditLog.allTypes")} options={(facets?.entityTypes ?? []).map((type) => ({ value: type, label: auditEntityLabel(type) }))} />
+          <FilterSelect id="audit-action" label={t("team.auditLog.action")} value={action} onChange={setAction} allLabel={t("team.auditLog.allActions")} options={(facets?.actions ?? []).map((a) => ({ value: a, label: auditActionLabel(a) }))} />
           {entityId && (
             <Button variant="secondary" onClick={() => setEntityId("")} data-testid="audit-one-record">
-              One record · Show all
+              {t("team.auditLog.oneRecord")}
             </Button>
           )}
           <Button asChild variant="secondary" className="ml-auto">
             <a href={`${API_URL}/org/audit-log.csv?${query}`} data-testid="audit-export">
               <Download size={14} aria-hidden="true" />
-              Export CSV
+              {t("team.auditLog.exportCsv")}
             </a>
           </Button>
         </div>
@@ -132,18 +135,18 @@ export function AuditLogExplorer() {
             <table className="w-full min-w-[760px] text-[14px]" data-testid="audit-table">
               <thead className="bg-surface-sunken text-left text-[13px] text-on-surface-muted">
                 <tr>
-                  <th className="px-4 py-3 font-medium">When</th>
-                  <th className="px-4 py-3 font-medium">Who</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                  <th className="px-4 py-3 font-medium">Record</th>
-                  <th className="px-4 py-3 font-medium">Details</th>
+                  <th className="px-4 py-3 font-medium">{t("team.auditLog.columns.when")}</th>
+                  <th className="px-4 py-3 font-medium">{t("team.auditLog.columns.who")}</th>
+                  <th className="px-4 py-3 font-medium">{t("team.auditLog.columns.action")}</th>
+                  <th className="px-4 py-3 font-medium">{t("team.auditLog.columns.record")}</th>
+                  <th className="px-4 py-3 font-medium">{t("team.auditLog.columns.details")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {data.entries.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-10 text-center text-[13px] text-on-surface-muted">
-                      No changes match these filters. Widen the dates or clear a filter.
+                      {t("team.auditLog.empty")}
                     </td>
                   </tr>
                 ) : (
@@ -153,7 +156,7 @@ export function AuditLogExplorer() {
                     return (
                       <tr key={e.id} data-entry={e.id} data-type={e.entityType}>
                         <td className="whitespace-nowrap px-4 py-3 text-on-surface">{when(e.createdAt)}</td>
-                        <td className="px-4 py-3 text-on-surface">{e.actor?.name ?? <span className="text-on-surface-muted">Customer or system</span>}</td>
+                        <td className="px-4 py-3 text-on-surface">{e.actor?.name ?? <span className="text-on-surface-muted">{t("team.auditLog.customerOrSystem")}</span>}</td>
                         <td className="px-4 py-3">
                           <span className={cn("inline-block rounded-md px-2 py-0.5 text-[12px] font-semibold", TONE[auditActionTone(e.action)])}>{auditActionLabel(e.action)}</span>
                         </td>
@@ -179,14 +182,14 @@ export function AuditLogExplorer() {
         {data && total > 0 && (
           <div className="flex items-center justify-between gap-3">
             <span className="text-[13px] text-on-surface-muted" data-testid="audit-range">
-              {first.toLocaleString()}–{last.toLocaleString()} of {total.toLocaleString()} {total === 1 ? "entry" : "entries"}
+              {t("team.auditLog.range", { count: total, first: first.toLocaleString(orgLocaleTag()), last: last.toLocaleString(orgLocaleTag()), total: total.toLocaleString(orgLocaleTag()) })}
             </span>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - AUDIT_PAGE_SIZE))}>
-                Previous
+                {t("team.auditLog.previous")}
               </Button>
               <Button variant="secondary" size="sm" disabled={last >= total} onClick={() => setOffset(offset + AUDIT_PAGE_SIZE)}>
-                Next
+                {t("team.auditLog.next")}
               </Button>
             </div>
           </div>

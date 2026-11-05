@@ -17,6 +17,7 @@ import { updatedLabel } from "../../contacts/contacts-list-state";
 import type { ExpenseCategory } from "../types";
 import { ExpenseCategoryDialog, FALLBACK_ACCOUNT_LABEL, type AccountOption, type TaxRateOption } from "./category-dialog";
 import { CategoryRowActions } from "./category-row-actions";
+import { useT } from "../../../../lib/i18n";
 import { CATEGORY_STATE_OPTIONS, categoriesQuery, filterCategories, hasCategoryFilters, isLabourCategory, parseCategoriesState, usageFor, type CategoriesListState, type CategoryStateFilter } from "./category-state";
 
 /**
@@ -30,6 +31,7 @@ import { CATEGORY_STATE_OPTIONS, categoriesQuery, filterCategories, hasCategoryF
  * menu, ask first where they remove something, and toast (D-223).
  */
 export function ExpenseCategoriesView() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const showToast = useToast();
@@ -73,13 +75,13 @@ export function ExpenseCategoriesView() {
       setUpdatedAt(Date.now());
       setNow(Date.now());
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Couldn't load the categories.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("expenses.categories.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load("first");
@@ -115,12 +117,12 @@ export function ExpenseCategoriesView() {
   const columns: TableColumn<ExpenseCategory>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t("expenses.categories.name"),
       render: (row) => (
         <div className="flex min-w-0 max-w-96 flex-col">
           <span className="flex items-center gap-2 font-medium text-on-surface">
             <span className="truncate">{row.name}</span>
-            {isLabourCategory(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">Headcount × day rate</Badge>}
+            {isLabourCategory(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">{t("expenses.categories.headcountDayRate")}</Badge>}
           </span>
           {row.description && <span className="truncate text-[12px] text-on-surface-muted">{row.description}</span>}
         </div>
@@ -129,20 +131,20 @@ export function ExpenseCategoriesView() {
     },
     {
       key: "account",
-      header: "Posts to",
+      header: t("expenses.categories.postsTo"),
       render: (row) => (row.accountCode ? `${row.accountCode} ${row.accountName ?? ""}` : <span className="text-on-surface-muted">{FALLBACK_ACCOUNT_LABEL}</span>),
       sortValue: (row) => row.accountCode ?? "6900",
     },
-    { key: "tax", header: "Default tax", render: (row) => row.defaultTaxRateName ?? <span className="text-on-surface-muted">—</span>, sortValue: (row) => row.defaultTaxRateName ?? "" },
+    { key: "tax", header: t("expenses.categories.defaultTax"), render: (row) => row.defaultTaxRateName ?? <span className="text-on-surface-muted">—</span>, sortValue: (row) => row.defaultTaxRateName ?? "" },
     {
       key: "count",
-      header: "Expenses",
+      header: t("expenses.categories.expensesColumn"),
       align: "right",
       render: (row) => {
         const u = usageFor(usage, row.id);
         if (!u) return <span className="text-on-surface-muted">—</span>;
         return u.expenseCount ? (
-          <Link href={`/expenses?category=${row.id}`} className="text-primary underline underline-offset-2" aria-label={`${u.expenseCount} expense${u.expenseCount === 1 ? "" : "s"} in ${row.name}`}>
+          <Link href={`/expenses?category=${row.id}`} className="text-primary underline underline-offset-2" aria-label={t("expenses.categories.usageAria", { count: u.expenseCount, name: row.name })}>
             {u.expenseCount}
           </Link>
         ) : (
@@ -153,7 +155,7 @@ export function ExpenseCategoriesView() {
     },
     {
       key: "month",
-      header: "Approved this month",
+      header: t("expenses.categories.approvedThisMonth"),
       align: "right",
       render: (row) => {
         const u = usageFor(usage, row.id);
@@ -163,15 +165,15 @@ export function ExpenseCategoriesView() {
     },
     {
       key: "state",
-      header: "State",
+      header: t("expenses.categories.state"),
       render: (row) =>
         row.archivedAt ? (
           <Badge className="border border-border bg-surface-sunken text-on-surface-muted" data-testid="category-state">
-            Archived
+            {t("expenses.categories.archived")}
           </Badge>
         ) : (
           <Badge className="bg-paid-bg text-paid" data-testid="category-state">
-            Active
+            {t("expenses.categories.active")}
           </Badge>
         ),
       sortValue: (row) => (row.archivedAt ? 1 : 0),
@@ -190,7 +192,7 @@ export function ExpenseCategoriesView() {
   const search = (
     <div className="relative w-full max-w-sm">
       <Search size={16} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" />
-      <Input value={state.q} onChange={(e) => update({ q: e.target.value })} placeholder="Search categories" aria-label="Search categories" className="pl-9" />
+      <Input value={state.q} onChange={(e) => update({ q: e.target.value })} placeholder={t("expenses.categories.searchPlaceholder")} aria-label={t("expenses.categories.searchPlaceholder")} className="pl-9" />
     </div>
   );
   const openNew = () => {
@@ -216,27 +218,27 @@ export function ExpenseCategoriesView() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Combobox options={CATEGORY_STATE_OPTIONS} value={state.state} onValueChange={(v) => update({ state: v as CategoryStateFilter })} aria-label="Filter by state" className="w-44" />
+            <Combobox options={CATEGORY_STATE_OPTIONS} value={state.state} onValueChange={(v) => update({ state: v as CategoryStateFilter })} aria-label={t("expenses.common.filterByState")} className="w-44" />
             {hasCategoryFilters(state) && (
               <Button variant="ghost" size="sm" onClick={() => update({ state: "active", q: "" })}>
-                Clear filters
+                {t("expenses.common.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {updatedAt !== null && <span className="whitespace-nowrap text-[12px] text-on-surface-muted">{refreshing ? "Updating…" : updatedLabel(updatedAt, now)}</span>}
+            {updatedAt !== null && <span className="whitespace-nowrap text-[12px] text-on-surface-muted">{refreshing ? t("expenses.common.updating") : updatedLabel(updatedAt, now)}</span>}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !categories} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("expenses.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !categories} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("expenses.common.refreshList")}</TooltipContent>
             </Tooltip>
             {canCreate && (
               <Button onClick={openNew}>
                 <Plus size={14} aria-hidden />
-                Add category
+                {t("expenses.categories.addTitle")}
               </Button>
             )}
           </div>
@@ -244,9 +246,9 @@ export function ExpenseCategoriesView() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("expenses.common.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("expenses.common.tryAgainButton")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -255,7 +257,7 @@ export function ExpenseCategoriesView() {
       </div>
 
       {!rows ? (
-        <div className="h-64 animate-pulse rounded-lg border border-border bg-surface-sunken motion-reduce:animate-none" aria-busy="true" aria-label="Loading categories" />
+        <div className="h-64 animate-pulse rounded-lg border border-border bg-surface-sunken motion-reduce:animate-none" aria-busy="true" aria-label={t("expenses.categories.loading")} />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
           <div className="flex">{search}</div>
@@ -263,20 +265,20 @@ export function ExpenseCategoriesView() {
             {hasCategoryFilters(state) ? (
               <EmptyState
                 icon={<Tags />}
-                title="No categories match"
-                description="Try another search or state."
+                title={t("expenses.categories.noneMatch")}
+                description={t("expenses.categories.noneMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={() => update({ state: "active", q: "" })}>
-                    Clear filters
+                    {t("expenses.common.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<Tags />}
-                title="No expense categories yet"
-                description="Categories say where an expense posts. Add one for each kind of spending — fuel, materials, site meals."
-                action={canCreate ? <Button onClick={openNew}>Add category</Button> : undefined}
+                title={t("expenses.categories.noneYet")}
+                description={t("expenses.categories.noneYetDescription")}
+                action={canCreate ? <Button onClick={openNew}>{t("expenses.categories.addTitle")}</Button> : undefined}
               />
             )}
           </div>
@@ -284,7 +286,7 @@ export function ExpenseCategoriesView() {
       ) : (
         <div className="flex flex-col gap-2" data-testid="categories-table">
           <DataTable columns={columns} data={rows} rowKey={(row) => row.id} toolbarStart={search} />
-          <p className="text-[12.5px] text-on-surface-muted">Archived categories leave the expense form; their expenses keep them. A category no expense uses can be deleted.</p>
+          <p className="text-[12.5px] text-on-surface-muted">{t("expenses.categories.footnote")}</p>
         </div>
       )}
 
@@ -296,11 +298,11 @@ export function ExpenseCategoriesView() {
         onOpenChange={setFormOpen}
         onSaved={(saved, mode) => {
           setFormOpen(false);
-          done(mode === "created" ? `${saved.name} added` : `${saved.name} saved`, mode === "created" ? "It's on the expense form now." : "Expenses approved from now on use these settings.");
+          done(mode === "created" ? t("expenses.categories.addedToast", { name: saved.name }) : t("expenses.categories.savedToast", { name: saved.name }), mode === "created" ? t("expenses.categories.addedToastDescription") : t("expenses.categories.savedToastDescription"));
         }}
         onRestored={(_, name) => {
           setFormOpen(false);
-          done(`${name} restored`, "It's back on the expense form.");
+          done(t("expenses.categories.restoredToast", { name }), t("expenses.categories.restoredToastDescription"));
         }}
       />
       {history && (

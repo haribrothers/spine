@@ -1,0 +1,48 @@
+---
+title: Record a refund from a vendor
+description: Record money a vendor paid back against a credit, so the credit closes and the bank shows the money.
+sidebar:
+  order: 12
+---
+
+Sometimes a vendor pays you back instead of taking a credit off your next bill. Record that refund against the vendor credit. The money goes into the account you choose, and the credit has that much less left to use.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Apply and refund vendor credits**. Field users can't work with vendor credits.
+</Aside>
+
+<Steps>
+
+1. **Open the credit** — Go to **Vendor Credits** and open a credit with credit left to use.
+
+2. **Choose Record refund** — It sits beside **Apply to bills** while credit is left. From the list, open the row's menu and choose **Record refund**.
+
+3. **Fill in the refund** — "Record a refund from &lt;vendor&gt;" asks for the **Amount** (up to what's left on the credit), the **Date**, **Paid into** (the money account it went into), the **Method** and an optional **Reference**.
+
+4. **Save** — Press **Record refund**.
+
+</Steps>
+
+The toast says "Refund recorded" and how much from the vendor is in your books. It's posted to your books: the money account goes up and what the vendor owes you comes down. The credit's page lists the refund under **Refunds** with its date, method, account, reference and amount, and **Left to use** drops. When nothing is left, the credit reads **Used**.
+
+If you enter more than the credit has left, you see "This credit has … left to refund." and nothing is saved.
+
+## Delete a refund recorded by mistake
+
+<Steps>
+
+1. **Find the refund** — On the credit's page, find it under **Refunds**.
+
+2. **Delete it** — Open its menu and choose **Delete refund**. Spine asks "Delete this refund?" first.
+
+3. **Confirm** — Press **Delete refund**.
+
+</Steps>
+
+The refund is reversed in your books and the credit has that much back to use. It stays listed, marked deleted.
+
+<Aside type="tip">
+  The **Unused 60+ days** card on the Vendor Credits list shows open credit that's been sitting for two months or more — a good time to ask the vendor for a refund.
+</Aside>

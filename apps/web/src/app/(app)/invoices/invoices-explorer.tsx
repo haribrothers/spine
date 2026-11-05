@@ -31,6 +31,7 @@ import {
 } from "./invoices-list-state";
 import type { Invoice } from "./types";
 import { ActionError } from "../../../components/action-error";
+import { useT } from "../../../lib/i18n";
 
 const STATUS_OPTIONS = (Object.keys(INVOICE_STATE_LABELS) as InvoiceState[]).map((value) => ({ value, label: INVOICE_STATE_LABELS[value] }));
 const ALL_CONTACTS = "__all__";
@@ -47,6 +48,7 @@ const ALL_CONTACTS = "__all__";
  * `?status=overdue&select=overdue`, filtered, with them ticked (US-DASH-13).
  */
 export function InvoicesExplorer() {
+  const t = useT();
   const canCreate = useCapability("invoices.edit_own");
   const canManageRecurring = useCapability("invoices.manage_recurring");
   const pathname = usePathname();
@@ -87,15 +89,15 @@ export function InvoicesExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Invoices updated");
+      if (mode === "refresh") setAnnouncement(t("invoices.explorer.updatedAnnouncement"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load invoices.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("invoices.explorer.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load("first");
@@ -134,7 +136,7 @@ export function InvoicesExplorer() {
   const stats = useMemo(() => (invoices ? invoiceStats(invoices, orgCurrency, today) : null), [invoices, orgCurrency, today]);
   const paid = useMemo(() => (payments ? paidThisMonth(payments, orgCurrency, today) : null), [payments, orgCurrency, today]);
   const rows = useMemo(() => (invoices ? filterInvoices(invoices, state, today) : null), [invoices, state, today]);
-  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: "All contacts" }, ...invoiceContacts(invoices ?? [])], [invoices]);
+  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: t("invoices.explorer.allContacts") }, ...invoiceContacts(invoices ?? [])], [invoices, t]);
   // US-INV-23 — ticked rows still on the list (a deleted invoice drops out).
   const selectedInvoices = useMemo(() => (invoices ?? []).filter((i) => selectedIds.has(i.id)), [invoices, selectedIds]);
 
@@ -155,10 +157,10 @@ export function InvoicesExplorer() {
     );
   }
 
-  const money = (s: MoneySum) => `${formatMoney(s.amount, orgCurrency)}${s.otherCurrencies ? " + other currencies" : ""}`;
-  const countOf = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  const money = (s: MoneySum) => (s.otherCurrencies ? t("invoices.explorer.otherCurrencies", { amount: formatMoney(s.amount, orgCurrency) }) : formatMoney(s.amount, orgCurrency));
+  const countOf = (n: number, noun: "invoice" | "payment") => (noun === "payment" ? t("invoices.explorer.paymentCount", { count: n }) : t("invoices.explorer.invoiceCount", { count: n }));
 
-  const card = (label: string, sum: MoneySum | null, key: InvoiceCard | null, hint: string, ariaHint: string, tone: "default" | "warning" | "critical" = "default", noun = "invoice") => {
+  const card = (label: string, sum: MoneySum | null, key: InvoiceCard | null, hint: string, ariaHint: string, tone: "default" | "warning" | "critical" = "default", noun: "invoice" | "payment" = "invoice") => {
     const pressed = key ? state.card === key : false;
     const inner = (
       <StatCard
@@ -166,7 +168,7 @@ export function InvoicesExplorer() {
         value={sum ? money(sum) : "—"}
         detail={sum ? countOf(sum.count, noun) : undefined}
         tone={sum && sum.count > 0 ? tone : "default"}
-        trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : hint }}
+        trend={{ direction: "neutral", label: pressed ? t("invoices.explorer.showingThese") : hint }}
         className={cn("h-full transition-colors", key && "hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
       />
     );
@@ -175,7 +177,7 @@ export function InvoicesExplorer() {
       <button
         type="button"
         aria-pressed={pressed}
-        aria-label={`${ariaHint}, ${sum ? sum.count : 0}`}
+        aria-label={t("invoices.explorer.cardAria", { hint: ariaHint, count: sum ? sum.count : 0 })}
         onClick={() => update({ card: pressed ? "" : key })}
         className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
@@ -187,7 +189,7 @@ export function InvoicesExplorer() {
   const search = (
     <div className="relative w-72">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search invoices, lines or jobs" aria-label="Search invoices" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("invoices.explorer.searchPlaceholder")} aria-label={t("invoices.explorer.searchAria")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
 
@@ -197,53 +199,58 @@ export function InvoicesExplorer() {
   // browser, so the server's HTML (no payments yet) never carries a date that could differ from the client's.
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" });
 
+  const outstandingCard = card(t("invoices.explorer.cardOutstanding"), stats?.outstanding ?? null, "outstanding", t("invoices.explorer.showTheseInvoices"), t("invoices.explorer.showOutstanding"));
+  const overdueCard = card(t("invoices.explorer.cardOverdue"), stats?.overdue ?? null, "overdue", t("invoices.explorer.showTheseInvoices"), t("invoices.explorer.showOverdue"), "critical");
+  const due7Card = card(t("invoices.explorer.cardDue7"), stats?.due7 ?? null, "due7", t("invoices.explorer.showTheseInvoices"), t("invoices.explorer.showDue7"), "warning");
+  const paidCard = card(t("invoices.explorer.cardPaidThisMonth"), paid, null, paid ? t("invoices.explorer.receivedSince", { date: monthStart }) : t("invoices.explorer.receivedThisMonth"), "", "default", "payment");
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="invoice-stats">
-        {card("Outstanding", stats?.outstanding ?? null, "outstanding", "Show these invoices", "Show outstanding invoices")}
-        {card("Overdue", stats?.overdue ?? null, "overdue", "Show these invoices", "Show overdue invoices", "critical")}
-        {card("Due in 7 days", stats?.due7 ?? null, "due7", "Show these invoices", "Show invoices due in 7 days", "warning")}
-        {card("Paid this month", paid, null, paid ? `Received since ${monthStart}` : "Received this month", "", "default", "payment")}
+        {outstandingCard}
+        {overdueCard}
+        {due7Card}
+        {paidCard}
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status: status as InvoiceState[] })} placeholder="Status" aria-label="Filter by status" className="w-40" />
+            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status: status as InvoiceState[] })} placeholder={t("invoices.explorer.statusPlaceholder")} aria-label={t("invoices.explorer.filterByStatus")} className="w-40" />
             <Combobox
               options={contactOptions}
               value={state.contact || ALL_CONTACTS}
               onValueChange={(v) => update({ contact: v === ALL_CONTACTS ? "" : v })}
-              placeholder="All contacts"
-              aria-label="Filter by contact"
+              placeholder={t("invoices.explorer.allContacts")}
+              aria-label={t("invoices.explorer.filterByContact")}
               className="w-56"
             />
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("invoices.explorer.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="invoices-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("invoices.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !invoices} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("invoices.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !invoices} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("invoices.explorer.refreshList")}</TooltipContent>
             </Tooltip>
             {/* US-INV-20 — hidden without invoices.manage_recurring, which every /recurring-invoices route also checks. */}
             {canManageRecurring && (
               <Button asChild variant="secondary">
                 <Link href="/invoices/recurring">
                   <Repeat size={14} aria-hidden />
-                  Recurring invoices
+                  {t("invoices.explorer.recurringInvoices")}
                 </Link>
               </Button>
             )}
@@ -251,7 +258,7 @@ export function InvoicesExplorer() {
               <Button asChild>
                 <Link href="/invoices/new">
                   <Plus size={14} aria-hidden />
-                  New invoice
+                  {t("invoices.explorer.newInvoice")}
                 </Link>
               </Button>
             )}
@@ -263,9 +270,9 @@ export function InvoicesExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("invoices.explorer.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("invoices.explorer.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -296,23 +303,23 @@ export function InvoicesExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<Receipt />}
-                title="No invoices match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("invoices.explorer.noMatchTitle")}
+                description={t("invoices.explorer.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("invoices.explorer.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<Receipt />}
-                title="No invoices yet"
-                description="Build a multi-line invoice for a customer — save it as a draft, then issue when it's ready."
+                title={t("invoices.explorer.emptyTitle")}
+                description={t("invoices.explorer.emptyDescription")}
                 action={
                   canCreate ? (
                     <Button asChild>
-                      <Link href="/invoices/new">New invoice</Link>
+                      <Link href="/invoices/new">{t("invoices.explorer.newInvoice")}</Link>
                     </Button>
                   ) : undefined
                 }
@@ -331,9 +338,9 @@ export function InvoicesExplorer() {
           toolbarStart={search}
           onDeleted={(invoice) => {
             void load("refresh");
-            showToast("Invoice deleted", `${invoice.number ?? "Draft invoice"} has been permanently removed.`);
+            showToast(t("invoices.explorer.deletedTitle"), t("invoices.explorer.deletedDescription", { number: invoice.number ?? t("invoices.explorer.draftInvoice") }));
           }}
-          onActionFailed={(invoice, message) => setActionError({ title: `Couldn't do that to ${invoice.number ?? "the draft invoice"}.`, message })}
+          onActionFailed={(invoice, message) => setActionError({ title: t("invoices.explorer.actionFailedTitle", { number: invoice.number ?? t("invoices.explorer.theDraftInvoice") }), message })}
           selected={selectedIds}
           onToggleSelected={toggleSelected}
         />

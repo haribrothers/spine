@@ -90,7 +90,9 @@ describe("US-SET-26 · see the Spine logo across the web app", () => {
     for (const page of ["apps/web/src/app/login/page.tsx", "apps/web/src/app/signup/page.tsx", "apps/web/src/app/accept-invite/[id]/accept-invite-view.tsx"]) {
       expect(read(page)).toContain("<AuthFrame");
     }
-    expect(read("apps/web/src/app/quote/[token]/public-quote-view.tsx")).toMatch(/<SpineLogo decorative size=\{20\} \/>\s*Sent with Spine/);
+    // US-OPS-16: the text comes from the shared English strings.
+    expect(read("apps/web/src/app/quote/[token]/public-quote-view.tsx")).toMatch(/<SpineLogo decorative size=\{20\} \/>\s*\{t\("publicQuote\.sentWithSpine"\)\}/);
+    expect(JSON.parse(read("packages/shared/src/i18n/en.json")).publicQuote.sentWithSpine).toBe("Sent with Spine");
   });
 
   it("gives browsers and home screens the app icon, and keeps Spine a normal website", () => {

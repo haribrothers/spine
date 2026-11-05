@@ -9,6 +9,7 @@ import { formatMoney } from "../../../../lib/money";
 import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { FigureTrio } from "./figure-trio";
+import { useT } from "../../../../lib/i18n";
 
 /**
  * US-DASH-21 (D-160) — `DashboardOwnerBooks` › Payables: total owed to
@@ -17,6 +18,7 @@ import { FigureTrio } from "./figure-trio";
  * to overdue. Not shown without `reports.view_payables`.
  */
 export function PayablesCard() {
+  const t = useT();
   const [kpi, setKpi] = useState<Kpi | null | undefined>(undefined);
   const orgCurrency = useDashboardCurrency();
   const currency = orgCurrency ?? "USD";
@@ -39,9 +41,9 @@ export function PayablesCard() {
     <Card data-testid="payables-card">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          Payables
+          {t("dashboard.widgets.payables")}
           <Link href="/payables" className="text-[13px] font-normal text-primary hover:underline">
-            Payables
+            {t("dashboard.widgets.payables")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -52,35 +54,35 @@ export function PayablesCard() {
           <div className="flex flex-col gap-4">
             <FigureTrio
               figures={[
-                { label: "Current", value: money(kpi.detail?.current) },
+                { label: t("dashboard.payables.current"), value: money(kpi.detail?.current) },
                 {
-                  label: "Overdue",
+                  label: t("dashboard.payables.overdue"),
                   value: money(kpi.detail?.overdue),
                   className: overdue > 0n ? "text-overdue" : undefined,
                   href: "/payables?overdue=1",
-                  "aria-label": `Overdue ${money(kpi.detail?.overdue)} — open overdue bills`,
+                  "aria-label": t("dashboard.payables.overdueAria", { amount: money(kpi.detail?.overdue) }),
                 },
-                { label: "Total", value: money(total.toString()) },
+                { label: t("dashboard.payables.total"), value: money(total.toString()) },
               ]}
             />
             <div
               className="flex h-2 overflow-hidden rounded-full bg-overdue-bg"
               role="img"
-              aria-label={`Current ${money(current.toString())}, overdue ${money(overdue.toString())}`}
+              aria-label={t("dashboard.payables.barAria", { current: money(current.toString()), overdue: money(overdue.toString()) })}
               data-testid="payables-bar"
             >
               <div className="h-full bg-primary" style={{ width: `${currentShare}%` }} />
             </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-[14px]">
-              <span className="text-on-surface">Bills due in the next 7 days</span>
+              <span className="text-on-surface">{t("dashboard.payables.dueSoon")}</span>
               <span className="whitespace-nowrap font-medium tabular-nums text-on-surface">
                 {kpi.detail?.dueSoon?.count ?? 0} · {money(kpi.detail?.dueSoon?.amount)}
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-[14px]">
-              <span className="text-on-surface">Oldest overdue</span>
+              <span className="text-on-surface">{t("dashboard.payables.oldestOverdue")}</span>
               <span className="whitespace-nowrap font-medium tabular-nums text-on-surface">
-                {kpi.detail?.oldestOverdue ? `${kpi.detail.oldestOverdue.number} · ${kpi.detail.oldestOverdue.days} ${kpi.detail.oldestOverdue.days === 1 ? "day" : "days"}` : "None"}
+                {kpi.detail?.oldestOverdue ? t("dashboard.payables.oldestDays", { number: kpi.detail.oldestOverdue.number, count: kpi.detail.oldestOverdue.days }) : t("dashboard.payables.none")}
               </span>
             </div>
           </div>

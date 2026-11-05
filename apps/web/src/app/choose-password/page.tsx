@@ -8,6 +8,8 @@ import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { ApiError, apiClient } from "../../lib/api-client";
 import { authClient } from "../../lib/auth-client";
 import type { MemberRow } from "../../lib/members";
+import { useT } from "../../lib/i18n";
+import { orgLocaleTag } from "../../lib/money";
 
 export default function ChoosePasswordPage() {
   return (
@@ -30,6 +32,7 @@ function safeNext(next: string | null): string {
  * given. Saving keeps this session and ends any others.
  */
 function ChoosePasswordForm() {
+  const t = useT();
   const router = useRouter();
   const next = safeNext(useSearchParams().get("next"));
   const [me, setMe] = useState<MemberRow | null>(null);
@@ -66,7 +69,7 @@ function ChoosePasswordForm() {
     } catch (err) {
       setSaving(false);
       if (err instanceof ApiError && err.status === 400) setPasswordError(err.message);
-      else setError(err instanceof Error ? err.message : "Couldn't save your password. Try again.");
+      else setError(err instanceof Error ? err.message : t("auth.choosePassword.saveFailed"));
     }
   }
 
@@ -76,15 +79,20 @@ function ChoosePasswordForm() {
   }
 
   const setBy = me?.passwordSetBy;
-  const when = setBy?.at ? new Date(setBy.at).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : null;
+  const when = setBy?.at ? new Date(setBy.at).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" }) : null;
   return (
     <AuthFrame scene="login">
       {!me ? (
         <Spinner />
       ) : (
         <>
-          <AuthHeading title="Choose your own password">
-            {setBy?.name ? `${setBy.name} set a password for you${when ? ` on ${when}` : ""}.` : "An owner set a password for you."} Choose one only you know to keep going — it signs you in from now on.
+          <AuthHeading title={t("auth.choosePassword.title")}>
+            {setBy?.name
+              ? when
+                ? t("auth.choosePassword.setByOn", { name: setBy.name, date: when })
+                : t("auth.choosePassword.setBy", { name: setBy.name })
+              : t("auth.choosePassword.setByOwner")}{" "}
+            {t("auth.choosePassword.keepGoing")}
           </AuthHeading>
           <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit} noValidate data-testid="choose-password-form">
             {error && (
@@ -92,7 +100,7 @@ function ChoosePasswordForm() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <FormField label="New password" helperText="At least 8 characters, not the one you were given." errorText={passwordError} required>
+            <FormField label={t("auth.fields.newPassword")} helperText={t("auth.choosePassword.helper")} errorText={passwordError} required>
               {(field) => (
                 <div className="flex flex-col gap-2">
                   <PasswordInput
@@ -110,20 +118,20 @@ function ChoosePasswordForm() {
                 </div>
               )}
             </FormField>
-            <FormField label="Confirm password" errorText={confirmError} required>
+            <FormField label={t("auth.fields.confirmPassword")} errorText={confirmError} required>
               {(field) => <PasswordInput {...field} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
             </FormField>
             <Button type="submit" size="touch" disabled={saving} className="mt-1">
-              {saving ? <Spinner size="sm" /> : "Save and continue"}
+              {saving ? <Spinner size="sm" /> : t("auth.choosePassword.saveAndContinue")}
             </Button>
           </form>
           <p className="mt-5 text-center text-[13px] text-on-surface-muted">
-            Not you?{" "}
+            {t("auth.choosePassword.notYou")}{" "}
             <button type="button" onClick={() => void signOut()} className="text-primary hover:underline">
-              Sign out
+              {t("auth.actions.signOut")}
             </button>
           </p>
-          <p className="mt-3 text-center text-[12.5px] text-on-surface-muted">Nobody else at {me.organizationName ?? "your business"} will see it.</p>
+          <p className="mt-3 text-center text-[12.5px] text-on-surface-muted">{t("auth.choosePassword.nobodyElse", { business: me.organizationName ?? t("auth.choosePassword.yourBusiness") })}</p>
         </>
       )}
     </AuthFrame>

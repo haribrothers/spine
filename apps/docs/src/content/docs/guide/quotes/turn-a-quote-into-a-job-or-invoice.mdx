@@ -1,0 +1,59 @@
+---
+title: Turn an accepted quote into a job or invoice
+description: Convert an accepted quote into a draft invoice or a job, without retyping anything.
+sidebar:
+  order: 12
+---
+
+Once a customer accepts a quote, you can turn it into a draft invoice with the same lines, or into a job with the quote total as its contract value. You can do both: for example, a job to track the work and an invoice for a deposit.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">To an invoice: Owners, and Staff whose Team has **Create/edit own invoices**. To a job: Owners, and Staff whose Team has **Create/edit own jobs**, with the **Jobs & field** module switched on (Settings › Modules).</Aside>
+
+## Convert to an invoice
+
+<Steps>
+
+1. **Open the accepted quote** — Go to **Quotes** and open it, or use the row's **…** menu.
+
+2. **Press Convert to invoice** — It's the main button on an accepted quote. Spine asks **Convert to an invoice?** and says a draft invoice is made from the quote's lines, and that nothing is issued or posted until you issue it.
+
+3. **Confirm** — Press **Convert to invoice**. The draft invoice opens, for the same contact with the same lines, linked back to the quote.
+
+4. **Check and issue it** — Change anything you need, then issue it from the invoice. See [Invoices](../../invoices/).
+
+</Steps>
+
+<Screenshot id="quotes-detail-accepted" alt="An accepted quote's page with Convert to invoice as the main button and Convert to job beside it" />
+
+## Convert to a job
+
+<Steps>
+
+1. **Press Convert to job** — On the accepted quote, press **Convert to job**. Spine asks **Convert to a job?** and shows the contract value.
+
+2. **Confirm** — Press **Convert to job**. The new job opens for the same contact, with the quote total as its contract value and a link to the quote. It's named after the quote's title, or its first item and the customer.
+
+3. **Set up the job** — Add its milestones next. See [Jobs](../../jobs/).
+
+</Steps>
+
+## Converting the same quote twice
+
+Each conversion makes a full, separate job or invoice for the quote's whole amount; the amount isn't split. By default Spine warns you: **This quote has already been converted before** lists the existing jobs or invoices, each as a link, with **Cancel** and **Convert to job anyway** (or **Convert to invoice anyway**).
+
+<Aside type="caution">
+Only convert again if you mean to bill or track this quote's work more than once.
+</Aside>
+
+An Owner chooses how this works in **Settings › Repeat quote conversion**:
+
+- **Warn (recommended)** shows what already exists and asks before creating another.
+- **Block** refuses a second job or invoice from the same quote.
+- **Off** converts with no check at all.
+
+<Screenshot id="quotes-settings-conversion" alt="Settings, Repeat quote conversion with the Warn, Block and Off choices" />
+
+The quote's **Related** panel lists every job and invoice made from it.

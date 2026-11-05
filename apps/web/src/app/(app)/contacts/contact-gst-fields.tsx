@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FormField, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { GST_STATES, GST_TREATMENTS, GST_TREATMENT_LABELS, gstinError, gstinRequired, gstinStateCode, normaliseGstin, type GstTreatment, type TaxProfile } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { t as translate, useT } from "../../../lib/i18n";
 
 /** US-TAX-12 — the organisation's tax country, for showing GST fields only in India. */
 export function useTaxCountry(): string | null {
@@ -20,7 +21,7 @@ export function useTaxCountry(): string | null {
 /** What's wrong with a contact's GST details, or null. */
 export function contactGstError(treatment: GstTreatment | null, gstin: string, stateCode?: string | null): string | null {
   if (!gstinRequired(treatment)) return null;
-  if (!gstin.trim()) return "Enter the GSTIN — it's needed for a registered business or SEZ.";
+  if (!gstin.trim()) return translate("contacts.gst.gstinMissing");
   return gstinError(gstin, stateCode);
 }
 
@@ -46,6 +47,7 @@ export function ContactGstFields({
   onStateCodeChange: (value: string) => void;
   showErrors: boolean;
 }) {
+  const t = useT();
   const fromGstin = gstinStateCode(gstin);
   const error = contactGstError(treatment, gstin, stateCode);
 
@@ -58,28 +60,28 @@ export function ContactGstFields({
   }
   return (
     <>
-      <FormField label="GST treatment" helperText="Registered, unregistered, consumer, overseas or special economic zone.">
+      <FormField label={t("contacts.gst.treatment")} helperText={t("contacts.gst.treatmentHelper")}>
         {(field) => (
           <Select value={treatment ?? ""} onValueChange={(v) => onTreatmentChange(v as GstTreatment)}>
             <SelectTrigger {...field} className="w-full">
-              <SelectValue placeholder="Choose a treatment" />
+              <SelectValue placeholder={t("contacts.gst.treatmentPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              {GST_TREATMENTS.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {GST_TREATMENT_LABELS[t]}
+              {GST_TREATMENTS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {GST_TREATMENT_LABELS[option]}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
       </FormField>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         <FormField
-          label={treatment === "overseas" ? "Tax ID" : "GSTIN"}
+          label={treatment === "overseas" ? t("contacts.gst.taxId") : t("contacts.gst.gstin")}
           required={gstinRequired(treatment)}
           errorText={showErrors || (gstin.length === 15 && error) ? (error ?? undefined) : undefined}
-          helperText={fromGstin && stateCode === fromGstin ? "State filled from the GSTIN." : undefined}
+          helperText={fromGstin && stateCode === fromGstin ? t("contacts.gst.stateFromGstin") : undefined}
         >
           {(field) => (
             <Input
@@ -93,11 +95,11 @@ export function ContactGstFields({
           )}
         </FormField>
         {treatment !== "overseas" && (
-          <FormField label="State">
+          <FormField label={t("contacts.gst.state")}>
             {(field) => (
               <Select value={stateCode ?? ""} onValueChange={onStateCodeChange}>
                 <SelectTrigger {...field} className="w-full">
-                  <SelectValue placeholder="Choose a state" />
+                  <SelectValue placeholder={t("contacts.common.choosePlaceholderState")} />
                 </SelectTrigger>
                 <SelectContent>
                   {GST_STATES.map((st) => (
@@ -111,7 +113,7 @@ export function ContactGstFields({
           </FormField>
         )}
       </div>
-      <p className="text-[13px] text-on-surface-muted">Each address also has a state — the site or shipping address decides the place of supply.</p>
+      <p className="text-[13px] text-on-surface-muted">{t("contacts.gst.addressNote")}</p>
     </>
   );
 }

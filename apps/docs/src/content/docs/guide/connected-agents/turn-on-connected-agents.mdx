@@ -1,0 +1,43 @@
+---
+title: Turn on connected agents
+description: Let people in your business connect AI agents to Spine, choose whether agents can create drafts, and see every connection.
+sidebar:
+  order: 2
+---
+
+Connected agents are off on a new Spine. One switch decides whether anyone in your business can use Spine from Claude, ChatGPT or another agent. Once it's on, each person connects their own agent with their own sign-in.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Staff and Field don't see **Connected agents** under **Business** in Settings.</Aside>
+
+<Steps>
+
+1. **Open the settings** — Open your user menu, choose **Settings**, then **Connected agents** under **Business**. Searching settings for "MCP", "agent", "Claude" or "ChatGPT" finds it too.
+
+2. **Switch it on** — Use the switch at the top. "Turn on connected agents?" explains that an agent sees what the person who connected it can see, and sends it to that agent's AI provider. It lists what agents can and can't do.
+
+3. **Confirm** — Press **Turn on connected agents**. The toast says "Connected agents are on".
+
+4. **Share the address** — The **Connector address** card shows the address people add to their agent, with **Copy**, and short **How to connect** notes for Claude, ChatGPT and Claude Code.
+
+</Steps>
+
+<Screenshot id="connected-agents-settings" alt="Settings, Connected agents: the on/off switch and the pane's description of what agents can and can't do" />
+
+## Choose whether agents can create drafts
+
+**Agents can create drafts** is on to start with. Agents can then create leads, draft quotes, draft vendor bills and notes, for a person to check and finish in Spine. Switch it off and agents can only read; the draft tools disappear from every connected agent.
+
+## See every connection
+
+**Connections** lists every agent connected in the business, by person, with what it can do, when it was connected and last used. You can disconnect any of them. See [Disconnect an agent](../disconnect-an-agent/).
+
+<Aside type="caution">Agents can only connect to Spine over https, or from the same computer at localhost. If your Spine has a plain http address, the pane says so, and the switch still works, but no agent can sign in until Spine has an https address. See [HTTPS and domains](../../../self-hosting/https-and-domains/).</Aside>
+
+## Turn connected agents off
+
+Use the same switch. "Turn off connected agents?" says every connected agent stops working at once, and connections are kept for when you turn it back on. Press **Turn off connected agents**.
+
+While it's off, agents are told connected agents are turned off and to ask an Owner, and **Connected agents** under **Your account** is hidden for everyone. **Settings › Modules** shows its state, with **Set up in Connected agents**.

@@ -24,6 +24,7 @@ import {
 } from "@spine/ui";
 import { MAX_INVITES_AT_ONCE, isEmailAddress, parseEmailList, type InviteMembersResult } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import { TeamChecklist, type TeamOption } from "./team-checklist";
 
@@ -45,11 +46,12 @@ export function InvitePeopleDialog({
   businessName: string;
   onInvited: (result: InviteMembersResult) => void;
 }) {
+  const t = useT();
   const [text, setText] = useState("");
   const [role, setRole] = useState<"staff" | "field">("staff");
   // Until someone ticks or unticks, the default Team — even if the Teams load after it opens.
   const [chosen, setChosen] = useState<string[] | null>(null);
-  const teamIds = chosen ?? teams.filter((t) => t.isDefault).map((t) => t.id);
+  const teamIds = chosen ?? teams.filter((team) => team.isDefault).map((team) => team.id);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<InviteMembersResult["skipped"]>([]);
@@ -81,7 +83,7 @@ export function InvitePeopleDialog({
         setText(result.skipped.map((s) => s.email).join("\n"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send the invites. Try again.");
+      setError(err instanceof Error ? err.message : t("team.inviteDialog.failed"));
     } finally {
       setSending(false);
     }
@@ -91,8 +93,8 @@ export function InvitePeopleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Invite people</DialogTitle>
-          <DialogDescription>Each gets an email with a link to join {businessName}. Owners are made by promoting Staff, not by invite.</DialogDescription>
+          <DialogTitle>{t("team.inviteDialog.title")}</DialogTitle>
+          <DialogDescription>{t("team.inviteDialog.description", { business: businessName })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -103,7 +105,7 @@ export function InvitePeopleDialog({
           {skipped.length > 0 && (
             <Alert variant="warning" data-testid="invite-skipped">
               <AlertDescription>
-                <span className="font-medium">These weren&apos;t invited:</span>
+                <span className="font-medium">{t("team.inviteDialog.notInvited")}</span>
                 <ul className="mt-1 list-disc pl-5">
                   {skipped.map((s) => (
                     <li key={s.email}>
@@ -114,52 +116,55 @@ export function InvitePeopleDialog({
               </AlertDescription>
             </Alert>
           )}
-          <FormField label="Emails" required helperText={`Separate them with commas, spaces or new lines. Up to ${MAX_INVITES_AT_ONCE} at once.`}>
-            {(field) => <Textarea id={field.id} value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="sam@example.com, neha@example.com" />}
+          <FormField label={t("team.inviteDialog.emails")} required helperText={t("team.inviteDialog.emailsHelper", { max: MAX_INVITES_AT_ONCE })}>
+            {(field) => (
+              // eslint-disable-next-line i18next/no-literal-string -- sample addresses, not copy
+              <Textarea id={field.id} value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="sam@example.com, neha@example.com" />
+            )}
           </FormField>
           {emails.length > 0 && (
             <div className="-mt-2 flex flex-col gap-1.5">
-              <div className="flex flex-wrap gap-1.5" aria-label="Emails to invite">
+              <div className="flex flex-wrap gap-1.5" aria-label={t("team.inviteDialog.emailsToInvite")}>
                 {emails.map((email) => (
                   <span key={email} className={cn("rounded-md px-2 py-0.5 text-[12.5px] font-medium", isEmailAddress(email) ? "bg-surface-sunken text-on-surface" : "bg-overdue-bg text-overdue")}>
                     {email}
                   </span>
                 ))}
               </div>
-              {bad.length > 0 && <p className="text-[12.5px] text-overdue">{bad.length === 1 ? `${bad[0]} isn't an email address — fix or remove it.` : `${bad.length} of these aren't email addresses — fix or remove them.`}</p>}
-              {tooMany && <p className="text-[12.5px] text-overdue">That&apos;s more than {MAX_INVITES_AT_ONCE} — send the rest in another batch.</p>}
+              {bad.length > 0 && <p className="text-[12.5px] text-overdue">{bad.length === 1 ? t("team.inviteDialog.badOne", { email: bad[0] ?? "" }) : t("team.inviteDialog.badMany", { n: bad.length })}</p>}
+              {tooMany && <p className="text-[12.5px] text-overdue">{t("team.inviteDialog.tooMany", { max: MAX_INVITES_AT_ONCE })}</p>}
             </div>
           )}
-          <FormField label="Role">
+          <FormField label={t("team.inviteDialog.role")}>
             {(field) => (
               <Select value={role} onValueChange={(v) => setRole(v as "staff" | "field")}>
                 <SelectTrigger id={field.id}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="field">Field</SelectItem>
+                  <SelectItem value="staff">{t("team.roles.staff")}</SelectItem>
+                  <SelectItem value="field">{t("team.roles.field")}</SelectItem>
                 </SelectContent>
               </Select>
             )}
           </FormField>
           {role === "staff" ? (
             <div className="flex flex-col gap-1.5">
-              <span className="text-[13px] font-medium text-on-surface">Teams they&apos;ll join</span>
-              <TeamChecklist teams={teams} value={teamIds} onChange={setChosen} label="Teams they'll join" />
-              <p className="text-[12.5px] text-on-surface-muted">Staff can open what their Teams allow. You can change this later.</p>
+              <span className="text-[13px] font-medium text-on-surface">{t("team.inviteDialog.teamsTheyJoin")}</span>
+              <TeamChecklist teams={teams} value={teamIds} onChange={setChosen} label={t("team.inviteDialog.teamsTheyJoin")} />
+              <p className="text-[12.5px] text-on-surface-muted">{t("team.inviteDialog.staffNote")}</p>
             </div>
           ) : (
-            <p className="text-[12.5px] text-on-surface-muted">Field see the jobs they&apos;re assigned to, without money, and their own meetings and expenses.</p>
+            <p className="text-[12.5px] text-on-surface-muted">{t("team.inviteDialog.fieldNote")}</p>
           )}
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            {skipped.length > 0 ? "Done" : "Cancel"}
+            {skipped.length > 0 ? t("team.inviteDialog.done") : t("team.common.cancel")}
           </Button>
           <Button onClick={() => void send()} disabled={sending || good === 0 || bad.length > 0 || tooMany}>
             {sending ? <Spinner size="sm" /> : <MENU_ICONS.send size={14} aria-hidden />}
-            {good === 1 ? "Send invite" : `Send invites (${good})`}
+            {good === 1 ? t("team.inviteDialog.sendOne") : t("team.inviteDialog.sendMany", { n: good })}
           </Button>
         </DialogFooter>
       </DialogContent>

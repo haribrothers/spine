@@ -1,5 +1,5 @@
 import type { DemoPlan, DemoPlanContact, DemoPlanItem, DemoPlanLead, DemoPlanLine } from "./types.ts";
-import { DEMO_ARCHIVED_CATEGORY, demoBanking } from "./scenario.ts";
+import { DEMO_ARCHIVED_CATEGORY, demoBanking, WEEKLY_MEETINGS } from "./scenario.ts";
 
 /**
  * US-ONB-09 — Riverstone Builders, the default demo (United States,
@@ -246,7 +246,7 @@ export function riverstonePlan(): DemoPlan {
       { title: "Site walkthrough — Marina office fit-out", contact: "harborview", startInDays: -3, startTime: "10:00", durationHours: 1, location: "48 Harbor Way, Portland, ME 04101", description: "Walk the space with the client before framing sign-off." },
       { title: "Kickoff call — kitchen renovation scope", contact: "priya", startInDays: -10, startTime: "15:30", durationHours: 1, location: null, description: "Confirm final material selections and schedule." },
       { title: "Progress review — Phase 2 townhomes", contact: "mapleRidge", startInDays: 3, startTime: "11:00", durationHours: 2, location: "220 Ridge Rd, Burlington, VT 05401", description: null },
-      { title: "Weekly crew scheduling", contact: null, startInDays: 1, startTime: "08:30", durationHours: 1, location: null, description: "Internal — assign crews to next week's jobs." },
+      { title: "Weekly crew scheduling", contact: null, startInDays: 1, startTime: "08:30", durationHours: 1, location: null, description: "Internal — assign crews to next week's jobs.", weeklyFor: WEEKLY_MEETINGS },
       { title: "Glazing scope review — Summit Glass", contact: "summitGlass", startInDays: 8, startTime: "14:00", durationHours: 1, location: null, description: "Agree the curtain wall scope before we finalise the quote." },
     ],
     bundles: [

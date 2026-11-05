@@ -6,6 +6,7 @@ import { Button, FloatingLabelField, FormRow, FormSection, FullWidthButton, Outl
 import { useSession } from "../../lib/session/session-provider";
 import { discoverServer, SignInError, type SignInField } from "../../lib/session/sign-in";
 import { SignInCompactLogo, SignInHero, useKeyboardOpen } from "./sign-in-hero";
+import { t as translate, useT } from "../../lib/i18n";
 
 type Errors = Partial<Record<SignInField, string>>;
 
@@ -17,9 +18,10 @@ type Errors = Partial<Record<SignInField, string>>;
  * server's reset page in the phone's browser (D-052, US-AUTH-09). A removed
  * membership comes back here with its notice (US-MOB-02).
  */
-export const SERVER_HINT = "The server address is the link you open Spine with on a computer.";
+export const SERVER_HINT = translate("mobileApp.signIn.serverHint");
 
 export function SignInScreen() {
+  const t = useT();
   const { state, signIn } = useSession();
   const signedOut = state.status === "signedOut" ? state : undefined;
   // EXPO_PUBLIC_DEFAULT_SERVER pre-fills the field in development (.env.development.example).
@@ -33,9 +35,9 @@ export function SignInScreen() {
 
   async function submit() {
     const next: Errors = {};
-    if (!server.trim()) next.server = "Enter your server address — it's the link you open Spine with on a computer.";
-    if (!email.trim()) next.email = "Enter the email your office invited you with.";
-    if (!password) next.password = "Enter your password.";
+    if (!server.trim()) next.server = t("mobileApp.signIn.errors.serverEmpty");
+    if (!email.trim()) next.email = t("mobileApp.signIn.errors.emailEmpty");
+    if (!password) next.password = t("mobileApp.signIn.errors.passwordEmpty");
     setErrors(next);
     if (Object.keys(next).length) return;
     setBusy(true);
@@ -63,9 +65,9 @@ export function SignInScreen() {
           <View className="-mx-5">{keyboardOpen ? <View className="px-5"><SignInCompactLogo /></View> : <SignInHero />}</View>
           <View className="gap-2 px-1">
             <Text accessibilityRole="header" className={`text-[30px] text-on-surface dark:text-on-surface-dark ${Platform.OS === "android" ? "" : "font-bold"}`}>
-              Sign in
+              {t("mobileApp.signIn.title")}
             </Text>
-            <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">Use the email your office invited you with.</Text>
+            <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileApp.signIn.intro")}</Text>
           </View>
 
           {signedOut?.notice ? (
@@ -78,7 +80,7 @@ export function SignInScreen() {
             // US-MOB-20 · `MobSignInAndroid`: Material outlined fields, each error under its field, the password with a show/hide eye.
             <View className="mt-6 gap-4">
               <OutlinedTextField
-                label="Server"
+                label={t("mobileApp.signIn.server")}
                 value={server}
                 onChangeText={setServer}
                 error={Boolean(errors.server)}
@@ -91,7 +93,7 @@ export function SignInScreen() {
                 testID="sign-in-server"
               />
               <OutlinedTextField
-                label="Email"
+                label={t("mobileApp.signIn.email")}
                 value={email}
                 onChangeText={setEmail}
                 error={errors.email !== undefined}
@@ -104,7 +106,7 @@ export function SignInScreen() {
                 testID="sign-in-email"
               />
               <OutlinedTextField
-                label="Password"
+                label={t("mobileApp.signIn.password")}
                 value={password}
                 onChangeText={setPassword}
                 error={Boolean(errors.password)}
@@ -119,10 +121,10 @@ export function SignInScreen() {
             </View>
           ) : (
             <View className="mt-6 gap-2">
-              <FormSection title="Your account">
+              <FormSection title={t("mobileApp.signIn.yourAccount")}>
                 <FormRow error={errors.server}>
                   <FloatingLabelField
-                    label="Server"
+                    label={t("mobileApp.signIn.server")}
                     value={server}
                     onChangeText={setServer}
                     error={Boolean(errors.server)}
@@ -135,7 +137,7 @@ export function SignInScreen() {
                 </FormRow>
                 <FormRow error={errors.email || undefined}>
                   <FloatingLabelField
-                    label="Email"
+                    label={t("mobileApp.signIn.email")}
                     value={email}
                     onChangeText={setEmail}
                     error={errors.email !== undefined}
@@ -149,7 +151,7 @@ export function SignInScreen() {
                 </FormRow>
                 <FormRow error={errors.password} last>
                   <FloatingLabelField
-                    label="Password"
+                    label={t("mobileApp.signIn.password")}
                     value={password}
                     onChangeText={setPassword}
                     error={Boolean(errors.password)}
@@ -177,19 +179,19 @@ export function SignInScreen() {
           <View className="mt-7 gap-3">
             {busy ? (
               <View className="h-12 items-center justify-center">
-                <Spinner label="Signing in" />
+                <Spinner label={t("mobileApp.signIn.signingIn")} />
               </View>
             ) : (
-              <FullWidthButton label="Sign in" onPress={submit} testID="sign-in-submit" />
+              <FullWidthButton label={t("mobileApp.signIn.title")} onPress={submit} testID="sign-in-submit" />
             )}
             <View className="items-center">
-              <Button variant="ghost" label="Forgot password?" onPress={forgotPassword} testID="sign-in-forgot" />
+              <Button variant="ghost" label={t("mobileApp.signIn.forgotPassword")} onPress={forgotPassword} testID="sign-in-forgot" />
             </View>
           </View>
 
           <View className="flex-1 justify-end pt-10">
             <Text className="text-center text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">
-              You stay signed in on this phone until you sign out.
+              {t("mobileApp.signIn.staySignedIn")}
             </Text>
           </View>
         </ScrollView>

@@ -1,14 +1,15 @@
 import type { Lead } from "../contacts/types";
+import { t } from "../../../lib/i18n";
 
 /** The board's sort orders (S-01.5). */
 export type SortKey = "value-desc" | "value-asc" | "newest" | "oldest" | "title";
 
 export const SORT_LABELS: Record<SortKey, string> = {
-  "value-desc": "Value: high to low",
-  "value-asc": "Value: low to high",
-  newest: "Newest first",
-  oldest: "Oldest first",
-  title: "Title (A–Z)",
+  "value-desc": t("leads.sort.valueDesc"),
+  "value-asc": t("leads.sort.valueAsc"),
+  newest: t("leads.sort.newest"),
+  oldest: t("leads.sort.oldest"),
+  title: t("leads.sort.title"),
 };
 
 export const SORTERS: Record<SortKey, (a: Lead, b: Lead) => number> = {
@@ -75,7 +76,7 @@ export function daysInStage(lead: Lead, now: number): number {
 }
 
 export function daysLabel(days: number): string {
-  return `${days} ${days === 1 ? "day" : "days"} in stage`;
+  return t("leads.daysInStage", { count: days });
 }
 
 /** Its next follow-up is past due. */

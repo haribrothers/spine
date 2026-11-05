@@ -1,5 +1,6 @@
 import { Platform, View } from "react-native";
 import { Skeleton } from "@spine/ui-native";
+import { useT } from "../lib/i18n";
 
 /**
  * D-201 — what a section shows while its first data is on the way: blocks
@@ -19,8 +20,9 @@ export function LoadingRegion({ label, testID, className, children }: { label: s
 
 /** The welcome card's gauge and its two lines. */
 export function GaugeSkeleton() {
+  const t = useT();
   return (
-    <LoadingRegion label="Loading milestones" testID="skeleton-gauge" className="w-full items-center gap-3 pt-2">
+    <LoadingRegion label={t("mobileApp.skeletons.milestones")} testID="skeleton-gauge" className="w-full items-center gap-3 pt-2">
       {/* An arc like the gauge: a half-disc with the card's own colour over its middle. */}
       <View className="h-28 w-56">
         <Skeleton className="h-28 w-56 rounded-t-full" />
@@ -34,8 +36,9 @@ export function GaugeSkeleton() {
 
 /** Three KPI cards, the third peeking like the real carousel. */
 export function KpiCardsSkeleton({ width, gap }: { width: number; gap: number }) {
+  const t = useT();
   return (
-    <LoadingRegion label="Loading figures" testID="skeleton-kpis" className="-mx-4 flex-row overflow-hidden px-4">
+    <LoadingRegion label={t("mobileApp.skeletons.figures")} testID="skeleton-kpis" className="-mx-4 flex-row overflow-hidden px-4">
       <View className="flex-row" style={{ gap }}>
         {[0, 1, 2].map((i) => (
           <Skeleton key={i} className="h-[104px] rounded-2xl" style={{ width }} />
@@ -66,8 +69,9 @@ export function JobCardSkeleton() {
 }
 
 export function JobCardsSkeleton({ count = 2 }: { count?: number }) {
+  const t = useT();
   return (
-    <LoadingRegion label="Loading jobs" testID="skeleton-job-cards" className="gap-3">
+    <LoadingRegion label={t("mobileApp.skeletons.jobs")} testID="skeleton-job-cards" className="gap-3">
       {Array.from({ length: count }, (_, i) => (
         <JobCardSkeleton key={i} />
       ))}
@@ -112,9 +116,10 @@ export function ListRowsSkeleton({
 }
 
 /** A grid of square photo tiles. */
-export function PhotoGridSkeleton({ rows = 1, columns = 4, size, gap = 4, label = "Loading photos" }: { rows?: number; columns?: number; size?: number; gap?: number; label?: string }) {
+export function PhotoGridSkeleton({ rows = 1, columns = 4, size, gap = 4, label }: { rows?: number; columns?: number; size?: number; gap?: number; label?: string }) {
+  const t = useT();
   return (
-    <LoadingRegion label={label} testID="skeleton-photos" className="gap-1">
+    <LoadingRegion label={label ?? t("mobileApp.skeletons.photos")} testID="skeleton-photos" className="gap-1">
       {Array.from({ length: rows }, (_, r) => (
         <View key={r} className="flex-row" style={{ gap }}>
           {Array.from({ length: columns }, (_, c) => (
@@ -130,8 +135,9 @@ export function PhotoGridSkeleton({ rows = 1, columns = 4, size, gap = 4, label 
 
 /** The next meeting card. */
 export function MeetingCardSkeleton() {
+  const t = useT();
   return (
-    <LoadingRegion label="Loading your next meeting" testID="skeleton-meeting" className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
+    <LoadingRegion label={t("mobileApp.skeletons.meeting")} testID="skeleton-meeting" className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
       <Skeleton className="h-11 w-11 rounded-xl" />
       <View className="flex-1 gap-2">
         <Skeleton className="h-4 w-3/4 rounded-md" />

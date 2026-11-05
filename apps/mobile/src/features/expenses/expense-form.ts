@@ -4,19 +4,20 @@ import { ApiError, OfflineError } from "../../lib/api/errors";
 import { calendarDay } from "../../lib/format";
 import { RejectedError } from "../../lib/outbox/send";
 import { MAX_UPLOAD_BYTES, type ExpensePayload, type LocalPhoto } from "../../lib/outbox/types";
+import { t } from "../../lib/i18n";
 
-export const CHOOSE_CATEGORY = "Choose a category.";
-export const AMOUNT_ABOVE_ZERO = "Enter an amount above zero.";
-export const RECEIPT_TOO_BIG = "This photo is over 10 MB. Retake it closer, or choose a smaller one.";
-export const EXPENSE_NOTE = "Your office approves it before it's paid back. No signal? It's saved and sent later.";
-export const LABOUR_NOTE = "Labour is always for a job. Only trades, headcounts and day rates — no names or hours.";
+export const CHOOSE_CATEGORY = t("mobileApp.expenseForm.chooseCategory");
+export const AMOUNT_ABOVE_ZERO = t("mobileApp.expenseForm.amountAboveZero");
+export const RECEIPT_TOO_BIG = t("mobileApp.receipt.tooBig");
+export const EXPENSE_NOTE = t("mobileApp.expenseForm.note");
+export const LABOUR_NOTE = t("mobileApp.expenseForm.labourNote");
 /** US-AI-10 — above the form once AI has filled something in. */
-export const AI_FILLED_NOTE = "Filled in from your receipt. Check the amount, date and category before you submit.";
+export const AI_FILLED_NOTE = t("mobileApp.expenseForm.aiFilledNote");
 /** US-AI-10 — "Read receipt" without a connection: the expense still queues as it always has (US-MOB-13). */
-export const READ_RECEIPT_OFFLINE = "Needs a connection — fill it in, or read it later.";
-export const AI_KEPT_NOTE = "Your entries are kept.";
+export const READ_RECEIPT_OFFLINE = t("mobileApp.expenseForm.readReceiptOffline");
+export const AI_KEPT_NOTE = t("mobileApp.expenseForm.aiKeptNote");
 /** The phone has no currency field: a receipt in another currency fills everything but the amount. */
-export const receiptCurrencyNote = (receipt: string, business: string) => `The receipt is in ${receipt}, so the amount wasn't filled in — enter it in ${business}.`;
+export const receiptCurrencyNote = (receipt: string, business: string) => t("mobileApp.expenseForm.receiptCurrencyNote", { receipt, business });
 
 export type EntryMode = "amount" | "labour";
 

@@ -1,0 +1,11 @@
+---
+/** US-SITE-12 — on every page of the guide an install serves at /help. */
+import { SPINE_DOCS_URL } from "../../../../packages/shared/src/public-site.ts";
+
+const version = import.meta.env.SPINE_VERSION as string;
+---
+
+<div class="spine-bundled-banner" role="note">
+  You're reading the guide for Spine {version}, served by your own server — it works without internet.
+  <a href={SPINE_DOCS_URL} target="_blank" rel="noopener">See the latest online docs ↗</a>
+</div>

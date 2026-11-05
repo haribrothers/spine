@@ -1,0 +1,33 @@
+---
+title: Switch between accrual and cash
+description: Show dashboard profit and the money chart on an accrual or a cash basis, and keep your choice on every device.
+sidebar:
+  order: 8
+---
+
+Profit can be measured two ways. On the accrual basis, income counts when you invoice and costs when you're billed. On the cash basis, they count when money actually moves. Many owners prefer cash because it matches the bank. The dashboard lets you choose, and remembers your choice.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View dashboard summary**: the switch appears for anyone who sees profit on the dashboard.</Aside>
+
+<Steps>
+
+1. **Find the switch** — In the dashboard's header, beside **Edit layout**, the **Accrual / Cash** switch shows the basis in use. It starts on **Accrual**.
+2. **Choose Cash** — Press **Cash**. **Profit this month** recomputes and says "cash basis" under the figure. The chart becomes **Money in and out**, with "Money in (payments received)" and "Money out (bills, expenses)".
+3. **Choose Accrual to go back** — **Profit this month** returns to the accrual figure and the chart to **Income and expenses**.
+
+</Steps>
+
+<Screenshot id="dashboard-basis" alt="The dashboard header with the Accrual and Cash switch beside Edit layout" />
+
+## Your choice stays with you
+
+The basis is saved with your own dashboard layout, so it's the same when you come back on another browser or device. It doesn't change anyone else's dashboard.
+
+## What it doesn't change
+
+The switch only affects **Profit this month** and the money chart. The other cards, such as Receivables, Payables and Tax this period, don't change.
+
+<Aside type="note">Reports have their own setting. Profit & Loss has a **Basis** switch of its own; the Balance Sheet, Trial Balance and Tax Summary are always on the accrual basis. See [Reports](../../reports/).</Aside>

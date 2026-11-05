@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { SpineLogo } from "@spine/ui";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthIllustration, type AuthScene } from "./auth-illustration";
+import { t } from "../lib/i18n";
 
 /**
  * US-AUTH-13, US-AUTH-14 (D-207) — the frame every signed-out page uses:
@@ -30,7 +31,7 @@ export function AuthFrame({
           <ThemeToggle placement="inline" />
         </div>
         <div className={`mx-auto flex w-full ${wide ? "max-w-[500px]" : "max-w-[380px]"} flex-1 flex-col justify-center py-10`}>{children}</div>
-        <p className="text-center text-[12px] text-on-surface-muted">Spine · self-hosted business management</p>
+        <p className="text-center text-[12px] text-on-surface-muted">{t("auth.frame.footer")}</p>
       </main>
       <div className="sticky top-0 hidden h-screen py-4 pr-4 lg:block">
         {panel ?? <AuthIllustration scene={scene} />}

@@ -5,25 +5,25 @@ import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { useSettingsValue } from "../use-settings-value";
 import { SavedToast } from "../saved-toast";
+import { t, useT } from "../../../lib/i18n";
 
 export type QuoteConversionGuardMode = "off" | "warn" | "block";
 
 const MODES: { value: QuoteConversionGuardMode; title: string; description: string }[] = [
   {
     value: "warn",
-    title: "Warn (recommended)",
-    description:
-      "If a quote already has a job or invoice, show what already exists and ask for confirmation before creating another.",
+    title: t("settings.quoteConversionGuard.warn.title"),
+    description: t("settings.quoteConversionGuard.warn.description"),
   },
   {
     value: "block",
-    title: "Block",
-    description: "Refuse to create a second job or invoice from the same quote. You'd need to change this setting to override it.",
+    title: t("settings.quoteConversionGuard.block.title"),
+    description: t("settings.quoteConversionGuard.block.description"),
   },
   {
     value: "off",
-    title: "Off",
-    description: "No check at all — convert the same quote as many times as you like, with no warning.",
+    title: t("settings.quoteConversionGuard.off.title"),
+    description: t("settings.quoteConversionGuard.off.description"),
   },
 ];
 
@@ -57,6 +57,7 @@ export function QuoteConversionGuardPane() {
  * loads" convention.
  */
 function QuoteConversionGuardForm({ initialMode }: { initialMode: QuoteConversionGuardMode }) {
+  const t = useT();
   const [mode, setMode] = useState<QuoteConversionGuardMode>(initialMode);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -74,11 +75,9 @@ function QuoteConversionGuardForm({ initialMode }: { initialMode: QuoteConversio
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Repeat quote conversion</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.quoteConversionGuard.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Nothing stops "Convert to job" or "Convert to invoice" from being used more than once on the same quote — each
-          conversion creates a full, separate job or invoice for the quote&apos;s whole amount, not a split. Choose how the
-          app should behave when that happens.
+          {t("settings.quoteConversionGuard.description")}
         </p>
       </div>
 
@@ -102,7 +101,7 @@ function QuoteConversionGuardForm({ initialMode }: { initialMode: QuoteConversio
       </RadioGroup>
 
       <Button onClick={handleSave} disabled={saving} className="ml-auto">
-        {saving ? <Spinner size="sm" /> : "Save"}
+        {saving ? <Spinner size="sm" /> : t("settings.common.save")}
       </Button>
 
       <SavedToast open={saved} onOpenChange={setSaved} />

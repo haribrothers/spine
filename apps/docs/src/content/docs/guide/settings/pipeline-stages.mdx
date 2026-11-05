@@ -1,0 +1,39 @@
+---
+title: Change your pipeline stages
+description: Rename, reorder, add and delete the columns on your pipeline board so it matches how you sell.
+sidebar:
+  order: 14
+---
+
+Pipeline stages are "The columns on your pipeline board. Rename, reorder or add stages. Won and Lost always stay last so reports can tell a closed lead from an open one." Changing them changes the board for everyone.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. The pane only shows while the **Leads & meetings** module is on (**Settings › Modules**).</Aside>
+
+<Steps>
+
+1. **Open Settings › Pipeline stages** — Open your user menu, choose **Settings**, and pick **Pipeline stages** under **Sales & meetings**. Each row shows the stage's name, its kind (**Open**, **Won** or **Lost**) and how many leads are in it.
+
+2. **Rename a stage** — Type a new name in its row, for example change "Proposal" to "Quote sent". Its leads stay in it.
+
+3. **Reorder** — Drag a stage by its handle to a new position, or use the up and down arrows on its row ("Move Proposal up").
+
+4. **Add a stage** — Press **+ Add stage**, name it, and move it where it belongs. You can have up to 12 stages.
+
+5. **Delete a stage** — Press the delete button on its row. If it still has leads, "Delete "…"?" asks where they go: choose a stage under "Move 3 leads to:" and press **Delete stage**. "Its leads aren't deleted — they move to the stage you choose when you save the stages."
+
+6. **Press Save** — A "Saved" message appears and the board shows your stages.
+
+</Steps>
+
+<Screenshot id="settings-pipeline-stages" alt="Settings, Pipeline stages: a row per stage with its kind and lead count, + Add stage and Save" />
+
+## Good to know
+
+- **Won and Lost stay last.** "Won and Lost can be renamed but not moved or deleted."
+- **Up to 12 stages.** With 12, **+ Add stage** is turned off.
+- **Nothing changes until you save.** A deleted stage and its leads' move happen when you press **Save**.
+
+For working leads on the board, see [Contacts and pipeline](../../contacts/).

@@ -10,9 +10,10 @@ import { useCurrency } from "../analysis-shared";
 import { ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { useReportDetail } from "../report-shell";
 import type { Gstr1DocumentRange, Gstr1Problem, Gstr1Summary } from "./types";
+import { t, useT } from "../../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS = [t("reports.gstr1.months.january"), t("reports.gstr1.months.february"), t("reports.gstr1.months.march"), t("reports.gstr1.months.april"), t("reports.gstr1.months.may"), t("reports.gstr1.months.june"), t("reports.gstr1.months.july"), t("reports.gstr1.months.august"), t("reports.gstr1.months.september"), t("reports.gstr1.months.october"), t("reports.gstr1.months.november"), t("reports.gstr1.months.december")];
 
 type Filing = "monthly" | "quarterly";
 
@@ -37,22 +38,22 @@ function periodOptions(filing: Filing, today = new Date()): { value: string; lab
 
 /** "INV-0120 – INV-0147" for a range; one number on its own. */
 const rangeText = (r: Gstr1DocumentRange) => (r.from === r.to ? r.from : `${r.from} – ${r.to}`);
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** "INV-0120 – INV-0147, 2 credit notes": invoice ranges, then how many credit notes. */
 function documentsText(docs: readonly Gstr1DocumentRange[]): string {
   const invoices = docs.filter((d) => d.kind === "invoice").map(rangeText);
   const notes = docs.filter((d) => d.kind === "credit_note").reduce((s, d) => s + d.total, 0);
-  return [...invoices, ...(notes ? [count(notes, "credit note", "credit notes")] : [])].join(", ") || "No documents issued";
+  return [...invoices, ...(notes ? [t("reports.gstr1.creditNotes", { count: notes })] : [])].join(", ") || t("reports.gstr1.noDocumentsIssued");
 }
 
 /** US-TAX-17 — what to fix before uploading, each with a link to the record. */
 function ProblemsPanel({ problems }: { problems: Gstr1Problem[] }) {
+  const t = useT();
   return (
     <Card data-testid="gstr1-problems">
       <CardHeader>
-        <CardTitle className="text-[15px]">Fix these before you upload</CardTitle>
-        <CardDescription>{count(problems.length, "problem", "problems")}</CardDescription>
+        <CardTitle className="text-[15px]">{t("reports.gstr1.problemsTitle")}</CardTitle>
+        <CardDescription>{t("reports.gstr1.problemCount", { count: problems.length })}</CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="divide-y divide-border border-t border-border">
@@ -77,6 +78,7 @@ function ProblemsPanel({ problems }: { problems: Gstr1Problem[] }) {
  * file; it never files the return.
  */
 export function Gstr1View() {
+  const t = useT();
   const currency = useCurrency();
   const [filing, setFiling] = useState<Filing>("monthly");
   const options = useMemo(() => periodOptions(filing), [filing]);
@@ -84,15 +86,15 @@ export function Gstr1View() {
   const [period, setPeriod] = useState(() => periodOptions("monthly")[1]!.value);
   const { data, error, loading } = useReport<Gstr1Summary>(`/exports/gstr1?period=${period}`, FINANCIAL_STATEMENTS_NO_ACCESS);
   const money = (value: string) => formatMoney(value, currency);
-  useReportDetail(data ? `${data.period.label} · GSTIN ${data.gstin}` : null);
+  useReportDetail(data ? t("reports.gstr1.detail", { period: data.period.label, gstin: data.gstin }) : null);
 
   const changeFiling = (next: Filing) => {
     setFiling(next);
     setPeriod(periodOptions(next)[1]!.value);
   };
 
-  const t = data?.tables;
-  const invoicesVoided = t?.docs.filter((d) => d.kind === "invoice").reduce((s, d) => s + d.cancelled, 0) ?? 0;
+  const tables = data?.tables;
+  const invoicesVoided = tables?.docs.filter((d) => d.kind === "invoice").reduce((s, d) => s + d.cancelled, 0) ?? 0;
   const line = (key: string, name: string, figures: { count: number; taxableValue: string; tax: string }, cells: Record<string, string> = {}) => ({
     kind: "line" as const,
     key,
@@ -106,20 +108,20 @@ export function Gstr1View() {
         loading={loading}
         filters={
           <>
-            <ReportFilter label="Filing">
+            <ReportFilter label={t("reports.gstr1.filing")}>
               {(id) => (
                 <Select value={filing} onValueChange={(v) => changeFiling(v as Filing)}>
                   <SelectTrigger className="w-40" aria-labelledby={id}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="monthly">{t("reports.gstr1.monthly")}</SelectItem>
+                    <SelectItem value="quarterly">{t("reports.gstr1.quarterly")}</SelectItem>
                   </SelectContent>
                 </Select>
               )}
             </ReportFilter>
-            <ReportFilter label="Period">
+            <ReportFilter label={t("reports.common.period")}>
               {(id) => (
                 <Select value={period} onValueChange={setPeriod}>
                   <SelectTrigger className="w-48" aria-labelledby={id}>
@@ -145,13 +147,13 @@ export function Gstr1View() {
               <Button variant="secondary" asChild>
                 <a href={`${API_URL}/exports/gstr1?period=${period}&format=xlsx`} data-testid="gstr1-download-xlsx">
                   <Download size={14} aria-hidden="true" />
-                  Download Excel
+                  {t("reports.gstr1.downloadExcel")}
                 </a>
               </Button>
               <Button asChild>
                 <a href={`${API_URL}/exports/gstr1?period=${period}&format=json`} data-testid="gstr1-download-json">
                   <Download size={14} aria-hidden="true" />
-                  Download JSON
+                  {t("reports.gstr1.downloadJson")}
                 </a>
               </Button>
             </>
@@ -165,21 +167,21 @@ export function Gstr1View() {
         </Alert>
       )}
 
-      {data && t && !error && (
+      {data && tables && !error && (
         <>
           <ReportKpis count={4} data-testid="gstr1-cards">
-            <StatCard label="Documents" value={String(data.totals.documents)} trend={{ direction: "neutral", label: documentsText(t.docs) }} />
-            <StatCard label="Taxable value" value={money(data.totals.taxableValue)} trend={{ direction: "neutral", label: "Across every table" }} />
+            <StatCard label={t("reports.common.documents")} value={String(data.totals.documents)} trend={{ direction: "neutral", label: documentsText(tables.docs) }} />
+            <StatCard label={t("reports.gstr1.taxableValue")} value={money(data.totals.taxableValue)} trend={{ direction: "neutral", label: t("reports.gstr1.acrossEveryTable") }} />
             {/* US-TAX-17: the file's tax against the Tax Summary's tax collected. */}
             <StatCard
-              label="Tax"
+              label={t("reports.common.tax")}
               value={money(data.totals.tax)}
-              trend={data.totalsMatchTaxSummary ? { direction: "up", label: "equals the Tax Summary" } : { direction: "down", label: `Tax Summary says ${money(data.taxSummaryTax)}` }}
+              trend={data.totalsMatchTaxSummary ? { direction: "up", label: t("reports.gstr1.equalsTaxSummary") } : { direction: "down", label: t("reports.gstr1.taxSummarySays", { amount: money(data.taxSummaryTax) }) }}
             />
             <StatCard
-              label="Problems"
+              label={t("reports.gstr1.problems")}
               value={String(data.problems.length)}
-              trend={data.problems.length ? { direction: "down", label: "fix before uploading" } : { direction: "up", label: "Nothing to fix" }}
+              trend={data.problems.length ? { direction: "down", label: t("reports.gstr1.fixBeforeUploading") } : { direction: "up", label: t("reports.gstr1.nothingToFix") }}
             />
           </ReportKpis>
 
@@ -188,27 +190,27 @@ export function Gstr1View() {
           <StatementTable
             data-testid="gstr1-tables"
             columns={[
-              { key: "name", header: "Table" },
-              { key: "documents", header: "Documents", align: "right" },
-              { key: "taxable", header: "Taxable value", align: "right" },
-              { key: "tax", header: "Tax", align: "right" },
+              { key: "name", header: t("reports.gstr1.table") },
+              { key: "documents", header: t("reports.common.documents"), align: "right" },
+              { key: "taxable", header: t("reports.gstr1.taxableValue"), align: "right" },
+              { key: "tax", header: t("reports.common.tax"), align: "right" },
             ]}
             rows={[
-              line("b2b", "B2B — registered customers", t.b2b),
-              line("b2cl", "B2CL — large unregistered inter-state", t.b2cl),
-              line("b2cs", "B2CS — other unregistered", t.b2cs),
-              line("cdnr", "CDNR — credit notes, registered", t.cdnr),
-              line("cdnur", "CDNUR — credit notes, unregistered", t.cdnur),
-              line("exp", "Exports", t.exp),
-              line("nil", "Nil, exempt and non-GST", t.nil, { tax: "—" }),
-              line("hsn", "HSN summary", t.hsn, { documents: count(t.hsn.count, "code", "codes") }),
+              line("b2b", t("reports.gstr1.b2b"), tables.b2b),
+              line("b2cl", t("reports.gstr1.b2cl"), tables.b2cl),
+              line("b2cs", t("reports.gstr1.b2cs"), tables.b2cs),
+              line("cdnr", t("reports.gstr1.cdnr"), tables.cdnr),
+              line("cdnur", t("reports.gstr1.cdnur"), tables.cdnur),
+              line("exp", t("reports.gstr1.exp"), tables.exp),
+              line("nil", t("reports.gstr1.nil"), tables.nil, { tax: "—" }),
+              line("hsn", t("reports.gstr1.hsn"), tables.hsn, { documents: t("reports.gstr1.codes", { count: tables.hsn.count }) }),
               {
                 kind: "line",
                 key: "docs",
                 testId: "gstr1-row-docs",
                 cells: {
-                  name: "Documents issued",
-                  documents: [t.docs.filter((d) => d.kind === "invoice").map(rangeText).join(", ") || "None", ...(invoicesVoided ? [`${invoicesVoided} void`] : [])].join(" · "),
+                  name: t("reports.gstr1.documentsIssued"),
+                  documents: [tables.docs.filter((d) => d.kind === "invoice").map(rangeText).join(", ") || t("reports.gstr1.none"), ...(invoicesVoided ? [t("reports.gstr1.voided", { count: invoicesVoided })] : [])].join(" · "),
                   taxable: "",
                   tax: "",
                 },

@@ -1,0 +1,45 @@
+---
+title: Connect an AI agent to Spine
+description: Add Spine's connector address to Claude, ChatGPT, Claude Code or another agent, sign in to Spine and approve what it can do.
+sidebar:
+  order: 3
+---
+
+You connect your agent once. You give it Spine's address, it opens Spine in your browser, and you sign in and choose what it can do. You never type your password anywhere but Spine, and you never copy a key.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone who works in Spine — Owners, Staff and Field — once an Owner has [turned on connected agents](../turn-on-connected-agents/).</Aside>
+
+<Steps>
+
+1. **Copy the address** — Open your user menu, choose **Settings**, then **Connected agents** under **Your account**. Under **Connector address**, press **Copy address**. In a standard install it ends in `/api/mcp`.
+
+2. **Add it to your agent** — How depends on the agent:
+   - **Claude** — add a custom connector and paste the address. Works on the web, desktop and phone.
+   - **ChatGPT** — add a connector and paste the address. ChatGPT opens Spine to sign in.
+   - **Claude Code** — run `claude mcp add --transport http spine` with the address.
+   - **Other agents** that support MCP connectors work the same way.
+
+3. **Sign in to Spine** — Your browser opens Spine. If you're not signed in, sign in as usual; the page names the agent asking to connect.
+
+4. **Read the consent page** — "*Agent* wants to use Spine as you" shows the agent's address, your name and the business. It lists what the agent can do: read what you can see in Spine — contacts, quotes, jobs, invoices, bills and the reports you can open. It says what it can't: issue, send, record payments, delete or change settings.
+
+5. **Choose whether it can create drafts** — Tick or untick **Create drafts for you to check** (leads, quotes, vendor bills and notes). It only shows when the Owner allows drafts.
+
+6. **Allow it** — Press **Allow**. Your agent finishes connecting and can use Spine as you. **Cancel** sends the agent back with nothing.
+
+</Steps>
+
+## For Field users
+
+The consent page lists only what Field can do: read your assigned jobs, contacts and the catalogue, and add notes to your jobs. It never mentions money or reports.
+
+<Aside type="caution">If the agent's name is marked **Unverified name**, the page leads with the address it returns to. Only allow it if you added that agent yourself. What the agent reads is sent to its AI provider.</Aside>
+
+## What happens next
+
+The connection appears in **Settings › Your account › Connected agents**, and the audit log records it. Try asking your agent what it can do in Spine. See [See what an agent can do](../see-what-an-agent-can-do/).
+
+A connection unused for 30 days ends by itself; connect the agent again when you need it.

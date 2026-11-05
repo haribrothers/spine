@@ -4,6 +4,7 @@ import * as ToastPrimitive from "@radix-ui/react-toast";
 import { X } from "lucide-react";
 import { forwardRef, useCallback, useRef } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export const ToastProvider = ToastPrimitive.Provider;
 
@@ -119,10 +120,12 @@ ToastDescription.displayName = "ToastDescription";
 export const ToastClose = forwardRef<
   React.ElementRef<typeof ToastPrimitive.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitive.Close>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, ref) => {
+  const t = useT();
+  return (
   <ToastPrimitive.Close
     ref={ref}
-    aria-label="Dismiss"
+    aria-label={t("ui.toast.dismiss")}
     className={cn(
       "shrink-0 rounded-sm text-inverse-on-surface-muted transition-colors hover:text-inverse-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inverse-on-surface",
       className,
@@ -131,7 +134,8 @@ export const ToastClose = forwardRef<
   >
     <X size={14} />
   </ToastPrimitive.Close>
-));
+  );
+});
 ToastClose.displayName = "ToastClose";
 
 export const ToastAction = ToastPrimitive.Action;

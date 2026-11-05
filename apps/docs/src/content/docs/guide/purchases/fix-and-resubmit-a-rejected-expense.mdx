@@ -1,0 +1,50 @@
+---
+title: Fix and resubmit a rejected expense
+description: Read why an expense was rejected, change what's wrong and send it back for approval without starting again.
+sidebar:
+  order: 21
+---
+
+When an approver rejects an expense, it isn't posted to your books and it isn't lost either. The reviewer's reason stays on the expense. You fix what they asked for and resubmit it, and it goes back to waiting for approval with its history kept.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  The person who submitted it: Owners, Staff whose Team has **Submit/edit own expenses**, and Field users for their own. Fixing someone else's rejected expense needs **Edit others' expenses**.
+</Aside>
+
+<Steps>
+
+1. **Find the rejected expense** — Go to **Expenses** and press the **Rejected** card. It counts the expenses there are to fix and resubmit.
+
+2. **Open it and read the reason** — At the top of the page, you see who rejected it and when, with their comment in quotes, for example: Rejected by Sarah Mendes on 3 Nov: "No receipt attached." Under it: "Fix it and resubmit, or delete it if it shouldn't be claimed."
+
+3. **Press Fix and resubmit** — It's the main action on a rejected expense. The form opens with your entries and the reason at the top: "Fix it, then resubmit — it goes back for approval."
+
+4. **Make the change** — Add the missing receipt, correct the amount, category or job, or whatever the reason asks for. The saved tax rate stays as it was unless you change it.
+
+5. **Resubmit** — Press **Resubmit**.
+
+</Steps>
+
+A toast says "Expense resubmitted" and that it's waiting for approval again. The reviewer's comment is cleared from the expense, and its state reads **Waiting for approval**. Nothing is posted until it's approved.
+
+## What the history keeps
+
+The expense's **Activity** still shows the rejection with its comment, then adds **Fixed and resubmitted**, with who and when. Anyone who approves it later can see what happened before.
+
+## If it shouldn't be claimed
+
+If the expense was a mistake, delete it instead: open **More** and choose **Delete expense**. Spine asks "Delete this expense?" first.
+
+<Aside type="danger">
+  Deleting an expense removes it for good. It can't be undone.
+</Aside>
+
+<Aside type="caution">
+  Only a waiting or rejected expense can be changed. An approved expense has already posted to your books, so it can't be edited or resubmitted.
+</Aside>
+
+<Aside type="tip">
+  On the phone, the field app's **Expenses** tab shows the reviewer's reason in red under a rejected expense. You fix it here, in Spine in a browser. See [Submit an expense from the field app](../submit-an-expense-from-the-field-app/).
+</Aside>

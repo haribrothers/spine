@@ -7,6 +7,7 @@ import { useCapabilities } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { NoAccess } from "../../../components/no-access";
 import { PrintHeader, PrintRangeProvider, useCurrentPrintRange } from "../../../components/print-header";
+import { useT } from "../../../lib/i18n";
 
 const DetailContext = createContext<((detail: string | null) => void) | null>(null);
 
@@ -24,10 +25,11 @@ export function useReportDetail(detail: string | null) {
 
 /** "Income less expenses for a period · Jan 1 – Oct 6, 2026 · Cash basis": the description, the range the filters cover and any detail. */
 function ReportHeader({ label, href, description, detail, page }: { label: string; href: string; description?: string; detail: string | null; page?: string }) {
+  const t = useT();
   const range = useCurrentPrintRange();
   const text = [description, range, detail].filter(Boolean).join(" · ");
   // A report's own sub-page (US-RPT-39: "Reports › Export to Tally › Account mapping").
-  const breadcrumb = page ? [{ label: "Reports", href: "/reports" }, { label, href }, { label: page }] : [{ label: "Reports", href: "/reports" }, { label }];
+  const breadcrumb = page ? [{ label: t("reports.common.reports"), href: "/reports" }, { label, href }, { label: page }] : [{ label: t("reports.common.reports"), href: "/reports" }, { label }];
   return <AppShellHeader breadcrumb={breadcrumb} title={page ?? label} description={text || undefined} />;
 }
 

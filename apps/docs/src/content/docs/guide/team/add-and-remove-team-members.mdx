@@ -1,0 +1,51 @@
+---
+title: Add and remove people on a Team
+description: Put Staff on a Team or take them off it, from the Team's page or from a person's row on Users.
+sidebar:
+  order: 6
+---
+
+Staff get what their Teams allow, so putting someone on a Team is how you give them access. Changes apply at their next request — they don't need to sign out.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Only Staff are on Teams: Owners can open everything, and Field access is fixed.</Aside>
+
+## Add people from the Team's page
+
+<Steps>
+
+1. **Open the Team** — Go to **Team › Teams** and open the Team. The **Members** tab lists who's on it, their other Teams and when they were last active.
+
+2. **Press Add people** — Tick the Staff to add. Each shows the Teams they're already on, or "No Team". Owners and Field aren't listed.
+
+3. **Add them** — Press **Add 2 people** (the count matches your ticks). The toast names who was added.
+
+</Steps>
+
+<Screenshot id="team-add-people" alt="The Add people dialog listing Staff to add with their current Teams" />
+
+## Remove someone from a Team
+
+On the **Members** tab, open the person's menu and choose **Remove from *Team***. Spine asks first: they lose what this Team allowed at their next request. If it's their only Team, it warns that they'll be on no Team and can't open anything. Press **Remove** to confirm.
+
+<Screenshot id="team-team-members" alt="A Team's page on the Members tab with each member's other Teams, when they were last active and the Add people button" />
+
+## Change one person's Teams from Users
+
+<Steps>
+
+1. **Find the person** — Go to **Team › Users** and open the Staff member's row menu.
+
+2. **Choose Manage Teams** — The dialog lists every Team with a tick for the ones they're on and how many people each has.
+
+3. **Save** — Tick or untick Teams and press **Save Teams**. The toast says where they are now, for example "Sarah Mendes is on General Staff and Accounts".
+
+</Steps>
+
+<Aside type="caution">A Staff member with no Team can't open anything. The **Staff without a Team** card on Users counts them, so check it after you change Teams.</Aside>
+
+## What happens next
+
+The person's sidebar and buttons change the next time they use Spine. To check the result, choose **What they can open** from their menu. See [Check what someone can open](../check-what-someone-can-open/).

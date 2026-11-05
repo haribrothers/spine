@@ -18,14 +18,17 @@ import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
 import { CatalogForm } from "./catalog-form";
 import type { CatalogItem } from "./types";
+import { t as translate, useT } from "../../../lib/i18n";
+import { orgLocaleTag } from "../../../lib/money";
 
 /** US-CAT-15 — "Used on 4 quotes and 2 invoices · last quoted 3 Oct 2026", or that it isn't used yet. */
 export function usageText(usage: CatalogItemUsage): string {
-  if (usage.quotes === 0 && usage.invoices === 0) return "Not used on a quote or invoice yet.";
-  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-  const parts = [usage.quotes ? plural(usage.quotes, "quote") : null, usage.invoices ? plural(usage.invoices, "invoice") : null].filter(Boolean).join(" and ");
-  const last = usage.lastQuotedAt ? ` · last quoted ${new Date(usage.lastQuotedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}` : "";
-  return `Used on ${parts}${last}`;
+  if (usage.quotes === 0 && usage.invoices === 0) return translate("catalog.drawer.notUsed");
+  const quotes = usage.quotes ? translate("catalog.drawer.quotes", { count: usage.quotes }) : null;
+  const invoices = usage.invoices ? translate("catalog.drawer.invoices", { count: usage.invoices }) : null;
+  const parts = quotes && invoices ? translate("catalog.drawer.both", { quotes, invoices }) : (quotes ?? invoices ?? "");
+  const last = usage.lastQuotedAt ? translate("catalog.drawer.lastQuoted", { date: new Date(usage.lastQuotedAt).toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short", year: "numeric" }) }) : "";
+  return translate("catalog.drawer.usedOn", { parts }) + last;
 }
 
 /**
@@ -50,6 +53,7 @@ export function CatalogItemDrawer({
   prefill?: CatalogItem;
   onSaved: (item: CatalogItem, mode: "created" | "updated") => void;
 }) {
+  const t = useT();
   const formId = useId();
   const [saving, setSaving] = useState(false);
   const [usage, setUsage] = useState<CatalogItemUsage | null>(null);
@@ -86,13 +90,13 @@ export function CatalogItemDrawer({
     <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{item ? "Edit item" : "Add item"}</DrawerTitle>
+          <DrawerTitle>{item ? t("catalog.drawer.editTitle") : t("catalog.common.addItem")}</DrawerTitle>
           <DrawerDescription>
             {item
-              ? "Update this item's default price, tax rate or account mapping."
+              ? t("catalog.drawer.editDescription")
               : prefill
-                ? "A copy of another item. Change what's different, then save it as a new item."
-                : "Goods or services with a default price and tax rate — you can override the price on a quote later."}
+                ? t("catalog.drawer.duplicateDescription")
+                : t("catalog.drawer.addDescription")}
           </DrawerDescription>
           {item && usage && (
             <p className="mt-2 flex items-center gap-2 rounded-md bg-surface-sunken px-2.5 py-2 text-[12.5px] text-on-surface-muted" data-testid="catalog-usage">
@@ -105,12 +109,12 @@ export function CatalogItemDrawer({
           <CatalogForm key={item?.id ?? prefill?.id ?? "new"} formId={formId} item={item} prefill={prefill} onSubmittingChange={setSaving} onSuccess={handleSuccess} />
         </DrawerBody>
         <DrawerFooter>
-          {item && <HistorySection endpoint={`/catalog-items/${item.id}/history`} subjectLabel="this item" />}
+          {item && <HistorySection endpoint={`/catalog-items/${item.id}/history`} subjectLabel={t("catalog.drawer.historySubject")} />}
           <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("catalog.common.cancel")}
           </Button>
           <Button type="submit" form={formId} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save item"}
+            {saving ? <Spinner size="sm" /> : t("catalog.drawer.saveItem")}
           </Button>
         </DrawerFooter>
       </DrawerContent>

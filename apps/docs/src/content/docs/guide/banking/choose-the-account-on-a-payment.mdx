@@ -1,0 +1,43 @@
+---
+title: Choose the account on a payment
+description: Pick which bank, cash or card account money went into or came out of, so every balance stays right.
+sidebar:
+  order: 3
+---
+
+Every form that moves money asks which account it used. Choosing the right one keeps each account's balance in Spine the same as the bank's, and makes reconciling quick.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Anyone who can record the payment, expense, refund or tax payment. You don't need a banking right to choose the account: without **View bank balances and registers**, the picker lists account names without balances.
+</Aside>
+
+<Steps>
+
+1. **Open the form** — For example **Record payment**, a vendor payment, **Pay bill**, an expense, a customer refund or a tax payment.
+
+2. **Find the account field** — Money coming in has **Paid into**. Money going out has **Paid from**. Each lists your active money accounts.
+
+3. **Check the suggestion** — If you've used an account on this kind of form before, it's already chosen, with "Last used by you" under it. Otherwise your organisation's default account is chosen.
+
+4. **Change it if needed** — Pick the account the money really went into or came out of, then finish the form as usual.
+
+</Steps>
+
+<Screenshot id="banking-paid-into" alt="The Record a payment dialog with the Paid into account picker" />
+
+## What happens next
+
+The money shows in that account's register and its balance changes. On a recorded payment, the account is shown next to the method, for example "Paid into First Coastal — Operating". It can't be changed afterwards.
+
+<Aside type="tip" title="Paying with a card">
+  When an expense is paid by business card, choose the card account under **Paid from**. The expense then adds to what's owed on the card instead of coming out of the bank. When you pay the card off, record a [transfer](../move-money-between-accounts/) from the bank to the card.
+</Aside>
+
+## Expenses from the field app
+
+Expenses submitted on the phone use your organisation's default account. Whoever approves the expense can change the account before approving it.
+
+Archived accounts aren't offered. See [Archive or restore an account](../archive-or-restore-an-account/).

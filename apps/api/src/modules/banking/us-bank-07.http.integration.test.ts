@@ -24,7 +24,7 @@ describe("US-BANK-07 · import a bank statement (requires local Postgres)", () =
 
   const upload = (who: Who, csv: string | Buffer, mapping: unknown = SPLIT, name = "statement-oct-2026.csv", type = "text/csv") => {
     const form = new FormData();
-    form.append("file", new Blob([csv], { type }), name);
+    form.append("file", new Blob([typeof csv === "string" ? csv : new Uint8Array(csv)], { type }), name);
     form.append("mapping", JSON.stringify(mapping));
     return fetch(`${testApp.baseUrl}/money-accounts/${bank.id}/statement-imports`, { method: "POST", headers: { "Idempotency-Key": randomUUID(), cookie: who.cookie }, body: form });
   };

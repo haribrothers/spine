@@ -1,0 +1,33 @@
+---
+title: Set your financial year
+description: Choose the day your financial year starts, which reports and period closing use.
+sidebar:
+  order: 7
+---
+
+Your financial year start decides which dates "this year" covers on reports, and the periods you close at year-end. It doesn't touch your document numbers — quotes and invoices carry on numbering from one year to the next.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Financial year** — Open your user menu, choose **Settings**, and pick **Financial year** under **Money & tax**.
+
+2. **Pick the start date** — Under **Financial year starts on**, choose the **Month** and the **Day**. For example, 1 April for India, 6 April for UK tax years, 1 July for Australia, or 1 January.
+
+3. **Press Save** — A "Saved" message appears.
+
+</Steps>
+
+<Screenshot id="settings-financial-year" alt="Settings, Financial year: Financial year starts on, with Month and Day pickers and Save" />
+
+## What changes
+
+- **Report defaults follow the new year** from the next year boundary. You can still pick any dates on a report.
+- **Document numbers never reset.** "Document numbers never reset." Your invoice after INV-0420 is INV-0421, whatever the date.
+- **Closed periods stay closed.** Changing the year start doesn't reopen or move a period you've closed. See [Close or reopen a period](../../accounts/close-a-period/).
+
+<Aside type="tip">Your opening balances' cutover date starts at the beginning of your current financial year. If you're moving from another system, set the financial year first. See [Enter your opening balances](../../accounts/opening-balances/).</Aside>

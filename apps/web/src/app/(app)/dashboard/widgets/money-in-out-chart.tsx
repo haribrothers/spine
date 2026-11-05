@@ -14,10 +14,14 @@ import {
 import type { MoneyInOutReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { minorUnitExponent } from "@spine/shared/money";
-import { formatMoney } from "../../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { useDashboardCurrency } from "../dashboard-currency";
 import { WidgetSkeleton } from "../dashboard-skeleton";
 import { useDashboardBasis } from "../dashboard-basis";
+import { useT } from "../../../../lib/i18n";
+
+/** The minus sign before a negative net (a symbol, not copy). */
+const MINUS = "−";
 
 type Range = 3 | 6 | 12;
 
@@ -45,6 +49,7 @@ function monthName(key: string): string {
  * every gated widget.
  */
 export function MoneyInOutChart() {
+  const t = useT();
   const [months, setMonths] = useState<Range>(12);
   const orgCurrency = useDashboardCurrency();
   const currency = orgCurrency ?? "USD";
@@ -71,7 +76,7 @@ export function MoneyInOutChart() {
   if (failed) return null;
 
   const scale = 10 ** minorUnitExponent(currency);
-  const compact = new Intl.NumberFormat(undefined, {
+  const compact = new Intl.NumberFormat(orgLocaleTag(), {
     style: "currency",
     currency,
     notation: "compact",
@@ -79,7 +84,7 @@ export function MoneyInOutChart() {
   });
   const money = (minor: string | bigint) =>
     formatMoney(BigInt(minor), currency);
-  const rangeLabel = `${months} months`;
+  const rangeLabel = t("dashboard.moneyInOut.rangeLabel", { months });
   const net = report ? BigInt(report.net) : 0n;
   const rows = (report?.months ?? []).map((m) => ({
     key: m.month,
@@ -94,17 +99,17 @@ export function MoneyInOutChart() {
     <Card data-testid="money-in-out">
       <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-[15px]">
-          {accrual ? "Income and expenses" : "Money in and out"}
+          {accrual ? t("dashboard.moneyInOut.titleAccrual") : t("dashboard.moneyInOut.titleCash")}
         </CardTitle>
         <ToggleGroup
           type="single"
           value={String(months)}
           onValueChange={(v) => v && setMonths(Number(v) as Range)}
-          aria-label="Range"
+          aria-label={t("dashboard.moneyInOut.rangeAria")}
         >
-          <ToggleGroupItem value="3" size="sm">3M</ToggleGroupItem>
-          <ToggleGroupItem value="6" size="sm">6M</ToggleGroupItem>
-          <ToggleGroupItem value="12" size="sm">12M</ToggleGroupItem>
+          <ToggleGroupItem value="3" size="sm">{t("dashboard.moneyInOut.range3")}</ToggleGroupItem>
+          <ToggleGroupItem value="6" size="sm">{t("dashboard.moneyInOut.range6")}</ToggleGroupItem>
+          <ToggleGroupItem value="12" size="sm">{t("dashboard.moneyInOut.range12")}</ToggleGroupItem>
         </ToggleGroup>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -113,8 +118,8 @@ export function MoneyInOutChart() {
         ) : !report.hasActivity ? (
           <p className="flex h-48 items-center justify-center text-center text-[13px] text-on-surface-muted">
             {accrual
-              ? "Income and expenses appear after your first invoice, bill or expense."
-              : "Money in and out appears after your first payment or bill."}
+              ? t("dashboard.moneyInOut.emptyAccrual")
+              : t("dashboard.moneyInOut.emptyCash")}
           </p>
         ) : (
           <>
@@ -124,7 +129,7 @@ export function MoneyInOutChart() {
             >
               <div className="flex flex-col">
                 <dt className="text-[12px] text-on-surface-muted">
-                  {accrual ? "Income" : "In"} · {rangeLabel}
+                  {accrual ? t("dashboard.moneyInOut.income") : t("dashboard.moneyInOut.in")} · {rangeLabel}
                 </dt>
                 <dd className="text-[18px] font-semibold tabular-nums text-on-surface">
                   {money(report.totalIn)}
@@ -132,14 +137,14 @@ export function MoneyInOutChart() {
               </div>
               <div className="flex flex-col">
                 <dt className="text-[12px] text-on-surface-muted">
-                  {accrual ? "Expenses" : "Out"} · {rangeLabel}
+                  {accrual ? t("dashboard.moneyInOut.expenses") : t("dashboard.moneyInOut.out")} · {rangeLabel}
                 </dt>
                 <dd className="text-[18px] font-semibold tabular-nums text-on-surface">
                   {money(report.totalOut)}
                 </dd>
               </div>
               <div className="flex flex-col">
-                <dt className="text-[12px] text-on-surface-muted">Net</dt>
+                <dt className="text-[12px] text-on-surface-muted">{t("dashboard.moneyInOut.net")}</dt>
                 <dd
                   className={cn(
                     "text-[18px] font-semibold tabular-nums",
@@ -151,7 +156,7 @@ export function MoneyInOutChart() {
                     net > 0n ? "positive" : net < 0n ? "negative" : "neutral"
                   }
                 >
-                  {net > 0n ? "+" : net < 0n ? "−" : ""}
+                  {net > 0n ? "+" : net < 0n ? MINUS : ""}
                   {money(net < 0n ? -net : net)}
                 </dd>
               </div>
@@ -161,12 +166,12 @@ export function MoneyInOutChart() {
               series={[
                 {
                   key: "in",
-                  label: accrual ? "Income" : "Money in (payments received)",
+                  label: accrual ? t("dashboard.moneyInOut.income") : t("dashboard.moneyInOut.seriesInCash"),
                   color: "var(--color-primary)",
                 },
                 {
                   key: "out",
-                  label: accrual ? "Expenses" : "Money out (bills, expenses)",
+                  label: accrual ? t("dashboard.moneyInOut.expenses") : t("dashboard.moneyInOut.seriesOutCash"),
                   color: "var(--color-border-strong)",
                 },
               ]}
@@ -180,14 +185,14 @@ export function MoneyInOutChart() {
                       {monthName(String(row.key))}
                     </span>
                     <span>
-                      {accrual ? "Income" : "In"}: {money(String(row.inMinor))}
+                      {accrual ? t("dashboard.moneyInOut.income") : t("dashboard.moneyInOut.in")}: {money(String(row.inMinor))}
                     </span>
                     <span>
-                      {accrual ? "Expenses" : "Out"}:{" "}
+                      {accrual ? t("dashboard.moneyInOut.expenses") : t("dashboard.moneyInOut.out")}:{" "}
                       {money(String(row.outMinor))}
                     </span>
                     <span>
-                      Net: {rowNet > 0n ? "+" : rowNet < 0n ? "−" : ""}
+                      {t("dashboard.moneyInOut.net")}: {rowNet > 0n ? "+" : rowNet < 0n ? MINUS : ""}
                       {money(rowNet < 0n ? -rowNet : rowNet)}
                     </span>
                   </div>
@@ -195,18 +200,18 @@ export function MoneyInOutChart() {
               }}
               aria-label={
                 accrual
-                  ? `Income and expenses by month, last ${rangeLabel}`
-                  : `Money in and out by month, last ${rangeLabel}`
+                  ? t("dashboard.moneyInOut.ariaAccrual", { range: rangeLabel })
+                  : t("dashboard.moneyInOut.ariaCash", { range: rangeLabel })
               }
               description={
                 accrual
-                  ? `Over the last ${rangeLabel}: ${money(report.totalIn)} income, ${money(report.totalOut)} expenses.`
-                  : `Over the last ${rangeLabel}: ${money(report.totalIn)} in, ${money(report.totalOut)} out.`
+                  ? t("dashboard.moneyInOut.descriptionAccrual", { range: rangeLabel, in: money(report.totalIn), out: money(report.totalOut) })
+                  : t("dashboard.moneyInOut.descriptionCash", { range: rangeLabel, in: money(report.totalIn), out: money(report.totalOut) })
               }
               emptyState={
                 accrual
-                  ? "No income or expenses in this range."
-                  : "No money in or out in this range."
+                  ? t("dashboard.moneyInOut.emptyStateAccrual")
+                  : t("dashboard.moneyInOut.emptyStateCash")
               }
             />
           </>

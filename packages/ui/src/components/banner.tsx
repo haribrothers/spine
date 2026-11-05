@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
 
 /**
  * A full-width notice across the top of the content area, above the page
@@ -46,7 +47,7 @@ export function Banner({
   icon,
   actions,
   onDismiss,
-  dismissLabel = "Dismiss",
+  dismissLabel,
   children,
   ...props
 }: BannerProps) {
@@ -68,7 +69,7 @@ export function Banner({
         <button
           type="button"
           onClick={onDismiss}
-          aria-label={dismissLabel}
+          aria-label={dismissLabel ?? t("ui.banner.dismiss")}
           className="-m-1 shrink-0 rounded p-1 text-on-surface-muted hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X className="h-4 w-4" aria-hidden="true" />

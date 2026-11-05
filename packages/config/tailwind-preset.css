@@ -346,6 +346,58 @@
   }
 }
 
+/* US-OPS-09 (finding C25) — with reduced motion asked for, the duration
+   tokens collapse and every transition and animation ends at once, so
+   dialogs, drawers, toasts and popovers appear in their final state. 0.01ms
+   rather than 0 keeps transitionend/animationend firing for code waiting on
+   them. Spinners keep turning: they're the only sign that work is going on. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* US-OPS-14 — under 768px every control is at least 44×44px to tap.
+   :where() keeps this at zero specificity, so a component's own size still
+   applies from 768px up; min-height wins over a smaller fixed height.
+   Links inside running text keep the text's line height. Checkboxes,
+   radios and switches keep their look and get a 44px tap area around them. */
+@media (max-width: 767.98px) {
+  :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *)) {
+    min-height: 44px;
+  }
+  :where(button, [role="button"], [role="combobox"]) {
+    min-width: 44px;
+  }
+  :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"]), textarea) {
+    min-height: 44px;
+  }
+  :where([role="checkbox"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="radio"]) {
+    position: relative;
+  }
+  :where([role="checkbox"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="radio"])::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+}
+
 /* US-SET-10 — a preview of a customer document (Settings › Branding) stays
    light in both themes, like the PDFs and emails it stands for. */
 [data-surface="document"] {
@@ -451,6 +503,14 @@
     from {
       opacity: 0;
       scale: 0.97;
+    }
+  }
+
+  /* US-OPS-14 — the phone navigation's entrance from the left; used only with motion-safe:, so reduced motion shows it at once. */
+  --animate-nav-in: nav-in var(--duration-base) var(--easing-decelerate);
+  @keyframes nav-in {
+    from {
+      translate: -100% 0;
     }
   }
 

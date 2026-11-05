@@ -5,6 +5,7 @@ import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { NumberingStep, type NumberingSequenceValue } from "../../onboarding/steps/numbering-step";
 import { SavedToast } from "../saved-toast";
+import { useT } from "../../../lib/i18n";
 
 /**
  * S-10.5 — numbering prefixes and starting numbers, reused as-is from
@@ -12,6 +13,7 @@ import { SavedToast } from "../saved-toast";
  * — content/logic unchanged.
  */
 export function NumberingPane() {
+  const t = useT();
   const [rows, setRows] = useState<NumberingSequenceValue[] | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -38,12 +40,12 @@ export function NumberingPane() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Document numbering</h2>
-        <p className="text-[13px] text-on-surface-muted">Prefix and starting number for each document type.</p>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.numbering.title")}</h2>
+        <p className="text-[13px] text-on-surface-muted">{t("settings.numbering.description")}</p>
       </div>
       <NumberingStep
         initialValue={rows}
-        saveLabel="Save"
+        saveLabel={t("settings.common.save")}
         onSave={async (values) => {
           await Promise.all(
             values.map((row) =>

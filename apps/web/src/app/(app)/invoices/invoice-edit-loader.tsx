@@ -5,9 +5,11 @@ import { Alert, AlertDescription, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { InvoiceBuilder } from "./invoice-builder";
 import type { Invoice } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /** Fetches an existing invoice client-side, then hands it to InvoiceBuilder for editing — mirrors quotes/quote-edit-loader.tsx's own split-out-from-server-component reasoning. */
 export function InvoiceEditLoader({ invoiceId }: { invoiceId: string }) {
+  const t = useT();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,13 +18,13 @@ export function InvoiceEditLoader({ invoiceId }: { invoiceId: string }) {
       .get<Invoice>(`/invoices/${invoiceId}`)
       .then((inv) => {
         if (inv.status !== "draft") {
-          setError("Only a draft invoice can be edited. An issued invoice is immutable.");
+          setError(t("invoices.editPage.onlyDraft"));
           return;
         }
         setInvoice(inv);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load invoice."));
-  }, [invoiceId]);
+      .catch((err) => setError(err instanceof Error ? err.message : t("invoices.editPage.loadFailed")));
+  }, [invoiceId, t]);
 
   if (error) {
     return (

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner, cn } from "@spine/ui";
 import { Check, Circle, Flag, Lock, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useT } from "../../../../lib/i18n";
 import { useCanEditOwnership } from "../../../../lib/capabilities-context";
 import { HistorySection } from "../../../../components/history-section";
 import { MILESTONE_STATUS_LABELS, type EditableMilestone, type Job, type Milestone, type MilestoneAmountType } from "../types";
@@ -78,6 +79,7 @@ export function MilestonesSection({
   onInvoice: (m: Milestone) => void;
   invoicingId: string | null;
 }) {
+  const t = useT();
   const canOpen = useCanOpen();
   const [editing, setEditing] = useState(false);
   const [rows, setRows] = useState<EditableMilestone[]>([]);
@@ -121,11 +123,11 @@ export function MilestonesSection({
   async function handleSave() {
     setSaveError(null);
     if (!rows.length) {
-      setSaveError("Add at least one milestone.");
+      setSaveError(t("jobs.milestones.addAtLeastOne"));
       return;
     }
     if (rows.some((r) => !r.name.trim())) {
-      setSaveError("Every milestone needs a name.");
+      setSaveError(t("jobs.milestones.needsName"));
       return;
     }
     setSaving(true);
@@ -147,7 +149,7 @@ export function MilestonesSection({
       // "Milestone percentages must total 100% (currently 80%)") — see
       // this component's own doc comment on why this isn't re-derived
       // client-side.
-      setSaveError(err instanceof Error ? err.message : "Could not save milestones.");
+      setSaveError(err instanceof Error ? err.message : t("jobs.milestones.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -173,8 +175,7 @@ export function MilestonesSection({
         {anyInvoiced && (
           <Alert variant="warning">
             <AlertDescription>
-              At least one milestone has already been invoiced — its billing details can no longer be edited or removed, only new
-              milestones can be added alongside it.
+              {t("jobs.milestones.invoicedLocked")}
             </AlertDescription>
           </Alert>
         )}
@@ -183,31 +184,30 @@ export function MilestonesSection({
             const locked = row.status === "invoiced";
             return (
               <div key={row.key} className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-surface p-3">
-                <FormField label="Name" required className="min-w-[10rem] flex-1">
+                <FormField label={t("jobs.milestones.name")} required className="min-w-[10rem] flex-1">
                   {(field) => (
                     <Input
                       {...field}
                       value={row.name}
                       disabled={locked}
                       onChange={(e) => updateRow(row.key, { name: e.target.value })}
-                      placeholder="e.g. Foundation complete"
+                      placeholder={t("jobs.milestones.namePlaceholder")}
                     />
                   )}
                 </FormField>
-                <FormField label="Type" className="w-32">
+                <FormField label={t("jobs.milestones.type")} className="w-32">
                   {() => (
                     <NativeSelect
                       value={row.amountType}
                       disabled={locked}
                       onChange={(e) => updateRow(row.key, { amountType: e.target.value as MilestoneAmountType })}
                     >
-                      <option value="percent">% of contract</option>
-                      <option value="fixed">Fixed amount</option>
+                      <option value="percent">{t("jobs.milestones.percentOfContract")}</option>
+                      <option value="fixed">{t("jobs.milestones.fixedAmount")}</option>
                     </NativeSelect>
                   )}
                 </FormField>
-                {/* eslint-disable-next-line no-restricted-syntax -- a field label naming the currency to type in, not an amount */}
-                <FormField label={row.amountType === "percent" ? "Percent" : `Amount (${job.currency})`} className="w-32">
+                <FormField label={row.amountType === "percent" ? t("jobs.milestones.percent") : t("jobs.milestones.amountIn", { currency: job.currency })} className="w-32">
                   {(field) => (
                     <Input
                       {...field}
@@ -222,7 +222,7 @@ export function MilestonesSection({
                     />
                   )}
                 </FormField>
-                <FormField label="Due date" className="w-40">
+                <FormField label={t("jobs.milestones.dueDate")} className="w-40">
                   {() => (
                     <DatePicker
                       value={row.dueDate ? new Date(row.dueDate) : undefined}
@@ -235,7 +235,7 @@ export function MilestonesSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={`Remove ${row.name || "this milestone"}`}
+                    aria-label={t("jobs.milestones.removeAria", { name: row.name || t("jobs.milestones.thisMilestone") })}
                     onClick={() => removeRow(row.key)}
                   >
                     <Trash2 size={16} />
@@ -249,21 +249,21 @@ export function MilestonesSection({
         <div className="flex items-center justify-between">
           <Button type="button" variant="secondary" size="sm" onClick={addRow}>
             <Plus size={14} className="mr-1" />
-            Add milestone
+            {t("jobs.milestones.addMilestone")}
           </Button>
           {hasPercentRows && (
             <span className={`text-[13px] font-medium ${Math.round(percentTotal * 100) === 10000 ? "text-paid" : "text-overdue"}`}>
-              Percent total: {percentTotal}%
+              {t("jobs.milestones.percentTotal", { pct: percentTotal })}
             </span>
           )}
         </div>
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={cancelEditing} disabled={saving}>
-            Cancel
+            {t("jobs.milestones.cancel")}
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save milestones"}
+            {saving ? <Spinner size="sm" /> : t("jobs.milestones.save")}
           </Button>
         </div>
       </Card>
@@ -277,18 +277,19 @@ export function MilestonesSection({
   const billedPct = contract > 0n ? Math.min(100, Math.round(Number((billed * 1000n) / contract) / 10)) : 0;
   const done = milestones.filter((m) => m.status !== "pending").length;
   const held = BigInt(job.retentionHeld ?? "0");
+  const canOpenInvoices = canOpen("/invoices");
 
   if (ordered.length === 0) {
     return (
       <Card className="flex flex-col items-start gap-2" data-testid="milestones-empty">
-        <h3 className="text-[14px] font-semibold text-on-surface">Set up how this job is billed</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("jobs.milestones.emptyTitle")}</h3>
         <p className="text-[13px] text-on-surface-muted">
-          Split the contract into milestones — a share or an amount each, with a due date — and invoice each one as it&apos;s done. Without milestones, bill the job however you like.
+          {t("jobs.milestones.emptyDescription")}
         </p>
         {canManage && (
           <Button className="mt-1" onClick={startEditing}>
             <Plus size={14} aria-hidden />
-            Add milestones
+            {t("jobs.milestones.addMilestones")}
           </Button>
         )}
       </Card>
@@ -301,7 +302,7 @@ export function MilestonesSection({
         {withMoney ? (
           <>
             <span className="text-[13px] text-on-surface-muted" data-testid="milestones-billed">
-              Billed <b className="font-semibold text-on-surface">{formatMoney(billed, job.currency)}</b> of <b className="font-semibold text-on-surface">{formatMoney(contract, job.currency)}</b>
+              {t("jobs.milestones.billedPrefix")} <b className="font-semibold text-on-surface">{formatMoney(billed, job.currency)}</b> {t("jobs.milestones.billedOf")} <b className="font-semibold text-on-surface">{formatMoney(contract, job.currency)}</b>
             </span>
             <span className="h-2 min-w-24 flex-1 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
               <span className="block h-full rounded-full bg-primary" style={{ width: `${billedPct}%` }} />
@@ -310,12 +311,12 @@ export function MilestonesSection({
           </>
         ) : (
           <span className="flex-1 text-[13px] text-on-surface-muted">
-            {done} of {ordered.length} milestones done
+            {t("jobs.milestones.doneCount", { done, total: ordered.length })}
           </span>
         )}
         {canManage && (
           <Button variant="secondary" size="sm" onClick={startEditing}>
-            Edit milestones
+            {t("jobs.milestones.editMilestones")}
           </Button>
         )}
       </div>
@@ -323,7 +324,7 @@ export function MilestonesSection({
       <ol className="flex flex-col divide-y divide-border">
         {ordered.map((m) => {
           const due = milestoneDueText(m.dueDate, now, locale);
-          const share = m.amount === undefined ? null : m.amountType === "percent" ? `${m.amount}% of contract` : "Fixed amount";
+          const share = m.amount === undefined ? null : m.amountType === "percent" ? t("jobs.milestones.shareOfContract", { pct: m.amount }) : t("jobs.milestones.fixedAmount");
           return (
             <li key={m.id} className="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[28px_minmax(0,1fr)_auto_auto]" data-testid="milestone-row">
               <span
@@ -343,7 +344,7 @@ export function MilestonesSection({
                 <p className="text-[12.5px] text-on-surface-muted">
                   {[
                     share,
-                    m.status === "pending" ? null : m.completedAt ? `completed ${calendarDate(m.completedAt, now, locale)}` : null,
+                    m.status === "pending" ? null : m.completedAt ? t("jobs.milestones.completedOn", { date: calendarDate(m.completedAt, now, locale) }) : null,
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -353,9 +354,9 @@ export function MilestonesSection({
                       <span className={due.tone === "over" ? "font-medium text-overdue" : due.tone === "soon" ? "font-medium text-due-soon" : ""}>{due.text}</span>
                     </>
                   )}
-                  {m.status === "completed" && <span className="font-medium text-overdue"> · not invoiced yet</span>}
+                  {m.status === "completed" && <span className="font-medium text-overdue">{t("jobs.milestones.notInvoiced")}</span>}
                 </p>
-                {m.completionNotes && <p className="mt-1 text-[12px] text-on-surface-muted">“{m.completionNotes}”</p>}
+                {m.completionNotes && <p className="mt-1 text-[12px] text-on-surface-muted">{t("jobs.milestones.quotedNotes", { notes: m.completionNotes })}</p>}
               </div>
               <span className="col-start-2 text-[13.5px] font-semibold tabular-nums text-on-surface sm:col-start-auto sm:text-right">
                 {m.resolvedAmount !== undefined ? formatMoney(BigInt(m.resolvedAmount), job.currency) : ""}
@@ -363,20 +364,20 @@ export function MilestonesSection({
               <div className="col-start-2 flex items-center gap-1 sm:col-start-auto sm:justify-end">
                 {m.status === "pending" && canComplete(m) && (
                   <Button size="sm" variant="secondary" onClick={() => onComplete(m)}>
-                    Mark complete
+                    {t("jobs.milestones.markComplete")}
                   </Button>
                 )}
                 {m.status === "completed" && canInvoice && (
                   <Button size="sm" variant="secondary" onClick={() => onInvoice(m)} disabled={invoicingId === m.id}>
-                    {invoicingId === m.id ? <Spinner size="sm" /> : "Raise invoice"}
+                    {invoicingId === m.id ? <Spinner size="sm" /> : t("jobs.milestones.raiseInvoice")}
                   </Button>
                 )}
-                {m.status === "invoiced" && m.invoicedInvoiceId && canOpen("/invoices") && (
+                {m.status === "invoiced" && m.invoicedInvoiceId && canOpenInvoices && (
                   <Button size="sm" variant="secondary" asChild>
-                    <a href={`/invoices/${m.invoicedInvoiceId}`}>View invoice</a>
+                    <a href={`/invoices/${m.invoicedInvoiceId}`}>{t("jobs.milestones.viewInvoice")}</a>
                   </Button>
                 )}
-                <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel="this milestone" />
+                <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel={t("jobs.milestones.thisMilestone")} />
               </div>
             </li>
           );
@@ -387,8 +388,8 @@ export function MilestonesSection({
         <p className="flex items-center gap-2 border-t border-border px-4 py-3 text-[13px] text-on-surface-muted" data-testid="retention-held">
           <Lock size={14} aria-hidden />
           <span>
-            Retention held <b className="font-semibold text-on-surface">{formatMoney(held, job.currency)}</b>
-            {(job.retentionPct ?? 0) > 0 ? ` (${job.retentionPct}%)` : ""} — release it now the job is complete.
+            {t("jobs.milestones.retentionHeld")} <b className="font-semibold text-on-surface">{formatMoney(held, job.currency)}</b>
+            {(job.retentionPct ?? 0) > 0 ? ` (${job.retentionPct}%)` : ""}{t("jobs.milestones.releaseNow")}
           </span>
         </p>
       )}

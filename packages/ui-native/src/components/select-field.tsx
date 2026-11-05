@@ -4,6 +4,7 @@ import ChevronDown from "lucide-react-native/icons/chevron-down";
 import { MenuView } from "@expo/ui/community/menu";
 import { useNativeColors } from "../theme/use-native-colors";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export interface SelectFieldOption<T extends string> {
   label: string;
@@ -125,7 +126,7 @@ export function SelectField<T extends string>({
   value,
   onValueChange,
   disabled = false,
-  placeholder = "Select…",
+  placeholder: placeholderProp,
   variant = "bordered",
   floatingLabel,
   required = false,
@@ -133,6 +134,8 @@ export function SelectField<T extends string>({
   className,
   testID,
 }: SelectFieldProps<T>) {
+  const t = useT();
+  const placeholder = placeholderProp ?? t("uiNative.select.placeholder");
   const colors = useNativeColors();
   const selected = options.find((option) => option.value === value);
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);

@@ -54,6 +54,8 @@ jobs:
     outputs:
       code: ${{ github.event_name != 'pull_request' || steps.code.outputs.code == 'true' }}
       integration: ${{ github.event_name != 'pull_request' || steps.suites.outputs.integration == 'true' }}
+      # US-SITE-01: the docs site and the home page, built and link-checked when they change.
+      sites: ${{ github.event_name != 'pull_request' || steps.suites.outputs.sites == 'true' }}
       # D-260: E2E runs before a release or on demand, never on a pull request.
       e2e: ${{ github.event_name != 'pull_request' }}
     steps:
@@ -87,13 +89,20 @@ jobs:
               - *shared
               - "apps/api/**"
               - ".env.test"
+            sites:
+              - *shared
+              - "apps/docs/**"
+              - "apps/site/**"
+              - "scripts/site/**"
+              - "docs/design/tokens.json"
 
   static:
     name: Lint, typecheck and unit
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.sites == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # About 15 minutes with the audit, the API reference check and the two sites' builds (Phase 12).
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,6 +129,11 @@ jobs:
 
       # lint/typecheck/test depend on ^build, so Turbo builds the shared
       # packages they need. The apps' production builds run once, in the E2E job.
+      # US-OPS-18 (NFR-SEC-04): fails on any high or critical advisory in a production
+      # dependency; reviewed exceptions are in package.json's pnpm.auditConfig (docs/security-review.md).
+      - name: Dependency audit
+        run: pnpm audit --prod --audit-level high
+
       - name: Lint
         run: pnpm turbo run lint --cache-dir=.turbo
 
@@ -133,6 +147,15 @@ jobs:
       # The release and install scripts' own tests (US-OPS-51).
       - name: Script tests
         run: pnpm test:scripts
+
+      # US-SITE-10: the API reference is generated from the API; a stale openapi.json fails.
+      - name: API reference is up to date
+        run: pnpm --filter @spine/api openapi ../docs/openapi.json && git diff --exit-code -- apps/docs/openapi.json
+
+      # US-SITE-01, US-SITE-14: the home page with the docs under /docs/; a broken internal link fails the build.
+      - name: Build the docs site and home page
+        if: needs.changes.outputs.sites == 'true'
+        run: pnpm site:build
 
   integration:
     name: Integration
@@ -150,6 +173,8 @@ jobs:
       APP_URL: http://localhost:3000
       # Tests sign up a fresh organisation per case (US-AUTH-08 keeps sign-up closed otherwise).
       SPINE_ALLOW_OPEN_SIGNUP: "true"
+      # No request to GitHub Releases from tests (US-OPS-06).
+      UPDATE_CHECK: "off"
       # The s3 storage-driver tests run against S3Mock (US-OPS-27); uploads
       # elsewhere use the default local driver.
       S3_ENDPOINT: http://localhost:9000
@@ -204,6 +229,18 @@ jobs:
 
       - name: Build workspace dependencies
         run: pnpm turbo run build --cache-dir=.turbo --filter=@spine/api^...
+
+      # US-OPS-03/04's backup tests dump and restore with the database's own major version;
+      # the runner image's default client is newer than the PostgreSQL 16 service.
+      - name: PostgreSQL 16 client tools
+        run: |
+          # From PostgreSQL's own apt repository (PGDG), which has every supported major version.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-common >/dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y --no-install-recommends postgresql-client-16 >/dev/null
+          echo /usr/lib/postgresql/16/bin >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
 
       - name: Run DB migrations
         run: pnpm --filter @spine/api db:migrate

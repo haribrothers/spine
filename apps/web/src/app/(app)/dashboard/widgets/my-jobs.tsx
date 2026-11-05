@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
 import { WidgetSkeleton } from "../dashboard-skeleton";
+import { t as translate, useT } from "../../../../lib/i18n";
+import { orgLocaleTag } from "../../../../lib/money";
 
 interface MyJob {
   id: string;
@@ -21,10 +23,10 @@ function dueLabel(date: string): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
-  if (days === 0) return "due today";
-  if (days === 1) return "due tomorrow";
-  if (days > 1 && days < 7) return `due ${due.toLocaleDateString("en-GB", { weekday: "short" })}`;
-  return `due ${due.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+  if (days === 0) return translate("dashboard.myJobs.dueToday");
+  if (days === 1) return translate("dashboard.myJobs.dueTomorrow");
+  if (days > 1 && days < 7) return translate("dashboard.myJobs.dueOn", { date: due.toLocaleDateString(orgLocaleTag(), { weekday: "short" }) });
+  return translate("dashboard.myJobs.dueOn", { date: due.toLocaleDateString(orgLocaleTag(), { day: "numeric", month: "short" }) });
 }
 
 /**
@@ -33,6 +35,7 @@ function dueLabel(date: string): string {
  * API leaves it out for Field (D-048, D-072).
  */
 export function MyJobs() {
+  const t = useT();
   const [jobs, setJobs] = useState<MyJob[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -49,9 +52,9 @@ export function MyJobs() {
     <Card data-testid="my-jobs">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
-          My jobs
+          {t("dashboard.widgets.myJobs")}
           <Link href="/jobs" className="text-[13px] font-normal text-primary hover:underline">
-            All my jobs
+            {t("dashboard.myJobs.allMyJobs")}
           </Link>
         </CardTitle>
       </CardHeader>
@@ -59,7 +62,7 @@ export function MyJobs() {
         {!jobs ? (
           <WidgetSkeleton kind="rows" rows={3} />
         ) : jobs.length === 0 ? (
-          <p className="py-4 text-center text-[13px] text-on-surface-muted">No jobs assigned to you yet.</p>
+          <p className="py-4 text-center text-[13px] text-on-surface-muted">{t("dashboard.myJobs.empty")}</p>
         ) : (
           <ul className="flex flex-col divide-y divide-border">
             {jobs.map((job) => (
@@ -71,7 +74,7 @@ export function MyJobs() {
                   <span className="text-[13px] text-on-surface">{[job.contactName, job.siteAddress].filter(Boolean).join(" · ")}</span>
                   {job.nextMilestone && (
                     <span className="text-[12px] text-on-surface-muted">
-                      Next: {job.nextMilestone.name}
+                      {t("dashboard.myJobs.next", { name: job.nextMilestone.name })}
                       {job.nextMilestone.dueDate ? ` · ${dueLabel(job.nextMilestone.dueDate)}` : ""}
                     </span>
                   )}
@@ -83,7 +86,7 @@ export function MyJobs() {
                     rel="noreferrer"
                     className="shrink-0 text-[13px] text-primary hover:underline"
                   >
-                    Directions
+                    {t("dashboard.myJobs.directions")}
                   </a>
                 )}
               </li>

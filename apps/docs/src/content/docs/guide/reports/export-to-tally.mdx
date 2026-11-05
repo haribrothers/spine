@@ -1,0 +1,51 @@
+---
+title: Export your books for Tally
+description: Download a ZIP your accountant imports into TallyPrime or Tally.ERP 9, and choose the Tally group each account lands in.
+sidebar:
+  order: 12
+---
+
+If your accountant keeps your books in TallyPrime or Tally.ERP 9, they don't need to retype anything. Spine builds a ZIP of masters (ledgers) and vouchers (transactions) for a period, which they import in Tally. Before the first export, check which Tally group each of your accounts goes into.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**, can export. Only Owners can change the account mapping.</Aside>
+
+## Export the period
+
+<Steps>
+
+1. **Open Export to Tally** — Go to **Reports** and choose **Export to Tally** under Accountant.
+2. **Set the range** — Choose **From** and **To**.
+3. **Check the cards** — **Ledgers** (accounts used, customers and vendors), **Vouchers** (one per journal entry) and **Accounts on default groups**. If that card says to review the mapping, some accounts haven't been mapped yet.
+4. **Check the voucher types** — The table shows each **Spine document**, the **Tally voucher type** it becomes and the **Count**.
+5. **Download** — Press **Export**. A ZIP downloads with `masters.xml`, `vouchers.xml` and a `README.txt`.
+6. **Import in Tally** — In Tally, go to **Gateway of Tally › Import › Masters**, then **Transactions**.
+
+</Steps>
+
+<Screenshot id="reports-tally-export" alt="Export to Tally with the Ledgers, Vouchers and Accounts on default groups cards and the table of Spine documents and their Tally voucher types" />
+
+## What goes where
+
+- Every account used in the range becomes a ledger under its mapped group. Customers go under Sundry Debtors and vendors under Sundry Creditors, with their address, state and GSTIN.
+- Invoices become Sales vouchers, bills Purchase, customer payments Receipt, vendor payments and refunds Payment, transfers Contra, journals and opening balances Journal, credit notes Credit Note and vendor credits Debit Note. Each is balanced and refers to its invoice or bill number.
+- An account you haven't mapped uses the default for its type, and the README lists the defaults used.
+
+## Map your accounts to Tally groups
+
+<Steps>
+
+1. **Open Account mapping** — On Export to Tally, choose **Account mapping**.
+2. **Find the account** — Filter by **Account type** or use **Search accounts**. Each account shows its **Code**, name and **Spine type**.
+3. **Pick the Tally group** — Choose from Tally's own groups, such as Bank Accounts, Cash-in-Hand, Duties & Taxes, Sales Accounts, Direct Expenses or Indirect Expenses.
+4. **Save** — Press **Save mapping**. You see "Mapping saved", and later exports use these groups.
+
+</Steps>
+
+<Screenshot id="reports-tally-mapping" alt="The Account mapping page listing each account's code, name, Spine type and Tally group picker" />
+
+The first time, each account is mapped from its type and code: bank accounts to Bank Accounts, 1000 to Cash-in-Hand, the tax accounts to Duties & Taxes, 4xxx to Sales Accounts, 5xxx to Direct Expenses and 6xxx to Indirect Expenses.
+
+<Aside type="caution">Spine prepares these files; your accountant imports and checks them in Tally. The files hold customer and vendor details, so share them with care.</Aside>

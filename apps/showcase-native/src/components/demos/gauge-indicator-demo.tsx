@@ -6,7 +6,8 @@ export function GaugeIndicatorDemo() {
     <>
       <DemoLead>
         A semi-circular animated progress gauge — see Home’s revenue-goal card for this in real use. Animates a
-        genuine sweep-in from 0% on mount, not an instant jump to the final value.
+        genuine sweep-in from 0% on mount, not an instant jump to the final value. With Reduce Motion (iOS) or
+        Remove animations (Android) on, it shows the final value at once, without the spring.
       </DemoLead>
       <DemoSection title="Values">
         <DemoPreview>

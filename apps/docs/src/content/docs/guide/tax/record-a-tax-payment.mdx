@@ -1,0 +1,42 @@
+---
+title: Record a tax payment or refund
+description: Record what you paid the tax authority, the input tax you used against it, or a refund you received.
+sidebar:
+  order: 7
+---
+
+When you file a return and pay, record it in Spine. The payment clears Output Tax Payable in your books, uses up the input tax you claimed, and takes the money out of the account you paid from. A refund from the tax authority is recorded the same way.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners only. This is never given to a Team.</Aside>
+
+<Steps>
+
+1. **Open the Tax Summary** — Go to **Reports › Tax Summary** and press **Record tax payment**.
+2. **Check the figures** — The dialog shows the period's **Tax collected**, **Input tax available** and **Net payable**.
+3. **Choose the Period** — Pick the return period you're paying for.
+4. **Enter Input tax used** — It starts at the smaller of the input tax available and the tax collected. The helper says how much you have to use.
+5. **Enter Amount paid** — It starts at the net payable.
+6. **Pick the account** — Choose the bank or cash account the money went from, set the **Date**, and add a **Reference**, such as the challan or return number.
+7. **Check the posting** — The line under the form shows what posts to your books: a debit to Output Tax Payable for the amount paid plus the input tax used, a credit to Input Tax Receivable for the input tax used, and a credit to the account you paid from.
+8. **Record it** — Press **Record payment**. You see "Tax payment recorded".
+
+</Steps>
+
+<Screenshot id="tax-payment" alt="The Record tax payment dialog with Tax collected, Input tax available and Net payable above the period, input tax used, amount paid and account fields" />
+
+If you enter more input tax than you have, you see "You have *amount* of input tax to use. Lower the amount."
+
+## Record a refund
+
+In the same dialog, press **Record a tax refund instead**. Enter the **Amount** the tax authority paid back, the account it went into, the **Date** and a **Reference**, then press **Record refund**. You see "Tax refund recorded".
+
+## See and delete tax payments
+
+Owners see **Tax payments and refunds** below the Tax Summary, listing each payment or refund in the period.
+
+<Aside type="caution">Deleting a tax payment reverses it in your books, so the tax it paid shows as owed again. Spine asks first, and the payment stays listed, marked deleted. A payment that's been reconciled on a bank statement can't be deleted.</Aside>
+
+While you reconcile a bank statement, you can also record a tax payment straight from the statement line it matches. See [Banking](../../banking/).

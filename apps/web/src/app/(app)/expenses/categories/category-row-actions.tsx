@@ -6,6 +6,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { useCanEditOwnership } from "../../../../lib/capabilities-context";
 import { MENU_ICONS } from "../../../../lib/menu-icons";
 import type { ExpenseCategory } from "../types";
+import { useT } from "../../../../lib/i18n";
 
 export interface CategoryRowHandlers {
   onEdit: (category: ExpenseCategory) => void;
@@ -14,8 +15,6 @@ export interface CategoryRowHandlers {
   onFailed: (title: string, description: string) => void;
 }
 
-const expensesWord = (n: number) => `${n} expense${n === 1 ? "" : "s"}`;
-
 /**
  * US-PUR-47 (D-218, D-222) — a category row's menu: Edit, View history,
  * Archive (or Restore) and Delete, each with its icon and right,
@@ -23,6 +22,7 @@ const expensesWord = (n: number) => `${n} expense${n === 1 ? "" : "s"}`;
  * otherwise the menu says to archive it. Archive and Delete ask first.
  */
 export function CategoryRowActions({ category, expenseCount, handlers }: { category: ExpenseCategory; expenseCount: number | null; handlers: CategoryRowHandlers }) {
+  const t = useT();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const canEdit = useCanEditOwnership(category.createdByUserId, { own: "expense_categories.edit_own", others: "expense_categories.edit_others" });
   const canRemove = useCanEditOwnership(category.createdByUserId, { own: "expense_categories.delete_own", others: "expense_categories.delete_others" });
@@ -31,36 +31,36 @@ export function CategoryRowActions({ category, expenseCount, handlers }: { categ
 
   async function archive() {
     const ok = await confirm({
-      title: `Archive ${category.name}?`,
-      description: `It leaves the expense form, so no new expense can use it. ${inUse ? `Its ${expensesWord(expenseCount!)} ${expenseCount === 1 ? "keeps" : "keep"} it, and you` : "You"} can restore it at any time.`,
-      confirmLabel: "Archive category",
+      title: t("expenses.categories.archiveTitle", { name: category.name }),
+      description: inUse ? t("expenses.categories.archiveDescriptionInUse", { count: expenseCount! }) : t("expenses.categories.archiveDescription"),
+      confirmLabel: t("expenses.categories.archiveConfirm"),
     });
     if (!ok) return;
     try {
       await apiClient.post(`/expense-categories/${category.id}/archive`);
-      handlers.onDone(`${category.name} archived`, "It's no longer offered on the expense form. Restore it from Archived.");
+      handlers.onDone(t("expenses.categories.archivedToast", { name: category.name }), t("expenses.categories.archivedToastDescription"));
     } catch (err) {
-      handlers.onFailed(`Couldn't archive ${category.name}.`, err instanceof Error ? err.message : "Try again.");
+      handlers.onFailed(t("expenses.categories.archiveFailed", { name: category.name }), err instanceof Error ? err.message : t("expenses.common.tryAgain"));
     }
   }
 
   async function restore() {
     try {
       await apiClient.post(`/expense-categories/${category.id}/restore`);
-      handlers.onDone(`${category.name} restored`, "It's back on the expense form.");
+      handlers.onDone(t("expenses.categories.restoredToast", { name: category.name }), t("expenses.categories.restoredToastDescription"));
     } catch (err) {
-      handlers.onFailed(`Couldn't restore ${category.name}.`, err instanceof Error ? err.message : "Try again.");
+      handlers.onFailed(t("expenses.categories.restoreFailed", { name: category.name }), err instanceof Error ? err.message : t("expenses.common.tryAgain"));
     }
   }
 
   async function remove() {
-    const ok = await confirm({ title: `Delete ${category.name}?`, description: "No expense uses it, so it's removed for good. This can't be undone.", confirmLabel: "Delete category", danger: true });
+    const ok = await confirm({ title: t("expenses.categories.deleteTitle", { name: category.name }), description: t("expenses.categories.deleteDescription"), confirmLabel: t("expenses.categories.deleteConfirm"), danger: true });
     if (!ok) return;
     try {
       await apiClient.delete(`/expense-categories/${category.id}`);
-      handlers.onDone(`${category.name} deleted`, "It's been removed for good.");
+      handlers.onDone(t("expenses.categories.deletedToast", { name: category.name }), t("expenses.categories.deletedToastDescription"));
     } catch (err) {
-      handlers.onFailed(`Couldn't delete ${category.name}.`, err instanceof Error ? err.message : "Try again.");
+      handlers.onFailed(t("expenses.categories.deleteFailed", { name: category.name }), err instanceof Error ? err.message : t("expenses.common.tryAgain"));
     }
   }
 
@@ -70,7 +70,7 @@ export function CategoryRowActions({ category, expenseCount, handlers }: { categ
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${category.name}`}
+            aria-label={t("expenses.categories.actionsAria", { name: category.name })}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
             <MoreHorizontal size={16} />
@@ -80,38 +80,38 @@ export function CategoryRowActions({ category, expenseCount, handlers }: { categ
           {canEdit && (
             <DropdownMenuItem onSelect={() => handlers.onEdit(category)}>
               <MENU_ICONS.edit aria-hidden />
-              Edit
+              {t("expenses.common.edit")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => handlers.onHistory(category)}>
             <MENU_ICONS.history aria-hidden />
-            View history
+            {t("expenses.common.viewHistory")}
           </DropdownMenuItem>
           {canRemove && !archived && (
             <DropdownMenuItem onSelect={() => void archive()}>
               <MENU_ICONS.archive aria-hidden />
-              Archive
+              {t("expenses.categories.archive")}
             </DropdownMenuItem>
           )}
           {canRemove && archived && (
             <DropdownMenuItem onSelect={() => void restore()}>
               <MENU_ICONS.restore aria-hidden />
-              Restore
+              {t("expenses.categories.restore")}
             </DropdownMenuItem>
           )}
           {canRemove && expenseCount !== null && <DropdownMenuSeparator />}
           {canRemove && expenseCount !== null && !inUse && (
             <DropdownMenuItem destructive onSelect={() => void remove()}>
               <MENU_ICONS.delete aria-hidden />
-              Delete
+              {t("expenses.common.delete")}
             </DropdownMenuItem>
           )}
           {canRemove && inUse && (
             <DropdownMenuItem disabled>
               <MENU_ICONS.delete aria-hidden />
               <span className="flex flex-col">
-                Delete
-                <span className="text-[11.5px]">In use — archive it instead</span>
+                {t("expenses.common.delete")}
+                <span className="text-[11.5px]">{t("expenses.categories.inUse")}</span>
               </span>
             </DropdownMenuItem>
           )}

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "tax-settings",
+    "path": "/dashboard?settings=tax",
+    "alt": "Settings › Tax with the prices-include-tax switch, the country, the return period, and the lists of tax rates and tax groups",
+    "wait": "Tax rates"
+  },
+  {
+    "id": "tax-country",
+    "path": "/dashboard?settings=tax",
+    "alt": "The Country and Return period settings at the top of Settings › Tax",
+    "wait": "Return period"
+  },
+  {
+    "id": "tax-add-rate",
+    "path": "/dashboard?settings=tax",
+    "alt": "The Add tax rate dialog with Name, Rate (%), Tax type, the supply type and the Compound option",
+    "click": "Add rate",
+    "wait": "Add tax rate"
+  },
+  {
+    "id": "tax-groups",
+    "path": "/dashboard?settings=tax",
+    "alt": "The Tax groups list in Settings › Tax with each group's rates shown beside its name",
+    "wait": "Tax groups"
+  },
+  {
+    "id": "tax-prices-include",
+    "path": "/dashboard?settings=tax",
+    "alt": "The Prices include tax by default switch in Settings › Tax",
+    "wait": "Prices include tax by default"
+  },
+  {
+    "id": "tax-summary",
+    "path": "/reports/tax-summary",
+    "alt": "The Tax Summary with the Tax collected, Tax paid, Net payable and Paid to the tax authority cards, and the tax type and rate tables",
+    "wait": "Collected by rate"
+  },
+  {
+    "id": "tax-payment",
+    "path": "/reports/tax-summary",
+    "alt": "The Record tax payment dialog with Tax collected, Input tax available and Net payable above the period, input tax used, amount paid and account fields",
+    "click": "Record tax payment",
+    "wait": "Input tax available"
+  }
+]

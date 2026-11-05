@@ -2,10 +2,11 @@ import { itemTaxFor, type AiQuoteLine, type CatalogBundle, type SupplyType } fro
 import { bundleLines } from "../../../lib/bundles";
 import { blankLine, type EditableQuoteLine } from "./quote-line-editor";
 import type { CatalogItemOption } from "./types";
+import { t } from "../../../lib/i18n";
 
-export const NOT_IN_CATALOGUE_PRICE = "Add a price — not in your catalogue.";
+export const NOT_IN_CATALOGUE_PRICE = t("quotes.aiLines.notInCataloguePrice");
 /** Names the currency only — no amount to format. */
-export const otherCurrencyPrice = (code: string) => `Add a price — the catalogue price is in ${code}.`;
+export const otherCurrencyPrice = (code: string) => t("quotes.aiLines.otherCurrencyPrice", { code });
 
 export interface AiRowContext {
   catalogItems: CatalogItemOption[];
@@ -23,15 +24,15 @@ export function proposedLineView(line: AiQuoteLine, ctx: Pick<AiRowContext, "cat
   if (item) {
     const code = item.defaultPriceCurrency;
     const same = code === ctx.currency;
-    return { source: same ? `Catalogue item · per ${item.unit}` : `Catalogue item · price in ${code}`, priceAmount: same ? BigInt(item.defaultPriceAmount) : null };
+    return { source: same ? t("quotes.aiLines.catalogueItemPer", { unit: item.unit }) : t("quotes.aiLines.catalogueItemPriceIn", { code }), priceAmount: same ? BigInt(item.defaultPriceAmount) : null };
   }
   const bundle = line.bundleId ? ctx.bundles.find((b) => b.id === line.bundleId) : undefined;
   if (bundle) {
     const items = bundle.lines.filter((l) => l.type === "item");
     const names = items.slice(0, 3).map((l) => l.name).join(", ");
-    return { source: `Bundle · ${names ? `${names} · ` : ""}${items.length} line${items.length === 1 ? "" : "s"}`, priceAmount: BigInt(bundle.totalAmount) * BigInt(Math.max(1, Math.round(line.quantity))) };
+    return { source: names ? t("quotes.aiLines.bundleWithNames", { names, count: items.length }) : t("quotes.aiLines.bundle", { count: items.length }), priceAmount: BigInt(bundle.totalAmount) * BigInt(Math.max(1, Math.round(line.quantity))) };
   }
-  return { source: "Not in your catalogue", priceAmount: null };
+  return { source: t("quotes.aiLines.notInCatalogue"), priceAmount: null };
 }
 
 /**

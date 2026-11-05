@@ -8,7 +8,11 @@ import { MoreHorizontal } from "lucide-react";
 import { orgLocaleTag } from "../../../lib/money";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useT } from "../../../lib/i18n";
 import { emailNote } from "./emails-list-state";
+
+/** The time a row was sent or queued, e.g. "10:42 AM". */
+const TIME_FORMAT: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
 
 const STATUS_CLASS: Record<EmailLogStatus, string> = {
   queued: "bg-draft-bg text-draft",
@@ -47,19 +51,20 @@ export function EmailsTable({
   onRetry: (email: EmailLogEntry) => void;
   onCancel: (email: EmailLogEntry) => void;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const columns: TableColumn<EmailLogEntry>[] = [
     {
       key: "when",
-      header: "When",
+      header: t("emails.columns.when"),
       render: (row) => {
         const at = row.sentAt ?? row.queuedAt;
         const day = new Date(at);
         const today = day.toDateString() === now.toDateString();
         return (
           <div className="flex flex-col whitespace-nowrap">
-            <span className="font-medium text-on-surface">{day.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}</span>
-            <span className="text-[12px] text-on-surface-muted">{today ? "Today" : calendarDate(at, now, locale)}</span>
+            <span className="font-medium text-on-surface">{day.toLocaleTimeString(locale, TIME_FORMAT)}</span>
+            <span className="text-[12px] text-on-surface-muted">{today ? t("emails.table.today") : calendarDate(at, now, locale)}</span>
           </div>
         );
       },
@@ -67,11 +72,11 @@ export function EmailsTable({
     },
     {
       key: "to",
-      header: "To",
+      header: t("emails.columns.to"),
       render: (row) => (
         <div className="flex max-w-60 flex-col">
           <span className="truncate" title={row.toAddress}>
-            {row.toAddress || <span className="italic text-on-surface-muted">No address</span>}
+            {row.toAddress || <span className="italic text-on-surface-muted">{t("emails.table.noAddress")}</span>}
           </span>
           {row.toName && <span className="truncate text-[12px] text-on-surface-muted">{row.toName}</span>}
         </div>
@@ -80,7 +85,7 @@ export function EmailsTable({
     },
     {
       key: "subject",
-      header: "Subject",
+      header: t("emails.columns.subject"),
       render: (row) => {
         const note = emailNote(row, locale);
         return (
@@ -99,7 +104,7 @@ export function EmailsTable({
     },
     {
       key: "record",
-      header: "Record",
+      header: t("emails.columns.record"),
       render: (row) => {
         const href = emailRecordHref(row.entityType, row.entityId);
         if (!row.recordLabel) return <span className="text-on-surface-muted">—</span>;
@@ -115,7 +120,7 @@ export function EmailsTable({
     },
     {
       key: "status",
-      header: "Status",
+      header: t("emails.columns.status"),
       render: (row) => (
         <Badge className={STATUS_CLASS[row.status]} data-testid="email-status">
           {EMAIL_LOG_STATUS_LABELS[row.status]}
@@ -125,10 +130,10 @@ export function EmailsTable({
     },
     {
       key: "attempts",
-      header: "Attempts",
+      header: t("emails.columns.attempts"),
       render: (row) => (
         <span className="whitespace-nowrap tabular-nums text-on-surface-muted">
-          {row.attempts} of {row.maxAttempts}
+          {t("emails.table.attempts", { attempts: row.attempts, max: row.maxAttempts })}
         </span>
       ),
       sortValue: (row) => row.attempts,
@@ -161,6 +166,7 @@ export function EmailsTable({
 
 /** Retry now and Cancel for a queued email; the record to open, where it can be sent again. */
 function EmailRowActions({ email, onRetry, onCancel }: { email: EmailLogEntry; onRetry: (email: EmailLogEntry) => void; onCancel: (email: EmailLogEntry) => void }) {
+  const t = useT();
   const router = useRouter();
   const href = emailRecordHref(email.entityType, email.entityId);
   const record = href && email.recordLabel;
@@ -170,7 +176,7 @@ function EmailRowActions({ email, onRetry, onCancel }: { email: EmailLogEntry; o
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for the email to ${email.toAddress || "no address"}`}
+          aria-label={t("emails.table.actionsFor", { address: email.toAddress || t("emails.table.noAddressLower") })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -180,13 +186,13 @@ function EmailRowActions({ email, onRetry, onCancel }: { email: EmailLogEntry; o
         {email.canRetry && (
           <DropdownMenuItem onSelect={() => onRetry(email)}>
             <MENU_ICONS.retry aria-hidden />
-            Retry now
+            {t("emails.table.retryNow")}
           </DropdownMenuItem>
         )}
         {record && (
           <DropdownMenuItem onSelect={() => router.push(href)}>
             <MENU_ICONS.open aria-hidden />
-            Open {email.recordLabel}
+            {t("emails.table.open", { record: email.recordLabel ?? "" })}
           </DropdownMenuItem>
         )}
         {email.canCancel && (
@@ -194,7 +200,7 @@ function EmailRowActions({ email, onRetry, onCancel }: { email: EmailLogEntry; o
             {(email.canRetry || record) && <DropdownMenuSeparator />}
             <DropdownMenuItem destructive onSelect={() => onCancel(email)}>
               <MENU_ICONS.cancel aria-hidden />
-              Cancel
+              {t("emails.table.cancel")}
             </DropdownMenuItem>
           </>
         )}

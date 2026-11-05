@@ -1,0 +1,15 @@
+---
+title: Versions
+description: The docs for each version of Spine.
+sidebar:
+  hidden: true
+---
+
+import versions from "../../versions.json";
+
+These docs are for the latest version of Spine. Settings › About Spine shows the version you run, and every install also serves the guide for its own version at `/help` on your server.
+
+- **Latest** — this site.
+{versions.archived.map((v) => <>{"\n"}- <a href={`/${v.slug}/`}>v{v.slug}</a></>)}
+
+{versions.archived.length === 0 && <p>Older versions are listed here once a newer minor version is released.</p>}

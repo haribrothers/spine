@@ -1,12 +1,13 @@
 import { Skeleton, TableSkeleton } from "@spine/ui";
+import { t } from "../../../lib/i18n";
 
 /** Mirrors VendorPaymentsTable's own `columns` (header text, order) so the loading state never drifts out of sync with the real table. */
 const TABLE_COLUMNS = [
-  { key: "number", header: "Number", width: "w-24" },
-  { key: "date", header: "Date", width: "w-24" },
-  { key: "contact", header: "Vendor", width: "w-40" },
-  { key: "method", header: "Method", width: "w-28" },
-  { key: "amount", header: "Amount", width: "w-24" },
+  { key: "number", header: t("vendorPayments.columns.number"), width: "w-24" },
+  { key: "date", header: t("vendorPayments.columns.date"), width: "w-24" },
+  { key: "contact", header: t("vendorPayments.columns.vendor"), width: "w-40" },
+  { key: "method", header: t("vendorPayments.columns.method"), width: "w-28" },
+  { key: "amount", header: t("vendorPayments.columns.amount"), width: "w-24" },
 ];
 
 /** Loading placeholder shaped like VendorPaymentsTable's actual columns. */

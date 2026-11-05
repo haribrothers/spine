@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@spine/ui";
 import { ONBOARDING_STAGES, TOTAL_MINUTES } from "../onboarding-stages";
+import { useT } from "../../../lib/i18n";
 
 export interface WelcomeStepProps {
   /** The owner's name, for "Welcome to Spine, <first name>". */
@@ -20,12 +21,13 @@ export interface WelcomeStepProps {
  * Spine drawn small beside it.
  */
 export function WelcomeStep({ ownerName, onStartManual, onUseDemoDefaults, onSkip }: WelcomeStepProps) {
+  const t = useT();
   const firstName = ownerName?.trim().split(/\s+/)[0];
   return (
     <div className="flex flex-col">
-      <h1 className="text-[32px] font-bold leading-tight tracking-tight text-on-surface">{firstName ? `Welcome to Spine, ${firstName}` : "Welcome to Spine"}</h1>
+      <h1 className="text-[32px] font-bold leading-tight tracking-tight text-on-surface">{firstName ? t("onboarding.welcome.titleWithName", { name: firstName }) : t("onboarding.welcome.title")}</h1>
       <p className="mt-3 text-[15px] leading-relaxed text-on-surface-muted">
-        Four short stages, about {TOTAL_MINUTES} minutes. Skip anything — it&apos;s all in Settings later.
+        {t("onboarding.welcome.intro", { minutes: TOTAL_MINUTES })}
       </p>
       <ol className="mt-6 flex flex-col gap-3">
         {ONBOARDING_STAGES.map((stage, i) => (
@@ -42,14 +44,14 @@ export function WelcomeStep({ ownerName, onStartManual, onUseDemoDefaults, onSki
       </ol>
       <div className="mt-7 flex flex-col gap-2.5">
         <Button size="touch" onClick={onStartManual}>
-          Set up my business
+          {t("onboarding.welcome.setUp")}
           <ArrowRight size={16} aria-hidden />
         </Button>
         <Button size="touch" variant="secondary" onClick={onUseDemoDefaults}>
-          Just show me around (use defaults)
+          {t("onboarding.welcome.showMeAround")}
         </Button>
         <Button size="touch" variant="ghost" onClick={onSkip}>
-          Skip to dashboard
+          {t("onboarding.common.skipToDashboard")}
         </Button>
       </div>
     </div>

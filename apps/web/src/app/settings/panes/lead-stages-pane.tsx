@@ -31,6 +31,7 @@ import { LEAD_STAGE_NAME_MAX, MAX_LEAD_STAGES, putLeadStagesSchema, type LeadSta
 import { apiClient } from "../../../lib/api-client";
 import { STAGE_DOT_CLASS, useLeadStages } from "../../(app)/contacts/use-lead-stages";
 import { SavedToast } from "../saved-toast";
+import { t, useT } from "../../../lib/i18n";
 
 /** A row being edited: `id` is absent for a stage added in this session. */
 interface StageRow {
@@ -42,7 +43,7 @@ interface StageRow {
   leadCount: number;
 }
 
-const KIND_LABEL: Record<LeadStageKind, string> = { open: "Open", won: "Won", lost: "Lost" };
+const KIND_LABEL: Record<LeadStageKind, string> = { open: t("settings.leadStages.kinds.open"), won: t("settings.leadStages.kinds.won"), lost: t("settings.leadStages.kinds.lost") };
 const KIND_CLASS: Record<LeadStageKind, string> = { open: "text-on-surface-muted", won: "font-medium text-paid", lost: "font-medium text-overdue" };
 
 function toRows(stages: LeadStage[]): StageRow[] {
@@ -57,6 +58,7 @@ function toRows(stages: LeadStage[]): StageRow[] {
  * moves, is saved at once (`PUT /org/lead-stages`).
  */
 export function LeadStagesPane() {
+  const t = useT();
   const { stages, error: loadError, setStages } = useLeadStages();
   const [rows, setRows] = useState<StageRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export function LeadStagesPane() {
   function addStage() {
     if (atLimit) return;
     const key = `new-${crypto.randomUUID()}`;
-    setRows([...open, { key, name: "New stage", kind: "open", leadCount: 0 }, ...closed]);
+    setRows([...open, { key, name: t("settings.leadStages.newStage"), kind: "open", leadCount: 0 }, ...closed]);
   }
 
   function removeRow(row: StageRow, target?: string) {
@@ -144,7 +146,7 @@ export function LeadStagesPane() {
       setStages(updated);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save the stages. Try again.");
+      setError(err instanceof Error ? err.message : t("settings.leadStages.saveError"));
     } finally {
       setSaving(false);
     }
@@ -173,12 +175,12 @@ export function LeadStagesPane() {
             <>
               <DragHandle />
               <span className="flex flex-col opacity-0 focus-within:opacity-100">
-                <button type="button" aria-label={`Move ${row.name} up`} disabled={index === 0} onClick={() => moveOpen(row.key, -1)} className="text-on-surface-muted disabled:opacity-30">
+                <button type="button" aria-label={t("settings.leadStages.moveUp", { name: row.name })} disabled={index === 0} onClick={() => moveOpen(row.key, -1)} className="text-on-surface-muted disabled:opacity-30">
                   <ArrowUp size={12} />
                 </button>
                 <button
                   type="button"
-                  aria-label={`Move ${row.name} down`}
+                  aria-label={t("settings.leadStages.moveDown", { name: row.name })}
                   disabled={index === open.length - 1}
                   onClick={() => moveOpen(row.key, 1)}
                   className="text-on-surface-muted disabled:opacity-30"
@@ -190,16 +192,16 @@ export function LeadStagesPane() {
           )}
         </span>
         <span aria-hidden="true" className={cn("h-2.5 w-2.5 shrink-0 rounded-full", row.color ? STAGE_DOT_CLASS[row.color] : "bg-border-strong")} />
-        <Input aria-label={`Stage name (${KIND_LABEL[row.kind]})`} value={row.name} maxLength={LEAD_STAGE_NAME_MAX} onChange={(e) => rename(row.key, e.target.value)} className="flex-1" />
+        <Input aria-label={t("settings.leadStages.stageName", { kind: KIND_LABEL[row.kind] })} value={row.name} maxLength={LEAD_STAGE_NAME_MAX} onChange={(e) => rename(row.key, e.target.value)} className="flex-1" />
         <span className={cn("w-14 shrink-0 text-[13px]", KIND_CLASS[row.kind])}>{KIND_LABEL[row.kind]}</span>
         <span className="w-16 shrink-0 text-right text-[13px] text-on-surface-muted">
-          {row.leadCount} {row.leadCount === 1 ? "lead" : "leads"}
+          {t("settings.leadStages.leadCount", { count: row.leadCount })}
         </span>
         <span className="flex w-6 shrink-0 justify-center">
           {!locked && (
             <button
               type="button"
-              aria-label={`Delete ${row.name}`}
+              aria-label={t("settings.leadStages.deleteRow", { name: row.name })}
               onClick={() => askDelete(row)}
               className="rounded-sm text-overdue transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
@@ -207,8 +209,8 @@ export function LeadStagesPane() {
             </button>
           )}
           {locked && (
-            <span title="Won and Lost can be renamed but not moved or deleted" className="text-on-surface-muted">
-              <Lock size={14} aria-label="Can't be moved or deleted" />
+            <span title={t("settings.leadStages.lockedTitle")} className="text-on-surface-muted">
+              <Lock size={14} aria-label={t("settings.leadStages.lockedLabel")} />
             </span>
           )}
         </span>
@@ -219,9 +221,9 @@ export function LeadStagesPane() {
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSave} noValidate>
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Pipeline stages</h2>
+        <h2 className="text-[15px] font-semibold text-on-surface">{t("settings.leadStages.title")}</h2>
         <p className="text-[13px] text-on-surface-muted">
-          The columns on your pipeline board. Rename, reorder or add stages. Won and Lost always stay last so reports can tell a closed lead from an open one.
+          {t("settings.leadStages.description")}
         </p>
       </div>
       {error && (
@@ -247,17 +249,17 @@ export function LeadStagesPane() {
 
       <div className="flex flex-col items-start gap-2">
         <Button type="button" variant="secondary" onClick={addStage} disabled={atLimit}>
-          + Add stage
+          {t("settings.leadStages.addStage")}
         </Button>
         <p className="text-[12px] text-on-surface-muted">
-          {atLimit ? "Up to 12 stages." : "Deleting a stage that still has leads asks which stage to move them to first. Up to 12 stages."}
+          {atLimit ? t("settings.leadStages.limit") : t("settings.leadStages.deleteHint")}
         </p>
         {problem && <p className="text-[13px] text-overdue">{problem}</p>}
       </div>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={saving || !!problem}>
-          {saving ? <Spinner size="sm" /> : "Save"}
+          {saving ? <Spinner size="sm" /> : t("settings.common.save")}
         </Button>
       </div>
       <SavedToast open={saved} onOpenChange={setSaved} />
@@ -265,21 +267,21 @@ export function LeadStagesPane() {
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{deleting?.name}”?</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.leadStages.deleteConfirm.title", { name: deleting?.name ?? "" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Its leads aren&apos;t deleted — they move to the stage you choose when you save the stages.
+              {t("settings.leadStages.deleteConfirm.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <FormField label={`Move ${deleting?.leadCount ?? 0} ${deleting?.leadCount === 1 ? "lead" : "leads"} to:`}>
+          <FormField label={t("settings.leadStages.deleteConfirm.moveLeads", { count: deleting?.leadCount ?? 0 })}>
             {(field) => (
               <Select value={moveTo} onValueChange={setMoveTo}>
                 <SelectTrigger {...field} className="w-full">
-                  <SelectValue placeholder="Choose a stage…" />
+                  <SelectValue placeholder={t("settings.leadStages.deleteConfirm.chooseStage")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {moveTargets.map((t) => (
-                    <SelectItem key={t.key} value={t.id!}>
-                      {t.name}
+                  {moveTargets.map((target) => (
+                    <SelectItem key={target.key} value={target.id!}>
+                      {target.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -287,7 +289,7 @@ export function LeadStagesPane() {
             )}
           </FormField>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("settings.leadStages.deleteConfirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               variant="danger"
               disabled={!moveTo}
@@ -296,7 +298,7 @@ export function LeadStagesPane() {
                 setDeleting(null);
               }}
             >
-              Delete stage
+              {t("settings.leadStages.deleteConfirm.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

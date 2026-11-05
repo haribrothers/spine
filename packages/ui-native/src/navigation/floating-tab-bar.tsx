@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View, type LayoutChangeEvent } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { lightColors, darkColors } from "../tokens";
+import { useReduceMotion } from "../hooks/use-reduce-motion";
 
 /**
  * A fully custom bottom tab bar (GitHub-iOS-style: a floating, rounded,
@@ -80,14 +81,16 @@ export function FloatingTabBar({ state, descriptors, navigation, insets, resolve
   const [highlightReady, setHighlightReady] = useState(false);
   const highlightX = useRef(new Animated.Value(0)).current;
   const highlightWidth = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   function animateHighlightTo(index: number) {
     const layout = tabLayouts.current[index];
     if (!layout) return;
-    if (!highlightReady) {
+    if (!highlightReady || reduceMotion) {
       // First measurement (initial mount / initial focused tab): snap
       // instead of sliding in from the top-left corner, which is what an
       // Animated.Value's un-set 0 default would otherwise animate from.
+      // With Reduce Motion on (US-OPS-09), every move snaps the same way.
       highlightX.setValue(layout.x);
       highlightWidth.setValue(layout.width);
       setHighlightReady(true);
@@ -139,6 +142,7 @@ export function FloatingTabBar({ state, descriptors, navigation, insets, resolve
           const color = isFocused ? colors.primary : colors.onSurfaceMuted;
 
           function onPress() {
+            // eslint-disable-next-line i18next/no-literal-string -- a navigation event name, not copy
             const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
             if (!isFocused && !event.defaultPrevented) {
               navigation.navigate(route.name);

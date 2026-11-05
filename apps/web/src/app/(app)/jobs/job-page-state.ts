@@ -1,6 +1,7 @@
 import type { JobActivityEntry } from "@spine/shared";
 import { calendarDate, daysUntil } from "../quotes/quotes-list-state";
 import type { Job, JobPhoto, Milestone } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** Milestones in the order they're billed. */
 export function inOrder(milestones: Milestone[]): Milestone[] {
@@ -25,22 +26,22 @@ export function nextStep(
 ): NextStep | null {
   const ordered = inOrder(milestones);
   const toInvoice = ordered.find((m) => m.status === "completed");
-  if (toInvoice && can.invoice) return { kind: "invoice", milestone: toInvoice, label: `Invoice ${toInvoice.name}` };
+  if (toInvoice && can.invoice) return { kind: "invoice", milestone: toInvoice, label: t("jobs.next.invoice", { name: toInvoice.name }) };
   if (job.status !== "completed" && job.status !== "cancelled") {
     const pending = ordered.find((m) => m.status === "pending");
-    if (pending && can.complete(pending)) return { kind: "complete", milestone: pending, label: `Complete ${pending.name}` };
+    if (pending && can.complete(pending)) return { kind: "complete", milestone: pending, label: t("jobs.next.complete", { name: pending.name }) };
   }
-  if (job.status === "completed" && BigInt(job.retentionHeld ?? "0") > 0n && can.release) return { kind: "release", label: "Release retention" };
+  if (job.status === "completed" && BigInt(job.retentionHeld ?? "0") > 0n && can.release) return { kind: "release", label: t("jobs.next.releaseRetention") };
   return null;
 }
 
 /** US-JOB-35 — "Due 30 Oct · in 20 days", "Due today", "Overdue 3 days". */
 export function milestoneDueText(dueDate: string | null, now: Date, locale?: string): { text: string; tone: "" | "soon" | "over" } {
-  if (!dueDate) return { text: "No due date", tone: "" };
+  if (!dueDate) return { text: t("jobs.due.noDueDate"), tone: "" };
   const days = daysUntil(dueDate, now);
-  if (days < 0) return { text: `Overdue ${-days} ${-days === 1 ? "day" : "days"}`, tone: "over" };
-  if (days === 0) return { text: "Due today", tone: "soon" };
-  return { text: `Due ${calendarDate(dueDate, now, locale)} · in ${days} ${days === 1 ? "day" : "days"}`, tone: days <= 7 ? "soon" : "" };
+  if (days < 0) return { text: t("jobs.due.overdue", { count: -days }), tone: "over" };
+  if (days === 0) return { text: t("jobs.due.today"), tone: "soon" };
+  return { text: t("jobs.due.onIn", { date: calendarDate(dueDate, now, locale), count: days }), tone: days <= 7 ? "soon" : "" };
 }
 
 /** US-JOB-35 — what's billed so far: the invoiced milestones' amounts. */
@@ -64,9 +65,9 @@ export interface PhotoGroup {
 export function groupPhotos(photos: JobPhoto[], milestones: Milestone[], now: Date, locale?: string): PhotoGroup[] {
   const byTime = photos.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const known = new Set(milestones.map((m) => m.id));
-  const groups: PhotoGroup[] = [{ key: "site", label: "Site photos", note: null, photos: byTime.filter((p) => !p.milestoneId || !known.has(p.milestoneId)) }];
+  const groups: PhotoGroup[] = [{ key: "site", label: t("jobs.photos.sitePhotos"), note: null, photos: byTime.filter((p) => !p.milestoneId || !known.has(p.milestoneId)) }];
   for (const m of inOrder(milestones)) {
-    const done = m.completedAt ? `completed ${calendarDate(m.completedAt, now, locale)}` : null;
+    const done = m.completedAt ? t("jobs.photos.completedOn", { date: calendarDate(m.completedAt, now, locale) }) : null;
     groups.push({ key: m.id, label: m.name, note: done, photos: byTime.filter((p) => p.milestoneId === m.id) });
   }
   return groups.filter((g) => g.photos.length > 0);

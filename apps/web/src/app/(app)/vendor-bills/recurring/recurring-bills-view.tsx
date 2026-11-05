@@ -12,6 +12,7 @@ import { formatRunDate } from "../../invoices/recurring/recurring-invoices-view"
 import { RecurringBillDialog } from "./recurring-bill-dialog";
 import { RecurringRowActions } from "../../invoices/recurring/recurring-row-actions";
 import { ActionError } from "../../../../components/action-error";
+import { useT } from "../../../../lib/i18n";
 
 const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
   active: "bg-paid-bg text-paid",
@@ -25,6 +26,7 @@ const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
  * Needs `vendor_bills.manage_recurring`, like every `/recurring-bills` route.
  */
 export function RecurringBillsView() {
+  const t = useT();
   const canManage = useCapability("vendor_bills.manage_recurring");
   const [schedules, setSchedules] = useState<RecurringBill[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function RecurringBillsView() {
     apiClient
       .get<RecurringBill[]>("/recurring-bills")
       .then(setSchedules)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load recurring bills."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("vendorBills.recurring.loadFailed")));
   }, []);
 
   useEffect(() => {
@@ -46,10 +48,10 @@ export function RecurringBillsView() {
 
   const header = (
     <AppShellHeader
-      breadcrumb={[{ label: "Vendor Bills", href: "/vendor-bills" }, { label: "Recurring" }]}
-      title="Recurring bills"
-      description="Bills Spine enters for you on a schedule — rent, subscriptions and retainers."
-      action={canManage ? <Button onClick={() => setCreating(true)}>+ New recurring bill</Button> : undefined}
+      breadcrumb={[{ label: t("vendorBills.recurring.breadcrumbVendorBills"), href: "/vendor-bills" }, { label: t("vendorBills.recurring.breadcrumbRecurring") }]}
+      title={t("vendorBills.recurring.title")}
+      description={t("vendorBills.recurring.description")}
+      action={canManage ? <Button onClick={() => setCreating(true)}>{t("vendorBills.recurring.newButton")}</Button> : undefined}
     />
   );
 
@@ -58,7 +60,7 @@ export function RecurringBillsView() {
       <>
         {header}
         <Alert variant="critical">
-          <AlertDescription>{error ?? "You don't have access to recurring bills. Ask an Owner to grant “Manage recurring bills” to your Team."}</AlertDescription>
+          <AlertDescription>{error ?? t("vendorBills.recurring.noAccess")}</AlertDescription>
         </Alert>
       </>
     );
@@ -67,7 +69,7 @@ export function RecurringBillsView() {
   const columns: TableColumn<RecurringBill>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t("vendorBills.recurring.name"),
       render: (row) => (
         <button type="button" onClick={() => setEditing(row)} className="text-left font-medium text-on-surface hover:text-primary hover:underline">
           {row.name}
@@ -75,18 +77,18 @@ export function RecurringBillsView() {
       ),
       sortValue: (row) => row.name,
     },
-    { key: "vendor", header: "Vendor", render: (row) => row.contactName, sortValue: (row) => row.contactName },
-    { key: "repeats", header: "Repeats", render: (row) => describeRepeats(row.frequency, row.dayRule) },
-    { key: "next", header: "Next bill", render: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : "—"), sortValue: (row) => row.nextRunOn ?? "" },
+    { key: "vendor", header: t("vendorBills.recurring.vendor"), render: (row) => row.contactName, sortValue: (row) => row.contactName },
+    { key: "repeats", header: t("vendorBills.recurring.repeats"), render: (row) => describeRepeats(row.frequency, row.dayRule) },
+    { key: "next", header: t("vendorBills.recurring.nextBill"), render: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : "—"), sortValue: (row) => row.nextRunOn ?? "" },
     {
       key: "amount",
-      header: "Amount",
+      header: t("vendorBills.recurring.amount"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.totalAmount),
     },
-    { key: "status", header: "Status", render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge> },
-    { key: "mode", header: "When it runs", render: (row) => RECURRING_BILL_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode },
+    { key: "status", header: t("vendorBills.recurring.status"), render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge> },
+    { key: "mode", header: t("vendorBills.recurring.whenItRuns"), render: (row) => RECURRING_BILL_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode },
     {
       key: "actions",
       header: "",
@@ -96,22 +98,26 @@ export function RecurringBillsView() {
           <RecurringRowActions
             schedule={row}
             endpoint="/recurring-bills"
-            keptText="Bills it already created are kept."
+            keptText={t("vendorBills.recurring.keptText")}
             onEdit={setEditing}
             onChanged={(saved, action) => {
               setActionError(null);
               load();
               showToast(
-                action === "paused" ? "Schedule paused" : "Schedule resumed",
-                action === "paused" ? `${saved.name} won't create bills until you resume it.` : saved.nextRunOn ? `${saved.name}'s next bill is on ${formatRunDate(saved.nextRunOn)}.` : `${saved.name} has reached its end.`,
+                action === "paused" ? t("vendorBills.recurring.paused") : t("vendorBills.recurring.resumed"),
+                action === "paused"
+                  ? t("vendorBills.recurring.pausedDescription", { name: saved.name })
+                  : saved.nextRunOn
+                    ? t("vendorBills.recurring.nextBillOn", { name: saved.name, date: formatRunDate(saved.nextRunOn) })
+                    : t("vendorBills.recurring.reachedEnd", { name: saved.name }),
               );
             }}
             onDeleted={(deleted) => {
               setActionError(null);
               load();
-              showToast("Schedule deleted", `${deleted.name} is deleted. Bills it already created are kept.`);
+              showToast(t("vendorBills.recurring.deleted"), t("vendorBills.recurring.deletedDescription", { name: deleted.name }));
             }}
-            onError={(message) => setActionError({ title: "Couldn't change the schedule.", message })}
+            onError={(message) => setActionError({ title: t("vendorBills.recurring.changeFailed"), message })}
           />
         </div>
       ),
@@ -127,7 +133,7 @@ export function RecurringBillsView() {
           <TableSkeleton columns={columns} rows={3} />
         ) : schedules.length === 0 ? (
           <div className="rounded-lg border border-border bg-surface">
-            <EmptyState icon={<Repeat />} title="No recurring bills yet" description="Set one up for rent or a subscription, and Spine enters the bill on its day." />
+            <EmptyState icon={<Repeat />} title={t("vendorBills.recurring.emptyTitle")} description={t("vendorBills.recurring.emptyDescription")} />
           </div>
         ) : (
           <div data-testid="recurring-bills-table">
@@ -135,7 +141,7 @@ export function RecurringBillsView() {
           </div>
         )}
         <p className="text-[13px] text-on-surface-muted">
-          Runs happen at 6:00 AM organisation time. If Spine was off on a run date, each missed bill is created once, in order, when it starts again.
+          {t("vendorBills.recurring.runsNote")}
         </p>
         <RecurringBillDialog
           open={creating || !!editing}
@@ -151,8 +157,8 @@ export function RecurringBillsView() {
             setEditing(null);
             load();
             showToast(
-              "Schedule saved",
-              wasEditing ? `${saved.name} is updated. Bills it already created stay as they are.` : `${saved.name} is active. The first bill is on ${formatRunDate(saved.nextRunOn)}.`,
+              t("vendorBills.recurring.saved"),
+              wasEditing ? t("vendorBills.recurring.updatedDescription", { name: saved.name }) : t("vendorBills.recurring.activeDescription", { name: saved.name, date: formatRunDate(saved.nextRunOn) }),
             );
           }}
         />

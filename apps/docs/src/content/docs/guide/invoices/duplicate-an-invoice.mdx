@@ -1,0 +1,45 @@
+---
+title: Duplicate an invoice
+description: Start a new draft invoice from an old one, so you don't retype the lines for repeat work.
+sidebar:
+  order: 4
+---
+
+When you bill the same work again, duplicate an earlier invoice instead of building it from scratch. Spine makes a new draft with the same customer and lines. The original isn't changed, whatever its status.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Create/edit own invoices**. The copy is your own draft.
+</Aside>
+
+<Steps>
+
+1. **Open the invoice to copy** — Go to **Invoices** and open any invoice: a draft, issued, paid or void.
+
+2. **Choose Duplicate as new draft** — Open **More** and choose **Duplicate as new draft**. From the list, choose **Duplicate** in the row's menu.
+
+3. **Check the new draft** — The builder opens with the copy, and a toast says, for example, "Duplicated from INV-0012. Check the dates and lines, then save."
+
+4. **Change what's different and save** — Update the lines or amounts for this job, then press **Save draft**.
+
+</Steps>
+
+<Screenshot id="invoices-detail" alt="An issued invoice's page with its status, customer and dates, the Total, Paid and Balance due strip, the lines table and the Activity panel" />
+
+## What's copied
+
+- The customer, currency, lines, notes and terms.
+- The type. A progress or retention-release invoice becomes a standard invoice, because the copy isn't tied to a milestone.
+- A line whose catalogue item has since been archived is copied as it was typed.
+
+## What's new
+
+- No number. It's a draft until you [issue it](../issue-an-invoice/).
+- Today's issue date, and a due date from your payment terms.
+- Its **Activity** says it was duplicated from the original.
+
+<Aside type="tip">
+  An opening-balance invoice (brought in from your old system) has no lines, so it can't be duplicated.
+</Aside>

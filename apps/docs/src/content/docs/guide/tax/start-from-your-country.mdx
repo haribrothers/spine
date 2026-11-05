@@ -1,0 +1,42 @@
+---
+title: Start from your country's tax rates
+description: Pick the country you're registered in so Spine creates its tax rates, and set how often you file returns.
+sidebar:
+  order: 1
+---
+
+You don't need to type in rates you're not sure of. When you tell Spine where your business is registered for tax, it creates that country's standard rates and groups for you, and sets the title your invoices use. You can add your own rates afterwards.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners only.</Aside>
+
+## During setup
+
+The setup wizard's Tax step asks "Where is your business registered for tax?". Choose one of:
+
+- **India (GST)**: GST rates at 0, 0.25, 3, 5, 12, 18, 28 and 40%, each made of CGST and SGST halves (and UTGST), grouped as "GST 5%", "GST 18%" and so on, with inter-state groups "IGST 5%", "IGST 18%" and so on, plus a cess tax type. Groups the law no longer uses start archived. The GST settings open next.
+- **United Kingdom (VAT)**: "VAT 20%", "VAT 5%", "VAT 0%" (zero-rated) and "Exempt". Invoices are titled "VAT invoice".
+- **Australia (GST)**, **New Zealand (GST)**, **United Arab Emirates (VAT)** or **Saudi Arabia (VAT)**: the standard rate (10%, 15%, 5% or 15%), a zero rate and an exempt rate. Invoices are titled "Tax invoice".
+- **Another country — I'll add my own rates**: you enter a default tax rate yourself.
+
+## Change the country later
+
+<Steps>
+
+1. **Open Settings › Tax** — Open your account menu, choose **Settings**, then **Tax**.
+2. **Pick the country** — Choose it under **Country**. Spine adds that country's rates straight away.
+3. **Check the message** — You see "Added *n* rates. Your existing rates are unchanged — archive the ones you no longer use."
+
+</Steps>
+
+<Screenshot id="tax-country" alt="The Country and Return period settings at the top of Settings › Tax" />
+
+<Aside type="tip">Changing the country only ever adds rates. Existing rates are never changed or deleted, so old documents stay correct. Archive the ones you don't need (see [Add and manage tax rates](../add-and-manage-tax-rates/)).</Aside>
+
+## Set your return period
+
+Under **Return period**, choose **Monthly** or **Quarterly**: how often you file tax returns. The dashboard's **Tax this period** card covers this month or this quarter to match.
+
+Your tax country also decides which tax types a rate can have, and whether the GST settings appear. Spine follows the tax law that applied when these presets were built, so check the rates against your own registration.

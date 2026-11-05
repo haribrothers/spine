@@ -2,6 +2,7 @@ import { Ban, Bot, Building2, CircleCheck } from "lucide-react";
 import { SpineLogo } from "@spine/ui";
 import type { AgentIdentity } from "@spine/shared";
 import styles from "./agent-scene.module.css";
+import { t } from "../../lib/i18n";
 
 /**
  * US-MCP-03 — the signed-out frame's picture while an agent connects: the
@@ -19,7 +20,7 @@ export function AgentScene({ agent, person }: { agent: AgentIdentity; person?: {
             </span>
             <span className="min-w-0">
               <b className="block truncate text-[14px] font-semibold text-on-surface">{agent.verified ? agent.name : agent.host}</b>
-              <small className="block text-[12px] text-on-surface-muted">{agent.verified ? agent.host : "Unverified name"}</small>
+              <small className="block text-[12px] text-on-surface-muted">{agent.verified ? agent.host : t("oauth.scene.unverifiedName")}</small>
             </span>
           </div>
         </div>
@@ -32,8 +33,8 @@ export function AgentScene({ agent, person }: { agent: AgentIdentity; person?: {
               <Building2 size={16} />
             </span>
             <span className="min-w-0">
-              <b className="block truncate text-[14px] font-semibold text-on-surface">{person?.name ?? "Your Spine"}</b>
-              <small className="block text-[12px] text-on-surface-muted">{person?.detail ?? "Log in to continue"}</small>
+              <b className="block truncate text-[14px] font-semibold text-on-surface">{person?.name ?? t("oauth.scene.yourSpine")}</b>
+              <small className="block text-[12px] text-on-surface-muted">{person?.detail ?? t("oauth.scene.logInToContinue")}</small>
             </span>
           </div>
           {person && (
@@ -49,8 +50,8 @@ export function AgentScene({ agent, person }: { agent: AgentIdentity; person?: {
         </div>
       </div>
       <div className={styles.caption}>
-        <b className="block text-[18px] font-semibold leading-snug text-on-surface">Your agent, your sign-in.</b>
-        <span className="mt-1 block text-[13px] text-on-surface-muted">The agent works as you, with your role — and you can disconnect it any time.</span>
+        <b className="block text-[18px] font-semibold leading-snug text-on-surface">{t("oauth.scene.captionTitle")}</b>
+        <span className="mt-1 block text-[13px] text-on-surface-muted">{t("oauth.scene.captionBody")}</span>
       </div>
     </div>
   );

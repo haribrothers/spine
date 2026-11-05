@@ -24,6 +24,7 @@ import {
 } from "@spine/ui";
 import type { OpeningCustomerCredit } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 
 /**
@@ -32,6 +33,7 @@ import { formatMoney } from "../../../lib/money";
  * their invoices or refunded like any other credit (P19).
  */
 export function CustomerCreditTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
+  const t = useT();
   const [rows, setRows] = useState<OpeningCustomerCredit[] | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
@@ -62,7 +64,7 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
       load();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't add this credit.");
+      setError(err instanceof Error ? err.message : t("openingBalances.customerCredit.addError"));
     } finally {
       setBusy(false);
     }
@@ -75,7 +77,7 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
       load();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove this credit.");
+      setError(err instanceof Error ? err.message : t("openingBalances.common.removeCreditError"));
     }
   }
 
@@ -84,7 +86,7 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[13px] text-on-surface-muted">Money customers had paid ahead, or credit they hadn&apos;t used, on the cutover date. They can use it against invoices or have it refunded.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("openingBalances.customerCredit.intro")}</p>
         {!locked && (
           <Button
             onClick={() => {
@@ -94,7 +96,7 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
               setAdding(true);
             }}
           >
-            Add credit
+            {t("openingBalances.common.addCredit")}
           </Button>
         )}
       </div>
@@ -107,17 +109,17 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
         <table className="w-full text-[14px]" data-testid="opening-credits">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
-              <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 text-right font-medium">Credit</th>
-              <th className="px-4 py-3 text-right font-medium">Still to use</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.customerCredit.colCustomer")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.colCredit")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.stillToUse")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {rows?.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-[13px] text-on-surface-muted">
-                  No opening customer credit.
+                  {t("openingBalances.customerCredit.empty")}
                 </td>
               </tr>
             )}
@@ -128,10 +130,10 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
                 <td className="px-4 py-3 text-right tabular-nums">{money(r.available)}</td>
                 <td className="px-4 py-3 text-right">
                   {!locked && r.available === r.amount && (
-                    <Button variant="ghost" size="sm" aria-label={`Remove ${r.contactName}'s credit`} onClick={async () => {
-                      if (await confirm({ title: `Remove ${r.contactName}'s opening credit?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r.id);
+                    <Button variant="ghost" size="sm" aria-label={t("openingBalances.customerCredit.removeAria", { name: r.contactName })} onClick={async () => {
+                      if (await confirm({ title: t("openingBalances.customerCredit.removeTitle", { name: r.contactName }), description: t("openingBalances.common.removeBody"), confirmLabel: t("openingBalances.common.remove"), danger: true })) void remove(r.id);
                     }}>
-                      Remove
+                      {t("openingBalances.common.remove")}
                     </Button>
                   )}
                 </td>
@@ -143,8 +145,8 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent size="md">
           <DialogHeader>
-            <DialogTitle>Add opening customer credit</DialogTitle>
-            <DialogDescription>Credit the customer held on the cutover date.</DialogDescription>
+            <DialogTitle>{t("openingBalances.customerCredit.dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("openingBalances.customerCredit.dialogBody")}</DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
             {error && (
@@ -152,11 +154,11 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <FormField label="Customer" required>
+            <FormField label={t("openingBalances.customerCredit.customer")} required>
               {(field) => (
                 <Select value={contactId || undefined} onValueChange={setContactId}>
                   <SelectTrigger id={field.id}>
-                    <SelectValue placeholder="Choose a customer" />
+                    <SelectValue placeholder={t("openingBalances.customerCredit.chooseCustomer")} />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((c) => (
@@ -168,16 +170,16 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
                 </Select>
               )}
             </FormField>
-            <FormField label="Amount" required>
+            <FormField label={t("openingBalances.common.amount")} required>
               {(field) => <MoneyInput id={field.id} value={amount} onValueChange={setAmount} currency={currency} />}
             </FormField>
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setAdding(false)} disabled={busy}>
-              Cancel
+              {t("openingBalances.common.cancel")}
             </Button>
             <Button onClick={add} disabled={busy || !contactId || amount <= 0n}>
-              {busy ? <Spinner size="sm" /> : "Add credit"}
+              {busy ? <Spinner size="sm" /> : t("openingBalances.common.addCredit")}
             </Button>
           </DialogFooter>
         </DialogContent>

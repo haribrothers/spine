@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useNativeColors } from "@spine/ui-native";
 import { useModules } from "../../src/lib/data/modules";
+import { useT } from "../../src/lib/i18n";
 
 /**
  * US-MOB-19 / D-197 — native tabs: Today, Jobs and Expenses, plus Search.
@@ -13,6 +14,7 @@ import { useModules } from "../../src/lib/data/modules";
  * (docs/design/native-notes.md). Jobs & field off hides the Jobs tab (D-198).
  */
 export default function TabsLayout() {
+  const t = useT();
   const colors = useNativeColors();
   const modules = useModules();
   const android = Platform.OS === "android";
@@ -28,22 +30,22 @@ export default function TabsLayout() {
     >
       <NativeTabs.Trigger name="(today)">
         <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="today" />
-        <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t("mobileApp.tabs.today")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="jobs" hidden={!modules.jobsField}>
         <NativeTabs.Trigger.Icon sf={{ default: "briefcase", selected: "briefcase.fill" }} md="work" />
-        <NativeTabs.Trigger.Label>Jobs</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t("mobileApp.tabs.jobs")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="expenses">
         <NativeTabs.Trigger.Icon sf={{ default: "doc.text", selected: "doc.text.fill" }} md="receipt_long" />
-        <NativeTabs.Trigger.Label>Expenses</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t("mobileApp.tabs.expenses")}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {Platform.OS === "ios" ? (
         <NativeTabs.Trigger name="search" role="search" />
       ) : (
         <NativeTabs.Trigger name="search">
           <NativeTabs.Trigger.Icon sf={{ default: "magnifyingglass", selected: "magnifyingglass" }} md="search" />
-          <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Label>{t("mobileApp.tabs.search")}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       )}
     </NativeTabs>

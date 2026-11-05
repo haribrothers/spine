@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { Inject, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from "@nestjs/common";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { CAPABILITIES, CAPABILITY_LABELS, INDUSTRY_TEMPLATES, itemTaxFor, toDecimalString, type DemoPlan, type DemoPlanBanking, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
@@ -14,7 +14,7 @@ import { CatalogBundlesService } from "../catalog/catalog-bundles.service";
 import { LeadStagesService } from "../contacts/lead-stages.service";
 import { MeetingsService } from "../contacts/meetings.service";
 import { CreditNotesService } from "../credit-notes/credit-notes.service";
-import { FilesService } from "../files/files.service";
+import { FilesService, type FileRow, type UploadFileInput } from "../files/files.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { CustomerRefundsService } from "../payments/customer-refunds.service";
 import { costByJob } from "../jobs/job-costing.service";
@@ -117,7 +117,12 @@ export interface SeedResult {
   createdCategoryIds: string[];
   defaultedCategoryIds: string[];
   counts: Record<string, number>;
+  /** US-ONB-09 — file storage didn't take the demo's files, so it loaded without photos, receipts or a logo. */
+  photosSkipped: boolean;
 }
+
+/** US-ONB-09 — what seeding says when it loaded without the demo's files. */
+export const PHOTOS_SKIPPED_NOTE = "Photos skipped — file storage isn't reachable.";
 
 /**
  * US-ONB-18 (D-192) — runs a demo plan (`buildDemoPlan`) through the real
@@ -134,6 +139,8 @@ export interface SeedResult {
  */
 @Injectable()
 export class DemoSeederService {
+  private readonly logger = new Logger(DemoSeederService.name);
+
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
@@ -183,6 +190,21 @@ export class DemoSeederService {
     const when = (offset: number) => new Date(Date.now() + offset * DAY_MS);
     /** Kept within this month, so it counts as "this month" whatever today's date is. */
     const thisMonth = (offset: number) => Math.max(offset, -(+today.slice(8, 10) - 1));
+    // US-ONB-09 (NFR-REL-05): the demo's logo, photos and receipts go up only while storage takes them;
+    // once it doesn't, the rest of the demo still loads, without them.
+    const storage = { skipped: !this.filesService.isStorageConfigured() };
+    const upload = async (input: UploadFileInput): Promise<FileRow | null> => {
+      if (storage.skipped) return null;
+      try {
+        return await this.filesService.upload(orgId, input);
+      } catch (error) {
+        const status = error instanceof HttpException ? error.getStatus() : null;
+        if (status !== HttpStatus.SERVICE_UNAVAILABLE && status !== HttpStatus.INSUFFICIENT_STORAGE) throw error;
+        this.logger.warn(`File storage didn't take the demo's files, so the demo loads without them: ${(error as Error).message}`);
+        storage.skipped = true;
+        return null;
+      }
+    };
     /** Moves an entity's audit rows (all, or those with the given actions) to a day, as if they'd happened then. */
     const backdateAudit = async (entityId: string, when: Date, actions?: string[]) =>
       this.db
@@ -201,7 +223,7 @@ export class DemoSeederService {
     if (options.locked) {
       await this.industryTemplate.seedTemplate(this.db, orgId, actorUserId, plan.template);
     } else {
-      await this.applySettings(orgId, actorUserId, plan);
+      await this.applySettings(orgId, actorUserId, plan, upload);
     }
     if (plan.taxCountry !== "other" && options.locked) await this.taxProfile.update(orgId, actorUserId, { country: plan.taxCountry });
 
@@ -484,11 +506,11 @@ export class DemoSeederService {
 
     // 5. Jobs, before the timeline that invoices their milestones.
     // D-250: a file belongs to one record, so each job and milestone gets its own upload of a sample photo.
-    const sitePhotos = this.filesService.isStorageConfigured() ? DEMO_SITE_PHOTOS.map((name) => ({ name, buffer: readFileSync(path.join(DEMO_PHOTOS_DIR, name)) })) : [];
+    const sitePhotos = !storage.skipped ? DEMO_SITE_PHOTOS.map((name) => ({ name, buffer: readFileSync(path.join(DEMO_PHOTOS_DIR, name)) })) : [];
     const photoFor = async (n: number): Promise<string | null> => {
       const photo = sitePhotos[n % (sitePhotos.length || 1)];
       if (!photo) return null;
-      const file = await this.filesService.upload(orgId, { originalFilename: photo.name, mimeType: "image/jpeg", buffer: photo.buffer, uploadedByUserId: actorUserId });
+      const file = await upload({ originalFilename: photo.name, mimeType: "image/jpeg", buffer: photo.buffer, uploadedByUserId: actorUserId });
       return file?.id ?? null;
     };
     const jobRows = new Map<string, { id: string; name: string; contact: string; milestoneIds: string[]; index: number }>();
@@ -863,7 +885,7 @@ export class DemoSeederService {
         if (!category) return;
         // US-ONB-31: its receipt, printed for it, stored like any upload.
         let receiptFileId: string | null = null;
-        if (seed.receipt && this.filesService.isStorageConfigured()) {
+        if (seed.receipt && !storage.skipped) {
           const buffer = await renderDemoReceipt({
             merchant: seed.receipt.merchant,
             place: seed.receipt.place,
@@ -876,9 +898,11 @@ export class DemoSeederService {
             paidWith: seed.paidBy === "company" ? "Company card" : "Card",
           });
           const slug = seed.receipt.merchant.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-          const file = await this.filesService.upload(orgId, { originalFilename: `receipt-${slug}.pdf`, mimeType: "application/pdf", buffer, uploadedByUserId: actorUserId });
-          receiptFileId = file.id;
-          count("receiptsAttached");
+          const file = await upload({ originalFilename: `receipt-${slug}.pdf`, mimeType: "application/pdf", buffer, uploadedByUserId: actorUserId });
+          if (file) {
+            receiptFileId = file.id;
+            count("receiptsAttached");
+          }
         }
         const expense = await this.expensesService.create(
           orgId,
@@ -1027,7 +1051,9 @@ export class DemoSeederService {
       startAt.setHours(hours ?? 9, minutes ?? 0, 0, 0);
       const endAt = new Date(startAt);
       endAt.setHours(endAt.getHours() + seed.durationHours);
-      const meeting = await this.meetingsService.create(orgId, actorUserId, { contactId: seed.contact ? contactIds.get(seed.contact)! : null, title: seed.title, startAt, endAt, location: seed.location, description: seed.description } as never);
+      // US-ONB-09 (finding C5): the internal planning meeting repeats weekly.
+      const recurrence = seed.weeklyFor ? { frequency: "weekly" as const, interval: 1, end: { type: "count" as const, count: seed.weeklyFor } } : null;
+      const meeting = await this.meetingsService.create(orgId, actorUserId, { contactId: seed.contact ? contactIds.get(seed.contact)! : null, title: seed.title, startAt, endAt, location: seed.location, description: seed.description, recurrence } as never);
       await this.db.update(meetingsTable).set({ isDemo: true }).where(eq(meetingsTable.id, meeting!.id));
       count("meetingsCreated");
     }
@@ -1051,7 +1077,7 @@ export class DemoSeederService {
     if (crew.length) await this.db.insert(jobAssignments).values(crew);
     count("crewAssignmentsCreated", crew.length);
 
-    return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, createdBundleIds, createdCategoryIds, defaultedCategoryIds, counts };
+    return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, createdBundleIds, createdCategoryIds, defaultedCategoryIds, counts, photosSkipped: storage.skipped };
   }
 
   /**
@@ -1183,16 +1209,14 @@ export class DemoSeederService {
   }
 
   /** A business without records of its own takes the demo's identity (D-192); its own profile and registration win when set. */
-  private async applySettings(orgId: string, actorUserId: string, plan: DemoPlan) {
+  private async applySettings(orgId: string, actorUserId: string, plan: DemoPlan, upload: (input: UploadFileInput) => Promise<FileRow | null>) {
     const ifUnset = async (key: string, value: unknown) => {
       if ((await this.settingsService.get(orgId, key)) === null) await this.settingsService.set(orgId, key, value);
     };
     if ((await this.settingsService.get(orgId, "business_profile")) === null) {
       let logoUrl: string | undefined;
-      if (this.filesService.isStorageConfigured()) {
-        const logo = await this.filesService.upload(orgId, { originalFilename: "logo.png", mimeType: "image/png", buffer: Buffer.from(PLACEHOLDER_PNG_BASE64, "base64"), uploadedByUserId: actorUserId });
-        if (logo) logoUrl = `${process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`}/files/${logo.id}`;
-      }
+      const logo = await upload({ originalFilename: "logo.png", mimeType: "image/png", buffer: Buffer.from(PLACEHOLDER_PNG_BASE64, "base64"), uploadedByUserId: actorUserId });
+      if (logo) logoUrl = `${process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`}/files/${logo.id}`;
       const { upiId, upiPayeeName, ...profile } = plan.business;
       await this.settingsService.set(orgId, "business_profile", { ...profile, ...(logoUrl ? { logoUrl } : {}), ...(upiId ? { upiId, upiPayeeName, showUpiQr: true } : {}) });
     }

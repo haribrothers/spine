@@ -6,6 +6,8 @@ import { History } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { describeHistoryEntry } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
+import { useT } from "../lib/i18n";
+import { orgLocaleTag } from "../lib/money";
 
 export interface AuditFieldChange {
   field: string;
@@ -51,6 +53,7 @@ export function HistorySection({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const t = useT();
   const [ownOpen, setOwnOpen] = useState(false);
   const controlled = controlledOpen !== undefined;
   const open = controlled ? controlledOpen : ownOpen;
@@ -66,14 +69,14 @@ export function HistorySection({
     <Dialog open={open} onOpenChange={setOpen}>
       {!controlled && (
         <DialogTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" aria-label="View history" className="h-8 w-8 shrink-0 text-on-surface-muted">
+          <Button type="button" variant="ghost" size="icon" aria-label={t("common.history.view")} className="h-8 w-8 shrink-0 text-on-surface-muted">
             <History size={16} />
           </Button>
         </DialogTrigger>
       )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>History</DialogTitle>
+          <DialogTitle>{t("common.history.title")}</DialogTitle>
         </DialogHeader>
         <DialogBody>
           {entries === null ? (
@@ -85,14 +88,14 @@ export function HistorySection({
               {entries.map((entry) => (
                 <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
                   <span className="text-on-surface">{describeHistoryEntry(entry, subjectLabel, ownEntityType)}</span>
-                  <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString()}>
+                  <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString(orgLocaleTag())}>
                     {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
                   </span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[13px] text-on-surface-muted">No history yet.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("common.history.empty")}</p>
           )}
         </DialogBody>
       </DialogContent>

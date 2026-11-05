@@ -13,6 +13,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type InvoicePaymentRow } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useT } from "../../../lib/i18n";
 /**
  * Every payment allocated against this invoice — `GET /payments?invoiceId=`
  * (`PaymentsService.listForInvoice`, a real join through
@@ -33,6 +34,7 @@ export function PaymentsSection({
   refreshKey: number;
   onChanged?: (message: { title: string; description: string }) => void;
 }) {
+  const t = useT();
   const [payments, setPayments] = useState<InvoicePaymentRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [moving, setMoving] = useState<{ payment: InvoicePaymentRow; target: PaymentAppliedTo } | null>(null);
@@ -44,7 +46,7 @@ export function PaymentsSection({
     apiClient
       .get<InvoicePaymentRow[]>(`/payments?invoiceId=${invoice.id}`)
       .then(setPayments)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load payments."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("invoices.paymentsSection.loadFailed")));
   }, [invoice.id, refreshKey]);
 
   if (error) return null; // non-critical subsection — a failure here shouldn't block the rest of the invoice page
@@ -54,20 +56,20 @@ export function PaymentsSection({
 
   return (
     <Card className="flex flex-col gap-3" data-testid="invoice-payments">
-      <h3 className="text-[14px] font-semibold text-on-surface">Payments</h3>
+      <h3 className="text-[14px] font-semibold text-on-surface">{t("invoices.paymentsSection.title")}</h3>
       {!payments ? (
         <div className="flex justify-center py-6">
           <Spinner size="sm" />
         </div>
       ) : payments.length === 0 ? (
-        <p className="text-[13px] text-on-surface-muted">No payments recorded against this invoice yet.</p>
+        <p className="text-[13px] text-on-surface-muted">{t("invoices.paymentsSection.empty")}</p>
       ) : (
         <div className="flex flex-col divide-y divide-border">
           {payments.map((payment) => (
             <div key={payment.allocationId} className="flex items-center justify-between gap-4 py-2" data-testid="invoice-payment-row">
               <div>
                 <SectionLink href={`/payments/${payment.id}`} className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
-                  {payment.number ?? "Payment"}
+                  {payment.number ?? t("invoices.paymentsSection.payment")}
                 </SectionLink>
                 <p className="text-[12px] text-on-surface-muted">
                   {calendarDate(payment.date.slice(0, 10), today, locale)} · {PAYMENT_METHOD_LABELS[payment.method]}
@@ -79,7 +81,7 @@ export function PaymentsSection({
                 {canMoveOff && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button type="button" aria-label={`Actions for ${payment.number ?? "this payment"}`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                      <button type="button" aria-label={t("invoices.paymentsSection.actionsFor", { number: payment.number ?? t("invoices.paymentsSection.thisPayment") })} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
                         <MoreHorizontal size={16} />
                       </button>
                     </DropdownMenuTrigger>
@@ -103,7 +105,7 @@ export function PaymentsSection({
                         }
                       >
                         <MENU_ICONS.moveOff aria-hidden />
-                        Move off this invoice
+                        {t("invoices.paymentsSection.moveOff")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -121,8 +123,8 @@ export function PaymentsSection({
           const p = moving?.payment;
           setMoving(null);
           onChanged?.({
-            title: `${formatMoney(BigInt(a.amount), p?.currency ?? "USD")} is now credit`,
-            description: `${p?.number ?? "The payment"} was moved off ${invoice.number ?? "this invoice"}; apply it to the right invoice or refund it.`,
+            title: t("invoices.paymentsSection.movedTitle", { amount: formatMoney(BigInt(a.amount), p?.currency ?? "USD") }),
+            description: t("invoices.paymentsSection.movedBody", { number: p?.number ?? t("invoices.paymentsSection.thePayment"), invoice: invoice.number ?? t("invoices.paymentsSection.thisInvoice") }),
           });
         }}
       />

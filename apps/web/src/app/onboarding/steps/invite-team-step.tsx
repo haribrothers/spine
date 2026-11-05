@@ -14,6 +14,7 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
+import { useT } from "../../../lib/i18n";
 
 // "owner" deliberately excluded — per PRD §2.1, Owner is only granted by
 // promoting an existing Staff member (Users page) once they've joined, not
@@ -35,6 +36,7 @@ export interface InviteTeamStepProps {
  * so the list of invites sent so far is local UI state, not re-fetched.
  */
 export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: InviteTeamStepProps) {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<MemberRole>("staff");
   const [sending, setSending] = useState(false);
@@ -50,7 +52,7 @@ export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: Invit
       setSent((prev) => [...prev, { email, role }]);
       setEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send invite.");
+      setError(err instanceof Error ? err.message : t("onboarding.invite.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -65,33 +67,33 @@ export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: Invit
       )}
 
       <form className="flex items-end gap-2" onSubmit={handleInvite}>
-        <FormField label="Email" className="flex-1">
+        <FormField label={t("onboarding.invite.email")} className="flex-1">
           {(field) => (
             <Input
               {...field}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="teammate@example.com"
+              placeholder={t("onboarding.invite.emailPlaceholder")}
               required
             />
           )}
         </FormField>
-        <FormField label="Role" className="w-32">
+        <FormField label={t("onboarding.invite.role")} className="w-32">
           {() => (
             <Select value={role} onValueChange={(v) => setRole(v as MemberRole)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="field">Field</SelectItem>
+                <SelectItem value="staff">{t("onboarding.common.staff")}</SelectItem>
+                <SelectItem value="field">{t("onboarding.common.field")}</SelectItem>
               </SelectContent>
             </Select>
           )}
         </FormField>
         <Button type="submit" disabled={sending || !email} variant="secondary">
-          {sending ? <Spinner size="sm" /> : "Send invite"}
+          {sending ? <Spinner size="sm" /> : t("onboarding.invite.send")}
         </Button>
       </form>
 
@@ -99,7 +101,9 @@ export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: Invit
         <ul className="flex flex-col gap-1 text-[13px] text-on-surface-muted">
           {sent.map((invite, i) => (
             <li key={i}>
-              Invited <span className="text-on-surface">{invite.email}</span> as {invite.role}
+              {t("onboarding.invite.invitedBefore")}
+              <span className="text-on-surface">{invite.email}</span>
+              {t("onboarding.invite.invitedAs", { role: invite.role })}
             </li>
           ))}
         </ul>
@@ -107,7 +111,7 @@ export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: Invit
 
       {!hideFooter && (
         <div className="mt-2 flex justify-end">
-          <Button onClick={onFinish}>{sent.length > 0 ? "Finish" : "Skip — finish setup"}</Button>
+          <Button onClick={onFinish}>{sent.length > 0 ? t("onboarding.invite.finish") : t("onboarding.invite.skipFinish")}</Button>
         </div>
       )}
     </div>

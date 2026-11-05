@@ -1,6 +1,7 @@
 import { Banknote, BarChart3, BookOpen, CalendarDays, ClipboardList, FileMinus, FileText, HandCoins, HardHat, History, Inbox, Landmark, LayoutDashboard, Package, Receipt, ReceiptText, Shield, Target, Undo2, UserCog, Users, Wallet } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 import { DEFAULT_MODULES, SECTION_OPEN_CAPABILITIES, moduleForPage, type Capability, type ModuleSettings } from "@spine/shared";
+import { t } from "./i18n";
 
 /**
  * The app's sidebar sections, shared across every routed page. Extracted
@@ -37,54 +38,54 @@ import { DEFAULT_MODULES, SECTION_OPEN_CAPABILITIES, moduleForPage, type Capabil
  */
 export const NAV_SECTIONS: AppShellNavSection[] = [
   {
-    label: "Overview",
-    items: [{ href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard /> }],
+    label: t("common.nav.sections.overview"),
+    items: [{ href: "/dashboard", label: t("common.nav.items.dashboard"), icon: <LayoutDashboard /> }],
   },
   {
-    label: "Sales",
+    label: t("common.nav.sections.sales"),
     items: [
-      { href: "/contacts", label: "Contacts", icon: <Users /> },
-      { href: "/leads", label: "Pipeline", icon: <Target /> },
-      { href: "/meetings", label: "Meetings", icon: <CalendarDays /> },
-      { href: "/catalog", label: "Catalogue", icon: <Package /> },
-      { href: "/quotes", label: "Quotes", icon: <FileText /> },
+      { href: "/contacts", label: t("common.nav.items.contacts"), icon: <Users /> },
+      { href: "/leads", label: t("common.nav.items.pipeline"), icon: <Target /> },
+      { href: "/meetings", label: t("common.nav.items.meetings"), icon: <CalendarDays /> },
+      { href: "/catalog", label: t("common.nav.items.catalogue"), icon: <Package /> },
+      { href: "/quotes", label: t("common.nav.items.quotes"), icon: <FileText /> },
     ],
   },
   {
-    label: "Jobs",
-    items: [{ href: "/jobs", label: "Jobs", icon: <HardHat /> }],
+    label: t("common.nav.sections.jobs"),
+    items: [{ href: "/jobs", label: t("common.nav.items.jobs"), icon: <HardHat /> }],
   },
   {
-    label: "Billing",
+    label: t("common.nav.sections.billing"),
     items: [
-      { href: "/invoices", label: "Invoices", icon: <Receipt /> },
-      { href: "/credit-notes", label: "Credit Notes", icon: <Undo2 /> },
-      { href: "/payments", label: "Payments", icon: <Banknote /> },
-      { href: "/receivables", label: "Receivables", icon: <Inbox /> },
+      { href: "/invoices", label: t("common.nav.items.invoices"), icon: <Receipt /> },
+      { href: "/credit-notes", label: t("common.nav.items.creditNotes"), icon: <Undo2 /> },
+      { href: "/payments", label: t("common.nav.items.payments"), icon: <Banknote /> },
+      { href: "/receivables", label: t("common.nav.items.receivables"), icon: <Inbox /> },
     ],
   },
   {
-    label: "Purchases",
+    label: t("common.nav.sections.purchases"),
     items: [
-      { href: "/vendor-bills", label: "Vendor Bills", icon: <ClipboardList /> },
+      { href: "/vendor-bills", label: t("common.nav.items.vendorBills"), icon: <ClipboardList /> },
       // US-PUR-24
-      { href: "/vendor-credits", label: "Vendor Credits", icon: <FileMinus /> },
-      { href: "/expenses", label: "Expenses", icon: <ReceiptText /> },
-      { href: "/vendor-payments", label: "Vendor Payments", icon: <HandCoins /> },
-      { href: "/payables", label: "Payables", icon: <Wallet /> },
+      { href: "/vendor-credits", label: t("common.nav.items.vendorCredits"), icon: <FileMinus /> },
+      { href: "/expenses", label: t("common.nav.items.expenses"), icon: <ReceiptText /> },
+      { href: "/vendor-payments", label: t("common.nav.items.vendorPayments"), icon: <HandCoins /> },
+      { href: "/payables", label: t("common.nav.items.payables"), icon: <Wallet /> },
     ],
   },
   {
     // US-BANK-01 (D-139): where the money actually sits.
-    label: "Money",
-    items: [{ href: "/banking", label: "Banking", icon: <Landmark /> }],
+    label: t("common.nav.sections.money"),
+    items: [{ href: "/banking", label: t("common.nav.items.banking"), icon: <Landmark /> }],
   },
   {
-    label: "Reports",
+    label: t("common.nav.sections.reports"),
     items: [
-      { href: "/reports", label: "Reports", icon: <BarChart3 /> },
+      { href: "/reports", label: t("common.nav.items.reports"), icon: <BarChart3 /> },
       // US-RPT-20–US-RPT-22 (D-134)
-      { href: "/journals", label: "Journals", icon: <BookOpen /> },
+      { href: "/journals", label: t("common.nav.items.journals"), icon: <BookOpen /> },
     ],
   },
 ];
@@ -100,12 +101,12 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
  * Owner status server-side too — hiding this link is not access control.
  */
 export const TEAM_NAV_SECTION: AppShellNavSection = {
-  label: "Team",
+  label: t("common.nav.sections.team"),
   items: [
-    { href: "/team/users", label: "Users", icon: <UserCog /> },
-    { href: "/team/teams", label: "Teams", icon: <Shield /> },
+    { href: "/team/users", label: t("common.nav.items.users"), icon: <UserCog /> },
+    { href: "/team/teams", label: t("common.nav.items.teams"), icon: <Shield /> },
     // US-SET-11 (D-064)
-    { href: "/team/audit-log", label: "Audit log", icon: <History /> },
+    { href: "/team/audit-log", label: t("common.nav.items.auditLog"), icon: <History /> },
   ],
 };
 
@@ -116,15 +117,15 @@ export const TEAM_NAV_SECTION: AppShellNavSection = {
  */
 export const FIELD_NAV_SECTIONS: AppShellNavSection[] = [
   {
-    label: "Overview",
-    items: [{ href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard /> }],
+    label: t("common.nav.sections.overview"),
+    items: [{ href: "/dashboard", label: t("common.nav.items.dashboard"), icon: <LayoutDashboard /> }],
   },
   {
-    label: "Work",
+    label: t("common.nav.sections.work"),
     items: [
-      { href: "/jobs", label: "Jobs", icon: <HardHat /> },
-      { href: "/meetings", label: "Meetings", icon: <CalendarDays /> },
-      { href: "/expenses", label: "Expenses", icon: <ReceiptText /> },
+      { href: "/jobs", label: t("common.nav.items.jobs"), icon: <HardHat /> },
+      { href: "/meetings", label: t("common.nav.items.meetings"), icon: <CalendarDays /> },
+      { href: "/expenses", label: t("common.nav.items.expenses"), icon: <ReceiptText /> },
     ],
   },
 ];

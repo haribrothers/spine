@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AppShellHeader, Spinner, Tabs, TabsContent, TabsList, TabsTrigger } from "@spine/ui";
 import { OPENING_INTRO, type OpeningBalancesView as View } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { AccountBalancesTab } from "./account-balances-tab";
 import { CustomerCreditTab } from "./customer-credit-tab";
 import { OpeningInvoicesTab } from "./opening-invoices-tab";
@@ -17,6 +18,7 @@ import { ReviewTab } from "./review-tab";
  * the review. Owner-only.
  */
 export function OpeningBalancesView() {
+  const t = useT();
   const [view, setView] = useState<View | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function OpeningBalancesView() {
     apiClient
       .get<View>("/opening-balances")
       .then(setView)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load the opening balances. Refresh to try again."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("openingBalances.view.loadError")));
   }, []);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function OpeningBalancesView() {
 
   return (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Settings" }, { label: "Opening balances" }]} title="Opening balances" description={OPENING_INTRO} />
+      <AppShellHeader breadcrumb={[{ label: t("openingBalances.view.breadcrumbSettings") }, { label: t("openingBalances.view.title") }]} title={t("openingBalances.view.title")} description={OPENING_INTRO} />
       {error ? (
         <p className="text-[14px] text-overdue">{error}</p>
       ) : !view ? (
@@ -48,12 +50,12 @@ export function OpeningBalancesView() {
       ) : (
         <Tabs defaultValue="accounts">
           <TabsList>
-            <TabsTrigger value="accounts">Account balances</TabsTrigger>
-            <TabsTrigger value="invoices">Customer invoices</TabsTrigger>
-            <TabsTrigger value="credit">Customer credit</TabsTrigger>
-            <TabsTrigger value="bills">Vendor bills</TabsTrigger>
-            <TabsTrigger value="vendor-credits">Vendor credits</TabsTrigger>
-            <TabsTrigger value="review">Review</TabsTrigger>
+            <TabsTrigger value="accounts">{t("openingBalances.view.tabAccounts")}</TabsTrigger>
+            <TabsTrigger value="invoices">{t("openingBalances.view.tabInvoices")}</TabsTrigger>
+            <TabsTrigger value="credit">{t("openingBalances.view.tabCredit")}</TabsTrigger>
+            <TabsTrigger value="bills">{t("openingBalances.view.tabBills")}</TabsTrigger>
+            <TabsTrigger value="vendor-credits">{t("openingBalances.view.tabVendorCredits")}</TabsTrigger>
+            <TabsTrigger value="review">{t("openingBalances.view.tabReview")}</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts" className="pt-4">
             <AccountBalancesTab view={view} currency={currency} onSaved={setView} />

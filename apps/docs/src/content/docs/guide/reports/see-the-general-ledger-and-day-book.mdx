@@ -1,0 +1,47 @@
+---
+title: Audit the general ledger and day book
+description: Read every account's opening balance, entries and closing balance, or every journal entry in date order.
+sidebar:
+  order: 7
+---
+
+The general ledger and the day book are the two reports accountants audit from. The general ledger goes account by account: what each one started with, every entry in the period, and what it ended with. The day book goes date by date: every journal entry in the order it was posted.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View ledger / journals**. Without it, Staff see the no-access page.</Aside>
+
+## Read the general ledger
+
+<Steps>
+
+1. **Open the report** — Go to **Reports** and choose **General ledger** under Accountant.
+2. **Set the range** — Choose **From** and **To**.
+3. **Pick accounts** — Under **Accounts**, keep **All accounts with activity** or choose the ones you want. **Hide accounts with no activity** is on by default; untick it to list every account.
+4. **Read each account** — Its **Opening balance**, one row per entry (date, source and number, contact, job, description, **Debit**, **Credit** and running **Balance**), then **Closing balance**.
+5. **Open a document** — Click a row to open the invoice, payment, bill or journal behind it.
+
+</Steps>
+
+<Screenshot id="reports-general-ledger" alt="The General ledger with the Accounts filter, the figure cards and an account's opening balance, entries and closing balance" />
+
+If nothing was posted, you see "Nothing posted in this period". Pick other dates, or untick **Hide accounts with no activity**.
+
+## Read the day book
+
+<Steps>
+
+1. **Open the report** — Choose the **Day book** tab from the General ledger, or **Day book** under Accountant. It opens on today.
+2. **Set the dates** — Change **From** and **To** to cover more days.
+3. **Filter by source** — Under **Source**, choose one kind of document instead of **All sources**.
+4. **Read each entry** — Its date, number, source (such as "Invoice INV-0042" or "Journal JNL-0003"), narration, and its lines with account, debit and credit.
+5. **Open a document** — Click an entry to open it.
+
+</Steps>
+
+<Screenshot id="reports-day-book" alt="The Day book with the Source filter and each journal entry listed with its lines" />
+
+Use **Search entries** to find one entry. If nothing was posted on those dates, you see "Nothing posted on these dates".
+
+<Aside type="tip">Both reports export to CSV, Excel and PDF, and print. See [Export or print a report](../export-or-print-a-report/).</Aside>

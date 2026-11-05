@@ -6,6 +6,7 @@ import { useNativeColors } from "../theme/use-native-colors";
 import { BottomSheet } from "./bottom-sheet";
 import { DropdownArrow, OutlinedFrame } from "./outlined-text-field";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 /**
  * RN exposes `ScrollView.Context` (a real React context whose value tells
@@ -120,8 +121,8 @@ export function SelectListField<T extends string>({
   options,
   value,
   onValueChange,
-  placeholder = "Select…",
-  searchPlaceholder = "Search…",
+  placeholder: placeholderProp,
+  searchPlaceholder: searchPlaceholderProp,
   disabled = false,
   error = false,
   variant = "row",
@@ -132,6 +133,9 @@ export function SelectListField<T extends string>({
   labelBackgroundClassName,
   helperText,
 }: SelectListFieldProps<T>) {
+  const t = useT();
+  const placeholder = placeholderProp ?? t("uiNative.select.placeholder");
+  const searchPlaceholder = searchPlaceholderProp ?? t("uiNative.select.searchPlaceholder");
   const colors = useNativeColors();
   const { height: windowHeight } = useWindowDimensions();
   const [isOpen, setIsOpen] = useState(false);
@@ -192,7 +196,7 @@ export function SelectListField<T extends string>({
 
   const trigger =
     variant === "outlined" ? (
-      <Pressable onPress={handleOpen} disabled={disabled} accessibilityRole="button" accessibilityLabel={`${labelText ?? placeholder}: ${selected?.label ?? placeholder}`} accessibilityHint={error && helperText ? helperText : undefined} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
+      <Pressable onPress={handleOpen} disabled={disabled} accessibilityRole="button" accessibilityLabel={t("uiNative.select.triggerLabel", { label: labelText ?? placeholder, value: selected?.label ?? placeholder })} accessibilityHint={error && helperText ? helperText : undefined} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
         <OutlinedFrame label={labelText ?? placeholder} error={error} helperText={helperText} labelBackgroundClassName={labelBackgroundClassName}>
           <View className="flex-row items-center justify-between gap-2">
             <Text numberOfLines={1} className={cn("flex-1 text-[16px]", selected ? "text-on-surface dark:text-on-surface-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark")}>
@@ -295,7 +299,7 @@ export function SelectListField<T extends string>({
               ItemSeparatorComponent={() => <View className="h-px w-full bg-border dark:bg-border-dark" />}
               ListEmptyComponent={
                 <Text className="py-6 text-center text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-                  No matches.
+                  {t("uiNative.select.noMatches")}
                 </Text>
               }
               renderItem={({ item }) => {

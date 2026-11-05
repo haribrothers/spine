@@ -4,6 +4,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export interface MultiSelectOption {
   value: string;
@@ -34,12 +35,13 @@ export function MultiSelect({
   options,
   value,
   onValueChange,
-  placeholder = "Select…",
+  placeholder,
   className,
   disabled,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
 }: MultiSelectProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const selected = options.filter((option) => value.includes(option.value));
 
@@ -67,7 +69,7 @@ export function MultiSelect({
           )}
         >
           {selected.length === 0 ? (
-            <span className="truncate">{placeholder}</span>
+            <span className="truncate">{placeholder ?? t("ui.combobox.placeholder")}</span>
           ) : (
             <MultiSelectValue labels={selected.map((option) => option.label)} />
           )}

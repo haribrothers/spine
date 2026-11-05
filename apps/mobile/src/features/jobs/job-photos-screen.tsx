@@ -13,6 +13,7 @@ import { useOutboxItems } from "../../lib/outbox/pending";
 import { jobWaiting } from "../../lib/outbox/job-waiting";
 import { PhotoGridSkeleton } from "../../components/skeletons";
 import { Fab } from "../../components/fab";
+import { t as translate, useT } from "../../lib/i18n";
 
 const COLUMNS = 3;
 const GAP = 2;
@@ -26,7 +27,7 @@ export function photosByDay(photos: (JobPhoto | TilePhoto)[], locale: string, no
   for (const photo of [...tiles].sort((a, b) => Date.parse(takenAt(b)) - Date.parse(takenAt(a)))) {
     const at = new Date(takenAt(photo));
     const days = daysUntil(at, now);
-    const title = days === 0 ? "Today" : days === -1 ? "Yesterday" : weekdayDayMonth(at, locale);
+    const title = days === 0 ? translate("mobileWork.jobPhotos.today") : days === -1 ? translate("mobileWork.jobPhotos.yesterday") : weekdayDayMonth(at, locale);
     groups.set(title, [...(groups.get(title) ?? []), photo]);
   }
   return [...groups.entries()].map(([title, list]) => ({
@@ -42,6 +43,7 @@ export function photosByDay(photos: (JobPhoto | TilePhoto)[], locale: string, no
  * camera on iOS and a floating button on Android.
  */
 export function JobPhotosScreen({ id }: { id: string }) {
+  const t = useT();
   const router = useRouter();
   const { locale } = useBusinessFormat();
   const { width } = useWindowDimensions();
@@ -62,6 +64,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
   const android = Platform.OS === "android";
   const subtitle = [job?.name, job?.number].filter(Boolean).join(" · ");
   const addPhotos = () => router.push(`/camera?mode=photos&jobId=${id}`);
+  const title = photos.loading ? t("mobileWork.common.photos") : t("mobileWork.jobPhotos.titleCount", { n: list.length });
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
@@ -71,14 +74,14 @@ export function JobPhotosScreen({ id }: { id: string }) {
             ? {
                 headerTitle: () => (
                   <View>
-                    <Text className="text-[22px] text-on-surface dark:text-on-surface-dark">{photos.loading ? "Photos" : `Photos · ${list.length}`}</Text>
+                    <Text className="text-[22px] text-on-surface dark:text-on-surface-dark">{title}</Text>
                     <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{subtitle}</Text>
                   </View>
                 ),
               }
             : {
-                title: photos.loading ? "Photos" : `Photos · ${list.length}`,
-                unstable_headerRightItems: () => [{ type: "button" as const, label: "Add photos", icon: { type: "sfSymbol" as const, name: "camera" as const }, accessibilityLabel: "Add photos", onPress: addPhotos }],
+                title,
+                unstable_headerRightItems: () => [{ type: "button" as const, label: t("mobileWork.common.addPhotos"), icon: { type: "sfSymbol" as const, name: "camera" as const }, accessibilityLabel: t("mobileWork.common.addPhotos"), onPress: addPhotos }],
               }
         }
       />
@@ -108,12 +111,12 @@ export function JobPhotosScreen({ id }: { id: string }) {
               <PhotoGridSkeleton rows={4} columns={COLUMNS} size={tile} gap={GAP} />
             </View>
           ) : photos.data ? (
-            <EmptyState title="No photos yet" description="Photos your crew takes on this job show up here, newest first." />
+            <EmptyState title={t("mobileWork.jobPhotos.emptyTitle")} description={t("mobileWork.jobPhotos.emptyDescription")} />
           ) : null
         }
       />
       {android ? (
-        <Fab testID="photos-add" label="Add photos" icon={Camera} onPress={addPhotos} />
+        <Fab testID="photos-add" label={t("mobileWork.common.addPhotos")} icon={Camera} onPress={addPhotos} />
       ) : null}
     </View>
   );

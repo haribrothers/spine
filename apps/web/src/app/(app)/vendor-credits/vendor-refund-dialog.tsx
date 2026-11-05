@@ -25,6 +25,7 @@ import {
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../vendor-bills/types";
 import type { VendorCredit } from "./types";
@@ -33,6 +34,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
 
 /** US-PUR-26 — `VendorRefundDialog`: money the vendor paid back against a credit (P25). Up to the credit's balance. */
 export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: { open: boolean; onOpenChange: (open: boolean) => void; credit: VendorCredit; onRecorded: (amount: bigint) => void }) {
+  const t = useT();
   const balance = BigInt(credit.balanceAmount);
   const [amount, setAmount] = useState<bigint>(balance);
   const [date, setDate] = useState<Date>(new Date());
@@ -54,11 +56,11 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
   async function handleSave() {
     setError(null);
     if (amount <= 0n) {
-      setError("Enter an amount greater than zero.");
+      setError(t("vendorCredits.refundDialog.enterAmount"));
       return;
     }
     if (amount > balance) {
-      setError(`This credit has ${formatMoney(balance, credit.currency)} left to refund.`);
+      setError(t("vendorCredits.refundDialog.creditLeft", { amount: formatMoney(balance, credit.currency) }));
       return;
     }
     setSaving(true);
@@ -67,7 +69,7 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
       onOpenChange(false);
       onRecorded(amount);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this refund.");
+      setError(err instanceof Error ? err.message : t("vendorCredits.refundDialog.recordFailed"));
     } finally {
       setSaving(false);
     }
@@ -77,8 +79,8 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Record a refund from {credit.contactName}</DialogTitle>
-          <DialogDescription>Money the vendor paid back against {credit.number}. Up to {formatMoney(balance, credit.currency)}.</DialogDescription>
+          <DialogTitle>{t("vendorCredits.refundDialog.title", { vendor: credit.contactName })}</DialogTitle>
+          <DialogDescription>{t("vendorCredits.refundDialog.description", { number: credit.number, amount: formatMoney(balance, credit.currency) })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -86,15 +88,15 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Amount" required>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label={t("vendorCredits.refundDialog.amount")} required>
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={credit.currency} />}
             </FormField>
-            <FormField label="Date" required>
+            <FormField label={t("vendorCredits.refundDialog.date")} required>
               {() => <DatePicker value={date} onChange={setDate} />}
             </FormField>
             <MoneyAccountPicker form="refund" direction="in" value={moneyAccountId} onValueChange={setMoneyAccountId} />
-            <FormField label="Method" required>
+            <FormField label={t("vendorCredits.refundDialog.method")} required>
               {(field) => (
                 <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
                   <SelectTrigger id={field.id}>
@@ -111,16 +113,16 @@ export function VendorRefundDialog({ open, onOpenChange, credit, onRecorded }: {
               )}
             </FormField>
           </div>
-          <FormField label="Reference">
-            {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" maxLength={120} />}
+          <FormField label={t("vendorCredits.refundDialog.reference")}>
+            {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder={t("vendorCredits.refundDialog.optional")} maxLength={120} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("vendorCredits.refundDialog.cancel")}
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Record refund"}
+            {saving ? <Spinner size="sm" /> : t("vendorCredits.refundDialog.recordRefund")}
           </Button>
         </DialogFooter>
       </DialogContent>

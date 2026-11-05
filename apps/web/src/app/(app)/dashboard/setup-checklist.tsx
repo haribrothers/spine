@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, cn } from "@spine/ui";
 import { finishSettingUpLabel } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { t as translate, useT } from "../../../lib/i18n";
 
 interface ChecklistStatus {
   /** False for Staff and Field: setup is the Owner's job (US-ONB-12). */
@@ -18,9 +19,9 @@ interface ChecklistStatus {
 }
 
 const CHECKLIST_ITEMS: { key: "hasCustomer" | "hasItem" | "hasSentQuote"; label: string; href: string }[] = [
-  { key: "hasCustomer", label: "Add your first customer", href: "/contacts" },
-  { key: "hasItem", label: "Create your first item", href: "/catalog" },
-  { key: "hasSentQuote", label: "Send your first quote", href: "/quotes" },
+  { key: "hasCustomer", label: translate("dashboard.checklist.addCustomer"), href: "/contacts" },
+  { key: "hasItem", label: translate("dashboard.checklist.createItem"), href: "/catalog" },
+  { key: "hasSentQuote", label: translate("dashboard.checklist.sendQuote"), href: "/quotes" },
 ];
 
 /**
@@ -47,6 +48,7 @@ const CHECKLIST_ITEMS: { key: "hasCustomer" | "hasItem" | "hasSentQuote"; label:
  * `dismissed` hasn't caught up yet) doesn't fire a redundant PUT per visit.
  */
 export function SetupChecklist({ className, onVisibleChange }: { className?: string; /** US-DASH-16: the dashboard moves Today when the checklist takes its spot. */ onVisibleChange?: (visible: boolean) => void } = {}) {
+  const t = useT();
   const [status, setStatus] = useState<ChecklistStatus | null>(null);
   const [error, setError] = useState(false);
   const autoDismissSent = useRef(false);
@@ -100,14 +102,14 @@ export function SetupChecklist({ className, onVisibleChange }: { className?: str
       <Card className={cn("w-full", className)} data-testid="finish-setting-up">
         <CardHeader>
           <CardTitle>{finishSettingUpLabel(left)}</CardTitle>
-          <CardDescription>Your first quote is out. A few settings make the rest of Spine fit your business.</CardDescription>
+          <CardDescription>{t("dashboard.checklist.finishDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
           <Button asChild size="sm">
-            <Link href="/setup">Set up Spine</Link>
+            <Link href="/setup">{t("dashboard.checklist.setUp")}</Link>
           </Button>
           <Button variant="ghost" size="sm" onClick={handleDismiss}>
-            Dismiss
+            {t("dashboard.checklist.dismiss")}
           </Button>
         </CardContent>
       </Card>
@@ -117,8 +119,8 @@ export function SetupChecklist({ className, onVisibleChange }: { className?: str
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader>
-        <CardTitle>Get started</CardTitle>
-        <CardDescription>A few things to do before your first real transaction.</CardDescription>
+        <CardTitle>{t("dashboard.checklist.getStarted")}</CardTitle>
+        <CardDescription>{t("dashboard.checklist.getStartedDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <ul className="flex flex-col gap-2">
@@ -126,14 +128,14 @@ export function SetupChecklist({ className, onVisibleChange }: { className?: str
             const done = status[item.key];
             return (
               <li key={item.key} className="flex items-center gap-2 text-[13px] text-on-surface">
-                <Checkbox checked={done} disabled aria-label={`${item.label}${done ? " (done)" : ""}`} />
+                <Checkbox checked={done} disabled aria-label={done ? t("dashboard.checklist.itemDone", { label: item.label }) : item.label} />
                 {done ? <span className="text-on-surface-muted line-through">{item.label}</span> : <Link href={item.href}>{item.label}</Link>}
               </li>
             );
           })}
         </ul>
         <Button variant="ghost" size="sm" className="self-start" onClick={handleDismiss}>
-          Dismiss
+          {t("dashboard.checklist.dismiss")}
         </Button>
       </CardContent>
     </Card>

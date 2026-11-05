@@ -27,6 +27,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { bulkToast, interCounterpart } from "./catalog-list-state";
 import type { Account, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
+import { useT } from "../../../lib/i18n";
 
 const actionClass = "text-inverse-on-surface hover:bg-inverse-on-surface/10 hover:text-inverse-on-surface";
 
@@ -65,6 +66,7 @@ export function CatalogBulkBar({
   /** It didn't: shown above the list, the selection kept (US-OPS-38). */
   onFailed: (title: string, message: string) => void;
 }) {
+  const t = useT();
   const canEdit = useCapability("catalog.edit_own");
   const canDelete = useCapability("catalog.delete_own");
   const [busy, setBusy] = useState(false);
@@ -72,15 +74,15 @@ export function CatalogBulkBar({
   const [category, setCategory] = useState("");
   const { confirm, dialog: confirmDialog } = useConfirm();
   const allArchived = selected.length > 0 && selected.every((item) => item.archivedAt);
-  const items = `${selected.length} ${selected.length === 1 ? "item" : "items"}`;
+  const items = t("catalog.bulk.items", { count: selected.length });
 
   /** US-CAT-16 — "Change the tax on 12 items?" before the change; Go back keeps the selection. */
   async function setTax(label: string | null, changes: NonNullable<BulkCatalogItemsInput["changes"]>) {
     const ok = await confirm({
-      title: `Change the tax on ${items}?`,
-      description: `${selected.length === 1 ? "It'll" : "They'll"} ${label ? `use ${label}` : "have no tax"} on new quotes and invoices. Quotes and invoices already issued keep their tax.`,
-      confirmLabel: "Change tax",
-      cancelLabel: "Go back",
+      title: t("catalog.bulk.taxTitle", { items }),
+      description: label ? t("catalog.bulk.taxUse", { count: selected.length, label }) : t("catalog.bulk.taxNone", { count: selected.length }),
+      confirmLabel: t("catalog.bulk.taxConfirm"),
+      cancelLabel: t("catalog.common.goBack"),
     });
     if (ok) await run({ action: "update", changes }, "Updated");
   }
@@ -88,10 +90,10 @@ export function CatalogBulkBar({
   /** US-CAT-16 — "Change the income account on 12 items?"; Go back keeps the selection. */
   async function setIncomeAccount(account: Account | null) {
     const ok = await confirm({
-      title: `Change the income account on ${items}?`,
-      description: `New quotes and invoices post ${selected.length === 1 ? "its" : "their"} sales to ${account ? `${account.code} ${account.name}` : "4100 Sales — Services"}. Quotes and invoices already issued keep theirs.`,
-      confirmLabel: "Change account",
-      cancelLabel: "Go back",
+      title: t("catalog.bulk.incomeTitle", { items }),
+      description: t("catalog.bulk.incomeDescription", { count: selected.length, account: account ? `${account.code} ${account.name}` : t("catalog.common.defaultIncomeAccount") }),
+      confirmLabel: t("catalog.bulk.incomeConfirm"),
+      cancelLabel: t("catalog.common.goBack"),
     });
     if (ok) await run({ action: "update", changes: { incomeAccountId: account?.id ?? null } }, "Updated");
   }
@@ -100,10 +102,10 @@ export function CatalogBulkBar({
   async function setCategoryConfirmed() {
     const name = category.trim();
     const ok = await confirm({
-      title: name ? `Move ${items} to “${name}”?` : `Remove the category from ${items}?`,
-      description: name ? `${selected.length === 1 ? "It shows" : "They show"} under “${name}” in the catalogue and the item pickers.` : `${selected.length === 1 ? "It shows" : "They show"} with no category in the catalogue and the item pickers.`,
-      confirmLabel: name ? "Move items" : "Remove category",
-      cancelLabel: "Go back",
+      title: name ? t("catalog.bulk.moveTitle", { items, name }) : t("catalog.bulk.removeCategoryTitle", { items }),
+      description: name ? t("catalog.bulk.moveDescription", { count: selected.length, name }) : t("catalog.bulk.removeCategoryDescription", { count: selected.length }),
+      confirmLabel: name ? t("catalog.bulk.moveConfirm") : t("catalog.bulk.removeCategoryConfirm"),
+      cancelLabel: t("catalog.common.goBack"),
     });
     if (!ok) return;
     await run({ action: "update", changes: { category: name } }, "Updated");
@@ -113,15 +115,15 @@ export function CatalogBulkBar({
 
   async function run(body: Omit<BulkCatalogItemsInput, "ids">, verb: "Updated" | "Archived" | "Restored") {
     if (selected.length > MAX_CATALOG_BULK) {
-      onFailed("Too many items.", `Select ${MAX_CATALOG_BULK} or fewer items.`);
+      onFailed(t("catalog.bulk.tooManyTitle"), t("catalog.bulk.tooManyMessage", { max: MAX_CATALOG_BULK }));
       return;
     }
     setBusy(true);
     try {
       await apiClient.post("/catalog-items/bulk", { ids: selected.map((item) => item.id), ...body });
-      onFinished(bulkToast(verb, selected.length), verb === "Archived" ? "They're hidden from pickers; restore them any time." : "Your catalogue is up to date.");
+      onFinished(bulkToast(verb, selected.length), verb === "Archived" ? t("catalog.bulk.archivedDescription") : t("catalog.bulk.updatedDescription"));
     } catch (err) {
-      onFailed("Nothing changed.", err instanceof Error ? err.message : "Try again.");
+      onFailed(t("catalog.bulk.failedTitle"), err instanceof Error ? err.message : t("catalog.bulk.tryAgain"));
     } finally {
       setBusy(false);
     }
@@ -137,14 +139,14 @@ export function CatalogBulkBar({
   };
 
   return (
-    <div role="region" aria-label="Selected items" className="flex flex-wrap items-center gap-1.5 rounded-lg bg-inverse-surface px-3 py-2" data-testid="catalog-bulk-bar">
+    <div role="region" aria-label={t("catalog.bulk.regionLabel")} className="flex flex-wrap items-center gap-1.5 rounded-lg bg-inverse-surface px-3 py-2" data-testid="catalog-bulk-bar">
       <p className="mr-2 pl-1 text-[14px] font-semibold text-inverse-on-surface" aria-live="polite">
-        {selected.length} selected
+        {t("catalog.bulk.selectedCount", { count: selected.length })}
       </p>
       {canEdit && (
         <Button variant="ghost" size="sm" className={actionClass} disabled={busy} onClick={() => { setCategory(""); setCategoryOpen(true); }}>
           <Tag size={14} aria-hidden />
-          Set category
+          {t("catalog.bulk.setCategory")}
         </Button>
       )}
       {canEdit && (
@@ -152,13 +154,13 @@ export function CatalogBulkBar({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className={actionClass} disabled={busy}>
               <Percent size={14} aria-hidden />
-              Set tax
+              {t("catalog.bulk.setTax")}
               <ChevronDown size={14} aria-hidden />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64">
-            <DropdownMenuLabel>{gst ? "Intra-state tax" : "Tax"}</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => void setTax(null, { defaultTaxRateId: null, defaultTaxGroupId: null, ...noInter })}>No tax</DropdownMenuItem>
+            <DropdownMenuLabel>{gst ? t("catalog.bulk.intraStateTax") : t("catalog.common.tax")}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => void setTax(null, { defaultTaxRateId: null, defaultTaxGroupId: null, ...noInter })}>{t("catalog.common.noTax")}</DropdownMenuItem>
             {activeGroups.map((g) => (
               <DropdownMenuItem key={g.id} onSelect={() => void setTax(`${g.name} (${g.taxRates.map((r) => `${r.rate}%`).join(" + ")})`, { defaultTaxGroupId: g.id, defaultTaxRateId: null, ...interFor(g) })}>
                 {g.name}
@@ -174,7 +176,7 @@ export function CatalogBulkBar({
             {gst && (
               <>
                 <DropdownMenuSeparator />
-                <p className="px-2 py-1.5 text-[12px] text-on-surface-muted">Inter-state tax follows: the IGST rate at the same total. Without one, each item keeps its own.</p>
+                <p className="px-2 py-1.5 text-[12px] text-on-surface-muted">{t("catalog.bulk.interStateNote")}</p>
               </>
             )}
           </DropdownMenuContent>
@@ -185,14 +187,14 @@ export function CatalogBulkBar({
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className={actionClass} disabled={busy}>
               <Landmark size={14} aria-hidden />
-              Set income account
+              {t("catalog.bulk.setIncomeAccount")}
               <ChevronDown size={14} aria-hidden />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-72">
-            <DropdownMenuLabel>Income account</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("catalog.common.incomeAccount")}</DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => void setIncomeAccount(null)}>
-              None — posts to 4100 Sales — Services
+              {t("catalog.bulk.noIncomeAccount")}
             </DropdownMenuItem>
             {incomeAccounts.map((a) => (
               <DropdownMenuItem key={a.id} onSelect={() => void setIncomeAccount(a)}>
@@ -207,44 +209,44 @@ export function CatalogBulkBar({
         (allArchived ? (
           <Button variant="ghost" size="sm" className={actionClass} disabled={busy} onClick={() => void run({ action: "restore" }, "Restored")}>
             <ArchiveRestore size={14} aria-hidden />
-            Restore
+            {t("catalog.common.restore")}
           </Button>
         ) : (
           <Button variant="ghost" size="sm" className={actionClass} disabled={busy} onClick={() => void run({ action: "archive" }, "Archived")}>
             <Archive size={14} aria-hidden />
-            Archive
+            {t("catalog.common.archive")}
           </Button>
         ))}
       {canEdit && !anyArchived && (
         <Button variant="ghost" size="sm" className={actionClass} disabled={busy} onClick={onMakeBundle}>
           <PackagePlus size={14} aria-hidden />
-          Make a bundle
+          {t("catalog.common.makeBundle")}
         </Button>
       )}
       <span className="flex-1" />
       {busy && <Spinner size="sm" className="text-inverse-on-surface" />}
       <Button variant="ghost" size="sm" className={actionClass} onClick={onClear}>
         <X size={14} aria-hidden />
-        Clear
+        {t("catalog.common.clear")}
       </Button>
 
       <Dialog open={categoryOpen} onOpenChange={setCategoryOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Set category</DialogTitle>
+            <DialogTitle>{t("catalog.bulk.setCategory")}</DialogTitle>
             <DialogDescription>
-              {selected.length} {selected.length === 1 ? "item moves" : "items move"} to this category. Leave it empty to remove their category.
+              {t("catalog.bulk.categoryDialogDescription", { count: selected.length })}
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
-            <FormField label="Category">
+            <FormField label={t("catalog.common.category")}>
               {(field) => (
                 <Combobox
                   {...field}
                   options={categories.map((c) => ({ value: c, label: c }))}
                   value={category}
                   onValueChange={setCategory}
-                  placeholder="Choose or type a category"
+                  placeholder={t("catalog.bulk.categoryPlaceholder")}
                   allowCreate
                 />
               )}
@@ -252,13 +254,13 @@ export function CatalogBulkBar({
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setCategoryOpen(false)}>
-              Cancel
+              {t("catalog.common.cancel")}
             </Button>
             <Button
               disabled={busy}
               onClick={() => void setCategoryConfirmed()}
             >
-              {busy ? <Spinner size="sm" /> : "Set category"}
+              {busy ? <Spinner size="sm" /> : t("catalog.bulk.setCategory")}
             </Button>
           </DialogFooter>
         </DialogContent>

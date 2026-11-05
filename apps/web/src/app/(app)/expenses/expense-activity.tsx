@@ -8,6 +8,7 @@ import { Check, Pencil, Receipt, RotateCw, Send, X } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { AiFilledMark } from "../../../components/ai-filled-mark";
+import { t as translate, useT } from "../../../lib/i18n";
 
 function when(iso: string): string {
   const d = new Date(iso);
@@ -19,17 +20,17 @@ function when(iso: string): string {
 export function expenseActivityText(item: ExpenseActivityEntry, currency: string): { text: string; link?: { label: string; href: string }; after?: string } {
   switch (item.type) {
     case "submitted":
-      return { text: "Submitted for approval" };
+      return { text: translate("expenses.activity.submitted") };
     case "edited":
-      return { text: item.detail ? `Edited · ${item.detail}` : "Edited" };
+      return { text: item.detail ? translate("expenses.activity.editedDetail", { detail: item.detail }) : translate("expenses.activity.edited") };
     case "rejected":
-      return { text: "Rejected", after: item.detail ?? undefined };
+      return { text: translate("expenses.activity.rejected"), after: item.detail ?? undefined };
     case "resubmitted":
-      return { text: "Fixed and resubmitted" };
+      return { text: translate("expenses.activity.resubmitted") };
     case "approved":
-      return { text: `Approved${item.amount ? ` · posted ${formatMoney(BigInt(item.amount), currency)}` : ""}`, after: item.detail ?? undefined };
+      return { text: item.amount ? translate("expenses.activity.approvedPosted", { amount: formatMoney(BigInt(item.amount), currency) }) : translate("expenses.activity.approved"), after: item.detail ?? undefined };
     case "billed":
-      return { text: "Billed on", link: item.linkId ? { label: item.detail ?? "an invoice", href: `/invoices/${item.linkId}` } : undefined };
+      return { text: translate("expenses.activity.billedOn"), link: item.linkId ? { label: item.detail ?? translate("expenses.activity.anInvoice"), href: `/invoices/${item.linkId}` } : undefined };
   }
 }
 
@@ -48,6 +49,7 @@ const ICONS: Record<ExpenseActivityEntry["type"], React.ComponentType<{ size?: n
  * the comment) and billed (with the invoice), with who and when.
  */
 export function ExpenseActivity({ expenseId, currency, refreshKey, onViewHistory }: { expenseId: string; currency: string; refreshKey?: unknown; onViewHistory: () => void }) {
+  const t = useT();
   const [items, setItems] = useState<ExpenseActivityEntry[] | null>(null);
 
   useEffect(() => {
@@ -60,9 +62,9 @@ export function ExpenseActivity({ expenseId, currency, refreshKey, onViewHistory
   return (
     <Card className="flex flex-col gap-1 p-0" data-testid="expense-activity">
       <div className="flex items-center justify-between px-4 pb-1 pt-4">
-        <h3 className="text-[14px] font-semibold text-on-surface">Activity</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("expenses.activity.title")}</h3>
         <button type="button" onClick={onViewHistory} className="text-[12.5px] font-medium text-primary hover:underline">
-          View history
+          {t("expenses.common.viewHistory")}
         </button>
       </div>
       <ol className="flex flex-col px-4 pb-4">
@@ -72,7 +74,7 @@ export function ExpenseActivity({ expenseId, currency, refreshKey, onViewHistory
             <Skeleton className="h-4 w-1/2" />
           </li>
         )}
-        {items?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">Nothing has happened yet.</li>}
+        {items?.length === 0 && <li className="py-2 text-[13px] text-on-surface-muted">{t("expenses.activity.empty")}</li>}
         {items?.map((item, i) => {
           const Icon = ICONS[item.type];
           const { text, link, after } = expenseActivityText(item, currency);
@@ -99,7 +101,7 @@ export function ExpenseActivity({ expenseId, currency, refreshKey, onViewHistory
                       </Link>
                     </>
                   )}
-                  {after && <> · “{after}”</>}
+                  {after && <>{t("expenses.activity.after", { text: after })}</>}
                   {item.aiAssisted && <AiFilledMark />}
                 </p>
                 <p className="mt-0.5 text-[12px] text-on-surface-muted">{[item.actorName, when(item.at)].filter(Boolean).join(" · ")}</p>

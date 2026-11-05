@@ -48,7 +48,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 
 ## `apps/site` and `apps/docs` — website, user guide and developer docs (Phase 12)
 
-`apps/site` is the home page at `h4loom.com` (Astro); `apps/docs` is everything people read, at `docs.h4loom.com` (Astro + Starlight) ([D-270](12-decisions.md)).
+`apps/site` is the home page at `spine.h4loom.com` (Astro); `apps/docs` is everything people read, under `/docs/` on the same site (Astro + Starlight) ([D-270](12-decisions.md), [D-273](12-decisions.md)). The domain is set once, in `packages/shared/src/public-site.ts`.
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -57,7 +57,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | API reference | `starlight-openapi`, from the API's OpenAPI document | Generated, so it never drifts from the code |
 | Versions | `starlight-versions`, one per minor release from 1.0 ([D-111](12-decisions.md)) | Self-hosters on older versions read matching docs |
 | Link checks | `starlight-links-validator` | Broken links fail the build |
-| Hosting | Cloudflare Pages: `apps/site` at `h4loom.com`, `apps/docs` at `docs.h4loom.com` ([D-270](12-decisions.md), [Q-15](13-risks-open-questions.md)) | Two projects from one repo, each on its own domain; free; works while the repo is private; a preview per branch |
+| Hosting | Cloudflare Pages, one project: `pnpm site:build` puts `apps/site` at `spine.h4loom.com` and `apps/docs` under `/docs/` ([D-273](12-decisions.md)) | One domain and one set of settings; free; works while the repo is private; a preview per branch |
 | In-app copy | The user guide and self-hosting sections are bundled into the web image at `/help` ([D-110](12-decisions.md)) | Help works offline and matches the installed version |
 
 ## `apps/mobile` — the field app (Phase 5)
@@ -85,4 +85,4 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 
 ## Configuration
 
-One `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Everything else is optional and degrades gracefully: `API_URL`, `NEXT_PUBLIC_API_URL`, `SMTP_*` (email queued, not sent), `STORAGE_DRIVER` (`local` default or `s3`), `FILES_DIR` (default `/data/files`), `S3_*` (only for the `s3` driver; without them a switch to `s3` leaves uploads unavailable), `CURRENCY`, `LOCALE`, `TZ`, `CLOUDFLARE_TUNNEL_TOKEN`, `SEED_DEMO`, `VAPID_*` (browser push hidden), `UPDATE_CHECK` (`off` disables the daily check, [D-055](12-decisions.md)) and `MOBILE_MIN_VERSION` (oldest field app the API accepts, [D-071](12-decisions.md)).
+One `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Everything else is optional and degrades gracefully: `API_URL`, `NEXT_PUBLIC_API_URL`, `SMTP_*` (email queued, not sent), `STORAGE_DRIVER` (`local` default or `s3`), `FILES_DIR` (default `/data/files`), `S3_*` (only for the `s3` driver; without them a switch to `s3` leaves uploads unavailable), `CURRENCY`, `LOCALE`, `TZ`, `CLOUDFLARE_TUNNEL_TOKEN`, `SEED_DEMO`, `VAPID_*` (browser push hidden), `UPDATE_CHECK` (`off` disables the daily check, [D-055](12-decisions.md)), `TRUST_PROXY` (which proxies' X-Forwarded-For the API believes; loopback and private networks by default, US-OPS-18) and `MOBILE_MIN_VERSION` (oldest field app the API accepts, [D-071](12-decisions.md)).

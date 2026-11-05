@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Text, View } from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
+import { isReduceMotionEnabled } from "../hooks/use-reduce-motion";
 
 /**
  * A semi-circular (180°) gauge, arc + filled progress + a centered value —
@@ -93,13 +94,26 @@ export function GaugeIndicator({ progress, trackColor, fillGradient, textColorCl
     // slightly past its final angle and back, while the displayed
     // percentage text still clamps to a sane 0-100 range.
     const id = animatedProgress.addListener(({ value }) => setRenderedProgress(value));
-    Animated.spring(animatedProgress, {
-      toValue: clamped,
-      useNativeDriver: false,
-      friction: 7,
-      tension: 40,
-    }).start();
-    return () => animatedProgress.removeListener(id);
+    let cancelled = false;
+    // US-OPS-09: with Reduce Motion on, the gauge shows its final value at once, no spring.
+    void isReduceMotionEnabled().then((reduce) => {
+      if (cancelled) return;
+      if (reduce) {
+        animatedProgress.setValue(clamped);
+        return;
+      }
+      Animated.spring(animatedProgress, {
+        toValue: clamped,
+        useNativeDriver: false,
+        friction: 7,
+        tension: 40,
+      }).start();
+    });
+    return () => {
+      cancelled = true;
+      animatedProgress.stopAnimation();
+      animatedProgress.removeListener(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- animate once per mount to `clamped`'s value at that time, matching a one-shot load-in sweep, not re-triggering on every re-render.
   }, []);
 

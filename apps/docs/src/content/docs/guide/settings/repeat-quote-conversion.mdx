@@ -1,0 +1,34 @@
+---
+title: Choose what happens when a quote is converted again
+description: Decide whether Spine warns, blocks or allows turning the same quote into a second job or invoice.
+sidebar:
+  order: 15
+---
+
+**Convert to job** and **Convert to invoice** can be used more than once on the same quote. "Each conversion creates a full, separate job or invoice for the quote's whole amount, not a split." This setting decides how Spine behaves when someone tries it, so amounts aren't doubled by accident.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. The rule applies to everyone who converts quotes.</Aside>
+
+<Steps>
+
+1. **Open Settings › Repeat quote conversion** — Open your user menu, choose **Settings**, and pick **Repeat quote conversion** under **Sales & meetings**.
+
+2. **Choose a behaviour** —
+   - **Warn (recommended)** — "If a quote already has a job or invoice, show what already exists and ask for confirmation before creating another."
+   - **Block** — "Refuse to create a second job or invoice from the same quote. You'd need to change this setting to override it."
+   - **Off** — "No check at all — convert the same quote as many times as you like, with no warning."
+
+3. **Press Save** — A "Saved" message appears.
+
+</Steps>
+
+<Screenshot id="settings-repeat-quote-conversion" alt="Settings, Repeat quote conversion: Warn (recommended), Block and Off, with Save" />
+
+## What people see
+
+With **Warn**, converting a quote a second time opens "This quote has already been converted before", listing the jobs or invoices that already exist, with **Cancel** and **Convert to job anyway** (or **Convert to invoice anyway**). Confirming creates a second, full job or invoice.
+
+<Aside type="tip">To bill a quote in parts, don't convert it twice — use milestones or progress billing on the job. See [Jobs and milestones](../../jobs/) and [Quotes](../../quotes/).</Aside>

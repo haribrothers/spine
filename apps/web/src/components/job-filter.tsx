@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Alert, AlertDescription, Combobox } from "@spine/ui";
 import { apiClient } from "../lib/api-client";
+import { t as translate, useT } from "../lib/i18n";
 
 import { SectionLink } from "./section-link";
 export const ALL_JOBS = "__all__";
@@ -50,23 +51,25 @@ export function useJobFilter() {
     [router, pathname, searchParams],
   );
 
-  const options = useMemo(() => [{ value: ALL_JOBS, label: "All jobs" }, ...jobs.map((j) => ({ value: j.id, label: jobLabel(j) }))], [jobs]);
+  const options = useMemo(() => [{ value: ALL_JOBS, label: translate("jobs.filter.allJobs") }, ...jobs.map((j) => ({ value: j.id, label: jobLabel(j) }))], [jobs]);
   const selected = jobs.find((j) => j.id === jobId);
 
   return { jobId, setJobId, options, selectedLabel: selected ? jobLabel(selected) : null, filtering: jobId !== ALL_JOBS };
 }
 
 export function JobFilter({ value, options, onValueChange }: { value: string; options: { value: string; label: string }[]; onValueChange: (value: string) => void }) {
-  return <Combobox options={options} value={value} onValueChange={onValueChange} placeholder="All jobs" aria-label="Filter by job" className="w-60" />;
+  const t = useT();
+  return <Combobox options={options} value={value} onValueChange={onValueChange} placeholder={t("jobs.filter.allJobs")} aria-label={t("jobs.filter.filterByJob")} className="w-60" />;
 }
 
 /** "Showing expenses on JOB-001 · Marina office fit-out. See vendor bills on this job · Open the job's costing" */
 export function JobFilterNote({ kind, jobId, label, canViewCosting }: { kind: "expenses" | "vendor bills"; jobId: string; label: string; canViewCosting: boolean }) {
-  const other = kind === "expenses" ? { href: `/vendor-bills?jobId=${jobId}`, text: "See vendor bills on this job" } : { href: `/expenses?jobId=${jobId}`, text: "See expenses on this job" };
+  const t = useT();
+  const other = kind === "expenses" ? { href: `/vendor-bills?jobId=${jobId}`, text: t("jobs.filter.seeVendorBills") } : { href: `/expenses?jobId=${jobId}`, text: t("jobs.filter.seeExpenses") };
   return (
     <Alert variant="info">
       <AlertDescription>
-        Showing {kind} on {label}.{" "}
+        {kind === "expenses" ? t("jobs.filter.showingExpenses", { label }) : t("jobs.filter.showingVendorBills", { label })}{" "}
         <Link href={other.href} className="text-primary hover:underline">
           {other.text}
         </Link>
@@ -74,7 +77,7 @@ export function JobFilterNote({ kind, jobId, label, canViewCosting }: { kind: "e
           <>
             {" · "}
             <SectionLink href={`/jobs/${jobId}?tab=costing`} className="text-primary hover:underline">
-              Open the job&apos;s costing
+              {t("jobs.filter.openCosting")}
             </SectionLink>
           </>
         )}

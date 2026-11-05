@@ -1,5 +1,6 @@
 import { addDays, addMinutes, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isSameWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns";
 import { expandEventsInRange, miniCalendarDayKey, type CalendarEvent, type CalendarView } from "@spine/ui";
+import { t } from "../../../lib/i18n";
 
 const VIEWS: CalendarView[] = ["day", "week", "month", "agenda"];
 export const DEFAULT_VIEW: CalendarView = "week";
@@ -56,13 +57,13 @@ export function visibleRange(view: CalendarView, date: Date): { start: Date; end
 export function rangeLabel(view: CalendarView, date: Date, today: Date): string {
   switch (view) {
     case "day":
-      return isSameDay(date, today) ? "Today" : format(date, "EEE d MMM");
+      return isSameDay(date, today) ? t("meetings.range.today") : format(date, "EEE d MMM");
     case "week":
-      return isSameWeek(date, today) ? "This week" : `Week of ${format(startOfWeek(date), "d MMM")}`;
+      return isSameWeek(date, today) ? t("meetings.range.thisWeek") : t("meetings.range.weekOf", { date: format(startOfWeek(date), "d MMM") });
     case "month":
-      return isSameMonth(date, today) ? "This month" : format(date, "MMMM yyyy");
+      return isSameMonth(date, today) ? t("meetings.range.thisMonth") : format(date, "MMMM yyyy");
     case "agenda":
-      return `From ${format(date, "d MMM")}`;
+      return t("meetings.range.from", { date: format(date, "d MMM") });
   }
 }
 
@@ -89,8 +90,8 @@ export function monthGrid(month: Date): { start: Date; end: Date } {
 
 /** US-MTG-15 — "Today · 1:00 PM", "Tomorrow · 9:00 AM", "Tue 13 Oct · 2:30 PM", "Fri 16 Oct · All day". */
 export function upcomingLabel(start: Date, allDay: boolean, now: Date): string {
-  const day = isSameDay(start, now) ? "Today" : isSameDay(start, addDays(now, 1)) ? "Tomorrow" : format(start, "EEE d MMM");
-  return `${day} · ${allDay ? "All day" : format(start, "h:mm a")}`;
+  const day = isSameDay(start, now) ? t("meetings.upcoming.today") : isSameDay(start, addDays(now, 1)) ? t("meetings.upcoming.tomorrow") : format(start, "EEE d MMM");
+  return `${day} · ${allDay ? t("meetings.upcoming.allDay") : format(start, "h:mm a")}`;
 }
 
 /** US-MTG-14 — New meeting: 30 minutes from the next half hour today, or from 9:00 AM on the shown day. */

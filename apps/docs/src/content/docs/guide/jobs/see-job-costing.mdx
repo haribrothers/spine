@@ -1,0 +1,42 @@
+---
+title: See a job's cost and margin
+description: Read a job's live cost, revenue and margin, and see which kind of cost is running away.
+sidebar:
+  order: 14
+---
+
+The **Costing** tab shows how a job is doing while it runs: what it has cost, what you've billed, and the margin between them. Everything comes from the entries in your books tagged to the job, so it agrees with your reports.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View job profitability**. Without it, the **Costing** tab and the job's cost and margin figures aren't shown. Clicking a cost category to see its entries also needs **View ledger / journals**. Field crew never see costing.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs** and open the job.
+2. **Open Costing** — Choose the **Costing** tab.
+3. **Read the figures** — "Job costing" shows **Contract value** (including applied variations), **Revenue recognised**, **Cost**, **Margin** and **Margin %**.
+4. **See the costs behind it** — Press **View bills and expenses** to open the bills and expenses tagged to this job.
+</Steps>
+
+<Screenshot id="jobs-costing" alt="A job's Costing tab with the job costing figures, the Budget and Billing cards and cost by category" />
+
+## Where the numbers come from
+
+- **Cost** is the net amount of vendor bills and approved expenses tagged to the job. A submitted or rejected expense doesn't count. A voided bill's cost is removed.
+- **Revenue recognised** is the job's issued invoices, such as its progress invoices.
+- **Margin** is revenue less cost. When cost is ahead of billing, the margin shows in the danger colour with "Cost is ahead of billing".
+
+With no costs yet, cost is 0.00. Tag bills and expenses to the job when you enter them, so they count here.
+
+## Cost by category
+
+The **Cost by category** card splits the cost by the expense account each bill line or expense posts to, such as materials, labour, subcontractors and plant hire. Each row shows the amount and its share ("Cost of Materials · 11,200.00 · 45%"), largest first, beside a donut. The rows add up to **Total cost**, which is the same as **Cost**.
+
+With more than six accounts, the donut shows the five largest and "Other", while the list shows every account. If you have **View ledger / journals**, click a row to see the entries for that account on this job.
+
+With no costs, the card says "No costs yet — bills and approved expenses tagged to this job show up here."
+
+<Aside type="tip">The job's figures strip at the top of the page also shows **Cost** and **Margin**, so you can check them from any tab. To compare all your jobs at once, use the job profitability report.</Aside>
+
+For the **Budget** and **Billing** cards on this tab, see [Set a cost budget and track billing progress](../track-budget-and-billing/).

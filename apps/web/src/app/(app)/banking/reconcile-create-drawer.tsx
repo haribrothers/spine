@@ -28,6 +28,7 @@ import {
 import type { AiBankSuggestion, MoneyAccount, StatementLine } from "@spine/shared";
 import { Sparkles } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { formatMoney } from "../../../lib/money";
@@ -83,6 +84,7 @@ export function ReconcileCreateDrawer({
   /** The new document's id; the reconcile page matches the line to its entry. */
   onCreated: (line: StatementLine, sourceId: string) => void;
 }) {
+  const t = useT();
   const role = useMyRole();
   const canPayment = useCapability("payments.edit_own");
   const canVendorPayment = useCapability("vendor_payments.edit_own");
@@ -98,20 +100,20 @@ export function ReconcileCreateDrawer({
   const options = useMemo(() => {
     const list: { kind: Kind; label: string; allowed: boolean }[] = isIn
       ? [
-          { kind: "payment", label: "Customer payment", allowed: canPayment },
-          { kind: "transfer", label: "Transfer from another account", allowed: canRecordBanking && others.length > 0 },
-          { kind: "money", label: "Other money in", allowed: canRecordBanking },
+          { kind: "payment", label: t("banking.createDrawer.customerPayment"), allowed: canPayment },
+          { kind: "transfer", label: t("banking.createDrawer.transferFrom"), allowed: canRecordBanking && others.length > 0 },
+          { kind: "money", label: t("banking.createDrawer.otherIn"), allowed: canRecordBanking },
         ]
       : [
-          { kind: "vendor_payment", label: "Vendor payment", allowed: canVendorPayment },
+          { kind: "vendor_payment", label: t("banking.createDrawer.vendorPayment"), allowed: canVendorPayment },
           // Staff can't approve their own expense (US-PUR-20), and an expense posts only once approved.
-          { kind: "expense", label: "Expense", allowed: canCreateExpense && canApproveExpense && isOwner },
-          { kind: "transfer", label: "Transfer to another account", allowed: canRecordBanking && others.length > 0 },
-          { kind: "money", label: "Other money out", allowed: canRecordBanking },
-          { kind: "tax_payment", label: "Tax payment", allowed: isOwner },
+          { kind: "expense", label: t("banking.createDrawer.expense"), allowed: canCreateExpense && canApproveExpense && isOwner },
+          { kind: "transfer", label: t("banking.createDrawer.transferTo"), allowed: canRecordBanking && others.length > 0 },
+          { kind: "money", label: t("banking.createDrawer.otherOut"), allowed: canRecordBanking },
+          { kind: "tax_payment", label: t("banking.createDrawer.taxPayment"), allowed: isOwner },
         ];
     return list.filter((o) => o.allowed);
-  }, [isIn, canPayment, canRecordBanking, canVendorPayment, canCreateExpense, canApproveExpense, isOwner, others.length]);
+  }, [t, isIn, canPayment, canRecordBanking, canVendorPayment, canCreateExpense, canApproveExpense, isOwner, others.length]);
 
   const jobsOn = useModule("jobsField");
   const [kind, setKind] = useState<Kind | null>(null);
@@ -168,7 +170,7 @@ export function ReconcileCreateDrawer({
   async function saveExpense() {
     if (!line || !prefill) return;
     if (!categoryId) {
-      setError("Choose a category.");
+      setError(t("banking.createDrawer.chooseCategoryError"));
       return;
     }
     setSaving(true);
@@ -188,7 +190,7 @@ export function ReconcileCreateDrawer({
       if (expense.status === "submitted") await apiClient.post(`/expenses/${expense.id}/approve`, { comment: null, moneyAccountId: account.id });
       created(expense.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this expense. Try again.");
+      setError(err instanceof Error ? err.message : t("banking.createDrawer.expenseError"));
     } finally {
       setSaving(false);
     }
@@ -201,8 +203,8 @@ export function ReconcileCreateDrawer({
       <Drawer open={line !== null && openForm === null} onOpenChange={onOpenChange}>
         <DrawerContent size="lg">
           <DrawerHeader>
-            <DrawerTitle>Create from statement line</DrawerTitle>
-            <DrawerDescription>{line ? `${formatDay(line.date)} · ${line.description} · ${signed}. Saving matches the line to the new entry.` : ""}</DrawerDescription>
+            <DrawerTitle>{t("banking.createDrawer.title")}</DrawerTitle>
+            <DrawerDescription>{line ? t("banking.createDrawer.description", { date: formatDay(line.date), line: line.description, amount: signed }) : ""}</DrawerDescription>
           </DrawerHeader>
           <DrawerBody className="flex flex-col gap-5">
             {error && (
@@ -214,16 +216,17 @@ export function ReconcileCreateDrawer({
               <p className="flex items-start gap-2 rounded-md bg-info-bg px-3 py-2 text-[13px] text-on-surface" data-testid="ai-create-reason">
                 <Sparkles size={15} aria-hidden className="mt-0.5 shrink-0 text-primary" />
                 <span>
-                  <strong className="font-semibold">AI suggests creating: {aiCreateLabel(aiCreate)}</strong> — {aiCreate.reason}. Check it before you save.
+                  <strong className="font-semibold">{t("banking.reconcile.aiSuggestsCreate", { what: aiCreateLabel(aiCreate) })}</strong>
+                  {t("banking.createDrawer.aiReason", { reason: aiCreate.reason })}
                 </span>
               </p>
             )}
             {options.length === 0 ? (
-              <p className="text-[14px] text-on-surface-muted">You can&apos;t record any of these entries. Ask an owner, or exclude the line.</p>
+              <p className="text-[14px] text-on-surface-muted">{t("banking.createDrawer.noOptions")}</p>
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-[14px] font-medium text-on-surface" id="record-it-as">
-                  Record it as
+                  {t("banking.createDrawer.recordItAs")}
                 </p>
                 <RadioGroup value={kind ?? undefined} onValueChange={(v) => setKind(v as Kind)} aria-labelledby="record-it-as" className="flex flex-col gap-2">
                   {options.map((o) => (
@@ -237,18 +240,18 @@ export function ReconcileCreateDrawer({
               </div>
             )}
             {kind === "expense" && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label="Amount" required>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField label={t("banking.createDrawer.amount")} required>
                   {(field) => <Input {...field} value={prefill ? formatMoney(prefill.amount, currency) : ""} disabled className="text-right tabular-nums" />}
                 </FormField>
-                <FormField label="Date" required>
+                <FormField label={t("banking.createDrawer.date")} required>
                   {(field) => <Input {...field} value={line ? formatDay(line.date) : ""} disabled />}
                 </FormField>
-                <FormField label="Category" required>
+                <FormField label={t("banking.createDrawer.category")} required>
                   {(field) => (
                     <Select value={categoryId || undefined} onValueChange={setCategoryId}>
                       <SelectTrigger id={field.id}>
-                        <SelectValue placeholder="Choose a category" />
+                        <SelectValue placeholder={t("banking.createDrawer.chooseCategory")} />
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((c) => (
@@ -262,14 +265,14 @@ export function ReconcileCreateDrawer({
                 </FormField>
                 {/* US-SET-24: no jobs while Jobs & field is switched off. */}
                 {jobsOn && (
-                  <FormField label="Job" helperText="Optional — counts as job cost.">
+                  <FormField label={t("banking.createDrawer.job")} helperText={t("banking.createDrawer.jobHelp")}>
                     {(field) => (
                       <Select value={jobId} onValueChange={setJobId}>
                         <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={NO_JOB}>No job</SelectItem>
+                          <SelectItem value={NO_JOB}>{t("banking.createDrawer.noJob")}</SelectItem>
                           {jobs.map((j) => (
                             <SelectItem key={j.id} value={j.id}>
                               {j.name}
@@ -280,10 +283,10 @@ export function ReconcileCreateDrawer({
                     )}
                   </FormField>
                 )}
-                <FormField label="Paid from" required>
+                <FormField label={t("banking.createDrawer.paidFrom")} required>
                   {() => <p className="py-2 text-[14px] text-on-surface">{account.name}</p>}
                 </FormField>
-                <FormField label="Description">
+                <FormField label={t("banking.createDrawer.descriptionLabel")}>
                   {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} />}
                 </FormField>
               </div>
@@ -291,14 +294,14 @@ export function ReconcileCreateDrawer({
           </DrawerBody>
           <DrawerFooter>
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancel
+              {t("banking.createDrawer.cancel")}
             </Button>
             {kind === "expense" ? (
               <Button onClick={saveExpense} disabled={saving}>
-                {saving ? <Spinner size="sm" /> : "Save and match"}
+                {saving ? <Spinner size="sm" /> : t("banking.createDrawer.saveAndMatch")}
               </Button>
             ) : (
-              kind && <Button onClick={() => setOpenForm(kind)}>Continue</Button>
+              kind && <Button onClick={() => setOpenForm(kind)}>{t("banking.createDrawer.continue")}</Button>
             )}
           </DrawerFooter>
         </DrawerContent>
@@ -306,7 +309,7 @@ export function ReconcileCreateDrawer({
 
       <RecordPaymentDialog open={openForm === "payment"} onOpenChange={(o) => !o && setOpenForm(null)} prefill={prefill} onRecorded={(p) => created(p.id)} />
       <RecordVendorPaymentDialog open={openForm === "vendor_payment"} onOpenChange={(o) => !o && setOpenForm(null)} prefill={prefill} onRecorded={(p) => created(p.id)} />
-      <TransferDialog open={openForm === "transfer"} onOpenChange={(o) => !o && setOpenForm(null)} accounts={active} currency={currency} prefill={transferPrefill} onRecorded={(t) => created(t.id)} />
+      <TransferDialog open={openForm === "transfer"} onOpenChange={(o) => !o && setOpenForm(null)} accounts={active} currency={currency} prefill={transferPrefill} onRecorded={(transfer) => created(transfer.id)} />
       <MoneyInOutDialog
         direction={isIn ? "in" : "out"}
         open={openForm === "money"}
@@ -324,7 +327,7 @@ export function ReconcileCreateDrawer({
           reportTo={previousQuarter(line.date).to}
           currency={currency}
           prefill={prefill}
-          onRecorded={(t) => created(t.id)}
+          onRecorded={(payment) => created(payment.id)}
         />
       )}
     </>

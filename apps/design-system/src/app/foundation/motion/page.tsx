@@ -72,6 +72,11 @@ export default function MotionPage() {
           `prefers-reduced-motion` matters doubly here, not only for users who've set it as an
           OS preference.
         </DocLead>
+        <DocLead>
+          With it set, the preset collapses every duration token to 0.01ms and ends every transition and
+          animation at once, so dialogs, drawers, menus, popovers and toasts appear in their final state (US-OPS-09).
+          Spinners keep turning: they&apos;re the only sign that work is going on.
+        </DocLead>
       </DocSection>
     </div>
   );

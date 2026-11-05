@@ -18,12 +18,14 @@ import {
 import { LOST_REASONS, LOST_REASON_LABELS, type LostReason } from "@spine/shared";
 import { FilePlus, Trophy } from "lucide-react";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 import type { Lead } from "../contacts/types";
 
 /** US-CRM-26 — the five reasons as chips; pressing the chosen one again clears it. */
 export function LostReasonChips({ value, onChange }: { value: LostReason | null; onChange: (reason: LostReason | null) => void }) {
+  const t = useT();
   return (
-    <div role="group" aria-label="Reason" className="flex flex-wrap gap-2">
+    <div role="group" aria-label={t("leads.closed.reason")} className="flex flex-wrap gap-2">
       {LOST_REASONS.map((reason) => {
         const on = value === reason;
         return (
@@ -61,6 +63,7 @@ export function LeadLostDialog({
   onSave: (reason: LostReason | null, note: string) => Promise<void>;
   onClose: () => void;
 }) {
+  const t = useT();
   const [reason, setReason] = useState<LostReason | null>(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -85,7 +88,7 @@ export function LeadLostDialog({
     <Dialog open={lead !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Why was it lost?</DialogTitle>
+          <DialogTitle>{t("leads.closed.lostTitle")}</DialogTitle>
           {lead && (
             <DialogDescription>
               {[lead.title, contactName, formatMoney(lead.valueAmount, lead.valueCurrency)].filter(Boolean).join(" · ")}
@@ -94,16 +97,16 @@ export function LeadLostDialog({
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           <LostReasonChips value={reason} onChange={setReason} />
-          <FormField label="Note (optional)">
+          <FormField label={t("leads.closed.note")}>
             {(field) => <Textarea {...field} value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={1000} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Skip
+            {t("leads.closed.skip")}
           </Button>
           <Button onClick={save} disabled={saving || (!reason && !note.trim())}>
-            {saving ? <Spinner size="sm" /> : "Save reason"}
+            {saving ? <Spinner size="sm" /> : t("leads.closed.saveReason")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -128,7 +131,8 @@ export function LeadWonDialog({
   onCreateQuote: (lead: Lead) => void;
   onClose: () => void;
 }) {
-  const title = lead?.title || contactName || "this lead";
+  const t = useT();
+  const title = lead?.title || contactName || t("leads.closed.thisLead");
   return (
     <Dialog open={lead !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
@@ -137,31 +141,31 @@ export function LeadWonDialog({
             <Trophy size={20} />
           </span>
           <div className="flex flex-col gap-1">
-            <DialogTitle>Won — {title}</DialogTitle>
+            <DialogTitle>{t("leads.closed.wonTitle", { title })}</DialogTitle>
             <DialogDescription>
-              Start a quote for {contactName ?? "this contact"}? It&apos;s linked to this lead, so you&apos;ll find it in the lead&apos;s Quotes.
+              {t("leads.closed.wonDescription", { name: contactName ?? t("leads.closed.thisContact") })}
             </DialogDescription>
           </div>
         </DialogHeader>
         {lead && (
           <DialogBody>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg border border-border px-3 py-2.5 text-[13px]">
-              <dt className="text-on-surface-muted">Contact</dt>
+              <dt className="text-on-surface-muted">{t("leads.closed.contact")}</dt>
               <dd className="font-medium text-on-surface">{contactName ?? "—"}</dd>
-              <dt className="text-on-surface-muted">Value</dt>
+              <dt className="text-on-surface-muted">{t("leads.closed.value")}</dt>
               <dd className="font-medium tabular-nums text-on-surface">{formatMoney(lead.valueAmount, lead.valueCurrency)}</dd>
-              <dt className="text-on-surface-muted">Owner</dt>
-              <dd className="font-medium text-on-surface">{ownerName ?? "Unassigned"}</dd>
+              <dt className="text-on-surface-muted">{t("leads.closed.owner")}</dt>
+              <dd className="font-medium text-on-surface">{ownerName ?? t("leads.closed.unassigned")}</dd>
             </dl>
           </DialogBody>
         )}
         <DialogFooter>
           <Button variant="secondary" onClick={onClose}>
-            Not now
+            {t("leads.closed.notNow")}
           </Button>
           <Button onClick={() => lead && onCreateQuote(lead)}>
             <FilePlus size={14} aria-hidden />
-            Create quote
+            {t("leads.closed.createQuote")}
           </Button>
         </DialogFooter>
       </DialogContent>

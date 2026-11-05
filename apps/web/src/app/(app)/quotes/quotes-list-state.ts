@@ -1,5 +1,6 @@
 import type { TableSort } from "@spine/ui";
 import type { Quote } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-QUO-27 — the cards that filter the list. */
 export type QuoteCard = "" | "open" | "expiring" | "won";
@@ -201,18 +202,18 @@ export function calendarDate(iso: string, now: Date, locale?: string): string {
 
 /** US-QUO-29 — what goes under "Valid until": a countdown, "Expired 2 days ago", or when it was answered. */
 export function validityNote(q: Quote, now: Date, locale?: string): { text: string; tone: "" | "soon" | "gone" } {
-  if (q.status === "accepted") return { text: q.respondedAt ? `Accepted ${shortDate(q.respondedAt, now, locale)}` : "Accepted", tone: "" };
-  if (q.status === "rejected") return { text: q.respondedAt ? `Declined ${shortDate(q.respondedAt, now, locale)}` : "Declined", tone: "" };
+  if (q.status === "accepted") return { text: q.respondedAt ? t("quotes.listState.acceptedOn", { date: shortDate(q.respondedAt, now, locale) }) : t("quotes.listState.accepted"), tone: "" };
+  if (q.status === "rejected") return { text: q.respondedAt ? t("quotes.listState.declinedOn", { date: shortDate(q.respondedAt, now, locale) }) : t("quotes.listState.declined"), tone: "" };
   if (!q.validUntil) return { text: "", tone: "" };
   const days = daysUntil(q.validUntil, now);
-  if (days < 0) return { text: `Expired ${-days} ${-days === 1 ? "day" : "days"} ago`, tone: q.status === "sent" ? "gone" : "" };
-  if (days === 0) return { text: "today", tone: "soon" };
-  return { text: `in ${days} ${days === 1 ? "day" : "days"}`, tone: days <= 7 && q.status === "sent" ? "soon" : "" };
+  if (days < 0) return { text: t("quotes.listState.expiredAgo", { count: -days }), tone: q.status === "sent" ? "gone" : "" };
+  if (days === 0) return { text: t("quotes.listState.today"), tone: "soon" };
+  return { text: t("quotes.listState.inDays", { count: days }), tone: days <= 7 && q.status === "sent" ? "soon" : "" };
 }
 
 /** The contacts that have a quote, for the Contact filter. */
 export function quoteContacts(quotes: Quote[]): { value: string; label: string }[] {
   const seen = new Map<string, string>();
-  for (const q of quotes) if (!seen.has(q.contactId)) seen.set(q.contactId, q.contactName ?? "Unknown contact");
+  for (const q of quotes) if (!seen.has(q.contactId)) seen.set(q.contactId, q.contactName ?? t("quotes.listState.unknownContact"));
   return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }

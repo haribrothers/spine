@@ -1,15 +1,17 @@
 import { View } from "react-native";
 import ServerCrash from "lucide-react-native/icons/server-crash";
 import { Button, EmptyState, useNativeColors } from "@spine/ui-native";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const SERVER_ERROR_TITLE = "Couldn't load your jobs";
-export const SERVER_ERROR_MESSAGE = "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute.";
+export const SERVER_ERROR_TITLE = translate("mobileApp.serverError.title");
+export const SERVER_ERROR_MESSAGE = translate("mobileApp.serverError.message");
 
 /**
  * US-MOB-10 · `MobError` — the phone is online but the server didn't answer.
  * "Show jobs saved at <time>" appears only when there's a cache to show.
  */
 export function ServerErrorState({ onRetry, savedAt, onShowSaved }: { onRetry: () => void; savedAt?: string | null; onShowSaved?: () => void }) {
+  const t = useT();
   const colors = useNativeColors();
   return (
     <EmptyState
@@ -23,8 +25,8 @@ export function ServerErrorState({ onRetry, savedAt, onShowSaved }: { onRetry: (
       description={SERVER_ERROR_MESSAGE}
       action={
         <View className="items-center gap-2">
-          <Button label="Try again" onPress={onRetry} testID="server-error-retry" />
-          {savedAt && onShowSaved ? <Button variant="ghost" label={`Show jobs saved at ${savedAt}`} onPress={onShowSaved} testID="server-error-saved" /> : null}
+          <Button label={t("mobileApp.common.tryAgain")} onPress={onRetry} testID="server-error-retry" />
+          {savedAt && onShowSaved ? <Button variant="ghost" label={t("mobileApp.serverError.showSaved", { time: savedAt })} onPress={onShowSaved} testID="server-error-saved" /> : null}
         </View>
       }
     />

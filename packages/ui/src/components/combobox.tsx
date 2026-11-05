@@ -4,6 +4,7 @@ import { Command as CommandPrimitive } from "cmdk";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import * as Popover from "@radix-ui/react-popover";
 
 export interface ComboboxOption {
@@ -45,13 +46,14 @@ export function Combobox({
   options,
   value,
   onValueChange,
-  placeholder = "Select…",
-  emptyText = "No results found.",
+  placeholder,
+  emptyText,
   className,
   disabled,
   allowCreate = false,
   ...triggerProps
 }: ComboboxProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const selected = options.find((option) => option.value === value);
@@ -80,7 +82,7 @@ export function Combobox({
           )}
           {...triggerProps}
         >
-          <span className="truncate">{selected?.label ?? (allowCreate ? value : undefined) ?? placeholder}</span>
+          <span className="truncate">{selected?.label ?? (allowCreate ? value : undefined) ?? placeholder ?? t("ui.combobox.placeholder")}</span>
           <ChevronsUpDown size={16} className="shrink-0 text-on-surface-muted" />
         </button>
       </Popover.Trigger>
@@ -94,13 +96,13 @@ export function Combobox({
             <CommandPrimitive.Input
               value={search}
               onValueChange={setSearch}
-              placeholder="Search…"
+              placeholder={t("ui.combobox.searchPlaceholder")}
               className="w-full border-b border-border px-3 py-2 text-[14px] text-on-surface placeholder:text-on-surface-muted focus:outline-none"
             />
             <CommandPrimitive.List className="max-h-64 overflow-y-auto p-1">
               {!canCreate && (
                 <CommandPrimitive.Empty className="px-2 py-4 text-center text-[13px] text-on-surface-muted">
-                  {emptyText}
+                  {emptyText ?? t("ui.combobox.empty")}
                 </CommandPrimitive.Empty>
               )}
               {options.map((option) => (
@@ -135,7 +137,7 @@ export function Combobox({
                   className="flex cursor-pointer items-center gap-1.5 rounded-sm px-2 py-1.5 text-[14px] text-on-surface data-[selected=true]:bg-surface-sunken"
                 >
                   <Plus size={14} className="shrink-0" />
-                  Create &ldquo;{trimmedSearch}&rdquo;
+                  {t("ui.combobox.create", { value: trimmedSearch })}
                 </CommandPrimitive.Item>
               )}
             </CommandPrimitive.List>

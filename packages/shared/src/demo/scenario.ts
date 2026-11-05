@@ -93,7 +93,8 @@ export interface IndustryPack {
   recurringBill: { name: string; line: IndustryFreeLine };
   expenses: Record<ExpenseKey, { category: string; amount: number; inAmount: number; description: string; paidBy: "company" | "employee" }>;
   creditNote: { reason: string; line: number; quantity: number };
-  meetings: { title: string; slot: CustomerSlot | null; startInDays: number; durationHours: number; atSite: boolean; description: string | null }[];
+  /** `weekly`: the internal planning meeting, which repeats every week (US-ONB-09). */
+  meetings: { title: string; slot: CustomerSlot | null; startInDays: number; durationHours: number; atSite: boolean; description: string | null; weekly?: boolean }[];
 }
 
 /** The six-month timeline every industry shares. Payments are full unless a fraction is given. */
@@ -220,6 +221,8 @@ const WON_AGES = [6, 34, 62, 95, 140, 170];
 const EXPECTED_CLOSE = { new: 50, qualified: 30, proposal: 12 } as const;
 /** US-ONB-27 — meetings start at different times of day, in the pack's order. */
 const MEETING_TIMES = ["10:00", "15:30", "11:00", "08:30", "14:00"];
+/** US-ONB-09 — the internal planning meeting repeats for the next three months. */
+export const WEEKLY_MEETINGS = 12;
 
 /**
  * Job A has just started, its first milestone due this week (so the field
@@ -635,6 +638,7 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
           durationHours: m.durationHours,
           location: m.atSite && contact ? `${contact.address.line1}, ${contact.address.city}` : null,
           description: m.description,
+          ...(m.weekly ? { weeklyFor: WEEKLY_MEETINGS } : {}),
         };
       }),
       // US-ONB-27: one more in the coming weeks, with the SEZ customer's open lead.

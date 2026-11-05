@@ -6,6 +6,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { SpineLogo, useNativeColors } from "@spine/ui-native";
 import { BrandGlow, JobCard, MilestonePill, PhotoCard, Sparkle } from "../brand/illustration";
 import { Orbits, type OrbitDot, type OrbitRing } from "../brand/orbits";
+import { useT } from "../../lib/i18n";
 
 const HEIGHT = 250;
 const FADE = 64;
@@ -59,6 +60,7 @@ function Twinkle({ spark, on }: { spark: (typeof SPARKS)[number]; on: boolean })
  * drift and the sparkles twinkle, and nothing moves with Reduce Motion (D-204).
  */
 export function SignInHero() {
+  const t = useT();
   const colors = useNativeColors();
   const still = useReducedMotion();
   const [focused, setFocused] = useState(true);
@@ -83,7 +85,7 @@ export function SignInHero() {
           <JobCard showDue={false} />
         </View>
         <View style={{ position: "absolute", right: -18, top: 108, width: 104, opacity: 0.55, transform: [{ rotate: "9deg" }] }}>
-          <PhotoCard label="3 photos" photoHeight={52} />
+          <PhotoCard label={t("mobileApp.illustration.photos")} photoHeight={52} />
         </View>
         <View style={{ position: "absolute", left: 16, top: 178, opacity: 0.55, transform: [{ rotate: "4deg" }] }}>
           <MilestonePill compact />

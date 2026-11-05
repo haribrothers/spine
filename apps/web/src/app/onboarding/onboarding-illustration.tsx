@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Caption, Figure, IllustrationPanel } from "../../components/auth-illustration";
 import styles from "./onboarding-illustration.module.css";
+import { t } from "../../lib/i18n";
 
 type Delay = CSSProperties & { "--d"?: string };
 
@@ -53,12 +54,12 @@ function DashboardWindow({ style }: { style: Delay }) {
 export function OnboardingStartIllustration() {
   return (
     <IllustrationPanel testId="onboarding-start-illustration">
-      <Caption title="Everything in one place." body="Quotes, jobs, invoices and your books — on the web and on the phone." />
+      <Caption title={t("onboarding.illustration.startTitle")} body={t("onboarding.illustration.startBody")} />
       <DashboardWindow style={{ left: "6%", top: "15%", width: "68%", height: "34%", "--d": "0.2s" }} />
       <div className={styles.invoice} style={{ left: "2%", top: "45%", width: "30%", "--d": "0.6s" } as Delay}>
         <div className={styles.invoiceHead}>
           <span className={styles.logo} />
-          <span className={styles.paid}>Paid</span>
+          <span className={styles.paid}>{t("onboarding.illustration.paid")}</span>
         </div>
         <Line width="70%" />
         <Line width="45%" />

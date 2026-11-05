@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Combobox } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import type { ContactOption } from "./types";
 
 /**
@@ -16,15 +17,19 @@ import type { ContactOption } from "./types";
  * same way across invoices/payments/quotes).
  */
 export function ContactPicker({
+  id,
   value,
   onValueChange,
   refreshKey = 0,
 }: {
+  /** US-OPS-17 — the field's id, so its label names the picker. */
+  id?: string;
   value: string;
   onValueChange: (contactId: string) => void;
   /** US-AI-08 — bump to read the vendors again (one was just added). */
   refreshKey?: number;
 }) {
+  const t = useT();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
@@ -39,5 +44,5 @@ export function ContactPicker({
     [contacts],
   );
 
-  return <Combobox options={options} value={value || undefined} onValueChange={onValueChange} placeholder="Select a vendor…" />;
+  return <Combobox id={id} options={options} value={value || undefined} onValueChange={onValueChange} placeholder={t("vendorBills.contactPicker.placeholder")} />;
 }

@@ -23,6 +23,7 @@ import {
 import { apiClient } from "../../../lib/api-client";
 import type { Payment } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 interface OutstandingInvoice {
   id: string;
@@ -57,6 +58,7 @@ export function ApplyCreditDialog({
   payment: Payment | null;
   onApplied: () => void;
 }) {
+  const t = useT();
   const [outstanding, setOutstanding] = useState<OutstandingInvoice[] | null>(null);
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
   const [saving, setSaving] = useState(false);
@@ -109,11 +111,11 @@ export function ApplyCreditDialog({
     if (!payment) return;
     setError(null);
     if (allocations.length === 0 || totalAllocated <= 0n) {
-      setError("Allocate at least some credit to an invoice.");
+      setError(t("payments.applyCredit.allocateSome"));
       return;
     }
     if (totalAllocated > creditAvailable) {
-      setError("Total allocated cannot exceed this payment's unallocated credit.");
+      setError(t("payments.applyCredit.exceeds"));
       return;
     }
     setSaving(true);
@@ -124,7 +126,7 @@ export function ApplyCreditDialog({
       onOpenChange(false);
       onApplied();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not apply this credit.");
+      setError(err instanceof Error ? err.message : t("payments.applyCredit.failed"));
     } finally {
       setSaving(false);
     }
@@ -134,10 +136,9 @@ export function ApplyCreditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Apply credit</DialogTitle>
+          <DialogTitle>{t("payments.applyCredit.title")}</DialogTitle>
           <DialogDescription>
-            {payment.number ?? "This payment"} has {formatMoney(creditAvailable, currency)} sitting as
-            unallocated customer credit. Apply it against one or more outstanding invoices.
+            {t("payments.applyCredit.description", { number: payment.number ?? t("payments.applyCredit.thisPayment"), amount: formatMoney(creditAvailable, currency) })}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,9 +150,9 @@ export function ApplyCreditDialog({
           )}
 
           <div className="flex items-center justify-between">
-            <h3 className="text-[13px] font-semibold text-on-surface">Allocation</h3>
+            <h3 className="text-[13px] font-semibold text-on-surface">{t("payments.applyCredit.allocation")}</h3>
             <span className="text-[12px] text-on-surface-muted">
-              Remaining credit: {formatMoney(remaining, currency)}
+              {t("payments.applyCredit.remaining", { amount: formatMoney(remaining, currency) })}
             </span>
           </div>
 
@@ -160,15 +161,15 @@ export function ApplyCreditDialog({
               <Spinner size="sm" />
             </div>
           ) : outstanding.length === 0 ? (
-            <p className="text-[13px] text-on-surface-muted">This contact has no outstanding issued invoices to apply credit to.</p>
+            <p className="text-[13px] text-on-surface-muted">{t("payments.applyCredit.noInvoices")}</p>
           ) : (
             <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
-              {allocations.length === 0 && <p className="text-[13px] text-on-surface-muted">No invoice selected yet.</p>}
+              {allocations.length === 0 && <p className="text-[13px] text-on-surface-muted">{t("payments.applyCredit.noneSelected")}</p>}
               {allocations.map((row) => (
                 <div key={row.invoiceId} className="flex items-center gap-2">
                   <span className="w-24 shrink-0 text-[13px] font-medium text-on-surface">{row.invoiceNumber ?? "—"}</span>
                   <span className="w-28 shrink-0 text-[12px] text-on-surface-muted">
-                    Balance {formatMoney(row.balanceDue, currency)}
+                    {t("payments.applyCredit.balance", { amount: formatMoney(row.balanceDue, currency) })}
                   </span>
                   <div className="flex-1">
                     <MoneyInput
@@ -179,11 +180,11 @@ export function ApplyCreditDialog({
                   </div>
                   <button
                     type="button"
-                    aria-label={`Remove allocation to ${row.invoiceNumber ?? "invoice"}`}
+                    aria-label={t("payments.applyCredit.removeAria", { number: row.invoiceNumber ?? t("payments.applyCredit.invoice") })}
                     onClick={() => removeAllocation(row.invoiceId)}
                     className="shrink-0 text-[12px] text-on-surface-muted underline hover:text-overdue"
                   >
-                    Remove
+                    {t("payments.applyCredit.remove")}
                   </button>
                 </div>
               ))}
@@ -192,12 +193,12 @@ export function ApplyCreditDialog({
                 <div className="pt-1">
                   <Select value="" onValueChange={addAllocationRow}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Apply to another invoice…" />
+                      <SelectValue placeholder={t("payments.applyCredit.anotherInvoice")} />
                     </SelectTrigger>
                     <SelectContent>
                       {unallocatedInvoices.map((inv) => (
                         <SelectItem key={inv.id} value={inv.id}>
-                          {inv.number ?? "Unnumbered"} — balance {formatMoney(BigInt(inv.balanceDue), currency)}
+                          {t("payments.applyCredit.optionLabel", { number: inv.number ?? t("payments.applyCredit.unnumbered"), amount: formatMoney(BigInt(inv.balanceDue), currency) })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -210,10 +211,10 @@ export function ApplyCreditDialog({
 
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("payments.applyCredit.cancel")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving || allocations.length === 0}>
-            {saving ? <Spinner size="sm" /> : "Apply credit"}
+            {saving ? <Spinner size="sm" /> : t("payments.applyCredit.apply")}
           </Button>
         </DialogFooter>
       </DialogContent>

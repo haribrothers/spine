@@ -21,6 +21,13 @@ import { AppShell, AppShellNavItem, AppShellNavSection, AppShellSidebar, AppShel
 | `AppShellSidebar.isActive` | (href: string) => boolean | — |
 | `AppShellSidebar.renderLink` | (item: AppShellNavItem, children: ReactNode) => ReactNode | — |
 | `AppShellSidebar.userMenu` | ReactNode | — |
+| `AppShellTopBar.logo` | ReactNode | — |
+| `AppShellTopBar.onMenuClick` | () => void | — |
+| `AppShellTopBar.actions` | ReactNode | — |
+| `AppShellTopBar.menuLabel` | string | "Open navigation" |
+| `AppShellMobileNav.open` / `onOpenChange` | boolean / (open: boolean) => void | — |
+| `AppShellMobileNav.logo`, `sections`, `isActive`, `renderLink`, `search` | as `AppShellSidebar` | — |
+| `AppShellMobileNav.footer` | ReactNode | — |
 | `AppShellHeader.breadcrumb` | BreadcrumbItem[] | — |
 | `AppShellHeader.title` | string | — |
 | `AppShellHeader.description` | string | — |
@@ -35,11 +42,12 @@ import { AppShell, AppShellNavItem, AppShellNavSection, AppShellSidebar, AppShel
 - Nav content is entirely caller-supplied via a `sections` prop (grouped items with icon/label/href) — AppShell has no built-in opinion about which pages exist in a given app.
 - Collapse toggle is real (built on Sidebar's existing collapsed state) and typically persisted by the consuming app (e.g. to localStorage) so it survives navigation — AppShell itself is stateless and takes `collapsed`/`onCollapsedChange` as controlled props.
 - renderLink stays router-agnostic — pass a Next.js `&lt;Link&gt;` (or any anchor) so @spine/ui never depends on next/link directly.
+- Under 768px (US-OPS-14, D-066) the sidebar is hidden and `AppShellTopBar` shows a menu button, the logo and the app's actions (notifications, avatar). The menu button opens `AppShellMobileNav`: the same sections sliding in from the left over a dimmed page, with a close button. Tapping the dimmed area, Escape or a followed link closes it. Every control is at least 44×44px. AppShellContent's padding drops to 16px.
 - AppShellHeader's breadcrumb and action are optional — a page can render AppShellContent directly and build its own header if AppShellHeader doesn't fit.
 
 ## Exports
 
-`AppShell` · `AppShellNavItem` · `AppShellNavSection` · `AppShellSidebarProps` · `AppShellSidebar` · `AppShellHeaderProps` · `AppShellHeader` · `AppShellContentProps` · `AppShellContent`
+`AppShell` · `AppShellTopBar` · `AppShellTopBarProps` · `AppShellMobileNav` · `AppShellMobileNavProps` · `AppShellNavItem` · `AppShellNavSection` · `AppShellSidebarProps` · `AppShellSidebar` · `AppShellHeaderProps` · `AppShellHeader` · `AppShellContentProps` · `AppShellContent`
 
 ## Accessibility
 

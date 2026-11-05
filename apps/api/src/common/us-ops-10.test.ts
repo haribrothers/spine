@@ -8,6 +8,14 @@ import { describe, expect, it } from "vitest";
  * or removes; primary (the default) otherwise.
  */
 const webSrc = path.resolve(__dirname, "../../../web/src");
+/** US-OPS-16: labels are `t("key")` calls; read them as the English they show. */
+const en = JSON.parse(readFileSync(path.resolve(__dirname, "../../../../packages/shared/src/i18n/en.json"), "utf8")) as Record<string, unknown>;
+function english(src: string): string {
+  return src.replace(/\bt\(\s*"([^"]+)"[^)]*\)/g, (call, key: string) => {
+    const value = key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], en);
+    return typeof value === "string" ? value : call;
+  });
+}
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -20,7 +28,7 @@ function files(dir: string): string[] {
 function actions(): { file: string; tag: string; label: string }[] {
   const found: { file: string; tag: string; label: string }[] = [];
   for (const file of files(webSrc)) {
-    const src = readFileSync(file, "utf8");
+    const src = english(readFileSync(file, "utf8"));
     for (const m of src.matchAll(/<AlertDialogAction\b([\s\S]*?)<\/AlertDialogAction>/g)) {
       const body = m[1]!;
       // The opening tag ends at the first ">" that isn't part of "=>".
@@ -54,8 +62,8 @@ describe("US-OPS-10 · confirmations are styled by what they do", () => {
     const allEvents = all.find((a) => a.label.includes("All events"))!;
     expect(allEvents.tag).toContain('variant={action === "delete" ? "danger" : "primary"}');
     // Billing an expense asks through useConfirm() on its page (US-PUR-43); it stays primary.
-    const page = readFileSync(path.join(webSrc, "app/(app)/expenses/expense-detail.tsx"), "utf8");
-    const createInvoice = page.slice(page.lastIndexOf("confirm({", page.indexOf('confirmLabel: "Create invoice"')), page.indexOf('confirmLabel: "Create invoice"'));
+    const page = english(readFileSync(path.join(webSrc, "app/(app)/expenses/expense-detail.tsx"), "utf8"));
+    const createInvoice = page.slice(page.lastIndexOf("confirm({", page.indexOf("confirmLabel: Create invoice")), page.indexOf("confirmLabel: Create invoice"));
     expect(createInvoice).toContain("Bill this expense to the customer?");
     expect(createInvoice).not.toContain("variant");
   });

@@ -34,7 +34,7 @@ describe("US-OPS-29 · only safe uploads are accepted and served (requires local
 
   async function post(bytes: Buffer, name: string, claimedType: string) {
     const form = new FormData();
-    form.append("file", new Blob([bytes], { type: claimedType }), name);
+    form.append("file", new Blob([new Uint8Array(bytes)], { type: claimedType }), name);
     return fetch(`${testApp.baseUrl}/files`, {
       method: "POST",
       headers: { cookie: ownerCookie, "Idempotency-Key": randomUUID() },

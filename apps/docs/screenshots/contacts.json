@@ -1,0 +1,61 @@
+[
+  {
+    "id": "contacts-list",
+    "path": "/contacts",
+    "alt": "The Contacts list with the Total contacts, Customers, Vendors and Active leads cards above the table of contacts",
+    "wait": "Total contacts"
+  },
+  {
+    "id": "contacts-add",
+    "path": "/contacts",
+    "alt": "The Add contact drawer with Type, the company switch, Full name, Email, Phone, Tax ID and Website",
+    "click": "Add contact",
+    "wait": "Save contact"
+  },
+  {
+    "id": "contacts-list-cards",
+    "path": "/contacts",
+    "alt": "The Contacts list in Card view, with the search box under the filters",
+    "click": "Card view",
+    "wait": "Total contacts"
+  },
+  {
+    "id": "contacts-detail",
+    "path": "/contacts/{contact}",
+    "alt": "A contact's page with Send statement, Edit, Archive and Delete at the top and the Timeline tab open",
+    "wait": "Timeline"
+  },
+  {
+    "id": "contacts-import",
+    "path": "/contacts",
+    "alt": "The Import contacts from CSV dialog asking you to choose a CSV file or drag and drop one",
+    "click": "Import CSV",
+    "wait": "Import contacts from CSV"
+  },
+  {
+    "id": "contacts-statement",
+    "path": "/contacts/{contact}",
+    "alt": "The Send a statement dialog with Period, Show, the statement summary, To, Subject and Message",
+    "click": "Send statement",
+    "wait": "Balance due"
+  },
+  {
+    "id": "contacts-pipeline",
+    "path": "/leads",
+    "alt": "The pipeline board with the Open pipeline, Won this month, Win rate and Overdue follow-ups strip above the stage columns",
+    "wait": "Open pipeline"
+  },
+  {
+    "id": "contacts-lead-new",
+    "path": "/leads",
+    "alt": "The Add lead drawer with Title, Contact, Stage, Estimated value, Currency, Owner, Expected close and Source",
+    "click": "Add lead",
+    "wait": "Expected close"
+  },
+  {
+    "id": "contacts-lead-stages",
+    "path": "/dashboard?settings=lead-stages",
+    "alt": "The Pipeline stages settings with a row per stage showing its name, kind and lead count, and + Add stage below",
+    "wait": "+ Add stage"
+  }
+]

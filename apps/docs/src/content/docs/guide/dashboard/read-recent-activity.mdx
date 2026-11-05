@@ -1,0 +1,38 @@
+---
+title: Read recent activity
+description: See who did what across the business, newest first, and open the record behind each event.
+sidebar:
+  order: 7
+---
+
+**Recent activity** is a running feed of what's happened across the business: quotes accepted, payments recorded, expenses submitted, jobs and milestones moving. Each entry names the person who did it, so you can scan the last day's work in seconds without opening each module.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Everyone, but the feed is filtered by role. Owners see every event. Staff without **View receivables** don't see payment events. Field crew see only events on their own jobs, with no money events.</Aside>
+
+<Steps>
+
+1. **Read the feed** — Newest first. Each entry starts with the person's avatar and name in bold, for example "Alex Morgan recorded a payment of $5,000.00 from Maple Ridge Developments". For something a customer did, such as accepting a quote, it starts with the customer's name.
+2. **Check the time** — Relative times such as "Just now" or "31m ago".
+3. **Open the record** — Click an entry to open its document.
+4. **See more** — Press **View all**. Owners go to the audit log; everyone else sees the full feed.
+
+</Steps>
+
+<Screenshot id="dashboard-activity" alt="The Recent activity card with entries naming who did what, amounts in bold and relative times" />
+
+## Repeats are grouped
+
+When the same customer views the same quote several times within 24 hours, the feed shows one row ending "· *n* times" with the latest time, rather than a row for every view.
+
+Amounts are in bold and use your business's currency format.
+
+## What Field crew see
+
+On a Field user's dashboard the card is **Recent activity on my jobs**. It lists only non-financial events on jobs they're assigned to: no payments, invoices or quote values. This filtering happens on the server, so the events never reach their browser.
+
+If nothing has happened yet, the card reads "Nothing yet."
+
+<Aside type="tip">You can hide Recent activity, or move it, from **Edit layout**. On a wide screen it sits in the right-hand column under **Today**. See [Edit your dashboard layout](../edit-your-dashboard-layout/).</Aside>

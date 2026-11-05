@@ -1,0 +1,33 @@
+---
+title: See where cash came from and went
+description: Read the cash flow statement to understand why your bank balance changed in a period.
+sidebar:
+  order: 4
+---
+
+You can make a profit and still have less cash at the end of the month: customers haven't paid yet, you bought equipment, or you paid back a loan. The Cash Flow report starts from your cash at the beginning of the period and shows what moved it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**.</Aside>
+
+<Steps>
+
+1. **Open the report** — Go to **Reports › Cash Flow**, or use the tabs from Profit & Loss.
+2. **Set the range** — Choose **From** and **To**.
+3. **Read the cards** — **Cash at start**, **Net change** (with "▲ more cash than at the start" or "▼ less cash than at the start") and **Cash at end**.
+4. **Read the sections** — **Operating activities**: net profit adjusted for changes in what customers owe you, what you owe vendors, tax and advances. **Investing activities**: fixed assets. **Financing activities**: capital, drawings and loans. Then **Net change in cash** and **Cash at end**.
+5. **Click a line** — See the accounts behind it. A positive amount brought cash in.
+
+</Steps>
+
+<Screenshot id="reports-cash-flow" alt="The Cash Flow report with Cash at start, Net change and Cash at end, and the operating, investing and financing sections" />
+
+## It ties to your accounts
+
+**Cash at end** equals the total of every bank and cash account on the **To** date. The footnote confirms it: "Cash at end equals the total of your bank and cash accounts". Card accounts are liabilities, not cash, so they're not included.
+
+<Aside type="caution">If Cash at end doesn't match your bank and cash accounts, the report says so and Spine logs it. Check the [Trial Balance](../check-the-trial-balance/) and tell the person who runs Spine.</Aside>
+
+To export, press **Export** (see [Export or print a report](../export-or-print-a-report/)).

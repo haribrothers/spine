@@ -1,0 +1,38 @@
+---
+title: Connected agents
+description: Use Spine from the AI agent you already use — Claude, ChatGPT, Claude Code or another MCP client — to ask about your business and start work as drafts.
+sidebar:
+  order: 1
+---
+
+Connected agents let you use Spine from an AI agent such as Claude, ChatGPT or Claude Code. Ask it "who owes us money?" or "how is the Harbour Road job doing?", or have it start work — "draft a quote for the deck repair from this email". The agent works as you, with your role and your Teams' permissions, and never more. Spine speaks the Model Context Protocol (MCP), the standard these agents use to connect to other apps.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">An Owner switches connected agents on in **Settings › Connected agents**. Then anyone who works in Spine — Owners, Staff and Field — can connect their own agent with their own sign-in.</Aside>
+
+## The main ideas
+
+- **Off until an Owner turns it on.** While it's off, no agent can connect or use Spine.
+- **Each person connects their own.** You add Spine's connector address to your agent, sign in to Spine in your browser and approve what it can do. You never share a password or key.
+- **As you, never more.** The agent sees only what you can see in Spine. Field users' agents never see money or reports.
+- **Read and draft only.** Agents can read records and reports, and create drafts — leads, quotes, vendor bills and notes — for you to check and finish in Spine. They never issue, send, record payments, approve, void, delete or change settings.
+- **Your AI, not Spine's.** The agent's AI is whatever you connected and pay for. What it reads is sent to that agent's AI provider. Spine's own [AI assistant](../ai-assistant/), its provider and budget don't apply.
+- **You stay in control.** Disconnect an agent at any time. Owners can disconnect anyone's.
+- **Recorded.** Every agent request is in the audit log, and everything an agent creates says so in its Activity.
+
+<Screenshot id="connected-agents-my-connections" alt="Settings, Your account, Connected agents: your connected agents, or none yet, and the connector address with Copy address" />
+
+## Tasks
+
+- [Turn on connected agents](./turn-on-connected-agents/) — the Owner's switch, the address and drafts.
+- [Connect an AI agent to Spine](./connect-an-ai-agent/) — add the address and approve it.
+- [See what an agent can do](./see-what-an-agent-can-do/) — what it can read, the reports, drafts and ready-made tasks.
+- [Disconnect an agent](./disconnect-an-agent/) — your own, or anyone's as an Owner.
+- [Check what agents did](./check-what-agents-did/) — the audit log and each record's Activity.
+
+## Related
+
+- [Team and permissions](../team/) — the roles and Team permissions an agent works within.
+- [HTTPS and domains](../../self-hosting/https-and-domains/) — agents need Spine on an https address.

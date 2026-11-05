@@ -1,0 +1,27 @@
+---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+/** US-SITE-02 — the dashboard, light or dark to match the reader (captured by US-SITE-06). */
+interface Props {
+  id: string;
+  alt: string;
+}
+const { id, alt } = Astro.props;
+const images = import.meta.glob<{ default: ImageMetadata }>("../assets/screens/*.webp", { eager: true });
+const light = images[`../assets/screens/${id}-light.webp`]?.default;
+const dark = images[`../assets/screens/${id}-dark.webp`]?.default;
+---
+
+<figure class="home-shot">
+  {
+    light && dark ? (
+      <>
+        <Image class="home-shot__light" src={light} alt={alt} widths={[960, 1920]} sizes="(min-width: 66rem) 64rem, 100vw" />
+        <Image class="home-shot__dark" src={dark} alt={alt} widths={[960, 1920]} sizes="(min-width: 66rem) 64rem, 100vw" />
+      </>
+    ) : (
+      <div class="home-shot__placeholder">Product screenshot: {alt}</div>
+    )
+  }
+</figure>

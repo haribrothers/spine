@@ -1,0 +1,44 @@
+---
+title: Reports
+description: What Spine's reports are for, how they're built from your books, and where to find each task.
+sidebar:
+  order: 0
+---
+
+Every report in Spine is worked out from your books, the journal entries that each invoice, payment, bill, expense and journal posts. Nobody types figures into a report, so Profit & Loss, the Balance Sheet, the Tax Summary and job profitability always agree with each other and with the documents behind them. Click a figure to see the entries that make it up.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can use reports">Owners see every report. Staff see the reports their Team grants: **View financial statements**, **View receivables**, **View payables**, **View job profitability** and **View ledger / journals**. Field crew never see financial reports, on the web or on a phone.</Aside>
+
+<Screenshot id="reports-centre" alt="The Reports page with reports grouped under Business overview, Sales, Receivables, Purchases, Tax, Jobs and Accountant" />
+
+## The main ideas
+
+- **The ledger.** Every business event posts a balanced journal entry: debits equal credits. Reports read those entries.
+- **Accrual and cash basis.** Accrual counts income when you invoice and costs when you're billed. Cash counts them when money moves. Profit & Loss offers both; other statements are accrual.
+- **Periods.** Most reports cover a range from **From** to **To**; the Balance Sheet and Trial Balance are **As of** one date. The default range is your financial year to date.
+- **Drill-down.** Clicking an account opens the entries behind its figure, and each entry opens its document.
+- **Journals.** Adjustments no document covers, such as depreciation, posted by an Owner and never edited, only reversed.
+- **Closed periods.** Once a period is closed, nothing can be posted with a date inside it. Closing periods, adding accounts and opening balances are covered in [Chart of accounts and opening balances](../accounts/).
+
+## Tasks
+
+- [Find a report](./find-a-report/)
+- [See profit and loss](./see-profit-and-loss/)
+- [See the balance sheet](./see-the-balance-sheet/)
+- [See where cash came from and went](./see-cash-flow/)
+- [Check the trial balance](./check-the-trial-balance/)
+- [See the entries behind a figure](./see-the-entries-behind-a-figure/)
+- [Audit the general ledger and day book](./see-the-general-ledger-and-day-book/)
+- [See sales and purchases](./see-sales-and-purchases/)
+- [See payments and credits in a period](./see-payments-and-credits/)
+- [Compare profitability across jobs](./compare-job-profitability/)
+- [Export or print a report](./export-or-print-a-report/)
+- [Export your books for Tally](./export-to-tally/)
+- [Post an adjusting journal](./post-an-adjusting-journal/)
+- [Review and reverse journals](./review-and-reverse-journals/)
+- [Give your accountant access to reports](./give-your-accountant-access/)
+
+The Tax Summary and GSTR-1 are covered in [Tax](../tax/), Receivables in [Payments](../payments/), Payables in [Purchases](../purchases/), and the dashboard's report cards in [Dashboard](../dashboard/).

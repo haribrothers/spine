@@ -1,0 +1,45 @@
+---
+title: Review and reverse journals
+description: List every manual journal, open one to check its lines, and reverse a journal posted by mistake.
+sidebar:
+  order: 14
+---
+
+Journals are never edited or deleted, so your books keep a full history. If a journal was wrong, you reverse it: Spine posts an entry that mirrors every line, and the original stays listed as Reversed. You can then copy it into a new journal and post it correctly.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View ledger / journals**, can read journals. Only Owners see **New journal**, **Reverse** and **Copy to new journal**.</Aside>
+
+## Review your journals
+
+<Steps>
+
+1. **Open Journals** — Choose **Journals** in the sidebar. The cards show **Total journals** and **Posted this year**.
+2. **Filter the list** — Use **Status** (**All journals**, **Posted** or **Reversed**), **From** and **To**, or **Search journals**.
+3. **Read the list** — Newest first, each journal shows its **Number**, **Date**, **Reason**, **Total**, **Status** and **Posted by**.
+4. **Open one** — Click a journal to see its **Lines**: account, description, debit, credit and job, with **Totals**.
+
+</Steps>
+
+<Screenshot id="reports-journals" alt="The Journals list with the Total journals and Posted this year cards and a table of journals with number, date, reason, total, status and who posted them" />
+
+With no journals, the list says "No journals yet. Most businesses only need one for year-end adjustments."
+
+## Reverse a journal
+
+<Steps>
+
+1. **Open the journal** — It must have the status **Posted**.
+2. **Press Reverse** — The **Reverse** dialog explains: "A reversing entry mirrors every line. The journal stays in the history as Reversed."
+3. **Set the date and reason** — The **Reversal date** starts at today. Enter a **Reason**, for example "Wrong account".
+4. **Confirm** — Press **Reverse journal**.
+
+</Steps>
+
+The journal now shows **Reversed**, and its **Reversal** section says when and by whom. **Reverse** is gone.
+
+<Aside type="danger">A reversal can't be undone. To post the right figures, press **Copy to new journal**: a new journal opens with the same lines for you to correct and post.</Aside>
+
+If a line is on a bank or cash account that's already reconciled, Spine tells you the reconciliation has to be undone first. See [Banking](../../banking/). A reversal dated inside a closed period is refused too.

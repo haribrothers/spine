@@ -45,10 +45,12 @@ import { PAYMENT_METHOD_LABELS, type PaymentDetailData } from "./types";
 import { ActionError } from "../../../components/action-error";
 
 import { SectionLink } from "../../../components/section-link";
+import { useLoadFailure } from "../../../lib/use-load-failure";
+import { t, useT } from "../../../lib/i18n";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type PaymentState = "applied" | "credit" | "refunded";
-export const PAYMENT_STATE_LABELS: Record<PaymentState, string> = { applied: "Fully applied", credit: "Credit left", refunded: "Refunded" };
+export const PAYMENT_STATE_LABELS: Record<PaymentState, string> = { applied: t("payments.state.applied"), credit: t("payments.state.credit"), refunded: t("payments.state.refunded") };
 const STATE_BADGE: Record<PaymentState, string> = { applied: "bg-paid-bg text-paid", credit: "bg-due-soon-bg text-due-soon", refunded: "bg-draft-bg text-draft" };
 
 /** Where a payment's money stands: credit still left, or none — all applied, or (some) paid back. */
@@ -70,6 +72,8 @@ export function paymentState(p: { unallocatedAmount: string; refundedAmount?: st
  * opens that dialog.
  */
 export function PaymentDetail({ paymentId }: { paymentId: string }) {
+  const t = useT();
+  const loadFailed = useLoadFailure(paymentId);
   const router = useRouter();
   const [payment, setPayment] = useState<PaymentDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +97,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
     apiClient
       .get<PaymentDetailData>(`/payments/${paymentId}`)
       .then(setPayment)
-      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this payment."));
+      .catch((err) => loadFailed(err) || setError(err instanceof Error ? err.message : t("payments.detail.loadFailed")));
   }, [paymentId]);
 
   useEffect(() => {
@@ -106,19 +110,19 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   async function deletePayment() {
     if (!payment) return;
     const ok = await confirm({
-      title: "Delete this payment?",
-      description: `This posts a reversing journal entry and permanently removes ${payment.number ?? "this payment"}. This can't be undone.`,
-      confirmLabel: "Delete payment",
+      title: t("payments.detail.deleteTitle"),
+      description: t("payments.detail.deleteDescription", { number: payment.number ?? t("payments.detail.thisPayment") }),
+      confirmLabel: t("payments.detail.deletePayment"),
       danger: true,
     });
     if (!ok) return;
     setActionError(null);
     try {
       await apiClient.delete(`/payments/${payment.id}`);
-      showToast("Payment deleted", `${payment.number ?? "The payment"} was deleted and its journal entry reversed.`);
+      showToast(t("payments.detail.deletedTitle"), t("payments.detail.deletedBody", { number: payment.number ?? t("payments.detail.thePayment") }));
       router.push("/payments");
     } catch (err) {
-      setActionError({ title: "Couldn't delete the payment.", message: err instanceof Error ? err.message : "Try again." });
+      setActionError({ title: t("payments.detail.deleteFailed"), message: err instanceof Error ? err.message : t("payments.detail.tryAgain") });
     }
   }
 
@@ -156,16 +160,16 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   const state = paymentState(payment);
   const applied = BigInt(payment.allocatedAmount);
   const refunded = BigInt(payment.refundedAmount ?? "0");
-  const title = payment.number ?? "Payment";
+  const title = payment.number ?? t("payments.detail.payment");
   const method = PAYMENT_METHOD_LABELS[payment.method];
   const date = calendarDate(payment.date.slice(0, 10), today, locale);
   const appliedTo = payment.appliedTo ?? [];
 
   type Action = { key: string; label: string; icon: React.ReactNode; onClick?: () => void; href?: string };
-  const pdf: Action = { key: "pdf", label: "Download PDF", icon: <Download size={14} aria-hidden />, href: `${API_URL}/payments/${payment.id}/pdf` };
-  const apply: Action = { key: "apply", label: "Apply credit", icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) };
-  const email: Action = { key: "email", label: "Email receipt", icon: <Mail size={14} aria-hidden />, onClick: () => setEmailOpen(true) };
-  const refund: Action = { key: "refund", label: "Refund", icon: <Banknote size={14} aria-hidden />, onClick: () => setRefundOpen(true) };
+  const pdf: Action = { key: "pdf", label: t("payments.detail.downloadPdf"), icon: <Download size={14} aria-hidden />, href: `${API_URL}/payments/${payment.id}/pdf` };
+  const apply: Action = { key: "apply", label: t("payments.detail.applyCredit"), icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) };
+  const email: Action = { key: "email", label: t("payments.detail.emailReceipt"), icon: <Mail size={14} aria-hidden />, onClick: () => setEmailOpen(true) };
+  const refund: Action = { key: "refund", label: t("payments.detail.refund"), icon: <Banknote size={14} aria-hidden />, onClick: () => setRefundOpen(true) };
   const primary = left > 0n && canApply ? apply : canSend ? email : pdf;
   const secondary = [pdf, ...(left > 0n && canRefund ? [refund] : [])].filter((a) => a.key !== primary.key);
 
@@ -184,6 +188,9 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
       </Button>
     );
 
+  const secondaryButtons = secondary.map((a) => render(a, "secondary"));
+  const primaryButton = render(primary, "primary");
+
   const figure = (label: string, value: string, sub: React.ReactNode, testId: string, tone?: string) => (
     <div key={testId} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
@@ -192,10 +199,15 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
     </div>
   );
   const figures = [
-    figure("Received", money(payment.amount), `${method} · ${date}`, "fig-received"),
-    figure("Applied", money(applied), appliedTo.length === 0 ? "Not applied yet" : appliedTo.length === 1 ? `To ${appliedTo[0]!.invoiceNumber ?? "1 invoice"}` : `To ${appliedTo.length} invoices`, "fig-applied"),
-    refunded > 0n ? figure("Refunded", money(refunded), "Paid back to the customer", "fig-refunded") : null,
-    figure("Credit left", money(left), left > 0n ? "To apply or refund" : "Nothing left to apply", "fig-left", left > 0n ? "text-due-soon" : undefined),
+    figure(t("payments.detail.figReceived"), money(payment.amount), `${method} · ${date}`, "fig-received"),
+    figure(
+      t("payments.detail.figApplied"),
+      money(applied),
+      appliedTo.length === 0 ? t("payments.detail.notAppliedYet") : appliedTo.length === 1 ? t("payments.detail.toInvoice", { number: appliedTo[0]!.invoiceNumber ?? t("payments.detail.oneInvoice") }) : t("payments.detail.toInvoices", { n: appliedTo.length }),
+      "fig-applied",
+    ),
+    refunded > 0n ? figure(t("payments.detail.figRefunded"), money(refunded), t("payments.detail.paidBack"), "fig-refunded") : null,
+    figure(t("payments.detail.figLeft"), money(left), left > 0n ? t("payments.detail.toApplyOrRefund") : t("payments.detail.nothingLeft"), "fig-left", left > 0n ? "text-due-soon" : undefined),
   ].filter(Boolean);
 
   const canMoveOff = (a: PaymentAppliedTo) => canApply && a.invoiceType !== "advance" && a.invoiceStatus !== "void";
@@ -203,7 +215,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
-        <Breadcrumb items={[{ label: "Billing" }, { label: "Payments", href: "/payments" }, { label: title }]} />
+        <Breadcrumb items={[{ label: t("payments.detail.breadcrumbBilling") }, { label: t("payments.detail.breadcrumbPayments"), href: "/payments" }, { label: title }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -216,7 +228,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
                 <SectionLink href={`/contacts/${payment.contactId}`} className="font-medium text-primary hover:underline">
-                  {payment.contactName ?? "Unknown contact"}
+                  {payment.contactName ?? t("payments.detail.unknownContact")}
                 </SectionLink>
               </span>
               <span className="inline-flex items-center gap-1.5">
@@ -226,7 +238,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
               {payment.moneyAccount && (
                 <span className="inline-flex items-center gap-1.5">
                   <Landmark size={14} aria-hidden />
-                  Paid into {payment.moneyAccount.name}
+                  {t("payments.detail.paidInto", { account: payment.moneyAccount.name })}
                 </span>
               )}
               {payment.reference && (
@@ -238,64 +250,64 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="payment-actions">
-            {secondary.map((a) => render(a, "secondary"))}
-            {render(primary, "primary")}
+            {secondaryButtons}
+            {primaryButton}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
-                  More <ChevronDown size={14} />
+                  {t("payments.detail.more")} <ChevronDown size={14} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {canSend && primary.key !== "email" && (
                   <DropdownMenuItem onSelect={() => setEmailOpen(true)}>
                     <MENU_ICONS.email aria-hidden />
-                    Email receipt
+                    {t("payments.detail.emailReceipt")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
                   <MENU_ICONS.history aria-hidden />
-                  View history
+                  {t("payments.detail.viewHistory")}
                 </DropdownMenuItem>
                 {canDelete && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem destructive onSelect={() => void deletePayment()}>
                       <MENU_ICONS.delete aria-hidden />
-                      Delete payment
+                      {t("payments.detail.deletePayment")}
                     </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel={t("payments.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
           </div>
         </div>
       </div>
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
-      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3")} data-testid="payment-figures">
+      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3")} data-testid="payment-figures">
         {figures}
       </div>
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Card className="p-0" data-testid="payment-applied-to">
-            <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">Applied to</h3>
+            <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("payments.detail.appliedTo")}</h3>
             {appliedTo.length === 0 ? (
-              <p className="px-4 pb-4 text-[13px] text-on-surface-muted">Not applied to any invoice — it&apos;s all credit for {payment.contactName ?? "the customer"}, to apply or refund.</p>
+              <p className="px-4 pb-4 text-[13px] text-on-surface-muted">{t("payments.detail.notAppliedAny", { name: payment.contactName ?? t("payments.detail.theCustomer") })}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-[13.5px]">
                   <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium">Invoice</th>
-                      <th className="px-4 py-2 text-right font-medium">Invoice total</th>
-                      <th className="px-4 py-2 text-right font-medium">From this payment</th>
-                      <th className="px-4 py-2 text-right font-medium">Still owes</th>
-                      <th className="px-4 py-2 text-right font-medium">Applied</th>
+                      <th className="px-4 py-2 text-left font-medium">{t("payments.detail.colInvoice")}</th>
+                      <th className="px-4 py-2 text-right font-medium">{t("payments.detail.colInvoiceTotal")}</th>
+                      <th className="px-4 py-2 text-right font-medium">{t("payments.detail.colFromPayment")}</th>
+                      <th className="px-4 py-2 text-right font-medium">{t("payments.detail.colStillOwes")}</th>
+                      <th className="px-4 py-2 text-right font-medium">{t("payments.detail.colApplied")}</th>
                       <th className="w-10 px-2 py-2">
-                        <span className="sr-only">Actions</span>
+                        <span className="sr-only">{t("payments.detail.colActions")}</span>
                       </th>
                     </tr>
                   </thead>
@@ -304,30 +316,30 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                       <tr key={a.allocationId} className="border-t border-border" data-testid="applied-to-row">
                         <td className="px-4 py-2.5">
                           <SectionLink href={`/invoices/${a.invoiceId}`} className="font-medium text-primary hover:underline">
-                            {a.invoiceNumber ?? "Invoice"}
+                            {a.invoiceNumber ?? t("payments.detail.invoice")}
                           </SectionLink>
-                          {a.invoiceType === "advance" && <span className="ml-2 text-[12px] text-on-surface-muted">Deposit</span>}
+                          {a.invoiceType === "advance" && <span className="ml-2 text-[12px] text-on-surface-muted">{t("payments.detail.deposit")}</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right tabular-nums">{money(a.invoiceTotal)}</td>
                         <td className="px-4 py-2.5 text-right tabular-nums">{money(a.amount)}</td>
-                        <td className="px-4 py-2.5 text-right tabular-nums">{BigInt(a.invoiceBalance) > 0n ? money(a.invoiceBalance) : <span className="font-medium text-paid">Paid</span>}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{BigInt(a.invoiceBalance) > 0n ? money(a.invoiceBalance) : <span className="font-medium text-paid">{t("payments.detail.paid")}</span>}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-right">{calendarDate(a.at.slice(0, 10), today, locale)}</td>
                         <td className="px-2 py-2.5 text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button type="button" aria-label={`Actions for ${a.invoiceNumber ?? "this invoice"}`} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                              <button type="button" aria-label={t("payments.detail.actionsFor", { number: a.invoiceNumber ?? t("payments.detail.thisInvoice") })} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
                                 <MoreHorizontal size={16} />
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => router.push(`/invoices/${a.invoiceId}`)}>
                                 <MENU_ICONS.open aria-hidden />
-                                Open {a.invoiceNumber ?? "invoice"}
+                                {t("payments.detail.openInvoice", { number: a.invoiceNumber ?? t("payments.detail.invoiceLower") })}
                               </DropdownMenuItem>
                               {canMoveOff(a) && (
                                 <DropdownMenuItem onSelect={() => setUnapplying(a)}>
                                   <MENU_ICONS.moveOff aria-hidden />
-                                  Move off {a.invoiceNumber ?? "this invoice"}
+                                  {t("payments.detail.moveOff", { number: a.invoiceNumber ?? t("payments.detail.thisInvoice") })}
                                 </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
@@ -342,7 +354,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
           </Card>
           {payment.notes && (
             <Card className="flex flex-col gap-1">
-              <h3 className="text-[14px] font-semibold text-on-surface">Notes</h3>
+              <h3 className="text-[14px] font-semibold text-on-surface">{t("payments.detail.notes")}</h3>
               <p className="text-[13.5px] text-on-surface">{payment.notes}</p>
             </Card>
           )}
@@ -363,35 +375,35 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
         payment={payment}
         onApplied={() => {
           setRefreshKey((k) => k + 1);
-          showToast("Credit applied", `Credit from ${payment.number ?? "this payment"} now counts against the invoice.`);
+          showToast(t("payments.detail.creditAppliedTitle"), t("payments.detail.creditAppliedBody", { number: payment.number ?? t("payments.detail.thisPayment") }));
         }}
       />
       <CustomerRefundDialog
         open={refundOpen}
         onOpenChange={setRefundOpen}
         contactId={payment.contactId}
-        contactName={payment.contactName ?? "the customer"}
+        contactName={payment.contactName ?? t("payments.detail.theCustomer")}
         currency={payment.currency}
         sourceId={payment.id}
         onRefunded={(r) => {
           setRefreshKey((k) => k + 1);
-          const { title: t, description } = refundToast(r);
-          showToast(t, description);
+          const { title: toastTitle, description } = refundToast(r);
+          showToast(toastTitle, description);
         }}
       />
       {emailOpen && (
         <SendEmailDialog
           open
           onOpenChange={(open) => !open && setEmailOpen(false)}
-          title={`Email receipt ${payment.number ?? ""}`.trim()}
+          title={t("payments.detail.emailTitle", { number: payment.number ?? "" }).trim()}
           description={payment.contactName ?? undefined}
           draftPath={`/email-drafts/receipt/${payment.id}`}
-          sendLabel="Send receipt"
-          pdfLabel="Attach the receipt PDF"
+          sendLabel={t("payments.detail.sendReceipt")}
+          pdfLabel={t("payments.detail.attachPdf")}
           onSend={async (body: EmailOverride) => {
             await apiClient.post(`/payments/${payment.id}/send-receipt`, body);
             setRefreshKey((k) => k + 1);
-            showToast("Receipt sent", `The receipt for ${payment.number ?? "this payment"} was emailed to ${body.to ?? payment.contactName ?? "the customer"}.`);
+            showToast(t("payments.detail.receiptSentTitle"), t("payments.detail.receiptSentBody", { number: payment.number ?? t("payments.detail.thisPayment"), to: body.to ?? payment.contactName ?? t("payments.detail.theCustomer") }));
           }}
         />
       )}
@@ -402,7 +414,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
         onDone={(a) => {
           setUnapplying(null);
           setRefreshKey((k) => k + 1);
-          showToast(`${money(a.amount)} is now credit`, `${a.invoiceNumber ?? "The invoice"} owes it again; apply it to the right invoice or refund it.`);
+          showToast(t("payments.detail.nowCreditTitle", { amount: money(a.amount) }), t("payments.detail.nowCreditBody", { number: a.invoiceNumber ?? t("payments.detail.theInvoiceCap") }));
         }}
       />
       {confirmDialog}
@@ -426,6 +438,7 @@ export function UnapplyDialog({
   onClose: () => void;
   onDone: (a: PaymentAppliedTo) => void;
 }) {
+  const t = useT();
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -440,7 +453,7 @@ export function UnapplyDialog({
   if (!target) return null;
   const money = (v: string | bigint) => formatMoney(BigInt(v), payment.currency);
   const owesAfter = BigInt(target.invoiceBalance) + BigInt(target.amount);
-  const label = target.invoiceNumber ?? "the invoice";
+  const label = target.invoiceNumber ?? t("payments.unapply.theInvoice");
 
   async function submit() {
     if (!target) return;
@@ -450,7 +463,7 @@ export function UnapplyDialog({
       await apiClient.post(`/payments/${payment.id}/allocations/${target.allocationId}/unapply`, { reason: reason.trim() || null });
       onDone(target);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't move the payment. Try again.");
+      setError(err instanceof Error ? err.message : t("payments.unapply.failed"));
     } finally {
       setSaving(false);
     }
@@ -461,10 +474,10 @@ export function UnapplyDialog({
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>
-            Move {money(target.amount)} off {label}?
+            {t("payments.unapply.title", { amount: money(target.amount), label })}
           </DialogTitle>
           <DialogDescription>
-            {label} will owe {money(owesAfter)} again, and {money(target.amount)} becomes credit for {payment.contactName ?? "the customer"} to apply to the right invoice or refund. The receipt already sent isn&apos;t changed.
+            {t("payments.unapply.description", { label, owes: money(owesAfter), amount: money(target.amount), name: payment.contactName ?? t("payments.unapply.theCustomer") })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
@@ -473,19 +486,19 @@ export function UnapplyDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <FormField label="Reason" helperText="Optional, kept in the history.">
-            {(field) => <Textarea {...field} rows={2} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} placeholder="Belongs on another invoice" />}
+          <FormField label={t("payments.unapply.reason")} helperText={t("payments.unapply.reasonHelp")}>
+            {(field) => <Textarea {...field} rows={2} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} placeholder={t("payments.unapply.reasonPlaceholder")} />}
           </FormField>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Go back
+            {t("payments.unapply.goBack")}
           </Button>
           <Button onClick={() => void submit()} disabled={saving}>
             {saving ? <Spinner size="sm" /> : (
               <>
                 <Undo2 size={14} aria-hidden />
-                Move off invoice
+                {t("payments.unapply.moveOff")}
               </>
             )}
           </Button>

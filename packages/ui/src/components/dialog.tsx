@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { forwardRef } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -39,7 +40,7 @@ const DIALOG_SIZES = {
   md: "max-w-md max-h-[85vh]",
   lg: "max-w-4xl h-[min(720px,85vh)]",
   // US-SET-32 (D-236): roomy on large screens (up to 1152 × 960, 90% of the window, 24px margin), the whole screen on a phone.
-  xl: "max-w-[min(1152px,calc(100vw-48px))] h-[min(960px,90vh)] max-md:h-dvh max-md:max-w-none max-md:rounded-none max-md:border-0",
+  xl: "max-w-[min(1152px,calc(100vw-48px))] h-[min(960px,90vh)] max-md:h-dvh max-md:w-full max-md:max-w-none max-md:rounded-none max-md:border-0",
 } as const;
 
 export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
@@ -54,13 +55,16 @@ export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeo
 }
 
 export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DialogContentProps>(
-  ({ className, children, size = "md", ...props }, ref) => (
+  ({ className, children, size = "md", ...props }, ref) => {
+    const t = useT();
+    return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-surface shadow-overlay focus:outline-none",
+          // US-OPS-15: under 768px a 16px gutter each side (xl is the whole screen there, D-236).
+          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-surface shadow-overlay focus:outline-none md:w-full",
           DIALOG_SIZES[size],
           className,
         )}
@@ -68,14 +72,15 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
       >
         {children}
         <DialogPrimitive.Close
-          aria-label="Close"
+          aria-label={t("ui.dialog.close")}
           className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X size={16} />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
-  ),
+    );
+  },
 );
 DialogContent.displayName = "DialogContent";
 

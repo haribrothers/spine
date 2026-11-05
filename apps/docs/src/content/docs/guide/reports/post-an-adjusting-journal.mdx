@@ -1,0 +1,36 @@
+---
+title: Post an adjusting journal
+description: Post a manual journal for depreciation, accruals or your accountant's year-end entries.
+sidebar:
+  order: 13
+---
+
+Almost everything in your books is posted for you by invoices, payments, bills and expenses. A journal is for the adjustments no document covers, such as depreciation, an accrual, or the entries your accountant sends at year end. Most businesses only need one or two a year.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners only. Staff with **View ledger / journals** can read journals but can't post them.</Aside>
+
+<Steps>
+
+1. **Open Journals** — Choose **Journals** in the sidebar, or **Journals** under Accountant on the Reports page.
+2. **Start a journal** — Press **New journal**.
+3. **Set the date and reason** — Enter the **Date** and a **Reason**, for example "Depreciation for March". The reason is required.
+4. **Add the lines** — For each line, choose the **Account**, add a **Description**, and enter a **Debit** or a **Credit**. When the **Jobs & field** module is on, you can tag a line with a **Job** so it counts in that job's costing. Press **Add line** for more lines, or **Remove** to take one out.
+5. **Balance it** — The **Totals** row shows total debits and credits. Until they match, you see "Debits and credits must be equal — out by *amount*." and you can't post.
+6. **Post it** — Press **Post journal**. It gets the next number, such as JNL-0001, and appears in every report with the source "Journal".
+
+</Steps>
+
+<Screenshot id="reports-new-journal" alt="The New journal dialog with Date, Reason, lines of account, description, debit and credit, and the Totals row" />
+
+## Accounts you can't use
+
+Some accounts are kept in step by documents, so a journal can't change them: Accounts Receivable, Retention Receivable, Input Tax, Accounts Payable, Output Tax, Customer Advances and Opening Balance Adjustments. They aren't offered in the account picker. Use invoices, bills, payments or **Record tax payment** for those.
+
+## Closed periods
+
+You can't post a journal dated inside a closed period. Spine refuses it with a message that the date falls within a closed fiscal period. Use a date in an open period, or ask an Owner to reopen the period (see [Chart of accounts and opening balances](../../accounts/)).
+
+<Aside type="caution">Journals are never edited. Check the lines before you post. If one is wrong, [reverse it](../review-and-reverse-journals/) and post a corrected copy.</Aside>

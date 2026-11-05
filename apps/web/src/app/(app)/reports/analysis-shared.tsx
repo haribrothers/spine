@@ -7,11 +7,12 @@ import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, Dia
 import { canOpenReport, REPORTS, type AnalysisDocumentRef } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
-import { formatMoney } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { useMyRole } from "../../../lib/role-context";
+import { useT } from "../../../lib/i18n";
 
 export const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-export const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+export const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 
 /** The first day of the current quarter. */
 export function quarterStart(): Date {
@@ -45,7 +46,8 @@ export function ReportTabs({ value, tabs }: { value: string; tabs: { value: stri
     <Tabs value={value} onValueChange={(v) => router.push(tabs.find((t) => t.value === v)!.href)}>
       <TabsList>
         {visible.map((t) => (
-          <TabsTrigger key={t.value} value={t.value}>
+          // US-OPS-17: these tabs open pages; there is no tab panel for aria-controls to name.
+          <TabsTrigger key={t.value} value={t.value} aria-controls={undefined}>
             {t.label}
           </TabsTrigger>
         ))}
@@ -56,6 +58,7 @@ export function ReportTabs({ value, tabs }: { value: string; tabs: { value: stri
 
 /** The documents behind a row, each opening on click. */
 export function DocumentsDialog({ title, description, documents, currency, onClose }: { title: string; description: string; documents: AnalysisDocumentRef[] | null; currency: string; onClose: () => void }) {
+  const t = useT();
   return (
     <Dialog open={documents !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
@@ -65,14 +68,14 @@ export function DocumentsDialog({ title, description, documents, currency, onClo
         </DialogHeader>
         <DialogBody>
           {documents?.length === 0 ? (
-            <p className="text-[14px] text-on-surface-muted">No documents in this range.</p>
+            <p className="text-[14px] text-on-surface-muted">{t("reports.documentsDialog.empty")}</p>
           ) : (
             <table className="w-full text-[14px]" data-testid="analysis-documents">
               <thead>
                 <tr className="border-b border-border text-left text-on-surface-muted">
-                  <th className="py-2 font-medium">Number</th>
-                  <th className="py-2 font-medium">Date</th>
-                  <th className="py-2 text-right font-medium">Total</th>
+                  <th className="py-2 font-medium">{t("reports.common.number")}</th>
+                  <th className="py-2 font-medium">{t("reports.common.date")}</th>
+                  <th className="py-2 text-right font-medium">{t("reports.common.total")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -80,7 +83,7 @@ export function DocumentsDialog({ title, description, documents, currency, onClo
                   <tr key={d.id} className="border-b border-border last:border-0">
                     <td className="py-2">
                       <Link href={d.href} className="text-primary hover:underline">
-                        {d.number ?? "Draft"}
+                        {d.number ?? t("reports.common.draft")}
                       </Link>
                     </td>
                     <td className="py-2 text-on-surface">{day(d.date)}</td>

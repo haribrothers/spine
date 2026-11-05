@@ -37,6 +37,7 @@ import {
 } from "@spine/ui";
 import { MONEY_ACCOUNT_KIND_LABELS, type BankTransaction, type BankTransactionDirection, type BankTransfer, type MoneyAccount, type MoneyAccountKind } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { t, useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
@@ -52,10 +53,10 @@ import { StatementImportDialog } from "./statement-import-dialog";
 import { bankLine, bankingQuery, bankingTotals, filterAccounts, parseBankingState, type BankingListState, type BankingTab } from "./banking-list-state";
 
 const TABLE_COLUMNS = [
-  { key: "name", header: "Account", width: "w-48" },
-  { key: "kind", header: "Type", width: "w-24" },
-  { key: "balance", header: "Balance in Spine", width: "w-28" },
-  { key: "reconciliation", header: "Reconciliation", width: "w-32" },
+  { key: "name", header: t("banking.explorer.colAccount"), width: "w-48" },
+  { key: "kind", header: t("banking.explorer.colType"), width: "w-24" },
+  { key: "balance", header: t("banking.explorer.colBalance"), width: "w-28" },
+  { key: "reconciliation", header: t("banking.explorer.colReconciliation"), width: "w-32" },
 ];
 
 const ALL_TYPES = "__all__";
@@ -72,6 +73,7 @@ type Recording = { kind: "in" | "out" | "transfer"; accountId?: string } | null;
  * acts on that account, with its right.
  */
 export function BankingExplorer() {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isOwner = useMyRole() === "owner";
@@ -106,7 +108,7 @@ export function BankingExplorer() {
       setUpdatedAt(Date.now());
       setNow(Date.now());
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Couldn't load your accounts. Refresh to try again.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("banking.explorer.loadError"));
     } finally {
       loading.current = false;
       setRefreshing(false);
@@ -144,35 +146,38 @@ export function BankingExplorer() {
 
   function handleTransferred(transfer: BankTransfer) {
     void load();
-    showToast(`Moved ${formatMoney(BigInt(transfer.amount), currency)} from ${transfer.fromMoneyAccount.name} to ${transfer.toMoneyAccount.name}`, "Both registers show the transfer.");
+    showToast(
+      t("banking.explorer.transferToastTitle", { amount: formatMoney(BigInt(transfer.amount), currency), from: transfer.fromMoneyAccount.name, to: transfer.toMoneyAccount.name }),
+      t("banking.explorer.transferToastBody"),
+    );
   }
 
   function handleMoneyRecorded(entry: BankTransaction) {
     void load();
     showToast(
-      `${entry.direction === "in" ? "Money in" : "Money out"} recorded`,
-      `${formatMoney(BigInt(entry.amount), currency)} ${entry.direction === "in" ? "into" : "from"} ${entry.moneyAccount.name} — ${entry.account.name}.`,
+      entry.direction === "in" ? t("banking.explorer.moneyInRecorded") : t("banking.explorer.moneyOutRecorded"),
+      t(entry.direction === "in" ? "banking.explorer.moneyInBody" : "banking.explorer.moneyOutBody", { amount: formatMoney(BigInt(entry.amount), currency), account: entry.moneyAccount.name, category: entry.account.name }),
     );
   }
 
   async function archive(account: MoneyAccount) {
     if (account.isDefault) {
-      showToast(`Couldn't archive ${account.name}`, "Choose another default account first.");
+      showToast(t("banking.explorer.archiveFailed", { name: account.name }), t("banking.explorer.archiveDefaultBody"));
       return;
     }
     const ok = await confirm({
-      title: `Archive ${account.name}?`,
-      description: "It leaves the account pickers on payments, expenses and transfers. Its register, reconciliations and ledger history stay, and you can restore it from Archived.",
-      confirmLabel: "Archive account",
-      cancelLabel: "Go back",
+      title: t("banking.explorer.archiveConfirmTitle", { name: account.name }),
+      description: t("banking.explorer.archiveConfirmBody"),
+      confirmLabel: t("banking.explorer.archiveConfirmLabel"),
+      cancelLabel: t("banking.explorer.goBack"),
     });
     if (!ok) return;
     try {
       await apiClient.post(`/money-accounts/${account.id}/archive`);
       void load();
-      showToast("Account archived", `${account.name} is under Archived. Its history stays.`);
+      showToast(t("banking.explorer.archivedTitle"), t("banking.explorer.archivedBody", { name: account.name }));
     } catch (err) {
-      showToast(`Couldn't archive ${account.name}`, err instanceof Error ? err.message : "Try again.");
+      showToast(t("banking.explorer.archiveFailed", { name: account.name }), err instanceof Error ? err.message : t("banking.explorer.tryAgain"));
     }
   }
 
@@ -180,9 +185,9 @@ export function BankingExplorer() {
     try {
       await apiClient.post(`/money-accounts/${account.id}/restore`);
       void load();
-      showToast("Account restored", `${account.name} is back in the pickers.`);
+      showToast(t("banking.explorer.restoredTitle"), t("banking.explorer.restoredBody", { name: account.name }));
     } catch (err) {
-      showToast(`Couldn't restore ${account.name}`, err instanceof Error ? err.message : "Try again.");
+      showToast(t("banking.explorer.restoreFailed", { name: account.name }), err instanceof Error ? err.message : t("banking.explorer.tryAgain"));
     }
   }
 
@@ -191,21 +196,27 @@ export function BankingExplorer() {
     try {
       await apiClient.put(`/money-accounts/${account.id}`, { kind: account.kind, name: account.name, bankName: account.bankName, last4: account.last4, isDefault: true });
       void load();
-      showToast(`${account.name} is the default`, previous ? `New payments use it instead of ${previous.name}.` : "New payments use it.");
+      showToast(
+        t("banking.explorer.defaultTitle", { name: account.name }),
+        previous ? t("banking.explorer.defaultBodyInstead", { previous: previous.name }) : t("banking.explorer.defaultBody"),
+      );
     } catch (err) {
-      showToast(`Couldn't make ${account.name} the default`, err instanceof Error ? err.message : "Try again.");
+      showToast(t("banking.explorer.defaultFailed", { name: account.name }), err instanceof Error ? err.message : t("banking.explorer.tryAgain"));
     }
   }
 
   function handleSaved(saved: MoneyAccount, created: boolean) {
     void load();
-    showToast(created ? "Account added" : "Account saved", created ? `${saved.name} is ready to use on payments and expenses.` : `${saved.name} has been updated.`);
+    showToast(
+      created ? t("banking.explorer.addedTitle") : t("banking.explorer.savedTitle"),
+      created ? t("banking.explorer.addedBody", { name: saved.name }) : t("banking.explorer.savedBody", { name: saved.name }),
+    );
   }
 
   const columns: TableColumn<MoneyAccount>[] = [
     {
       key: "name",
-      header: "Account",
+      header: t("banking.explorer.colAccount"),
       render: (row) => {
         const Icon = KIND_ICON[row.kind];
         const line = bankLine(row);
@@ -219,7 +230,7 @@ export function BankingExplorer() {
                 <Link href={`/banking/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
                   {row.name}
                 </Link>
-                {row.isDefault && <Badge className="bg-primary/10 text-primary">Default</Badge>}
+                {row.isDefault && <Badge className="bg-primary/10 text-primary">{t("banking.explorer.defaultBadge")}</Badge>}
               </span>
               {line && <span className="text-[12.5px] text-on-surface-muted">{line}</span>}
             </span>
@@ -228,35 +239,40 @@ export function BankingExplorer() {
       },
       sortValue: (row) => row.name.toLowerCase(),
     },
-    { key: "kind", header: "Type", render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind], sortValue: (row) => row.kind },
+    { key: "kind", header: t("banking.explorer.colType"), render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind], sortValue: (row) => row.kind },
     {
       key: "balance",
-      header: "Balance in Spine",
+      header: t("banking.explorer.colBalance"),
       align: "right",
       render: (row) => (
         <span className="whitespace-nowrap tabular-nums">
           {formatMoney(BigInt(row.balance ?? "0"), currency)}
-          {row.kind === "card" && <span className="text-[12.5px] text-on-surface-muted"> owed</span>}
+          {row.kind === "card" && <span className="text-[12.5px] text-on-surface-muted">{t("banking.explorer.owedSuffix")}</span>}
         </span>
       ),
       sortValue: (row) => BigInt(row.balance ?? "0"),
     },
     {
       key: "reconciliation",
-      header: "Reconciliation",
-      render: (row) => (row.lastReconciledOn ? <span>Reconciled to {formatDay(row.lastReconciledOn)}</span> : <span className="text-on-surface-muted">Never reconciled</span>),
+      header: t("banking.explorer.colReconciliation"),
+      render: (row) =>
+        row.lastReconciledOn ? (
+          <span>{t("banking.explorer.reconciledTo", { date: formatDay(row.lastReconciledOn) })}</span>
+        ) : (
+          <span className="text-on-surface-muted">{t("banking.explorer.neverReconciled")}</span>
+        ),
       sortValue: (row) => row.lastReconciledOn ?? "",
     },
     {
       key: "unreconciled",
-      header: "Unreconciled",
+      header: t("banking.explorer.colUnreconciled"),
       render: (row) =>
         (row.unreconciledCount ?? 0) > 0 ? (
           <Link href={`/banking/${row.id}?show=unreconciled`} className="font-medium text-primary hover:underline">
-            {row.unreconciledCount} unreconciled
+            {t("banking.explorer.unreconciledCount", { n: row.unreconciledCount ?? 0 })}
           </Link>
         ) : (
-          <span className="text-on-surface-muted">None</span>
+          <span className="text-on-surface-muted">{t("banking.explorer.none")}</span>
         ),
       sortValue: (row) => row.unreconciledCount ?? 0,
     },
@@ -296,7 +312,7 @@ export function BankingExplorer() {
   const search = (
     <div className="relative w-96 max-w-full">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search accounts" aria-label="Search accounts" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("banking.explorer.searchPlaceholder")} aria-label={t("banking.explorer.searchPlaceholder")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
 
@@ -304,39 +320,39 @@ export function BankingExplorer() {
     <div className="flex flex-col gap-6">
       <Tabs value={state.tab} onValueChange={(tab) => update({ tab: tab as BankingTab })} className="flex flex-col gap-6">
         <TabsList data-print="hide">
-          <TabsTrigger value="active" className="group" aria-label={allRows ? `Active, ${active.length}` : "Active"}>
-            Active
+          <TabsTrigger value="active" className="group" aria-label={allRows ? t("banking.explorer.tabActiveCount", { n: active.length }) : t("banking.explorer.tabActive")}>
+            {t("banking.explorer.tabActive")}
             {allRows && <Count n={active.length} />}
           </TabsTrigger>
-          <TabsTrigger value="archived" className="group" aria-label={allRows ? `Archived, ${archivedCount}` : "Archived"}>
-            Archived
+          <TabsTrigger value="archived" className="group" aria-label={allRows ? t("banking.explorer.tabArchivedCount", { n: archivedCount }) : t("banking.explorer.tabArchived")}>
+            {t("banking.explorer.tabArchived")}
             {allRows && <Count n={archivedCount} />}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value={state.tab} className="flex flex-col gap-6 pt-0">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="banking-cards">
-            <StatCard label="Bank and cash" value={totals ? formatMoney(totals.cash, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cashLabel } : undefined} className="h-full" />
-            <StatCard label="Owed on cards" value={totals ? formatMoney(totals.owed, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cardLabel } : undefined} className="h-full" />
+            <StatCard label={t("banking.explorer.cardBankCash")} value={totals ? formatMoney(totals.cash, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cashLabel } : undefined} className="h-full" />
+            <StatCard label={t("banking.explorer.cardOwed")} value={totals ? formatMoney(totals.owed, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cardLabel } : undefined} className="h-full" />
             <button
               type="button"
               aria-pressed={state.unreconciled}
-              aria-label="Show accounts not yet reconciled only"
+              aria-label={t("banking.explorer.cardUnreconciledAria")}
               onClick={() => update({ unreconciled: !state.unreconciled })}
               className="relative rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <StatCard
-                label="Not yet reconciled"
+                label={t("banking.explorer.cardUnreconciled")}
                 value={totals ? String(totals.unreconciled) : "—"}
                 tone={totals && totals.unreconciled > 0 ? "warning" : "default"}
-                trend={{ direction: "neutral", label: state.unreconciled ? "Showing these · press again to clear" : (totals?.unreconciledLabel ?? "") }}
+                trend={{ direction: "neutral", label: state.unreconciled ? t("banking.explorer.cardShowing") : (totals?.unreconciledLabel ?? "") }}
                 className={cn("h-full transition-colors hover:border-border-strong", state.unreconciled && "border-primary bg-info-bg/60 ring-1 ring-primary")}
               />
               <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", state.unreconciled ? "text-primary" : "text-on-surface-muted")} />
             </button>
             <StatCard
-              label="Last reconciled"
-              value={totals?.lastReconciled?.lastReconciledOn ? formatDay(totals.lastReconciled.lastReconciledOn) : "Never"}
+              label={t("banking.explorer.cardLastReconciled")}
+              value={totals?.lastReconciled?.lastReconciledOn ? formatDay(totals.lastReconciled.lastReconciledOn) : t("banking.explorer.never")}
               trend={totals?.lastReconciled ? { direction: "neutral", label: totals.lastReconciled.name } : undefined}
               className="h-full"
             />
@@ -344,43 +360,43 @@ export function BankingExplorer() {
 
           <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
             <Select value={state.type ?? ALL_TYPES} onValueChange={(v) => update({ type: v === ALL_TYPES ? null : (v as MoneyAccountKind) })}>
-              <SelectTrigger aria-label="Filter by type" className="w-44">
+              <SelectTrigger aria-label={t("banking.explorer.filterType")} className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_TYPES}>All types</SelectItem>
-                <SelectItem value="bank">Bank</SelectItem>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
+                <SelectItem value={ALL_TYPES}>{t("banking.explorer.allTypes")}</SelectItem>
+                <SelectItem value="bank">{t("banking.explorer.typeBank")}</SelectItem>
+                <SelectItem value="cash">{t("banking.explorer.typeCash")}</SelectItem>
+                <SelectItem value="card">{t("banking.explorer.typeCard")}</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex flex-wrap items-center justify-end gap-2">
               {updatedAt !== null && (
                 <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="banking-updated">
-                  {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                  {refreshing ? t("banking.explorer.updating") : updatedLabel(updatedAt, now)}
                 </span>
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
+                  <Button variant="secondary" size="icon" aria-label={t("banking.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
                     <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Refresh list</TooltipContent>
+                <TooltipContent>{t("banking.explorer.refreshList")}</TooltipContent>
               </Tooltip>
               {canRecord && (
                 <>
                   <Button variant="secondary" onClick={() => setRecording({ kind: "transfer" })} disabled={active.length < 2}>
                     <MENU_ICONS.transfer size={14} aria-hidden />
-                    Transfer
+                    {t("banking.explorer.transfer")}
                   </Button>
                   <Button variant="secondary" onClick={() => setRecording({ kind: "in" })} disabled={!active.length}>
                     <MENU_ICONS.moneyIn size={14} aria-hidden />
-                    Money in
+                    {t("banking.explorer.moneyIn")}
                   </Button>
                   <Button variant="secondary" onClick={() => setRecording({ kind: "out" })} disabled={!active.length}>
                     <MENU_ICONS.moneyOut size={14} aria-hidden />
-                    Money out
+                    {t("banking.explorer.moneyOut")}
                   </Button>
                 </>
               )}
@@ -391,7 +407,7 @@ export function BankingExplorer() {
                     setDialogOpen(true);
                   }}
                 >
-                  Add account
+                  {t("banking.explorer.addAccount")}
                 </Button>
               )}
             </div>
@@ -404,15 +420,15 @@ export function BankingExplorer() {
               <div className="flex">{search}</div>
               <div className="rounded-lg border border-border bg-surface">
                 {state.tab === "archived" && !state.q.trim() && !state.type ? (
-                  <EmptyState icon={<Landmark />} title="No archived accounts" description="Accounts you archive appear here with their history, and can be restored." />
+                  <EmptyState icon={<Landmark />} title={t("banking.explorer.emptyArchivedTitle")} description={t("banking.explorer.emptyArchivedBody")} />
                 ) : (
                   <EmptyState
                     icon={<Landmark />}
-                    title="No accounts match"
-                    description="Clear the filters to see every account."
+                    title={t("banking.explorer.emptyNoMatchTitle")}
+                    description={t("banking.explorer.emptyNoMatchBody")}
                     action={
                       <Button variant="secondary" onClick={() => update({ type: null, unreconciled: false, q: "" })}>
-                        Clear filters
+                        {t("banking.explorer.clearFilters")}
                       </Button>
                     }
                   />
@@ -486,6 +502,7 @@ function AccountRowMenu({
   onArchive: () => void;
   onRestore: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const canReconcile = useCapability("banking.reconcile");
   const archived = Boolean(account.archivedAt);
@@ -494,7 +511,7 @@ function AccountRowMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for ${account.name}`}
+          aria-label={t("banking.explorer.actionsFor", { name: account.name })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -503,18 +520,18 @@ function AccountRowMenu({
       <DropdownMenuContent align="end" className="min-w-52">
         <DropdownMenuItem onSelect={() => router.push(`/banking/${account.id}`)}>
           <MENU_ICONS.register aria-hidden />
-          Open register
+          {t("banking.explorer.openRegister")}
         </DropdownMenuItem>
         {!archived && canReconcile && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => router.push(`/banking/${account.id}/reconcile`)}>
               <MENU_ICONS.reconcile aria-hidden />
-              Reconcile
+              {t("banking.explorer.reconcile")}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onImport}>
               <MENU_ICONS.importStatement aria-hidden />
-              Import statement
+              {t("banking.explorer.importStatement")}
             </DropdownMenuItem>
           </>
         )}
@@ -523,16 +540,16 @@ function AccountRowMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => onRecord("in")}>
               <MENU_ICONS.moneyIn aria-hidden />
-              Money in
+              {t("banking.explorer.moneyIn")}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onRecord("out")}>
               <MENU_ICONS.moneyOut aria-hidden />
-              Money out
+              {t("banking.explorer.moneyOut")}
             </DropdownMenuItem>
             {canRecordTransfer && (
               <DropdownMenuItem onSelect={() => onRecord("transfer")}>
                 <MENU_ICONS.transfer aria-hidden />
-                Transfer
+                {t("banking.explorer.transfer")}
               </DropdownMenuItem>
             )}
           </>
@@ -543,24 +560,24 @@ function AccountRowMenu({
             {!archived && !account.isDefault && (
               <DropdownMenuItem onSelect={onMakeDefault}>
                 <MENU_ICONS.setDefault aria-hidden />
-                Set as default
+                {t("banking.explorer.setDefault")}
               </DropdownMenuItem>
             )}
             {!archived && (
               <DropdownMenuItem onSelect={onEdit}>
                 <MENU_ICONS.edit aria-hidden />
-                Edit
+                {t("banking.explorer.edit")}
               </DropdownMenuItem>
             )}
             {archived ? (
               <DropdownMenuItem onSelect={onRestore}>
                 <MENU_ICONS.restore aria-hidden />
-                Restore
+                {t("banking.explorer.restore")}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem onSelect={onArchive}>
                 <MENU_ICONS.archive aria-hidden />
-                Archive
+                {t("banking.explorer.archive")}
               </DropdownMenuItem>
             )}
           </>

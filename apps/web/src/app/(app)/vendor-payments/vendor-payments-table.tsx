@@ -7,6 +7,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useT } from "../../../lib/i18n";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { PAYMENT_METHOD_LABELS, type VendorPaymentRow } from "./types";
 
@@ -18,30 +19,31 @@ import { SectionLink } from "../../../components/section-link";
  * dialog, so nothing happens in one click (D-218).
  */
 function RowActions({ payment, onDownload }: { payment: VendorPaymentRow; onDownload: (p: VendorPaymentRow) => void }) {
+  const t = useT();
   const router = useRouter();
   const canEmail = useCanEditOwnership(payment.createdByUserId, { own: "vendor_payments.edit_own", others: "vendor_payments.edit_others" });
   const canDelete = useCanEditOwnership(payment.createdByUserId, { own: "vendor_payments.delete_own", others: "vendor_payments.delete_others" });
-  const label = payment.number ?? "this payment";
+  const label = payment.number ?? t("vendorPayments.table.thisPayment");
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={`Actions for ${label}`} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface">
+        <button type="button" aria-label={t("vendorPayments.table.actionsFor", { name: label })} className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface">
           <MoreHorizontal size={16} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => router.push(`/vendor-payments/${payment.id}`)}>
           <MENU_ICONS.view aria-hidden />
-          View
+          {t("vendorPayments.table.view")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onDownload(payment)}>
           <MENU_ICONS.download aria-hidden />
-          Download remittance advice
+          {t("vendorPayments.table.downloadRemittance")}
         </DropdownMenuItem>
         {canEmail && payment.paidTo.length > 0 && (
           <DropdownMenuItem onSelect={() => router.push(`/vendor-payments/${payment.id}?action=email`)}>
             <MENU_ICONS.email aria-hidden />
-            Email remittance advice
+            {t("vendorPayments.table.emailRemittance")}
           </DropdownMenuItem>
         )}
         {canDelete && (
@@ -49,7 +51,7 @@ function RowActions({ payment, onDownload }: { payment: VendorPaymentRow; onDown
             <DropdownMenuSeparator />
             <DropdownMenuItem destructive onSelect={() => router.push(`/vendor-payments/${payment.id}?action=delete`)}>
               <MENU_ICONS.delete aria-hidden />
-              Delete payment
+              {t("vendorPayments.table.deletePayment")}
             </DropdownMenuItem>
           </>
         )}
@@ -83,11 +85,12 @@ export function VendorPaymentsTable({
   toolbarStart?: React.ReactNode;
   onDownload: (p: VendorPaymentRow) => void;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const columns: TableColumn<VendorPaymentRow>[] = [
     {
       key: "number",
-      header: "Number",
+      header: t("vendorPayments.columns.number"),
       render: (row) => (
         <Link href={`/vendor-payments/${row.id}`} className="flex min-w-0 flex-col hover:text-primary">
           <span className="font-semibold text-on-surface">{row.number ?? "—"}</span>
@@ -96,11 +99,11 @@ export function VendorPaymentsTable({
       ),
       sortValue: (row) => row.number ?? "",
     },
-    { key: "date", header: "Date", render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
-    { key: "vendor", header: "Vendor", render: (row) => <span className="block max-w-64 truncate">{row.contactName ?? "—"}</span>, sortValue: (row) => row.contactName ?? "" },
+    { key: "date", header: t("vendorPayments.columns.date"), render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
+    { key: "vendor", header: t("vendorPayments.columns.vendor"), render: (row) => <span className="block max-w-64 truncate">{row.contactName ?? "—"}</span>, sortValue: (row) => row.contactName ?? "" },
     {
       key: "method",
-      header: "Method",
+      header: t("vendorPayments.columns.method"),
       render: (row) => (
         <span className="flex flex-col">
           <span>{PAYMENT_METHOD_LABELS[row.method]}</span>
@@ -109,15 +112,15 @@ export function VendorPaymentsTable({
       ),
       sortValue: (row) => row.method,
     },
-    { key: "amount", header: "Amount", align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
+    { key: "amount", header: t("vendorPayments.columns.amount"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
     {
       key: "bills",
-      header: "Bills paid",
+      header: t("vendorPayments.columns.billsPaid"),
       render: (row) =>
         row.paidTo.length === 0 ? (
           <span className="text-on-surface-muted">—</span>
         ) : row.paidTo.length > 2 ? (
-          <span>{row.paidTo.length} bills</span>
+          <span>{t("vendorPayments.table.billCount", { count: row.paidTo.length })}</span>
         ) : (
           <span className="flex flex-wrap gap-x-1">
             {row.paidTo.map((b, i) => (

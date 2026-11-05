@@ -1,5 +1,6 @@
 import type { SupplyClass } from "@spine/shared";
 import type { BillingFigures, BudgetFigures, BudgetState } from "@spine/shared";
+import { t } from "../../../lib/i18n";
 /** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type JobStatus = "active" | "on_hold" | "completed" | "cancelled";
 export type MilestoneAmountType = "fixed" | "percent";
@@ -165,16 +166,16 @@ export interface JobCostingReport {
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
-  active: "Active",
-  on_hold: "On hold",
-  completed: "Completed",
-  cancelled: "Cancelled",
+  active: t("jobs.status.active"),
+  on_hold: t("jobs.status.onHold"),
+  completed: t("jobs.status.completed"),
+  cancelled: t("jobs.status.cancelled"),
 };
 
 export const MILESTONE_STATUS_LABELS: Record<MilestoneStatus, string> = {
-  pending: "Pending",
-  completed: "Completed",
-  invoiced: "Invoiced",
+  pending: t("jobs.milestoneStatus.pending"),
+  completed: t("jobs.milestoneStatus.completed"),
+  invoiced: t("jobs.milestoneStatus.invoiced"),
 };
 
 /** Minimal shape used by the contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */

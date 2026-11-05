@@ -1,6 +1,7 @@
 import { minorUnitExponent } from "@spine/shared/money";
 import type { TableSort } from "@spine/ui";
 import type { Account, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-CAT-10 — the setup filters the stat cards apply. */
 export type SetupFilter = "" | "tax" | "account";
@@ -138,9 +139,10 @@ export function catalogStats(items: CatalogItem[], gst: boolean): CatalogStats {
 
 /** "Labour, Materials and 4 more". */
 export function categoriesNote(categories: string[]): string {
-  if (categories.length === 0) return "None yet";
-  if (categories.length <= 2) return categories.join(" and ");
-  return `${categories.slice(0, 2).join(", ")} and ${categories.length - 2} more`;
+  if (categories.length === 0) return t("catalog.list.categoriesNoneYet");
+  if (categories.length === 1) return categories[0]!;
+  if (categories.length === 2) return t("catalog.list.categoriesTwo", { first: categories[0]!, second: categories[1]! });
+  return t("catalog.list.categoriesMore", { names: categories.slice(0, 2).join(", "), count: categories.length - 2 });
 }
 
 export type TaxLabelKind = "tax" | "none" | "class";
@@ -155,10 +157,10 @@ export function taxLabel(
   if (item.defaultTaxGroupId) return { kind: "tax", text: groups.get(item.defaultTaxGroupId)?.name ?? `${item.defaultTaxRatePercentage}%` };
   if (item.defaultTaxRateId) return { kind: "tax", text: rates.get(item.defaultTaxRateId)?.name ?? `${item.defaultTaxRatePercentage}%` };
   if (item.defaultTaxRatePercentage > 0) return { kind: "tax", text: `${item.defaultTaxRatePercentage}%` };
-  if (item.supplyClass === "exempt") return { kind: "class", text: "Exempt" };
-  if (item.supplyClass === "non_taxable") return { kind: "class", text: "Non-taxable" };
-  if (gst && item.supplyClass === "zero_rated") return { kind: "class", text: "Zero-rated" };
-  return { kind: "none", text: "No tax" };
+  if (item.supplyClass === "exempt") return { kind: "class", text: t("catalog.list.supplyExempt") };
+  if (item.supplyClass === "non_taxable") return { kind: "class", text: t("catalog.list.supplyNonTaxable") };
+  if (gst && item.supplyClass === "zero_rated") return { kind: "class", text: t("catalog.list.supplyZeroRated") };
+  return { kind: "none", text: t("catalog.common.noTax") };
 }
 
 /**
@@ -219,13 +221,14 @@ export function exportFileName(today: Date): string {
 export function priceLabel(min: string, max: string, currency: string, format: (amount: bigint, currency: string) => string): string {
   const lo = parseDecimalToMinorUnits(min, currency);
   const hi = parseDecimalToMinorUnits(max, currency);
-  if (lo !== null && hi !== null) return `${format(lo, currency)} – ${format(hi, currency)}`;
-  if (lo !== null) return `From ${format(lo, currency)}`;
-  if (hi !== null) return `Up to ${format(hi, currency)}`;
-  return "Price";
+  if (lo !== null && hi !== null) return t("catalog.list.priceRange", { min: format(lo, currency), max: format(hi, currency) });
+  if (lo !== null) return t("catalog.list.priceFrom", { min: format(lo, currency) });
+  if (hi !== null) return t("catalog.list.priceUpTo", { max: format(hi, currency) });
+  return t("catalog.common.price");
 }
 
 /** "Updated 3 items", "Archived 1 item". */
 export function bulkToast(verb: "Updated" | "Archived" | "Restored", count: number): string {
-  return `${verb} ${count} ${count === 1 ? "item" : "items"}`;
+  const key = ({ Updated: "updated", Archived: "archived", Restored: "restored" } as const)[verb];
+  return t(`catalog.list.bulkToast.${key}`, { count });
 }

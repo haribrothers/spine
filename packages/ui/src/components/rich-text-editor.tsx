@@ -10,6 +10,7 @@ import DOMPurify from "dompurify";
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { cn } from "../lib/cn";
+import { t as translate, useT } from "../lib/i18n";
 import { Toolbar, ToolbarButton, ToolbarSeparator } from "./toolbar";
 
 export interface RichTextEditorProps {
@@ -136,8 +137,10 @@ export function RichTextEditor({
         ...(ariaInvalid !== undefined ? { "aria-invalid": String(ariaInvalid) } : {}),
         ...(ariaRequired !== undefined ? { "aria-required": String(ariaRequired) } : {}),
         ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
-        // Named, it's announced as a multi-line text box.
-        ...(ariaLabel ? { "aria-label": ariaLabel, role: "textbox", "aria-multiline": "true" } : {}),
+        // Announced as a multi-line text box, always with a name (Tiptap gives it the role itself since 3.30).
+        "aria-label": ariaLabel ?? placeholder ?? translate("ui.richTextEditor.defaultLabel"),
+        role: "textbox",
+        "aria-multiline": "true",
         class: "min-h-24 px-2.5 py-2 text-[14px] text-on-surface focus:outline-none [&_p]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline",
       },
     },
@@ -206,13 +209,14 @@ export function RichTextEditor({
 }
 
 function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled?: boolean }) {
+  const t = useT();
   if (!editor) return <div className="h-10" />; // reserves toolbar height before the editor instance is ready, avoiding layout shift
   return (
     <Toolbar className="rounded-b-none border-0 border-b-0 bg-transparent p-1">
       <ToolbarButton
         type="button"
         disabled={disabled}
-        aria-label="Bold"
+        aria-label={t("ui.richTextEditor.bold")}
         aria-pressed={editor.isActive("bold")}
         data-state={editor.isActive("bold") ? "on" : "off"}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -223,7 +227,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
-        aria-label="Italic"
+        aria-label={t("ui.richTextEditor.italic")}
         aria-pressed={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={cn(editor.isActive("italic") && "bg-surface-sunken text-primary")}
@@ -234,7 +238,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
-        aria-label="Bulleted list"
+        aria-label={t("ui.richTextEditor.bulletedList")}
         aria-pressed={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={cn(editor.isActive("bulletList") && "bg-surface-sunken text-primary")}
@@ -244,7 +248,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
-        aria-label="Numbered list"
+        aria-label={t("ui.richTextEditor.numberedList")}
         aria-pressed={editor.isActive("orderedList")}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={cn(editor.isActive("orderedList") && "bg-surface-sunken text-primary")}
@@ -255,14 +259,15 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
-        aria-label={editor.isActive("link") ? "Remove link" : "Add link"}
+        // eslint-disable-next-line i18next/no-literal-string -- a mark name, not copy
+        aria-label={editor.isActive("link") ? t("ui.richTextEditor.removeLink") : t("ui.richTextEditor.addLink")}
         aria-pressed={editor.isActive("link")}
         onClick={() => {
           if (editor.isActive("link")) {
             editor.chain().focus().unsetLink().run();
             return;
           }
-          const url = window.prompt("Link URL");
+          const url = window.prompt(t("ui.richTextEditor.linkUrlPrompt"));
           if (url) editor.chain().focus().setLink({ href: url }).run();
         }}
         className={cn(editor.isActive("link") && "bg-surface-sunken text-primary")}

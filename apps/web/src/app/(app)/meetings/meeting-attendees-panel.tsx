@@ -17,10 +17,14 @@ import {
   Spinner,
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { STATUS_CLASSNAME, STATUS_LABEL } from "./meeting-attendee-status";
 import { MeetingVisibilityAndInviteesEditor } from "./meeting-visibility-and-invitees-editor";
 import type { Meeting, MeetingAttendee, MeetingVisibility } from "./types";
 import { useMeetingRespond } from "./use-meeting-respond";
+
+/** The answers an invitee can give, in button order. */
+const RESPONSES = ["accepted", "tentative", "declined"] as const;
 
 interface Member {
   id: string;
@@ -62,6 +66,7 @@ export function MeetingAttendeesPanel({
   onClose: () => void;
   onSaved: (updated: Meeting) => void;
 }) {
+  const t = useT();
   const [visibility, setVisibility] = useState<MeetingVisibility>(meeting.visibility);
   const [attendeeUserIds, setAttendeeUserIds] = useState<string[]>([]);
   const [attendees, setAttendees] = useState<MeetingAttendee[] | null>(null);
@@ -80,9 +85,9 @@ export function MeetingAttendeesPanel({
         setAttendees(rows);
         setAttendeeUserIds(rows.filter((r) => r.userId && r.userId !== meeting.organizerUserId).map((r) => r.userId as string));
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load attendees."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("meetings.attendees.loadFailed")))
       .finally(() => setLoading(false));
-  }, [meeting.id, meeting.organizerUserId]);
+  }, [meeting.id, meeting.organizerUserId, t]);
 
   const myAttendeeRow = attendees?.find((a) => a.userId === currentUserId);
 
@@ -97,7 +102,7 @@ export function MeetingAttendeesPanel({
       onSaved(updated);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setError(err instanceof Error ? err.message : t("meetings.attendees.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -107,7 +112,7 @@ export function MeetingAttendeesPanel({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Manage attendees</DialogTitle>
+          <DialogTitle>{t("meetings.attendees.title")}</DialogTitle>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-5">
           {(error || respondError) && (
@@ -118,9 +123,9 @@ export function MeetingAttendeesPanel({
 
           {!isOrganizer && myAttendeeRow && (
             <div className="flex flex-col gap-2 rounded-md border border-border-strong bg-surface p-3">
-              <p className="text-[13px] font-medium text-on-surface">Your response</p>
+              <p className="text-[13px] font-medium text-on-surface">{t("meetings.attendees.yourResponse")}</p>
               <div className="flex gap-2">
-                {(["accepted", "tentative", "declined"] as const).map((status) => (
+                {RESPONSES.map((status) => (
                   <Button
                     key={status}
                     size="sm"
@@ -154,7 +159,7 @@ export function MeetingAttendeesPanel({
             attendees &&
             attendees.length > 0 && (
               <div className="flex flex-col gap-2">
-                <p className="text-[13px] font-medium text-on-surface">Attendees</p>
+                <p className="text-[13px] font-medium text-on-surface">{t("meetings.attendees.list")}</p>
                 <ul className="flex flex-col gap-2">
                   {attendees.map((a) => (
                     <li key={a.id} className="flex items-center gap-2 text-[13px]">
@@ -162,8 +167,8 @@ export function MeetingAttendeesPanel({
                         <AvatarFallback>{(a.name ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <span className="flex-1 truncate text-on-surface">
-                        {a.name ?? "Former member"}
-                        {a.userId === meeting.organizerUserId && " (organizer)"}
+                        {a.name ?? t("meetings.attendees.formerMember")}
+                        {a.userId === meeting.organizerUserId && t("meetings.attendees.organizerSuffix")}
                       </span>
                       <Badge className={STATUS_CLASSNAME[a.status]}>{STATUS_LABEL[a.status]}</Badge>
                     </li>
@@ -175,11 +180,11 @@ export function MeetingAttendeesPanel({
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose}>
-            {isOrganizer ? "Cancel" : "Close"}
+            {isOrganizer ? t("meetings.attendees.cancel") : t("meetings.attendees.close")}
           </Button>
           {isOrganizer && (
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? <Spinner size="sm" /> : "Save"}
+              {saving ? <Spinner size="sm" /> : t("meetings.attendees.save")}
             </Button>
           )}
         </DialogFooter>

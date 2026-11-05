@@ -4,7 +4,7 @@
  * marked ready for review, so CI confirms a green branch instead of
  * discovering failures on paid Actions minutes.
  *
- * Steps, in CI's order: lint, typecheck, unit, integration, e2e. Stops at
+ * Steps, in CI's order: audit, lint, typecheck, unit, sites, integration, e2e. Stops at
  * the first failure and says how to pick up from there.
  *
  *   pnpm verify                     everything
@@ -19,9 +19,14 @@ import { spawnSync } from "node:child_process";
 import { createConnection } from "node:net";
 
 const STEPS = [
+  // US-OPS-18: high or critical advisories in production dependencies, as CI checks.
+  { name: "audit", command: "pnpm audit --prod --audit-level high" },
   { name: "lint", command: "pnpm turbo run lint" },
   { name: "typecheck", command: "pnpm turbo run typecheck" },
   { name: "unit", command: "pnpm turbo run test --filter=!@spine/e2e && pnpm test:scripts" },
+  // US-SITE-01, US-SITE-14: the home page with the docs under /docs/, as Pages publishes it, every internal link checked.
+  // US-SITE-10: openapi.json is regenerated (commit the change if it moved).
+  { name: "sites", command: "pnpm --filter @spine/api openapi ../docs/openapi.json && pnpm site:build" },
   { name: "integration", command: "pnpm --filter @spine/api test:integration", databases: ["spine_test"] },
   { name: "e2e", command: "pnpm --filter @spine/e2e test", databases: ["spine_e2e"], ports: [[1025, "Maildev"]] },
 ];

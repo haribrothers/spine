@@ -1,0 +1,48 @@
+---
+title: Download invoice PDFs
+description: Preview a draft, download the exact PDF a customer received, or download several invoices at once as a ZIP.
+sidebar:
+  order: 16
+---
+
+Every issued invoice has a PDF that Spine saved at the moment it was issued. Downloading it, today or years from now, gives you the same file the customer got, even if your logo, address or payment instructions have changed since. A draft has no saved PDF; you see a live preview instead.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Invoices**. Previewing a draft in the builder needs **Create/edit own invoices**.
+</Aside>
+
+## One invoice
+
+- **An issued invoice** — open it and press **Download PDF**. It's the main button once nothing is owed; otherwise it's beside the main button or under **More**. In the list, choose **Download PDF** from the row's menu.
+- **A draft** — open it and press **Preview PDF**, or press **Preview PDF** in the builder. The preview shows the invoice as it is on screen, with a faint "DRAFT — Preview only — not a valid invoice" watermark on every page. Nothing is saved.
+
+The PDF shows your business details, "INVOICE", the number, who it's billed to, the issue and due dates, the lines, Subtotal, Tax, Total, any credits and **Balance due**. A progress invoice also shows the retention held. If you've set [payment instructions](../payment-instructions/), they're under the totals.
+
+## Several invoices at once
+
+<Steps>
+
+1. **Tick the invoices** — In the Invoices list, tick the rows you want. A bar shows how many are selected.
+
+2. **Press Download PDFs** — One ZIP file downloads, named like "invoices-2026-11-05.zip", with each invoice's saved PDF.
+
+3. **Clear the selection** — Press **Clear** when you're done.
+
+</Steps>
+
+<Screenshot id="invoices-list" alt="The Invoices list with the Outstanding, Overdue, Due in 7 days and Paid this month cards above the table of invoices" />
+
+A toast says, for example, "Downloaded 12 PDFs". Drafts in the selection are skipped, because they aren't real invoices yet, and the toast says which were skipped.
+
+<Aside type="caution">
+  You can download up to 100 invoices at a time. With more ticked, you'll see "Select 100 or fewer invoices."
+</Aside>
+
+<Aside type="tip">
+  This is a quick way to send your accountant a month's invoices. Filter the list first (for example by **Status**), then tick the rows.
+</Aside>
+
+An invoice brought in from your old system (an opening balance) has no PDF in Spine. Its page keeps the original as an attachment instead.

@@ -29,10 +29,11 @@ import {
 } from "@spine/ui";
 import { STATEMENT_DATE_FORMATS, parseStatementAmount, parseStatementDate, type OpeningBill, type OpeningImportResult, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
-import { formatMoney } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric", year: "numeric" });
 const NONE = "__none__";
 
 /**
@@ -41,6 +42,7 @@ const NONE = "__none__";
  * with a vendor payment like any other bill.
  */
 export function OpeningBillsTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
+  const t = useT();
   const [rows, setRows] = useState<OpeningBill[] | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
@@ -74,7 +76,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
       await apiClient.delete(`/opening-balances/bills/${row.id}`);
       changed();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove this bill.");
+      setError(err instanceof Error ? err.message : t("openingBalances.bills.removeError"));
     }
   }
 
@@ -83,16 +85,16 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard label="Opening bills" value={rows ? String(rows.length) : "—"} />
-        <StatCard label="Amount due" value={money(total)} />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <StatCard label={t("openingBalances.bills.openingBills")} value={rows ? String(rows.length) : "—"} />
+        <StatCard label={t("openingBalances.common.amountDue")} value={money(total)} />
       </div>
       {!locked && (
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={() => setImportOpen(true)}>
-            Import from CSV
+            {t("openingBalances.invoices.importCsv")}
           </Button>
-          <Button onClick={() => setEditing("new")}>Add bill</Button>
+          <Button onClick={() => setEditing("new")}>{t("openingBalances.bills.add")}</Button>
         </div>
       )}
       {error && (
@@ -104,19 +106,19 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
         <table className="w-full text-[14px]" data-testid="opening-bills">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
-              <th className="px-4 py-3 font-medium">Bill number</th>
-              <th className="px-4 py-3 font-medium">Vendor</th>
-              <th className="px-4 py-3 font-medium">Bill date</th>
-              <th className="px-4 py-3 font-medium">Due date</th>
-              <th className="px-4 py-3 text-right font-medium">Amount due</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.bills.colNumber")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.bills.colVendor")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.bills.billDate")}</th>
+              <th className="px-4 py-3 font-medium">{t("openingBalances.common.dueDate")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.amountDue")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("openingBalances.common.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {rows?.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-center text-[13px] text-on-surface-muted">
-                  No opening bills yet.
+                  {t("openingBalances.bills.empty")}
                 </td>
               </tr>
             )}
@@ -130,17 +132,17 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
                 <td className="px-4 py-3 text-right">
                   {!locked && !r.hasActivity ? (
                     <span className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" aria-label={`Edit bill ${r.billNumber}`} onClick={() => setEditing(r)}>
-                        Edit
+                      <Button variant="ghost" size="sm" aria-label={t("openingBalances.bills.editAria", { number: r.billNumber })} onClick={() => setEditing(r)}>
+                        {t("openingBalances.common.edit")}
                       </Button>
-                      <Button variant="ghost" size="sm" aria-label={`Remove bill ${r.billNumber}`} onClick={async () => {
-                      if (await confirm({ title: `Remove opening bill ${r.billNumber}?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r);
+                      <Button variant="ghost" size="sm" aria-label={t("openingBalances.bills.removeAria", { number: r.billNumber })} onClick={async () => {
+                      if (await confirm({ title: t("openingBalances.bills.removeTitle", { number: r.billNumber }), description: t("openingBalances.common.removeBody"), confirmLabel: t("openingBalances.common.remove"), danger: true })) void remove(r);
                     }}>
-                        Remove
+                        {t("openingBalances.common.remove")}
                       </Button>
                     </span>
                   ) : r.hasActivity ? (
-                    <span className="text-[12px] text-on-surface-muted">Paid or credited</span>
+                    <span className="text-[12px] text-on-surface-muted">{t("openingBalances.common.paidOrCredited")}</span>
                   ) : null}
                 </td>
               </tr>
@@ -148,7 +150,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
           </tbody>
         </table>
       </div>
-      <p className="text-[13px] text-on-surface-muted">Opening bills keep the vendor&apos;s numbers, have no lines or tax, and show on Payables to be paid like any other bill. Attach the original to each one.</p>
+      <p className="text-[13px] text-on-surface-muted">{t("openingBalances.bills.footnote")}</p>
 
       <OpeningBillDialog value={editing} onClose={() => setEditing(null)} vendors={vendors} currency={currency} onSaved={() => { setEditing(null); changed(); }} />
       <OpeningBillImport open={importOpen} onOpenChange={setImportOpen} currency={currency} onImported={() => { changed(); loadVendors(); }} />
@@ -158,6 +160,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
 }
 
 function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { value: OpeningBill | "new" | null; onClose: () => void; vendors: { id: string; name: string }[]; currency: string; onSaved: () => void }) {
+  const t = useT();
   const existing = value && value !== "new" ? value : null;
   const [contactId, setContactId] = useState("");
   const [billNumber, setBillNumber] = useState("");
@@ -179,7 +182,7 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
 
   async function save() {
     if (!contactId || !billNumber.trim() || !billDate || !dueDate) {
-      setError("Enter the vendor, bill number and both dates.");
+      setError(t("openingBalances.bills.missingFields"));
       return;
     }
     setSaving(true);
@@ -190,7 +193,7 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
       else await apiClient.post("/opening-balances/bills", body);
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save this bill.");
+      setError(err instanceof Error ? err.message : t("openingBalances.bills.saveError"));
     } finally {
       setSaving(false);
     }
@@ -200,8 +203,8 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
     <Dialog open={value !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>{existing ? `Edit opening bill ${existing.billNumber}` : "Add opening bill"}</DialogTitle>
-          <DialogDescription>An unpaid bill from your old system, as it stood on the cutover date.</DialogDescription>
+          <DialogTitle>{existing ? t("openingBalances.bills.editTitle", { number: existing.billNumber }) : t("openingBalances.bills.addTitle")}</DialogTitle>
+          <DialogDescription>{t("openingBalances.bills.dialogBody")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -209,12 +212,12 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Vendor" required>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField label={t("openingBalances.bills.vendor")} required>
               {(field) => (
                 <Select value={contactId || undefined} onValueChange={setContactId}>
                   <SelectTrigger id={field.id}>
-                    <SelectValue placeholder="Choose a vendor" />
+                    <SelectValue placeholder={t("openingBalances.bills.chooseVendor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {vendors.map((v) => (
@@ -226,26 +229,26 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
                 </Select>
               )}
             </FormField>
-            <FormField label="Bill number" required>
-              {(field) => <Input {...field} value={billNumber} onChange={(e) => setBillNumber(e.target.value)} maxLength={60} placeholder="The vendor's number" />}
+            <FormField label={t("openingBalances.bills.colNumber")} required>
+              {(field) => <Input {...field} value={billNumber} onChange={(e) => setBillNumber(e.target.value)} maxLength={60} placeholder={t("openingBalances.bills.numberPlaceholder")} />}
             </FormField>
-            <FormField label="Bill date" required>
+            <FormField label={t("openingBalances.bills.billDate")} required>
               {() => <DatePicker value={billDate} onChange={setBillDate} />}
             </FormField>
-            <FormField label="Due date" required>
+            <FormField label={t("openingBalances.common.dueDate")} required>
               {() => <DatePicker value={dueDate} onChange={setDueDate} />}
             </FormField>
-            <FormField label="Amount due" required>
+            <FormField label={t("openingBalances.common.amountDue")} required>
               {(field) => <MoneyInput id={field.id} value={amount} onValueChange={setAmount} currency={currency} />}
             </FormField>
           </div>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Cancel
+            {t("openingBalances.common.cancel")}
           </Button>
           <Button onClick={save} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : existing ? "Save bill" : "Add bill"}
+            {saving ? <Spinner size="sm" /> : existing ? t("openingBalances.bills.save") : t("openingBalances.bills.add")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -254,15 +257,16 @@ function OpeningBillDialog({ value, onClose, vendors, currency, onSaved }: { val
 }
 
 const FIELDS = [
-  { key: "vendor", label: "Vendor name", required: true, guess: /vendor|supplier|name/i },
-  { key: "number", label: "Bill number", required: true, guess: /number|no\.?$|bill|ref/i },
-  { key: "billDate", label: "Bill date", required: true, guess: /bill date|^date$|issued/i },
-  { key: "dueDate", label: "Due date", required: true, guess: /due/i },
-  { key: "amountDue", label: "Amount due", required: true, guess: /amount|balance|outstanding/i },
+  { key: "vendor", label: t("openingBalances.bills.fieldVendor"), required: true, guess: /vendor|supplier|name/i },
+  { key: "number", label: t("openingBalances.bills.colNumber"), required: true, guess: /number|no\.?$|bill|ref/i },
+  { key: "billDate", label: t("openingBalances.bills.billDate"), required: true, guess: /bill date|^date$|issued/i },
+  { key: "dueDate", label: t("openingBalances.common.dueDate"), required: true, guess: /due/i },
+  { key: "amountDue", label: t("openingBalances.common.amountDue"), required: true, guess: /amount|balance|outstanding/i },
 ] as const;
 type FieldKey = (typeof FIELDS)[number]["key"];
 
 function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open: boolean; onOpenChange: (open: boolean) => void; currency: string; onImported: () => void }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -294,7 +298,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
       complete: (parsed) => {
         const cols = parsed.meta.fields ?? [];
         if (!cols.length) {
-          setError("That file has no columns. Export it from your old system as CSV.");
+          setError(t("openingBalances.import.noColumns"));
           return;
         }
         setFileName(file.name);
@@ -307,7 +311,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
         }
         setMapping(guess);
       },
-      error: () => setError("That file couldn't be read. Export it from your old system as CSV."),
+      error: () => setError(t("openingBalances.import.unreadable")),
     });
   }
 
@@ -342,7 +346,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
       setResult(res);
       onImported();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't import this file.");
+      setError(err instanceof Error ? err.message : t("openingBalances.import.error"));
     } finally {
       setBusy(false);
     }
@@ -352,8 +356,8 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Import opening bills from CSV</DialogTitle>
-          <DialogDescription>One row per unpaid bill from your old system. Vendors are matched by name.</DialogDescription>
+          <DialogTitle>{t("openingBalances.bills.importTitle")}</DialogTitle>
+          <DialogDescription>{t("openingBalances.bills.importBody")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -365,45 +369,45 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
             <div className="flex flex-col gap-2" data-testid="opening-import-result">
               <Alert variant={result.failed.length ? "warning" : "success"}>
                 <AlertDescription>
-                  Imported {result.imported} bills · {result.failed.length} rows couldn&apos;t be imported
+                  {t("openingBalances.bills.importResult", { imported: result.imported, failed: result.failed.length })}
                 </AlertDescription>
               </Alert>
               <ul className="flex flex-col gap-1 text-[13px] text-on-surface">
                 {result.failed.map((f) => (
                   <li key={f.row}>
-                    Row {f.row}: {f.reason}
+                    {t("openingBalances.import.failedRow", { row: f.row, reason: f.reason })}
                   </li>
                 ))}
               </ul>
             </div>
           ) : unmatched ? (
             <Card className="flex flex-col gap-3" data-testid="opening-import-unmatched">
-              <h3 className="text-[15px] font-semibold text-on-surface">Import from CSV · {fileName}</h3>
+              <h3 className="text-[15px] font-semibold text-on-surface">{t("openingBalances.import.heading", { file: fileName ?? "" })}</h3>
               <p className="text-[14px] text-on-surface">
-                {unmatched.length} vendor {unmatched.length === 1 ? "name didn't" : "names didn't"} match anyone in Spine: {unmatched.join(", ")}.
+                {t("openingBalances.bills.unmatched", { count: unmatched.length, names: unmatched.join(", ") })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={() => run(true)} disabled={busy}>
-                  {busy ? <Spinner size="sm" /> : "Create these vendors"}
+                  {busy ? <Spinner size="sm" /> : t("openingBalances.bills.createVendors")}
                 </Button>
                 <Button variant="ghost" className="text-primary" onClick={() => onOpenChange(false)}>
-                  Fix the file
+                  {t("openingBalances.import.fixFile")}
                 </Button>
               </div>
             </Card>
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed border-border-strong p-4">
-                <p className="text-[13px] text-on-surface">{fileName ? `${fileName} · ${data.length} rows` : "A CSV with a row per unpaid bill."}</p>
+                <p className="text-[13px] text-on-surface">{fileName ? t("openingBalances.import.fileRows", { file: fileName, n: data.length }) : t("openingBalances.bills.fileHint")}</p>
                 <Button variant="secondary" onClick={() => inputRef.current?.click()}>
-                  {fileName ? "Choose another file" : "Choose file"}
+                  {fileName ? t("openingBalances.import.chooseAnother") : t("openingBalances.import.chooseFile")}
                 </Button>
                 <input
                   ref={inputRef}
                   type="file"
                   accept=".csv,text/csv"
                   className="sr-only"
-                  aria-label="Opening bills file"
+                  aria-label={t("openingBalances.bills.fileLabel")}
                   data-testid="opening-bills-file"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -413,7 +417,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
                 />
               </div>
               {fileName && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {FIELDS.map((f) => (
                     <FormField key={f.key} label={f.label} required>
                       {(field) => (
@@ -422,7 +426,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={NONE}>Choose a column</SelectItem>
+                            <SelectItem value={NONE}>{t("openingBalances.import.chooseColumn")}</SelectItem>
                             {headers.map((h) => (
                               <SelectItem key={h} value={h}>
                                 {h}
@@ -433,7 +437,7 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
                       )}
                     </FormField>
                   ))}
-                  <FormField label="Date format" required>
+                  <FormField label={t("openingBalances.import.dateFormat")} required>
                     {(field) => (
                       <Select value={dateFormat} onValueChange={(v) => setDateFormat(v as StatementDateFormat)}>
                         <SelectTrigger id={field.id}>
@@ -456,15 +460,15 @@ function OpeningBillImport({ open, onOpenChange, currency, onImported }: { open:
         </DialogBody>
         <DialogFooter>
           {result ? (
-            <Button onClick={() => onOpenChange(false)}>Done</Button>
+            <Button onClick={() => onOpenChange(false)}>{t("openingBalances.import.done")}</Button>
           ) : (
             <>
               <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={busy}>
-                Cancel
+                {t("openingBalances.common.cancel")}
               </Button>
               {!unmatched && (
                 <Button onClick={() => run(false)} disabled={!fileName || !ready || busy}>
-                  {busy ? <Spinner size="sm" /> : `Import ${data.length} bills`}
+                  {busy ? <Spinner size="sm" /> : t("openingBalances.bills.importN", { n: data.length })}
                 </Button>
               )}
             </>

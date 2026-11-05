@@ -1,4 +1,5 @@
 import type { Contact, ContactType } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-CRM-23 (D-210) — what the contacts list shows, kept in the address. */
 export interface ContactsListState {
@@ -19,7 +20,7 @@ export const STAT_TYPES = {
 };
 
 export function parseListState(params: URLSearchParams): ContactsListState {
-  const types = params.getAll("type").filter((t): t is ContactType => (TYPES as string[]).includes(t));
+  const types = params.getAll("type").filter((type): type is ContactType => (TYPES as string[]).includes(type));
   const status = params.getAll("status").filter((s) => s === "active" || s === "archived");
   const page = Number.parseInt(params.get("page") ?? "1", 10);
   return { types, status: status.length > 0 ? status : DEFAULT_STATUS, q: params.get("q") ?? "", page: Number.isFinite(page) && page > 1 ? page : 1 };
@@ -62,15 +63,15 @@ export function filterContacts(all: Contact[], state: ContactsListState): Contac
 
 /** Whether the type filter is exactly a stat card's set (it shows as pressed). */
 export function isTypeSet(types: ContactType[], set: ContactType[]): boolean {
-  return types.length === set.length && set.every((t) => types.includes(t));
+  return types.length === set.length && set.every((type) => types.includes(type));
 }
 
 /** US-CRM-22 — "Updated just now", "Updated 2 min ago", "Updated 3 h ago". */
 export function updatedLabel(updatedAt: number, now: number): string {
   const minutes = Math.floor((now - updatedAt) / 60_000);
-  if (minutes < 1) return "Updated just now";
-  if (minutes < 60) return `Updated ${minutes} min ago`;
-  return `Updated ${Math.floor(minutes / 60)} h ago`;
+  if (minutes < 1) return t("contacts.listState.updatedJustNow");
+  if (minutes < 60) return t("contacts.listState.updatedMinutes", { count: minutes });
+  return t("contacts.listState.updatedHours", { count: Math.floor(minutes / 60) });
 }
 
 /** A refresh when the tab is shown again needs this long away (D-210). */

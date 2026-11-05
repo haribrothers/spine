@@ -1,0 +1,43 @@
+---
+title: Find jobs in the jobs list
+description: Use the cards, filters and search on the Jobs page to see which jobs need you.
+sidebar:
+  order: 2
+---
+
+The Jobs page lists every job with what's next on it and how far along it is. The cards at the top tell you what needs doing: work to bill, jobs going over budget and retention you're still owed.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Open Jobs**. The **Over or near budget** card and the **Budget used** column need **View job profitability**. Field crew see their assigned jobs in the field app instead.</Aside>
+
+<Steps>
+1. **Open Jobs** — Choose **Jobs** in the sidebar.
+2. **Press a card** — **Active** shows running jobs and their contract value. **Ready to bill** shows jobs with a completed milestone not yet invoiced, and that amount. **Over or near budget** shows jobs that have used 80% or more of their cost budget. Press a card again to clear it. **Retention held** shows the total held across your jobs.
+3. **Narrow the list** — Use **Status** and **Contact** in the toolbar, or type in **Search jobs, numbers or sites** to search by number, name, contact or site address.
+4. **Choose columns** — Press **Columns** to show or hide columns such as **Retention** and **Budget used**.
+5. **Open a job** — Click a row to open the job's page.
+</Steps>
+
+<Screenshot id="jobs-list" alt="The Jobs list with the Active, Ready to bill, Over or near budget and Retention held cards above the table of jobs" />
+
+## Reading a row
+
+Each row shows:
+
+- **Job** — the name, with the job number and site address under it.
+- **Contact** and **Status**.
+- **Next milestone** — its name and when it's due ("Due in 3 days", "Overdue 2 days"), or "All billed".
+- **Progress** — two short bars: how complete the work is and how much of the contract is billed. A job billed over its contract shows the billed figure in the overdue colour with a warning icon, and "Billed over the contract" when you point at it.
+- **End date** and **Contract**.
+
+**Budget used** reads "78%", "Nearing · 85%" or "Over · 104%", or "—" for a job without a budget.
+
+## Coming back to the same list
+
+Your search, filters, card, sort and page are kept in the page address, so you can bookmark or share a view. Press **Clear filters** to start again. The list shows when it was last updated. Press **Refresh list** to reload it, and it also reloads when you come back after 30 seconds.
+
+If nothing matches, you see "No jobs match these filters". With no jobs at all, you see "No jobs yet" with **New job** (if you can create jobs) and **Go to quotes**.
+
+<Aside type="tip">The dashboard can show jobs in progress, retention held and jobs ready to bill. Its links open this list or the right job.</Aside>

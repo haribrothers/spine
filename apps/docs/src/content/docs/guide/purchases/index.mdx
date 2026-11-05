@@ -1,0 +1,70 @@
+---
+title: Purchases and expenses
+description: Enter what you owe vendors, pay them, use their credit, and handle the expenses your team spends.
+sidebar:
+  order: 0
+---
+
+Purchases is the money going out of the business. Vendor bills are what you owe suppliers and subcontractors. Vendor payments are what you paid them. Vendor credits are what they owe you back. Expenses are what your team spends — fuel, materials, site meals, a day's labour — sent in with a receipt and approved before they count. Payables shows what you still owe and how late it is.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has the right for each part: **Open Vendor Bills**, **Open Vendor Credits**, **Open Vendor Payments**, and **View payables** for Payables. Submitting expenses needs **Submit/edit own expenses**; **See everyone's expenses** shows other people's. Field users submit and see only their own expenses, and never see bills, payments or Payables.
+</Aside>
+
+<Screenshot id="purchases-bills-list" alt="The Vendor bills list with the To pay, Overdue, Due in 7 days and Drafts to record cards above the table of bills" />
+
+## The main ideas
+
+- **A bill starts as a draft.** A draft posts nothing to your books, so you can check it. When you record it, it's posted as owed to the vendor and can't be edited any more — only voided.
+- **The bill number is the vendor's.** Spine doesn't number vendor bills. It warns you if the same vendor already has a bill with that number, so you don't pay it twice.
+- **A payment pays bills.** You tick the bills a payment covers. Each bill's balance drops, and a bill paid in full reads **Paid**.
+- **A vendor credit lowers what you owe.** Record a vendor's credit note, then apply it to their open bills or record the refund they paid back.
+- **An expense waits for approval.** A submitted expense posts nothing until an Owner or an approver approves it. Staff can't approve their own expenses. If the **Approvals** module is switched off in Settings › Modules, expenses post when they're submitted.
+- **Jobs pick up their costs.** A bill line or an expense tagged to a job counts as that job's cost once it's recorded or approved. See [Jobs](../jobs/).
+- **You never write journal entries.** Recording, approving, paying, voiding and deleting each post the right entry for you.
+
+## Vendor bills
+
+- [Enter a vendor bill](./enter-a-vendor-bill/) — the bill page, due dates, attachments and duplicates.
+- [Fill in a bill or expense with AI](./fill-in-a-bill-or-expense-with-ai/) — read the vendor's PDF or a receipt into the form.
+- [Record a vendor bill](./record-a-vendor-bill/) — post one bill, or several drafts at once.
+- [Find vendor bills and see what's due](./find-vendor-bills/) — the list, its cards, filters and the job filter.
+- [Void a vendor bill](./void-a-vendor-bill/) — take a recorded bill off your books with a reason.
+- [Set up a recurring bill](./set-up-a-recurring-bill/) — rent and subscriptions entered for you.
+
+## Vendor payments
+
+- [Pay a vendor](./pay-a-vendor/) — tick the bills a payment covers.
+- [Find or delete a vendor payment](./find-or-delete-a-vendor-payment/) — the list, each payment's page, search and deleting.
+- [Send a remittance advice](./send-a-remittance-advice/) — tell a vendor what you paid against which bills.
+
+## Vendor credits
+
+- [Record a vendor credit](./record-a-vendor-credit/) — enter a credit note, from scratch or from its bill.
+- [Apply a vendor credit to bills](./apply-a-vendor-credit/) — use the credit so you pay less.
+- [Record a refund from a vendor](./record-a-vendor-refund/) — when the vendor pays you back.
+- [Track or void a vendor credit](./track-or-void-a-vendor-credit/) — what's left to use, and voiding a mistake.
+
+## Payables
+
+- [See what you owe vendors](./see-what-you-owe-vendors/) — by vendor and by bill, by age, and the export.
+- [Pay bills from Payables](./pay-bills-from-payables/) — pay or apply credit without opening each bill.
+
+## Expenses
+
+- [Submit an expense](./submit-an-expense/) — with a receipt, tax worked out for you.
+- [Submit an expense from the field app](./submit-an-expense-from-the-field-app/) — a receipt photo on site, even with no signal.
+- [Enter a day of site labour](./enter-a-day-of-site-labour/) — workers per trade times their day rate.
+- [Approve or reject an expense](./approve-or-reject-an-expense/) — review it next to its receipt.
+- [Approve several expenses at once](./approve-several-expenses-at-once/) — the weekly batch.
+- [Fix and resubmit a rejected expense](./fix-and-resubmit-a-rejected-expense/) — send it back without starting again.
+- [Bill an expense to a customer](./bill-an-expense-to-a-customer/) — pass a cost on to the job's customer.
+- [Find expenses](./find-expenses/) — what's waiting, what's ready to bill, and filters.
+- [Manage expense categories](./manage-expense-categories/) — where each kind of spending posts.
+
+## Rights
+
+- [Control who can work on purchases](./control-who-can-work-on-purchases/) — the Team rights for bills, payments, credits and expenses.

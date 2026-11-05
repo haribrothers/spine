@@ -12,6 +12,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useT } from "../../../lib/i18n";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /**
@@ -37,15 +38,16 @@ export function PaymentsTable({
   onPageChange?: (page: number) => void;
   toolbarStart?: React.ReactNode;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const columns: TableColumn<Payment>[] = [
     {
       key: "number",
-      header: "Number",
+      header: t("payments.columns.number"),
       render: (row) => (
         <div className="flex max-w-[14rem] flex-col">
           <Link href={`/payments/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
-            {row.number ?? "Payment"}
+            {row.number ?? t("payments.table.payment")}
           </Link>
           {row.reference && (
             <span className="truncate text-[12.5px] text-on-surface-muted" title={row.reference}>
@@ -58,13 +60,13 @@ export function PaymentsTable({
     },
     {
       key: "date",
-      header: "Date",
+      header: t("payments.columns.date"),
       render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>,
       sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}`,
     },
     {
       key: "contact",
-      header: "Customer",
+      header: t("payments.columns.customer"),
       render: (row) => (
         <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -74,7 +76,7 @@ export function PaymentsTable({
     },
     {
       key: "method",
-      header: "Method",
+      header: t("payments.columns.method"),
       render: (row) => (
         <div className="flex flex-col">
           <span>{PAYMENT_METHOD_LABELS[row.method]}</span>
@@ -85,25 +87,25 @@ export function PaymentsTable({
     },
     {
       key: "amount",
-      header: "Amount",
+      header: t("payments.columns.amount"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.amount),
     },
     {
       key: "applied",
-      header: "Applied to",
+      header: t("payments.columns.appliedTo"),
       render: (row) => {
         const to = row.appliedTo ?? [];
-        if (!to.length) return <span className="text-[13px] text-on-surface-muted">Not applied</span>;
-        if (to.length > 2) return <span className="text-[13px]">{to.length} invoices</span>;
+        if (!to.length) return <span className="text-[13px] text-on-surface-muted">{t("payments.table.notApplied")}</span>;
+        if (to.length > 2) return <span className="text-[13px]">{t("payments.table.invoicesCount", { n: to.length })}</span>;
         return (
           <span className="text-[13px]" data-testid="payment-applied-to">
             {to.map((a, i) => (
               <Fragment key={a.invoiceId}>
                 {i > 0 && ", "}
                 <SectionLink href={`/invoices/${a.invoiceId}`} className="text-primary hover:underline">
-                  {a.number ?? "Invoice"}
+                  {a.number ?? t("payments.table.invoice")}
                 </SectionLink>
               </Fragment>
             ))}
@@ -114,7 +116,7 @@ export function PaymentsTable({
     },
     {
       key: "credit",
-      header: "Credit left",
+      header: t("payments.columns.creditLeft"),
       align: "right",
       render: (row) =>
         BigInt(row.unallocatedAmount) > 0n ? (
@@ -160,6 +162,7 @@ export function PaymentsTable({
  * nothing happens in one click (D-218).
  */
 function PaymentRowActions({ payment }: { payment: Payment }) {
+  const t = useT();
   const router = useRouter();
   const canApply = useCapability("payments.apply_credit");
   const canRefund = useCapability("payments.refund");
@@ -174,7 +177,7 @@ function PaymentRowActions({ payment }: { payment: Payment }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Actions for ${payment.number ?? "this payment"}`}
+          aria-label={t("payments.table.actionsFor", { number: payment.number ?? t("payments.table.thisPayment") })}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         >
           <MoreHorizontal size={16} />
@@ -183,30 +186,30 @@ function PaymentRowActions({ payment }: { payment: Payment }) {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => open()}>
           <MENU_ICONS.view aria-hidden />
-          View
+          {t("payments.table.view")}
         </DropdownMenuItem>
         {left && canApply && (
           <DropdownMenuItem onSelect={() => open("apply")}>
             <MENU_ICONS.applyCredit aria-hidden />
-            Apply credit
+            {t("payments.table.applyCredit")}
           </DropdownMenuItem>
         )}
         {left && canRefund && (
           <DropdownMenuItem onSelect={() => open("refund")}>
             <MENU_ICONS.refund aria-hidden />
-            Refund
+            {t("payments.table.refund")}
           </DropdownMenuItem>
         )}
         {canSend && (
           <DropdownMenuItem onSelect={() => open("email")}>
             <MENU_ICONS.email aria-hidden />
-            Email receipt
+            {t("payments.table.emailReceipt")}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
           <a href={`${API_URL}/payments/${payment.id}/pdf`} target="_blank" rel="noreferrer">
             <MENU_ICONS.download aria-hidden />
-            Download PDF
+            {t("payments.table.downloadPdf")}
           </a>
         </DropdownMenuItem>
         {canDelete && (
@@ -214,7 +217,7 @@ function PaymentRowActions({ payment }: { payment: Payment }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem destructive onSelect={() => open("delete")}>
               <MENU_ICONS.delete aria-hidden />
-              Delete payment
+              {t("payments.table.deletePayment")}
             </DropdownMenuItem>
           </>
         )}

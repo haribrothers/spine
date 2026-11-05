@@ -1,0 +1,10 @@
+---
+import Default from "@astrojs/starlight/components/Footer.astro";
+
+/** US-SITE-04 — every guide page says which Spine it describes, above the previous/next links. */
+const version = import.meta.env.SPINE_VERSION as string;
+const isGuide = Astro.locals.starlightRoute.id.startsWith("guide/");
+---
+
+{isGuide && <p class="spine-version">Last updated with Spine {version}</p>}
+<Default><slot /></Default>

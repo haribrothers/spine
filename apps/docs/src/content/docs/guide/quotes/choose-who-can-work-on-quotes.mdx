@@ -1,0 +1,53 @@
+---
+title: Choose who can draft, send and revise quotes
+description: Decide which Staff can draft quotes, change colleagues' quotes, send them and revise them.
+sidebar:
+  order: 16
+---
+
+Quote rights come from Teams. You can let a junior draft quotes without letting them send anything on your behalf, or let them work on their own quotes without touching a colleague's.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners only. Managing Teams is always Owner-only.</Aside>
+
+<Steps>
+
+1. **Open the Team** — Go to **Team** › **Teams** and open the Team whose rights you want to change.
+
+2. **Find the quote rights** — They're grouped with Quotes. Type "quote" in **Search permissions** to see only them.
+
+3. **Turn rights on or off** — Choose the rights from the list below. Turning on an action turns on **Open Quotes** with it.
+
+4. **Save** — Press **Save changes** and confirm. Members get the new rights at their next request. A member has every right granted by any of their Teams.
+
+</Steps>
+
+## The quote rights
+
+| Right | What it allows |
+|---|---|
+| **Open Quotes** | See Quotes in the sidebar and read every quote. |
+| **Create/edit own quotes** | Start new quotes, duplicate them, and edit drafts you created. |
+| **Edit others' quotes** | Edit a draft a colleague created. |
+| **Delete own quotes** | Delete a draft you created. |
+| **Delete others' quotes** | Delete a colleague's draft. |
+| **Send a quote** | Send a draft, email it again and copy the customer link. Sending can't be undone, so it's separate from editing. |
+| **Revise a quote** | Make a new version of a sent quote. |
+| **Approve quote above discount threshold** | Listed with the quote rights; on the quote's page, only Owners see **Approve discount**. |
+| **Accept a quote in person** | Record a customer's on-site acceptance and signature. |
+
+The seeded **General Staff** Team has every quote right except approving discounts.
+
+## What people see
+
+- Without **Create/edit own quotes** or **Edit others' quotes**, **New quote** is hidden.
+- With **Create/edit own quotes** only, **Edit** is hidden on a colleague's draft.
+- Without **Send a quote**, **Send quote** and **Save and send** are hidden, even on your own draft. With it, you can send a colleague's draft you can't edit.
+- Without **Revise a quote**, **Revise** is hidden.
+
+<Aside type="tip">
+Spine checks these rights on the server too, so hiding a button is never the only protection.
+</Aside>
+
+Converting a quote needs the invoice or job rights: **Create/edit own invoices** or **Create/edit own jobs**. Field users never see Quotes on the web, whatever their Teams. See [Team](../../team/).

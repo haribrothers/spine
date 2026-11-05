@@ -1,0 +1,47 @@
+---
+title: Invite people
+description: Send email invites to one or more people as Staff or Field, and put new Staff straight onto their Teams.
+sidebar:
+  order: 3
+---
+
+Each person gets their own sign-in through an email invite. You choose their role when you invite them and, for Staff, the Teams they'll join, so they can work the moment they accept.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Spine needs email set up to send the invite; if it isn't, you can still copy the invite link (see [Resend or cancel an invite](../resend-or-cancel-an-invite/)).</Aside>
+
+<Steps>
+
+1. **Open Users** — In the sidebar, go to **Team › Users** and press **Invite people**.
+
+2. **Enter the emails** — Type or paste one or more addresses in **Emails**, separated by commas, spaces or new lines. You can invite up to 20 at once.
+
+3. **Choose the role** — Pick **Staff** or **Field**. Owners are made by promoting Staff, not by invite.
+
+4. **Choose their Teams (Staff only)** — Under **Teams they'll join**, tick the Teams they should be on. **General Staff** is ticked to start with.
+
+5. **Send** — Press **Send invite**, or **Send invites (3)** for several. The toast says who was invited, and the invites appear on the **Invites** tab until they're accepted.
+
+</Steps>
+
+<Screenshot id="team-invite-people" alt="The Invite people dialog with the Emails box, the Staff and Field role choice and the Teams they'll join list" />
+
+## When some can't be invited
+
+Spine sends the ones it can and lists the rest under "These weren't invited:" with the reason:
+
+- **already a member** — they already have access.
+- **already invited — resend it instead** — use **Resend** on the Invites tab.
+- **not an email address** — fix or remove it.
+
+## What the invitee sees
+
+They get an email from your business, such as "Alex Morgan invited you to join Riverstone Builders as staff.", with a link to accept. They sign in, or create an account, with the address the invite was sent to, then press **Accept**. Staff join the Teams you chose; Field users can sign in to the field app.
+
+<Aside type="caution">An invite only works for the email address it was sent to. If they're signed in with a different address, Spine asks them to sign out and sign in with the invited one.</Aside>
+
+## What happens next
+
+The new person appears on the **Active** tab of Users. If a Staff member joined without a Team, the **Staff without a Team** card counts them — press it to see who, then [add them to a Team](../add-and-remove-team-members/).

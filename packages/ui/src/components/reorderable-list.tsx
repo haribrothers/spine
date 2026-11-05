@@ -3,6 +3,7 @@
 import { createContext, useContext, useRef, useState } from "react";
 import { GripVertical, Eye, EyeOff } from "lucide-react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 
 interface ReorderableListContextValue {
   draggedId: string | null;
@@ -189,12 +190,13 @@ export interface HideToggleProps {
 
 /** An eye/eye-off icon button toggling a widget's visibility — shared visual between the row-list layout and the card-overlay layout. */
 export function HideToggle({ hidden, onToggle, className }: HideToggleProps) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onToggle}
       className={cn("text-on-surface-muted hover:text-on-surface", className)}
-      aria-label={hidden ? "Show widget" : "Hide widget"}
+      aria-label={hidden ? t("ui.reorderableList.showWidget") : t("ui.reorderableList.hideWidget")}
     >
       {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
     </button>

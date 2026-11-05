@@ -9,6 +9,7 @@ import { whereItWent } from "./credit-notes-list-state";
 import type { CreditNoteRow } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useT } from "../../../lib/i18n";
 const WHERE_TONE = { off: "text-on-surface-muted", applied: "text-on-surface-muted", refunded: "font-medium text-paid", left: "font-semibold text-due-soon" } as const;
 
 /**
@@ -34,15 +35,16 @@ export function CreditNotesTable({
   onPageChange?: (page: number) => void;
   toolbarStart?: React.ReactNode;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const columns: TableColumn<CreditNoteRow>[] = [
     {
       key: "number",
-      header: "Number",
+      header: t("creditNotes.columns.number"),
       render: (row) => (
         <div className="flex max-w-[18rem] flex-col whitespace-normal">
           <Link href={`/credit-notes/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
-            {row.number ?? <span className="font-medium italic text-on-surface-muted">Draft</span>}
+            {row.number ?? <span className="font-medium italic text-on-surface-muted">{t("creditNotes.table.draft")}</span>}
           </Link>
           {row.reason && (
             <span className="truncate text-[12.5px] text-on-surface-muted" title={row.reason}>
@@ -55,7 +57,7 @@ export function CreditNotesTable({
     },
     {
       key: "contact",
-      header: "Customer",
+      header: t("creditNotes.table.customer"),
       render: (row) => (
         <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -65,7 +67,7 @@ export function CreditNotesTable({
     },
     {
       key: "invoice",
-      header: "Invoice",
+      header: t("creditNotes.columns.invoice"),
       render: (row) =>
         row.invoiceNumber ? (
           <SectionLink href={`/invoices/${row.invoiceId}`} className="text-primary hover:underline">
@@ -78,7 +80,7 @@ export function CreditNotesTable({
     },
     {
       key: "date",
-      header: "Date",
+      header: t("creditNotes.columns.date"),
       render: (row) => {
         const day = (row.issuedAt ?? row.date ?? "").slice(0, 10);
         return day ? calendarDate(day, now, locale) : <span className="text-on-surface-muted">—</span>;
@@ -87,16 +89,16 @@ export function CreditNotesTable({
     },
     {
       key: "total",
-      header: "Total",
+      header: t("creditNotes.columns.total"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.totalAmount),
     },
     {
       key: "where",
-      header: "Where it went",
+      header: t("creditNotes.table.whereItWent"),
       render: (row) => {
-        if (row.status !== "issued") return <span className="text-[12.5px] italic text-on-surface-muted">Draft — not issued</span>;
+        if (row.status !== "issued") return <span className="text-[12.5px] italic text-on-surface-muted">{t("creditNotes.table.draftNotIssued")}</span>;
         const parts = whereItWent(row);
         return (
           <span className="flex flex-wrap items-center gap-x-1.5 text-[12.5px]" data-testid="where-it-went">

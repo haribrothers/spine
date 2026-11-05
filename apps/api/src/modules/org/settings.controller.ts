@@ -9,9 +9,11 @@ import { SECRET_SETTING } from "../data-export/data-export.tables";
 /**
  * Keys these generic routes never read or write: secrets (D-094), and the AI
  * assistant's settings, which only an Owner reaches, through `/org/ai`
- * (US-AI-01, US-AI-02), and Connected agents' through `/org/agents` (US-MCP-02).
+ * (US-AI-01, US-AI-02), Connected agents' through `/org/agents` (US-MCP-02),
+ * and the update check's result, which only an Owner reads, through
+ * `/org/update-status` (US-OPS-06).
  */
-const isPrivateSetting = (key: string) => SECRET_SETTING.test(key) || key === "ai" || key === "agents";
+const isPrivateSetting = (key: string) => SECRET_SETTING.test(key) || key === "ai" || key === "agents" || key === "update_check";
 
 /**
  * Org-scoped settings read/write, backing every onboarding-wizard step that

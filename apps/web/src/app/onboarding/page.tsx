@@ -24,6 +24,7 @@ import { OnboardingShell, StepCard } from "./onboarding-shell";
 import { OnboardingPreview, presetTaxLine, type PreviewData } from "./onboarding-preview";
 import { OnboardingFinishIllustration, OnboardingStartIllustration } from "./onboarding-illustration";
 import { nextStep, previousStep, type OnboardingStepKey } from "./onboarding-stages";
+import { useT } from "../../lib/i18n";
 
 type Step = "welcome" | OnboardingStepKey | "done";
 
@@ -86,6 +87,7 @@ async function loadSaved(): Promise<Saved> {
  * step's unsaved input.
  */
 export default function OnboardingPage() {
+  const t = useT();
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const [step, setStep] = useState<Step>("welcome");
@@ -231,7 +233,7 @@ export default function OnboardingPage() {
     <>
       <OnboardingShell current={step} onBack={back ? () => setStep(back) : undefined} preview={<OnboardingPreview step={step} data={preview} />}>
         {step === "profile" && (
-          <StepCard title="Tell us about your business" description="Name, logo and address — shown on quotes and invoices.">
+          <StepCard title={t("onboarding.page.profileTitle")} description={t("onboarding.page.profileDescription")}>
             <ProfileStepBody
               onSaved={() => advance("profile")}
               onSkip={handleSkip}
@@ -241,13 +243,13 @@ export default function OnboardingPage() {
         )}
 
         {step === "template" && (
-          <StepCard title="Pick an industry template" description="Pre-sets sensible defaults — you can change anything later.">
+          <StepCard title={t("onboarding.page.templateTitle")} description={t("onboarding.page.templateDescription")}>
             <TemplateStepBody onSaved={() => advance("template")} onSkip={handleSkip} />
           </StepCard>
         )}
 
         {step === "currency" && (
-          <StepCard title="Currency & locale" description="Used for every document and report from now on.">
+          <StepCard title={t("onboarding.page.currencyTitle")} description={t("onboarding.page.currencyDescription")}>
             <CurrencyStepBody
               onSaved={() => advance("currency")}
               onSkip={handleSkip}
@@ -257,7 +259,7 @@ export default function OnboardingPage() {
         )}
 
         {step === "fiscal_year" && (
-          <StepCard title="Financial year" description="The day your financial year starts, used for reports and closing periods. Document numbers never reset.">
+          <StepCard title={t("onboarding.page.fiscalYearTitle")} description={t("onboarding.page.fiscalYearDescription")}>
             <FiscalYearStepBody onSaved={() => advance("fiscal_year")} onSkip={handleSkip} />
           </StepCard>
         )}
@@ -273,7 +275,7 @@ export default function OnboardingPage() {
         )}
 
         {step === "numbering" && (
-          <StepCard title="Document numbering" description="Prefix and starting number for each document type.">
+          <StepCard title={t("onboarding.page.numberingTitle")} description={t("onboarding.page.numberingDescription")}>
             <NumberingStepBody
               onSaved={() => advance("numbering")}
               onSkip={handleSkip}
@@ -283,13 +285,13 @@ export default function OnboardingPage() {
         )}
 
         {step === "accounts" && (
-          <StepCard title="Chart of accounts" description="This is what we'll post your transactions to. System accounts can't be renamed.">
+          <StepCard title={t("onboarding.page.accountsTitle")} description={t("onboarding.page.accountsDescription")}>
             <AccountsStepBody onSaved={() => advance("accounts")} onSkip={handleSkip} />
           </StepCard>
         )}
 
         {step === "team" && (
-          <StepCard title="Invite your team" description="You can invite people later from Team › Users.">
+          <StepCard title={t("onboarding.page.teamTitle")} description={t("onboarding.page.teamDescription")}>
             <InviteTeamStep
               onInvite={async (email, role) => {
                 await apiClient.post("/org/invitations", { email, role });
@@ -425,6 +427,7 @@ function TaxStepBody({
   onRateChange: (rate: TaxRateValue) => void;
   onCountrySaved: () => void;
 }) {
+  const t = useT();
   const [country, setCountry] = useState<TaxCountry | null>(null);
   const [profile, setProfile] = useState<TaxProfile>({});
   const [phase, setPhase] = useState<"country" | "rate" | "gst">("country");
@@ -451,14 +454,14 @@ function TaxStepBody({
   if (phase === "gst") {
     // US-TAX-12 — India's GST registration comes next (US-TAX-09).
     return (
-      <StepCard title="GST details" description="Your GST registration. Spine uses your state to pick intra- or inter-state tax.">
+      <StepCard title={t("onboarding.page.gstTitle")} description={t("onboarding.page.gstDescription")}>
         <GstRegistrationForm
           initial={profile}
           onSaved={onSaved}
-          saveLabel="Continue"
+          saveLabel={t("onboarding.common.continue")}
           secondary={
             <Button type="button" variant="ghost" onClick={onSaved}>
-              Not registered yet — skip this step
+              {t("onboarding.page.gstNotRegistered")}
             </Button>
           }
         />
@@ -467,13 +470,13 @@ function TaxStepBody({
   }
   if (phase === "rate") {
     return (
-      <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
+      <StepCard title={t("onboarding.page.rateTitle")} description={t("onboarding.page.rateDescription")}>
         <DefaultTaxRateBody onSaved={onSaved} onSkip={onSkip} onChange={onRateChange} />
       </StepCard>
     );
   }
   return (
-    <StepCard title="Tax" description="Where is your business registered for tax? Spine sets up your country's rates — change them any time in Settings › Tax.">
+    <StepCard title={t("onboarding.page.taxTitle")} description={t("onboarding.page.taxDescription")}>
       {country === null ? (
         <StepLoading />
       ) : (
@@ -496,7 +499,8 @@ function TaxStepBody({
 }
 
 function DefaultTaxRateBody({ onSaved, onSkip, onChange }: { onSaved: () => void; onSkip: () => void; onChange: (value: TaxRateValue) => void }) {
-  const [value, setValue] = useState<TaxRateValue>({ name: "Tax", percentage: 0 });
+  const t = useT();
+  const [value, setValue] = useState<TaxRateValue>({ name: t("onboarding.page.defaultTaxName"), percentage: 0 });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {

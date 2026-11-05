@@ -1,0 +1,51 @@
+---
+title: Reconcile an account
+description: Match each line of a bank statement to an entry in Spine, and finish when Spine agrees with the bank.
+sidebar:
+  order: 8
+---
+
+Reconciling proves that an account in Spine matches the bank up to a date. You match each statement line to the entries in Spine until the difference is zero, then finish. Spine suggests the obvious matches, and saves your work as you go.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Reconcile accounts**. Turning that right on also grants **View bank balances and registers**.
+</Aside>
+
+<Steps>
+
+1. **Start** — [Import the statement](../import-a-bank-statement/) first. Then press **Reconcile** in the account's register or row menu. Enter the **Statement end date** and the **Closing balance on the statement** — if you imported a balance column, they're filled in from the newest line — and press **Start reconciling**.
+
+2. **Accept the suggestions** — A line with one Spine entry of the same amount within 3 days shows as **Suggested match**. Press **Match**, or **Not this one**. To accept them all, press **Match all suggested** and confirm **Match … lines**.
+
+3. **Match the rest** — Select a statement line. Under **Unreconciled in Spine**, entries with the **Same amount** come first, then the nearest dates. Tick the entries that make up the line — one or several — and press **Match**.
+
+4. **Exclude lines that don't belong** — For a line that shouldn't be in the books, such as a bank reversal that cancels out, press **Exclude**, add a **Note** and press **Exclude line**.
+
+5. **Create what's missing** — If Spine has no entry for a line, press **Create**. See [Create missing entries from a statement line](../create-missing-entries-from-a-statement-line/).
+
+6. **Finish** — When **Difference** reads 0.00, press **Finish reconciliation** and confirm.
+
+</Steps>
+
+<Screenshot id="banking-reconcile" alt="The reconcile page with statement lines on the left, unreconciled Spine entries on the right, and the Statement closing balance, Cleared in Spine and Difference cards" />
+
+## Keep track as you go
+
+Above the panels, "… of … lines done" counts matched and excluded lines. The statement panel has tabs **To do**, **Suggested**, **Matched** and **Excluded**, and a search for description, reference or amount. The cards show **Statement closing balance**, **Cleared in Spine** and **Difference**. **Unmatch** or **Include** puts a line back.
+
+Leave whenever you like: when you come back, it says "Saved as you go — pick up where you left off."
+
+<Aside type="tip">
+  If the AI assistant is on and your Team can use it, **Suggest with AI** looks at lines the rules couldn't settle. Check each suggestion before you match it.
+</Aside>
+
+## When it's finished
+
+The matched entries get the **Reconciled** tick, and the account shows the date it's reconciled to. While the difference isn't zero, **Finish reconciliation** stays off and the footer says to match or create entries until it's zero.
+
+<Aside type="caution" title="Reconciled entries are locked">
+  The documents behind reconciled entries can't be voided or deleted. To change one, [undo the reconciliation](../review-or-undo-a-reconciliation/) first.
+</Aside>

@@ -1,0 +1,49 @@
+---
+title: Find expenses
+description: Use the Expenses list, its cards, filters and search to see what's waiting, what's ready to bill and what needs fixing.
+sidebar:
+  order: 23
+---
+
+The Expenses list shows what your team has spent and where each expense stands. The cards at the top tell you what's waiting on you, what's been approved this month and what can still be billed to customers, so you can act without hunting.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Everyone can see their own expenses. Owners, and Staff whose Team has **See everyone's expenses**, see everyone's. Field users see only their own, and the job filter offers only the jobs they're assigned to.
+</Aside>
+
+<Steps>
+
+1. **Open the list** — Go to **Expenses**. The newest expense by date comes first.
+
+2. **Read the cards** — **Waiting for approval** shows the amount and how many. As a Staff approver, it counts other people's expenses only; an Owner sees all. **Approved this month** shows the amount and count. **Ready to bill** counts approved, billable expenses not on an invoice yet. **Rejected** counts the ones to fix and resubmit.
+
+3. **Narrow it down** — Press **Waiting for approval**, **Ready to bill** or **Rejected** to show only those; press it again to clear. Or use the filters on the left of the filter bar: state, category, **Submitted by** (with **Me** first) and job.
+
+4. **Search** — Type in **Search numbers, descriptions, jobs or people**.
+
+5. **Open an expense** — Press the row, or open the row's menu and choose **View**. The expense opens on its own page.
+
+</Steps>
+
+<Screenshot id="purchases-expenses-list" alt="The Expenses list with the Waiting for approval, Approved this month, Ready to bill and Rejected cards above the table of expenses" />
+
+Each row shows the date, the number once approved, the description over the category, the job, who submitted it, who paid (Company or Employee), the state in words — **Waiting for approval**, **Approved**, **Billed** or **Rejected** — and the amount. **Columns** lets you choose which columns show.
+
+Your filters, card, search, sort and page are kept in the address, so you can share the view or come back to it.
+
+## Act from a row
+
+The row's menu offers **View**, **Edit** (waiting or rejected), **Approve** and **Reject** (waiting), **Bill to customer** (ready to bill) and **Delete** (waiting). You only see the actions your Team allows, and Staff don't see **Approve** or **Reject** on their own expenses. **Approve**, **Reject**, **Bill to customer** and **Delete** ask first.
+
+## See a job's expenses
+
+Choose a job in the job filter to list only expenses tagged to it. The cards count only those. If none are tagged to the job, you see "No expenses on this job" with **Clear filters**. From a job's **Costing** tab, **View bills and expenses** opens Vendor bills filtered to that job, with a link to the same filter here — see [Find vendor bills and see what's due](../find-vendor-bills/).
+
+<Aside type="tip">
+  On a category's row in Expenses › Categories, press its expense count to open this list filtered to that category. See [Manage expense categories](../manage-expense-categories/).
+</Aside>
+
+If nothing matches your filters, you see "No expenses match these filters" with **Clear filters**. If there are no expenses yet, the page says "No expenses yet".

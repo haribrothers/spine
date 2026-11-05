@@ -1,0 +1,44 @@
+---
+title: See payments and credits in a period
+description: List the money you received and paid in a period, and every credit note, vendor credit and refund, to check deposits and avoid giving money back twice.
+sidebar:
+  order: 9
+---
+
+The registers list money as it moved: every payment received from customers and every payment made to vendors, with what each one settled. The credit registers list every credit note and vendor credit with how much was applied, refunded or is still held, so nothing is given back twice.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners. Staff need **View receivables** for Payments received and Credit notes and refunds, and **View payables** for Payments made and Vendor credits.</Aside>
+
+## Payments received and made
+
+<Steps>
+
+1. **Open the register** — Go to **Reports** and choose **Payments received** under Receivables. **Payments made** is the next tab, and is also under Purchases.
+2. **Set the range** — Choose **From** and **To**.
+3. **Pick one account** — Under **Account**, choose a bank or cash account to see only its payments, or keep **All accounts**. This is how you check a deposit or a cheque run.
+4. **Read each payment** — Its date, number, customer or vendor, **Method**, money account, amount, and **Allocated to**: the invoices or bills it settled. Money not yet settled shows as held as credit, refunded or **Not yet applied to bills**.
+
+</Steps>
+
+<Screenshot id="reports-payments-received" alt="Payments received with the figure cards and a table of payments showing method, account, amount and the invoices each was allocated to" />
+
+Use **Search payments** to find one. With nothing in the range, you see "No payments received in this period" or "No payments made in this period".
+
+## Credit notes, vendor credits and refunds
+
+<Steps>
+
+1. **Open the register** — Choose **Credit notes and refunds** under Receivables. **Vendor credits** is the next tab, and is also under Purchases.
+2. **Set the range** — Choose **From** and **To**.
+3. **Read each credit** — Its date, number, customer and **Invoice** (or vendor and **Bill**), the amount, and how much was **Applied**, **Refunded** or is **Still held**.
+
+</Steps>
+
+<Screenshot id="reports-credits" alt="Credit notes and refunds with each credit note's amount and the Applied, Refunded and Still held columns" />
+
+<Aside type="tip">**Still held** is what can still be applied or refunded. Check it before you refund a customer, so you don't refund the same credit twice.</Aside>
+
+To work with a single payment or credit, open it from [Payments](../../payments/) or [Purchases](../../purchases/).

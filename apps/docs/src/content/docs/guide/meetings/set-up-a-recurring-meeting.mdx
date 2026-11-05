@@ -1,0 +1,54 @@
+---
+title: Set up a recurring meeting
+description: Make a meeting repeat, and change or delete one occurrence or the whole series.
+sidebar:
+  order: 7
+---
+
+A weekly site meeting or a monthly review only needs setting up once. When plans change, you can move or cancel a single date without disturbing the rest of the series.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">The organiser with **Create/edit own meetings**, Owners, and Staff whose Team has **Edit others' meetings**. Deleting needs **Delete own meetings** or **Delete others' meetings**.</Aside>
+
+## Make a meeting repeat
+
+<Steps>
+1. **Open the dialog** — Start a new meeting, or edit an existing one.
+2. **Turn on Repeats** — On the **Details** tab, turn on **Repeats**.
+3. **Choose how often** — In **Frequency**, choose **Daily**, **Weekly** or **Monthly**.
+4. **Choose when it ends** — In **Ends**, choose **After** and a number of occurrences, or **On date** and an end date.
+5. **Save** — Press **Create event** or **Save changes**. Each occurrence shows on the calendar.
+</Steps>
+
+The quick view says how a meeting repeats, such as "Weekly, 10 times" or "Monthly, until …".
+
+## Change one occurrence or the whole series
+
+<Steps>
+1. **Start the change** — Press an occurrence and choose **Edit** in the quick view.
+2. **Choose the scope** — Spine asks "Edit recurring event". Choose **This event** to change only this date, or **All events** to change the series. **Cancel** changes nothing.
+3. **Make the change and save** — Press **Save changes**.
+</Steps>
+
+When you edit one occurrence, the dialog says "Editing just this occurrence — the rest of the series is unaffected." Press **Edit the series instead** if you meant all of them. Editing all events says "Editing updates the entire series."
+
+Visibility and invitees always apply to the whole series. To change them, choose **All events**.
+
+When you drag an occurrence to a new time, Spine asks "Move recurring event" with the same choices.
+
+## Delete one occurrence or the whole series
+
+<Steps>
+1. **Choose Delete** — Press the occurrence and press **Delete** in the quick view.
+2. **Choose the scope** — In "Delete recurring event", choose **This event** or **All events**.
+3. **Confirm** — For one date, Spine asks "Delete this occurrence?"; the rest of the series stays. For all events, it asks "Delete this meeting?". Press **Delete**.
+</Steps>
+
+<Aside type="danger" title="Deleting can't be undone">A deleted occurrence or series is removed from the calendar for everyone.</Aside>
+
+## Good to know
+
+- There's no "this and following events" option. To change the rest of a series from a date on, edit all events, or end the series and start a new one.
+- A cancelled occurrence doesn't show on the contact's timeline, and a moved one shows at its new time.
+- Spine sends a reminder for each occurrence, and none for a cancelled one.

@@ -28,6 +28,7 @@ import {
 } from "@spine/ui";
 import { JOURNAL_CONTROL_CODES, JOURNAL_CONTROL_HINT, JOURNAL_OUT_BY, type ManualJournal } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -63,6 +64,7 @@ export function JournalDialog({
   initial?: { reason: string; lines: Omit<JournalLineDraft, "key">[] } | null;
   onPosted: (journal: ManualJournal) => void;
 }) {
+  const t = useT();
   const [date, setDate] = useState<Date>(new Date());
   const [reason, setReason] = useState("");
   const [lines, setLines] = useState<JournalLineDraft[]>([blank(), blank()]);
@@ -125,7 +127,7 @@ export function JournalDialog({
       onOpenChange(false);
       onPosted(journal);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't post this journal.");
+      setError(err instanceof Error ? err.message : t("journals.dialog.postError"));
     } finally {
       setSaving(false);
     }
@@ -137,8 +139,8 @@ export function JournalDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>New journal</DialogTitle>
-          <DialogDescription>For adjustments no document covers. Journals are never edited — a mistake is reversed.</DialogDescription>
+          <DialogTitle>{t("journals.dialog.title")}</DialogTitle>
+          <DialogDescription>{t("journals.dialog.description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-4">
           {error && (
@@ -147,24 +149,24 @@ export function JournalDialog({
             </Alert>
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[12rem_1fr]">
-            <FormField label="Date" required>
+            <FormField label={t("journals.dialog.date")} required>
               {() => <DatePicker value={date} onChange={(d) => d && setDate(d)} />}
             </FormField>
-            <FormField label="Reason" required>
-              {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="e.g. Depreciation for March" />}
+            <FormField label={t("journals.dialog.reason")} required>
+              {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder={t("journals.dialog.reasonPlaceholder")} />}
             </FormField>
           </div>
           <div className="overflow-x-auto rounded-md border border-border">
             <table className="w-full text-[13px]" data-testid="journal-lines">
               <thead>
                 <tr className="border-b border-border bg-surface-sunken text-left text-on-surface-muted">
-                  <th className="px-3 py-2 font-medium">Account</th>
-                  <th className="px-3 py-2 font-medium">Description</th>
-                  <th className="px-3 py-2 text-right font-medium">Debit</th>
-                  <th className="px-3 py-2 text-right font-medium">Credit</th>
-                  {jobsOn && <th className="px-3 py-2 font-medium">Job</th>}
+                  <th className="px-3 py-2 font-medium">{t("journals.dialog.colAccount")}</th>
+                  <th className="px-3 py-2 font-medium">{t("journals.dialog.colDescription")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("journals.dialog.colDebit")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("journals.dialog.colCredit")}</th>
+                  {jobsOn && <th className="px-3 py-2 font-medium">{t("journals.dialog.colJob")}</th>}
                   <th className="px-1 py-2">
-                    <span className="sr-only">Remove</span>
+                    <span className="sr-only">{t("journals.dialog.remove")}</span>
                   </th>
                 </tr>
               </thead>
@@ -172,21 +174,28 @@ export function JournalDialog({
                 {lines.map((l, i) => (
                   <tr key={l.key} className="border-b border-border last:border-0 align-top">
                     <td className="min-w-48 px-3 py-2">
-                      <Combobox aria-label={`Account, line ${i + 1}`} options={accounts} value={l.accountId || undefined} onValueChange={(v) => update(l.key, { accountId: v })} placeholder="Choose an account" emptyText="No matching account." />
+                      <Combobox
+                        aria-label={t("journals.dialog.accountLine", { n: i + 1 })}
+                        options={accounts}
+                        value={l.accountId || undefined}
+                        onValueChange={(v) => update(l.key, { accountId: v })}
+                        placeholder={t("journals.dialog.chooseAccount")}
+                        emptyText={t("journals.dialog.noMatchingAccount")}
+                      />
                     </td>
                     <td className="min-w-40 px-3 py-2">
-                      <Input aria-label={`Description, line ${i + 1}`} value={l.description} onChange={(e) => update(l.key, { description: e.target.value })} maxLength={200} />
+                      <Input aria-label={t("journals.dialog.descriptionLine", { n: i + 1 })} value={l.description} onChange={(e) => update(l.key, { description: e.target.value })} maxLength={200} />
                     </td>
                     <td className="w-32 px-3 py-2">
-                      <MoneyInput aria-label={`Debit, line ${i + 1}`} value={l.debit} onValueChange={(v) => update(l.key, { debit: v })} currency={currency} />
+                      <MoneyInput aria-label={t("journals.dialog.debitLine", { n: i + 1 })} value={l.debit} onValueChange={(v) => update(l.key, { debit: v })} currency={currency} />
                     </td>
                     <td className="w-32 px-3 py-2">
-                      <MoneyInput aria-label={`Credit, line ${i + 1}`} value={l.credit} onValueChange={(v) => update(l.key, { credit: v })} currency={currency} />
+                      <MoneyInput aria-label={t("journals.dialog.creditLine", { n: i + 1 })} value={l.credit} onValueChange={(v) => update(l.key, { credit: v })} currency={currency} />
                     </td>
                     {jobsOn && (
                       <td className="min-w-36 px-3 py-2">
                         <Select value={l.jobId} onValueChange={(v) => update(l.key, { jobId: v })}>
-                          <SelectTrigger aria-label={`Job, line ${i + 1}`}>
+                          <SelectTrigger aria-label={t("journals.dialog.jobLine", { n: i + 1 })}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -203,7 +212,7 @@ export function JournalDialog({
                     )}
                     <td className="px-1 py-2">
                       {lines.length > 2 && (
-                        <Button variant="ghost" size="icon" aria-label={`Remove line ${i + 1}`} onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}>
+                        <Button variant="ghost" size="icon" aria-label={t("journals.dialog.removeLine", { n: i + 1 })} onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}>
                           <X size={14} />
                         </Button>
                       )}
@@ -214,7 +223,7 @@ export function JournalDialog({
               <tfoot>
                 <tr className="border-t border-border-strong bg-surface-sunken font-semibold text-on-surface">
                   <td />
-                  <td className="px-3 py-2">Totals</td>
+                  <td className="px-3 py-2">{t("journals.dialog.totals")}</td>
                   <td className="px-3 py-2 text-right tabular-nums" data-testid="journal-debits">
                     {money(debits)}
                   </td>
@@ -229,7 +238,7 @@ export function JournalDialog({
           <div>
             <Button variant="secondary" size="sm" onClick={() => setLines((ls) => [...ls, blank()])}>
               <Plus size={14} aria-hidden />
-              Add line
+              {t("journals.dialog.addLine")}
             </Button>
           </div>
           {outBy !== 0n && (
@@ -241,10 +250,10 @@ export function JournalDialog({
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
+            {t("journals.dialog.cancel")}
           </Button>
           <Button onClick={post} disabled={!canPost || saving}>
-            {saving ? <Spinner size="sm" /> : "Post journal"}
+            {saving ? <Spinner size="sm" /> : t("journals.dialog.post")}
           </Button>
         </DialogFooter>
       </DialogContent>

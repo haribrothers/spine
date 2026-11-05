@@ -6,6 +6,7 @@ import { Button, SpineLogo } from "@spine/ui";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { ONBOARDING_STAGES, ONBOARDING_STEPS, minutesLeft, stepPosition, type OnboardingStepKey } from "./onboarding-stages";
 import styles from "./onboarding-illustration.module.css";
+import { useT } from "../../lib/i18n";
 
 function Progress({ value }: { value: number }) {
   return (
@@ -17,20 +18,22 @@ function Progress({ value }: { value: number }) {
 
 /** US-ONB-22 — the four stages and their steps, ticked off as they're done, and the minutes left. */
 function OnboardingRail({ current }: { current: OnboardingStepKey }) {
+  const t = useT();
   const currentIndex = ONBOARDING_STEPS.findIndex((s) => s.key === current);
   const { progress } = stepPosition(current);
   return (
-    <nav aria-label="Setup steps" className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 lg:flex">
+    <nav aria-label={t("onboarding.shell.railLabel")} className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 lg:flex">
       <SpineLogo variant="horizontal" size={96} />
-      <p className="mt-7 text-[13px] font-semibold text-on-surface">Set up Spine</p>
+      <p className="mt-7 text-[13px] font-semibold text-on-surface">{t("onboarding.shell.setUpSpine")}</p>
       <p className="mt-1 flex items-center gap-1.5 text-[12px] text-on-surface-muted">
         <Clock size={13} aria-hidden />
-        About {minutesLeft(current)} min left
+        {t("onboarding.shell.minutesLeft", { minutes: minutesLeft(current) })}
       </p>
       <Progress value={progress} />
       <ol className="mt-5 flex flex-col gap-1.5">
         {ONBOARDING_STAGES.map((stage, i) => {
           const indexes = stage.steps.map((s) => ONBOARDING_STEPS.findIndex((x) => x.key === s.key));
+          // eslint-disable-next-line i18next/no-literal-string -- state keys, not copy
           const state = Math.max(...indexes) < currentIndex ? "done" : indexes.includes(currentIndex) ? "current" : "todo";
           return (
             <li key={stage.key} className="py-2">
@@ -65,7 +68,7 @@ function OnboardingRail({ current }: { current: OnboardingStepKey }) {
                     >
                       <Icon size={14} aria-hidden className={done ? "text-paid" : undefined} />
                       {step.label}
-                      {done && <span className="sr-only"> (done)</span>}
+                      {done && <span className="sr-only">{t("onboarding.shell.done")}</span>}
                     </li>
                   );
                 })}
@@ -83,6 +86,7 @@ function OnboardingRail({ current }: { current: OnboardingStepKey }) {
 
 /** Below 1024 px the rail becomes a bar: the stage, the minutes left and a progress line. */
 function OnboardingTopBar({ current }: { current: OnboardingStepKey }) {
+  const t = useT();
   const { stage, stageNumber, progress } = stepPosition(current);
   return (
     <header className="border-b border-border bg-surface px-5 pb-3 pt-3.5 lg:hidden">
@@ -91,8 +95,8 @@ function OnboardingTopBar({ current }: { current: OnboardingStepKey }) {
         <ThemeToggle placement="inline" />
       </div>
       <p className="mt-2.5 text-[13px] font-semibold text-on-surface">
-        Stage {stageNumber} of {ONBOARDING_STAGES.length} · {stage.label}{" "}
-        <span className="font-normal text-on-surface-muted">· About {minutesLeft(current)} min left</span>
+        {t("onboarding.shell.stageOf", { stage: stageNumber, total: ONBOARDING_STAGES.length, label: stage.label })}{" "}
+        <span className="font-normal text-on-surface-muted">{t("onboarding.shell.minutesLeftAfterDot", { minutes: minutesLeft(current) })}</span>
       </p>
       <Progress value={progress} />
     </header>
@@ -101,9 +105,10 @@ function OnboardingTopBar({ current }: { current: OnboardingStepKey }) {
 
 /** Why the step matters and where to change it later (US-ONB-22). */
 function StepTip({ current }: { current: OnboardingStepKey }) {
+  const t = useT();
   const { tip } = stepPosition(current).step;
   return (
-    <aside aria-label="Tip" data-testid="onboarding-tip" className="mt-[18px] flex gap-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3.5">
+    <aside aria-label={t("onboarding.shell.tip")} data-testid="onboarding-tip" className="mt-[18px] flex gap-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3.5">
       <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-due-soon-bg text-due-soon">
         <Lightbulb size={16} aria-hidden />
       </span>
@@ -132,6 +137,7 @@ export function OnboardingShell({
   preview: ReactNode;
   children: ReactNode;
 }) {
+  const t = useT();
   const { stage, stageNumber, stepNumber } = stepPosition(current);
   return (
     // The page scrolls here: globals.css stops the body scrolling. The rail and the preview stay in place.
@@ -147,11 +153,11 @@ export function OnboardingShell({
             {onBack && (
               <Button variant="ghost" size="sm" onClick={onBack} className="-ml-3">
                 <ArrowLeft size={14} aria-hidden />
-                Back
+                {t("onboarding.shell.back")}
               </Button>
             )}
             <p className="text-[12px] font-semibold tracking-[0.02em] text-primary" data-testid="onboarding-position">
-              Stage {stageNumber} of {ONBOARDING_STAGES.length} · {stage.label} · Step {stepNumber} of {stage.steps.length}
+              {t("onboarding.shell.position", { stage: stageNumber, total: ONBOARDING_STAGES.length, label: stage.label, step: stepNumber, steps: stage.steps.length })}
             </p>
           </div>
           {children}

@@ -1,0 +1,37 @@
+---
+title: Change your settings and sign out
+description: See your account, choose light or dark, check sync, find the app version and sign out safely.
+sidebar:
+  order: 16
+---
+
+**Profile** holds your account details, the app's appearance, your sync status and **Sign out**. Signing out is safe: if anything hasn't reached your office yet, the app warns you before it's deleted.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone signed in to the field app.</Aside>
+
+## Open Profile
+
+Tap your picture or initials at the top right of any tab. On iPhone, Profile opens as a sheet; on Android, as a page. It shows:
+
+- Your name and your role and business, such as "Field · Riverstone Builders".
+- **Email** and **Server**.
+- Your sync status (**All synced** or "_n_ waiting to sync") and when items were last sent. Tap it to open Sync.
+- **Appearance**: **System**, **Light** or **Dark**. **System** follows your phone. Your choice is kept on this phone.
+- For Field members: "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account."
+- The app's version, such as "Spine 1.0.0-beta.1 (12) · Beta".
+
+## Sign out
+
+<Steps>
+1. **Press Sign out** — At the bottom of Profile, press **Sign out**.
+2. **Read the warning, if there is one** — If items are still waiting, you see "_n_ items haven't reached your office yet. Sign out anyway?" and what they are, for example "2 site photos and 1 expense are still waiting to sync. Signing out deletes them from this phone."
+3. **Choose what to do** — Press **Send them first** (on Android, **Send first**) to open Sync, **Sign out anyway** (on Android, **Sign out**) to sign out and delete them, or **Cancel**.
+</Steps>
+
+With nothing waiting, you're signed out straight away and go back to **Sign in**.
+
+<Aside type="danger">**Sign out anyway** deletes waiting photos, expenses and milestone updates from the phone. They never reach your office and can't be recovered.</Aside>
+
+<Aside type="tip">To change your name, email or role, ask your office. If an Owner deactivates your account, the app signs you out with "Your access to _business_ was removed."</Aside>

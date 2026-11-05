@@ -10,6 +10,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { useT } from "../../../lib/i18n";
 
 /**
  * Client-side line shape while editing — money fields as `bigint` (never a
@@ -143,6 +144,7 @@ export function VendorBillLineEditor({
   onChange: (lines: EditableVendorBillLine[]) => void;
   currency: string;
 }) {
+  const t = useT();
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
@@ -179,7 +181,7 @@ export function VendorBillLineEditor({
 
   const taxOptions = useMemo(
     () => [
-      { value: "", label: "No tax" },
+      { value: "", label: t("vendorBills.lineEditor.noTax") },
       ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
       ...taxGroups
         .filter((g) => !g.archivedAt)
@@ -254,7 +256,7 @@ export function VendorBillLineEditor({
                 <div className="flex flex-col gap-1 pt-1">
                   <button
                     type="button"
-                    aria-label="Move line up"
+                    aria-label={t("vendorBills.lineEditor.moveLineUp")}
                     disabled={index === 0}
                     onClick={() => moveLine(index, -1)}
                     className="flex h-6 w-6 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface disabled:opacity-30"
@@ -263,7 +265,7 @@ export function VendorBillLineEditor({
                   </button>
                   <button
                     type="button"
-                    aria-label="Move line down"
+                    aria-label={t("vendorBills.lineEditor.moveLineDown")}
                     disabled={index === lines.length - 1}
                     onClick={() => moveLine(index, 1)}
                     className="flex h-6 w-6 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface disabled:opacity-30"
@@ -275,23 +277,23 @@ export function VendorBillLineEditor({
                 <div className="flex-1 flex-col gap-2">
                   <div className="flex flex-col gap-2">
                     <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <Input value={line.name} onChange={(e) => updateLine(index, { name: e.target.value })} placeholder="Item name" required />
+                      <Input value={line.name} onChange={(e) => updateLine(index, { name: e.target.value })} placeholder={t("vendorBills.lineEditor.itemName")} required />
                       <div className="w-48">
                         <Combobox
                           options={catalogOptions}
                           value={line.catalogItemId ?? undefined}
                           onValueChange={(id) => applyCatalogItem(index, id)}
-                          placeholder="Prefill from catalogue…"
+                          placeholder={t("vendorBills.lineEditor.prefillFromCatalogue")}
                         />
                       </div>
                     </div>
                     <Input
                       value={line.description}
                       onChange={(e) => updateLine(index, { description: e.target.value })}
-                      placeholder="Description (optional)"
+                      placeholder={t("vendorBills.lineEditor.descriptionPlaceholder")}
                     />
-                    <div className="grid grid-cols-3 gap-2">
-                      <FieldLabel label="Qty">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                      <FieldLabel label={t("vendorBills.lineEditor.qty")}>
                         <Input
                           type="number"
                           inputMode="decimal"
@@ -301,35 +303,35 @@ export function VendorBillLineEditor({
                           onChange={(e) => updateLine(index, { quantity: Number(e.target.value) || 0 })}
                         />
                       </FieldLabel>
-                      <FieldLabel label="Unit price">
+                      <FieldLabel label={t("vendorBills.lineEditor.unitPrice")}>
                         <MoneyInput value={line.unitPriceAmount} onValueChange={(v) => updateLine(index, { unitPriceAmount: v })} currency={currency} />
                       </FieldLabel>
-                      <FieldLabel label="Line total">
+                      <FieldLabel label={t("vendorBills.lineEditor.lineTotal")}>
                         <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 text-[14px] tabular-nums">
                           {formatMoney(preview.total, currency)}
                         </div>
                       </FieldLabel>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <FieldLabel label="Expense/COGS account">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                      <FieldLabel label={t("vendorBills.lineEditor.expenseAccount")}>
                         <Combobox
                           options={accountOptions}
                           value={line.accountId ?? undefined}
                           onValueChange={(id) => updateLine(index, { accountId: id })}
-                          placeholder="Select an account…"
+                          placeholder={t("vendorBills.lineEditor.selectAccount")}
                         />
                       </FieldLabel>
-                      <FieldLabel label="Tax">
-                        <Combobox options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
+                      <FieldLabel label={t("vendorBills.lineEditor.tax")}>
+                        <Combobox options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder={t("vendorBills.lineEditor.noTax")} />
                       </FieldLabel>
                     </div>
                     <label className="flex h-10 w-fit cursor-pointer items-center gap-2 pb-0.5">
                       <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => updateLine(index, { isTaxInclusive: v === true })} />
-                      <span className="text-[13px] text-on-surface">Price includes tax</span>
+                      <span className="text-[13px] text-on-surface">{t("vendorBills.lineEditor.priceIncludesTax")}</span>
                     </label>
                     {flaggedKeys?.has(line.key) && <LineTaxWarning />}
                     {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
-                      <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
+                      <div className={showHsn ? "grid grid-cols-1 items-start gap-2 md:grid-cols-2" : "flex flex-col"}>
                         {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => updateLine(index, { hsnSac })} />}
                         {showsSupplyType(line.supplyClass, taxPercent) && (
                           <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => updateLine(index, { supplyClass })} />
@@ -341,7 +343,7 @@ export function VendorBillLineEditor({
 
                 <button
                   type="button"
-                  aria-label="Remove line"
+                  aria-label={t("vendorBills.lineEditor.removeLine")}
                   onClick={() => removeLine(index)}
                   className="mt-1 flex h-7 w-7 items-center justify-center rounded-sm text-on-surface-muted hover:bg-overdue-bg hover:text-overdue"
                 >
@@ -355,7 +357,7 @@ export function VendorBillLineEditor({
 
       <div>
         <Button type="button" variant="secondary" size="sm" onClick={addLine}>
-          <Plus size={14} /> Add line
+          <Plus size={14} /> {t("vendorBills.lineEditor.addLine")}
         </Button>
       </div>
     </div>

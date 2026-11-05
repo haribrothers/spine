@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, EmptyState } from "@spine/ui";
 import { Lock } from "lucide-react";
 import { apiClient } from "../lib/api-client";
+import { useT } from "../lib/i18n";
 
 interface MemberRow {
   name: string | null;
@@ -20,6 +21,7 @@ interface MemberRow {
  * is left out for them too.
  */
 export function NoAccess({ pageName, ownerOnly = false, fixedRole = false, message }: { pageName: string; ownerOnly?: boolean; fixedRole?: boolean; message?: string }) {
+  const t = useT();
   const [owners, setOwners] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,25 +35,25 @@ export function NoAccess({ pageName, ownerOnly = false, fixedRole = false, messa
       .catch(() => setOwners(null));
   }, [ownerOnly]);
 
-  const ask = owners ? `ask an owner — ${owners} —` : "ask an owner";
+  const ask = owners ? t("common.noAccess.askNamed", { owners }) : t("common.noAccess.ask");
   const description = message
     ? message
     : ownerOnly
-    ? `${pageName} is only available to owners.`
+    ? t("common.noAccess.ownerOnly", { page: pageName })
     : fixedRole
-      ? `Your account can't open this page. If you need it for your work, ${ask.replace(/ —$/, "")}.`
-      : `Your account can't open this page. If you need it for your work, ${ask} to change your team's permissions.`;
+      ? t("common.noAccess.fixedRole", { ask: ask.replace(/ —$/, "") })
+      : t("common.noAccess.teamRole", { ask });
 
   return (
     <EmptyState
       data-testid="no-access"
       className="mx-auto max-w-[480px] py-24"
       icon={<Lock />}
-      title={`You don't have access to ${pageName}`}
+      title={t("common.noAccess.title", { page: pageName })}
       description={description}
       action={
         <Button asChild>
-          <Link href="/dashboard">Go to dashboard</Link>
+          <Link href="/dashboard">{t("common.actions.goToDashboard")}</Link>
         </Button>
       }
     />

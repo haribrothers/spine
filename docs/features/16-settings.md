@@ -139,6 +139,7 @@ Legacy: S-12.8
 
 **Implementation notes**
 - API: `GET /demo-data/status`, `DELETE /demo-data`.
+- UI: `DataPane` asks with `useConfirm()` (D-218) and says what happened with `useToast()` (D-223): "Demo data deleted · Your own records stay." plus any demo contact kept (US-ONB-17). A failed delete shows the server's message in the pane and keeps the demo shown.
 
 ### US-SET-09 · Pick a theme for the whole organisation
 **Feature:** F-SET-05 · **Priority:** P3 · **Phase:** 7 · **Screens:** `SettingsBranding`

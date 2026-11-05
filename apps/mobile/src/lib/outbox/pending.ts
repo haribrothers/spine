@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { outbox } from "./outbox";
 import type { OutboxItem } from "./types";
+import { t } from "../i18n";
 
 /**
  * What hasn't reached the office yet, from the outbox: every item not yet
@@ -47,24 +48,22 @@ export function pendingTotal(summary: PendingSummary): number {
   return summary.photos + summary.expenses + summary.completions;
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 /** "2 site photos and 1 expense" — only the kinds that are waiting. */
 export function describePending(summary: PendingSummary): string {
   const parts = [
-    summary.photos ? plural(summary.photos, "site photo", "site photos") : null,
-    summary.expenses ? plural(summary.expenses, "expense", "expenses") : null,
-    summary.completions ? plural(summary.completions, "milestone update", "milestone updates") : null,
+    summary.photos ? t("mobileApp.outbox.sitePhotos", { count: summary.photos }) : null,
+    summary.expenses ? t("mobileApp.pending.expenses", { count: summary.expenses }) : null,
+    summary.completions ? t("mobileApp.pending.milestoneUpdates", { count: summary.completions }) : null,
   ].filter((part): part is string => part !== null);
   if (parts.length <= 1) return parts[0] ?? "";
-  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return t("mobileApp.pending.list", { first: parts.slice(0, -1).join(", "), last: parts[parts.length - 1] });
 }
 
 /** US-MOB-02 — the sign-out warning's title and message. */
 export function signOutWarning(summary: PendingSummary): { title: string; message: string } {
   const total = pendingTotal(summary);
   return {
-    title: `${total} ${total === 1 ? "item hasn't" : "items haven't"} reached your office yet. Sign out anyway?`,
-    message: `${describePending(summary)} ${total === 1 ? "is" : "are"} still waiting to sync. Signing out deletes ${total === 1 ? "it" : "them"} from this phone.`,
+    title: t("mobileApp.signOut.warningTitle", { count: total }),
+    message: t("mobileApp.signOut.warningMessage", { count: total, what: describePending(summary) }),
   };
 }

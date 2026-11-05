@@ -34,6 +34,7 @@ import { localIsoDate, prefillDate, type StatementPrefill } from "../../../compo
 import { AiField } from "../../../components/ai-suggested-tag";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { calendarDate } from "../quotes/quotes-list-state";
+import { useT } from "../../../lib/i18n";
 import { ContactPicker } from "./contact-picker";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
 import { paysSentence, spreadOldestFirst } from "./vendor-payments-state";
@@ -81,6 +82,7 @@ export function RecordVendorPaymentDialog({
   /** US-PUR-58 — Payables' "Pay (n)": several of the vendor's bills ticked for their balances. */
   initialBillIds?: readonly string[];
 }) {
+  const t = useT();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [contactId, setContactId] = useState("");
   const [vendorName, setVendorName] = useState<string | null>(null);
@@ -158,7 +160,7 @@ export function RecordVendorPaymentDialog({
       .then((credits) => {
         const total = credits.reduce((sum, c) => sum + BigInt(c.balanceAmount), 0n);
         if (credits[0]?.contactName) setVendorName(credits[0].contactName);
-        setOpenCredit(total > 0n ? { total, vendor: credits[0]!.contactName ?? "This vendor", href: credits.length === 1 ? `/vendor-credits/${credits[0]!.id}` : "/vendor-credits" } : null);
+        setOpenCredit(total > 0n ? { total, vendor: credits[0]!.contactName ?? t("vendorPayments.record.thisVendor"), href: credits.length === 1 ? `/vendor-credits/${credits[0]!.id}` : "/vendor-credits" } : null);
       })
       .catch(() => setOpenCredit(null));
   }, [open, contactId]);
@@ -225,9 +227,9 @@ export function RecordVendorPaymentDialog({
   }
 
   const dueText = (b: OpenBill) => {
-    if (!b.dueDate) return { due: `Billed ${calendarDate(b.date, new Date(), locale)}`, late: null };
+    if (!b.dueDate) return { due: t("vendorPayments.record.billed", { date: calendarDate(b.date, new Date(), locale) }), late: null };
     const days = Math.floor((new Date(new Date().toISOString().slice(0, 10)).getTime() - new Date(b.dueDate).getTime()) / DAY_MS);
-    return { due: `Due ${calendarDate(b.dueDate, new Date(), locale)}`, late: days > 0 ? `${days} day${days === 1 ? "" : "s"} late` : null };
+    return { due: t("vendorPayments.record.due", { date: calendarDate(b.dueDate, new Date(), locale) }), late: days > 0 ? t("vendorPayments.record.daysLate", { count: days }) : null };
   };
 
   async function record() {
@@ -235,9 +237,12 @@ export function RecordVendorPaymentDialog({
     if (!canRecord) return;
     const methodLabel = PAYMENT_METHOD_LABELS[method].toLowerCase();
     const ok = await confirm({
-      title: "Record this payment?",
-      description: `${money(amount)} to ${vendorName ?? "the vendor"} by ${methodLabel}${prefill ? ` from ${prefill.moneyAccountName}` : ""}. It pays ${sentence.replace(/^.*? pays /, "").replace(/\.$/, "")}, and is posted to your books.`,
-      confirmLabel: "Record payment",
+      title: t("vendorPayments.record.confirmTitle"),
+      description: (() => {
+        const values = { amount: money(amount), vendor: vendorName ?? t("vendorPayments.record.theVendor"), method: methodLabel, pays: sentence.replace(/^.*? pays /, "").replace(/\.$/, "") };
+        return prefill ? t("vendorPayments.record.confirmDescriptionFrom", { ...values, account: prefill.moneyAccountName }) : t("vendorPayments.record.confirmDescription", values);
+      })(),
+      confirmLabel: t("vendorPayments.record.recordPayment"),
     });
     if (!ok) return;
     setSaving(true);
@@ -255,7 +260,7 @@ export function RecordVendorPaymentDialog({
       onOpenChange(false);
       onRecorded(recorded);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't record this payment. Try again.");
+      setError(err instanceof Error ? err.message : t("vendorPayments.record.recordFailed"));
     } finally {
       setSaving(false);
     }
@@ -268,8 +273,8 @@ export function RecordVendorPaymentDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent size="lg">
           <DialogHeader>
-            <DialogTitle>Record a vendor payment</DialogTitle>
-            <DialogDescription>Tick the bills it pays, oldest due first; a typed amount is spread over them.</DialogDescription>
+            <DialogTitle>{t("vendorPayments.record.title")}</DialogTitle>
+            <DialogDescription>{t("vendorPayments.record.description")}</DialogDescription>
           </DialogHeader>
 
           <DialogBody className="flex flex-col gap-4">
@@ -281,30 +286,30 @@ export function RecordVendorPaymentDialog({
             {openCredit && (
               <Alert variant="info" data-testid="vendor-credit-note">
                 <AlertDescription>
-                  {openCredit.vendor} has {formatMoney(openCredit.total, currency)} of credit.{" "}
+                  {t("vendorPayments.record.creditNote", { vendor: openCredit.vendor, amount: formatMoney(openCredit.total, currency) })}{" "}
                   <a href={openCredit.href} className="font-medium text-primary underline">
-                    Apply it first?
+                    {t("vendorPayments.record.applyFirst")}
                   </a>
                 </AlertDescription>
               </Alert>
             )}
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <AiField suggested={Boolean(prefill?.ai?.contactId) && contactId === prefill?.ai?.contactId}>
-                <FormField label="Vendor" required>
-                  {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+                <FormField label={t("vendorPayments.record.vendor")} required>
+                  {(field) => <ContactPicker id={field.id} value={contactId} onValueChange={setContactId} />}
                 </FormField>
               </AiField>
-              <FormField label="Amount" required>
-                {() => <MoneyInput value={amount} onValueChange={changeAmount} currency={currency} disabled={!contactId || Boolean(prefill)} aria-label="Amount" />}
+              <FormField label={t("vendorPayments.record.amount")} required>
+                {() => <MoneyInput value={amount} onValueChange={changeAmount} currency={currency} disabled={!contactId || Boolean(prefill)} aria-label={t("vendorPayments.record.amount")} />}
               </FormField>
-              <FormField label="Date" required>
+              <FormField label={t("vendorPayments.record.date")} required>
                 {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
               </FormField>
-              <FormField label="Method" required>
+              <FormField label={t("vendorPayments.record.method")} required>
                 {() => (
                   <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-                    <SelectTrigger aria-label="Method">
+                    <SelectTrigger aria-label={t("vendorPayments.record.method")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -318,14 +323,14 @@ export function RecordVendorPaymentDialog({
                 )}
               </FormField>
               {prefill ? (
-                <FormField label="Paid from" required>
+                <FormField label={t("vendorPayments.record.paidFrom")} required>
                   {() => <p className="py-2 text-[14px] text-on-surface">{prefill.moneyAccountName}</p>}
                 </FormField>
               ) : (
                 <MoneyAccountPicker form="vendor_payment" direction="out" value={moneyAccountId} onValueChange={setMoneyAccountId} />
               )}
-              <FormField label="Reference" helperText="Cheque number, transaction ID…">
-                {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" />}
+              <FormField label={t("vendorPayments.record.reference")} helperText={t("vendorPayments.record.referenceHelper")}>
+                {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder={t("vendorPayments.record.optional")} />}
               </FormField>
             </div>
 
@@ -333,10 +338,15 @@ export function RecordVendorPaymentDialog({
               <div className="flex items-start gap-2 rounded-md border border-due-soon/40 bg-due-soon-bg px-3 py-2 text-[13px] text-on-surface" data-testid="vendor-payment-duplicate-warning">
                 <TriangleAlert size={15} aria-hidden className="mt-0.5 shrink-0 text-due-soon" />
                 <span>
-                  <span className="font-semibold">This looks like {dup.number ?? "a payment already recorded"}</span> — {formatMoney(BigInt(dup.amount), dup.currency)} to {vendorName ?? "this vendor"} on{" "}
-                  {calendarDate(dup.date, new Date(), locale)} ({[PAYMENT_METHOD_LABELS[dup.method as PaymentMethod] ?? dup.method, dup.reference].filter(Boolean).join(" · ")}). Record it anyway if it&apos;s a second payment.{" "}
+                  <span className="font-semibold">{t("vendorPayments.record.duplicateLead", { number: dup.number ?? t("vendorPayments.record.aPaymentAlreadyRecorded") })}</span>
+                  {t("vendorPayments.record.duplicateBody", {
+                    amount: formatMoney(BigInt(dup.amount), dup.currency),
+                    vendor: vendorName ?? t("vendorPayments.record.thisVendorLower"),
+                    date: calendarDate(dup.date, new Date(), locale),
+                    details: [PAYMENT_METHOD_LABELS[dup.method as PaymentMethod] ?? dup.method, dup.reference].filter(Boolean).join(" · "),
+                  })}{" "}
                   <Link href={`/vendor-payments/${dup.id}`} className="font-medium text-primary hover:underline">
-                    Open {dup.number ?? "it"} →
+                    {t("vendorPayments.record.openDuplicate", { number: dup.number ?? t("vendorPayments.record.it") })}
                   </Link>
                 </span>
               </div>
@@ -345,10 +355,10 @@ export function RecordVendorPaymentDialog({
             {contactId && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[13px] font-semibold text-on-surface">What it pays</h3>
+                  <h3 className="text-[13px] font-semibold text-on-surface">{t("vendorPayments.record.whatItPays")}</h3>
                   {bills && bills.length > 1 && (
                     <button type="button" className="text-[12.5px] font-medium text-primary hover:underline" onClick={payAll}>
-                      Pay all
+                      {t("vendorPayments.record.payAll")}
                     </button>
                   )}
                 </div>
@@ -357,31 +367,31 @@ export function RecordVendorPaymentDialog({
                     <Spinner size="sm" />
                   </div>
                 ) : bills.length === 0 ? (
-                  <p className="rounded-lg border border-border px-3 py-3 text-[13px] text-on-surface-muted">This vendor has no recorded bills with a balance to pay.</p>
+                  <p className="rounded-lg border border-border px-3 py-3 text-[13px] text-on-surface-muted">{t("vendorPayments.record.noBills")}</p>
                 ) : (
                   <div className="overflow-hidden rounded-lg border border-border" data-testid="vendor-payment-bills">
                     <div className="grid grid-cols-[28px_minmax(0,1fr)_150px_120px_140px] items-center gap-x-2.5 bg-surface-sunken px-3 py-1.5 text-[12px] font-medium text-on-surface-muted">
                       <span />
-                      <span>Bill</span>
-                      <span>Due</span>
-                      <span className="text-right">Balance</span>
-                      <span className="text-right">Pay</span>
+                      <span>{t("vendorPayments.record.bill")}</span>
+                      <span>{t("vendorPayments.record.dueHeading")}</span>
+                      <span className="text-right">{t("vendorPayments.record.balance")}</span>
+                      <span className="text-right">{t("vendorPayments.record.pay")}</span>
                     </div>
                     {lines.map((l) => {
                       const { due, late } = dueText(l);
                       return (
                         <div key={l.id} className="grid grid-cols-[28px_minmax(0,1fr)_150px_120px_140px] items-center gap-x-2.5 border-t border-border px-3 py-2 text-[13px]" data-testid="vendor-payment-bill">
-                          <Checkbox checked={l.amount > 0n} onCheckedChange={(v) => toggle(l.id, v === true)} aria-label={`Pay ${l.billNumber}`} />
+                          <Checkbox checked={l.amount > 0n} onCheckedChange={(v) => toggle(l.id, v === true)} aria-label={t("vendorPayments.record.payBill", { number: l.billNumber })} />
                           <span className="min-w-0">
                             <span className="block font-semibold text-on-surface">{l.billNumber}</span>
-                            <span className="block text-[12px] text-on-surface-muted">Billed {calendarDate(l.date, new Date(), locale)}</span>
+                            <span className="block text-[12px] text-on-surface-muted">{t("vendorPayments.record.billed", { date: calendarDate(l.date, new Date(), locale) })}</span>
                           </span>
                           <span>
                             {due}
                             {late && <span className="block text-[12px] font-medium text-overdue">{late}</span>}
                           </span>
                           <span className="text-right tabular-nums">{money(l.balance)}</span>
-                          <MoneyInput value={l.amount} onValueChange={(v) => setLine(l.id, v)} currency={currency} aria-label={`Pay on ${l.billNumber}`} />
+                          <MoneyInput value={l.amount} onValueChange={(v) => setLine(l.id, v)} currency={currency} aria-label={t("vendorPayments.record.payOnBill", { number: l.billNumber })} />
                         </div>
                       );
                     })}
@@ -398,8 +408,8 @@ export function RecordVendorPaymentDialog({
                       {diff === 0n
                         ? sentence
                         : diff > 0n
-                          ? `${money(diff)} more than the ticked bills — tick another or lower the amount.`
-                          : `The ticked bills come to ${money(-diff)} more than the amount — raise it or lower a line.`}
+                          ? t("vendorPayments.record.overByAmount", { amount: money(diff) })
+                          : t("vendorPayments.record.underByAmount", { amount: money(-diff) })}
                     </span>
                   </div>
                 )}
@@ -408,13 +418,13 @@ export function RecordVendorPaymentDialog({
           </DialogBody>
 
           <DialogFooter className="items-center">
-            <p className="mr-auto text-[12px] text-on-surface-muted">It gets a number and is posted to your books when recorded.</p>
+            <p className="mr-auto text-[12px] text-on-surface-muted">{t("vendorPayments.record.footerNote")}</p>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancel
+              {t("vendorPayments.record.cancel")}
             </Button>
             <Button type="button" onClick={() => void record()} disabled={!canRecord}>
               {saving ? <Spinner size="sm" /> : <Check size={14} aria-hidden />}
-              Record payment
+              {t("vendorPayments.record.recordPayment")}
             </Button>
           </DialogFooter>
         </DialogContent>

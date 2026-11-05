@@ -22,6 +22,7 @@ import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-co
 import type { CatalogItemUsage } from "@spine/shared";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import type { CatalogItem } from "./types";
+import { useT } from "../../../lib/i18n";
 
 /**
  * Row-level "more" menu, following ContactRowActions' exact pattern — Edit
@@ -48,6 +49,7 @@ export function CatalogRowActions({
   onDuplicate?: (item: CatalogItem) => void;
   onChanged: (action: "archived" | "restored" | "deleted", item: CatalogItem) => void;
 }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -85,7 +87,7 @@ export function CatalogRowActions({
       setConfirmOpen(false);
       onChanged("deleted", item);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete item.");
+      setError(err instanceof Error ? err.message : t("catalog.rowActions.deleteError"));
     } finally {
       setBusy(false);
     }
@@ -101,7 +103,7 @@ export function CatalogRowActions({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={`Actions for ${item.name}`}
+            aria-label={t("catalog.common.actionsFor", { name: item.name })}
             onClick={(e) => e.stopPropagation()}
             className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
           >
@@ -112,19 +114,19 @@ export function CatalogRowActions({
           {canEdit && (
             <DropdownMenuItem onSelect={() => onEdit(item)}>
               <MENU_ICONS.edit aria-hidden />
-              Edit
+              {t("catalog.common.edit")}
             </DropdownMenuItem>
           )}
           {canCreate && onDuplicate && (
             <DropdownMenuItem onSelect={() => onDuplicate(item)}>
               <MENU_ICONS.duplicate aria-hidden />
-              Duplicate
+              {t("catalog.rowActions.duplicate")}
             </DropdownMenuItem>
           )}
           {canDelete && (
             <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
               {item.archivedAt ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
-              {item.archivedAt ? "Restore" : "Archive"}
+              {item.archivedAt ? t("catalog.common.restore") : t("catalog.common.archive")}
             </DropdownMenuItem>
           )}
           {canDelete && (
@@ -132,7 +134,7 @@ export function CatalogRowActions({
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={openConfirm}>
                 <MENU_ICONS.delete aria-hidden />
-                Delete
+                {t("catalog.common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -142,18 +144,18 @@ export function CatalogRowActions({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {item.name}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("catalog.rowActions.deleteTitle", { name: item.name })}</AlertDialogTitle>
             <AlertDialogDescription>
               {usage && usage.quotes + usage.invoices > 0
-                ? `It's on ${usage.quotes + usage.invoices} ${usage.quotes + usage.invoices === 1 ? "document" : "documents"} (quotes and invoices), and they keep their own copy of the line. Deleting can't be undone; Archive hides it from pickers instead.`
-                : "This permanently removes the item. This cannot be undone. Prefer Archive if this item may be referenced by a quote or invoice later."}
+                ? t("catalog.rowActions.deleteUsed", { count: usage.quotes + usage.invoices })
+                : t("catalog.rowActions.deleteUnused")}
               {error && <span className="mt-2 block text-overdue">{error}</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("catalog.common.cancel")}</AlertDialogCancel>
             <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
-              Delete
+              {t("catalog.common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

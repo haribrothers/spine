@@ -1,0 +1,43 @@
+---
+title: Edit a job's details
+description: Change a job's name, site address, dates, notes, retention, cost budget and percent complete.
+sidebar:
+  order: 3
+---
+
+Keep a job matching the real work: rename it, move its dates, change the site address, or record how far along it is. Every change is kept in the job's history with who made it and when.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners. Staff whose Team has **Create/edit own jobs** can edit the jobs they created; **Edit others' jobs** lets them edit everyone else's. Without the right, **Edit job** isn't shown.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs** and open the job.
+2. **Open the dialog** — Press **Edit job**.
+3. **Change the details** — Edit **Job name**, **Site address**, **Status**, **Start date**, **End date** and **Notes**. Open **Advanced (retention)** to change **Retention %**.
+4. **Set budget and progress** — Under **Budget and progress**, enter a **Cost budget** (what you expect the job to cost; leave it blank if you don't budget it) and **Percent complete** (your estimate of how much of the work is done).
+5. **Save** — Press **Save**. A toast says "Job updated".
+</Steps>
+
+<Screenshot id="jobs-edit" alt="The Edit job dialog with the job name, site address, status, dates, notes, retention and the Budget and progress fields" />
+
+## What you can't change here
+
+- **The contract value.** For a job started from a quote it's the quote's total. It changes only when you [apply an accepted variation order](../apply-a-variation-order/).
+- **The job number.** It's permanent once given.
+
+## Rules when you save
+
+- **Job name** is required ("Job name is required.").
+- The end date can't be before the start date. If it is, an error shows and nothing is saved.
+- **Cost budget** must be zero or more ("Enter a budget of zero or more.").
+- **Percent complete** must be from 0 to 100 ("Enter a percentage from 0 to 100.").
+
+<Aside type="tip">A change to **Retention %** applies to progress invoices you raise afterwards. Invoices already raised from a milestone keep the retention worked out when they were created.</Aside>
+
+## Related
+
+- Setting the job to **Completed** or **Cancelled**: see [Change a job's status or close it](../change-a-job-status/).
+- How the budget and percent complete are used: see [Set a cost budget and track billing progress](../track-budget-and-billing/).
+- Applying an accepted variation order doesn't change the budget. Edit it yourself if the extra work costs more.

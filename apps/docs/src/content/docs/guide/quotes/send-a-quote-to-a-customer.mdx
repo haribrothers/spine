@@ -1,0 +1,49 @@
+---
+title: Send a quote to a customer
+description: Give a draft quote its number and email it to the customer with a secure link they can answer from.
+sidebar:
+  order: 8
+---
+
+Sending is the moment a draft becomes a real quote. It gets its permanent number, it can no longer be edited or deleted, and the customer receives an email with the PDF and a link to read and answer it online, without an account.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Send a quote**. You can send a colleague's draft without being able to edit it.</Aside>
+
+<Steps>
+
+1. **Open the draft** — Go to **Quotes** and open the draft. (In the builder, **Save and send** saves the draft and takes you to this step.)
+
+2. **Press Send quote** — The send dialog opens with **To**, **Subject** and **Message** filled in from your quote email template. The highlighted words are this quote's details; Spine fills them in. Changes here apply to this email only.
+
+3. **Check the attachment** — Leave **Attach the quote PDF** ticked to attach the PDF.
+
+4. **Send** — Press **Send quote**. A toast says **Quote marked as sent**: the quote is now issued, and the email is on its way.
+
+</Steps>
+
+<Screenshot id="quotes-send" alt="The Send quote dialog with To, Subject, Message and Attach the quote PDF" />
+
+## What the customer receives
+
+By default the subject reads "Riverstone Builders sent you a quote (QUO-0012)", with your business name and the quote number. The email has a **View quote** button that opens the quote online, and the PDF attached. See [Let a customer accept or decline online](../let-a-customer-accept-or-decline-online/).
+
+<Aside type="danger">
+Sending can't be undone. A sent quote is never edited or deleted. To change it, [revise it](../revise-a-sent-quote/) into a new version.
+</Aside>
+
+## Checking the email went
+
+- While it's going, the quote's page says "Sending email to" the contact.
+- Once it's gone, the quote's **Activity** shows **Emailed to** the address.
+- If it failed, the page shows **Email failed** with the reason. Owners can follow **See it in the email log** to retry it.
+- If your mail server is down, the quote is still sent: the email waits in the queue and is retried. See [Email](../../../self-hosting/email/).
+
+## Send it again, or share the link yourself
+
+- **Email again** (under **More**, for a sent quote) sends another email.
+- **Copy customer link** copies the link to the customer's page so you can share it another way. A toast says **Link copied** and "It works for 30 days, or until you revise the quote."
+
+Every link you've sent keeps working until it's 30 days old or you revise the quote. Sending again never breaks an earlier link.

@@ -4,6 +4,7 @@ import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-reac
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createContext, forwardRef, useCallback, useContext, useEffect, useState } from "react";
 import { cn } from "../lib/cn";
+import { useT } from "../lib/i18n";
 import { Button } from "./button";
 
 type CarouselApi = UseEmblaCarouselType[1];
@@ -41,6 +42,7 @@ export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(
   ({ options, className, children, ...props }, ref) => {
+    const t = useT();
     const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
     useEffect(() => {
@@ -88,7 +90,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(
         <div
           ref={ref}
           role="region"
-          aria-roledescription="carousel"
+          aria-roledescription={t("ui.carousel.roleDescription")}
           className={cn("relative", className)}
           {...props}
         >
@@ -113,19 +115,23 @@ export const CarouselContent = forwardRef<HTMLDivElement, React.HTMLAttributes<H
 CarouselContent.displayName = "CarouselContent";
 
 export const CarouselItem = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      role="group"
-      aria-roledescription="slide"
-      className={cn("min-w-0 shrink-0 grow-0 basis-full", className)}
-      {...props}
-    />
-  ),
+  ({ className, ...props }, ref) => {
+    const t = useT();
+    return (
+      <div
+        ref={ref}
+        role="group"
+        aria-roledescription={t("ui.carousel.slideRoleDescription")}
+        className={cn("min-w-0 shrink-0 grow-0 basis-full", className)}
+        {...props}
+      />
+    );
+  },
 );
 CarouselItem.displayName = "CarouselItem";
 
 export function CarouselPrevious({ className }: { className?: string }) {
+  const t = useT();
   const { scrollPrev, canScrollPrev } = useCarousel();
   return (
     <Button
@@ -133,7 +139,7 @@ export function CarouselPrevious({ className }: { className?: string }) {
       size="icon"
       disabled={!canScrollPrev}
       onClick={scrollPrev}
-      aria-label="Previous slide"
+      aria-label={t("ui.carousel.previousSlide")}
       className={cn("absolute left-2 top-1/2 -translate-y-1/2", className)}
     >
       <ChevronLeft size={16} />
@@ -142,6 +148,7 @@ export function CarouselPrevious({ className }: { className?: string }) {
 }
 
 export function CarouselNext({ className }: { className?: string }) {
+  const t = useT();
   const { scrollNext, canScrollNext } = useCarousel();
   return (
     <Button
@@ -149,7 +156,7 @@ export function CarouselNext({ className }: { className?: string }) {
       size="icon"
       disabled={!canScrollNext}
       onClick={scrollNext}
-      aria-label="Next slide"
+      aria-label={t("ui.carousel.nextSlide")}
       className={cn("absolute right-2 top-1/2 -translate-y-1/2", className)}
     >
       <ChevronRight size={16} />

@@ -3,6 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { Checkbox, Input, Popover, PopoverAnchor, PopoverContent, cn } from "@spine/ui";
 import { formatMoney } from "../lib/money";
+import { useT } from "../lib/i18n";
 
 export interface PickerCatalogItem {
   id: string;
@@ -62,6 +63,7 @@ export function LineItemPicker({
   /** The typed name is kept as a one-off line, saved to the catalogue or not. */
   onOneOff: (saveToCatalogue: boolean) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [save, setSave] = useState(saveToCatalogue);
@@ -118,13 +120,13 @@ export function LineItemPicker({
           <Input
             ref={inputRef}
             role="combobox"
-            aria-label="Item"
+            aria-label={t("catalog.lineItemPicker.inputLabel")}
             aria-expanded={showList}
             aria-controls={listId}
             aria-autocomplete="list"
             aria-activedescendant={showList && options[active] ? optionId(options[active]!) : undefined}
             value={name}
-            placeholder="Item name — type to search the catalogue"
+            placeholder={t("catalog.lineItemPicker.placeholder")}
             required
             onChange={(e) => {
               onNameChange(e.target.value);
@@ -149,8 +151,8 @@ export function LineItemPicker({
           if (e.target instanceof Node && inputRef.current?.contains(e.target)) e.preventDefault();
         }}
       >
-        <div id={listId} role="listbox" aria-label="Catalogue matches" className="flex max-h-80 flex-col overflow-y-auto py-1">
-          {matchingBundles.length > 0 && <GroupLabel>Bundles</GroupLabel>}
+        <div id={listId} role="listbox" aria-label={t("catalog.lineItemPicker.listLabel")} className="flex max-h-80 flex-col overflow-y-auto py-1">
+          {matchingBundles.length > 0 && <GroupLabel>{t("catalog.lineItemPicker.bundles")}</GroupLabel>}
           {matchingBundles.map((bundle, i) => {
             const option = options[i]!;
             return (
@@ -169,12 +171,12 @@ export function LineItemPicker({
                   <span className="font-semibold tabular-nums text-on-surface">{formatMoney(bundle.totalAmount, currency)}</span>
                 </span>
                 <span className="text-[12px] text-on-surface-muted">
-                  Adds {bundle.lineNames.length} {bundle.lineNames.length === 1 ? "line" : "lines"}: {bundle.lineNames.join(", ")}
+                  {t("catalog.lineItemPicker.adds", { count: bundle.lineNames.length, names: bundle.lineNames.join(", ") })}
                 </span>
               </div>
             );
           })}
-          {matchingItems.length > 0 && <GroupLabel>Items</GroupLabel>}
+          {matchingItems.length > 0 && <GroupLabel>{t("catalog.lineItemPicker.items")}</GroupLabel>}
           {matchingItems.map((item, i) => {
             const index = firstItemIndex + i;
             const option = options[index]!;
@@ -209,12 +211,12 @@ export function LineItemPicker({
               onClick={() => choose(options[oneOffIndex]!)}
               className={cn("flex-1 cursor-pointer rounded-md px-3 py-2 text-[14px] text-on-surface", active === oneOffIndex && "bg-info-bg")}
             >
-              Use “{name.trim()}” as a one-off line
+              {t("catalog.lineItemPicker.oneOff", { name: name.trim() })}
             </div>
             {canSaveToCatalogue && (
               <label className="flex shrink-0 cursor-pointer items-center gap-2 px-2 text-[13px] text-on-surface" onMouseDown={(e) => e.preventDefault()}>
-                <Checkbox checked={save} onCheckedChange={(v) => setSave(v === true)} aria-label="Also save to catalogue" />
-                Also save to catalogue
+                <Checkbox checked={save} onCheckedChange={(v) => setSave(v === true)} aria-label={t("catalog.lineItemPicker.alsoSave")} />
+                {t("catalog.lineItemPicker.alsoSave")}
               </label>
             )}
           </div>

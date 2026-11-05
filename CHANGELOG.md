@@ -80,6 +80,102 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-05 — The website at spine.h4loom.com with the docs under /docs/, the domain set in one place (US-SITE-14, D-273)
+
+- **One site:** the home page is `spine.h4loom.com` and the docs `spine.h4loom.com/docs/` (they were `h4loom.com` and `docs.h4loom.com`). `pnpm site:build` builds the home page into `apps/site/dist` and the docs into its `docs/` folder, then checks that every home-page link into `/docs/` was built. CI, `pnpm verify` and the one Cloudflare Pages project (`spine-site`, docs/release.md) all run it. The home page's links to the docs no longer name a domain.
+- **The domain is set once,** in `packages/shared/src/public-site.ts` (`SPINE_DOMAIN`, `SPINE_SITE_URL`, `SPINE_DOCS_URL`). The two sites' addresses, the bundled guide's "See the latest online docs", the app's ? › Online docs and the tests read it. `scripts/us-site-14.test.mjs` checks that the README and GitHub's issue template, which have to spell the addresses out, agree with it, and that no code names the domain itself.
+- **Unchanged:** the field app's id `com.h4loom.spine`, and the `beta.` and `demo.` addresses. Pointing the bare `h4loom.com` at the home page is a Cloudflare redirect rule (docs/release.md).
+- **Spec:** D-273 supersedes D-270's two projects and D-271's home page and docs addresses. Updated: 01-tech-stack, 02-architecture, 11-testing-release, 19-website (US-SITE-01, US-SITE-14), Q-15, CLAUDE.md, the README. QA section 279 gains steps 9–11.
+
+### 2026-11-05 — Fix: the meetings mini calendar after paging quickly (US-MTG-13)
+
+- Paging the mini calendar several months at once could leave the month on screen without its busy-day dots: an earlier month's answer that arrived last replaced it. Answers for a month no longer on screen are now ignored. Found by the E2E suite (`us-mtg-13`), which failed now and then.
+
+### 2026-11-05 — The README, licence and contributor guide (US-OPS-19, D-263)
+
+- **README:** what Spine does, screenshots (light and dark), installing in 5 minutes, back up and restore, updating, help, status, the repository layout, contributing and the licence. The production section now describes the published images and migrations at start.
+- **`LICENSE`:** AGPL-3.0-only, copyright (C) 2026 Hari Prasad (D-263). **`CONTRIBUTING.md`:** working from a story, tests, docs, the checks, pull requests and sign-off (Developer Certificate of Origin, no CLA). **`CODE_OF_CONDUCT.md`:** Contributor Covenant 2.1. **Templates:** bug, idea and pull request templates; security reports go to GitHub's private reporting.
+- **`docs/release.md`:** versioning, the changelog and release notes (`docs/releases/v<version>.md`), the release steps and what CI publishes, archiving the docs per minor, the Cloudflare Pages setup, and what to do when a release goes wrong.
+- **Left for the Owner:** the clean-machine test of following only the README to a first invoice (QA section 280).
+
+### 2026-11-05 — The website, the docs and help in the app (US-SITE-01 to US-SITE-14, D-108, D-110, D-111, D-113, D-270)
+
+- **Two sites:** `apps/docs` (`docs.h4loom.com`) and `apps/site` (`h4loom.com`), Astro 7 + Starlight 0.42, themed from `tokens.json`, with light, dark and auto modes and the Spine logo. Pagefind search. Every internal link is checked at build. CI and `pnpm verify` build both.
+- **Content:** Get started (3 pages). The user guide: 268 task pages in 20 modules, each with who can do it, numbered steps in the app's own words and a screenshot. Self-hosting (9 pages: install, configuration of every setting, email, file storage, backups, upgrades, HTTPS, Coolify, troubleshooting). Developers (architecture, local setup, the ledger, testing, contributing, API conventions). A generated API reference: one page per operation, with who may call it, the Idempotency-Key, errors and a `curl` example.
+- **Screenshots:** `pnpm --filter @spine/e2e screenshots` captures the 183 screens the guide lists, light and dark, from a demo install, and the home page's dashboard.
+- **In the app:** the Help (?) button is a menu with Help for this page (the guide page for the screen you're on), User guide, What's new in <version>, Keyboard shortcuts and Online docs, all opening in a new tab. Every install serves the guide for its own version at `/help`, built into the web image, with no outside requests, so it works offline. It has its own search, and a banner saying which version it describes.
+- **Versions:** `starlight-versions` archives each earlier minor once 1.1 ships (`apps/docs/src/versions.json`); `/versions/` lists them.
+- **Publishing:** two Cloudflare Pages projects, set up as docs/release.md describes (the Owner connects them). The pull request template asks for the guide page (US-SITE-05).
+- **Found while writing the guide** (the guide describes the app as it is; these are left for follow-up): US-SET-05's check that a starting number isn't at or below the last issued one isn't enforced. US-SET-04's warning when changing currency with documents isn't shown. US-DASH-10's keyboard reordering of dashboard cards isn't built (mouse only). US-MTG-07's "no response after a meeting ends" isn't enforced. D-198's field-app message when Jobs & field is off doesn't exist. The capability descriptions for "View dashboard summary" and "View ledger / journals" still say P&L and the balance sheet are Owner-only.
+- **Tests:** `us-site-11` (web: the menu, its links and the route map) and `us-site-11-12` (E2E: the menu opens this page's guide from `/help`, with no outside requests, offline search, no developer docs and no version menu). QA section 279.
+
+### 2026-11-05 — The security review before 1.0 (US-OPS-18, D-267)
+
+- **Review:** [docs/security-review.md](docs/security-review.md) covers the OWASP Top 10 area by area, with each finding fixed or accepted, and is ready for the Owner's sign-off. `SECURITY.md` says how to report a vulnerability (GitHub private reporting).
+- **Fixed:** the API now trusts the reverse proxy (loopback and private networks; `TRUST_PROXY` overrides). Before, every visitor behind Caddy shared one 20-a-minute public limit. The web app sends `X-Frame-Options`, `nosniff`, a referrer policy, a permissions policy and HSTS over HTTPS. The API sends `DENY`, `nosniff`, `no-referrer` and no `X-Powered-By`.
+- **Dependencies:** 9 critical and 49 high advisories fixed by upgrading Next.js (15.5.28), nodemailer (10.0.6), Tiptap (3.30.5), DOMPurify (3.4.17) and Vitest (3.2.7, with Vite 6.4), and by pinning fixed transitive versions. The rest, all build tooling linked as optional peers, are reviewed and listed by id. CI and `pnpm verify` run `pnpm audit --prod --audit-level high`. The rich-text editor is always named, since Tiptap 3.30 gives it a text-box role.
+- **Scans:** gitleaks over the whole history (10 reviewed false positives, in `.gitleaksignore`) and a ZAP baseline of the web app and the API (no failures; a Content-Security-Policy is risk R-31).
+- **Tests:** `us-ops-18` integration test (guessed and tampered quote tokens and invitation ids get the same 404, per-visitor rate limits, headers). QA section 278.
+
+### 2026-11-04 — Every user-facing string in translation files (US-OPS-16, D-268, D-069)
+
+- **Strings:** every string the web app, the field app, `@spine/ui` and `@spine/ui-native` show now comes from `packages/shared/src/i18n/en.json`: about 7,650 strings in 34 areas, read through i18next (`react-i18next` in components). Keys are typed, so a missing or misspelled key fails typecheck. English is still the only language, and no wording changed. A translation is a sibling file with the same keys.
+- **Lint:** `i18next/no-literal-string` (from `@spine/config/eslint/i18n`) fails CI on a hard-coded string in JSX text or a visible attribute, in all four packages.
+- **Locale:** dates and numbers use the business's locale everywhere. Before, many dates used the browser's locale or a fixed `en-GB`. The web app reads `orgLocaleTag()`, and the field app and the component libraries read `formatLocale()` from `@spine/shared/i18n`, set from the business.
+- **How:** 15 agents converted the apps area by area in parallel, after the setup (`80b9f778`). Then every literal they removed was checked against `en.json`, and lint, typecheck, unit tests and the E2E suite were run. Two tests that read source text now read the keys' English (US-OPS-10, US-SET-26).
+- **Still in code, until 1.1 with emails, PDFs and API errors:** labels exported by `@spine/shared` that the server also uses. A few sentences are assembled from pieces.
+
+### 2026-11-04 — Pass an accessibility audit of every screen (US-OPS-17, PRD §10.8)
+
+- **Audit:** a new E2E runs axe-core (WCAG 2.1 A and AA) with demo data on every web page: 54 pages, a demo record of each of 9 kinds and 27 Settings panes, in light and dark mode. It now passes with no violations.
+- **Fixed on the way:** the report tabs, the Documents pane's document tabs and the credit-note mode tabs named tab panels that don't exist. Currency, job, vendor and customer pickers inside a labelled field weren't named by it. The financial-year and currency/locale dropdowns, the Meetings "show every calendar" checkbox and the "Prices include tax by default" switch had no name. The numbering table's inputs had none. The calendar's event times were at 3.7:1 contrast. The expense page's receipt note sat inside a definition list.
+- **Keyboard:** an E2E takes an accepted quote to a paid invoice with Tab and Enter alone and checks that every control on the way shows a focus ring.
+- **Field app:** a test checks every touchable has a role and a label or visible text. The VoiceOver and TalkBack walkthrough is QA section 276.
+
+### 2026-11-04 — The web app on a phone (US-OPS-14, US-OPS-15, finding C19, D-066)
+
+- **Phone layout:** under 768px a top bar shows the menu button, the logo, notifications and your avatar, in place of the sidebar. The menu button slides the full navigation in from the left over a dimmed page, with search, a close button, and your name and help at the bottom. Tapping the dimmed area, Escape or a link closes it. New `@spine/ui` parts: `AppShellTopBar` and `AppShellMobileNav`, documented on the AppShell page.
+- **Tap targets:** every control is at least 44×44px under 768px, set once in the Tailwind preset. Checkboxes, radios and switches keep their size with a 44px tap area around them.
+- **Fits the screen:** page headers wrap their actions under the title. The dashboard's key figures are two per row and charts one per row. Content padding is 16px. Tables scroll inside their card, and no page scrolls sideways. Dialogs fill the width with a 16px gutter (Settings stays full-screen, D-236), drawers leave 16px, and form fields stack in one column below 768px (54 form grids moved from `sm:` to `md:`).
+- **Tests:** `us-ops-14` (top bar, opening and closing the navigation, the dashboard at 390px, 44px controls) and `us-ops-15` (19 routes at 390×844 with no sideways scroll and tables scrolling in their box; dialog, drawer and form widths) E2E specs, and an AppShell a11y test for the phone parts. QA sections 274 and 275.
+
+### 2026-11-04 — A helpful page for a missing page, and for an unexpected error (US-OPS-11, US-OPS-13, finding G8)
+
+- **404:** an unknown address, a record id that can't be one, or a record that isn't in your organisation shows "404", "We can't find that page" and that financial documents are never deleted, inside the app shell, with "Go to dashboard" and "Go back". Signed out, an unknown address goes to the login page first and comes back after. Record pages use a new `useLoadFailure(id)` hook. Before, they showed only an error line (or a 500 for a malformed id).
+- **Error page:** a page that fails on the server shows "Something went wrong on our side", that nothing saved was lost, and "Error reference: <request id>" with "Try again" (reloads) and "Go to dashboard". `ApiError` carries the API's `X-Request-Id`.
+- **Tests:** `us-ops-11` and `us-ops-13` web tests and E2E specs (an unknown address, a missing and a malformed record, signed out; a stubbed 500 with its request id, Try again recovering, Go to dashboard). QA sections 272 and 273.
+
+### 2026-11-04 — Respect reduced-motion settings everywhere (US-OPS-09, finding C25)
+
+- **Web:** with `prefers-reduced-motion: reduce`, the Tailwind preset collapses the `--duration-*` tokens and ends every transition and animation at once (0.01ms, so code waiting for `transitionend` still runs). Dialogs, drawers, menus, popovers, toasts and the sidebar appear in their final state. Spinners keep turning, as the only sign that work is going on.
+- **Phone:** `@spine/ui-native` has `useReduceMotion()` and `isReduceMotionEnabled()`. With Reduce Motion (iOS) or Remove animations (Android) on, `GaugeIndicator` shows its value without the spring, `FloatingTabBar`'s highlight snaps to the new tab and `FloatingLabelField`'s label moves without animating. `Skeleton` and `Carousel` already held still. The field app's native tabs follow the setting themselves.
+- **Docs:** `motion.md` says how it's built in place of the C25 gap. The motion page in the design system and the gauge and floating label demos say what happens.
+- **Tests:** a `us-ops-09` E2E (the palette, a menu, a toast and the sidebar with reduced motion, and a toast still animating without it) and a `us-ops-09` native test (gauge, tab highlight, floating label). QA section 271.
+
+### 2026-11-04 — Tell owners a new version is available (US-OPS-06, D-055, D-269)
+
+- **Daily check:** once a day (04:17), and at start-up if the last result is missing or a day old, the API asks GitHub Releases for Spine's latest release. Drafts and pre-releases don't count. The request carries only `Accept` and `User-Agent: Spine`: no version, address or business. A failed check is logged and keeps the last result. `UPDATE_CHECK=off` schedules nothing, so no request is made. Tests and CI set it off.
+- **`GET /org/update-status`** (Owners only) returns `{ current, latest?, releaseUrl?, checkedAt? }`. The result is stored as the `update_check` setting, which the generic settings routes no longer read or write.
+- **Banner:** Owners see "Spine <new> is available. You're on <current>. Updating runs database migrations automatically and takes a backup first." with "What's new" (the release's notes), "How to update" (the README's new Updating section) and a close button. Closing it hides it in that browser until the next version. Staff and Field never get it. Versions compare the semantic-version way, so 1.0.0 is newer than 1.0.0-beta.2.
+- **Tests:** `us-ops-06` tests in the API (what the request sends, Owner-only access, failures and pre-releases kept out, `UPDATE_CHECK=off`), the web (the banner, closing it, the next version) and shared (version order). QA section 270.
+
+### 2026-11-03 — Start with demo data from an environment flag (US-OPS-02, D-086)
+
+- **`SEED_DEMO` works:** it was in `.env.example` but nothing read it. On first start, into an empty database only, `true` loads Riverstone Builders and `<country>:<industry>` (e.g. `IN:interior_design`) loads that demo business. The API logs "Demo data loaded — the first person to sign up becomes its owner." On a database with data it logs that seeding was skipped. An unknown value logs what it takes. A failure is logged and never stops the API.
+- **No owner account:** the demo is loaded as a placeholder Owner with no password, and the business carries a `demo_awaiting_owner` setting. Sign-up stays open while it waits. The first sign-up takes the marker under a row lock, becomes the business's Primary Owner in place of the placeholder, and lands on the dashboard with onboarding marked skipped. Sign-up is invite-only after that. Two sign-ups at once can't both own it. `07-security.md` › Sign-up and `04-data-model.md` are updated.
+- **Tests:** `us-ops-02` boots the app on a database of its own, made and migrated by the test, because first start needs an empty one: unset and unknown values, loading with no owner, the first sign-up becoming Primary Owner, sign-up closing, a restart skipping, and two claims at once. QA section 269.
+
+### 2026-11-03 — Remove demo data and keep my real data (US-SET-08)
+
+- **Settings › Data:** "Delete all demo data" now asks with the app's `useConfirm()` (D-218): "Delete all demo data?", what goes, that your own records stay and the demo people lose access, with "Cancel" and "Delete demo data". It then says what happened with the app's toast (D-223), "Demo data deleted · Your own records stay.", in place of Settings' generic "Saved". A failed delete used to fail silently. Now the pane shows the server's message and keeps the demo shown. The button reads "Deleting…" while it works.
+- **Tests:** a `us-set-08` integration test (the demo goes, the demo people's memberships go, the Owner and their own customer stay, the status says so) and a web test of the pane's wording, confirm, toast and error. QA section 268.
+
+### 2026-11-03 — Load demo data to explore (US-ONB-09)
+
+- **A recurring meeting in every demo business:** each one's internal planning meeting ("Weekly crew scheduling" for Riverstone Builders, "Studio planning" for interior design, and so on) now repeats weekly for 12 weeks. Editing one shows the "This event" / "All events" choice (finding C5). The plans carry `weeklyFor`.
+- **Loads when file storage is down:** the demo's logo, job and milestone photos and receipts go through one upload helper. After the first upload storage refuses (503 or 507), it skips the rest, so the demo loads without them instead of failing with every row rolled back. `POST /demo-data/seed` returns `notes` (`"Photos skipped — file storage isn't reachable."`), and the picker shows it with Continue rather than closing. Real photos (finding C10) came with US-JOB-38.
+- **Tests:** `us-onb-09` integration tests (the weekly meeting and editing one occurrence of it, another industry's, storage refusing uploads), a shared test that all 35 demo businesses have one weekly meeting, and a web test of the picker's note. QA section 267.
+
 ### 2026-11-03 — An Android-only beta, and the keystore checked before the build (US-MOB-28, D-272)
 
 - **Android only for now:** the field team uses Android, and TestFlight needs the Apple Developer Program, so the beta can ship just the APK (`build-beta.sh --android`). iPhone joins once the Owner enrols. `docs/beta.md` › The phone app now leads with Android and says how to share the APK while the repo is private: Google Drive or Firebase App Distribution, since testers can't download from a private GitHub release.

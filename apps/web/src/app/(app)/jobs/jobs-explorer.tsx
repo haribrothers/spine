@@ -7,6 +7,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSele
 import { HardHat, Plus, RefreshCw, Search } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
+import { useT } from "../../../lib/i18n";
 import { formatMoney } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
@@ -33,6 +34,7 @@ const ALL_CONTACTS = "__all__";
  * back after 30 s. Field users get their own jobs without money (US-JOB-19).
  */
 export function JobsExplorer() {
+  const t = useT();
   const canCreate = useCapability("jobs.edit_own");
   const canOpen = useCanOpen();
   const canSeeBudget = useCapability("reports.view_job_profitability");
@@ -66,15 +68,15 @@ export function JobsExplorer() {
       setRefreshFailed(false);
       setUpdatedAt(Date.now());
       setNow(Date.now());
-      if (mode === "refresh") setAnnouncement("Jobs updated");
+      if (mode === "refresh") setAnnouncement(t("jobs.list.updated"));
     } catch (err) {
-      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load jobs.");
+      if (mode === "first") setError(err instanceof Error ? err.message : t("jobs.list.loadFailed"));
       else setRefreshFailed(true);
     } finally {
       loading.current = false;
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load("first");
@@ -106,7 +108,7 @@ export function JobsExplorer() {
   const withMoney = Boolean(jobs?.some((j) => j.contractValueAmount !== undefined));
   const stats = useMemo(() => (jobs ? jobStats(jobs, orgCurrency, canSeeBudget) : null), [jobs, orgCurrency, canSeeBudget]);
   const rows = useMemo(() => (jobs ? filterJobs(jobs, state) : null), [jobs, state]);
-  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: "All contacts" }, ...jobContacts(jobs ?? [])], [jobs]);
+  const contactOptions = useMemo(() => [{ value: ALL_CONTACTS, label: t("jobs.list.allContacts") }, ...jobContacts(jobs ?? [])], [jobs, t]);
   const convertedQuoteIds = useMemo(() => new Set((jobs ?? []).map((j) => j.sourceQuoteId).filter((id): id is string => Boolean(id))), [jobs]);
 
   if (error) {
@@ -117,7 +119,7 @@ export function JobsExplorer() {
     );
   }
 
-  const money = (s: MoneySum) => (s.amount > 0n || s.otherCurrencies ? `${formatMoney(s.amount, orgCurrency)}${s.otherCurrencies ? " + other currencies" : ""}` : "");
+  const money = (s: MoneySum) => (s.amount > 0n || s.otherCurrencies ? `${formatMoney(s.amount, orgCurrency)}${s.otherCurrencies ? t("jobs.list.otherCurrencies") : ""}` : "");
 
   const card = (label: string, value: string, extra: string, key: JobCard | null, hint: string, ariaHint: string, tone?: "warn") => {
     const pressed = key ? state.card === key : false;
@@ -127,7 +129,7 @@ export function JobsExplorer() {
         value={value}
         detail={extra || undefined}
         tone={tone === "warn" && Number(value) > 0 ? "warning" : "default"}
-        trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : hint }}
+        trend={{ direction: "neutral", label: pressed ? t("jobs.list.showingThese") : hint }}
         className={cn("h-full transition-colors", key && "hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
       />
     );
@@ -148,7 +150,7 @@ export function JobsExplorer() {
   const search = (
     <div className="relative w-72">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
-      <Input type="search" placeholder="Search jobs, numbers or sites" aria-label="Search jobs" value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
+      <Input type="search" placeholder={t("jobs.list.searchPlaceholder")} aria-label={t("jobs.list.searchAria")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
 
@@ -157,23 +159,27 @@ export function JobsExplorer() {
   const newJobButton = canCreate && (
     <Button onClick={() => setNewOpen(true)}>
       <Plus size={14} aria-hidden />
-      New job
+      {t("jobs.list.newJob")}
     </Button>
   );
+
+  const activeCard = card(t("jobs.list.cardActive"), stats ? String(stats.active.count) : "—", stats ? money(stats.active) : "", "active", t("jobs.list.showTheseJobs"), t("jobs.list.showActive"));
+  const readyCard = card(t("jobs.list.cardReady"), stats ? String(stats.ready.count) : "—", stats ? money(stats.ready) : "", "ready", t("jobs.list.showTheseJobs"), t("jobs.list.showReady"), "warn");
+  const budgetCard = card(t("jobs.list.cardBudget"), stats ? String(stats.budget) : "—", "", "budget", t("jobs.list.showTheseJobs"), t("jobs.list.showBudget"), "warn");
 
   return (
     <div className="flex flex-col gap-6">
       {withMoney && (
         <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", stats?.budget === null ? "lg:grid-cols-3" : "lg:grid-cols-4")} data-testid="job-stats">
-          {card("Active", stats ? String(stats.active.count) : "—", stats ? money(stats.active) : "", "active", "Show these jobs", "Show active jobs")}
-          {card("Ready to bill", stats ? String(stats.ready.count) : "—", stats ? money(stats.ready) : "", "ready", "Show these jobs", "Show jobs ready to bill", "warn")}
-          {stats?.budget !== null && card("Over or near budget", stats ? String(stats.budget) : "—", "", "budget", "Show these jobs", "Show jobs over or near budget", "warn")}
+          {activeCard}
+          {readyCard}
+          {stats?.budget !== null && budgetCard}
           {card(
-            "Retention held",
+            t("jobs.list.cardRetention"),
             stats ? formatMoney(stats.retention.amount, orgCurrency) : "—",
             "",
             null,
-            stats && stats.retention.count ? `Across ${stats.retention.count} ${stats.retention.count === 1 ? "job" : "jobs"}` : "None held",
+            stats && stats.retention.count ? t("jobs.list.acrossJobs", { count: stats.retention.count }) : t("jobs.list.noneHeld"),
             "",
           )}
         </div>
@@ -182,34 +188,34 @@ export function JobsExplorer() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status: status as JobStatus[] })} placeholder="Status" aria-label="Filter by status" className="w-40" />
+            <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status: status as JobStatus[] })} placeholder={t("jobs.list.statusPlaceholder")} aria-label={t("jobs.list.filterByStatus")} className="w-40" />
             <Combobox
               options={contactOptions}
               value={state.contact || ALL_CONTACTS}
               onValueChange={(v) => update({ contact: v === ALL_CONTACTS ? "" : v })}
-              placeholder="All contacts"
-              aria-label="Filter by contact"
+              placeholder={t("jobs.list.allContacts")}
+              aria-label={t("jobs.list.filterByContact")}
               className="w-56"
             />
             {filtersOn && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
-                Clear filters
+                {t("jobs.list.clearFilters")}
               </Button>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="jobs-updated">
-                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+                {refreshing ? t("jobs.list.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Refresh list" aria-busy={refreshing} disabled={refreshing || !jobs} onClick={() => void load("refresh")}>
+                <Button variant="secondary" size="icon" aria-label={t("jobs.list.refreshList")} aria-busy={refreshing} disabled={refreshing || !jobs} onClick={() => void load("refresh")}>
                   <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Refresh list</TooltipContent>
+              <TooltipContent>{t("jobs.list.refreshList")}</TooltipContent>
             </Tooltip>
             {newJobButton}
           </div>
@@ -220,9 +226,9 @@ export function JobsExplorer() {
         {refreshFailed && (
           <Alert variant="critical">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-              Couldn&apos;t refresh the list. Check your connection and try again.
+              {t("jobs.list.refreshFailed")}
               <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
-                Try again
+                {t("jobs.list.tryAgain")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -238,26 +244,26 @@ export function JobsExplorer() {
             {filtersOn ? (
               <EmptyState
                 icon={<HardHat />}
-                title="No jobs match these filters"
-                description="Try adjusting or clearing the filters above."
+                title={t("jobs.list.noMatchTitle")}
+                description={t("jobs.list.noMatchDescription")}
                 action={
                   <Button variant="secondary" onClick={clearAll}>
-                    Clear filters
+                    {t("jobs.list.clearFilters")}
                   </Button>
                 }
               />
             ) : (
               <EmptyState
                 icon={<HardHat />}
-                title="No jobs yet"
-                description="Start a job for work you've agreed — from an accepted quote, or straight from here."
+                title={t("jobs.list.emptyTitle")}
+                description={t("jobs.list.emptyDescription")}
                 action={
                   canCreate ? (
                     <div className="flex flex-wrap justify-center gap-2">
                       {newJobButton}
                       {canOpen("/quotes") && (
                         <Button asChild variant="secondary">
-                          <Link href="/quotes">Go to quotes</Link>
+                          <Link href="/quotes">{t("jobs.list.goToQuotes")}</Link>
                         </Button>
                       )}
                     </div>

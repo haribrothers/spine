@@ -4,8 +4,10 @@ import { useNativeColors } from "@spine/ui-native";
 import { presentation } from "../../../src/lib/data/quotes";
 import { DeclineSheet } from "../../../src/features/quotes/decline-sheet";
 import { useCloseQuote } from "../../../src/features/quotes/use-close-quote";
+import { useT } from "../../../src/lib/i18n";
 
 export default function DeclineQuote() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useNativeColors();
@@ -15,7 +17,7 @@ export default function DeclineQuote() {
   return (
     <>
       {Platform.OS === "ios" ? (
-        <Stack.Screen options={{ unstable_headerLeftItems: () => [{ type: "button" as const, label: "Cancel", tintColor: colors.onSurface, onPress: () => router.back() }] }} />
+        <Stack.Screen options={{ unstable_headerLeftItems: () => [{ type: "button" as const, label: t("mobileWork.common.cancel"), tintColor: colors.onSurface, onPress: () => router.back() }] }} />
       ) : null}
       <DeclineSheet quote={quote} onCancel={() => router.back()} onDeclined={close} />
     </>

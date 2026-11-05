@@ -9,13 +9,14 @@ import { ApiError, OfflineError } from "../../lib/api/errors";
 import { money } from "../../lib/format";
 import { useBusinessFormat } from "../../lib/data/business";
 import { possessive } from "./quote-format";
+import { t as translate, useT } from "../../lib/i18n";
 
-export const DECLINE_OFFLINE = "Needs a connection — declining can't be saved offline.";
-export const REASON_PLACEHOLDER = "For example, the price or the timing";
+export const DECLINE_OFFLINE = translate("mobileWork.decline.offline");
+export const REASON_PLACEHOLDER = translate("mobileWork.decline.reasonPlaceholder");
 
 /** "Harborview Construction Co. is declining QUO-0004 for $601.16. Riverstone Builders' office is told straight away." */
 export function declineMessage(customer: string, number: string, total: string, business: string): string {
-  return `${customer} is declining ${number} for ${total}. ${possessive(business)} office is told straight away.`;
+  return translate("mobileWork.decline.message", { customer, number, total, business: possessive(business) });
 }
 
 /**
@@ -25,6 +26,7 @@ export function declineMessage(customer: string, number: string, total: string, 
  * button stays off.
  */
 export function DeclineSheet({ quote, onCancel, onDeclined }: { quote: PresentedQuote; onCancel: () => void; onDeclined: () => void }) {
+  const t = useT();
   const android = Platform.OS === "android";
   const colors = useNativeColors();
   const online = useOnline();
@@ -43,9 +45,9 @@ export function DeclineSheet({ quote, onCancel, onDeclined }: { quote: Presented
       onDeclined();
     } catch (error) {
       setSaving(false);
-      if (error instanceof OfflineError) Alert.alert("No connection", DECLINE_OFFLINE);
-      else if (error instanceof ApiError && (error.status === 410 || error.status === 404)) Alert.alert("This quote was already answered", "Go back to the job to see what's changed.");
-      else Alert.alert("Couldn't record the decline", "Nothing was saved. Try again.");
+      if (error instanceof OfflineError) Alert.alert(t("mobileWork.decline.noConnection"), DECLINE_OFFLINE);
+      else if (error instanceof ApiError && (error.status === 410 || error.status === 404)) Alert.alert(t("mobileWork.common.alreadyAnsweredTitle"), t("mobileWork.common.alreadyAnsweredMessage"));
+      else Alert.alert(t("mobileWork.decline.failedTitle"), t("mobileWork.decline.failedMessage"));
     }
   };
 
@@ -53,17 +55,17 @@ export function DeclineSheet({ quote, onCancel, onDeclined }: { quote: Presented
     <ScrollView testID="quote-decline-sheet" keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" className="flex-1 bg-surface dark:bg-surface-dark" contentContainerClassName="gap-4 px-5 pb-8 pt-4">
       {android ? (
         <Text accessibilityRole="header" className="text-[24px] text-on-surface dark:text-on-surface-dark">
-          Decline quote
+          {t("mobileWork.decline.title")}
         </Text>
       ) : null}
       <Text testID="decline-message" className="text-[17px] leading-6 text-on-surface dark:text-on-surface-dark">
-        {declineMessage(quote.contactName ?? "The customer", quote.number ?? "this quote", total, quote.business.name)}
+        {declineMessage(quote.contactName ?? t("mobileWork.decline.theCustomer"), quote.number ?? t("mobileWork.decline.thisQuote"), total, quote.business.name)}
       </Text>
       {android ? (
-        <OutlinedTextField testID="decline-reason" label="Reason (optional)" placeholder={REASON_PLACEHOLDER} value={reason} onChangeText={setReason} multiline labelBackgroundClassName="bg-surface dark:bg-surface-dark" />
+        <OutlinedTextField testID="decline-reason" label={t("mobileWork.decline.reason")} placeholder={REASON_PLACEHOLDER} value={reason} onChangeText={setReason} multiline labelBackgroundClassName="bg-surface dark:bg-surface-dark" />
       ) : (
         <View className="gap-2">
-          <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Reason (optional)</Text>
+          <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileWork.decline.reason")}</Text>
           <TextInput
             testID="decline-reason"
             value={reason}
@@ -71,7 +73,7 @@ export function DeclineSheet({ quote, onCancel, onDeclined }: { quote: Presented
             multiline
             placeholder={REASON_PLACEHOLDER}
             placeholderTextColor={colors.onSurfaceMuted}
-            accessibilityLabel="Reason (optional)"
+            accessibilityLabel={t("mobileWork.decline.reason")}
             className="min-h-[88px] rounded-xl border border-border bg-background px-4 py-3 text-[16px] text-on-surface dark:border-border-dark dark:bg-background-dark dark:text-on-surface-dark"
             style={{ textAlignVertical: "top" }}
           />
@@ -86,7 +88,7 @@ export function DeclineSheet({ quote, onCancel, onDeclined }: { quote: Presented
       {android ? (
         <View className="flex-row items-center justify-end gap-6 pt-4">
           <Pressable testID="decline-cancel" onPress={onCancel} accessibilityRole="button" className="min-h-[44px] justify-center">
-            <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Cancel</Text>
+            <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">{t("mobileWork.common.cancel")}</Text>
           </Pressable>
           <Pressable
             testID="decline-confirm"
@@ -96,12 +98,12 @@ export function DeclineSheet({ quote, onCancel, onDeclined }: { quote: Presented
             accessibilityState={{ disabled: !online || saving, busy: saving }}
             className={`min-h-[48px] justify-center rounded-full bg-overdue px-6 dark:bg-overdue-dark ${!online || saving ? "opacity-40" : ""}`}
           >
-            <Text className="text-[16px] font-semibold text-on-danger dark:text-on-danger-dark">Decline quote</Text>
+            <Text className="text-[16px] font-semibold text-on-danger dark:text-on-danger-dark">{t("mobileWork.decline.title")}</Text>
           </Pressable>
         </View>
       ) : (
         <View className="pt-4">
-          <FullWidthButton testID="decline-confirm" variant="danger" label={saving ? "Declining…" : "Decline quote"} onPress={() => void decline()} disabled={!online || saving} />
+          <FullWidthButton testID="decline-confirm" variant="danger" label={saving ? t("mobileWork.decline.declining") : t("mobileWork.decline.title")} onPress={() => void decline()} disabled={!online || saving} />
         </View>
       )}
     </ScrollView>

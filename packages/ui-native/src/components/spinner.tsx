@@ -1,5 +1,6 @@
 import { ActivityIndicator, View } from "react-native";
 import { useColorScheme } from "nativewind";
+import { useT } from "../lib/i18n";
 import { lightColors, darkColors } from "../tokens";
 
 const sizeMap = {
@@ -31,13 +32,14 @@ export interface SpinnerProps {
  * color resolution `Button` uses, extracted into its own component now
  * that a second, non-Button use needs it).
  */
-export function Spinner({ size = "md", label = "Loading" }: SpinnerProps) {
+export function Spinner({ size = "md", label }: SpinnerProps) {
+  const t = useT();
   const { colorScheme } = useColorScheme();
   const color = colorScheme === "dark" ? darkColors.onSurfaceMuted : lightColors.onSurfaceMuted;
   const { indicatorSize, scale } = sizeMap[size];
 
   return (
-    <View accessibilityRole="alert" accessibilityLiveRegion="polite" accessibilityLabel={label}>
+    <View accessibilityRole="alert" accessibilityLiveRegion="polite" accessibilityLabel={label ?? t("uiNative.spinner.loading")}>
       <ActivityIndicator size={indicatorSize} color={color} style={{ transform: [{ scale }] }} />
     </View>
   );

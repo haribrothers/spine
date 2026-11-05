@@ -2,14 +2,15 @@ import type { TableSort } from "@spine/ui";
 import type { CustomerRefund } from "@spine/shared";
 import { formatMoney } from "../../../lib/money";
 import type { CreditNoteRow } from "./types";
+import { t } from "../../../lib/i18n";
 
 /** US-INV-40 — what the "Where it went" filter offers. */
 export type WhereItWent = "off" | "left" | "applied" | "refunded";
 export const WHERE_LABELS: Record<WhereItWent, string> = {
-  off: "Off the invoice",
-  left: "Credit left",
-  applied: "Applied",
-  refunded: "Refunded",
+  off: t("creditNotes.where.off"),
+  left: t("creditNotes.where.left"),
+  applied: t("creditNotes.where.applied"),
+  refunded: t("creditNotes.where.refunded"),
 };
 const WHERE = Object.keys(WHERE_LABELS) as WhereItWent[];
 
@@ -70,7 +71,7 @@ export function creditNoteState(note: Pick<CreditNoteRow, "status" | "creditRema
   if (note.status === "draft") return "draft";
   return big(note.creditRemainingAmount) > 0n ? "credit_left" : "credited";
 }
-export const CREDIT_NOTE_STATE_LABELS: Record<CreditNoteState, string> = { draft: "Draft", credit_left: "Credit left", credited: "Credited" };
+export const CREDIT_NOTE_STATE_LABELS: Record<CreditNoteState, string> = { draft: t("creditNotes.state.draft"), credit_left: t("creditNotes.state.creditLeft"), credited: t("creditNotes.state.credited") };
 
 export interface WherePart {
   kind: WhereItWent;
@@ -82,10 +83,10 @@ export function whereItWent(note: CreditNoteRow): WherePart[] {
   if (note.status !== "issued") return [];
   const money = (v: bigint) => formatMoney(v, note.currency);
   const parts: WherePart[] = [];
-  if (big(note.offInvoiceAmount) > 0n) parts.push({ kind: "off", text: `Off ${note.invoiceNumber ?? "the invoice"}` });
-  if (big(note.appliedAmount) > 0n) parts.push({ kind: "applied", text: `Applied ${money(big(note.appliedAmount))}` });
-  if (big(note.refundedAmount) > 0n) parts.push({ kind: "refunded", text: `Refunded ${money(big(note.refundedAmount))}` });
-  if (big(note.creditRemainingAmount) > 0n) parts.push({ kind: "left", text: `${money(big(note.creditRemainingAmount))} left` });
+  if (big(note.offInvoiceAmount) > 0n) parts.push({ kind: "off", text: t("creditNotes.list.offInvoice", { number: note.invoiceNumber ?? t("creditNotes.list.theInvoice") }) });
+  if (big(note.appliedAmount) > 0n) parts.push({ kind: "applied", text: t("creditNotes.list.applied", { amount: money(big(note.appliedAmount)) }) });
+  if (big(note.refundedAmount) > 0n) parts.push({ kind: "refunded", text: t("creditNotes.list.refunded", { amount: money(big(note.refundedAmount)) }) });
+  if (big(note.creditRemainingAmount) > 0n) parts.push({ kind: "left", text: t("creditNotes.list.left", { amount: money(big(note.creditRemainingAmount)) }) });
   return parts;
 }
 
@@ -166,6 +167,6 @@ export function filterCreditNotes(list: CreditNoteRow[], state: CreditNotesListS
 /** The contacts that have a credit note, for the Contact filter. */
 export function creditNoteContacts(list: CreditNoteRow[]): { value: string; label: string }[] {
   const seen = new Map<string, string>();
-  for (const note of list) if (!seen.has(note.contactId)) seen.set(note.contactId, note.contactName ?? "Unknown contact");
+  for (const note of list) if (!seen.has(note.contactId)) seen.set(note.contactId, note.contactName ?? t("creditNotes.list.unknownContact"));
   return [...seen.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
 }

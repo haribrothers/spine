@@ -1,4 +1,5 @@
 import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, SECTION_OPEN_CAPABILITIES, capabilitiesOff, withImpliedPrivileges, type Capability, type ModuleSettings } from "@spine/shared";
+import { t } from "../../../../lib/i18n";
 import type { MemberRow } from "../../../../lib/members";
 import { sectionAccessFor, type SectionAccess } from "../../../../lib/nav-sections";
 import type { TeamPrivileges, TeamSummary } from "../../../../lib/teams";
@@ -6,7 +7,7 @@ import type { TeamPrivileges, TeamSummary } from "../../../../lib/teams";
 /** US-TEAM-25 (D-234) — the list's search, kept in the address (`?q=`). */
 export function filterTeams(rows: TeamSummary[], q: string): TeamSummary[] {
   const needle = q.trim().toLowerCase();
-  return needle ? rows.filter((t) => `${t.name} ${t.description ?? ""}`.toLowerCase().includes(needle)) : rows;
+  return needle ? rows.filter((team) => `${team.name} ${team.description ?? ""}`.toLowerCase().includes(needle)) : rows;
 }
 
 /**
@@ -39,32 +40,30 @@ export function permissionCount(granted: Iterable<string>, modules: ModuleSettin
   return { granted: shown.filter((c) => on.has(c)).length, total: shown.length };
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 /** The cards: Teams, Staff on no Team and Staff on several Teams. */
 export function teamsTotals(rows: TeamSummary[], members: MemberRow[]) {
   const staff = members.filter((m) => m.role === "staff" && m.isActive);
   const teamCount = new Map<string, number>();
-  for (const t of rows) for (const m of t.members) teamCount.set(m.memberId, (teamCount.get(m.memberId) ?? 0) + 1);
+  for (const team of rows) for (const m of team.members) teamCount.set(m.memberId, (teamCount.get(m.memberId) ?? 0) + 1);
   const noTeam = staff.filter((m) => !teamCount.get(m.id));
   const several = staff.filter((m) => (teamCount.get(m.id) ?? 0) > 1);
-  const empty = rows.filter((t) => t.members.length === 0).length;
+  const empty = rows.filter((team) => team.members.length === 0).length;
   return {
     teams: rows.length,
-    teamsLabel: [rows.some((t) => t.isDefault) ? "1 default" : null, empty ? `${empty} with no one yet` : null].filter(Boolean).join(" · ") || "—",
+    teamsLabel: [rows.some((team) => team.isDefault) ? t("team.teams.cards.oneDefault") : null, empty ? t("team.teams.cards.withNoOne", { n: empty }) : null].filter(Boolean).join(" · ") || "—",
     noTeam: noTeam.length,
-    noTeamLabel: noTeam.length === 0 ? "everyone can work" : noTeam.length === 1 ? `${noTeam[0]!.name} · open in Users` : `${plural(noTeam.length, "person", "people")} · open in Users`,
+    noTeamLabel: noTeam.length === 0 ? t("team.common.everyoneCanWork") : t("team.teams.cards.openInUsers", { who: noTeam.length === 1 ? noTeam[0]!.name : t("team.common.personCount", { count: noTeam.length }) }),
     several: several.length,
   };
 }
 
 /** Who'd be left on no Team if this Team went (or they came off it). */
 export function leftWithoutTeam(teamId: string, memberIds: string[], rows: TeamSummary[]): string[] {
-  return memberIds.filter((id) => !rows.some((t) => t.id !== teamId && t.members.some((m) => m.memberId === id)));
+  return memberIds.filter((id) => !rows.some((team) => team.id !== teamId && team.members.some((m) => m.memberId === id)));
 }
 
 export function peopleLabel(n: number): string {
-  return n === 0 ? "No one yet" : plural(n, "person", "people");
+  return n === 0 ? t("team.teams.noOneYet") : t("team.common.personCount", { count: n });
 }
 
 // ---------- Permissions draft (US-TEAM-28) ----------
@@ -115,14 +114,14 @@ export function waitsFor(capability: Capability, draft: TeamPrivileges): string 
   const open = CAPABILITY_REQUIRES[capability]?.requires.find((r) => OPEN_CAPABILITIES.has(r) && !draft[r]);
   if (!open) return null;
   const label = CAPABILITY_LABELS[open].label;
-  return label.startsWith("Open ") ? `${label} first.` : `Turn on “${label}” first.`;
+  return label.startsWith("Open ") ? t("team.permissions.waitsForOpen", { label }) : t("team.permissions.waitsForTurnOn", { label });
 }
 
 /** The save confirm's line for a section the draft opens, closes or changes. */
 export function sectionChangeLine(was: SectionAccess, access: SectionAccess): string {
-  if (access === "none") return "They'll no longer see";
-  if (was === "none") return "They'll see";
-  return access === "work" ? "They'll work in" : "They'll only view";
+  if (access === "none") return t("team.permissions.noLongerSee");
+  if (was === "none") return t("team.permissions.willSee");
+  return access === "work" ? t("team.permissions.willWorkIn") : t("team.permissions.willOnlyView");
 }
 
 /** Groups in the matrix's order, for the switched-on modules (US-SET-24). */
@@ -131,7 +130,7 @@ export function permissionGroups(modules: ModuleSettings | null): { label: strin
   const groups: { label: string; capabilities: Capability[] }[] = [];
   for (const capability of CAPABILITIES) {
     if (off.has(capability)) continue;
-    const label = CAPABILITY_LABELS[capability].group ?? "Other";
+    const label = CAPABILITY_LABELS[capability].group ?? t("team.permissions.otherGroup");
     const group = groups.find((g) => g.label === label);
     if (group) group.capabilities.push(capability);
     else groups.push({ label, capabilities: [capability] });

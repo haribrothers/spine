@@ -1,0 +1,47 @@
+---
+title: Move a payment off the wrong invoice
+description: Take money off an invoice it was put on by mistake, so you can apply it to the right one.
+sidebar:
+  order: 4
+---
+
+If a payment went on the wrong invoice, you don't need to delete it. Move it off that invoice: the invoice owes the amount again, and the money becomes credit for the customer. Then apply the credit to the right invoice, or refund it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Apply payment credit**. Without it, the move off option is hidden.
+</Aside>
+
+<Steps>
+
+1. **Find the allocation** — Open the payment and look under **Applied to**. Open the actions menu on the invoice's row and choose **Move off INV-0039** (with that invoice's number). From the invoice instead, open the payment's row under **Payments** and choose **Move off this invoice**.
+
+2. **Read what will happen** — The confirmation, for example "Move $1,200.00 off INV-0039?", says the invoice will owe that amount again and the money becomes credit for the customer.
+
+3. **Add a reason (optional)** — Type a **Reason**, such as "Belongs on another invoice". It's kept in the history.
+
+4. **Confirm** — Press **Move off invoice**, or **Go back** to change nothing.
+
+</Steps>
+
+<Screenshot id="payments-move-off" alt="A payment's Applied to table, where each invoice's actions menu offers Move off" />
+
+## What happens next
+
+- The invoice's paid amount drops and its balance rises by the amount moved.
+- The payment's credit left rises by the same amount, and the toast says it's now credit for the customer.
+- **Apply credit** is offered on the payment, so you can put the money on the right invoice straight away. See [Apply customer credit to an invoice](../apply-customer-credit-to-an-invoice/).
+- The payment's **Activity** keeps both the original "Applied" line and a "Moved … off" line with your reason.
+- The change is posted to your books with today's date.
+
+<Aside type="caution" title="When you can't move a payment off">
+  Money on a deposit invoice, or on an invoice that's been voided, can't be moved off. Spine says what to do instead.
+</Aside>
+
+<Aside type="tip">
+  A payment that's already reconciled with the bank can still be moved off an invoice — the money in the bank doesn't change.
+</Aside>
+
+The receipt PDF lists only what's still applied. A receipt you already emailed isn't changed.

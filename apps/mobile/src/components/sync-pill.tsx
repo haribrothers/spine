@@ -4,6 +4,7 @@ import CircleCheck from "lucide-react-native/icons/circle-check";
 import CloudUpload from "lucide-react-native/icons/cloud-upload";
 import { useNativeColors } from "@spine/ui-native";
 import { pendingItems, useOutboxItems } from "../lib/outbox/pending";
+import { useT } from "../lib/i18n";
 
 /**
  * US-MOB-03, US-MOB-08 — "All synced" in the header, or "<n> waiting to
@@ -11,16 +12,17 @@ import { pendingItems, useOutboxItems } from "../lib/outbox/pending";
  * fixing included). Opens Sync.
  */
 export function SyncPill() {
+  const t = useT();
   const router = useRouter();
   const colors = useNativeColors();
   const waiting = pendingItems(useOutboxItems());
-  const label = waiting === 0 ? "All synced" : `${waiting} waiting to sync`;
+  const label = waiting === 0 ? t("mobileApp.syncPill.allSynced") : t("mobileApp.syncPill.waiting", { n: waiting });
   return (
     <Pressable
       testID="sync-pill"
       onPress={() => router.push("/sync")}
       accessibilityRole="button"
-      accessibilityLabel={`${label}. Open Sync`}
+      accessibilityLabel={t("mobileApp.syncPill.label", { label })}
       hitSlop={6}
       className={`h-9 flex-row items-center gap-1.5 rounded-full px-3 active:opacity-70 ${waiting === 0 ? "bg-paid-bg dark:bg-paid-bg-dark" : "bg-due-soon-bg dark:bg-due-soon-bg-dark"}`}
     >

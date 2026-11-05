@@ -1,0 +1,51 @@
+---
+title: Record a vendor credit
+description: Enter a vendor's credit note for returned goods, an overcharge or a discount, so what you owe goes down.
+sidebar:
+  order: 10
+---
+
+When a vendor sends a credit note — for goods you sent back, an overcharge or a discount after the bill — record it as a vendor credit. It lowers what you owe them without voiding the bill. Like a bill, it starts as a draft and posts nothing until you record it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Vendor Credits** and **Create/edit own vendor credits**. Recording needs **Record vendor credits**. Field users can't work with vendor credits.
+</Aside>
+
+<Steps>
+
+1. **Start the credit** — Go to **Vendor Credits** and press **New vendor credit**. Or, on the recorded bill it's for, open **More** and choose **Record vendor credit**: the vendor, the bill, its currency, job and lines are filled in for you to edit down.
+
+2. **Fill in the header** — Choose the **Vendor** and enter the **Vendor's credit note number** (their own number, for example CN-4471). Set the **Date**. Choose a **Job** if it's for one — it lowers that job's cost once recorded.
+
+3. **Link the bill (optional)** — Under **Against bill**, choose the bill it's for. Its lines are copied for you to edit down. If you've already entered lines, Spine asks "Replace your lines with RTE-3302's?" first; **Keep my lines** leaves them as they are.
+
+4. **Enter the lines** — Each line has an **Item**, **Qty**, **Rate**, **Tax** and **Account**, like a bill.
+
+5. **Save** — Press **Save as draft**, or **Save and record** to post it now.
+
+</Steps>
+
+<Screenshot id="purchases-new-vendor-credit" alt="The New vendor credit page with Vendor, Vendor's credit note number, Against bill, Date, Job and the line rows" />
+
+## Record the credit
+
+Open the draft and press **Record credit**. Spine asks "Record this vendor credit?" and says how much is posted, lowering what you owe. Confirm with **Record credit**.
+
+The credit gets its VCR- number and reads **Open**, with its amount left to use. Then [apply it to bills](../apply-a-vendor-credit/) or [record the refund](../record-a-vendor-refund/) when the vendor pays you back.
+
+## Record several drafts at once
+
+On the **Vendor Credits** list, tick the drafts and press **Record (n)**. Spine asks first with their total, then records them. The toast says how many, and names any that couldn't be recorded with why.
+
+## Help while you type
+
+If this vendor already has a credit (not void) with the same credit note number, a warning names it with its date, amount and a link. You can still save.
+
+<Aside type="caution">
+  A recorded credit can't be edited. If it's wrong, [void it](../track-or-void-a-vendor-credit/) and record a new one.
+</Aside>
+
+To delete a draft, open **More** and choose **Delete draft**. Spine asks "Delete this draft credit?" first.

@@ -8,6 +8,7 @@ import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { useToast } from "../../../components/toast-host";
 
 import { SectionLink } from "../../../components/section-link";
+import { useT } from "../../../lib/i18n";
 interface CreditNoteRow {
   id: string;
   number: string | null;
@@ -25,6 +26,7 @@ interface CreditNoteRow {
  * opens the credit note's page (US-INV-38, D-219).
  */
 export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: { invoiceId: string; refreshKey: number; canEmail?: boolean }) {
+  const t = useT();
   const [creditNotes, setCreditNotes] = useState<CreditNoteRow[] | null>(null);
   // US-SET-21 — emailing a credit note, from the "Credit note" email template.
   const [emailing, setEmailing] = useState<CreditNoteRow | null>(null);
@@ -36,7 +38,7 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
     apiClient
       .get<CreditNoteRow[]>(`/credit-notes?invoiceId=${invoiceId}`)
       .then(setCreditNotes)
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load credit notes."));
+      .catch((err) => setError(err instanceof Error ? err.message : t("invoices.creditNotesSection.loadFailed")));
   }, [invoiceId, refreshKey]);
 
   if (error) return null; // non-critical subsection — a failure here shouldn't block the rest of the invoice page
@@ -47,7 +49,7 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
   return (
     <>
       <Card className="flex flex-col gap-3">
-        <h3 className="text-[14px] font-semibold text-on-surface">Credit notes</h3>
+        <h3 className="text-[14px] font-semibold text-on-surface">{t("invoices.creditNotesSection.title")}</h3>
         {!creditNotes ? (
           <div className="flex justify-center py-6">
             <Spinner size="sm" />
@@ -61,14 +63,14 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
                   className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <div>
-                    <span className="text-[13px] font-medium text-on-surface">{cn.number ?? "Credit note"}</span>
+                    <span className="text-[13px] font-medium text-on-surface">{cn.number ?? t("invoices.creditNotesSection.creditNote")}</span>
                     {cn.reason && <p className="text-[12px] text-on-surface-muted">{cn.reason}</p>}
                   </div>
                   <span className="shrink-0 text-[13px] tabular-nums text-on-surface">{formatMoney(-BigInt(cn.totalAmount), cn.currency)}</span>
                 </SectionLink>
                 {canEmail && (
-                  <Button variant="secondary" size="sm" onClick={() => setEmailing(cn)} aria-label={`Email credit note ${cn.number ?? ""}`.trim()}>
-                    Email
+                  <Button variant="secondary" size="sm" onClick={() => setEmailing(cn)} aria-label={t("invoices.creditNotesSection.emailAria", { number: cn.number ?? "" }).trim()}>
+                    {t("invoices.creditNotesSection.email")}
                   </Button>
                 )}
               </div>
@@ -80,14 +82,14 @@ export function CreditNotesSection({ invoiceId, refreshKey, canEmail = false }: 
         <SendEmailDialog
           open
           onOpenChange={(open) => !open && setEmailing(null)}
-          title={`Email credit note ${emailing.number ?? ""}`.trim()}
+          title={t("invoices.creditNotesSection.dialogTitle", { number: emailing.number ?? "" }).trim()}
           description={formatMoney(BigInt(emailing.totalAmount), emailing.currency)}
           draftPath={`/email-drafts/credit_note/${emailing.id}`}
-          sendLabel="Send credit note"
-          pdfLabel="Attach the credit note PDF"
+          sendLabel={t("invoices.creditNotesSection.sendLabel")}
+          pdfLabel={t("invoices.creditNotesSection.pdfLabel")}
           onSend={async (email) => {
             const result = await apiClient.post<{ sentTo: string }>(`/credit-notes/${emailing.id}/send-email`, email);
-            showToast("Credit note emailed", `${emailing.number ?? "The credit note"} was sent to ${result.sentTo}.`);
+            showToast(t("invoices.creditNotesSection.emailedTitle"), t("invoices.creditNotesSection.emailedBody", { number: emailing.number ?? t("invoices.creditNotesSection.theCreditNote"), to: result.sentTo }));
           }}
         />
       )}

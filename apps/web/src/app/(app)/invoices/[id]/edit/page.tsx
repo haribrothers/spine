@@ -1,5 +1,6 @@
 import { AppShellHeader } from "@spine/ui";
 import { InvoiceEditLoader } from "../../invoice-edit-loader";
+import { t } from "../../../../../lib/i18n";
 
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -7,9 +8,9 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Billing" }, { label: "Invoices", href: "/invoices" }, { label: "Edit" }]}
-        title="Edit invoice"
-        description="Only a draft can be edited — an issued invoice is immutable per CLAUDE.md."
+        breadcrumb={[{ label: t("invoices.page.breadcrumbBilling") }, { label: t("invoices.page.breadcrumbInvoices"), href: "/invoices" }, { label: t("invoices.editPage.breadcrumbEdit") }]}
+        title={t("invoices.editPage.title")}
+        description={t("invoices.editPage.description")}
       />
       <InvoiceEditLoader invoiceId={id} />
     </>

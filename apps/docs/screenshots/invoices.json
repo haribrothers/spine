@@ -1,0 +1,95 @@
+[
+  {
+    "id": "invoices-list",
+    "path": "/invoices",
+    "alt": "The Invoices list with the Outstanding, Overdue, Due in 7 days and Paid this month cards above the table of invoices",
+    "wait": "Paid this month"
+  },
+  {
+    "id": "invoices-builder",
+    "path": "/invoices/new",
+    "alt": "The New invoice builder with the contact, type and dates at the top, the lines below, and the bar with Subtotal, Tax, Total, Preview PDF and Save as draft",
+    "wait": "Save as draft"
+  },
+  {
+    "id": "invoices-drafts",
+    "path": "/invoices?status=draft",
+    "alt": "The Invoices list filtered to drafts, each showing Draft in the number column",
+    "wait": "Clear filters"
+  },
+  {
+    "id": "invoices-overdue",
+    "path": "/invoices?card=overdue",
+    "alt": "The Invoices list with the Overdue card pressed, showing only overdue invoices with Overdue in the Due column",
+    "wait": "Showing these · press again to clear"
+  },
+  {
+    "id": "invoices-detail",
+    "path": "/invoices/{invoice}",
+    "alt": "An issued invoice's page with its status, customer and dates, the Total, Paid and Balance due strip, the lines table and the Activity panel",
+    "wait": "Activity"
+  },
+  {
+    "id": "invoices-email",
+    "path": "/invoices/{invoice}?action=email",
+    "alt": "The Email invoice dialog with To, Subject, Message and Attach the invoice PDF, and the Send invoice button",
+    "wait": "Attach the invoice PDF"
+  },
+  {
+    "id": "invoices-void",
+    "path": "/invoices/{invoice}?action=void",
+    "alt": "The Void this invoice? dialog with the required Reason box and the Void invoice button",
+    "wait": "Void this invoice?"
+  },
+  {
+    "id": "invoices-reminders-settings",
+    "path": "/dashboard?settings=reminders",
+    "alt": "Settings, Automatic reminders, with the Send reminders automatically switch, the Schedule checkboxes and Send at",
+    "wait": "Send reminders automatically"
+  },
+  {
+    "id": "invoices-payment-instructions",
+    "path": "/dashboard?settings=payment-instructions",
+    "alt": "Settings, Payment instructions, with the How customers can pay box and the note that issued invoices keep their instructions",
+    "wait": "How customers can pay"
+  },
+  {
+    "id": "invoices-recurring-list",
+    "path": "/invoices/recurring",
+    "alt": "The Recurring invoices list with each schedule's name, customer, repeats, next invoice, amount, status and when it runs",
+    "wait": "Recurring invoices"
+  },
+  {
+    "id": "invoices-recurring-new",
+    "path": "/invoices/recurring",
+    "alt": "The New recurring invoice dialog with Name, Customer, Repeats, On, Starts, Ends, Payment due, When it runs and the lines",
+    "click": "+ New recurring invoice",
+    "wait": "When it runs"
+  },
+  {
+    "id": "invoices-statement",
+    "path": "/contacts/{contact}",
+    "alt": "The Send a statement dialog with Period, Show, the summary of opening balance, invoiced, paid and credited and balance due, and the To and Message fields",
+    "click": "Send statement",
+    "wait": "Paid and credited"
+  },
+  {
+    "id": "invoices-credit-notes-list",
+    "path": "/credit-notes",
+    "alt": "The Credit Notes list with the Credited this month, Credit to use and Refunded this month cards above the table, showing where each credit went",
+    "wait": "Credit to use"
+  },
+  {
+    "id": "invoices-credit-note-new",
+    "path": "/credit-notes",
+    "alt": "The New credit note dialog asking which invoice it corrects, with a search box and the issued invoices that have something left to credit",
+    "click": "New credit note",
+    "wait": "Which invoice does it correct?"
+  },
+  {
+    "id": "invoices-credit-note-detail",
+    "path": "/credit-notes/{creditNote}",
+    "alt": "A credit note's page with its number, customer, the invoice it's against, the strip from Credited to Credit left, and the lines",
+    "wait": "Credit left"
+  }
+]

@@ -7,6 +7,7 @@ import { INVOICE_STATE_LABELS, dueNote, invoiceState, paidShare, type InvoiceSta
 import { calendarDate } from "../quotes/quotes-list-state";
 import type { Invoice } from "./types";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
+import { t, useT } from "../../../lib/i18n";
 
 export const STATE_BADGE_CLASS: Record<InvoiceState, string> = {
   draft: "bg-draft-bg text-draft",
@@ -21,11 +22,11 @@ const TONE_CLASS = { "": "text-on-surface-muted", soon: "font-medium text-due-so
 
 /** What sits under the number: "Progress claim 3 · JOB-002", "Deposit", "Opening balance". */
 export function invoiceKindNote(inv: Invoice): string | null {
-  if (inv.type === "progress" && inv.progressClaimNo) return [`Progress claim ${inv.progressClaimNo}`, inv.job?.number].filter(Boolean).join(" · ");
+  if (inv.type === "progress" && inv.progressClaimNo) return [t("invoices.table.progressClaim", { number: inv.progressClaimNo }), inv.job?.number].filter(Boolean).join(" · ");
   if (inv.job) return [inv.job.number, inv.job.name].filter(Boolean).join(" · ");
-  if (inv.type === "advance") return "Deposit";
-  if (inv.type === "opening") return "Opening balance";
-  if (inv.type === "retention_release") return "Retention release";
+  if (inv.type === "advance") return t("invoices.table.deposit");
+  if (inv.type === "opening") return t("invoices.table.openingBalance");
+  if (inv.type === "retention_release") return t("invoices.table.retentionRelease");
   return null;
 }
 
@@ -62,6 +63,7 @@ export function InvoicesTable({
   onDeleted: (invoice: Invoice) => void;
   onActionFailed?: (invoice: Invoice, message: string) => void;
 }) {
+  const t = useT();
   const locale = orgLocaleTag();
   const columns: TableColumn<Invoice>[] = [
     ...(selected && onToggleSelected
@@ -70,20 +72,20 @@ export function InvoicesTable({
             key: "select",
             header: "",
             render: (row: Invoice) => (
-              <Checkbox checked={selected.has(row.id)} onCheckedChange={(v) => onToggleSelected(row, v === true)} aria-label={`Select ${row.number ?? "draft invoice"}`} />
+              <Checkbox checked={selected.has(row.id)} onCheckedChange={(v) => onToggleSelected(row, v === true)} aria-label={t("invoices.table.selectRow", { number: row.number ?? t("invoices.table.draftInvoiceLower") })} />
             ),
           },
         ]
       : []),
     {
       key: "number",
-      header: "Number",
+      header: t("invoices.columns.number"),
       render: (row) => {
         const note = invoiceKindNote(row);
         return (
           <div className="flex max-w-[16rem] flex-col whitespace-normal">
             <Link href={`/invoices/${row.id}`} className="font-semibold text-on-surface hover:text-primary hover:underline">
-              {row.number ?? <span className="font-medium italic text-on-surface-muted">Draft</span>}
+              {row.number ?? <span className="font-medium italic text-on-surface-muted">{t("invoices.table.draft")}</span>}
             </Link>
             {note && (
               <span className="truncate text-[12.5px] text-on-surface-muted" title={note}>
@@ -97,7 +99,7 @@ export function InvoicesTable({
     },
     {
       key: "contact",
-      header: "Contact",
+      header: t("invoices.columns.contact"),
       render: (row) => (
         <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
@@ -107,7 +109,7 @@ export function InvoicesTable({
     },
     {
       key: "status",
-      header: "Status",
+      header: t("invoices.columns.status"),
       render: (row) => {
         const state = invoiceState(row);
         return (
@@ -120,13 +122,13 @@ export function InvoicesTable({
     },
     {
       key: "issued",
-      header: "Issued",
+      header: t("invoices.table.issued"),
       render: (row) => (row.issueDate && row.status !== "draft" ? calendarDate(row.issueDate, now, locale) : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.issueDate ?? row.createdAt,
     },
     {
       key: "dueDate",
-      header: "Due",
+      header: t("invoices.table.due"),
       render: (row) => {
         const note = dueNote(row, now, locale);
         return (
@@ -144,14 +146,14 @@ export function InvoicesTable({
     },
     {
       key: "total",
-      header: "Total",
+      header: t("invoices.columns.total"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.totalAmount),
     },
     {
       key: "balanceDue",
-      header: "Balance due",
+      header: t("invoices.columns.balanceDue"),
       align: "right",
       // US-OPS-21: a void invoice owes nothing, so it shows "—", not its old total.
       render: (row) => {
@@ -161,7 +163,7 @@ export function InvoicesTable({
           <div className="flex flex-col items-end gap-1">
             <span className="tabular-nums">{formatMoney(BigInt(row.balanceDue), row.currency)}</span>
             {share > 0 && (
-              <span className="h-1 w-20 overflow-hidden rounded-full bg-border" aria-label={`${share}% paid`} role="img">
+              <span className="h-1 w-20 overflow-hidden rounded-full bg-border" aria-label={t("invoices.table.paidShare", { share })} role="img">
                 <span className="block h-full rounded-full bg-paid" style={{ width: `${share}%` }} />
               </span>
             )}

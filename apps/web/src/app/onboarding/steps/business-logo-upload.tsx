@@ -6,6 +6,7 @@ import { Camera } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
 import { PHOTO_ACCEPT } from "../../../lib/upload-types";
+import { useT } from "../../../lib/i18n";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -30,6 +31,7 @@ export function BusinessLogoUpload({
   logoUrl?: string;
   onChange: (logoUrl: string | undefined) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export function BusinessLogoUpload({
       onChange(`${API_URL}/files/${uploaded.id}`);
       closeCropDialog();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload logo.");
+      setError(err instanceof Error ? err.message : t("onboarding.logoUpload.failed"));
       throw err; // keep the dialog open so the user can retry Save
     } finally {
       setUploading(false);
@@ -75,11 +77,11 @@ export function BusinessLogoUpload({
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        aria-label="Upload business logo"
+        aria-label={t("onboarding.logoUpload.upload")}
         className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-md cursor-pointer"
       >
         <Avatar size="lg" className="h-14 w-14 rounded-md">
-          {logoUrl && <AvatarImage src={logoUrl} alt="Business logo" className="rounded-md" />}
+          {logoUrl && <AvatarImage src={logoUrl} alt={t("onboarding.logoUpload.alt")} className="rounded-md" />}
           <AvatarFallback className="rounded-md text-[15px]">
             <Camera size={18} />
           </AvatarFallback>
@@ -89,8 +91,8 @@ export function BusinessLogoUpload({
         </span>
       </button>
       <div className="flex flex-col gap-1">
-        <span className="text-[13px] text-on-surface">{logoUrl ? "Logo uploaded" : "No logo yet"}</span>
-        <span className="text-[12px] text-on-surface-muted">Click the square to upload — shown on quotes and invoices.</span>
+        <span className="text-[13px] text-on-surface">{logoUrl ? t("onboarding.logoUpload.uploaded") : t("onboarding.logoUpload.none")}</span>
+        <span className="text-[12px] text-on-surface-muted">{t("onboarding.logoUpload.hint")}</span>
         {error && <span className="text-[12px] text-overdue">{error}</span>}
       </div>
       <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleFileSelected} />

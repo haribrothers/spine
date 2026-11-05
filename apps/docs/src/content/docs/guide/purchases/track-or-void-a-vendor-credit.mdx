@@ -1,0 +1,56 @@
+---
+title: Track or void a vendor credit
+description: See what credit vendors owe you and what's left on each, and void a credit entered by mistake.
+sidebar:
+  order: 13
+---
+
+The Vendor credits list and each credit's page show how much credit is left to use, so no credit sits forgotten. If a credit was recorded by mistake and nothing has been applied or refunded, you can void it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Vendor Credits**. Voiding needs **Void vendor credits**. Field users can't see vendor credits.
+</Aside>
+
+## See what's left to use
+
+Go to **Vendor Credits**. The cards read:
+
+- **Credit to use** — what's left on open and partly used credits, and how many.
+- **Drafts to record** — drafts not yet posted, with their total.
+- **Partly used** — credits with some left.
+- **Unused 60+ days** — open credit dated 60 or more days ago. Ask for a refund?
+
+Press **Drafts to record**, **Partly used** or **Unused 60+ days** to show only those; press again to clear. Filter by state, vendor or job, or search numbers, vendors or bills. Each row shows the number, the vendor's number, the vendor, the date, the bill it's against, the job, the state, the total and **Left to use**. The newest credit comes first.
+
+<Screenshot id="purchases-vendor-credits-list" alt="The Vendor credits list with the Credit to use, Drafts to record, Partly used and Unused 60+ days cards above the table" />
+
+## Read a credit's page
+
+A credit's state is one of **Draft**, **Open**, **Partly used**, **Used** or **Void**. Under the title you see the vendor, their credit note number, the date, the bill it's against, and the job. The strip reads **Total**, **Applied to bills**, **Refunded** and **Left to use**. Below the lines, **Applied to bills** and **Refunds** list where the credit went, and **Activity** lists each step with who and when.
+
+<Screenshot id="purchases-vendor-credit-page" alt="A vendor credit's page with the Total, Applied to bills, Refunded and Left to use strip, the lines and the Activity panel" />
+
+## Void a credit
+
+<Steps>
+
+1. **Open the credit** — Open the recorded credit.
+
+2. **Choose Void credit** — Open **More** and choose **Void credit**.
+
+3. **Give a reason** — "Void VCR-0004?" says what you owe the vendor goes back up. Enter the **Reason**.
+
+4. **Confirm** — Press **Void credit**.
+
+</Steps>
+
+A reversing entry takes the credit off your books, and the page reads "Void — &lt;reason&gt;". If it was tagged to a job, that job's cost goes back up.
+
+<Aside type="danger">
+  Voiding can't be undone. Record a new credit if you need it back.
+</Aside>
+
+If the credit has been applied to bills or refunded, you see "Remove its 2 applications and refunds first." and nothing changes. Remove each one from **Applied to bills** or **Refunds**, then void it.
