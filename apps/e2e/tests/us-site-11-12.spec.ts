@@ -26,8 +26,11 @@ test.describe("US-SITE-11, US-SITE-12 · help for this page, from the guide on t
     await expect(guide.getByRole("heading", { level: 1 })).toBeVisible();
 
     // Search runs in the browser.
-    await guide.getByRole("button", { name: /Search/ }).first().click();
-    await guide.getByRole("searchbox").fill("payment");
+    // Starlight enables its search button once its script has loaded.
+    const searchButton = guide.locator("button[data-open-modal]");
+    await expect(searchButton).toBeEnabled();
+    await searchButton.click();
+    await guide.locator('dialog[aria-label="Search"] input').fill("payment");
     await expect(guide.locator("[data-pagefind-ui] .pagefind-ui__result, .pagefind-ui__result").first()).toBeVisible({ timeout: 15_000 });
     expect(outside).toEqual([]);
 
