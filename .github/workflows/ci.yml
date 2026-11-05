@@ -234,7 +234,10 @@ jobs:
       # the runner image's default client is newer than the PostgreSQL 16 service.
       - name: PostgreSQL 16 client tools
         run: |
+          # From PostgreSQL's own apt repository (PGDG), which has every supported major version.
           sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-common >/dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
           sudo apt-get install -y --no-install-recommends postgresql-client-16 >/dev/null
           echo /usr/lib/postgresql/16/bin >> "$GITHUB_PATH"
           /usr/lib/postgresql/16/bin/pg_dump --version
