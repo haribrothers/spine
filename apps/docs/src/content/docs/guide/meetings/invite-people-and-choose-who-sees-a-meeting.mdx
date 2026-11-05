@@ -1,0 +1,37 @@
+---
+title: Invite people and choose who sees a meeting
+description: Invite colleagues to a meeting, keep it private to the people on it, or show it to everyone.
+sidebar:
+  order: 4
+---
+
+A new meeting is private: only you and the people you invite can see it. Invite the colleagues who need to be there, or make it visible to everyone for a team event, without inviting each person.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">The meeting's organiser with **Create/edit own meetings**, Owners, and Staff whose Team has **Edit others' meetings**. Anyone in your organisation can be invited.</Aside>
+
+<Steps>
+1. **Open the People tab** — In the new or edit meeting dialog, choose the **People** tab.
+2. **Choose who can see it** — Leave **Visible to everyone in the org** off to keep it private: "Only you and invited attendees can see this meeting." Turn it on to show it to everyone: "Every org member can see this meeting."
+3. **Invite people** — Under **Invite people**, choose someone in **Select people to invite…** and press **Add**. They're listed below with a remove button. Repeat for each person.
+4. **Save** — Press **Create event** (or **Save changes** for an existing meeting).
+</Steps>
+
+Each person you add gets an email, "You've been invited: …", and a notification in Spine. People you remove, and everyone invited to a meeting you delete, are told it's been removed or cancelled.
+
+## Change attendees later
+
+In the sidebar's **Upcoming** list, press the attendees button beside a meeting to open **Manage attendees**. You see everyone invited and their response. As the organiser, you can change the visibility and invite list here too, then press **Save**.
+
+For a recurring meeting, visibility and invitees apply to the whole series. To change them, edit the series rather than one occurrence.
+
+## Who sees what
+
+- **Owners** see every meeting, private or not.
+- **Staff and Field crew** see meetings visible to everyone, and private meetings they organise or are invited to. A private meeting they're not on doesn't show on their calendar at all.
+- Seeing a meeting doesn't mean you can change it. Without edit rights, the quick view shows **View only**.
+
+<Aside type="caution" title="Edit rights don't reveal private meetings">Giving a Team **Edit others' meetings** lets its members change meetings they can already see. It never shows them private meetings they're not invited to.</Aside>
+
+To let a Team manage only its own meetings, or everyone's, an Owner sets **Create/edit own meetings**, **Edit others' meetings**, **Delete own meetings** and **Delete others' meetings** in the Team's **Manage Meetings** permissions. See [Team and permissions](../../team/).

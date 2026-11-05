@@ -1,0 +1,43 @@
+---
+title: Choose what your documents show
+description: Set the paper size, columns, title, terms, notes, signature and amount in words for each kind of document.
+sidebar:
+  order: 10
+---
+
+The Documents pane decides what your quotes, invoices, credit notes, receipts and statements look like when they're issued. A live preview beside the options shows a sample page as you change them, so you can see the result before any customer does.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Documents** — Open your user menu, choose **Settings**, and pick **Documents** under **Documents & emails**.
+
+2. **Pick a document type** — Choose a tab: **Quotes**, **Invoices**, **Credit notes**, **Receipts** or **Statements**. Each has its own options.
+
+3. **Set the page** — Choose a **Paper size** (A4 or Letter) and a **Title**, such as "Quotation", "Tax Invoice" or "Estimate". On Quotes, **Quotes valid for** sets how many days new quotes are valid (1 to 365). On Invoices, **Invoices due in** sets the days after issue (0 to 365; 0 is on receipt).
+
+4. **Choose the columns** — On quotes, invoices and credit notes, tick what to show under **Columns**: **Quantity and unit**, **Discount**, **HSN/SAC** (only when GST is on) and **Tax per line**. Tick **Tax summary table** and **Amount in words** if you want them.
+
+5. **Add your signature** — Press **Upload signature** and choose a PNG or JPEG, then tick **Signature** on the document types that should show it. It prints above "Authorised signatory".
+
+6. **Write default terms and notes** — **Default terms** and **Default notes** are up to 2,000 characters each. On quotes and invoices, new drafts start with them and you can change them on each document; on the others they're printed on every one.
+
+7. **Press Save** — A "Saved" message appears. The next document you issue uses these options.
+
+</Steps>
+
+<Screenshot id="settings-documents" alt="Settings, Documents: tabs for each document type, paper size, title, columns and terms beside a live sample invoice" />
+
+## Good to know
+
+- **Hidden columns don't change amounts.** "Hidden columns don't change any amounts. Issued PDFs never change." A line with a discount still shows its discounted price when the Discount column is hidden.
+- **GST titles win.** With GST on, the invoice and credit note titles are "Tax Invoice" and "Credit Note" and the field says "Set by your GST settings". See [Tax](../../tax/).
+- **Amount in words** uses your currency, and lakh and crore for rupees.
+- **Every character prints.** ₹ and names in Devanagari print correctly on PDFs.
+- **Replace or remove a signature** with **Replace signature** or **Remove signature**. Issued PDFs keep the signature they were issued with.
+
+<Aside type="tip">Your logo and address come from [Business profile](../business-profile/), and the document colour and footer from [Branding](../branding/). The words in the emails that carry these documents are in [Emails](../emails/).</Aside>

@@ -1,0 +1,15 @@
+---
+/** US-SITE-02 — "Enquiry → Quote → Job → Invoice → Payment → Books". */
+const steps = ["Enquiry", "Quote", "Job", "Invoice", "Payment", "Books"];
+---
+
+<ol class="workflow" aria-label="How work flows through Spine">
+  {
+    steps.map((step, i) => (
+      <li class={i === steps.length - 1 ? "workflow__books" : undefined}>
+        {step}
+        {i < steps.length - 1 && <span aria-hidden="true">→</span>}
+      </li>
+    ))
+  }
+</ol>

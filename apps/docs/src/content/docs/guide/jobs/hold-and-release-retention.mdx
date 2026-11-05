@@ -1,0 +1,49 @@
+---
+title: Hold and release retention
+description: Hold back a percentage of each progress invoice automatically, then release it as a final invoice when the defect period ends.
+sidebar:
+  order: 8
+---
+
+Retention is the share of each progress claim the customer keeps back until the work is signed off. Spine works it out on every progress invoice for you and keeps it separate from what the customer owes now. When the defect period ends, you release it as an invoice so you actually collect it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Setting the **Retention %** needs the right to edit the job: Owners, or Staff with **Create/edit own jobs** or **Edit others' jobs**. Releasing it: Owners, and Staff whose Team has **Release retention**.</Aside>
+
+## Set the retention percentage
+
+Enter **Retention %** when you start the job ([Start a job](../start-a-job/)), or later in **Edit job** under **Advanced (retention)** ([Edit a job's details](../edit-a-job/)). It's held back from each progress invoice you raise from a milestone after that.
+
+## How it's held
+
+For a job with 5% retention, a progress invoice for 10,000.00 holds back 500.00:
+
+- The invoice shows **Retention held (5%)** as a negative row, then the amount due, 9,500.00. Its PDF and email show the same rows.
+- The 500.00 sits in Retention Receivable on your Balance Sheet, not in Accounts Receivable.
+- Receivables aging leaves held retention out of its buckets.
+
+A job with 0% retention shows no retention row. The **Retention held** card on the Jobs list adds up what's held across your jobs.
+
+## Release it
+
+<Steps>
+1. **Open the job** — Go to **Jobs** and open the job. Once the job is **Completed** and retention is held, the main button is **Release retention**. Before that, it's under **More**.
+2. **Read the confirmation** — "Release retention?" says a retention-release invoice will be created for the amount still held on this job's issued progress invoices.
+3. **Confirm** — Press **Release retention**. A toast says "Retention released" and "A retention-release invoice has been created for this job."
+</Steps>
+
+<Screenshot id="jobs-detail" alt="A job's page with its number, status, contact, site address and dates, the next-step button and the strip of figures" />
+
+## What the release does
+
+- It creates an issued invoice for the held amount, with its own invoice number, due on your usual payment terms. Find it in **Invoices** and send it to the customer.
+- The amount moves from Retention Receivable to Accounts Receivable. It isn't counted as revenue again: that was counted on the progress invoices.
+- It doesn't count towards the job's billed to date and gets no progress claim number.
+
+<Aside type="danger">Releasing retention can't be undone. The invoice is issued straight away: it can't be edited or deleted, only voided or credited.</Aside>
+
+Only retention on issued progress invoices counts. If nothing is held, the button isn't shown, and a release that finds nothing says "Could not release retention for this job."
+
+<Aside type="tip">The dashboard's retention widget lists jobs with retention held and can open the release for a job.</Aside>

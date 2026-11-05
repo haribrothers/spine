@@ -1,0 +1,45 @@
+---
+title: Create a Team
+description: Make a new Team from nothing or from another Team's permissions, and rename or duplicate one.
+sidebar:
+  order: 5
+---
+
+A Team is a group of Staff who need the same access — your accounts person, site supervisors or estimators. Every business starts with one Team, **General Staff**, marked **Default**. Create more when different people need different access.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Teams** — In the sidebar, go to **Team › Teams** and press **Create Team**.
+
+2. **Name it** — Enter a **Name** (for example "Site supervisors") and, if you like, a **Description** of what the Team is for. It shows on Teams and on the Team's page.
+
+3. **Choose where to start** — Under **Start from**, pick **Nothing allowed** for an empty Team, or another Team to copy its permissions. Only permissions are copied, never members.
+
+4. **Create it** — Press **Create Team**. Spine opens the new Team's **Permissions** tab, and the toast says to check what it allows, then add people.
+
+</Steps>
+
+<Screenshot id="team-create-team" alt="The Create Team dialog with the Name, Description and Start from fields" />
+
+A Team made with **Nothing allowed** starts with every section closed. Its members can't open anything until you turn permissions on. See [Choose what a Team can do](../choose-what-a-team-can-do/).
+
+## Duplicate a Team
+
+On **Team › Teams**, open a Team's row menu and choose **Duplicate**. The dialog opens with the name "*Team* (copy)" and that Team's permissions to start from; its members aren't copied. Change the name and press **Create Team**.
+
+## Rename a Team
+
+Choose **Rename** from the Team's row menu on Teams, or from the menu on the Team's own page. Change the name or description and press **Save**. The Team's members and permissions stay as they are.
+
+<Aside type="caution">The default Team's name can't change, but you can change its description. Two Teams can't share a name: Spine says "There's already a Team called *name*." under the field.</Aside>
+
+## Read the Teams list
+
+<Screenshot id="team-teams-list" alt="The Teams list with the Teams, Staff on no Team and Staff on several Teams cards, and each Team's members, Works in and Permissions" />
+
+Each row shows the Team's name with its **Default** or **Demo** badge, its members ("4 people" or "No one yet"), **Works in** — how many sections it can do something in, such as "7 of 18 sections" — and how many permissions it allows. The **Staff on no Team** card warns when someone can't open anything; press it to see them on Users.

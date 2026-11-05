@@ -1,0 +1,55 @@
+---
+title: See what you owe vendors
+description: Use Payables to see what you owe each vendor and each bill, by how late it is, and export it.
+sidebar:
+  order: 14
+---
+
+Payables adds up every recorded bill that still has a balance, grouped by how late it is, so you know who to pay first. The figures come straight from your books, so they agree with your reports.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **View payables**. Without it, Payables shows the no-access page. Field users never see Payables.
+</Aside>
+
+<Steps>
+
+1. **Open Payables** — Go to **Payables**. The description reads "What you owe vendors, by how late it is · as of" today's date.
+
+2. **Read the cards** — **Total owed** (with how many bills and vendors), **Overdue**, **Due in 7 days** (not overdue yet, due within a week) and **90+ days**.
+
+3. **Read the age bar** — **Owed by age** splits what you owe into Current, 1–30 days, 31–60 days, 61–90 days and 90+ days.
+
+4. **Choose a tab** — **By vendor** has one row per vendor. **By bill** has one row per open bill.
+
+</Steps>
+
+<Screenshot id="purchases-payables-by-vendor" alt="Payables on the By vendor tab with the Total owed, Overdue, Due in 7 days and 90+ days cards, the age bar and one row per vendor" />
+
+## By vendor
+
+Each row shows the vendor, how many open bills, the oldest ("45 days late", "Due in 5 days" or "No due date"), the overdue amount, the total owed, **Credit to use** (their open vendor credits) and when you last paid them ("Never" if you haven't). The most overdue money comes first, then the most owed, with a totals row at the end. Expand a vendor to see their open bills, oldest due first, each opening the bill.
+
+## By bill
+
+Each row shows the bill number with its job under it, the vendor, the due date, how late it is in words ("12 days late", "Due today") beside its age, and the balance due. The most days late comes first. **Columns** can also show **Bill date**, **Bill total** and **Paid so far**.
+
+<Screenshot id="purchases-payables-by-bill" alt="Payables on the By bill tab with the bill, vendor, due date, how late and balance due columns" />
+
+## Show one age
+
+Press **Overdue**, **Due in 7 days** or **90+ days**, or an age in the bar, to show only that on both tabs. Press it again to show all. The age filter in the filter bar also offers All ages, Current and each age range. If nothing is in it, you see, for example, "Nothing due in the next 7 days." with **Show all**.
+
+Search finds vendors on **By vendor**, and bill numbers, vendors or jobs on **By bill**.
+
+## Export
+
+Press **Export** and choose **CSV** (or Excel or PDF). The file has one row per open bill on screen, with its age. Amounts are plain numbers with the currency in its own column. With an age chosen, only that age is exported. With nothing owed, the CSV has only the header row.
+
+<Aside type="note">
+  Draft bills aren't counted here. A note under the age bar says, for example, "2 draft bills ($18,400.00) aren't counted here — record them to include them." **See drafts** opens them on Vendor bills.
+</Aside>
+
+When every recorded bill is paid, Payables says "Nothing outstanding" and "Every recorded vendor bill has been paid in full.". The page refreshes itself after you've been away for 30 seconds; **Updated** shows when it last did.

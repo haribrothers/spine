@@ -1,0 +1,37 @@
+---
+title: Get AI suggestions while reconciling
+description: Ask AI to suggest matches and categories for the bank statement lines the rules couldn't settle.
+sidebar:
+  order: 9
+---
+
+When you reconcile a bank account, Spine's rules suggest matches for most lines. For the odd ones they can't settle, AI can suggest which entry a line matches, or what to create for it, with its reason. You still match or create each one yourself.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Use AI features** and **Reconcile accounts**. AI and **Suggest bank matches** must be on in **Settings › AI assistant**.</Aside>
+
+<Steps>
+
+1. **Open the reconciliation** — Start or continue reconciling the account in **Banking**.
+
+2. **Press Suggest with AI** — Above the statement panel, "Suggest with AI (4 lines)" counts the lines the rules couldn't settle. AI only runs when you press it, so a long statement doesn't use your budget unasked.
+
+3. **Look at the Suggested tab** — AI's suggestions appear marked **AI suggests**, with the reason — for example "same amount; description mentions Maple Ridge".
+
+4. **Match or skip each one** — On a line, "AI suggests: *entry* · *contact*" has **Match** and **Not this one**. When you select the line, AI's entry comes first in the entries panel, before the same amount and nearest dates.
+
+5. **Create what's missing** — "AI suggests creating: *category* · *contact*" has **Create** and **Exclude**. **Create** opens the form with the suggested kind, category and contact filled in, marked **Suggested by AI**. Check it and save.
+
+</Steps>
+
+## Things to know
+
+- **Match all suggested** only matches the rules' suggestions. AI suggestions aren't included — check and match each one.
+- **Ignoring a suggestion** matches or creates nothing.
+- A line matched from AI's suggestion reads "Matched · suggested by AI".
+- **Suggest again** replaces the suggestions with new ones. AI looks at up to 30 lines at a time.
+- AI is sent the lines' dates, amounts and descriptions, with account numbers and IDs removed.
+
+<Aside type="tip">AI suggestions are kept on the reconciliation, so you can come back to them later. See [Banking](../../banking/) for the rest of reconciling.</Aside>

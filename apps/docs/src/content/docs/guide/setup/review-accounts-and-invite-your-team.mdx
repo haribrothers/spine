@@ -1,0 +1,39 @@
+---
+title: Review your accounts and invite your team
+description: Finish setup by checking the accounts Spine posts to, inviting colleagues and seeing what to do next.
+sidebar:
+  order: 4
+---
+
+The last stage, **Books & team**, shows the accounts Spine will post your transactions to and lets you invite the people you work with. When you finish, a screen sums up what you set and points you to your first customer, item and quote.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only the Owner running setup. You can invite Staff and Field users here; Owner is never offered as a role at invite time.</Aside>
+
+<Steps>
+
+1. **Look over your chart of accounts** — **Chart of accounts** lists the accounts grouped under Assets, Liabilities, Equity, Income and Expenses, each with its code. Rows marked **System** are the ones Spine needs for its own postings and can't be renamed.
+
+2. **Rename the accounts you care about** — Press **Rename** on any other account, type the new name and press **Save**. The new name is used everywhere. Press **Continue** when you're done; if you changed nothing, the default chart is kept as it is.
+
+3. **Invite your team** — On **Invite your team**, enter an **Email** (e.g. teammate@example.com), choose a **Role** — **Staff** or **Field** — and press **Send invite**. A line "Invited … as Staff" appears and the invitation email is queued. Repeat for each person.
+
+4. **Finish** — Press **Finish**, or **Skip — finish setup** if you haven't invited anyone.
+
+</Steps>
+
+While you're in this stage, the preview turns to "Your books" (each account group and how many accounts it has) and "Your team" (everyone you've invited and their role).
+
+## The finish screen
+
+"You're set up" lists what you set — **Business**, **Money**, **Documents** (your first invoice number) and **Team** ("2 invites sent" or "Just you for now") — each with a **Change** link that opens its Settings pane. Under **What to do next** are three cards: **Add your first customer**, **Add something you sell** and **Send your first quote**. "See what's left to set up — 6 left" opens the [Set up Spine page](../finish-setting-up/). **Go to dashboard** takes you to the dashboard.
+
+## Good to know
+
+- Staff see what their Team allows. Field users get the phone app for their jobs and never see your money.
+- If an invite can't be sent — for example the address already has a pending invite — you see "Could not send invite." with the reason.
+- If email isn't set up on the server yet, the invitation email can't go out and shows as Failed in the [email log](../../settings/email-log/). Whoever runs the server sets email up — see [Email](../../../self-hosting/email/).
+
+<Aside type="tip">Rename or add accounts later in **Settings › Chart of accounts** ([Review your chart of accounts](../../accounts/chart-of-accounts/)). Invite or change people later in **Team › Users** ([Team](../../team/)).</Aside>

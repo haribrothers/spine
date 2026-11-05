@@ -1,0 +1,40 @@
+---
+title: Raise a progress invoice from a milestone
+description: Turn a completed milestone into a draft progress invoice, then issue it as the next claim on the job.
+sidebar:
+  order: 7
+---
+
+When a milestone is completed, one press creates its progress invoice: a draft for the milestone's amount, linked to the job and the milestone. Billing follows the work, and nothing is retyped.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Raise invoice from milestone**. Issuing the draft afterwards needs **Issue an invoice**. Field crew can't raise invoices.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs** and open the job. The **Ready to bill** card on the Jobs list shows which jobs have completed milestones waiting.
+2. **Raise the invoice** — On the **Milestones** tab, press **Raise invoice** on a completed milestone. Or press the job's main button, **Invoice _milestone_**.
+3. **Check the draft** — The draft invoice opens. A toast says "The draft invoice is open — check it, then issue it."
+4. **Issue it** — Press **Issue invoice** on the invoice and confirm. It gets its permanent number and posts to your books.
+</Steps>
+
+<Screenshot id="jobs-milestones" alt="A job's Milestones tab showing billed so far, a progress bar and each milestone with its status, amount, due date and action" />
+
+Back on the job, the milestone shows **Invoiced** with **View invoice**. It can't be invoiced again. A pending milestone never offers **Raise invoice**: mark it complete first ([Mark a milestone complete](../mark-a-milestone-complete/)).
+
+If something goes wrong, you see "Could not raise an invoice for this milestone." Nothing is created, so you can try again.
+
+## What the progress invoice shows
+
+- **Job** and **Milestone** in its header, each linking back to the job.
+- **Progress claim 3** (or whichever claim it is on the job) once it's issued. A draft says "Claim number is given when the invoice is issued." The PDF and email show the claim and the job number under the invoice number.
+- **Retention held** as a negative row, then the amount due, when the job holds retention. A note says how much is held on the job so far. See [Hold and release retention](../hold-and-release-retention/).
+
+## Claim numbers
+
+Claims are numbered per job in the order they're issued: 1, 2, 3. If claim 2 is voided, it keeps its number and shows "(void)", and the next one issued is claim 3. The invoice also keeps its ordinary invoice number. Advance, standard and retention-release invoices don't get a claim number.
+
+<Aside type="caution">An issued invoice can't be edited or deleted, only voided or credited. Check the draft before you issue it.</Aside>
+
+<Aside type="tip">The dashboard's ready-to-bill row lists completed milestones that aren't invoiced yet.</Aside>

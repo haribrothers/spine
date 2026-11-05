@@ -1,0 +1,59 @@
+---
+title: Pause, change or stop a recurring invoice
+description: Keep a recurring invoice in step with the contract by pausing it, changing its lines or deleting the schedule.
+sidebar:
+  order: 15
+---
+
+Contracts change. You can pause a schedule while a customer is on hold, change what it bills, or delete it when the contract ends. Invoices a schedule has already created are never changed by any of this.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Manage recurring invoices**, with the **Recurring documents** module switched on in **Settings › Modules**.
+</Aside>
+
+## Read the list
+
+Go to **Invoices** and press **Recurring invoices**. Each schedule shows **Name**, **Customer**, **Repeats** (for example "Monthly · 1st"), **Next invoice**, **Amount**, **Status** (**Active**, **Paused** or **Finished**) and **When it runs** ("Issue and email" or "Create draft").
+
+<Screenshot id="invoices-recurring-list" alt="The Recurring invoices list with each schedule's name, customer, repeats, next invoice, amount, status and when it runs" />
+
+## Pause or resume
+
+<Steps>
+
+1. **Open the row's menu** — On the schedule's row, open its menu.
+
+2. **Choose Pause** — A toast says **Schedule paused**: it won't create invoices until you resume it. Its next invoice shows "—".
+
+3. **Choose Resume later** — Open the menu again and choose **Resume**. The toast gives the next invoice date.
+
+</Steps>
+
+When you resume, the next invoice is the next date still to come. Dates missed while it was paused aren't billed.
+
+## Change the schedule or its lines
+
+Choose **Edit** in the row's menu. **Edit recurring invoice** opens with everything you set. Change the lines, amounts or timing, then press **Save schedule**. Only invoices created from now on use the changes.
+
+## Delete a schedule
+
+<Steps>
+
+1. **Choose Delete** — In the row's menu, choose **Delete**.
+
+2. **Confirm** — **Delete this schedule?** says "Invoices it already created are kept." Press **Delete schedule**, or **Cancel**.
+
+</Steps>
+
+A toast says **Schedule deleted**.
+
+<Aside type="danger">
+  Deleting a schedule can't be undone. If you might need it again, pause it instead.
+</Aside>
+
+<Aside type="tip">
+  To correct an invoice a schedule already issued, [issue a credit note](../issue-a-credit-note/) or [void it](../void-an-invoice/), as with any issued invoice.
+</Aside>

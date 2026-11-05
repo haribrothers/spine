@@ -27,7 +27,29 @@ How a version of Spine is numbered, written up and published. The decisions behi
    - A GitHub release named "Spine <version>" (a pre-release for a suffixed tag) with `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, the `docker-compose.yml` that pulls those images, the `Caddyfile`, `env.example`, the Coolify Compose file and `SHA256SUMS`. `upgrade.sh` checks the files against `SHA256SUMS`.
 6. **Check it.** On a test server, `./upgrade.sh --version <version>` from the previous release keeps the data; Settings › About Spine shows the new version; the update banner appears on an install of the previous version once its daily check has run.
 7. **The field app**, when it changed: build and submit it as [15-mobile-release.md](prd/15-mobile-release.md) describes (for a beta, `scripts/mobile/build-beta.sh`, [docs/beta.md](beta.md)).
-8. **The docs site** publishes itself from `main` (US-SITE-14); a new minor version archives the previous minor's docs (US-SITE-13).
+8. **The docs site** publishes itself from `main` (US-SITE-14, below). For a new **minor** version (1.1, 1.2 …), first add the previous minor to `apps/docs/src/versions.json` (`{ "archived": [{ "slug": "1.0" }] }`, newest first) and build once: `starlight-versions` copies the current docs into `src/content/docs/1.0/`. Commit that copy with the version bump, then update the docs for the new version. The version menu appears from the first archived version (US-SITE-13).
+
+## The website and docs (US-SITE-14, D-270)
+
+Two Cloudflare Pages projects build from this repo with Cloudflare's Git integration: no GitHub workflow and no Actions minutes. Both are public even while the repo is private. Set them up once in the Cloudflare dashboard (Workers & Pages › Create › Pages › Connect to Git, choosing `haribrothers/spine`):
+
+| Setting | Docs (`docs.h4loom.com`) | Home page (`h4loom.com`) |
+|---|---|---|
+| Project name | `spine-docs` | `spine-site` |
+| Production branch | `main` | `main` |
+| Framework preset | None | None |
+| Root directory | `/` | `/` |
+| Build command | `pnpm install --frozen-lockfile --filter @spine/docs... && pnpm --filter @spine/docs build` | `pnpm install --frozen-lockfile --filter @spine/site... && pnpm --filter @spine/site build` |
+| Build output directory | `apps/docs/dist` | `apps/site/dist` |
+| Environment variables | `NODE_VERSION=22`, `PNPM_VERSION=9.15.9` | the same |
+| Build watch paths (include) | `apps/docs/*`, `docs/design/tokens.json`, `scripts/site/*`, `package.json`, `pnpm-lock.yaml` | `apps/site/*`, `docs/design/tokens.json`, `scripts/site/*`, `package.json`, `pnpm-lock.yaml` |
+| Custom domain | `docs.h4loom.com` | `h4loom.com` |
+| Web Analytics | Off | Off |
+
+- A push to any other branch gets a preview address per project (Pages' preview deployments), to check before merging.
+- A merge that doesn't touch a project's watch paths doesn't build it.
+- A failed build — a broken internal link fails it (`starlight-links-validator`) — leaves the live site as it was.
+- CI and `pnpm verify` build and link-check both sites on every change to them, so a pull request shows a broken link before it reaches `main`.
 
 ## If a release goes wrong
 

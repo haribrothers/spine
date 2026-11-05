@@ -1,0 +1,46 @@
+---
+title: Set up GST for an Indian business
+description: Record your GSTIN and state, your customers' GST treatment, and the default intra- and inter-state tax for new items.
+sidebar:
+  order: 8
+---
+
+For a business registered for GST in India, Spine needs to know your GSTIN and state, and each customer's GST details. With those, it picks CGST + SGST for a sale in your state and IGST for one outside it, and prints a GST-compliant invoice.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners set up the GST registration and the default tax preference. The **GST** settings appear only when your tax country is India (see [Start from your country's tax rates](../start-from-your-country/)). Anyone who can edit a contact can set its GST treatment.</Aside>
+
+## Record your GST registration
+
+<Steps>
+
+1. **Open Settings › GST** — Open your account menu, choose **Settings**, then **GST** under Money & tax.
+2. **Enter your GSTIN** — Spine checks its format and checksum. A wrong one shows "This GSTIN isn't valid — check the 15 characters."
+3. **Choose your State** — The GSTIN's first two digits must match it. If they don't, you see "This GSTIN belongs to" the state the GSTIN is from.
+4. **Add the rest** — Enter the **Legal name** on your GST certificate, your **Trade name** and the date you were **Registered on**, and choose the **Return period** (**Monthly** or **Quarterly**).
+5. **Exports** — Turn on **We export under LUT** if your exports go out zero-rated with no IGST. Leave it off to charge IGST on exports.
+6. **Save**
+
+</Steps>
+
+Spine prepares GST invoices and a GSTR-1 file to upload. It never files your return or connects to the GST portal.
+
+## Set the default tax for new items
+
+In **Settings › Tax**, under **Default tax preference**, choose the **Intra-state** tax (for example "GST 18%") and the **Inter-state** tax (for example "IGST 18%"). New catalogue items start with these, and each item can pick its own.
+
+## Record each customer's GST details
+
+<Steps>
+
+1. **Open the contact** — Go to **Contacts**, open the customer and edit it.
+2. **Choose the GST treatment** — Pick **Registered business**, **Unregistered business**, **Consumer**, **Overseas** or **Special economic zone**.
+3. **Enter the GSTIN** — It's required for a registered business or SEZ. When you save a registered contact with a blank state, the state is filled from the GSTIN.
+4. **Set each address's State** — The site or shipping address decides the place of supply.
+
+</Steps>
+
+<Aside type="tip">Importing contacts from a file? GSTIN and state columns are mapped too.</Aside>
+
+Next, see how Spine uses these details on each document in [Charge the right GST on a document](../charge-the-right-gst/).

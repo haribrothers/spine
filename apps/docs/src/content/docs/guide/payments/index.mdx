@@ -1,0 +1,41 @@
+---
+title: Payments and receivables
+description: Record the money customers pay you, keep track of their credit, and see who still owes what.
+sidebar:
+  order: 0
+---
+
+Payments is where money coming in from customers is recorded. Each payment says what it paid, which account the money went into and how much credit the customer has left. Receivables shows what customers still owe you and how late it is, so you know who to chase first.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Payments**. Each action has its own Team right, named on its page. Receivables needs **View receivables**. Field users never see payments or receivables, on the web or on the phone.
+</Aside>
+
+<Screenshot id="payments-list" alt="The Payments list with the Received this month, Credit to use and Refunded this month cards above the table of payments" />
+
+## The main ideas
+
+- **A payment pays invoices.** When you record a payment you tick the invoices it covers. Each invoice's balance drops by what the payment put on it. An invoice that's paid in full reads **Paid**; one that's part-paid stays open with what's left.
+- **Anything left over is customer credit.** Money that doesn't go on an invoice — a deposit before there's an invoice, or an overpayment — stays on the payment as **Credit left**. You can apply it to a later invoice or refund it.
+- **Every payment gets a receipt number** (for example RCP-0029) and is posted to your books when you record it. You never write journal entries yourself.
+- **Payments aren't edited.** If money went on the wrong invoice, move it off and apply it again. If a payment was recorded by mistake and nothing is applied, delete it.
+- **Receivables comes from your books.** The totals are worked out from what's posted, so they always agree with your reports.
+
+## Tasks
+
+- [Record a payment](./record-a-payment/) — tick the invoices it pays, with an oldest-first suggestion.
+- [Take a deposit or overpayment as credit](./take-a-deposit-or-overpayment-as-credit/) — hold money as customer credit, including deposit invoices.
+- [Apply customer credit to an invoice](./apply-customer-credit-to-an-invoice/) — use credit from payments and credit notes.
+- [Move a payment off the wrong invoice](./move-a-payment-off-the-wrong-invoice/) — turn an allocation back into credit.
+- [Refund a customer](./refund-a-customer/) — pay credit back and record the money leaving.
+- [Delete a payment recorded by mistake](./delete-a-payment/) — remove a payment that hasn't been applied.
+- [Send a receipt](./send-a-receipt/) — the receipt PDF, the receipt email and the notice to owners.
+- [Find and review payments](./find-and-review-payments/) — the list, its filters, search and each payment's page.
+- [See who owes you money](./see-who-owes-you-money/) — Receivables by customer and by invoice, by age, and the CSV export.
+- [Chase customers from Receivables](./chase-customers-from-receivables/) — reminders, payments and statements from a row.
+- [Send a customer a statement](./send-a-customer-statement/) — a PDF of everything they owe, by email or download.
+
+Money goes into a bank, cash or card account you choose. To set those accounts up and reconcile them, see [Banking](../banking/).

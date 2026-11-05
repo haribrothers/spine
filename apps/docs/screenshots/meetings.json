@@ -1,0 +1,27 @@
+[
+  {
+    "id": "meetings-week",
+    "path": "/meetings?view=week",
+    "alt": "The meetings calendar in Week view, with the mini calendar, Calendars, Upcoming and Meetings by contact in the sidebar",
+    "wait": "Meetings by contact"
+  },
+  {
+    "id": "meetings-new",
+    "path": "/meetings?view=week",
+    "alt": "The New event dialog on its Details tab with Title, Contact, All day, Start, End, Category, Location and Notes",
+    "click": "New meeting",
+    "wait": "Create event"
+  },
+  {
+    "id": "meetings-month",
+    "path": "/meetings?view=month",
+    "alt": "The meetings calendar in Month view, with dots under busy days in the mini calendar",
+    "wait": "Meetings by contact"
+  },
+  {
+    "id": "meetings-reminders",
+    "path": "/dashboard?settings=meeting-reminder-lead-time",
+    "alt": "The Meeting reminders settings with the default lead time options from 5 to 60 minutes before",
+    "wait": "15 minutes before"
+  }
+]

@@ -1,0 +1,31 @@
+---
+title: Delete a Team
+description: Remove a Team you no longer use, and see first who loses what it allowed.
+sidebar:
+  order: 13
+---
+
+Deleting a Team removes it and its permissions. Its members lose what it allowed, but nobody's sign-in goes, and Teams they're on keep working. Spine tells you first who would be left on no Team.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. You can't delete the default Team (**General Staff**), and a business always keeps at least one Team.</Aside>
+
+<Steps>
+
+1. **Find the Team** — Go to **Team › Teams**. Open the Team's row menu, or the menu on the Team's own page.
+
+2. **Choose Delete** — "Delete *Team*?" says how many people lose what it allowed, and names anyone who'd be on no Team — for example "Kavya Iyer will be on no Team — they can't open anything until you add them to one."
+
+3. **Confirm** — Press **Delete Team**. The toast names the Team and how many people lost what it allowed.
+
+</Steps>
+
+<Aside type="danger">Deleting a Team can't be undone, and its history goes with it. The audit log keeps a record that it was deleted. To keep the permissions for later, take everyone off the Team instead.</Aside>
+
+## What happens next
+
+- Members on other Teams keep everything those Teams allow.
+- Members left with no Team can't open anything. The **Staff on no Team** card on Teams and the **Staff without a Team** card on Users count them. [Add them to a Team](../add-and-remove-team-members/).
+- **Delete** isn't offered on the default Team or when it's the only Team.

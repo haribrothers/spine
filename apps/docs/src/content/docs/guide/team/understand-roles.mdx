@@ -1,0 +1,44 @@
+---
+title: "Understand roles: Owner, Staff and Field"
+description: What Owners, Staff and Field users can open in Spine, and how Teams shape what Staff can do.
+sidebar:
+  order: 2
+---
+
+Each person in Spine has one role. The role decides which parts of Spine they see, on the web and on the phone. Spine checks it on the server for every request, so hiding a button is never the only protection.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners choose roles. You can see each person's role in **Team › Users**.</Aside>
+
+## Owner
+
+Owners have full access to everything in the business — every record and report, plus **Users**, **Teams**, **Settings** and the **Audit log**. Team permissions don't apply to Owners. Managing people, Teams, settings and tax is always Owner-only; no Team can be given it.
+
+One Owner is the **Primary Owner**, marked with a badge on Users. Nobody else can demote or deactivate them. See [Transfer primary ownership](../transfer-primary-ownership/).
+
+You can't invite someone as an Owner. Invite them as Staff, then promote them. See [Change someone's role](../change-someones-role/).
+
+## Staff
+
+Staff work in the office. What they can open and do comes from their Teams: someone on several Teams gets everything any of them allows. On Users, a Staff member's Teams show as chips. With no Team, their row reads "No Team — can't open anything".
+
+Only Staff are on Teams. See [Choose what a Team can do](../choose-what-a-team-can-do/).
+
+## Field
+
+Field users are your crew on site. Field access is fixed — no Team or setting changes it:
+
+- The jobs they're assigned to, without money.
+- Their own meetings and expenses.
+- Notes and photos on their jobs, completing milestones, and accepting a quote in person.
+
+Field users never see invoices, payments, receivables, payables, reports or anyone else's money, on the web or on the phone. Their web sidebar shows only **Dashboard**, **Jobs**, **Meetings** and **Expenses**.
+
+<Aside type="tip">To give a crew member office access, change them to Staff instead of inviting them again. Their history stays with them.</Aside>
+
+## Where the role shows
+
+- **Users** shows the role in the **Role** column, and the **Teams** column reads "Everything" for Owners and "Field access" for Field.
+- **What they can open** on a person's menu shows exactly which sections they can work in. See [Check what someone can open](../check-what-someone-can-open/).

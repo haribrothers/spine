@@ -1,0 +1,50 @@
+---
+title: See what you're notified about
+description: What triggers each notification in Spine, and who receives it.
+sidebar:
+  order: 3
+---
+
+Spine sends a notification when something happens that someone needs to act on or know about. Who receives it depends on their role and what they're allowed to see, so nobody learns about records they can't open.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Nothing to set up — notifications go to the right people by role. Owners can switch off a whole module in **Settings › Modules**, and nothing is then sent about it.</Aside>
+
+## Sales and money
+
+Owners and Staff hear when:
+
+- A customer **views**, **accepts** or **declines** a quote online, or a quote is accepted or declined in person.
+- A customer accepts a **variation order** — apply it to the job.
+- A **payment is received**, for example "Harbour Homes paid $1,250.00."
+
+Field users never get notifications about payments or other money.
+
+## Jobs and expenses
+
+- **Milestone completed** — Owners and Staff get "Milestone "Framing" completed on *job*", in the app and by email.
+- **Expense approved or rejected** — the person who submitted it hears "Sarah Mendes approved your expense" (or rejected, with the reason). Owners and Staff also see "Expense approved — *category*, *amount*".
+- **Crew changes** — a Field user hears when they're added to or removed from a job's crew.
+
+## Meetings
+
+- **Invited** — you get an email, "You've been invited: *meeting title*", and a notification.
+- **Removed or cancelled** — you're told you're no longer invited, or that the meeting or one occurrence was cancelled.
+- **Response changed** — the organiser hears when an invitee changes an earlier answer. Their first answer doesn't notify anyone.
+- **Starting soon** — a reminder before meetings you organise or have accepted. See [Set your meeting reminders](../set-meeting-reminders/).
+
+A private meeting only ever notifies its organiser and attendees.
+
+## For Owners
+
+- **Recurring drafts** — "Recurring invoice ready to review" or "Recurring bill ready to review", when a schedule makes a draft.
+- **AI budget** — when AI has used 80% of this month's budget, and when it's paused. See [The AI assistant](../../ai-assistant/).
+- **Problems Spine finds** — for example if stored files are damaged or the books don't balance.
+
+## About your own account
+
+If an Owner disconnects an AI agent you connected, you're told who disconnected it. See [Connected agents](../../connected-agents/).
+
+<Aside type="tip">Emails from Spine use your business's branded layout. Their footer says why the person got them, such as "You're getting this because you're a member of Riverstone Builders."</Aside>

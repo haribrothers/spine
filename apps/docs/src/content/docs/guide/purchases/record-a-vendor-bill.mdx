@@ -1,0 +1,60 @@
+---
+title: Record a vendor bill
+description: Post a draft bill to your books as owed to the vendor, one at a time or several together.
+sidebar:
+  order: 3
+---
+
+Recording a bill posts it to your books: its lines go to their expense accounts, its tax to input tax, and the total to Accounts Payable as owed to the vendor. A bill tagged to a job counts as that job's cost from then on. A recorded bill is locked — it can't be edited, only voided.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Record a vendor bill**. Entering the draft needs **Create/edit own vendor bills**, which is a separate right.
+</Aside>
+
+<Steps>
+
+1. **Open the draft** — Go to **Vendor Bills** and open the draft. Its state reads **Draft**.
+
+2. **Check it** — Look over the vendor, bill number, dates, job and lines. Press **Edit** if anything needs changing.
+
+3. **Record it** — Press **Record bill**. Spine asks "Record this bill?" and says what will be posted. Press **Record bill** again to confirm.
+
+</Steps>
+
+A toast says the bill is recorded and how much is posted as owed to the vendor. The bill's state changes to **Unpaid** (or **Overdue** once its due date has passed).
+
+On the bill builder, **Save and record** saves the draft and records it in one go, after the same question.
+
+<Screenshot id="purchases-bill-page" alt="A recorded vendor bill's page with Pay bill as the main action, the Total, Paid, Credits applied and Balance due strip, the lines and the Activity panel" />
+
+## Read the bill's page
+
+Once a bill is recorded, its page shows:
+
+- **The state in words** — Unpaid, Partly paid, Paid, Overdue or Void — with how late it is, for example "12 days late" or "Due in 5 days".
+- **A strip** with **Total**, **Paid**, **Credits applied** and **Balance due**.
+- **Payments** against the bill, each opening its payment.
+- **Activity**, newest first: created, recorded, each payment and credit applied, and voided, with who and when.
+
+The main action is **Pay bill** while money is owed — see [Pay a vendor](../pay-a-vendor/). The rest sit in **More**.
+
+## Record several drafts at once
+
+<Steps>
+
+1. **Tick the drafts** — On the **Vendor Bills** list, tick the bills you want to record. Only drafts count.
+
+2. **Record them** — Press **Record (n)** in the bar. Spine asks "Record n bills?" with their total. Confirm with **Record bills**.
+
+</Steps>
+
+The toast says how many were recorded. Any that couldn't be recorded are named, with the reason — for example "It's already recorded.".
+
+<Aside type="caution">
+  You can't edit a bill after you record it. If it's wrong, [void it](../void-a-vendor-bill/) and enter it again, or record a [vendor credit](../record-a-vendor-credit/) for the difference.
+</Aside>
+
+If recording fails, the page says so and nothing is posted. Try again, or check the bill for a missing account.

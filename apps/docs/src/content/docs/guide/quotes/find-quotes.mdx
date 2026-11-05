@@ -1,0 +1,44 @@
+---
+title: Find quotes and see what needs chasing
+description: Use the Quotes list's cards, filters and search to find a quote and see which customers to call.
+sidebar:
+  order: 2
+---
+
+The Quotes list shows every quote, newest first, with what's in play and what's about to go cold. Each row tells you when the quote was sent, how long it has left and whether the customer has opened it, so you know whom to call.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Open Quotes**.</Aside>
+
+<Steps>
+
+1. **Open the list** — Go to **Quotes** in the sidebar.
+
+2. **Read the cards** — **Open** is every sent quote that's still valid, with its total value. **Expiring in 7 days** is the open quotes whose validity ends this week. **Won this month** is the quotes accepted this calendar month, with their value. **Win rate** is how many quotes were accepted out of those answered or expired in the last 90 days.
+
+3. **Press a card to filter** — Press **Open**, **Expiring in 7 days** or **Won this month** to show just those quotes. The card reads "Showing these · press again to clear". Press it again to show everything.
+
+4. **Filter or search** — Choose a **Status** (Draft, Sent, Accepted, Declined or Expired) or a contact. Type in **Search quotes, titles or lines** to match a quote's number, title, contact or line names. **Clear filters** resets them.
+
+5. **Act from the row** — Open a row's **…** menu to do what the quote allows: **View**, **Edit** and **Send** a draft, **Copy customer link** for a sent quote, **Preview PDF** (for a draft) or **Download PDF**, **Duplicate**, **Revise**, **Convert to invoice** and **Convert to job** for an accepted quote, and **Delete** a draft. You only see the actions you're allowed to take.
+
+</Steps>
+
+<Screenshot id="quotes-list-filters" alt="The Quotes list toolbar with the Status and Contact filters, the search box and a row's Viewed count" />
+
+## Reading a row
+
+- **Number** shows the quote number with its title under it. A draft has no number yet and reads **Draft**.
+- **Sent** is the date it went out, or "—" for a draft.
+- **Valid until** has a reminder under the date, such as "in 3 days", "today" or "Expired 2 days ago".
+- **Viewed 2×** beside the status means the customer has opened the link twice. Hover over it to see when they last looked.
+
+<Aside type="tip">
+The address keeps your filters, search, sort and page, so **Back** and bookmarks return you to the same list. The list refreshes when you press **Refresh list**, or when you come back to the tab after 30 seconds.
+</Aside>
+
+When a quote has several versions, the list shows one row for it (its newest version), and the cards count it once.
+
+If there are no quotes yet, you see **No quotes yet** with a **New quote** button. If your filters match nothing, you see **No quotes match these filters**.

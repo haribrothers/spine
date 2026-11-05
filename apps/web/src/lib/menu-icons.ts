@@ -10,12 +10,14 @@ import {
   Banknote,
   Bell,
   BookOpen,
+  CircleHelp,
   Camera,
   Check,
   CheckCheck,
   Copy,
   Crown,
   Download,
+  ExternalLink,
   Eye,
   FileCheck,
   FileMinus,
@@ -23,6 +25,7 @@ import {
   GitBranch,
   HardHat,
   History,
+  Keyboard,
   KeyRound,
   Link2,
   ListChecks,
@@ -36,6 +39,7 @@ import {
   Repeat,
   RotateCw,
   ScrollText,
+  Sparkles,
   ShieldCheck,
   ShieldMinus,
   Send,
@@ -59,6 +63,12 @@ import {
  * component sets its size, colour and spacing (US-OPS-37).
  */
 export const MENU_ICONS = {
+  /** US-SITE-11: the Help menu — the guide for this page, the whole guide, what's new, shortcuts, the website. */
+  helpForPage: CircleHelp,
+  guide: BookOpen,
+  whatsNew: Sparkles,
+  shortcuts: Keyboard,
+  externalLink: ExternalLink,
   view: Eye,
   /** Open a record from another page (an invoice from a payment, an email's record). */
   open: FileText,

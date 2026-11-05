@@ -1,0 +1,64 @@
+/* US-SITE-01 — Spine's look on top of Starlight; every value is a token from tokens.css. */
+:root {
+  --sl-content-width: 48rem;
+}
+.sl-markdown-content :is(pre, .expressive-code .frame),
+.starlight-aside,
+.card,
+figure.spine-screenshot {
+  border-radius: var(--spine-radius-lg);
+}
+.starlight-aside__title {
+  font-weight: 600;
+}
+.pagination-links a {
+  border-radius: var(--spine-radius-lg);
+}
+.spine-version {
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-sm);
+  margin-block: 1.5rem 0.5rem;
+}
+figure.spine-screenshot {
+  border: 1px solid var(--sl-color-hairline);
+  overflow: hidden;
+  margin-block: 1.5rem;
+}
+figure.spine-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+figure.spine-screenshot figcaption {
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-sm);
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+.spine-screenshot__placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  padding: 1rem;
+  color: var(--sl-color-gray-3);
+  background: var(--sl-color-gray-7);
+  text-align: center;
+}
+/* The capture that matches the reader's theme. */
+:root[data-theme="light"] .spine-screenshot__dark,
+:root:not([data-theme="light"]) .spine-screenshot__light {
+  display: none;
+}
+
+/* US-SITE-12 — the bundled guide's banner. */
+.spine-bundled-banner {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-white);
+  font-size: var(--sl-text-sm);
+  padding: 0.5rem 1rem;
+  text-align: center;
+}
+.spine-bundled-banner a {
+  color: var(--sl-color-text-accent);
+  margin-inline-start: 0.5rem;
+}

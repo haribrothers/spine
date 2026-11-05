@@ -1,0 +1,37 @@
+---
+title: Approve a large discount
+description: Sign off a quote whose discount is above your approval threshold so it can be sent.
+sidebar:
+  order: 7
+---
+
+To protect your margins, a draft quote whose overall discount is 20% or more of its value before discount needs an Owner's approval before anyone can send it. The banner on the draft is the signal; there's no separate notification, but the quote also shows in the dashboard's **Needs your attention**.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners only. Discount approval is part of the **Approvals** module (Settings › Modules). With Approvals switched off, discounts need no approval.</Aside>
+
+<Steps>
+
+1. **Open the draft** — Go to **Quotes** and open the draft. A banner says the quote's discount is above the business's approval threshold and needs an owner to approve it before it can be sent.
+
+2. **Check the discount** — Look over the lines and the Discount in the totals.
+
+3. **Approve it** — Press **Approve discount** in the banner. Spine asks **Approve this discount?** and says it's approved in your name. Press **Approve discount** again to confirm.
+
+4. **Send it** — A toast says **Discount approved** and "This quote can now be sent." **Send quote** now appears for anyone who may send quotes.
+
+</Steps>
+
+<Screenshot id="quotes-detail-approval" alt="A draft quote's page with the discount approval banner and the Approve discount button" />
+
+## What others see
+
+Staff see the same banner, without the **Approve discount** button, and the quote has no **Send quote** button until an Owner approves it. In the builder, **Save and send** is hidden while a discount needs approval. If someone tries to send it anyway, sending is refused with "This quote's discount requires owner approval before it can be sent".
+
+<Aside type="caution">
+Approval covers the discount you saw. If the draft is edited after approval so the discount grows, the approval is cleared and the quote needs approving again.
+</Aside>
+
+The approval is recorded in the quote's **Activity** as **Discount approved**, with who approved it and when.

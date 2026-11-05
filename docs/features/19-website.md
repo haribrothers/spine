@@ -35,6 +35,7 @@ Decision: D-108
 **Implementation notes**
 - `apps/docs` (package `@spine/docs`): Astro 5, `@astrojs/starlight`, `starlight-links-validator`; Starlight's built-in Pagefind search. `apps/site` (package `@spine/site`): Astro 5, sharing the docs' theme tokens ([D-270](12-decisions.md)).
 - Turbo task `build` for the site; no runtime server — the output is static HTML.
+- Built: `apps/docs` (`@spine/docs`) and `apps/site` (`@spine/site`) on Astro 7.4 and Starlight 0.42. Those are the current lines: Starlight no longer supports Astro 5, which D-108's notes assumed. The theme is generated from `docs/design/tokens.json` by `scripts/site/tokens-css.mjs` before each build, so neither site holds a colour of its own. The logo comes from `docs/logos`. `starlight-links-validator` fails the build on a broken link. CI and `pnpm verify` (the `sites` step) build both.
 
 ### US-SITE-02 · Show a home page for people discovering Spine
 **Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteHome`, `SiteHomeDark`
@@ -49,6 +50,7 @@ Decision: D-108
 
 **Implementation notes**
 - Starlight `splash` template; screenshots from US-SITE-06.
+- Built: `apps/site/src/content/docs/index.mdx` (splash), with the workflow strip, the dashboard capture (light and dark, from US-SITE-06), six cards and a footer naming the licence and linking to the docs' versions page.
 
 ### US-SITE-03 · Find any page with search
 **Feature:** F-SITE-01 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteSearch`
@@ -62,6 +64,7 @@ Decision: D-108
 
 **Implementation notes**
 - Pagefind index built at build time; no external search service.
+- Built: Starlight's Pagefind search (Ctrl K / ⌘K), built at build time; the bundled guide has its own index and works offline. Results show the page title, the matching headings and an excerpt with the match highlighted. Starlight's results don't print a section path such as "User guide › Quotes"; the page titles say what they are.
 
 ### US-SITE-04 · Read a task-based guide for every module
 **Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`
@@ -78,6 +81,7 @@ Decision: D-113
 
 **Implementation notes**
 - Content in `apps/docs/src/content/docs/guide/<module>/*.mdx`; asides use Starlight's note/tip/caution/danger.
+- Built: 268 pages in 20 module folders under `guide/`, written from the stories, `en.json` and the components by 10 parallel agents, then built and link-checked. Places where a ticked story and the app disagree were written as the app behaves; they're listed in the 2026-11-05 CHANGELOG entry.
 
 ### US-SITE-05 · Ship each story with its guide page
 **Feature:** F-SITE-02 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteUserGuide`
@@ -92,6 +96,7 @@ Decision: D-113
 
 **Implementation notes**
 - Rule recorded in CLAUDE.md and 11-testing-release; applies to stories from Phase 12 onward.
+- Built: the rule is in CLAUDE.md, the definition of done (11-testing-release) and `.github/pull_request_template.md`.
 
 ### US-SITE-06 · Capture guide screenshots automatically
 **Feature:** F-SITE-02 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteUserGuide`, `SiteUserGuideDark`
@@ -104,6 +109,7 @@ Decision: D-113
 
 **Implementation notes**
 - Playwright, reusing `apps/e2e`'s `seededOrg` fixture; a manifest maps guide pages to routes.
+- Built: `pnpm --filter @spine/e2e screenshots` (`playwright.screenshots.config.ts`, `screenshots/capture.spec.ts`) reads `apps/docs/screenshots/*.json` (183 screens: id, route with `{placeholder}` ids from the demo data, alt, optional click and wait text) and saves `<id>-light.png` and `<id>-dark.png`. `<Screenshot id alt />` shows the one matching the reader's theme, or the description until it's captured. The run also captures the home page's dashboard.
 
 ### US-SITE-07 · Install Spine from the self-hosting guide
 **Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteSelfHosting`
@@ -117,6 +123,7 @@ Decision: D-113
 
 **Implementation notes**
 - The README's install section links here; the site is the long version (US-OPS-19).
+- Built: `self-hosting/install`, `configuration` (every variable in `.env.example` and the Compose files), `email`, `https-and-domains`, `troubleshooting`, `coolify`.
 
 ### US-SITE-08 · Run, back up and upgrade from the self-hosting guide
 **Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteSelfHosting`
@@ -130,6 +137,7 @@ Decision: D-113
 
 **Implementation notes**
 - Content mirrors US-OPS-01/03/04/27/30; those stories update these pages when they change.
+- Built: `self-hosting/backups`, `file-storage`, `upgrades`.
 
 ### US-SITE-09 · Learn the codebase from the developer docs
 **Feature:** F-SITE-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteApiReference`
@@ -143,6 +151,7 @@ Decision: D-113
 
 **Implementation notes**
 - The spec in `docs/` stays the source for Claude Code; developer docs are written for people and link to it.
+- Built: `developers/architecture`, `local-setup`, `ledger`, `testing`, `contributing`, `api` (authentication, idempotency, errors).
 
 ### US-SITE-10 · Browse a generated API reference
 **Feature:** F-SITE-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteApiReference`
@@ -156,6 +165,7 @@ Decision: D-113
 
 **Implementation notes**
 - `starlight-openapi` reading the document exported by `apps/api` at build time.
+- Built: `pnpm --filter @spine/api openapi <file>` writes the document without starting the API (NestJS preview mode) and adds, per operation, who may call it (role and Team right from the route's metadata), the `Idempotency-Key` header on writes, the error statuses and a `curl` example. `apps/docs/openapi.json` is that output, never edited by hand; CI fails when it's stale. `starlight-openapi` makes one page per operation under API reference.
 
 ### US-SITE-11 · Open help for the page I'm on
 **Feature:** F-SITE-05 · **Priority:** P1 · **Phase:** 12 · **Screens:** `AppHelpMenu`
@@ -172,6 +182,7 @@ Decision: D-110
 
 **Implementation notes**
 - `HelpButton` (today a placeholder) becomes a `DropdownMenu`; a route → guide-page map lives in `apps/web/src/lib/help-links.ts`.
+- Built: `apps/web/src/components/help-button.tsx` (DropdownMenu, icons from `MENU_ICONS`, D-222), `apps/web/src/lib/help-links.ts`. "What's new" opens the version's GitHub release notes; "Keyboard shortcuts" opens `guide/keyboard-shortcuts/`.
 
 ### US-SITE-12 · Read the guide without internet
 **Feature:** F-SITE-05 · **Priority:** P1 · **Phase:** 12 · **Screens:** `BundledGuide`
@@ -187,6 +198,7 @@ Decision: D-110
 
 **Implementation notes**
 - The web image's build copies `apps/docs`' `guide` and `self-hosting` output into `/help`; served as static files by the web app (no API involvement, no login needed).
+- Built: `pnpm --filter @spine/docs build:help` (`DOCS_BUNDLED=1`, base `/help`, no developer docs, a banner, no outside links but the banner's) writes into `apps/web/public/help`. `docker/Dockerfile.web` runs it before the web build, and the E2E web server does too. `next.config.ts` rewrites `/help/<page>` to its `index.html`.
 
 ### US-SITE-13 · Read docs for the version I run
 **Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteUserGuide`
@@ -201,6 +213,7 @@ Decision: D-111
 
 **Implementation notes**
 - `starlight-versions` plugin; versions start at 1.0.
+- Built: `starlight-versions`, driven by `apps/docs/src/versions.json` (empty at 1.0, so there's no menu yet; tested with an archived 1.0). The release steps are in docs/release.md. `/versions/` lists them.
 
 ### US-SITE-14 · Publish the site after each merge
 **Feature:** F-SITE-06 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
@@ -217,3 +230,4 @@ Decision: D-270
 
 **Implementation notes**
 - Cloudflare Pages' Git integration, two projects with root folders `apps/site` and `apps/docs` and build watch paths; no GitHub workflow and no Actions minutes ([D-270](12-decisions.md)). Web analytics off.
+- Built: the two Cloudflare Pages projects' settings (build commands, output folders, watch paths, domains, analytics off) are in docs/release.md › The website and docs. Connecting them is the Owner's step in the Cloudflare dashboard.

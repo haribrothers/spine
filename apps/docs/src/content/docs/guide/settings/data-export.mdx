@@ -1,0 +1,49 @@
+---
+title: Export all your data
+description: Download everything in your Spine as one file, to keep your own copy or move to another system.
+sidebar:
+  order: 17
+---
+
+"Download everything in your Spine as one file. Your data is yours — use this to keep your own copy or move to another system." The export is a ZIP with your records and, if you choose, your files.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Data export** — Open your user menu, choose **Settings**, and pick **Data export** under **Data**.
+
+2. **Choose what to include** —
+   - **Records as CSV** (on by default) — "One CSV per table: contacts, quotes, invoices, payments, jobs, bills, expenses, journal entries and more."
+   - **Records as JSON** — "The same data as JSON, for importing into other software."
+   - **Files** — "Receipts, photos, signatures, logos and issued PDFs, in their original format."
+
+   Choose CSV, JSON or both.
+
+3. **Press Prepare export** — The button shows **Preparing…**. "Large exports are prepared in the background. We'll email you when the file is ready."
+
+4. **Download it** — Come back to the pane when it's ready. **Last export** shows the date, who asked for it and its size, with **Download again** and when the link expires.
+
+</Steps>
+
+<Screenshot id="settings-data-export" alt="Settings, Data export: Records as CSV, Records as JSON and Files, with Prepare export" />
+
+## What's in the ZIP
+
+- One CSV (or JSON) file per table, each with a header row.
+- A `files/` folder when you chose **Files**.
+- A `README.txt` that describes each file.
+
+Passwords, sign-in sessions and other secrets are never exported.
+
+## Kept private
+
+- **Owners only.** Anyone without an Owner sign-in who opens the download link gets "not found".
+- **Links last 7 days.** After that the link stops working and the file is deleted.
+- **It's in the audit log.** Preparing and downloading an export are both recorded with the person who did it.
+- **The email links to Settings,** never to the file itself, so a forwarded email can't hand out your data.
+
+<Aside type="tip">A data export is your own copy of your records. It isn't a backup of the server — whoever runs Spine sets those up. See [Backups](../../../self-hosting/backups/).</Aside>

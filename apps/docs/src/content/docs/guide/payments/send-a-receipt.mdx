@@ -1,0 +1,49 @@
+---
+title: Send a receipt
+description: Give a customer proof of payment as a PDF or by email, and know when payments arrive.
+sidebar:
+  order: 7
+---
+
+Every payment has a receipt the customer can keep as proof they paid. Spine can email it when you record the payment, and you can send it again or download it at any time.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Anyone who can open the payment can download its receipt. Emailing it needs Owner, or Staff whose Team has **Re-send a receipt**; without it, **Email receipt** is hidden.
+</Aside>
+
+## Send it as you record the payment
+
+In the **Record a payment** dialog, if the customer has an email address, **Email a receipt to …** is on. The receipt is emailed once, when you press **Record payment**. Turn it off and nothing is sent.
+
+<Aside type="caution" title="Email has to be set up">
+  If email isn't set up on your Spine, the receipt isn't sent and the email log says so. Your administrator can set it up — see [Email](../../../self-hosting/email/).
+</Aside>
+
+## Email it later
+
+<Steps>
+
+1. **Open the payment** — Go to **Payments** and open it.
+
+2. **Press Email receipt** — It's the main button once the payment has no credit left; otherwise it's under **More**. The **Email receipt** dialog opens with the customer's address and a message.
+
+3. **Check the email** — Leave **Attach the receipt PDF** ticked to include the PDF.
+
+4. **Send it** — Press **Send receipt**. The toast reads **Receipt sent**.
+
+</Steps>
+
+<Screenshot id="payments-email-receipt" alt="The Email receipt dialog for a payment, with the customer's address and Attach the receipt PDF ticked" />
+
+The customer gets an email titled with your business name and the receipt number, saying you received their payment. The payment's **Activity** records "Receipt emailed to …".
+
+## Download the receipt
+
+Press **Download PDF** on the payment's page or in its row menu. The receipt shows your business details, **RECEIPT**, its number, who it was received from, the date, the method, the invoices it was applied to and the amount received. If you later move the payment off an invoice, the PDF lists only what's still applied.
+
+## When a payment arrives
+
+Each time a payment is recorded, Owners get an email, "Payment received from" the customer, and an in-app notification saying who paid and how much. Clicking the notification opens the payment.

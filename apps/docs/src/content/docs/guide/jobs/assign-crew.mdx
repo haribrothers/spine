@@ -1,0 +1,39 @@
+---
+title: Assign crew to a job
+description: Choose who works on a job, so it shows on their phone, and take people off it when they're done.
+sidebar:
+  order: 11
+---
+
+The crew on a job are the people working on it. Field crew see only the jobs they're assigned to, on their phone and on the web, so assigning crew decides whose field app shows the job.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Assign crew to a job**. Anyone who can open the job sees its crew. Without the right, you can't change it.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs**, open the job and choose the **Crew** tab.
+2. **Pick a person** — Choose someone in **Add a user…**.
+3. **Assign them** — Press **Assign**. They're listed on the crew, and they get a notification.
+</Steps>
+
+<Screenshot id="jobs-crew" alt="A job's Crew tab with the Add a user picker, the Assign button and the people on the crew" />
+
+With no one assigned, the tab says "No one is assigned to this job yet."
+
+## Take someone off a job
+
+1. On the **Crew** tab, press the remove button beside their name.
+2. Spine asks "Remove _name_ from this job?" and explains they'll stop seeing the job on the web and in the field app, and won't be notified about it any more.
+3. Press **Remove from job**. A toast says they've been removed.
+
+You can add them back later. They get a notification that they've been taken off, with no link to the job.
+
+## What crew see
+
+- **Field crew** see only their assigned jobs, in the field app's **Jobs** tab and on **Today**. Their list says "Only jobs your office has put you on the crew for." With none, they see "No jobs assigned to you yet".
+- When someone is taken off a job, it leaves their list the next time the app refreshes, and the copy saved on their phone is cleared. If they had the job open, they see "This job isn't on your list".
+- Field crew never see money on a job: no contract value, retention, milestone amounts, cost budget or costing. They do see the milestones, photos, notes and percent complete, and they can mark milestones complete and add photos and notes.
+
+<Aside type="tip">Owners and Staff see every job on the web whether or not they're on its crew. Their field app shows only jobs whose crew they're on.</Aside>

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "purchases-bills-list",
+    "path": "/vendor-bills",
+    "alt": "The Vendor bills list with the To pay, Overdue, Due in 7 days and Drafts to record cards above the table of bills",
+    "wait": "Drafts to record"
+  },
+  {
+    "id": "purchases-new-bill",
+    "path": "/vendor-bills/new",
+    "alt": "The New vendor bill page with the header card, the line rows and the bar with Subtotal, Tax, Total, Save as draft and Save and record",
+    "wait": "Save and record"
+  },
+  {
+    "id": "purchases-bill-page",
+    "path": "/vendor-bills/{vendorBill}",
+    "alt": "A recorded vendor bill's page with Pay bill as the main action, the Total, Paid, Credits applied and Balance due strip, the lines and the Activity panel",
+    "wait": "Balance due"
+  },
+  {
+    "id": "purchases-recurring-bill-dialog",
+    "path": "/vendor-bills/recurring",
+    "alt": "The New recurring bill dialog with Name, Vendor, Repeat, Starts on, Ends, Due, Paid from and When it runs",
+    "click": "New recurring bill",
+    "wait": "When it runs"
+  },
+  {
+    "id": "purchases-record-payment",
+    "path": "/vendor-payments",
+    "alt": "The Record a vendor payment dialog with Vendor, Amount, Date, Method, Paid from, Reference and the list of bills to tick",
+    "click": "Record payment",
+    "wait": "Paid from"
+  },
+  {
+    "id": "purchases-vendor-payments-list",
+    "path": "/vendor-payments",
+    "alt": "The Vendor payments list with the Paid this month, Paid last month and To pay cards above the table of payments",
+    "wait": "Paid this month"
+  },
+  {
+    "id": "purchases-vendor-payment-page",
+    "path": "/vendor-payments/{vendorPayment}",
+    "alt": "A vendor payment's page with the Paid and Bills paid strip, the Paid to table and the Activity panel",
+    "wait": "Paid to"
+  },
+  {
+    "id": "purchases-new-vendor-credit",
+    "path": "/vendor-credits/new",
+    "alt": "The New vendor credit page with Vendor, Vendor's credit note number, Against bill, Date, Job and the line rows",
+    "wait": "Against bill"
+  },
+  {
+    "id": "purchases-vendor-credits-list",
+    "path": "/vendor-credits",
+    "alt": "The Vendor credits list with the Credit to use, Drafts to record, Partly used and Unused 60+ days cards above the table",
+    "wait": "Credit to use"
+  },
+  {
+    "id": "purchases-vendor-credit-page",
+    "path": "/vendor-credits/{vendorCredit}",
+    "alt": "A vendor credit's page with the Total, Applied to bills, Refunded and Left to use strip, the lines and the Activity panel",
+    "wait": "Left to use"
+  },
+  {
+    "id": "purchases-payables-by-vendor",
+    "path": "/payables",
+    "alt": "Payables on the By vendor tab with the Total owed, Overdue, Due in 7 days and 90+ days cards, the age bar and one row per vendor",
+    "wait": "Owed by age"
+  },
+  {
+    "id": "purchases-payables-by-bill",
+    "path": "/payables?view=bills",
+    "alt": "Payables on the By bill tab with the bill, vendor, due date, how late and balance due columns",
+    "wait": "Owed by age"
+  },
+  {
+    "id": "purchases-expense-form",
+    "path": "/expenses",
+    "alt": "The Submit an expense form with the receipt pane, Category, Job, Date, Amount, Tax rate, Tax amount, Paid by and Description",
+    "click": "Submit expense",
+    "wait": "Paid by"
+  },
+  {
+    "id": "purchases-expense-page",
+    "path": "/expenses/{expense}",
+    "alt": "An expense's page with the receipt preview beside the details, the Amount, Tax, Paid from and Billable strip, and Approve and Reject",
+    "wait": "Activity"
+  },
+  {
+    "id": "purchases-expenses-list",
+    "path": "/expenses",
+    "alt": "The Expenses list with the Waiting for approval, Approved this month, Ready to bill and Rejected cards above the table of expenses",
+    "wait": "Approved this month"
+  },
+  {
+    "id": "purchases-expense-categories",
+    "path": "/expenses/categories",
+    "alt": "Expenses › Categories with each category's name, what it's for, the account it posts to, default tax, expense count, approved this month and state",
+    "wait": "Default tax"
+  },
+  {
+    "id": "purchases-team-permissions",
+    "path": "/team/teams/{team}?tab=permissions",
+    "alt": "A Team's Permissions tab with its groups of rights, each with a switch to grant all of it",
+    "wait": "Manage Expenses"
+  }
+]

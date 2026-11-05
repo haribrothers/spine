@@ -1,0 +1,37 @@
+---
+title: Check how AI is used
+description: See every AI request in the audit log, and which records were filled in with AI.
+sidebar:
+  order: 10
+---
+
+Every AI request is recorded: who used which feature, on what, with which provider and model, how many tokens it used and whether it worked. The text of the request and the reply are never stored. Records saved after AI filled them in say so in their Activity.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners can open the audit log. Anyone who can open a record can see its Activity.</Aside>
+
+## See AI requests in the audit log
+
+<Steps>
+
+1. **Open the audit log** — In the sidebar, go to **Team › Audit log**.
+
+2. **Choose the record type** — Set **Record type** to **AI request**.
+
+3. **Read each row** — **When**, **Who**, the action — "Read a document", "Drafted an email", "Drafted quote lines" or "Suggested bank matches" — and the record it was for, which you can open. **Details** shows the provider and model, the tokens used and whether it worked, for example "Worked" or "Didn't answer in 30 seconds".
+
+</Steps>
+
+See [Use the audit log](../../team/use-the-audit-log/) for filters and **Export CSV**.
+
+## See AI settings changes
+
+Switching AI on or off, and changing the provider, features or budget, are all in the audit log under the record type **AI assistant**. The API key is never included. When you turn AI on for a cloud provider, your acknowledgement of what's sent is recorded too.
+
+## See which records AI helped fill in
+
+Open a vendor bill, expense or quote and look at its **Activity**. An entry such as "Created as a draft · filled in with AI", "Edited · filled in with AI" or "Submitted for approval · filled in with AI" shows AI helped, with who and when under it like every entry.
+
+<Aside type="tip">Settings › AI assistant shows the month's usage at a glance, with the top features and people. See [Set a monthly AI budget](../set-a-monthly-ai-budget/).</Aside>

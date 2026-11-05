@@ -1,0 +1,40 @@
+---
+title: Check what agents did
+description: See every agent request in the audit log, and which records an agent created.
+sidebar:
+  order: 6
+---
+
+Every request an agent makes is recorded: when, as whom, which agent, what it did, what record it touched and whether it worked. The text the agent sent and what Spine returned are never stored. Records an agent created say so in their Activity.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners can open the audit log. Anyone who can open a record can see its Activity.</Aside>
+
+## See agent requests in the audit log
+
+<Steps>
+
+1. **Open the audit log** — In the sidebar, go to **Team › Audit log**.
+
+2. **Choose the record type** — Set **Record type** to **Agent request**.
+
+3. **Read each row** — When, who, the agent, the tool it used ("Searched", "Read a quote", "Read receivables", "Drafted a quote" and so on), the record it touched (press it to open it) and whether it worked, was refused or was slowed down for making too many requests.
+
+</Steps>
+
+See [Use the audit log](../../team/use-the-audit-log/) for the other filters and **Export CSV**.
+
+## See connections and settings changes
+
+The audit log also records:
+
+- **Connecting and disconnecting** agents — record type **Agent connection**.
+- **Switching connected agents on or off**, and changing whether agents can create drafts — record type **Connected agents**.
+
+## See what an agent created
+
+Open a lead, quote or vendor bill an agent drafted and look at its **Activity**. The first entry reads "Created as a draft · via *Agent* for *person*". The record belongs to the person who connected the agent, as if they'd made it. Notes an agent adds to a job show "via" and the agent's name.
+
+<Aside type="tip">If you're unsure whether to trust an agent, check its recent requests here, then [disconnect it](../disconnect-an-agent/) if anything looks wrong. Drafts it made stay for you to check or delete.</Aside>

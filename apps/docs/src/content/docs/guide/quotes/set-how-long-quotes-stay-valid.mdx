@@ -1,0 +1,46 @@
+---
+title: Set how long quotes stay valid
+description: Choose the number of days new quotes are valid for, and understand what happens when a quote expires.
+sidebar:
+  order: 5
+---
+
+Every quote can have a **Valid until** date. After that date a sent quote shows **Expired**, so old prices aren't honoured by accident. You set your usual validity once, and every new quote starts with it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Changing the default: Owners only. Changing one quote's date: anyone who can edit the draft.</Aside>
+
+## Set the default
+
+<Steps>
+
+1. **Open Settings** — Open your account menu and choose **Settings**, then **Documents**.
+
+2. **Choose the quote tab** — At the top of the pane, choose the **Quote** tab.
+
+3. **Set the days** — Enter **Quotes valid for**, from 1 to 365 days. It starts at 30.
+
+4. **Save** — Press **Save**. New quotes now start with this validity.
+
+</Steps>
+
+<Screenshot id="quotes-settings-documents" alt="Settings, Documents with Quote chosen and the Quotes valid for field" />
+
+## Change one quote's date
+
+In the quote builder, **Valid until** starts at today plus your default. Pick another date, press **+15 days**, **+30 days** or **+60 days**, or clear it so the quote never expires. A duplicated quote gets a fresh date; if the original had none, the copy uses your default.
+
+## When a quote expires
+
+- The list and the quote's page show **Expired**, with how long ago ("Expired 2 days ago").
+- Choose **Expired** in the list's **Status** filter to see them all.
+- The **Expiring in 7 days** card on the Quotes list, and **Needs your attention** on the dashboard, show quotes about to expire so you can follow up first.
+- To offer the work again, [revise the quote](../revise-a-sent-quote/) and give the new version a new date.
+
+<Aside type="caution">
+An expired quote is a signal, not a lock. The customer's link keeps working for 30 days from when it was sent, and they can still accept from it. If your prices have changed, revise the quote so the old version can't be answered.
+</Aside>
+
+Spine doesn't send customers reminders about quotes. Use the **Expiring in 7 days** card to follow up yourself.

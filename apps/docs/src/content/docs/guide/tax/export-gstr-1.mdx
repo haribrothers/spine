@@ -1,0 +1,35 @@
+---
+title: Export GSTR-1 for the GST portal
+description: Check a month's or quarter's outward supplies, fix problems, and download a GSTR-1 file to upload on the GST portal.
+sidebar:
+  order: 10
+---
+
+GSTR-1 is the return of your outward supplies. Spine builds it from your issued invoices and credit notes, checks it for the problems the portal would reject, and gives you a JSON file to upload and an Excel copy to review. Spine prepares the file; you check it and upload it yourself.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**. GSTR-1 is listed in Reports only when your tax country is India.</Aside>
+
+<Steps>
+
+1. **Open GSTR-1** — Go to **Reports** and choose **GSTR-1** under Tax.
+2. **Choose how you file** — Under **Filing**, pick **Monthly** or **Quarterly**, then the **Period**. The header shows the period and your GSTIN.
+3. **Read the cards** — The taxable value and tax across every table, and the number of documents. The tax card says whether it equals the Tax Summary; if not, it shows what the Tax Summary says.
+4. **Fix the problems** — If anything's wrong, "Fix these before you upload" lists it before the download buttons: registered customers with no GSTIN, lines with no HSN/SAC code, invoices with no place of supply, and totals that don't match the Tax Summary. Each has a link to the record to fix.
+5. **Check the tables** — Counts and values for B2B (registered customers), B2CL (large unregistered inter-state), B2CS (other unregistered), CDNR and CDNUR (credit notes, registered and unregistered), Exports, Nil, exempt and non-GST, the HSN summary, and Documents issued.
+6. **Download** — Press **Download JSON** for the portal, or **Download Excel** to review.
+
+</Steps>
+
+## What's in the files
+
+- The JSON follows the GST portal's GSTR-1 upload format, with your GSTIN, the period and its schema version.
+- The Excel file has one sheet per GSTR-1 table plus **Problems**, with the same figures as the JSON.
+- A credit note in this period against an invoice from an earlier period goes in CDNR or CDNUR with the original invoice's number and date.
+- Documents issued lists invoice and credit note number ranges, with totals and how many were voided.
+- Total tax in the file equals the Tax Summary's tax collected for the period.
+
+<Aside type="caution">These files hold every customer's GSTIN, addresses and amounts. Spine records who downloaded them and never emails them. Store them carefully.</Aside>
+
+The footer reminds you: "Spine prepares this file; it doesn't file your return. Check it, then upload it on the GST portal."

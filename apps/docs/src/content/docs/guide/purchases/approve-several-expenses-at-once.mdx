@@ -1,0 +1,58 @@
+---
+title: Approve several expenses at once
+description: Tick a batch of waiting expenses on the Expenses list and approve or reject them together.
+sidebar:
+  order: 20
+---
+
+When the week's expenses are in, you don't have to open each one. Tick them on the Expenses list and approve them in one go. Each one is approved and posted to your books exactly as it would be on its own. You can reject a batch the same way, with one comment that goes to everyone.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **See everyone's expenses** plus **Approve expense** (to approve) or **Reject expense** (to reject). Without **Approve expense**, the tick boxes don't show. Staff can't tick their own expenses; Owners can. The **Approvals** module must be on in Settings › Modules.
+</Aside>
+
+## Approve a batch
+
+<Steps>
+
+1. **Show what's waiting** — Go to **Expenses** and press the **Waiting for approval** card. The list shows only expenses waiting for approval.
+
+2. **Tick the expenses** — Tick each expense you want to approve. A bar shows how many you've selected and their total, for example "3 selected · $412.50", with **Approve (3)**, **Reject…** and **Clear**.
+
+3. **Approve them** — Press **Approve (n)**. Spine asks "Approve 3 expenses?" and says the total is posted to your books, each expense as it would be on its own. An approved expense can't be edited.
+
+4. **Confirm** — Press **Approve expenses**.
+
+</Steps>
+
+A toast says, for example, "3 expenses approved" — each one is posted to the books. If any couldn't be approved, the toast lists them after "Skipped —" with the reason, and the rest are still approved.
+
+## Reject a batch
+
+<Steps>
+
+1. **Tick the expenses** — Tick the expenses that need fixing.
+
+2. **Press Reject…** — "Reject 2 expenses?" says your comment goes with every one of them, so the people who submitted them know what to fix.
+
+3. **Write the comment** — For example "Attach the receipt and resubmit." If you leave it empty, you see "Add a comment — it's sent with every rejected expense."
+
+4. **Confirm** — Press **Reject expenses**.
+
+</Steps>
+
+Nothing is posted. Each submitter sees your comment on their expense and can [fix and resubmit it](../fix-and-resubmit-a-rejected-expense/).
+
+## Your own expenses
+
+As Staff, the tick box on your own expense is turned off, and the page says "Your own expenses can't be selected for approval — someone else approves them." Someone else on an approving Team must approve them.
+
+<Aside type="danger">
+  Approving can't be undone. Check the batch first — open any expense you're unsure of and compare it with its receipt, as in [Approve or reject an expense](../approve-or-reject-an-expense/).
+</Aside>
+
+<Aside type="tip">
+  Press **Clear** to untick everything without doing anything.
+</Aside>

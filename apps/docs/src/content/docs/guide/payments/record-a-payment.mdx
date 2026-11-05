@@ -1,0 +1,49 @@
+---
+title: Record a payment
+description: Record money a customer paid you and tick the invoices it pays.
+sidebar:
+  order: 1
+---
+
+When a customer pays, record the payment so their invoices show the right balance and the money shows in the right account. One payment can pay one invoice, part of one, or several at once. It gets a receipt number and is posted to your books as soon as you record it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Record own payments**. Without it, **Record payment** is hidden.
+</Aside>
+
+<Steps>
+
+1. **Open the dialog** — Press **Record payment** on the **Payments** list, on an invoice, or on an invoice's row in **Receivables**. It's the same **Record a payment** dialog everywhere. From an invoice, the customer is already chosen and that invoice is ticked with its balance.
+
+2. **Choose the customer** — Under **Customer**, pick who paid. Their open invoices are listed under **What it pays**, oldest due first, each with its number, due date (or how many days late), balance and a tick box. A deposit invoice says **Deposit**.
+
+3. **Say what it pays** — Either tick the invoices first (the **Amount** becomes their total, and **Pay all** ticks every invoice), or type the **Amount** first and Spine spreads it oldest first, ticking invoices as it goes. You can change any line, up to that invoice's balance.
+
+4. **Fill in the details** — Set the **Date**, the **Method** (Cash, Bank transfer, Cheque, Card, UPI or Other), **Paid into** (the account the money went into) and an optional **Reference**, such as a cheque number or transaction ID.
+
+5. **Check the total line** — Above the button, Spine says what happens, for example "$4,000.00 goes on 2 invoices; nothing becomes credit." This line is your confirmation.
+
+6. **Record it** — Press **Record payment**. The toast reads, for example, **RCP-0029 recorded**.
+
+</Steps>
+
+<Screenshot id="payments-record" alt="The Record a payment dialog with a customer chosen and their open invoices listed under What it pays" />
+
+## What happens next
+
+Each ticked invoice's balance drops by what the payment put on it. A part-paid invoice stays open and shows what's left; one paid in full reads **Paid**. The invoice lists the payment under **Payments**.
+
+If the customer has an email address and email is set up, **Email a receipt to …** is on, and the receipt goes out when you record the payment. Turn it off to send nothing. See [Send a receipt](../send-a-receipt/).
+
+<Aside type="caution" title="Is it already recorded?">
+  If the same customer paid the same amount within 3 days, or a payment has the same reference, the dialog warns "This looks like RCP-0028" with a link to open it. If it really is a second payment, press **Record payment** anyway.
+</Aside>
+
+<Aside type="tip">
+  Paying more than the ticked invoices? The rest becomes credit for the customer. See [Take a deposit or overpayment as credit](../take-a-deposit-or-overpayment-as-credit/).
+</Aside>
+
+The invoices can't add up to more than the payment. If they do, Spine says so: lower a line or raise the amount.

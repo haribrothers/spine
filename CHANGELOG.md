@@ -80,6 +80,24 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-05 — The README, licence and contributor guide (US-OPS-19, D-263)
+
+- **README:** what Spine does, screenshots (light and dark), installing in 5 minutes, back up and restore, updating, help, status, the repository layout, contributing and the licence. The production section now describes the published images and migrations at start.
+- **`LICENSE`:** AGPL-3.0-only, copyright (C) 2026 Hari Prasad (D-263). **`CONTRIBUTING.md`:** working from a story, tests, docs, the checks, pull requests and sign-off (Developer Certificate of Origin, no CLA). **`CODE_OF_CONDUCT.md`:** Contributor Covenant 2.1. **Templates:** bug, idea and pull request templates; security reports go to GitHub's private reporting.
+- **`docs/release.md`:** versioning, the changelog and release notes (`docs/releases/v<version>.md`), the release steps and what CI publishes, archiving the docs per minor, the Cloudflare Pages setup, and what to do when a release goes wrong.
+- **Left for the Owner:** the clean-machine test of following only the README to a first invoice (QA section 280).
+
+### 2026-11-05 — The website, the docs and help in the app (US-SITE-01 to US-SITE-14, D-108, D-110, D-111, D-113, D-270)
+
+- **Two sites:** `apps/docs` (`docs.h4loom.com`) and `apps/site` (`h4loom.com`), Astro 7 + Starlight 0.42, themed from `tokens.json`, with light, dark and auto modes and the Spine logo. Pagefind search. Every internal link is checked at build. CI and `pnpm verify` build both.
+- **Content:** Get started (3 pages). The user guide: 268 task pages in 20 modules, each with who can do it, numbered steps in the app's own words and a screenshot. Self-hosting (9 pages: install, configuration of every setting, email, file storage, backups, upgrades, HTTPS, Coolify, troubleshooting). Developers (architecture, local setup, the ledger, testing, contributing, API conventions). A generated API reference: one page per operation, with who may call it, the Idempotency-Key, errors and a `curl` example.
+- **Screenshots:** `pnpm --filter @spine/e2e screenshots` captures the 183 screens the guide lists, light and dark, from a demo install, and the home page's dashboard.
+- **In the app:** the Help (?) button is a menu with Help for this page (the guide page for the screen you're on), User guide, What's new in <version>, Keyboard shortcuts and Online docs, all opening in a new tab. Every install serves the guide for its own version at `/help`, built into the web image, with no outside requests, so it works offline. It has its own search, and a banner saying which version it describes.
+- **Versions:** `starlight-versions` archives each earlier minor once 1.1 ships (`apps/docs/src/versions.json`); `/versions/` lists them.
+- **Publishing:** two Cloudflare Pages projects, set up as docs/release.md describes (the Owner connects them). The pull request template asks for the guide page (US-SITE-05).
+- **Found while writing the guide** (the guide describes the app as it is; these are left for follow-up): US-SET-05's check that a starting number isn't at or below the last issued one isn't enforced. US-SET-04's warning when changing currency with documents isn't shown. US-DASH-10's keyboard reordering of dashboard cards isn't built (mouse only). US-MTG-07's "no response after a meeting ends" isn't enforced. D-198's field-app message when Jobs & field is off doesn't exist. The capability descriptions for "View dashboard summary" and "View ledger / journals" still say P&L and the balance sheet are Owner-only.
+- **Tests:** `us-site-11` (web: the menu, its links and the route map) and `us-site-11-12` (E2E: the menu opens this page's guide from `/help`, with no outside requests, offline search, no developer docs and no version menu). QA section 279.
+
 ### 2026-11-05 — The security review before 1.0 (US-OPS-18, D-267)
 
 - **Review:** [docs/security-review.md](docs/security-review.md) covers the OWASP Top 10 area by area, with each finding fixed or accepted, and is ready for the Owner's sign-off. `SECURITY.md` says how to report a vulnerability (GitHub private reporting).

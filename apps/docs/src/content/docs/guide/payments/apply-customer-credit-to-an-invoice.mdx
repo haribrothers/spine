@@ -1,0 +1,51 @@
+---
+title: Apply customer credit to an invoice
+description: Use a customer's credit from payments and credit notes to reduce what they owe on an invoice.
+sidebar:
+  order: 3
+---
+
+When a customer has credit — a deposit, an overpayment, money moved off an invoice, or the extra on a credit note — you can apply it to one of their invoices. The invoice's balance drops and their credit drops by the same amount. No money moves; it's credit they already hold being put to use.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Apply payment credit**. Without it, **Apply credit** is hidden.
+</Aside>
+
+## From the payment that holds the credit
+
+<Steps>
+
+1. **Open the payment** — Go to **Payments** and open a payment marked **Credit left**. Press the **Credit to use** card to find them quickly.
+
+2. **Press Apply credit** — While credit is left it's the main button. The **Apply credit** dialog says how much credit the payment holds.
+
+3. **Choose the invoices** — Pick an invoice and enter how much to put on it, or use **Apply to another invoice…** to spread it over several. **Remaining credit** updates as you go.
+
+4. **Apply it** — Press **Apply credit**. The toast reads **Credit applied**.
+
+</Steps>
+
+<Screenshot id="payments-apply-credit" alt="The Apply credit dialog on a payment, with its remaining credit and the invoices to apply it to" />
+
+## From the invoice
+
+<Steps>
+
+1. **Open the invoice** — Open the customer's issued invoice and press **Apply credit**.
+
+2. **Enter the amounts** — The dialog lists each source of credit, from payments and credit notes, with how much is available. Enter how much to take from each.
+
+3. **Apply it** — Press **Apply credit**. The toast says how much credit now counts against the invoice.
+
+</Steps>
+
+You can also apply credit from an invoice's row in **Receivables**, while the customer has credit. When you issue a new invoice for a customer with credit, Spine offers to apply it as the invoice is issued.
+
+## Limits
+
+- You can't apply more than the credit available, or more than the invoice still owes.
+- If the customer has no outstanding issued invoices, there's nothing to apply credit to. You can [refund the credit](../refund-a-customer/) instead.
+- Applying credit from a paid deposit to the final invoice is how the deposit counts against the work.

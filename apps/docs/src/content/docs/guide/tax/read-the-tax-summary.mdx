@@ -1,0 +1,40 @@
+---
+title: Read the Tax Summary
+description: See tax collected from customers, tax paid to vendors and the net you owe for any period, split by rate, tax type and supply class.
+sidebar:
+  order: 6
+---
+
+The Tax Summary puts the figures for your tax return on one page: what you collected on invoices, what you paid on bills and expenses, and the difference. Every figure comes from your books, so it matches the ledger exactly.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**. Only Owners see the tax payments list and the **Record tax payment** button.</Aside>
+
+<Steps>
+
+1. **Open the report** — Go to **Reports** and choose **Tax Summary** under Tax.
+2. **Pick the period** — Set **From** and **To**. The report reloads as soon as you change them.
+3. **Read the cards** — **Tax collected** (on issued invoices, after credit notes), **Tax paid** (on bills, expenses and money out, less vendor credits), **Net payable** (collected minus paid) and **Paid to the tax authority**, with "Still to pay" underneath.
+
+</Steps>
+
+<Screenshot id="tax-summary" alt="The Tax Summary with the Tax collected, Tax paid, Net payable and Paid to the tax authority cards, and the tax type and rate tables" />
+
+## The tables
+
+- **By tax type**: collected, paid and net for each type, such as CGST, SGST/UTGST, IGST and cess, or VAT or GST.
+- **Collected by rate**: the taxable amount and tax for each rate or group, with a row for "Adjustments from credit notes and voided invoices" when there are any, and **Total collected**.
+- **Paid by rate**: the same for bills, expenses and money out, with "Adjustments from voided bills and removed documents" when there are any, and **Total paid**.
+- **Supply class**: zero-rated, exempt and non-taxable sales and purchases with their values.
+
+Total collected equals the credits to Output Tax Payable for the period, and total paid equals the debits to Input Tax Receivable.
+
+## Export it
+
+Press **Export** and choose **CSV**, **Excel (.xlsx)**, **PDF** or **Print**. The file has exactly what's on screen. See [Reports](../../reports/) for how exports look.
+
+<Aside type="note">The Tax Summary is always on the accrual basis. It has no cash-basis switch.</Aside>
+
+The footnote says it plainly: "Spine produces the numbers for your return; it doesn't file it." When you've paid, [record the tax payment](../record-a-tax-payment/) so Net payable goes back to zero. The dashboard's **Tax this period** card opens this report for the current month or quarter.

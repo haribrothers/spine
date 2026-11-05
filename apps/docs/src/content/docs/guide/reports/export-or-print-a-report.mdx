@@ -1,0 +1,36 @@
+---
+title: Export or print a report
+description: Download any report as CSV, Excel or PDF, or print it, with exactly what's on screen.
+sidebar:
+  order: 11
+---
+
+Every report has the same **Export** menu. Your accountant can work with the numbers in Excel, your bank can have a clean PDF, and you can print a copy for a meeting. The file always holds what's on screen: the same range, filters, search and comparison columns.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone who can open the report can export it.</Aside>
+
+<Steps>
+
+1. **Set up the report** — Open the report and choose the range, filters, comparison or basis you want in the file.
+2. **Open Export** — Press **Export**, on the right of the toolbar.
+3. **Choose a format** — **CSV**, **Excel (.xlsx)**, **PDF** or **Print**. CSV, Excel and PDF download straight away.
+
+</Steps>
+
+<Screenshot id="reports-export-menu" alt="The Export menu open on Profit & Loss, offering CSV, Excel (.xlsx), PDF and Print" />
+
+## What each format gives you
+
+- **CSV**: one row per account, job, customer or document, with plain decimal amounts and the currency in its own column. The file is named after the report and its range.
+- **Excel (.xlsx)**: amounts are numbers with two decimals, not text. Headings are bold, the first row is frozen, and the business name, report name and range are in the first rows.
+- **PDF**: your logo, business name, report name, range or date, and basis (accrual or cash), with page numbers and "Prepared *date*" in the footer. A report with more than five amount columns turns landscape. The PDF is always light, even if you use Spine in dark mode.
+- **Print**: opens your browser's print dialog. The sidebar, toolbars and buttons are left out, and the report fills the page with its title, range and business name. On long tables, column headings repeat on every page and rows aren't split across pages.
+
+<Aside type="tip">Want a comparison in the file? Choose it under **Compare with** before you export. A cash-basis Profit & Loss says "Cash basis" in its exports too.</Aside>
+
+Export files can hold customer names and amounts. Store and share them with care.
+
+The Tax Summary exports the same way. For a file your accountant imports into Tally, see [Export your books for Tally](../export-to-tally/).

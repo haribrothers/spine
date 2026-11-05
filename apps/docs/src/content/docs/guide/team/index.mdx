@@ -1,0 +1,45 @@
+---
+title: Team and permissions
+description: Who can use Spine and what each person can do — roles, invites, Teams and their permissions, and the audit log.
+sidebar:
+  order: 1
+---
+
+Everyone who works in Spine has their own sign-in and one of three roles. Owners run the business and can open everything. Staff work in the office and can do what their Teams allow. Field crew use the phone app and see only the jobs they're assigned to, without money. The **Team** section of the sidebar is where Owners invite people, put Staff on Teams, choose what each Team can do and check who changed what.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Staff and Field users don't see the **Team** section, and its pages show the no-access page if they open the address.</Aside>
+
+## The main ideas
+
+- **Three roles.** **Owner**, **Staff** and **Field**. Owners can do everything, including Users, Teams and Settings. Field access is fixed and can't be changed. Staff get their access from Teams.
+- **Teams decide what Staff can do.** A Team is a named group of Staff with a list of permissions. Someone on several Teams gets everything any of them allows. A Staff member on no Team can't open anything.
+- **Sections open and close.** Each part of Spine — Contacts, Quotes, Invoices and so on — has an **Open** permission. With it off, the section leaves that Team's sidebar.
+- **One Primary Owner.** The person who set up Spine is the Primary Owner. Nobody else can demote or deactivate them, and the status only moves when they transfer it.
+- **Nothing is deleted.** You deactivate people instead of deleting them, so their name stays on everything they did.
+- **Every change is recorded.** The **Audit log** lists every change to records, people and Teams, newest first.
+
+<Screenshot id="team-users-list" alt="The Users page with the Active, Deactivated and Invites tabs, the People, Staff without a Team and Pending invites cards, and the list of people with their role, Teams and Last active" />
+
+## Tasks
+
+- [Understand roles: Owner, Staff and Field](./understand-roles/) — what each role can open.
+- [Invite people](./invite-people/) — send invites, with a role and Teams.
+- [Resend or cancel an invite](./resend-or-cancel-an-invite/) — the Invites tab.
+- [Create a Team](./create-a-team/) — start from nothing or from another Team, rename or duplicate one.
+- [Add and remove people on a Team](./add-and-remove-team-members/) — from the Team's page or from Users.
+- [Choose what a Team can do](./choose-what-a-team-can-do/) — sections and permissions, reviewed before saving.
+- [Check what someone can open](./check-what-someone-can-open/) — one person's access at a glance.
+- [Change someone's role](./change-someones-role/) — Staff and Field, promote to Owner, demote to Staff.
+- [Transfer primary ownership](./transfer-primary-ownership/) — hand the Primary Owner status to another Owner.
+- [Deactivate or reactivate someone](./deactivate-or-reactivate-someone/) — remove access and keep their history.
+- [Set a new password for someone](./set-a-new-password-for-someone/) — when a Staff or Field member is locked out.
+- [Delete a Team](./delete-a-team/) — and what happens to its people.
+- [Use the audit log](./use-the-audit-log/) — every change, who made it and when, and a Team's history.
+
+## Related
+
+- [Settings and data export](../settings/) — the rest of the Owner-only settings.
+- [Notifications](../notifications/) — what people hear about, by role.

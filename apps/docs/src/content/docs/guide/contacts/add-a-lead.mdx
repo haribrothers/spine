@@ -1,0 +1,44 @@
+---
+title: Add a lead
+description: Record a possible piece of work for a contact, with its estimated value, stage, source and owner.
+sidebar:
+  order: 9
+---
+
+A lead is a job you might win. Add one as soon as an enquiry comes in, so the pipeline shows what's in play and what it could be worth. You can add a lead from the pipeline or from the contact's page.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own leads**. Without it, **Add lead** isn't shown. Leads are part of the **Leads & meetings** module: if **Pipeline** isn't in the sidebar, an Owner can switch the module on in **Settings › Modules**.</Aside>
+
+## Add a lead from the pipeline
+
+<Steps>
+1. **Open the drawer** — Go to **Pipeline** and press **Add lead**. The **Add lead** drawer opens. If you press it from a column, the lead starts in that column's stage.
+2. **Say who it's for** — In **Contact**, start typing and choose the contact ("Select a contact…").
+3. **Describe it** — Fill in **Title**, such as "Kitchen extension". If you leave it blank, the card shows the contact's name.
+4. **Add its value** — Choose the **Stage**, and fill in **Estimated value** and **Currency**.
+5. **Add the details** — Choose an **Owner** (any active member, or **Unassigned**), an **Expected close** date, and a **Source**. In **Source**, pick one you've used before or type a new one ("Select or type a source…").
+6. **Save** — Press **Add lead**. The lead appears in its stage column with its title, contact and value, and the column's total goes up.
+</Steps>
+
+<Screenshot id="contacts-lead-new" alt="The Add lead drawer with Title, Contact, Stage, Estimated value, Currency, Owner, Expected close and Source" />
+
+Once the lead is saved, its drawer also shows **Follow-ups**, **Quotes** and **History**. See [Work a lead from its drawer](../work-a-lead-from-its-drawer/).
+
+## Add a lead from a contact
+
+<Steps>
+1. **Open the contact** — Go to **Contacts**, open the contact and choose the **Leads** tab.
+2. **Add the lead** — Press **Add lead**. The contact is already chosen. Fill in **Title**, **Stage**, **Estimated value** and **Currency**.
+3. **Save** — Press **Add lead**. A "Lead added" toast shows and the lead is listed with its title, stage and value.
+</Steps>
+
+To change a lead from this tab, press the edit button beside it, change the details and press **Save changes**.
+
+## The owner and the creator
+
+The **Owner** is the person working the lead. You can change it at any time. The person who created the lead stays its creator, and that's what decides who can change it: "own leads" means leads you created, not leads you own on the board. See [Choose who can change contacts and leads](../choose-who-can-change-contacts-and-leads/).
+
+<Aside type="tip">If you can't see **Add lead** on a contact's **Leads** tab, your Team doesn't have the right to add leads. The tab still lists the contact's leads.</Aside>

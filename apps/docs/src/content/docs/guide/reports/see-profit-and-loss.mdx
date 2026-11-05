@@ -1,0 +1,46 @@
+---
+title: See profit and loss
+description: See income, expenses and net profit for any period, compare it with other periods, and switch to the cash basis.
+sidebar:
+  order: 2
+---
+
+Profit & Loss tells you whether the business made money in a period: income less expenses. You can compare it with the previous period, the same period last year or each month, and see it on a cash basis when you want it to match money that actually moved.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**. Without it, Staff see "You don't have access to financial statements. Ask an owner."</Aside>
+
+<Steps>
+
+1. **Open the report** — Go to **Reports › Profit & Loss**.
+2. **Set the range** — **From** and **To** start at your financial year to date.
+3. **Read the cards** — **Total income**, **Total expenses**, **Net profit** and **Net margin** (net profit as a share of income).
+4. **Read the table** — **Income** by account with **Total income**, **Expenses** by account with **Total expenses**, then **Net profit**. A chart of income and expenses by month shows for ranges of 24 months or fewer.
+5. **Click an account** — See every journal entry behind it (see [See the entries behind a figure](../see-the-entries-behind-a-figure/)).
+
+</Steps>
+
+<Screenshot id="reports-profit-and-loss" alt="Profit & Loss with the Total income, Total expenses, Net profit and Net margin cards, the monthly chart and the income and expenses table" />
+
+With nothing posted in the range you see "No income posted in this range." and "No expenses posted in this range."
+
+## Compare periods
+
+Under **Compare with**, choose:
+
+- **Previous period** or **Same period last year**: adds a column for the other period, plus **Change** and **Change %**. Each change carries an arrow and a sign, not colour alone.
+- **Each month**: one column per month plus **Total**. It covers up to 24 months.
+
+Choose **No comparison** to go back.
+
+## Switch to the cash basis
+
+Under **Basis**, switch from **Accrual** to **Cash**. Income then counts only what customers paid in the range, and expenses only what was paid, split across accounts in proportion to each invoice's or bill's lines. For example, a half-paid 1,000.00 invoice for services shows 500.00 under Sales — Services, before tax.
+
+The subtitle reads "Cash basis", and exports carry it.
+
+<Aside type="note">If you brought in opening balances, payments on invoices and bills from before your cutover date aren't counted on the cash basis, because that income and those costs were in your old books. A note on the report says so. The Balance Sheet, Trial Balance and Tax Summary stay on the accrual basis.</Aside>
+
+To export, press **Export** (see [Export or print a report](../export-or-print-a-report/)).

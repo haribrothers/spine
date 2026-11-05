@@ -1,0 +1,35 @@
+---
+title: Fix an item that didn't send
+description: Correct an expense, photos or a milestone update the server refused, then send it again or delete it.
+sidebar:
+  order: 14
+---
+
+Most problems sort themselves out: when the network drops, the app keeps trying on its own and the item stays **Waiting**. But if your server refuses an item, for example because a photo is too big, it needs you. It shows in red with the reason and a **Fix** button.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone signed in to the field app, for items on their own phone.</Aside>
+
+<Steps>
+1. **Open Sync** — Tap the sync pill on Today, or the sync row in Profile. Refused items are under **Needs fixing**, each with its reason, such as "Didn't send: the receipt photo is over 10 MB."
+2. **Press Fix** — The fix screen shows the reason in red and the item's details. A refused expense also opens from **Waiting to sync** on the Expenses tab.
+3. **Make the change** — What you can change depends on the item:
+   - **An expense** — **Retake photo**, **Choose a different photo** or **Remove photo** for the receipt, or **Edit expense** to change the details. The receipt shows its size.
+   - **Site photos or a milestone update** — remove the photo that's causing the problem.
+4. **Send it again** — Press **Send again**. When you edit an expense, press **Send** on the form.
+</Steps>
+
+## Common reasons
+
+- "Didn't send: the receipt photo is over 10 MB." or "Didn't send: a photo is over 10 MB." Retake it closer, or choose a smaller one.
+- "Didn't send: the receipt photo is no longer on this phone. Take it again or remove it."
+- "Didn't send: this job isn't on your list any more." Your office took you off the crew. Ask them, or delete the item.
+
+## Delete an item instead
+
+Press **Delete this expense**, **Delete these photos** or **Delete this update**. On Android, it's the bin icon at the top. The app asks first: "It's removed from this phone and never reaches your office." Press **Delete** to confirm.
+
+<Aside type="danger">A deleted item is gone from the phone and never reaches your office. It can't be brought back.</Aside>
+
+<Aside type="tip">A milestone someone else completed first isn't an error. It shows as sent with "Already completed by _name_".</Aside>

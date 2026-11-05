@@ -16,6 +16,10 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // US-SITE-12: the bundled guide (public/help, built from apps/docs) is folders of index.html.
+  async rewrites() {
+    return { beforeFiles: [], afterFiles: [{ source: "/help", destination: "/help/index.html" }, { source: "/help/:path*", destination: "/help/:path*/index.html" }], fallback: [] };
+  },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },

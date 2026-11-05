@@ -62,7 +62,8 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      command: "pnpm --filter @spine/web build:e2e && pnpm --filter @spine/web start:e2e",
+      // US-SITE-12: the bundled guide (/help) is built into the web app first.
+      command: "pnpm --filter @spine/docs build:help && pnpm --filter @spine/web build:e2e && pnpm --filter @spine/web start:e2e",
       url: "http://localhost:3110",
       cwd: "../..",
       reuseExistingServer: !process.env.CI,

@@ -54,6 +54,8 @@ jobs:
     outputs:
       code: ${{ github.event_name != 'pull_request' || steps.code.outputs.code == 'true' }}
       integration: ${{ github.event_name != 'pull_request' || steps.suites.outputs.integration == 'true' }}
+      # US-SITE-01: the docs site and the home page, built and link-checked when they change.
+      sites: ${{ github.event_name != 'pull_request' || steps.suites.outputs.sites == 'true' }}
       # D-260: E2E runs before a release or on demand, never on a pull request.
       e2e: ${{ github.event_name != 'pull_request' }}
     steps:
@@ -87,11 +89,17 @@ jobs:
               - *shared
               - "apps/api/**"
               - ".env.test"
+            sites:
+              - *shared
+              - "apps/docs/**"
+              - "apps/site/**"
+              - "scripts/site/**"
+              - "docs/design/tokens.json"
 
   static:
     name: Lint, typecheck and unit
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.sites == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -138,6 +146,15 @@ jobs:
       # The release and install scripts' own tests (US-OPS-51).
       - name: Script tests
         run: pnpm test:scripts
+
+      # US-SITE-10: the API reference is generated from the API; a stale openapi.json fails.
+      - name: API reference is up to date
+        run: pnpm --filter @spine/api openapi ../docs/openapi.json && git diff --exit-code -- apps/docs/openapi.json
+
+      # US-SITE-01: a broken internal link fails the build.
+      - name: Build the docs site and home page
+        if: needs.changes.outputs.sites == 'true'
+        run: pnpm --filter @spine/docs --filter @spine/site build
 
   integration:
     name: Integration

@@ -1,0 +1,38 @@
+---
+title: Choose who can change the catalogue
+description: Give a Team the right to add and change catalogue items, separately for their own items and everyone else's.
+sidebar:
+  order: 9
+---
+
+Your prices matter. You can let a junior add items without letting them change the prices a colleague set. Catalogue rights are a group of their own, separate from contacts, so granting one never grants the other.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners only. Owners can always change every item. Field crew can't open the catalogue.</Aside>
+
+<Steps>
+1. **Open the Team** — Go to **Teams** in the sidebar (or **Settings › Teams**) and open the Team.
+2. **Open its permissions** — Choose the **Permissions** tab and expand **Manage Catalogue**.
+3. **Turn rights on or off** — Switch each right, or use **Everything in Manage Catalogue** to turn the group on or off.
+4. **Save** — Press **Save changes** and confirm. Members get the new rights at their next request, without signing out.
+</Steps>
+
+## The catalogue rights
+
+- **Open Catalogue**: see the Catalogue section with its items and bundles. Without it, Catalogue leaves the sidebar, but quote, invoice and bill lines still pick items.
+- **Create/edit own catalogue**: add items, import them, make bundles, and edit items the person added.
+- **Edit others' catalogue**: edit items a colleague added.
+- **Archive/delete own catalogue**: archive, restore or delete items the person added.
+- **Archive/delete others' catalogue**: archive, restore or delete items a colleague added.
+
+"Own" means items the person created. Items with no recorded creator count as someone else's.
+
+## What people see
+
+- Without **Create/edit own catalogue** or **Edit others' catalogue**, **Add item** and **Import** are hidden.
+- On a colleague's item, **Edit** is hidden unless the person has **Edit others' catalogue**.
+- Everyone who can open the catalogue can read every item.
+- A bulk change to several items is all or nothing: if any of them is outside the person's rights, nothing changes.
+
+<Aside type="tip">Someone on several Teams gets everything any of their Teams allows. For more on Teams, see [Team and permissions](../../team/).</Aside>

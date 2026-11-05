@@ -1,0 +1,42 @@
+---
+title: Add contact persons and addresses
+description: Keep the people at a company and its billing, shipping and site addresses on the contact.
+sidebar:
+  order: 4
+---
+
+A company can have several people you deal with, and several addresses. Invoices go to the billing address, and your crew goes to the site address. Both live on tabs on the contact's page.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners. Staff need **Manage contact persons** to add, edit or remove people, and **Manage contact addresses** for addresses. They also need the right to edit the contact itself (**Create/edit own contacts** for contacts they added, **Edit others' contacts** for the rest). Without these, the tabs are read-only.</Aside>
+
+## Add a contact person
+
+<Steps>
+1. **Open the tab** — Open the contact and choose the **Contact persons** tab.
+2. **Add the person** — Press **Add contact person**. Fill in **Name** (required), **Title** and **Email**. You can add a photo too.
+3. **Save** — Press **Add**. A "Contact person added" toast shows and the person is listed with their title and details.
+</Steps>
+
+To change someone, press the edit button beside their name, change the details and press **Save changes**. To remove them, press the remove button: Spine asks "Remove …?" and explains this can't be undone. Press **Remove** to go ahead.
+
+## Add an address
+
+<Steps>
+1. **Open the tab** — Open the contact and choose the **Addresses** tab.
+2. **Add the address** — Press **Add address**. Choose a **Type** (billing, shipping, site or other) and fill in **Address line** (required) and **City**.
+3. **Save** — Press **Add**. An "Address added" toast shows and the address appears with its type.
+</Steps>
+
+To change an address, press **Edit address**. To remove one, press **Remove address**: Spine asks "Remove this address?" and explains it can't be undone. Press **Remove** to go ahead.
+
+## Addresses and jobs
+
+When you start a job for a customer, its site address is filled from the contact's site address, or from the billing address when there isn't one. See [Jobs](../../jobs/).
+
+## For a GST business
+
+Each address also has a **State**. The site or shipping address's state is the place of supply, which decides whether a line uses CGST + SGST or IGST.
+
+<Aside type="tip">If two people edit the same contact's people or addresses at the same moment, the last one to save wins. Refresh the page before a big change if a colleague might be working on it too.</Aside>

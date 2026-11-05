@@ -4,7 +4,7 @@
  * marked ready for review, so CI confirms a green branch instead of
  * discovering failures on paid Actions minutes.
  *
- * Steps, in CI's order: audit, lint, typecheck, unit, integration, e2e. Stops at
+ * Steps, in CI's order: audit, lint, typecheck, unit, sites, integration, e2e. Stops at
  * the first failure and says how to pick up from there.
  *
  *   pnpm verify                     everything
@@ -24,6 +24,9 @@ const STEPS = [
   { name: "lint", command: "pnpm turbo run lint" },
   { name: "typecheck", command: "pnpm turbo run typecheck" },
   { name: "unit", command: "pnpm turbo run test --filter=!@spine/e2e && pnpm test:scripts" },
+  // US-SITE-01: the docs site and the home page build, with every internal link checked.
+  // US-SITE-10: openapi.json is regenerated (commit the change if it moved).
+  { name: "sites", command: "pnpm --filter @spine/api openapi ../docs/openapi.json && pnpm --filter @spine/docs --filter @spine/site build" },
   { name: "integration", command: "pnpm --filter @spine/api test:integration", databases: ["spine_test"] },
   { name: "e2e", command: "pnpm --filter @spine/e2e test", databases: ["spine_e2e"], ports: [[1025, "Maildev"]] },
 ];

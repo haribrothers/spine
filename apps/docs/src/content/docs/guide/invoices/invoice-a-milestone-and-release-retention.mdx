@@ -1,0 +1,55 @@
+---
+title: Invoice a milestone and release retention
+description: Bill a job's completed milestone as a progress invoice, see the retention held back, and collect it at the end.
+sidebar:
+  order: 13
+---
+
+On a job with billing milestones, each completed milestone becomes a progress invoice. If the job holds retention, Spine keeps that percentage back on every progress invoice. When the job is done, you release the retention as one final invoice, so you actually collect it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Raise invoice from milestone** (for progress invoices) or **Release retention**. Issuing the invoice needs **Issue an invoice**. Jobs need the **Jobs & field** module switched on in **Settings › Modules**.
+</Aside>
+
+## Raise a progress invoice
+
+<Steps>
+
+1. **Open the job** — Go to **Jobs**, open the job and find the milestone. It must be marked complete.
+
+2. **Press Raise invoice** — Spine creates a draft progress invoice for the milestone's amount, linked to the job and milestone. The milestone then shows **Invoiced** with **View invoice**.
+
+3. **Check and issue it** — The draft opens. Check it, then press **Issue invoice** and confirm. See [Issue an invoice](../issue-an-invoice/).
+
+</Steps>
+
+A milestone can be invoiced only once, and a milestone that isn't complete has no **Raise invoice**. If it fails, you'll see "Could not raise an invoice for this milestone." Setting up milestones and retention is covered in [Jobs](../../jobs/).
+
+## What a progress invoice shows
+
+- In the list, "Progress claim 3 · JOB-002" under its number. The claim number is given when the invoice is issued.
+- The job and milestone in its header, as links.
+- Under the totals, **Retention held (5%)** as a negative amount, then the amount due. With 0% retention there's no retention row.
+- A note: "Retention is held in Retention Receivable until you release it from the job. Held on this job so far: …"
+
+The PDF and email show the same retention rows. For example, a 10,000.00 claim with 5% retention has a balance due of 9,500.00. The 500.00 held back sits in Retention Receivable in your books, and isn't counted in what customers owe on the aging report.
+
+## Release retention
+
+<Steps>
+
+1. **Open the job** — When the defect period is over, open the job.
+
+2. **Press Release retention** — **Release retention?** says it creates a retention-release invoice for the amount still held on the job's issued progress invoices.
+
+3. **Confirm** — Press **Release retention**, or **Cancel** to leave it held.
+
+</Steps>
+
+A toast says **Retention released**: "A retention-release invoice has been created for this job." The invoice is issued straight away, with the next number and a due date from your payment terms. The held amount moves from Retention Receivable to what the customer owes. In the list it shows "Retention release" under its number; [email it](../email-an-invoice/) to the customer when you're ready.
+
+<Aside type="caution">
+  If nothing is held on the job, nothing is created and you'll see "Could not release retention for this job."
+</Aside>

@@ -1,0 +1,40 @@
+---
+title: Delete a payment recorded by mistake
+description: Remove a payment you recorded by mistake, while none of it has been applied or refunded.
+sidebar:
+  order: 6
+---
+
+If you recorded a payment that never happened — the wrong customer, or the same money twice — you can delete it, as long as none of it is applied to an invoice or refunded. Spine posts a reversing entry, so your books go back to how they were.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Delete own payments** (for payments they recorded) or **Delete others' payments** (for payments a colleague recorded). Without the right one, **Delete payment** is hidden.
+</Aside>
+
+<Steps>
+
+1. **Open the payment** — Go to **Payments** and open it. If it was applied to invoices, first [move it off each invoice](../move-a-payment-off-the-wrong-invoice/) so nothing is applied.
+
+2. **Choose Delete payment** — Open **More** next to the main button and choose **Delete payment**. It's also in the payment's row menu on the list, where it opens the payment's page with the confirmation.
+
+3. **Confirm** — "Delete this payment?" says Spine posts a reversing journal entry and permanently removes the payment. Press **Delete payment** to go ahead.
+
+</Steps>
+
+<Screenshot id="payments-delete" alt="A payment's page with the More menu open, where Delete payment appears while none of the payment is applied" />
+
+## What happens next
+
+The toast reads **Payment deleted**. The payment's journal entry is reversed and the payment no longer appears in the list. Owners aren't sent another "payment received" notice.
+
+<Aside type="danger" title="This can't be undone">
+  A deleted payment is gone. If the customer did pay, record the payment again.
+</Aside>
+
+## When you can't delete a payment
+
+- **Delete payment** isn't offered while any of the payment is applied to an invoice or has been refunded. A customer payment that's been applied stays in your records; correct it by moving it off the invoice instead.
+- A payment that's part of a finished bank reconciliation can't be deleted until that reconciliation is undone. See [Banking](../../banking/).

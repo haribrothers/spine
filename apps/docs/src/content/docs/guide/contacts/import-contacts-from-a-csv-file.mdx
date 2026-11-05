@@ -1,0 +1,40 @@
+---
+title: Import contacts from a CSV file
+description: Bring your customers and vendors in from a spreadsheet or another CRM in one go.
+sidebar:
+  order: 7
+---
+
+Moving off a spreadsheet or another system? Save your contact list as a CSV file and import it. You match your file's columns to Spine's fields, check each row, and Spine tells you which rows look like duplicates and which failed.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own contacts**.</Aside>
+
+<Steps>
+1. **Open the import** — Go to **Contacts** and press **Import CSV**. The **Import contacts from CSV** dialog opens.
+2. **Choose your file** — Press **Click to choose a CSV file**, or drag the file onto the dialog. Spine says how many rows it found.
+3. **Match the columns** — For each column in your file, choose the Spine field it holds: **Name**, **Type (customer/vendor/both)**, **Is company**, **Email**, **Phone**, **Notes**, **Tax ID**, **GSTIN**, **State** or **Website**. Columns are pre-matched by their heading. Choose **Don't import** for a column you don't want. Name and type must be matched before you can go on. Press **Continue**.
+4. **Check the rows** — A preview lists each row with its name, type, email, phone and status. **Ready** rows will be imported; rows with errors are flagged, and possible duplicates say which contact they look like. Untick any row you want to skip; rows with errors are skipped for you.
+5. **Import** — Press **Import … contacts**. You see "Importing…", then "Import complete.".
+6. **Finish** — Press **Done**. The new contacts are in the list, and a toast says how many were added.
+</Steps>
+
+<Screenshot id="contacts-import" alt="The Import contacts from CSV dialog asking you to choose a CSV file or drag and drop one" />
+
+## What can go wrong in a row
+
+- A missing name or type, or a type that isn't customer, vendor or both.
+- An email that isn't a valid address.
+- A state Spine doesn't know, or a GSTIN with a problem.
+
+## After the import
+
+- **Possible duplicates.** Rows that match an existing contact's email or phone are still created. They're listed under "Created, but possible duplicates — worth reviewing:" so you can check them and archive or delete the extra ones.
+- **Failed rows.** Under "Rows that failed:" each row number is listed with its reason. Fix those rows in your file and import just them again.
+- **An import that stopped part-way.** You see "Import failed — some rows may have already been created. Review the list below before retrying." Check the list before you run the same file again.
+
+<Aside type="caution" title="Importing the same file twice">Rows that match existing contacts are flagged as possible duplicates, not skipped. Untick them in the preview before you import a file a second time.</Aside>
+
+If the file has no columns you see "No columns found — the file may be empty or not a CSV." Save it from your spreadsheet as CSV and try again.

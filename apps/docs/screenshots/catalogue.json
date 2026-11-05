@@ -1,0 +1,34 @@
+[
+  {
+    "id": "catalogue-list",
+    "path": "/catalog",
+    "alt": "The Catalogue with the Items and Bundles tabs, the Total items, Categories, Missing tax rate and No income account cards, and the table of items",
+    "wait": "Missing tax rate"
+  },
+  {
+    "id": "catalogue-add",
+    "path": "/catalog",
+    "alt": "The Add item drawer with Details, Price and tax, and Accounts sections and Save item at the bottom",
+    "click": "Add item",
+    "wait": "Save item"
+  },
+  {
+    "id": "catalogue-missing-tax",
+    "path": "/catalog?setup=tax",
+    "alt": "The Catalogue filtered by the pressed Missing tax rate card, showing only items with no default tax",
+    "wait": "Showing these · press again to clear"
+  },
+  {
+    "id": "catalogue-bundles",
+    "path": "/catalog?tab=bundles",
+    "alt": "The Bundles tab of the Catalogue listing each bundle with its lines, total and status",
+    "wait": "Lines"
+  },
+  {
+    "id": "catalogue-import",
+    "path": "/catalog",
+    "alt": "The Import catalogue items dialog asking you to choose a CSV file",
+    "click": "Import",
+    "wait": "Import catalogue items"
+  }
+]

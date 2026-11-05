@@ -1,0 +1,55 @@
+---
+title: Issue an invoice
+description: Lock a draft invoice, give it its permanent number and post it to your books.
+sidebar:
+  order: 2
+---
+
+Issuing turns a draft into a real invoice. It gets the next number in your sequence, it's posted to your books, and its PDF is saved exactly as it is at that moment. Issue an invoice only when it's right: after this it can't be edited, only voided or credited.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Issue an invoice**. You can issue a colleague's draft with this right even if you can't edit it.
+</Aside>
+
+<Steps>
+
+1. **Open the draft** — Go to **Invoices** and open the draft. Drafts show **Draft** in the number column.
+
+2. **Check it** — Read the lines and totals. Press **Preview PDF** to see what the customer will get.
+
+3. **Press Issue invoice** — **Issue this invoice?** says who will owe what and when it's due, and that it can then only be voided or credited.
+
+4. **Confirm** — Press **Issue invoice**. Press **Go back** to leave it as a draft.
+
+</Steps>
+
+<Screenshot id="invoices-drafts" alt="The Invoices list filtered to drafts, each showing Draft in the number column" />
+
+You can also issue from a draft's row menu (**Issue**) or with **Save and issue** in the builder. Both open the same question first, so nothing is issued in one click.
+
+## What happens next
+
+- A toast says **Invoice issued**, and the invoice gets its number, such as INV-0012.
+- Its status becomes **Due**, and its lines can no longer be changed.
+- If it had no due date, it gets one from your payment terms.
+- One balanced entry is posted to your books: the customer owes the total, and the revenue and tax are recorded line by line. A deposit (Advance) invoice is the exception — nothing is posted until the money arrives.
+
+## Questions Spine may ask instead
+
+- **Apply this customer's credit?** — when the customer has credit from payments or credit notes. **Apply credit and issue** uses it, so the invoice (and its UPI QR code, if it has one) asks only for what's still owed. **Issue without credit** leaves the credit for later.
+- **Issue without HSN/SAC codes?** — on a GST invoice to a registered business when lines have no HSN/SAC code. **Go back** to add them, or **Issue anyway**.
+
+Answering either question is the confirmation.
+
+<Aside type="caution">
+  If the issue date falls in a closed financial period, you'll see "Could not issue this invoice." Change the issue date, or ask an Owner about the period.
+</Aside>
+
+<Aside type="tip">
+  Numbers never skip or repeat, even when two people issue at the same moment. An Owner sets the prefix and starting number in **Settings › Numbering**.
+</Aside>
+
+Next: [Email an invoice](../email-an-invoice/).

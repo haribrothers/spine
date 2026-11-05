@@ -1,0 +1,35 @@
+---
+title: Change your industry template
+description: Switch to another industry template so new jobs and cost categories suit the work you do.
+sidebar:
+  order: 4
+---
+
+The industry template you picked during setup isn't permanent. Choosing another one changes the defaults Spine uses for new work — for example whether jobs show milestones and retention — and adds the cost categories and expense accounts that kind of business uses.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Industry template** — Open your user menu, choose **Settings**, and pick **Industry template** under **Business**. It says "Pre-sets sensible defaults — you can change anything here at any time."
+
+2. **Choose a template** — Pick **Construction / Contracting**, **Interior design & fit-out**, **Trades (electrical, plumbing, HVAC)**, **IT services & agency**, **Professional services**, **General Services** or **Generic**. Each card says what it sets up.
+
+3. **Press Save** — A "Saved" message appears.
+
+</Steps>
+
+<Screenshot id="settings-industry-template" alt="Settings, Industry template: the template cards with Construction / Contracting selected" />
+
+## What changes
+
+- **New jobs follow the new template.** Construction / Contracting shows milestones and retention on jobs by default; General Services and Generic start those sections collapsed. Jobs you already have don't change.
+- **Cost categories are added, never removed.** The first five templates add their cost categories and expense accounts — such as "Plant & equipment hire" (5300) for construction. If a category or account code already exists, Spine keeps yours and doesn't add a second.
+- **Nothing is taken away.** Switching template never deletes a record, category or account.
+
+<Aside type="caution">Once your modules have been saved, changing the template doesn't switch them on or off: "Modules stay as they are. Change them in Settings › Modules." If you need jobs and the field app, see [Switch modules on or off](../modules/).</Aside>
+
+For what each template sets up during first-time setup, see [Start setting up your business](../../setup/start-the-setup-wizard/).

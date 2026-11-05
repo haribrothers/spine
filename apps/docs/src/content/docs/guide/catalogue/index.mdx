@@ -1,0 +1,37 @@
+---
+title: Catalogue
+description: What the catalogue is for, the main ideas behind it, and where to find each task.
+sidebar:
+  order: 0
+---
+
+The catalogue holds the goods and services you quote, invoice and buy: labour by the hour, materials by the each or the square foot, a fixed-price call-out. Each item has a unit, a default price and tax, and the accounts it posts to. Pick an item on a quote or invoice line and its details fill in for you.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can use the catalogue">Owners and Staff see **Catalogue** under **Sales** in the sidebar. Staff need **Open Catalogue** from their Team; adding and changing items needs **Create/edit own catalogue** or **Edit others' catalogue**. Field crew don't see the catalogue. The catalogue is always on.</Aside>
+
+<Screenshot id="catalogue-list" alt="The Catalogue with the Items and Bundles tabs, the Total items, Categories, Missing tax rate and No income account cards, and the table of items" />
+
+## The main ideas
+
+- **Item.** A good or service with a name, description, unit, category, default price and currency.
+- **Default tax.** The tax rate or group a new line for this item starts with. You can change it on each line.
+- **Supply type.** Whether the item is **Taxable**, **Zero-rated**, **Exempt** or **Non-taxable (outside GST/VAT)**. Only taxable items need a tax rate.
+- **Income and expense accounts.** Where sales of the item post in your books, and where purchases of it post. An item with no income account posts its sales to 4100 Sales — Services.
+- **A copy on every document.** A quote or invoice copies the item's details onto the line. Changing or deleting the item later never changes documents you've already made.
+- **Bundle.** A group of items you sell together, added to a quote or invoice in one pick.
+- **Archive or delete.** Archiving hides an item from pickers but keeps it. Deleting removes it for good; documents keep their copy.
+
+## Tasks
+
+- [Add an item](./add-an-item/)
+- [Set an item's tax and accounts](./set-an-items-tax-and-accounts/)
+- [Find items and fix missing setup](./find-items-and-fix-missing-setup/)
+- [Edit, duplicate, archive or delete an item](./edit-duplicate-archive-or-delete-an-item/)
+- [Change many items at once](./change-many-items-at-once/)
+- [Make a bundle](./make-a-bundle/)
+- [Import and export catalogue items](./import-and-export-catalogue-items/)
+- [Use catalogue items on quotes and invoices](./use-catalogue-items-on-quotes-and-invoices/)
+- [Choose who can change the catalogue](./choose-who-can-change-the-catalogue/)

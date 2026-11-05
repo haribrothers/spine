@@ -1,0 +1,47 @@
+---
+title: Email an invoice
+description: Send an issued invoice to your customer by email, with its PDF attached.
+sidebar:
+  order: 6
+---
+
+Once an invoice is issued, email it to the customer from Spine. They get your message with the invoice PDF attached and, if you've set them, your payment instructions. The invoice's Activity records whether the email went.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Email an invoice**. Only issued invoices can be emailed; a draft has to be [issued](../issue-an-invoice/) first.
+</Aside>
+
+<Steps>
+
+1. **Open the invoice** — Go to **Invoices** and open the issued invoice.
+
+2. **Choose Email invoice** — Open **More** and choose **Email invoice**. From the list, choose **Email invoice** in the row's menu; the invoice opens with the email ready.
+
+3. **Check the email** — **Email invoice INV-0012** shows the customer and the amount due. **To** is filled in with the contact's email. **Subject** and **Message** start from your template in **Settings › Emails**; highlighted words are the invoice's details, which Spine fills in.
+
+4. **Keep the PDF attached** — Leave **Attach the invoice PDF** ticked.
+
+5. **Send** — Press **Send invoice**.
+
+</Steps>
+
+<Screenshot id="invoices-email" alt="The Email invoice dialog with To, Subject, Message and Attach the invoice PDF, and the Send invoice button" />
+
+## What happens next
+
+A toast says **Emailing invoice**, and the email is queued to the customer. The invoice's **Activity** then shows **Emailed to** the address, or **Email failed** with the reason.
+
+The PDF is the one saved when the invoice was issued. It shows your business details, "INVOICE", the number, who it's billed to, the issue and due dates, the lines, Subtotal, Tax, Total, any credits, and **Balance due**. If you've set [payment instructions](../payment-instructions/), the email shows them in a "How to pay" box above the closing note.
+
+<Aside type="caution">
+  If your email server is down, the email waits in a queue and Spine keeps trying. Nothing is lost, and the invoice stays issued. If emails don't arrive, ask whoever runs your Spine to check [email settings](../../../self-hosting/email/).
+</Aside>
+
+<Aside type="tip">
+  Changes you make to the subject or message apply to this email only. To change the wording for every invoice email, an Owner edits the template in **Settings › Emails**.
+</Aside>
+
+To chase an unpaid invoice, see [Send a payment reminder](../send-a-payment-reminder/).

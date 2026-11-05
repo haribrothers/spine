@@ -1,0 +1,3 @@
+
+# US-SITE-12: built from apps/docs (pnpm --filter @spine/docs build:help)
+/public/help/

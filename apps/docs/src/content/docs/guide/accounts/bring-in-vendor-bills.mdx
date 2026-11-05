@@ -1,0 +1,44 @@
+---
+title: Bring in unpaid vendor bills and credits
+description: Add each unpaid bill and unused vendor credit from your old system, so you can pay them and see what you owe in Spine.
+sidebar:
+  order: 7
+---
+
+Bring in each bill you still owe on the cutover date, one by one. They show on Payables with their due dates, and you pay them with a vendor payment like any other bill. Credit notes vendors gave you that you haven't used come in too.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+## Add bills one at a time
+
+<Steps>
+
+1. **Open the Vendor bills tab** — Open **Opening balances** (from **Settings › Opening balances**) and choose **Vendor bills**.
+
+2. **Press Add bill** — **Add opening bill** opens: "An unpaid bill from your old system, as it stood on the cutover date."
+
+3. **Fill it in** — Choose the **Vendor**, then enter the **Bill number** (the vendor's number), **Bill date**, **Due date** and **Amount due**.
+
+4. **Press Add bill** — It's listed, and the totals at the top update.
+
+</Steps>
+
+## Import them from a CSV file
+
+Press **Import from CSV** and choose a file with "One row per unpaid bill from your old system." Match your columns to vendor name, bill number, dates and amount due, pick the **Date format**, and press **Import** (for example **Import 12 bills**). Vendors are matched by name; for names that don't match, press **Create these vendors** or **Fix the file**.
+
+## Add vendor credits
+
+On **Vendor credits**, press **Add credit** and fill in **Add opening vendor credit**: the **Vendor**, the **Amount** and, if you have it, the **Vendor's credit note number**. Press **Add credit**. These are "Credit notes from vendors you hadn't used on the cutover date. Apply them to the vendor's bills or record the refund they pay."
+
+## Good to know
+
+- **They act like real bills.** "Opening bills keep the vendor's numbers, have no lines or tax, and show on Payables to be paid like any other bill." In **Bills** they carry an **Opening balance** badge. Attach the original to each one.
+- **Edit** and **Remove** are on each row. Removing reverses its entry and takes it out of your opening balances; you can add it again.
+- **The totals feed Accounts Payable.** On **Account balances**, Accounts Payable shows "From opening bills" with their total.
+
+<Aside type="caution">After you lock your opening balances, opening bills and vendor credits can't be added, changed or removed. See [Check and lock your opening balances](../lock-opening-balances/).</Aside>
+
+For paying these bills, see [Purchases and expenses](../../purchases/).

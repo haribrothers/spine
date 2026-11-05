@@ -23,9 +23,18 @@ the owner never has to think in debits and credits. See
 - **Field app:** crews see their jobs, mark milestones done, and send photos and expenses, offline too (Android and iPhone).
 - **Your server, your data:** it runs on your own machine with Docker. Nothing calls home, and backups, restores and upgrades are one command each.
 
+## Screenshots
+
+| | |
+|---|---|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="apps/site/src/assets/screens/dashboard-dark.webp"><img alt="The dashboard: cash, receivables, overdue invoices and revenue, with what needs attention" src="apps/site/src/assets/screens/dashboard-light.webp"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/jobs-detail-dark.webp"><img alt="A job with its milestones, costs and retention" src="apps/docs/src/assets/screens/jobs-detail-light.webp"></picture> |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/invoices-list-dark.webp"><img alt="The invoices list with what's outstanding and overdue" src="apps/docs/src/assets/screens/invoices-list-light.webp"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/reports-profit-and-loss-dark.webp"><img alt="Profit and loss, straight from the books" src="apps/docs/src/assets/screens/reports-profit-and-loss-light.webp"></picture> |
+
+Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More in the [user guide](https://docs.h4loom.com/guide/).
+
 ## Install in 5 minutes
 
-You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
+The long version, with every setting, is the [self-hosting guide](https://docs.h4loom.com/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
 
 ```bash
 ./install.sh --app-url https://spine.example.com
@@ -77,18 +86,24 @@ Full rationale for each choice is in PRD §5.
 ```
 spine/
 ├─ apps/
-│  ├─ api/            # NestJS — REST API, Drizzle schema & migrations
-│  ├─ web/            # Next.js
-│  ├─ design-system/  # @spine/ui's living docs app (component pages, not Storybook)
-│  └─ mobile/         # Expo (not yet scaffolded)
+│  ├─ api/             # NestJS — REST API, Drizzle schema & migrations
+│  ├─ web/             # Next.js — the web app
+│  ├─ mobile/          # Expo — the field app
+│  ├─ e2e/             # Playwright end-to-end tests and the guide's screenshots
+│  ├─ docs/            # Astro + Starlight — docs.h4loom.com, and the /help guide in each install
+│  ├─ site/            # Astro — the home page, h4loom.com
+│  ├─ design-system/   # @spine/ui's living docs
+│  └─ showcase-native/ # @spine/ui-native's living docs
 ├─ packages/
-│  ├─ shared/     # money, tax engine, zod schemas, shared types
+│  ├─ shared/     # money, tax engine, zod schemas, shared types, the English strings (i18n)
 │  ├─ ui/         # @spine/ui — Radix + Tailwind component library
+│  ├─ ui-native/  # @spine/ui-native — the field app's components
+│  ├─ sdk/        # typed API client
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
-├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile (production)
+├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile, Coolify compose
 ├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
-├─ scripts/       # seed.ts
-├─ docker-compose.yml       # production stack (builds api/web, runs behind Caddy)
+├─ scripts/       # install, backup, restore, upgrade, verify, release and mobile scripts
+├─ docker-compose.yml       # production stack (published images, behind Caddy)
 ├─ docker-compose.dev.yml   # local dev infra only (Postgres, MailDev; optional RustFS)
 └─ .env.example
 ```

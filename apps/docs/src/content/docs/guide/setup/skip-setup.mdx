@@ -1,0 +1,35 @@
+---
+title: Skip setup and come back later
+description: Skip the setup wizard, or leave part-way, and finish each step later in Settings.
+sidebar:
+  order: 5
+---
+
+You don't have to finish setup to use Spine. If you're moving data in from another system, or want to look around first, you can skip the whole wizard or leave part-way. Spine works with sensible defaults, and every step is waiting in **Settings**.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only the Owner running setup. The Settings panes the wizard uses are Owner-only too.</Aside>
+
+<Steps>
+
+1. **Press Skip to dashboard** — It's on the welcome screen and on every step. Setup is marked finished and you land on the dashboard.
+
+2. **Finish the steps later** — Open your user menu and choose **Settings**. The wizard's steps are panes there: **Business profile**, **Industry template**, **Currency & locale**, **Financial year**, **Tax**, **Numbering** and **Chart of accounts**. Each shows what you chose in the wizard, or the default.
+
+3. **Change a value and press Save** — A "Saved" message appears and new records use the new value. Opening a pane never starts the wizard again.
+
+</Steps>
+
+## What happens when you skip
+
+- **Nothing you saved is lost.** Skipping keeps every step you already finished.
+- **Defaults fill the gaps.** Until you change them, Spine uses the server's default currency, its default document numbering and the standard chart of accounts.
+- **You won't see the wizard again.** Opening the setup address after skipping, or after finishing, takes you to the dashboard. Staff and Field users never see it at all.
+- **The dashboard helps you start.** A **Get started** card lists **Add your first customer**, **Create your first item** and **Send your first quote**, and ticks each one as you do it. Only Owners see it, and **Dismiss** hides it for every Owner in the business. Demo records don't count — the card tracks your own first records.
+- **The Set up Spine page shows what's left.** Open it from your user menu with **Set up Spine**. See [Finish setting up from the Set up Spine page](../finish-setting-up/).
+
+<Aside type="tip">If you skip because you want to try Spine first, **Just show me around (use defaults)** on the welcome screen loads a demo business instead. See [Explore Spine with a demo business](../explore-with-demo-data/).</Aside>
+
+<Aside type="caution">Set your currency before you issue documents. Issued documents keep the currency they were issued in, and Spine uses one currency for the whole business.</Aside>

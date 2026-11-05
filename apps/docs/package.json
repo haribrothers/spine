@@ -1,0 +1,27 @@
+{
+  "name": "@spine/docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "theme": "node ../../scripts/site/tokens-css.mjs src/styles/tokens.css",
+    "dev": "pnpm theme && astro dev --port 4321",
+    "build": "pnpm theme && astro build",
+    "preview": "astro preview",
+    "lint": "astro check",
+    "typecheck": "astro check",
+    "build:help": "pnpm theme && DOCS_BUNDLED=1 astro build --outDir ../web/public/help"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.6",
+    "astro": "7.4.1",
+    "sharp": "0.35.5",
+    "starlight-links-validator": "0.27.0",
+    "starlight-openapi": "0.27.0",
+    "starlight-versions": "0.10.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.11",
+    "typescript": "^5.7.0"
+  }
+}

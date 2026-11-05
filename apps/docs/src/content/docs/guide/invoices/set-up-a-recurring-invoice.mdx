@@ -1,0 +1,58 @@
+---
+title: Set up a recurring invoice
+description: Bill a maintenance contract or retainer on a schedule, so Spine creates the invoice for you each time.
+sidebar:
+  order: 14
+---
+
+A recurring invoice is a schedule plus a set of lines. On each date, Spine creates the invoice from those lines. It can issue and email it for you, or leave a draft for you to check first.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Manage recurring invoices**. It needs the **Recurring documents** module switched on in **Settings › Modules**. Without the right, **Recurring invoices** isn't shown.
+</Aside>
+
+<Steps>
+
+1. **Open Recurring invoices** — Go to **Invoices** and press **Recurring invoices**.
+
+2. **Start a schedule** — Press **+ New recurring invoice**.
+
+3. **Name it and pick the customer** — Enter a **Name**, such as "Monthly maintenance — Hotel lobby", and choose the **Customer**.
+
+4. **Set when it repeats** — Choose **Repeats** (**Weekly**, **Monthly**, **Every 3 months** or **Yearly**) and **On**: a weekday, a day of the month from the 1st to the 28th, or **Last day of the month**.
+
+5. **Set the start and end** — Pick **Starts** (today or later). For **Ends**, choose **Never**, **On a date** or **After a number of invoices**.
+
+6. **Set the payment terms** — Choose **Payment due**: **On receipt**, or 7, 14, 30 or 60 days after issue.
+
+7. **Choose what happens** — Under **When it runs**, choose **Issue the invoice and email it to the customer** or **Create a draft for me to review**.
+
+8. **Add the lines** — Press **Edit lines**, add the items, then press **Done**.
+
+9. **Save** — Press **Save schedule**.
+
+</Steps>
+
+<Screenshot id="invoices-recurring-new" alt="The New recurring invoice dialog with Name, Customer, Repeats, On, Starts, Ends, Payment due, When it runs and the lines" />
+
+A toast says **Schedule saved**, with the date of the first invoice. The schedule is listed as **Active** with its next invoice date.
+
+## What happens on each date
+
+Runs happen at 6:00 AM in your organisation's time zone. Each invoice uses the schedule's lines with the tax rates of that day.
+
+- **Issue and email** — the invoice is issued with the next number, posted to your books and emailed to the customer, as if you'd done it yourself.
+- **Create a draft** — Owners get a notification, "Recurring invoice ready to review: …". Open the draft, check it and [issue it](../issue-an-invoice/).
+
+A schedule never makes more than one invoice for the same date, even if the server was off and catches up. When the end you set is reached, the schedule shows **Finished**.
+
+## If Spine won't save
+
+- "Pick today or a later start date." — the start date is in the past.
+- "Pick a customer." or "Pick a start date." — a required field is empty.
+- "End after at least 1 invoice." — the number of invoices is 0.
+
+To change, pause or delete a schedule, see [Pause, change or stop a recurring invoice](../pause-or-stop-a-recurring-invoice/).

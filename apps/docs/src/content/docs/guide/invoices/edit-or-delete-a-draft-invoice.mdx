@@ -1,0 +1,52 @@
+---
+title: Edit or delete a draft invoice
+description: Change a draft invoice as often as you need, or remove a draft you no longer want.
+sidebar:
+  order: 3
+---
+
+A draft invoice is yours to change. Nothing is in your books until it's issued, so you can edit the customer, dates and lines as often as you like, or delete the draft altogether. Once an invoice is issued, neither is possible.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Create/edit own invoices** (your own drafts) or **Edit others' invoices** (a colleague's). Deleting needs **Delete own invoices** or **Delete others' invoices**. Without the right, **Edit** or **Delete draft** is hidden.
+</Aside>
+
+## Edit a draft
+
+<Steps>
+
+1. **Open the draft** — Go to **Invoices** and open it. Its page is titled **Draft invoice**.
+
+2. **Press Edit** — The builder opens with everything you saved. You can also choose **Edit** from the draft's row menu in the list.
+
+3. **Make your changes** — Change the lines, dates, notes or anything else. The totals update as you type.
+
+4. **Save** — Press **Save draft**. The draft updates, and still nothing is posted to your books.
+
+</Steps>
+
+<Screenshot id="invoices-drafts" alt="The Invoices list filtered to drafts, each showing Draft in the number column" />
+
+## Delete a draft
+
+<Steps>
+
+1. **Find the delete action** — On the draft's page, open **More** and choose **Delete draft**. Or choose **Delete** from its row menu.
+
+2. **Confirm** — **Delete this draft invoice?** warns that this permanently removes the draft. Press **Delete draft** (or **Delete**, from the list) to go ahead, or **Cancel** to keep it.
+
+</Steps>
+
+A toast says **Invoice deleted**.
+
+<Aside type="danger">
+  Deleting a draft can't be undone. If you might want its lines later, [duplicate it](../duplicate-an-invoice/) first.
+</Aside>
+
+## When you can't edit or delete
+
+- An issued invoice can't be edited or deleted, by anyone. **Edit** and **Delete draft** aren't offered. To correct it, [issue a credit note](../issue-a-credit-note/) or [void it](../void-an-invoice/).
+- If you have only **Create/edit own invoices**, a colleague's draft opens without **Edit**. If your Team has **Issue an invoice**, you can still issue it.

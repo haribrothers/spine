@@ -1,0 +1,62 @@
+---
+title: Manage expense categories
+description: Add, change, archive and delete the categories people pick when they submit an expense, and say where each one posts.
+sidebar:
+  order: 24
+---
+
+An expense category is a kind of spending — fuel, materials, site meals. It decides which account an approved expense posts to, and it can fill in the usual tax rate. A short "What it's for" line helps people pick the right one when they submit.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Create/edit own expense categories** or **Edit others' expense categories**. Archiving, restoring and deleting need **Archive/delete own expense categories** or **Archive/delete others' expense categories**. Without any of these, the **Categories** tab doesn't show. Field users pick categories but never manage them.
+</Aside>
+
+## See your categories
+
+Go to **Expenses** and choose the **Categories** tab. Each row shows the name over its "What it's for" line, the account it posts to ("6900 Other Expenses · default" when none is set), its **Default tax** ("—" when none), how many expenses use it, what was approved in it this month, and its state: **Active** or **Archived**. A category posting to 5200 Direct Labour is tagged **Headcount × day rate**.
+
+The state filter shows **Active** by default; choose **Archived** or **All** to see the rest. Press a category's expense count to open the Expenses list filtered to it.
+
+<Screenshot id="purchases-expense-categories" alt="Expenses › Categories with each category's name, what it's for, the account it posts to, default tax, expense count, approved this month and state" />
+
+## Add or change a category
+
+<Steps>
+
+1. **Open the form** — Press **Add category**, or open a row's menu and choose **Edit**.
+
+2. **Name it** — Enter the **Name**, for example "Fuel & freight".
+
+3. **Say what it's for** — **What it's for** is optional, up to 120 characters. It shows under the name when people pick a category.
+
+4. **Choose where it posts** — **Posts to** lists your expense accounts. Leave it empty to post to 6900 Other Expenses.
+
+5. **Set the usual tax** — **Default tax rate** is filled in on the expense form when this category is chosen. People can still change it.
+
+6. **Save** — Press **Add category**, or **Save changes** when editing.
+
+</Steps>
+
+A toast confirms it, and a new category is on the expense form straight away.
+
+If another category already has the name (ignoring case and spaces, archived ones included), you see "Fuel & freight is already a category." If that one is archived, press **Restore it** instead.
+
+<Aside type="caution">
+  Changing a category's account doesn't move past expenses. The form says expenses already approved stay in the old account, and expenses approved from now on post to the new one.
+</Aside>
+
+## Archive, restore or delete
+
+Open a row's menu:
+
+- **Archive** — "Archive Fuel & freight?" It leaves the expense form, so no new expense can use it. Its expenses keep it. Press **Archive category**.
+- **Restore** — on an archived category, puts it back on the expense form.
+- **Delete** — only for a category no expense uses. "Delete Client entertainment?" Press **Delete category**. For a category in use, the menu says "In use — archive it instead".
+- **View history** — who changed it and when.
+
+<Aside type="danger">
+  Deleting a category removes it for good. It can't be undone.
+</Aside>

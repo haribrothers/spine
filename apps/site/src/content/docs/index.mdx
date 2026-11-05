@@ -1,0 +1,44 @@
+---
+title: Run your service business from one place
+description: Spine takes you from enquiry to quote, job, invoice and payment — and keeps the books for you. Self-hosted, for small contractors, fabricators and studios.
+template: splash
+hero:
+  title: Run your service business from one place
+  tagline: Spine takes you from enquiry to quote, job, invoice and payment — and keeps the books for you. Self-hosted, for small contractors, fabricators and studios.
+  actions:
+    - text: Install in 5 minutes
+      link: https://docs.h4loom.com/get-started/install/
+      variant: primary
+    - text: Read the user guide
+      link: https://docs.h4loom.com/guide/
+      variant: secondary
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import Workflow from "../../components/Workflow.astro";
+import Screenshot from "../../components/Screenshot.astro";
+
+<Workflow />
+
+<Screenshot id="dashboard" alt="The dashboard: cash, receivables, overdue invoices and this month's revenue, with what needs your attention" />
+
+<CardGrid>
+  <Card title="Quotes customers accept online" icon="document">
+    Send a branded quote; the customer reads, accepts or declines it from any phone.
+  </Card>
+  <Card title="Jobs, milestones and retention" icon="setting">
+    Bill in stages, hold retention automatically and see each job's margin as it runs.
+  </Card>
+  <Card title="Invoices that post to the books" icon="open-book">
+    Every invoice, payment and expense becomes a balanced journal entry — no data entry.
+  </Card>
+  <Card title="A field app that works offline" icon="phone">
+    Crews see today's jobs, take photos and log expenses with or without signal.
+  </Card>
+  <Card title="Self-hosted — your data stays yours" icon="laptop">
+    Runs on one machine with Docker. Back up with one command, restore anywhere.
+  </Card>
+  <Card title="Built for developers too" icon="github">
+    Architecture, local setup and the API reference live in the [developer docs](https://docs.h4loom.com/developers/architecture/).
+  </Card>
+</CardGrid>

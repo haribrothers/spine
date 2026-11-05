@@ -1,0 +1,41 @@
+---
+title: Finish setting up from the Set up Spine page
+description: Use the Set up Spine page to see what's done, what's left and where to set each thing up.
+sidebar:
+  order: 6
+---
+
+The Set up Spine page puts everything a new business sets up in one place, with a card for each and whether it's done. Spine works out "Done" from your data, so you never tick anything yourself — lock your opening balances, for example, and that card turns Done.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Staff and Field users who open the page see the no-access page.</Aside>
+
+<Steps>
+
+1. **Open the page** — Open your user menu and choose **Set up Spine**. The top shows how many cards are **Done**, how many are **To do** and how many are **Not needed**, with a progress bar.
+
+2. **Pick a card** — Each card has a title, one line on why it matters, and **Done** or **To do**.
+
+3. **Press Set up (or Review)** — A card that's to do says **Set up**; a done one says **Review**. Settings cards open their pane over the page, and closing it brings you back with the cards updated. Opening balances, Bank and cash accounts, Invite your team and Field app open their own page.
+
+4. **Hide what you don't need** — **Mark as not needed** moves a card to **Not needed** at the bottom, for everyone in the business. **Show again** brings it back.
+
+</Steps>
+
+<Screenshot id="setup-set-up-spine" alt="The Set up Spine page: counts of done, to do and not needed, and cards such as Business details and logo, Tax and Chart of accounts" />
+
+## The cards
+
+**Business details and logo**, **Tax**, **Chart of accounts**, **Opening balances**, **Bank and cash accounts**, **Payment instructions**, **Documents and emails**, **Numbering**, **Payment reminders**, **Modules**, **Invite your team**, **Email sending**, **Backups** and **Field app**.
+
+- **Field app** only shows while the Jobs & field module is on.
+- **Email sending** and **Backups** are set on the server by whoever runs Spine, so their cards have **Read the guide** instead of **Set up**. See [Email](../../../self-hosting/email/) and [Backups](../../../self-hosting/backups/).
+- **Backups** says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below." It isn't counted in the totals.
+
+## The dashboard checklist
+
+Until your first customer, item and quote exist, the dashboard's **Get started** card lists those three steps. Once they're done it reads "Finish setting up Spine — 4 left" with a **Set up Spine** button, until every card is done or marked not needed.
+
+<Aside type="caution">With demo data loaded, the page says "Demo data is loaded — these reflect the demo business. Delete it in Settings › Data to set up your own." The cards count the demo's settings as they stand. See [Delete the demo data](../delete-demo-data/).</Aside>

@@ -1,0 +1,41 @@
+---
+title: Follow receivables, sales and jobs
+description: Read the Receivables aging, Invoices due this week, Pipeline by stage, Job profitability, Retention held and Jobs in progress cards.
+sidebar:
+  order: 6
+---
+
+These cards show who owes you, what's coming due, how your pipeline looks and how your jobs are doing. Each one is a short version of a full report, and **View all** or the card's link takes you there.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners see every card. Staff need **View receivables** for Receivables aging, Invoices due this week and Retention held, and **View job profitability** for Job profitability and Jobs in progress. Pipeline by stage needs no right. The job cards need the **Jobs & field** module.</Aside>
+
+<Screenshot id="dashboard-receivables-jobs" alt="The Receivables aging ring, Pipeline by stage and Job profitability cards on an Owner's dashboard" />
+
+## Receivables aging
+
+A ring splits what customers owe into **Current**, **1–30 days**, **31–60 days**, **61–90 days** and **90+ days**, with each amount beside it. The centre shows the total in short form, such as "$4.5M", and the full total sits under the card title. With nothing owed, it reads "Nothing outstanding." See [Payments](../../payments/).
+
+## Invoices due this week
+
+Issued invoices due in the next 7 days, marked "Due today", "Due tomorrow" or "Due in *n*d". Click one to open it, or **View all** for Receivables. With none, it reads "Nothing due this week."
+
+## Pipeline by stage
+
+Each stage of your sales pipeline with its lead count and value. **View board** opens the pipeline. With no leads, it reads "No leads yet."
+
+## Job profitability
+
+Your best jobs under **Top performers** and your weakest under **Needs attention**, each with a margin bar. **View all** opens the Job profitability report.
+
+## Retention held
+
+The total retention customers are holding back, "on *n* jobs · in Retention Receivable until released", and the three jobs holding the most. **Release** on a job opens it so you can release the retention. When nothing is held, the card shrinks to one line: "Retention held · No retention held."
+
+## Jobs in progress
+
+Each active job with its name and number, a bar of how much of the contract value is billed, and its budget used (or "No budget"). The **Job profitability** link opens the full report. See [Jobs](../../jobs/).
+
+<Aside type="tip">Retention held and Jobs in progress are shown by default for a business on the Construction template. For other templates they start hidden: show them from **Edit layout** (see [Edit your dashboard layout](../edit-your-dashboard-layout/)).</Aside>

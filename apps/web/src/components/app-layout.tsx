@@ -125,6 +125,8 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
   useEffect(() => setNavOpen(false), [pathname]);
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(`${href}/`);
+  // US-SITE-11: the Help menu names the page its guide is for.
+  const pageName = sections.flatMap((section) => section.items).find((item) => isActive(item.href))?.label;
   const renderLink = (item: { href: string; label: string }, content: React.ReactNode) => (
     <Link href={item.href} aria-label={item.label}>
       {content}
@@ -171,7 +173,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
               <div className="min-w-0 flex-1">
                 <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
               </div>
-              <HelpButton collapsed={false} />
+              <HelpButton collapsed={false} pageName={pageName} />
             </div>
           }
         />
@@ -187,7 +189,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
           userMenu={
             (hydrated ? collapsed : false) ? (
               <div className="flex flex-col items-center gap-1">
-                <HelpButton collapsed />
+                <HelpButton collapsed pageName={pageName} />
                 <NotificationBell collapsed />
                 <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
               </div>
@@ -196,7 +198,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
                 <div className="min-w-0 flex-1">
                   <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
                 </div>
-                <HelpButton collapsed={false} />
+                <HelpButton collapsed={false} pageName={pageName} />
                 <NotificationBell collapsed={false} />
               </div>
             )

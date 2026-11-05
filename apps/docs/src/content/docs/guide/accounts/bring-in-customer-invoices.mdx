@@ -1,0 +1,45 @@
+---
+title: Bring in unpaid customer invoices and credit
+description: Add each unpaid invoice and any unused customer credit from your old system, so aging, reminders and statements work from day one.
+sidebar:
+  order: 6
+---
+
+Rather than one Accounts Receivable figure, Spine brings in each unpaid invoice from your old system. That way every customer's balance, aging, reminders and statements are right from the first day, and you record payments against the invoices they're paying.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+## Add invoices one at a time
+
+<Steps>
+
+1. **Open the Customer invoices tab** — Open **Opening balances** (from **Settings › Opening balances**) and choose **Customer invoices**.
+
+2. **Press Add invoice** — **Add opening invoice** opens: "An unpaid invoice from your old system, as it stood on the cutover date."
+
+3. **Fill it in** — Choose the **Customer**, then enter the **Invoice number** (as on your old invoice), **Invoice date**, **Due date** and **Amount due**.
+
+4. **Add retention if there is any** — **Retention held** is "Optional — held back on a job until the job is done." With retention, choose the **Job** it belongs to.
+
+5. **Press Add invoice** — It's listed, and the totals at the top update.
+
+</Steps>
+
+## Import them from a CSV file
+
+Press **Import from CSV** and choose a file with "One row per unpaid invoice from your old system." Match each of your file's columns to Spine's (customer name, number, dates, amount due, retention), pick the **Date format**, and press **Import** (for example **Import 24 invoices**). Customers are matched by name. If some names don't match anyone, Spine lists them: press **Create these customers** to add them and import those rows, or **Fix the file** and try again.
+
+## Add customer credit
+
+On **Customer credit**, press **Add credit**, choose the **Customer**, enter the **Amount** and press **Add credit**: "Money customers had paid ahead, or credit they hadn't used, on the cutover date. They can use it against invoices or have it refunded."
+
+## Good to know
+
+- **Each number once.** A number that's already used shows "Invoice … already exists. Use the number from your old system exactly once."
+- **They act like real invoices.** "Opening invoices keep your old numbers, have no lines or tax, and age, get paid and get reminded like any other invoice." In **Invoices** they carry an **Opening balance** badge and have no PDF — attach the original to each one.
+- **Retention comes back with the job.** When the job's retention is released, the opening retention is included.
+- **Edit** and **Remove** are on each row. Removing reverses its entry; you can add it again. An invoice that's been paid or credited shows **Paid or credited** instead.
+
+<Aside type="caution">After you lock your opening balances, opening invoices and credit can't be added, changed or removed. See [Check and lock your opening balances](../lock-opening-balances/).</Aside>

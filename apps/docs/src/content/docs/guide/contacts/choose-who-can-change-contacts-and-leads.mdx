@@ -1,0 +1,37 @@
+---
+title: Choose who can change contacts and leads
+description: Give a Team the right to change contacts, leads and activities, separately for their own records and everyone else's.
+sidebar:
+  order: 14
+---
+
+Every Staff member who can open Contacts or the pipeline can read every contact and lead. What they can change is set per Team, in four separate groups: contacts, contact persons and addresses, leads, and activities. This lets a junior add customers without altering a colleague's records.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners only. Owners can always change everything. Field crew's access is fixed: they can't open Contacts or the pipeline.</Aside>
+
+<Steps>
+1. **Open the Team** — Go to **Teams** in the sidebar (or **Settings › Teams**) and open the Team.
+2. **Open its permissions** — Choose the **Permissions** tab.
+3. **Turn rights on or off** — Expand **Manage Contacts**, **Manage Leads** or **Manage Activities** and switch each right. **Everything in …** turns a whole group on or off.
+4. **Save** — Press **Save changes** and confirm. Members get the new rights at their next request, without signing out.
+</Steps>
+
+## "Own" and "others'"
+
+"Own" means records the person created. "Others'" means records someone else created, and records with no recorded creator.
+
+- **Manage Contacts**: **Open Contacts**, **Create/edit own contacts**, **Edit others' contacts**, **Archive/delete own contacts**, **Archive/delete others' contacts**, **Manage contact persons** and **Manage contact addresses**.
+- **Manage Leads**: **Open Pipeline**, **Create/edit own leads**, **Edit others' leads**, **Delete own leads** and **Delete others' leads**.
+- **Manage Activities**: **Create/edit own activities**, **Edit others' activities**, **Delete own activities** and **Delete others' activities**.
+
+## How the rights work together
+
+- **Create/edit own contacts** also lets someone add contacts. Without it or **Edit others' contacts**, **Add contact** is hidden.
+- **Manage contact persons** and **Manage contact addresses** need the right to edit the contact as well. With only one of them, the other tab is read-only.
+- A lead's creator keeps the right to edit it when you change its **Owner** on the board.
+- **Edit others' activities** is what lets someone tick off a colleague's follow-up. Without it, the box is greyed out.
+- Rights for contacts, leads and activities are separate. Full contact rights don't let someone move a colleague's lead.
+
+<Aside type="tip">Someone on several Teams gets everything any of their Teams allows. For more on Teams, see [Team and permissions](../../team/).</Aside>

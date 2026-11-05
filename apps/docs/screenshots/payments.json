@@ -1,0 +1,93 @@
+[
+  {
+    "id": "payments-list",
+    "path": "/payments",
+    "alt": "The Payments list with the Received this month, Credit to use and Refunded this month cards above the table of payments",
+    "wait": "Credit to use"
+  },
+  {
+    "id": "payments-record",
+    "path": "/invoices/{invoice}",
+    "alt": "The Record a payment dialog with a customer chosen and their open invoices listed under What it pays",
+    "click": "Record payment",
+    "wait": "What it pays"
+  },
+  {
+    "id": "payments-record-credit",
+    "path": "/payments",
+    "alt": "The Record a payment dialog, which says anything over what it pays becomes the customer's credit",
+    "click": "Record payment",
+    "wait": "Record a payment"
+  },
+  {
+    "id": "payments-apply-credit",
+    "path": "/payments/{payment}",
+    "alt": "The Apply credit dialog on a payment, with its remaining credit and the invoices to apply it to",
+    "click": "Apply credit",
+    "wait": "Remaining credit"
+  },
+  {
+    "id": "payments-move-off",
+    "path": "/payments/{payment}",
+    "alt": "A payment's Applied to table, where each invoice's actions menu offers Move off",
+    "wait": "Applied to"
+  },
+  {
+    "id": "payments-refund",
+    "path": "/payments/{payment}",
+    "alt": "The Refund dialog with Refund from, Amount, Date, Paid from and Method",
+    "click": "Refund",
+    "wait": "Refund from"
+  },
+  {
+    "id": "payments-delete",
+    "path": "/payments/{payment}",
+    "alt": "A payment's page with the More menu open, where Delete payment appears while none of the payment is applied",
+    "click": "More",
+    "wait": "View history"
+  },
+  {
+    "id": "payments-email-receipt",
+    "path": "/payments/{payment}",
+    "alt": "The Email receipt dialog for a payment, with the customer's address and Attach the receipt PDF ticked",
+    "click": "Email receipt",
+    "wait": "Attach the receipt PDF"
+  },
+  {
+    "id": "payments-list-filters",
+    "path": "/payments?card=credit",
+    "alt": "The Payments list showing only payments with credit left, with the contact, method and date filters and the search bar",
+    "wait": "Showing these · press again to clear"
+  },
+  {
+    "id": "payments-detail",
+    "path": "/payments/{payment}",
+    "alt": "A payment's page with its state, the Received, Applied and Credit left strip, and the Applied to table",
+    "wait": "Activity"
+  },
+  {
+    "id": "payments-receivables",
+    "path": "/receivables",
+    "alt": "Receivables By customer, with the age cards, the age bar and each customer's overdue and total owed",
+    "wait": "Total owed"
+  },
+  {
+    "id": "payments-receivables-invoices",
+    "path": "/receivables?view=invoices",
+    "alt": "Receivables By invoice, with how late each invoice is and when the customer was last reminded",
+    "wait": "How late"
+  },
+  {
+    "id": "payments-receivables-remind",
+    "path": "/receivables?view=invoices",
+    "alt": "Receivables By invoice, with a tick box on each invoice for sending reminders to several customers at once",
+    "wait": "Balance due"
+  },
+  {
+    "id": "payments-statement",
+    "path": "/contacts/{contact}",
+    "alt": "The Send a statement dialog with Period, Show, the summary and the email fields",
+    "click": "Send statement",
+    "wait": "Paid and credited"
+  }
+]

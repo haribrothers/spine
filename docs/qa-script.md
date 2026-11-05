@@ -5649,6 +5649,25 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 5. The Owner reads docs/security-review.md and signs it off (name and date).
 6. Regression: quote acceptance, invitations, sign-in from the phone app and file downloads work behind Caddy and on Coolify.
 
+## 279. The website, the docs and help in the app (US-SITE-01 to US-SITE-14, Phase 12)
+
+1. `pnpm --filter @spine/docs dev` (http://localhost:4321): the sidebar has Get started, User guide (20 modules, then Keyboard shortcuts), Self-hosting and Developers (with API reference). The theme menu switches Auto, Light and Dark, and the whole site follows. Screenshots match the theme.
+2. Press Ctrl K (⌘K), type "send": results show page titles and excerpts with the match highlighted. Escape closes it and focus returns.
+3. Open a few guide pages (Quotes › Send a quote, Invoices › Record a payment, Team › Invite people): each says who can do it, numbers its steps, names buttons as the app does, shows a screenshot and ends with "Last updated with Spine <version>" and previous/next links.
+4. Self-hosting › Configuration lists every setting in `.env.example`. Backups shows the passphrase danger note and the `down -v` caution. API reference › Invoices: an operation shows who may call it, the Idempotency-Key, errors and a `curl` example.
+5. `pnpm --filter @spine/site dev` (http://localhost:4322): "Run your service business from one place", Install in 5 minutes and Read the user guide (both to docs.h4loom.com), the workflow strip, the dashboard screenshot in your theme, six cards and the licence in the footer.
+6. In the app, on Invoices, press ? › Help for this page: the guide's Invoices page opens in a new tab from your own server (`/help/guide/invoices/`), with the banner "You're reading the guide for Spine <version>, served by your own server…". Turn off Wi-Fi on a server-side test: the guide and its search still work. The menu's footer reads "Spine <version> · the guide on this server matches your version". What's new opens the release notes; Online docs opens docs.h4loom.com.
+7. `/help/developers/…` doesn't exist in the bundled copy; there's no version menu.
+8. After the Owner connects Cloudflare Pages (docs/release.md): a merge that changes `apps/docs` publishes docs.h4loom.com; a branch push gets a preview address; a broken link fails the build and leaves the live site as it was.
+9. Regression: the app's own pages are unaffected by `/help`; unknown addresses still show the 404 page.
+
+## 280. The README, licence and contributor guide (US-OPS-19, Phase 12)
+
+1. On GitHub, the repository's front page shows the README with screenshots (they switch with GitHub's theme), the licence as "AGPL-3.0", and Contributing, Code of conduct and Security policy in the sidebar.
+2. New issue offers "Something isn't working", "An idea or a feature", and links to report a security problem and to the docs; a new pull request shows the checklist.
+3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said.
+4. docs/release.md matches what happened for the last beta release.
+
 ## Known gaps — don't file these as bugs
 
 - Status, payment-method, capability and report labels that `@spine/shared` exports are still English in code; they move with emails, PDFs and API errors in 1.1 (US-OPS-16, D-268).

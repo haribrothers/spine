@@ -1,0 +1,52 @@
+---
+title: Deactivate or reactivate someone
+description: Remove a person's access straight away while keeping everything they did, and give it back later if they return.
+sidebar:
+  order: 11
+---
+
+When someone leaves, deactivate them. They can't sign in or open anything from that moment, on the web or the phone, but their records, history and Teams stay. Their name still shows on the quotes, invoices and notes they created. Spine doesn't delete people.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. You can't deactivate yourself or the Primary Owner.</Aside>
+
+## Deactivate someone
+
+<Steps>
+
+1. **Find the person** — Go to **Team › Users** on the **Active** tab and open their row menu.
+
+2. **Choose Deactivate** — "Deactivate *name*?" says they can't sign in or open anything from now on, and that their records, history and Teams stay.
+
+3. **Confirm** — Press **Deactivate**. The toast says they've been deactivated, and they move to the **Deactivated** tab.
+
+</Steps>
+
+## What happens when someone is deactivated
+
+- Their sessions stop working for your business at once, on every device.
+- Any AI agents they connected are disconnected. See [Connected agents](../../connected-agents/).
+- Their name stays on everything they did, and the audit log keeps their history.
+- People from the demo data are marked **Demo**. Deactivating one notes that they go when the demo data is deleted.
+
+<Aside type="caution">If you're about to deactivate someone because their password may be known to others, consider [setting a new password](../set-a-new-password-for-someone/) instead — it signs them out everywhere while keeping their access.</Aside>
+
+## Reactivate someone
+
+<Steps>
+
+1. **Open the Deactivated tab** — Go to **Team › Users** and choose **Deactivated**.
+
+2. **Choose Reactivate** — Open their row menu. "Reactivate *name*?" says they get their previous role and Teams back and can sign in again.
+
+3. **Confirm** — Press **Reactivate**. The toast says they can sign in again.
+
+</Steps>
+
+Agents they had connected don't come back; they connect them again if they need them.
+
+## Taking someone off one Team
+
+To reduce what someone can do without removing their access, take them off a Team instead. See [Add and remove people on a Team](../add-and-remove-team-members/).

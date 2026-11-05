@@ -1,0 +1,49 @@
+---
+title: Open, edit, duplicate or delete a meeting
+description: Check a meeting in its quick view, change it, copy it for a similar meeting, or take it off the calendar.
+sidebar:
+  order: 6
+---
+
+Press a meeting to see a short summary without opening the whole form. From there you can edit it, make a copy for a similar meeting, or delete it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone who can see a meeting can open it. Editing and duplicating need **Create/edit own meetings** for meetings you organise, or **Edit others' meetings**. Deleting needs **Delete own meetings** or **Delete others' meetings**. Owners can do all of these.</Aside>
+
+## Check a meeting
+
+Press a meeting on the calendar. The quick view shows its title, date and time, how it repeats, location, the linked contact ("Linked to …"), who organised it ("Organized by …"), and the attendees with their responses. Press **Close** or Escape to close it.
+
+If you can't change the meeting, the quick view shows **View only** instead of the edit and delete buttons.
+
+## Edit a meeting
+
+<Steps>
+1. **Open it** — Press the meeting, then press **Edit** (the pencil) in the quick view.
+2. **Change it** — The **Edit event** dialog opens. Change the details, or the people on the **People** tab.
+3. **Save** — Press **Save changes**.
+</Steps>
+
+For a recurring meeting, Spine first asks whether to change **This event** or **All events**. See [Set up a recurring meeting](../set-up-a-recurring-meeting/).
+
+## Duplicate a meeting
+
+<Steps>
+1. **Open the menu** — In the quick view, press **More options** and choose **Duplicate**.
+2. **Change what's different** — The new-event dialog opens with the title, contact, length, location, notes, visibility and invitees filled in. Change the date and anything else.
+3. **Save** — Press **Create event**. A separate meeting is created; the original stays as it was.
+</Steps>
+
+Press **Cancel** to close the dialog without creating anything.
+
+## Delete a meeting
+
+<Steps>
+1. **Choose Delete** — In the quick view, press **Delete** (the bin), or press **Delete** in the edit dialog.
+2. **Confirm** — Spine asks "Delete this meeting?" and explains it's removed from the calendar for everyone. Press **Delete** to go ahead, or **Cancel**.
+</Steps>
+
+A "Meeting deleted" toast says it's off the calendar. Everyone invited is told it's been cancelled.
+
+<Aside type="danger" title="Deleting can't be undone">The meeting is removed from everyone's calendar and from the contact's timeline. To change the time instead, edit or drag it.</Aside>

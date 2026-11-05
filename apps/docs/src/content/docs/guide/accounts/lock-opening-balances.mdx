@@ -1,0 +1,43 @@
+---
+title: Check and lock your opening balances
+description: Compare Spine's trial balance with your old one, then lock the opening balances so nobody changes your starting point.
+sidebar:
+  order: 8
+---
+
+When every balance, invoice, bill and credit is in, check the totals against your old system's trial balance and lock them. Locking closes everything up to the day before your cutover date, so your starting point stays put.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open the Review tab** — Open **Opening balances** (from **Settings › Opening balances**) and choose **Review**.
+
+2. **Check the cards** — **Opening invoices** (how many, and the retention), **Opening bills**, **Credits** (customers and vendors) and **Opening Balance Adjustments**. "nothing left to explain" means everything balances.
+
+3. **Compare the trial balance** — "Trial balance on …" lists every account with its debit or credit on the day before the cutover date. It should match your old software's trial balance for that day.
+
+4. **Press Lock opening balances** — "Lock opening balances?" explains that Spine closes everything up to that date and that an owner can unlock it later. Confirm with **Lock opening balances**.
+
+</Steps>
+
+## If Opening Balance Adjustments isn't zero
+
+The lock dialog warns "Opening Balance Adjustments still holds … Lock anyway?" Press **Go back** to find the missing figure, or **Lock anyway** if you'll correct it later with a journal.
+
+## What locking does
+
+- A closed period is created, ending the day before the cutover date. Nothing can be posted inside it.
+- Every opening balances screen becomes read-only and shows **Locked**. Trying to change something says "Unlock the opening balances to change them."
+- The **Opening balances** card on the Set up Spine page shows **Done**.
+- The lock is recorded in the audit log.
+
+## Unlock to make a change
+
+Press **Unlock** on the Review tab. "Unlock opening balances?" says everything up to that date opens again so the opening balances can be changed, and that it's recorded in the audit log. Confirm with **Unlock**, make your change, then lock again.
+
+<Aside type="caution">While the opening balances are unlocked, the period before the cutover date is open. Lock them again as soon as you've made your change.</Aside>
+
+To check the result, open the Balance Sheet on the day before the cutover date — see [Reports](../../reports/).

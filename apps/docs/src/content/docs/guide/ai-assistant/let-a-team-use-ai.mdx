@@ -1,0 +1,43 @@
+---
+title: Let a Team use AI
+description: Give a Team the Use AI features permission, and understand who else can use AI and where.
+sidebar:
+  order: 5
+---
+
+Owners can always use AI once it's on. For Staff, AI is a Team permission, **Use AI features**, so only the people you choose use it. It's off for **General Staff** to start with.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners, with the AI assistant switched on.</Aside>
+
+<Steps>
+
+1. **Open the Team** — Go to **Team › Teams** and open the Team.
+
+2. **Find the AI assistant group** — On the **Permissions** tab, the **AI assistant** group has one permission: **Use AI features**.
+
+3. **Switch it on** — It's marked **Changed** in the draft, like any other permission.
+
+4. **Save** — Press **Save changes**, check that "Save 1 change to *Team*?" names **Use AI features**, and confirm. Members get it at their next request, and the Team's **History** records the change.
+
+</Steps>
+
+See [Choose what a Team can do](../../team/choose-what-a-team-can-do/) for how drafts and saving work.
+
+## Where members see AI
+
+AI isn't a section of Spine, so it doesn't appear in the **Sections** card or in **What members will open**. With **Use AI features**, members see AI on the bills, expenses, quotes, emails and reconciliations they can already work on. For example, reading a vendor's bill needs **Open Vendor Bills** and the right to create bills too.
+
+AI reads data for its suggestions through the same permission checks as the person using it, so it never shows them anything they couldn't open.
+
+## Field users
+
+Field access is fixed. With AI on, Field users can use **Read receipt** on their own expenses in the field app, and nothing else. See [Read a bill or receipt with AI](../read-a-bill-or-receipt-with-ai/).
+
+## When AI is switched off
+
+The **AI assistant** group is hidden from Team permissions. Grants are kept, so when AI is switched back on, the same Teams have it again.
+
+<Aside type="tip">Staff without **Use AI features** don't see any AI control — no greyed-out buttons. If someone asks where AI is, check their access with [What they can open](../../team/check-what-someone-can-open/) and their Teams' permissions.</Aside>

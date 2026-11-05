@@ -1,0 +1,51 @@
+---
+title: Pay bills from Payables
+description: Pay a bill, pay a vendor or use their credit straight from Payables, without opening each bill.
+sidebar:
+  order: 15
+---
+
+Once Payables shows you what to pay, you can pay from there. Each row's menu opens the same payment and credit dialogs as a bill's page, and the page refreshes in place when you're done.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **View payables**. Paying needs **Create own vendor payments**; applying credit needs **Apply and refund vendor credits**. You only see the actions you have the right to do.
+</Aside>
+
+## Pay one bill
+
+On the **By bill** tab, open the bill's row menu and choose **Pay bill**. The vendor payment dialog opens with that bill ticked for its balance. Fill in the date, method and account, and press **Record payment** — see [Pay a vendor](../pay-a-vendor/).
+
+## Pay several bills from one vendor
+
+<Steps>
+
+1. **Tick the bills** — On **By bill**, tick the bills you want to pay.
+
+2. **Press Pay (n)** — The vendor payment dialog opens with those bills ticked for their balances.
+
+3. **Record it** — Check the details and press **Record payment**, then confirm.
+
+</Steps>
+
+A payment is always for one vendor. If you tick bills from several vendors, **Pay (n)** is off and says "Pick bills from one vendor — a payment is for one vendor."
+
+## Pay a vendor
+
+On the **By vendor** tab, open the vendor's row menu and choose **Pay vendor**. The dialog opens with the vendor chosen and their bills listed, ready to tick.
+
+## Apply credit
+
+When a vendor has open credit, **Apply credit** shows in their row menu, and in the menu of each of their bills. It opens the bill's apply dialog — see [Apply a vendor credit to bills](../apply-a-vendor-credit/). The **Credit to use** column on **By vendor** shows who has credit.
+
+## Other actions
+
+- **Open bill** opens the bill's page.
+- **Open contact** opens the vendor's contact.
+
+When a payment or credit is done, the toast says what happened and Payables refreshes, keeping your tab, search and age. If something fails, the message shows above the list.
+
+<Aside type="tip">
+  Press **Due in 7 days** first to see this week's bills, then tick and pay them vendor by vendor.
+</Aside>

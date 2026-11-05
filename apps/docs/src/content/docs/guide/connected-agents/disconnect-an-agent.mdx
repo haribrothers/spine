@@ -1,0 +1,52 @@
+---
+title: Disconnect an agent
+description: See the agents you've connected and disconnect one, or, as an Owner, end anyone's connection.
+sidebar:
+  order: 5
+---
+
+You can see every agent you've connected and stop any of them at once. Owners can see and end every connection in the business. Drafts an agent created stay, marked with its name.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone, for their own agents. Owners can disconnect anyone's from **Settings › Connected agents**.</Aside>
+
+## Disconnect your own agent
+
+<Steps>
+
+1. **Open your connected agents** — Open your user menu, choose **Settings**, then **Connected agents** under **Your account**.
+
+2. **Find the agent** — Each connection shows the agent's name and address, what it can do ("Read" or "Read and create drafts"), when you connected it and when it was last used.
+
+3. **Press Disconnect** — "Disconnect *Agent*?" says it stops working at once and drafts it created stay, marked with its name.
+
+4. **Confirm** — The toast says it's disconnected. It can't use Spine as you any more.
+
+</Steps>
+
+<Screenshot id="connected-agents-my-connections" alt="Settings, Your account, Connected agents: your connected agents, or none yet, and the connector address with Copy address" />
+
+With no connections, the pane says "No agents connected" and shows the address to add, with **Copy address**.
+
+## Disconnect someone else's agent (Owners)
+
+<Steps>
+
+1. **Open Settings › Connected agents** — Under **Business**. The **Connections** card lists every agent by **Agent**, **Person**, **Can**, **Connected** and **Last used**.
+
+2. **Press Disconnect** on the row — Spine asks first, with the same confirm.
+
+3. **Confirm** — The toast says it's disconnected and that the person is told. They get a notification that you disconnected their agent from their account.
+
+</Steps>
+
+## When connections end by themselves
+
+- **Deactivated or removed** — every agent the person connected is disconnected. Reactivating them doesn't restore it; they connect again.
+- **Password reset** — when someone resets their password, their connections end.
+- **Unused for 30 days** — the connection ends; connect the agent again when you need it.
+- **Connected agents switched off** — every agent stops at once, but connections are kept for when an Owner turns it back on.
+
+<Aside type="tip">To use a disconnected agent again, [connect it from the agent](../connect-an-ai-agent/) as you did the first time.</Aside>

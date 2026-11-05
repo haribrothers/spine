@@ -662,24 +662,24 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-16 · Move every user-facing string into translation files
 - [x] US-OPS-17 · Pass an accessibility audit of every screen
 - [ ] US-OPS-18 · Complete a security review before 1.0 (review, fixes and checks done; waiting for the Owner's sign-off in docs/security-review.md)
-- [ ] US-OPS-19 · Ship the README, licence and contributor guide
+- [ ] US-OPS-19 · Ship the README, licence and contributor guide (README, LICENSE, CONTRIBUTING, code of conduct, issue and PR templates and docs/release.md done; waiting for the Owner's clean-machine test: follow only the README to a first invoice)
 
 ### Milestone 2 · website and help
 
-- [ ] US-SITE-01 · Set up the docs site in the monorepo
-- [ ] US-SITE-02 · Show a home page for people discovering Spine
-- [ ] US-SITE-03 · Find any page with search
-- [ ] US-SITE-04 · Read a task-based guide for every module
-- [ ] US-SITE-05 · Ship each story with its guide page
-- [ ] US-SITE-06 · Capture guide screenshots automatically
-- [ ] US-SITE-07 · Install Spine from the self-hosting guide
-- [ ] US-SITE-08 · Run, back up and upgrade from the self-hosting guide
-- [ ] US-SITE-09 · Learn the codebase from the developer docs
-- [ ] US-SITE-10 · Browse a generated API reference
-- [ ] US-SITE-11 · Open help for the page I'm on
-- [ ] US-SITE-12 · Read the guide without internet
-- [ ] US-SITE-13 · Read docs for the version I run
-- [ ] US-SITE-14 · Publish the site after each merge
+- [x] US-SITE-01 · Set up the docs site in the monorepo
+- [x] US-SITE-02 · Show a home page for people discovering Spine
+- [x] US-SITE-03 · Find any page with search
+- [x] US-SITE-04 · Read a task-based guide for every module
+- [x] US-SITE-05 · Ship each story with its guide page
+- [x] US-SITE-06 · Capture guide screenshots automatically
+- [x] US-SITE-07 · Install Spine from the self-hosting guide
+- [x] US-SITE-08 · Run, back up and upgrade from the self-hosting guide
+- [x] US-SITE-09 · Learn the codebase from the developer docs
+- [x] US-SITE-10 · Browse a generated API reference
+- [x] US-SITE-11 · Open help for the page I'm on
+- [x] US-SITE-12 · Read the guide without internet
+- [x] US-SITE-13 · Read docs for the version I run
+- [ ] US-SITE-14 · Publish the site after each merge (settings ready in docs/release.md; waiting for the Owner to connect the two Cloudflare Pages projects)
 
 ### After the v1.0 tag
 

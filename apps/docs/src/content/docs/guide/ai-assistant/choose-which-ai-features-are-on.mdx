@@ -1,0 +1,45 @@
+---
+title: Choose which AI features are on
+description: Switch each AI feature on or off and see exactly what it sends to your AI provider.
+sidebar:
+  order: 3
+---
+
+Each AI feature has its own switch, so you allow only what you're comfortable with. Each one lists exactly what it sends, and some things are never sent at all.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners, with AI switched on. See [Turn on the AI assistant](../turn-on-the-ai-assistant/).</Aside>
+
+<Steps>
+
+1. **Open the AI settings** — Open your user menu, choose **Settings**, then **AI assistant**.
+
+2. **Find Features** — "Each one only fills in a form someone has open." Every feature is on to start with.
+
+3. **Read what's sent** — Press **What's sent** on a feature to see exactly what goes to your provider.
+
+4. **Switch a feature off or on** — Use its switch. The toast says, for example, "Draft quote lines is off" — it's gone from every screen.
+
+</Steps>
+
+## The features and what they send
+
+- **Read bills and receipts** — on new vendor bills, the expense form and the field app. Sends the bill or receipt someone chooses to read — a PDF's text, or the image — and the names of your vendors and categories to match against.
+- **Draft customer emails** — in the send dialog for quotes, invoices, reminders, statements, receipts and credit notes. Sends the email template, the document's number, amounts and dates, and the customer's name.
+- **Draft quote lines** — in the quote builder. Sends the enquiry and up to 50 matching catalogue items and bundles.
+- **Suggest bank matches** — in reconcile, only when someone presses **Suggest with AI**. Sends statement lines' dates, amounts and descriptions, with account numbers and IDs removed.
+
+<Aside type="note" title="Never sent">Bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys.</Aside>
+
+## Privacy in short
+
+- With a provider on your own network, nothing leaves it.
+- With a cloud provider, data goes to that provider's host only when someone uses an AI feature. Turning AI on asks you to confirm this first, and the acknowledgement is recorded in the audit log.
+- AI only reads what the person using it can already see, through the same permission checks.
+- The text of each request and its reply isn't stored — only who used which feature, on what, and whether it worked.
+
+## What switching a feature off does
+
+Its AI control disappears from its screen for everyone. The rest of AI keeps working. Turning a feature back on brings the control back.
