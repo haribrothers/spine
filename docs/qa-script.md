@@ -5651,15 +5651,18 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 
 ## 279. The website, the docs and help in the app (US-SITE-01 to US-SITE-14, Phase 12)
 
-1. `pnpm --filter @spine/docs dev` (http://localhost:4321): the sidebar has Get started, User guide (20 modules, then Keyboard shortcuts), Self-hosting and Developers (with API reference). The theme menu switches Auto, Light and Dark, and the whole site follows. Screenshots match the theme.
+1. `pnpm --filter @spine/docs dev` (http://localhost:4321/docs/): the sidebar has Get started, User guide (20 modules, then Keyboard shortcuts), Self-hosting and Developers (with API reference). The theme menu switches Auto, Light and Dark, and the whole site follows. Screenshots match the theme.
 2. Press Ctrl K (⌘K), type "send": results show page titles and excerpts with the match highlighted. Escape closes it and focus returns.
 3. Open a few guide pages (Quotes › Send a quote, Invoices › Record a payment, Team › Invite people): each says who can do it, numbers its steps, names buttons as the app does, shows a screenshot and ends with "Last updated with Spine <version>" and previous/next links.
 4. Self-hosting › Configuration lists every setting in `.env.example`. Backups shows the passphrase danger note and the `down -v` caution. API reference › Invoices: an operation shows who may call it, the Idempotency-Key, errors and a `curl` example.
-5. `pnpm --filter @spine/site dev` (http://localhost:4322): "Run your service business from one place", Install in 5 minutes and Read the user guide (both to docs.h4loom.com), the workflow strip, the dashboard screenshot in your theme, six cards and the licence in the footer.
-6. In the app, on Invoices, press ? › Help for this page: the guide's Invoices page opens in a new tab from your own server (`/help/guide/invoices/`), with the banner "You're reading the guide for Spine <version>, served by your own server…". Turn off Wi-Fi on a server-side test: the guide and its search still work. The menu's footer reads "Spine <version> · the guide on this server matches your version". What's new opens the release notes; Online docs opens docs.h4loom.com.
+5. `pnpm --filter @spine/site dev` (http://localhost:4322): "Run your service business from one place", Install in 5 minutes and Read the user guide (both to the docs under /docs/), the workflow strip, the dashboard screenshot in your theme, six cards and the licence in the footer.
+6. In the app, on Invoices, press ? › Help for this page: the guide's Invoices page opens in a new tab from your own server (`/help/guide/invoices/`), with the banner "You're reading the guide for Spine <version>, served by your own server…". Turn off Wi-Fi on a server-side test: the guide and its search still work. The menu's footer reads "Spine <version> · the guide on this server matches your version". What's new opens the release notes; Online docs opens spine.h4loom.com/docs/.
 7. `/help/developers/…` doesn't exist in the bundled copy; there's no version menu.
-8. After the Owner connects Cloudflare Pages (docs/release.md): a merge that changes `apps/docs` publishes docs.h4loom.com; a branch push gets a preview address; a broken link fails the build and leaves the live site as it was.
-9. Regression: the app's own pages are unaffected by `/help`; unknown addresses still show the 404 page.
+8. After the Owner connects Cloudflare Pages (docs/release.md): a merge that changes `apps/docs` publishes spine.h4loom.com/docs/; a branch push gets a preview address; a broken link fails the build and leaves the live site as it was.
+9. `pnpm site:build`, then `npx serve apps/site/dist`: the home page is at `/` and the docs at `/docs/`, with their styles, search and favicon; the home page's buttons, the developer docs card and the footer's Docs and Older versions links all open docs pages. The build ends "every link into /docs/ is there".
+10. View the page source of a docs page: its canonical address is `https://spine.h4loom.com/docs/…`. The bundled guide's "See the latest online docs ↗" and the app's ? › Online docs open `https://spine.h4loom.com/docs/`.
+11. Change the domain in `packages/shared/src/public-site.ts` to `example.org` and run `pnpm test:scripts`: US-SITE-14 fails, naming the README and `.github/ISSUE_TEMPLATE/config.yml`. Put it back.
+12. Regression: the app's own pages are unaffected by `/help`; unknown addresses still show the 404 page.
 
 ## 280. The README, licence and contributor guide (US-OPS-19, Phase 12)
 

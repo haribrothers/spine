@@ -1,3 +1,5 @@
+import { SPINE_DOCS_URL } from "@spine/shared";
+
 /**
  * US-SITE-11 (D-110) — which guide page "Help for this page" opens. The
  * guide for this install's version is served by the server itself at
@@ -5,7 +7,7 @@
  * a page with no guide of its own opens the guide's start page.
  */
 export const HELP_BASE = "/help/";
-export const ONLINE_DOCS_URL = "https://docs.h4loom.com/";
+export const ONLINE_DOCS_URL = SPINE_DOCS_URL;
 
 const ROUTES: [prefix: string, guide: string][] = [
   ["/dashboard", "guide/dashboard/"],

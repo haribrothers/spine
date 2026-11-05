@@ -5,7 +5,7 @@ const state = vi.hoisted(() => ({ get: vi.fn(), pathname: "/invoices" }));
 vi.mock("../lib/api-client", () => ({ apiClient: { get: state.get } }));
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }));
 
-import { helpPathFor, releaseNotesUrl } from "../lib/help-links";
+import { ONLINE_DOCS_URL, helpPathFor, releaseNotesUrl } from "../lib/help-links";
 import { HelpButton } from "../components/help-button";
 
 const openMenu = async () => {
@@ -46,6 +46,6 @@ describe("US-SITE-11 · open help for the page I'm on", () => {
     expect(open).toHaveBeenCalledWith("/help/guide/invoices/", "_blank", "noopener,noreferrer");
     await openMenu();
     fireEvent.click(screen.getByRole("menuitem", { name: /Online docs/ }));
-    expect(open).toHaveBeenLastCalledWith("https://docs.h4loom.com/", "_blank", "noopener,noreferrer");
+    expect(open).toHaveBeenLastCalledWith(ONLINE_DOCS_URL, "_blank", "noopener,noreferrer");
   });
 });

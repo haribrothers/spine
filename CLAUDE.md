@@ -17,7 +17,7 @@ Spine is a self-hosted business management app for small service and project bus
 - If you change a contract (API route, table, column, event, error code, capability, posting rule), update `docs/prd/05-api.md`, `04-data-model.md`, `07-security.md` or `06-ledger-posting-rules.md` in the same change.
 - If a story, a screen and the architecture disagree: the story wins over the screen; the architecture and decisions win over the story. If it's still unclear, stop and ask; add the question to `docs/prd/13-risks-open-questions.md`.
 - Controls that depend on a later phase are hidden behind flags in `packages/shared/src/feature-flags.ts` until that phase ships.
-- User-facing help lives in the docs site (`apps/docs/src/content/docs/guide/`, published at `docs.h4loom.com`), not in `docs/` (that's the spec). From Phase 12, when a story changes what people see, update its guide page in the same change.
+- User-facing help lives in the docs site (`apps/docs/src/content/docs/guide/`, published at `spine.h4loom.com/docs/`; the domain is set in `packages/shared/src/public-site.ts`), not in `docs/` (that's the spec). From Phase 12, when a story changes what people see, update its guide page in the same change.
 - Don't build beyond the story. Non-goals in `docs/prd/00-overview.md` are out of scope (no multi-tenant SaaS, multi-org, payroll, inventory valuation, multi-currency, live bank feeds, filing returns). Work planned after 1.0 is in `docs/prd/16-roadmap.md` — don't build it early.
 
 ## Stack (don't substitute)

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { SPINE_DOCS_URL } from "../../../packages/shared/src/public-site";
 import { signUpNewOrg } from "./helpers";
 
 test.describe("US-SITE-11, US-SITE-12 · help for this page, from the guide on this server", () => {
@@ -22,7 +23,7 @@ test.describe("US-SITE-11, US-SITE-12 · help for this page, from the guide on t
     await guide.waitForLoadState("networkidle");
     expect(new URL(guide.url()).pathname).toMatch(/^\/help\/guide\/invoices\/?$/);
     await expect(guide.getByRole("note")).toContainText("served by your own server — it works without internet.");
-    await expect(guide.getByRole("link", { name: /See the latest online docs/ })).toHaveAttribute("href", "https://docs.h4loom.com/");
+    await expect(guide.getByRole("link", { name: /See the latest online docs/ })).toHaveAttribute("href", SPINE_DOCS_URL);
     await expect(guide.getByRole("heading", { level: 1 })).toBeVisible();
 
     // Search runs in the browser.

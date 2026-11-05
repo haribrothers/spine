@@ -5,6 +5,7 @@ import starlight from "@astrojs/starlight";
 import starlightLinksValidator from "starlight-links-validator";
 import starlightVersions from "starlight-versions";
 import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
+import { SPINE_SITE_URL } from "../../packages/shared/src/public-site.ts";
 
 /** The Spine version these docs describe, shown on every page ("Last updated with Spine 1.0"). */
 const version = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version;
@@ -44,11 +45,11 @@ const GUIDE = [
 ];
 
 /**
- * US-SITE-01 (D-108, D-270) — the docs at docs.h4loom.com: Get started, the
- * user guide, self-hosting and developer docs. English only for 1.0; a
- * second language is a new folder under src/content/docs/ plus a `locales`
- * entry here. DOCS_BASE serves the same build under /help on an install
- * (US-SITE-12).
+ * US-SITE-01 (D-108, D-273) — the docs, under /docs/ on the home page's site
+ * (spine.<domain>): Get started, the user guide, self-hosting and developer
+ * docs. English only for 1.0; a second language is a new folder under
+ * src/content/docs/ plus a `locales` entry here. The same build is served
+ * under /help on an install (US-SITE-12).
  */
 /**
  * US-SITE-12 (D-110) — `DOCS_BUNDLED=1` builds the copy every install serves
@@ -59,8 +60,8 @@ const GUIDE = [
 const bundled = process.env.DOCS_BUNDLED === "1";
 
 export default defineConfig({
-  site: bundled ? undefined : "https://docs.h4loom.com",
-  base: bundled ? "/help" : "/",
+  site: bundled ? undefined : SPINE_SITE_URL,
+  base: bundled ? "/help" : "/docs",
   trailingSlash: "always",
   vite: { define: { "import.meta.env.SPINE_VERSION": JSON.stringify(version), "import.meta.env.DOCS_BUNDLED": JSON.stringify(bundled) } },
   integrations: [

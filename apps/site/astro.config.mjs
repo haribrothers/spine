@@ -2,14 +2,16 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightLinksValidator from "starlight-links-validator";
+import { SPINE_SITE_URL } from "../../packages/shared/src/public-site.ts";
 
 /**
- * US-SITE-02 (D-270) — the home page at h4loom.com, for people discovering
- * Spine. One splash page in the docs' theme; every link leads to
- * docs.h4loom.com. No search of its own: the docs have it.
+ * US-SITE-02 (D-273) — the home page at spine.<domain>, for people
+ * discovering Spine. One splash page in the docs' theme; its links lead to
+ * the docs, built into /docs/ on the same site (scripts/site/build-pages.mjs
+ * checks them). No search of its own: the docs have it.
  */
 export default defineConfig({
-  site: "https://h4loom.com",
+  site: SPINE_SITE_URL,
   trailingSlash: "always",
   integrations: [
     starlight({
@@ -21,7 +23,7 @@ export default defineConfig({
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/haribrothers/spine" }],
       pagefind: false,
       components: { Footer: "./src/components/Footer.astro" },
-      plugins: [starlightLinksValidator({ errorOnLocalLinks: true })],
+      plugins: [starlightLinksValidator({ errorOnLocalLinks: true, exclude: ["/docs/**"] })],
     }),
   ],
 });

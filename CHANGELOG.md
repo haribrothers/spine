@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-05 — The website at spine.h4loom.com with the docs under /docs/, the domain set in one place (US-SITE-14, D-273)
+
+- **One site:** the home page is `spine.h4loom.com` and the docs `spine.h4loom.com/docs/` (they were `h4loom.com` and `docs.h4loom.com`). `pnpm site:build` builds the home page into `apps/site/dist` and the docs into its `docs/` folder, then checks that every home-page link into `/docs/` was built. CI, `pnpm verify` and the one Cloudflare Pages project (`spine-site`, docs/release.md) all run it. The home page's links to the docs no longer name a domain.
+- **The domain is set once,** in `packages/shared/src/public-site.ts` (`SPINE_DOMAIN`, `SPINE_SITE_URL`, `SPINE_DOCS_URL`). The two sites' addresses, the bundled guide's "See the latest online docs", the app's ? › Online docs and the tests read it. `scripts/us-site-14.test.mjs` checks that the README and GitHub's issue template, which have to spell the addresses out, agree with it, and that no code names the domain itself.
+- **Unchanged:** the field app's id `com.h4loom.spine`, and the `beta.` and `demo.` addresses. Pointing the bare `h4loom.com` at the home page is a Cloudflare redirect rule (docs/release.md).
+- **Spec:** D-273 supersedes D-270's two projects and D-271's home page and docs addresses. Updated: 01-tech-stack, 02-architecture, 11-testing-release, 19-website (US-SITE-01, US-SITE-14), Q-15, CLAUDE.md, the README. QA section 279 gains steps 9–11.
+
 ### 2026-11-05 — Fix: the meetings mini calendar after paging quickly (US-MTG-13)
 
 - Paging the mini calendar several months at once could leave the month on screen without its busy-day dots: an earlier month's answer that arrived last replaced it. Answers for a month no longer on screen are now ignored. Found by the E2E suite (`us-mtg-13`), which failed now and then.

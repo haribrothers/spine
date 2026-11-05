@@ -179,11 +179,11 @@ Safety rules ([D-104](12-decisions.md)): issued files are write-once; uploads ar
 
 ## Help and documentation
 
-The public site is two Astro projects: `apps/site`, the home page at `h4loom.com`, and `apps/docs` (Starlight), the user guide, self-hosting guide, developer docs and the generated API reference at `docs.h4loom.com` ([D-108](12-decisions.md), [D-270](12-decisions.md)). It is the only place user help is written ([D-109](12-decisions.md)).
+The public site is two Astro projects published as one: `apps/site`, the home page at `spine.h4loom.com`, and `apps/docs` (Starlight), the user guide, self-hosting guide, developer docs and the generated API reference under `/docs/` on the same site ([D-108](12-decisions.md), [D-270](12-decisions.md), [D-273](12-decisions.md)). The domain is set once, in `packages/shared/src/public-site.ts`. It is the only place user help is written ([D-109](12-decisions.md)).
 
 - **Bundled guide:** the web image's build copies the user guide and self-hosting sections for that release into `/help`, served as static files by the web app — no login, no outside requests, search included ([D-110](12-decisions.md)).
 - **Help button:** the sidebar's Help (?) menu maps the current route to its guide page (`apps/web/src/lib/help-links.ts`) and opens `/help/...` on the same server; "Online docs ↗" opens the public site at the matching version.
-- **Publishing:** Cloudflare Pages builds and deploys each project after merges to `main` that change its folder (for the docs, also the OpenAPI document), with a preview address for every branch ([D-270](12-decisions.md)).
+- **Publishing:** Cloudflare Pages builds both with `pnpm site:build` (the docs into the home page's `docs/` folder) and deploys after merges to `main` that change either folder or the OpenAPI document, with a preview address for every branch ([D-273](12-decisions.md)).
 
 ## Updates
 

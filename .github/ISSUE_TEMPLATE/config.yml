@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/haribrothers/spine/security/advisories/new
     about: Privately, so it can be fixed before it's public (SECURITY.md).
   - name: User guide and self-hosting guide
-    url: https://docs.h4loom.com
+    url: https://spine.h4loom.com/docs/
     about: How to use, install, back up and upgrade Spine.

@@ -30,11 +30,11 @@ the owner never has to think in debits and credits. See
 | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/site/src/assets/screens/dashboard-dark.webp"><img alt="The dashboard: cash, receivables, overdue invoices and revenue, with what needs attention" src="apps/site/src/assets/screens/dashboard-light.webp"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/jobs-detail-dark.webp"><img alt="A job with its milestones, costs and retention" src="apps/docs/src/assets/screens/jobs-detail-light.webp"></picture> |
 | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/invoices-list-dark.webp"><img alt="The invoices list with what's outstanding and overdue" src="apps/docs/src/assets/screens/invoices-list-light.webp"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="apps/docs/src/assets/screens/reports-profit-and-loss-dark.webp"><img alt="Profit and loss, straight from the books" src="apps/docs/src/assets/screens/reports-profit-and-loss-light.webp"></picture> |
 
-Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More in the [user guide](https://docs.h4loom.com/guide/).
+Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More in the [user guide](https://spine.h4loom.com/docs/guide/).
 
 ## Install in 5 minutes
 
-The long version, with every setting, is the [self-hosting guide](https://docs.h4loom.com/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
+The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
 
 ```bash
 ./install.sh --app-url https://spine.example.com
@@ -57,7 +57,7 @@ Owners see "Spine <version> is available" when a new release is out. `./upgrade.
 
 ## Help
 
-The user guide and the self-hosting guide are at [docs.h4loom.com](https://docs.h4loom.com), and in the app (the **?** button). Found a bug or want something? [Open an issue](https://github.com/haribrothers/spine/issues/new/choose). Found a security problem? Please report it privately, as [SECURITY.md](SECURITY.md) explains.
+The user guide and the self-hosting guide are at [spine.h4loom.com/docs](https://spine.h4loom.com/docs/), and in the app (the **?** button). Found a bug or want something? [Open an issue](https://github.com/haribrothers/spine/issues/new/choose). Found a security problem? Please report it privately, as [SECURITY.md](SECURITY.md) explains.
 
 ## Status
 
@@ -90,8 +90,8 @@ spine/
 │  ├─ web/             # Next.js — the web app
 │  ├─ mobile/          # Expo — the field app
 │  ├─ e2e/             # Playwright end-to-end tests and the guide's screenshots
-│  ├─ docs/            # Astro + Starlight — docs.h4loom.com, and the /help guide in each install
-│  ├─ site/            # Astro — the home page, h4loom.com
+│  ├─ docs/            # Astro + Starlight — the docs at spine.h4loom.com/docs, and the /help guide in each install
+│  ├─ site/            # Astro — the home page, spine.h4loom.com
 │  ├─ design-system/   # @spine/ui's living docs
 │  └─ showcase-native/ # @spine/ui-native's living docs
 ├─ packages/

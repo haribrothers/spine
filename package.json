@@ -29,6 +29,7 @@
     "test:e2e": "pnpm --filter @spine/e2e test",
     "test:e2e:ui": "pnpm --filter @spine/e2e test:ui",
     "verify": "node scripts/verify.mjs",
+    "site:build": "node scripts/site/build-pages.mjs",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\""
   },
   "devDependencies": {
