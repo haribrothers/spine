@@ -12,6 +12,8 @@
   },
   "workers_dev": true,
   "preview_urls": true,
+  // `wrangler preview` (Workers Builds' default for a branch) needs this block, even empty.
+  "previews": {},
   // Telemetry off.
   "send_metrics": false
 }

@@ -31,7 +31,7 @@ How a version of Spine is numbered, written up and published. The decisions behi
 
 ## The website and docs (US-SITE-14, D-273, D-274)
 
-The site is one Cloudflare **Worker with static assets** (`spine-site`), built by Workers Builds, Cloudflare's Git integration: no GitHub workflow and no Actions minutes. `pnpm site:build` puts the home page (`apps/site`) at the root and the docs (`apps/docs`) under `/docs/`, in `apps/site/dist`. `wrangler.jsonc` at the repo root tells Wrangler to serve that folder, to answer a missing page with the nearest `404.html`, and to send no telemetry, so Cloudflare's default deploy and preview commands work unchanged. It's public even while the repo is private.
+The site is one Cloudflare **Worker with static assets** (`spine-site`), built by Workers Builds, Cloudflare's Git integration: no GitHub workflow and no Actions minutes. `pnpm site:build` puts the home page (`apps/site`) at the root and the docs (`apps/docs`) under `/docs/`, in `apps/site/dist`. `wrangler.jsonc` at the repo root tells Wrangler to serve that folder, to answer a missing page with the nearest `404.html`, to allow branch previews (`wrangler preview` needs its `previews` block, even empty), and to send no telemetry, so Cloudflare's default deploy and preview commands work unchanged. It's public even while the repo is private.
 
 Cloudflare's dashboard combines Workers and Pages, and **Create** makes a Worker. That's what this setup expects, so there's no Pages option to look for.
 
@@ -66,6 +66,8 @@ Build variables apply only to the build; nothing goes under **Settings › Varia
 
 ### 4. Check it
 Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page.
+
+If a branch build fails with "Your Wrangler configuration is missing a `previews` block", the commit predates that block in `wrangler.jsonc`; rebase it on `main`.
 
 If the deploy step fails with "The Cloudflare application detection logic has been run in the root of a workspace", Wrangler didn't find `wrangler.jsonc`: check that **Root directory** is `/` and that the commit being built has the file.
 

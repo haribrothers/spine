@@ -33,12 +33,13 @@ describe("US-SITE-14 · the website's and docs' addresses", () => {
     assert.deepEqual(files.split("\n").filter(Boolean), ["packages/shared/src/public-site.ts"]);
   });
 
-  it("the Worker serves the folder pnpm site:build writes, with its 404 pages and telemetry off (D-274)", () => {
+  it("the Worker serves the folder pnpm site:build writes, with its 404 pages, branch previews and telemetry off (D-274)", () => {
     const config = JSON.parse(read("wrangler.jsonc").replace(/^\s*\/\/.*$/gm, ""));
     assert.equal(config.name, "spine-site");
     assert.equal(config.assets.directory, "./apps/site/dist");
     assert.match(read("scripts/site/build-pages.mjs"), /join\(root, "apps\/site\/dist"\)/);
     assert.equal(config.assets.not_found_handling, "404-page");
+    assert.deepEqual(config.previews, {}, "a branch build runs `wrangler preview`, which needs a previews block");
     assert.equal(config.send_metrics, false);
     assert.ok(!read("wrangler.jsonc").includes(SPINE_DOMAIN), "wrangler.jsonc names no domain");
   });
