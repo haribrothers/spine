@@ -67,6 +67,8 @@ Build variables apply only to the build; nothing goes under **Settings › Varia
 ### 4. Check it
 Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page.
 
+A branch's preview (`<branch>-spine-site.<subdomain>.workers.dev`) serves the same pages, but a made-up address there gets Cloudflare's plain "Not found" instead of the site's 404 page: Worker Previews don't apply `not_found_handling` (seen with Wrangler 4.158; Cloudflare's docs don't cover it). Check the 404 pages on production.
+
 If a branch build fails with "Your Wrangler configuration is missing a `previews` block", the commit predates that block in `wrangler.jsonc`; rebase it on `main`.
 
 If the deploy step fails with "The Cloudflare application detection logic has been run in the root of a workspace", Wrangler didn't find `wrangler.jsonc`: check that **Root directory** is `/` and that the commit being built has the file.
