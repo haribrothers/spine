@@ -11,7 +11,8 @@ name: CI
 #   release (a v* tag) or on demand (D-260);
 # - docs-only changes skip everything, and each suite runs only when the
 #   code it covers changed (a mobile-only change runs lint, typecheck and
-#   unit tests alone);
+#   unit tests alone; a change only to the home page or the docs site runs
+#   the Sites job alone);
 # - lint, typecheck and unit tests run first (a few minutes); integration
 #   and E2E (when it runs) then run side by side, and the first of them to
 #   fail cancels the other;
@@ -52,7 +53,10 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      code: ${{ github.event_name != 'pull_request' || steps.code.outputs.code == 'true' }}
+      # Code outside the two sites: the full lint, typecheck and unit job. The design
+      # tokens live under docs/ but feed every app, and the API reference under
+      # apps/docs is checked against the API, so both count as app code.
+      app: ${{ github.event_name != 'pull_request' || steps.app.outputs.app == 'true' || steps.suites.outputs.tokens == 'true' || steps.suites.outputs.openapi == 'true' }}
       integration: ${{ github.event_name != 'pull_request' || steps.suites.outputs.integration == 'true' }}
       # US-SITE-01: the docs site and the home page, built and link-checked when they change.
       sites: ${{ github.event_name != 'pull_request' || steps.suites.outputs.sites == 'true' }}
@@ -60,17 +64,22 @@ jobs:
       e2e: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: dorny/paths-filter@v3
-        id: code
+        id: app
         if: github.event_name == 'pull_request'
         with:
           predicate-quantifier: every
           filters: |
-            code:
+            app:
               - "**"
               - "!docs/**"
               - "!**/*.md"
               - "!.vscode/**"
               - "!LICENSE"
+              - "!apps/site/**"
+              - "!apps/docs/**"
+              - "!scripts/site/**"
+              - "!scripts/us-site-14.test.mjs"
+              - "!wrangler.jsonc"
       # What the integration suite exercises; the field app and its native
       # packages are covered by the unit tests alone.
       - uses: dorny/paths-filter@v3
@@ -94,12 +103,18 @@ jobs:
               - "apps/docs/**"
               - "apps/site/**"
               - "scripts/site/**"
+              - "scripts/us-site-14.test.mjs"
+              - "wrangler.jsonc"
               - "docs/design/tokens.json"
+            tokens:
+              - "docs/design/tokens.json"
+            openapi:
+              - "apps/docs/openapi.json"
 
   static:
     name: Lint, typecheck and unit
     needs: changes
-    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.sites == 'true'
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     # About 15 minutes with the audit, the API reference check and the two sites' builds (Phase 12).
     timeout-minutes: 25
@@ -155,6 +170,43 @@ jobs:
       # US-SITE-01, US-SITE-14: the home page with the docs under /docs/; a broken internal link fails the build.
       - name: Build the docs site and home page
         if: needs.changes.outputs.sites == 'true'
+        run: pnpm site:build
+
+  # A change only to the home page, the docs site or how they publish: their
+  # own checks and build, without the rest of the workspace (a few minutes).
+  sites:
+    name: Sites
+    needs: changes
+    if: needs.changes.outputs.sites == 'true' && needs.changes.outputs.app != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # The same install Cloudflare's build runs (docs/release.md).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @spine/site... --filter @spine/docs...
+
+      # Lint and typecheck are both `astro check` in the two sites.
+      - name: Check the sites
+        run: pnpm --filter @spine/site --filter @spine/docs lint
+
+      # US-SITE-14: the addresses come from public-site.ts and the Worker serves the build's folder.
+      - name: Site script tests
+        run: node --test scripts/us-site-14.test.mjs
+
+      # US-SITE-01, US-SITE-14: the home page with the docs under /docs/; a broken internal link fails the build.
+      - name: Build the docs site and home page
         run: pnpm site:build
 
   integration:
@@ -256,11 +308,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   # Required by main's branch protection under this name: passes when lint,
-  # typecheck, unit and (when it ran) integration all passed.
+  # typecheck, unit and (when it ran) integration all passed, or, for a change
+  # only to the sites, when the Sites job passed.
   unit-and-integration:
     name: Unit and integration
-    needs: [changes, static, integration]
-    if: always() && needs.changes.result == 'success' && needs.changes.outputs.code == 'true'
+    needs: [changes, static, integration, sites]
+    if: always() && needs.changes.result == 'success' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.sites == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -268,8 +321,13 @@ jobs:
         run: |
           echo "Lint, typecheck and unit: ${{ needs.static.result }}"
           echo "Integration: ${{ needs.integration.result }}"
-          [ "${{ needs.static.result }}" = "success" ] || exit 1
-          case "${{ needs.integration.result }}" in success|skipped) ;; *) exit 1 ;; esac
+          echo "Sites: ${{ needs.sites.result }}"
+          if [ "${{ needs.changes.outputs.app }}" = "true" ]; then
+            [ "${{ needs.static.result }}" = "success" ] || exit 1
+            case "${{ needs.integration.result }}" in success|skipped) ;; *) exit 1 ;; esac
+          else
+            [ "${{ needs.sites.result }}" = "success" ] || exit 1
+          fi
 
   # D-260: runs on a release tag or on demand. On a pull request it's
   # skipped, which main's branch protection counts as passing.
