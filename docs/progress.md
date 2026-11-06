@@ -679,7 +679,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-SITE-11 · Open help for the page I'm on
 - [x] US-SITE-12 · Read the guide without internet
 - [x] US-SITE-13 · Read docs for the version I run
-- [ ] US-SITE-14 · Publish the site after each merge (settings ready in docs/release.md; waiting for the Owner to connect the two Cloudflare Pages projects)
+- [ ] US-SITE-14 · Publish the site after each merge (settings ready in docs/release.md; waiting for the Owner to connect the `spine-site` Worker, D-274)
 
 ### After the v1.0 tag
 

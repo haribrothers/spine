@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-06 — The website publishes as a Cloudflare Worker with static assets (US-SITE-14, D-274)
+
+- **Why:** Cloudflare's dashboard now combines Workers and Pages, and Create makes a Worker whose build runs `npx wrangler deploy`. With no Wrangler config, that stopped at the monorepo root ("application detection logic has been run in the root of a workspace") after a successful `pnpm site:build`.
+- **`wrangler.jsonc`** (repo root): the `spine-site` Worker serves `apps/site/dist`, answers a missing page with the nearest `404.html` (the docs' own under `/docs/`), turns on workers.dev and preview URLs, and sends no telemetry. It names no domain; the domain stays in `public-site.ts`. `scripts/us-site-14.test.mjs` checks the folder matches the build's and that no domain is named.
+- **docs/release.md › The website and docs:** step-by-step setup in the combined dashboard (Settings › Build, Build variables, Branch control, Build watch paths, Domains & Routes), and what to check after the first build.
+- **Spec:** D-274 amends D-273. Updated 01-tech-stack, 02-architecture, 11-testing-release, 19-website (US-SITE-14), progress and the QA script.
+
 ### 2026-11-05 — The website at spine.h4loom.com with the docs under /docs/, the domain set in one place (US-SITE-14, D-273)
 
 - **One site:** the home page is `spine.h4loom.com` and the docs `spine.h4loom.com/docs/` (they were `h4loom.com` and `docs.h4loom.com`). `pnpm site:build` builds the home page into `apps/site/dist` and the docs into its `docs/` folder, then checks that every home-page link into `/docs/` was built. CI, `pnpm verify` and the one Cloudflare Pages project (`spine-site`, docs/release.md) all run it. The home page's links to the docs no longer name a domain.

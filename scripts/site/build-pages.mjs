@@ -1,4 +1,4 @@
-// US-SITE-14 (D-273) — the public site as Cloudflare Pages serves it: the home
+// US-SITE-14 (D-273) — the public site as Cloudflare serves it (D-274): the home
 // page (apps/site) at the root and the docs (apps/docs) under /docs/, in one
 // folder, apps/site/dist. Each build checks its own links; this then checks
 // the home page's links into /docs/ land on a page the docs built.

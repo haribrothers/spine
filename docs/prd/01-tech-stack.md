@@ -57,7 +57,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | API reference | `starlight-openapi`, from the API's OpenAPI document | Generated, so it never drifts from the code |
 | Versions | `starlight-versions`, one per minor release from 1.0 ([D-111](12-decisions.md)) | Self-hosters on older versions read matching docs |
 | Link checks | `starlight-links-validator` | Broken links fail the build |
-| Hosting | Cloudflare Pages, one project: `pnpm site:build` puts `apps/site` at `spine.h4loom.com` and `apps/docs` under `/docs/` ([D-273](12-decisions.md)) | One domain and one set of settings; free; works while the repo is private; a preview per branch |
+| Hosting | Cloudflare Workers static assets, one Worker built by Workers Builds ([D-274](12-decisions.md)): `pnpm site:build` puts `apps/site` at `spine.h4loom.com` and `apps/docs` under `/docs/` ([D-273](12-decisions.md)) | One domain and one set of settings; free; works while the repo is private; a preview per branch |
 | In-app copy | The user guide and self-hosting sections are bundled into the web image at `/help` ([D-110](12-decisions.md)) | Help works offline and matches the installed version |
 
 ## `apps/mobile` — the field app (Phase 5)

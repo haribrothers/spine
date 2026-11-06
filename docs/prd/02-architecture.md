@@ -183,7 +183,7 @@ The public site is two Astro projects published as one: `apps/site`, the home pa
 
 - **Bundled guide:** the web image's build copies the user guide and self-hosting sections for that release into `/help`, served as static files by the web app — no login, no outside requests, search included ([D-110](12-decisions.md)).
 - **Help button:** the sidebar's Help (?) menu maps the current route to its guide page (`apps/web/src/lib/help-links.ts`) and opens `/help/...` on the same server; "Online docs ↗" opens the public site at the matching version.
-- **Publishing:** Cloudflare Pages builds both with `pnpm site:build` (the docs into the home page's `docs/` folder) and deploys after merges to `main` that change either folder or the OpenAPI document, with a preview address for every branch ([D-273](12-decisions.md)).
+- **Publishing:** Cloudflare Workers Builds builds both with `pnpm site:build` (the docs into the home page's `docs/` folder) and deploys after merges to `main` that change either folder or the OpenAPI document, with a preview address for every branch; one Worker serves `apps/site/dist` as static assets (`wrangler.jsonc`, [D-273](12-decisions.md), [D-274](12-decisions.md)).
 
 ## Updates
 
