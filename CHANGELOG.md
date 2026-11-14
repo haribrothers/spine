@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — Fix: the dependency audit after two new node-forge advisories
+
+- **Why:** `pnpm audit --prod` (the first step of `pnpm verify` and of CI) started failing on GHSA-rhr8-3pm8-cq29 and GHSA-6qrw-m8cv-hcxf, published 2026-11-10: both high, in `node-forge` 1.4.0, which reaches production through better-auth › drizzle-orm › expo-sqlite › expo's CLI.
+- **Fix:** a pnpm override pins `node-forge` to ^1.4.3 (the patch release that fixes these and its other open advisories), like the existing overrides in the root `package.json`.
+
 ### 2026-11-14 — A redesigned home page with motion (US-SITE-02, D-275)
 
 - **Why:** the home page was Starlight's stock splash: a left-aligned hero, a strip of pills, a flat screenshot and six identical cards, with nothing showing how Spine works. Redesigned in Claude Design from Mobbin references (Twenty, Beside, Mercury, FLORA, Function, Giga) and approved before building.
