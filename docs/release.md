@@ -65,6 +65,7 @@ A new Worker builds on a change to any file (Include paths `*`). Until the paths
 1. **Workers & Pages** › `spine-site` › **Settings** › **Build** › **Build watch paths** › edit (pencil).
 2. **Include paths:** replace `*` with the paths in the table above, one per field: `apps/site/*`, `apps/docs/*`, `packages/shared/src/public-site.ts`, `docs/design/tokens.json`, `scripts/site/*`, `package.json`, `pnpm-lock.yaml`, `wrangler.jsonc`. A trailing `*` matches everything under that folder, subfolders included.
 3. **Exclude paths:** leave empty. **Save**. It applies from the next push.
+   The **Production** and **Previews Base** tabs at the top of Builds each have their own settings, so set and save the paths on both. Production covers `main`; Previews Base covers every other branch.
 4. Check it: push a commit to a branch that changes only a file in `docs/`. The commit gets no new "Workers Builds: spine-site" check, and **Deployments** shows no new build.
 
 The two paths outside the site folders are the files the builds read from elsewhere in the repo: the domain (`public-site.ts`) and the design tokens. If either site starts reading another file outside `apps/site`, `apps/docs` or `scripts/site`, add it here, or a change to it won't publish. `package.json` and `pnpm-lock.yaml` also start a build when an unrelated dependency changes; that's the safe side, since the lockfile decides what the site builds with.
