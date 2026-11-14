@@ -22,7 +22,7 @@ const section = (id: string) => (isHome ? `#${id}` : `/#${id}`);
       <a href={section("features")}>{t.features}</a>
       <a href={section("install")}>{t.install}</a>
       <a href={docs.home}>{t.docs}</a>
-      <a href={REPO_URL}>{t.github}</a>
+      <a class="nav-gh" href={REPO_URL}><Icon name="github" />{t.github}</a>
     </nav>
     <div class="hdr-act">
       <div class="seg" role="group" aria-label={home.theme.label} data-theme-switch>

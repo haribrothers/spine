@@ -55,6 +55,7 @@ body { margin: 0; }
 .nav { display: flex; gap: 4px; }
 .sp .nav a { color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 12px; border-radius: var(--r-md); transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
 .sp .nav a:hover { color: var(--ink); background: var(--n100); }
+.nav-gh { display: inline-flex; align-items: center; gap: 6px; }
 .hdr-act { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .seg { display: flex; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: var(--r-full); background: var(--surface); }
 .seg button { all: unset; cursor: pointer; display: grid; place-items: center; width: 32px; height: 30px; border-radius: var(--r-full); color: var(--muted); transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
