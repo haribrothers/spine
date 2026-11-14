@@ -58,14 +58,36 @@ For an existing Worker: **Workers & Pages** › select `spine-site` › **Settin
 
 Build variables apply only to the build; nothing goes under **Settings › Variables and secrets** (runtime), since the site has no code. There's no output-directory field: `wrangler.jsonc` names the folder.
 
+These settings live only in the dashboard. `wrangler.jsonc` can't hold them: Workers Builds ignores Wrangler's `build` block, and its `watch_dir` only controls what `wrangler dev` reloads.
+
+#### Build watch paths
+A new Worker builds on a change to any file (Include paths `*`). Until the paths are set, a pull request that changes only the API, the web app or the spec in `docs/` still gets a site build.
+1. **Workers & Pages** › `spine-site` › **Settings** › **Build** › **Build watch paths** › edit (pencil).
+2. **Include paths:** replace `*` with the paths in the table above, one per field: `apps/site/*`, `apps/docs/*`, `packages/shared/src/public-site.ts`, `docs/design/tokens.json`, `scripts/site/*`, `package.json`, `pnpm-lock.yaml`, `wrangler.jsonc`. A trailing `*` matches everything under that folder, subfolders included.
+3. **Exclude paths:** leave empty. **Save**. It applies from the next push.
+   The **Production** and **Previews Base** tabs at the top of Builds each have their own settings, so set and save the paths on both. Production covers `main`; Previews Base covers every other branch.
+4. Check it: push a commit to a branch that changes only a file in `docs/`. The commit gets no new "Workers Builds: spine-site" check, and **Deployments** shows no new build.
+
+The two paths outside the site folders are the files the builds read from elsewhere in the repo: the domain (`public-site.ts`) and the design tokens. If either site starts reading another file outside `apps/site`, `apps/docs` or `scripts/site`, add it here, or a change to it won't publish. `package.json` and `pnpm-lock.yaml` also start a build when an unrelated dependency changes; that's the safe side, since the lockfile decides what the site builds with.
+
+Cloudflare builds regardless of the paths when a push has no file changes, or 3,000 or more files, or 20 or more commits. A skipped build doesn't block a merge: "Workers Builds: spine-site" isn't a required check, and CI's Sites job builds both sites on any pull request that changes them.
+
 ### 3. Domain and previews
 **Settings** › **Domains & Routes**:
 - **Custom domain:** **Add** › **Custom domain** › `spine.h4loom.com` › **Add Custom Domain**. The domain has to be a zone on this Cloudflare account. Cloudflare creates the DNS record and the certificate. It refuses a hostname that already has a CNAME record, so delete any existing `spine` CNAME first.
 - **workers.dev** and **Preview URLs:** on (`wrangler.jsonc` sets both). The `spine-site.<subdomain>.workers.dev` address is where the first build lands, before the domain is added.
 - Leave **Observability** (Workers Logs) off. Cloudflare's Web Analytics isn't added to a Worker, so there's nothing to turn off.
 
+**HTTPS:** the custom domain gets a certificate, but `http://` is still answered as plain HTTP until the zone redirects it. In the `h4loom.com` zone (**Domains** › `h4loom.com`) › **SSL/TLS** › **Edge Certificates**:
+- **Always Use HTTPS:** on. It redirects every `http://` request in the zone with a 301, keeping the path and query string. It takes effect within seconds, with no Save button.
+- **Minimum TLS Version:** TLS 1.2. **Automatic HTTPS Rewrites:** on.
+- **HTTP Strict Transport Security (HSTS):** leave it off until every hostname in the zone serves HTTPS. Browsers remember it for months, so it's hard to undo.
+- Leave the encryption mode (**SSL/TLS** › **Overview**) as it is: a Worker custom domain has no origin server behind it.
+
+Always Use HTTPS applies to every hostname in the zone. To redirect only the site, leave it off and add a redirect rule instead (**Rules** › **Overview** › **Create rule** › **Redirect Rule**): custom filter expression **SSL/HTTPS** equals **Off** and **Hostname** equals `spine.h4loom.com`; then **Dynamic**, expression `concat("https://", http.host, http.request.uri)`, status **301**, **Preserve query string** ticked; **Deploy**.
+
 ### 4. Check it
-Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page.
+Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page. `curl -sI http://spine.h4loom.com/docs/` answers `301` with `location: https://spine.h4loom.com/docs/`.
 
 A branch's preview (`<branch>-spine-site.<subdomain>.workers.dev`) serves the same pages, but a made-up address there gets Cloudflare's plain "Not found" instead of the site's 404 page: Worker Previews don't apply `not_found_handling` (seen with Wrangler 4.158; Cloudflare's docs don't cover it). Check the 404 pages on production.
 
@@ -77,7 +99,7 @@ If the deploy step fails with "The Cloudflare application detection logic has be
 - **The domain** is set once, in `packages/shared/src/public-site.ts` (D-273). To change it, edit that file, then run `pnpm test:scripts`: it names the files that spell the addresses out (the README, `.github/ISSUE_TEMPLATE/config.yml`). Then change the Worker's custom domain to match.
 - **The bare domain** (`h4loom.com`) isn't part of the site. To send it to the home page, add a Cloudflare redirect rule from `h4loom.com/*` to `https://spine.h4loom.com/${1}` (in the `h4loom.com` zone, **Rules** › **Redirect Rules**). The bare domain needs a proxied DNS record for the rule to run.
 - A push to any other branch gets a preview address (Preview Builds), to check before merging. It's listed on the build in **Deployments** and on the commit in GitHub.
-- A merge that doesn't touch the watch paths doesn't build it.
+- A merge or branch push that doesn't touch the watch paths doesn't build it (step 2 › Build watch paths).
 - A failed build — a broken internal link fails it (`starlight-links-validator`, and the check of the home page's links into `/docs/`) — leaves the live site as it was.
 - CI and `pnpm verify` run the same `pnpm site:build` on every change to either site, so a pull request shows a broken link before it reaches `main`.
 

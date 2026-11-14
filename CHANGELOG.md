@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — The website redirects http to https, and builds only when it changes (US-SITE-14)
+
+- **Why:** once `spine.h4loom.com` was live, `http://` still answered 200 over plain HTTP. The zone's Always Use HTTPS setting now sends a 301 to the https address.
+- **docs/release.md › The website and docs:** step 3 gains the zone's HTTPS settings (Always Use HTTPS on, TLS 1.2, Automatic HTTPS Rewrites on, HSTS off for now), plus a redirect rule for the site alone as the narrower option. Step 4 checks the redirect. The QA script's step 8 checks it too.
+- **docs/release.md › Build watch paths:** step-by-step setup of the Worker's watch paths, so a change outside the two sites (the API, the web app, the spec in `docs/`) doesn't start a site build. A new Worker builds on every change until they're set. It also explains why they can't go in `wrangler.jsonc` (Workers Builds ignores its `build` block), why the two paths outside the site folders are there, and Cloudflare's own build-anyway cases.
+
 ### 2026-11-06 — The website publishes as a Cloudflare Worker with static assets (US-SITE-14, D-274)
 
 - **Why:** Cloudflare's dashboard now combines Workers and Pages, and Create makes a Worker whose build runs `npx wrangler deploy`. With no Wrangler config, that stopped at the monorepo root ("application detection logic has been run in the root of a workspace") after a successful `pnpm site:build`.
