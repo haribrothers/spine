@@ -1,3 +1,4 @@
+import type { FilesService } from "../files/files.service";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -65,7 +66,7 @@ describe("Variation order tax (requires local Postgres)", () => {
     const ledger = new LedgerService(db, new PeriodsService(db));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
     const quotesService = new QuotesService(db, auditLog, numbering, settings, queue, publicTokens, taxResolver, new PlaceOfSupplyService(db), notifications, new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
-    const jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
+    const jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering, {} as FilesService);
     const milestonesService = new MilestonesService(db, auditLog, invoices, notifications);
     variationOrdersService = new VariationOrdersService(db, auditLog, quotesService, jobsService, milestonesService);
 

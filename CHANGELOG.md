@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — Delete job photos, and see them full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, D-277)
+
+- **API:** `DELETE /jobs/:id/photos/:photoId { reason? }`: ownership first (own `job_photos.edit_own`, Field always on assigned jobs; others' `job_photos.edit_others`, never Field, else 403 `PHOTO_NOT_YOURS`), then the lock (job Completed or Cancelled, or milestone invoiced: Owner only, 409 `PHOTO_LOCKED`, and a reason, 400 `REASON_REQUIRED`). The row is marked removed (who, when, reason), audited as `photo_removed` (the job's activity shows it), and the stored file deleted once nothing else uses it. `GET /jobs/:id/photos` leaves removed photos out and gains `locked`, `lockedBy` and `canDelete`; the files' owner lookup and Today's photo count skip removed photos. Migration `0133_job_photo_removal`: the three columns, and `file_id` now empties (set null) when its file is deleted, as attachments do. The two photo capabilities are relabelled "Add and delete own job photos" and "Delete others' job photos"; the OpenAPI document is regenerated.
+- **Web:** each photo on the Photos tab has a ⋯ menu (Open, Download, Delete photo); the viewer has Delete photo beside Download; `delete-photo-dialog.tsx` asks first, and asks an Owner for a reason on a locked photo. A new fixed `inverse-danger` token (#F17B72) colours Delete on the dark viewer. "Photo removed" in the job's activity.
+- **Field app:** tapping a photo on a job or its Photos screen opens `/photo-viewer`: full screen and dark like the camera, "<n> of <total>", swipe, pinch or double-tap zoom, swipe down to close, Next/Previous photo for screen readers, the caption, milestone and who added it, no Save or Share. "Delete photo" follows the row's `canDelete`, needs a connection and is never queued; a waiting photo has "Discard", which takes it out of the outbox. Zoom is built on `PanResponder`, so no new native module or prebuild.
+- **Checks:** `us-job-39.http.integration.test.ts` (5), `apps/e2e/tests/us-job-39.spec.ts` (2, runs in `pnpm verify`), `us-mob-30.test.tsx` (7), `us-mob-31.test.tsx` (7). API, web, shared, UI and mobile suites pass.
+- **Spec and docs:** the stories gain the designed copy (the lock line, "Only Owners can delete a locked photo", the Photos tab's note) and `canDelete`; D-277's as-built note; 04-data-model (`file_id`); screens.md gains the five screens; QA script §281; the guide's "Add site photos to a job" (delete) and "Take site photos for a job" (look at and delete a photo).
+
 ### 2026-11-14 — Spec: delete job photos, and see them full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, D-277)
 
 - **Why:** a wrong photo on a job couldn't be removed anywhere, and the field app's photo tiles didn't open.

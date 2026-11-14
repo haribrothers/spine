@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
 import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
 import { expenses, jobAssignments, jobPhotos, jobs, milestones } from "../../db/schema";
@@ -91,6 +91,7 @@ export class MobileTodayService {
         and(
           eq(jobPhotos.orgId, orgId),
           eq(jobPhotos.uploadedByUserId, userId),
+          isNull(jobPhotos.removedAt),
           sql`(${jobPhotos.createdAt} at time zone ${orgTimeZone()})::date between ${from} and ${to}`,
         ),
       );

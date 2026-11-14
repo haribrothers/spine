@@ -1,4 +1,4 @@
-import type { SupplyClass } from "@spine/shared";
+import type { JobPhotoLockReason, SupplyClass } from "@spine/shared";
 import type { BillingFigures, BudgetFigures, BudgetState } from "@spine/shared";
 import { t } from "../../../lib/i18n";
 /** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
@@ -83,6 +83,11 @@ export interface JobPhoto {
   uploadedByName?: string | null;
   createdByUserId: string | null;
   createdAt: string;
+  /** US-JOB-39 (D-277) — the job is Completed or Cancelled, or the photo's milestone is invoiced: only an Owner can delete it, with a reason. */
+  locked?: boolean;
+  lockedBy?: JobPhotoLockReason | null;
+  /** Whether the signed-in person may delete it (the API decides, by the same rules it enforces). */
+  canDelete?: boolean;
 }
 
 export interface JobNote {

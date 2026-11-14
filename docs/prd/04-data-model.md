@@ -386,7 +386,7 @@ PRD F3 — quotes with multi-line pricing and versioning (S-03.1, S-03.8). Stage
 
 PRD F4 (Phase 3 · Jobs & Construction Billing) — a job created from an accepted quote (S-04.1), carrying the contract value over as a real snapshot rather than a live reference back to the quote (per CLAUDE.md's "documents snapshot their data" — a job must not silently change value if its source quote were ever…
 
-`id` uuid (PK, default random) · `job_id` uuid (not null, → jobs (cascade)) · `org_id` text (not null, → organization (cascade)) · `milestone_id` uuid (→ milestones (set null)) · `file_id` uuid (not null, → files (cascade)) · `caption` text · `uploaded_by_user_id` text (→ user (set null)) · `created_by_user_id` text (→ user (set null)) · `created_at` timestamp (not null, default now) · `removed_at` timestamp · `removed_by_user_id` text (→ user (set null)) · `removal_reason` text (US-JOB-39, D-277: a removed photo is left out of every read; its file is deleted)
+`id` uuid (PK, default random) · `job_id` uuid (not null, → jobs (cascade)) · `org_id` text (not null, → organization (cascade)) · `milestone_id` uuid (→ milestones (set null)) · `file_id` uuid (→ files (set null); null only once the photo is removed and its file deleted, US-JOB-39) · `caption` text · `uploaded_by_user_id` text (→ user (set null)) · `created_by_user_id` text (→ user (set null)) · `created_at` timestamp (not null, default now) · `removed_at` timestamp · `removed_by_user_id` text (→ user (set null)) · `removal_reason` text (US-JOB-39, D-277: a removed photo is left out of every read; its file is deleted)
 
 #### `job_notes`
 

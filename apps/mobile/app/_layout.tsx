@@ -61,6 +61,7 @@ function RootStack() {
             <Stack.Screen name="profile" options={profileScreenOptions(Platform.OS, colors, () => router.back())} />
           <Stack.Screen name="sync" options={{ presentation: Platform.OS === "ios" ? "modal" : "card", headerShown: false }} />
           <Stack.Screen name="camera" options={{ presentation: "fullScreenModal", headerShown: false, animation: "slide_from_bottom" }} />
+          <Stack.Screen name="photo-viewer" options={{ presentation: "fullScreenModal", headerShown: false, animation: "fade" }} />
           <Stack.Screen
             name="milestone-complete"
             options={{ presentation: "formSheet", sheetAllowedDetents: [0.92], sheetGrabberVisible: true, headerShown: Platform.OS === "ios", headerStyle: { backgroundColor: colors.surface } }}

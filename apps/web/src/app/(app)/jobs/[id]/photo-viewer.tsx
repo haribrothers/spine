@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@spine/ui";
-import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Trash2, X } from "lucide-react";
 import { orgLocaleTag } from "../../../../lib/money";
 import { useT } from "../../../../lib/i18n";
 import type { JobPhoto } from "../types";
@@ -31,6 +31,8 @@ export function PhotoViewer({
   groupLabel,
   onIndexChange,
   onClose,
+  canDelete,
+  onDelete,
 }: {
   /** The group the open photo is in. */
   photos: JobPhoto[];
@@ -38,6 +40,9 @@ export function PhotoViewer({
   groupLabel: string;
   onIndexChange: (index: number) => void;
   onClose: () => void;
+  /** US-JOB-39 — offered only for a photo this person may delete. */
+  canDelete?: (photo: JobPhoto) => boolean;
+  onDelete?: (photo: JobPhoto) => void;
 }) {
   const t = useT();
   const open = index !== null && photos[index] !== undefined;
@@ -76,6 +81,12 @@ export function PhotoViewer({
                 <Download size={15} aria-hidden />
                 {t("jobs.photoViewer.download")}
               </a>
+              {onDelete && canDelete?.(photo) && (
+                <button type="button" className={`${barButton} text-inverse-danger`} onClick={() => onDelete(photo)} data-testid="photo-viewer-delete">
+                  <Trash2 size={15} aria-hidden />
+                  {t("jobs.photoViewer.delete")}
+                </button>
+              )}
               <DialogClose className={barButton}>
                 <X size={15} aria-hidden />
                 {t("jobs.photoViewer.close")}

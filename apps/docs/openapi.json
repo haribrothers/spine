@@ -14091,7 +14091,81 @@
           "Jobs"
         ],
         "summary": "Add photo",
-        "description": "**Who can call it:** Owners, Staff and Field users. Staff need the Team right **Add own job photos** (`job_photos.edit_own`).\n\n```sh\ncurl -X POST \"https://spine.example.com/api/jobs/<id>/photos\" \\\n  -H \"Cookie: better-auth.session_token=<session>\" \\\n  -H \"Idempotency-Key: $(uuidgen)\" \\\n  -H \"Content-Type: application/json\" -d '{ … }'\n```"
+        "description": "**Who can call it:** Owners, Staff and Field users. Staff need the Team right **Add and delete own job photos** (`job_photos.edit_own`).\n\n```sh\ncurl -X POST \"https://spine.example.com/api/jobs/<id>/photos\" \\\n  -H \"Cookie: better-auth.session_token=<session>\" \\\n  -H \"Idempotency-Key: $(uuidgen)\" \\\n  -H \"Content-Type: application/json\" -d '{ … }'\n```"
+      }
+    },
+    "/jobs/{id}/photos/{photoId}": {
+      "delete": {
+        "operationId": "JobsController_removePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "A fresh UUID per action. A retry with the same key gets the first answer instead of doing it twice.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveJobPhotoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation failed or a business rule was broken; `message` says what to change."
+          },
+          "401": {
+            "description": "No session, or it has expired: sign in again."
+          },
+          "403": {
+            "description": "The caller's role, Team rights or ownership don't allow it, the module is switched off, or their access was removed."
+          },
+          "404": {
+            "description": "No such record in this business."
+          },
+          "409": {
+            "description": "The same Idempotency-Key is still being handled, or the record conflicts with one that exists."
+          },
+          "429": {
+            "description": "Too many requests: wait a minute."
+          },
+          "500": {
+            "description": "Something went wrong on the server; the response carries the request id to report."
+          }
+        },
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Remove photo",
+        "description": "**Who can call it:** Owners, Staff and Field users.\n\n```sh\ncurl -X DELETE \"https://spine.example.com/api/jobs/<id>/photos/<photoId>\" \\\n  -H \"Cookie: better-auth.session_token=<session>\" \\\n  -H \"Idempotency-Key: $(uuidgen)\"\n```"
       }
     },
     "/jobs/{id}/photos/{photoId}/history": {
@@ -23123,6 +23197,16 @@
         "required": [
           "fileId"
         ]
+      },
+      "RemoveJobPhotoDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Required when an Owner deletes a locked photo (job Completed or Cancelled, or its milestone invoiced); kept in the job's activity."
+          }
+        }
       },
       "AddJobNoteDto": {
         "type": "object",

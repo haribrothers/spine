@@ -165,14 +165,18 @@ export const jobPhotos = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     /** Null when the photo is a general job/site photo rather than tied to one milestone's completion (S-04.4 vs S-04.10 — the same table serves both, distinguished by this column). */
     milestoneId: uuid("milestone_id").references(() => milestones.id, { onDelete: "set null" }),
-    fileId: uuid("file_id")
-      .notNull()
-      .references(() => files.id, { onDelete: "cascade" }),
+    /** Null only once the photo is removed and its file deleted (US-JOB-39): the row keeps who removed it and why, as attachments do. */
+    fileId: uuid("file_id").references(() => files.id, { onDelete: "set null" }),
     caption: text("caption"),
     uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Same value as uploadedByUserId, duplicated under the standard `createdByUserId` name so `job_photos.edit_own`/`edit_others` ownership checks use the same column name every other own/others module uses. */
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    /** US-JOB-39 (D-277) — a removed photo is left out of every read; its file is deleted once nothing else uses it. */
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    removedByUserId: text("removed_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** Required when an Owner removes a locked photo (job Completed or Cancelled, or its milestone invoiced). */
+    removalReason: text("removal_reason"),
   },
   (table) => [
     index("job_photos_job_idx").on(table.jobId),

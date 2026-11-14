@@ -1,8 +1,8 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, JobActivityEntry, updateJobSchema } from "@spine/shared";
-import { linkInUse, linkUploadFirst } from "@spine/shared";
-import { assertLinkable } from "../files/files.service";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, JobActivityEntry, JobPhotoLockReason, RemoveJobPhotoInput, updateJobSchema } from "@spine/shared";
+import { PHOTO_ALREADY_DELETED_MESSAGE, PHOTO_LOCKED, PHOTO_NOT_YOURS, PHOTO_NOT_YOURS_MESSAGE, PHOTO_REASON_REQUIRED_MESSAGE, REASON_REQUIRED, jobPhotoLock, linkInUse, linkUploadFirst, photoLockedMessage } from "@spine/shared";
+import { FilesService, assertLinkable } from "../files/files.service";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -11,7 +11,7 @@ import { jobs, jobVariationOrders, contacts, contactPersons, quotes, jobPhotos, 
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
-import { hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
+import { getMemberRole, hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { jobNameFromQuote } from "./job-name";
 
@@ -45,6 +45,7 @@ export class JobsService {
     private readonly conversionGuard: QuoteConversionGuardService,
     private readonly notifications: NotificationsService,
     private readonly numbering: NumberingService,
+    private readonly files: FilesService,
   ) {}
 
   /**
@@ -419,16 +420,94 @@ export class JobsService {
     return row;
   }
 
-  /** US-JOB-36: with who added each photo, for the viewer's "Added by Ravi Kumar". */
-  async listPhotos(orgId: string, jobId: string) {
-    await this.getOne(orgId, jobId);
+  /**
+   * US-JOB-36: with who added each photo, for the viewer's "Added by Ravi
+   * Kumar". US-JOB-39 (D-277): removed photos are left out, and each row
+   * says whether it's locked (job Completed or Cancelled, milestone invoiced)
+   * and whether the caller may delete it (the same rules `removePhoto`
+   * enforces), so the web and the phone offer "Delete photo" only then.
+   */
+  async listPhotos(orgId: string, jobId: string, actorUserId: string) {
+    const job = await this.getOne(orgId, jobId);
+    const actor = { orgId, userId: actorUserId };
+    const [role, mayOwn, mayOthers] = await Promise.all([
+      getMemberRole(this.db, orgId, actorUserId),
+      hasCapability(this.db, actor, "job_photos.edit_own", true),
+      hasCapability(this.db, actor, "job_photos.edit_others"),
+    ]);
     const rows = await this.db
-      .select({ photo: jobPhotos, uploadedByName: user.name })
+      .select({ photo: jobPhotos, uploadedByName: user.name, milestoneStatus: milestones.status })
       .from(jobPhotos)
       .leftJoin(user, eq(jobPhotos.uploadedByUserId, user.id))
-      .where(eq(jobPhotos.jobId, jobId))
+      .leftJoin(milestones, eq(jobPhotos.milestoneId, milestones.id))
+      .where(and(eq(jobPhotos.jobId, jobId), isNull(jobPhotos.removedAt)))
       .orderBy(desc(jobPhotos.createdAt));
-    return rows.map((r) => ({ ...r.photo, uploadedByName: r.uploadedByName ?? null }));
+    return rows.map((r) => {
+      const { removedAt: _removedAt, removedByUserId: _removedBy, removalReason: _reason, ...photo } = r.photo;
+      const lockedBy = jobPhotoLock(job.status, r.milestoneStatus ?? null);
+      const own = (photo.createdByUserId ?? photo.uploadedByUserId) === actorUserId;
+      const canDelete = lockedBy ? role === "owner" : own ? mayOwn : mayOthers;
+      return { ...photo, fileId: photo.fileId!, uploadedByName: r.uploadedByName ?? null, locked: lockedBy !== null, lockedBy, canDelete };
+    });
+  }
+
+  /**
+   * US-JOB-39 (D-277) — `DELETE /jobs/:id/photos/:photoId`. Ownership first
+   * (own: `job_photos.edit_own`, Field always; someone else's:
+   * `job_photos.edit_others`, never Field), then the lock: a photo on a
+   * Completed or Cancelled job, or with an invoiced milestone, is Owner-only
+   * with a reason. Like removing an attachment (US-OPS-35), the row is
+   * marked removed and audited, and the stored file is deleted once nothing
+   * else uses it. The controller has already checked Field's access to the job.
+   */
+  async removePhoto(orgId: string, jobId: string, actorUserId: string, photoId: string, input: RemoveJobPhotoInput): Promise<{ id: string }> {
+    const job = await this.getOne(orgId, jobId);
+    const [row] = await this.db
+      .select({ photo: jobPhotos, milestoneStatus: milestones.status, milestoneName: milestones.name })
+      .from(jobPhotos)
+      .leftJoin(milestones, eq(jobPhotos.milestoneId, milestones.id))
+      .where(and(eq(jobPhotos.orgId, orgId), eq(jobPhotos.jobId, jobId), eq(jobPhotos.id, photoId)));
+    if (!row) throw new NotFoundException("Job photo not found");
+    if (row.photo.removedAt) throw new NotFoundException(PHOTO_ALREADY_DELETED_MESSAGE);
+    const { photo } = row;
+
+    const addedBy = photo.createdByUserId ?? photo.uploadedByUserId;
+    const own = addedBy !== null && addedBy === actorUserId;
+    try {
+      await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, addedBy, { own: "job_photos.edit_own", others: "job_photos.edit_others" }, "own");
+    } catch (err) {
+      if (err instanceof ForbiddenException && !own) throw new ForbiddenException({ error: PHOTO_NOT_YOURS, message: PHOTO_NOT_YOURS_MESSAGE });
+      throw err;
+    }
+
+    const lock: JobPhotoLockReason | null = jobPhotoLock(job.status, row.milestoneStatus ?? null);
+    const reason = input.reason?.trim() || null;
+    if (lock) {
+      if ((await getMemberRole(this.db, orgId, actorUserId)) !== "owner") throw new ConflictException({ error: PHOTO_LOCKED, message: photoLockedMessage(lock) });
+      if (!reason) throw new BadRequestException({ error: REASON_REQUIRED, message: PHOTO_REASON_REQUIRED_MESSAGE });
+    }
+
+    const removed = await this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(jobPhotos)
+        .set({ removedAt: new Date(), removedByUserId: actorUserId, removalReason: lock ? reason : null })
+        .where(and(eq(jobPhotos.id, photoId), isNull(jobPhotos.removedAt)))
+        .returning({ id: jobPhotos.id });
+      if (!updated) return false;
+      const label = photo.caption ?? row.milestoneName ?? null;
+      const changes = [
+        { field: "photo", from: label, to: null },
+        ...(lock && reason ? [{ field: "reason", from: null, to: reason }] : []),
+      ];
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "photo_removed", entityType: "job", entityId: jobId, contactId: job.contactId, changes });
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "removed", entityType: "job_photo", entityId: photoId, contactId: job.contactId, changes });
+      return true;
+    });
+    if (!removed) throw new NotFoundException(PHOTO_ALREADY_DELETED_MESSAGE);
+
+    // Nothing points at the file any more: delete it from storage (the row's file link empties).
+    if (photo.fileId && !(await this.files.owningRecords(orgId, photo.fileId)).length) await this.files.deleteStored(orgId, photo.fileId);
+    return { id: photoId };
   }
 
   /**
@@ -509,6 +588,12 @@ export class JobsService {
         case "note_added":
           entries.push({ at, type: "note_added", actorName, detail: null });
           break;
+        case "photo_removed": {
+          // US-JOB-39: the photo's caption or milestone, then the reason an Owner gave for a locked one.
+          const detail = [change("photo")?.from, change("reason")?.to].filter((v): v is string => typeof v === "string" && v.length > 0).join(" · ");
+          entries.push({ at, type: "photo_removed", actorName, detail: detail || null });
+          break;
+        }
         case "assigned":
         case "unassigned": {
           const who = (row.action === "assigned" ? change("assignedUserId")?.to : change("assignedUserId")?.from) as string | undefined;

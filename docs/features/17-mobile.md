@@ -524,7 +524,8 @@ Decision: D-277
 - **Given** the viewer, **when** I look for Save or Share, **then** there are none: site photos stay out of the camera roll.
 
 **Implementation notes**
-- Opened from `PhotoTile` on `job-detail-screen.tsx` and `job-photos-screen.tsx`; images through `useFileUri` (`GET /files/:id` with the bearer token). Light and dark: the viewer uses the camera's ink tokens (US-MOB-20) in both themes.
+- Opened from `PhotoTile` on `job-detail-screen.tsx` and `job-photos-screen.tsx` (the strip's last "+n" tile still opens Photos) as `/photo-viewer?jobId=…&key=…`, a full-screen modal (`photo-viewer-screen.tsx`); images through `useFileUri` (`GET /files/:id` with the bearer token). The open photo is tracked by key, so it stays put while the list loads or loses a photo. Zoom is `zoomable-photo.tsx`, built on React Native's `PanResponder` and `Animated` (no native gesture module). Light and dark: the viewer uses the camera's ink (US-MOB-20) in both themes.
+- Tests: `apps/mobile/src/__tests__/us-mob-30.test.tsx`.
 
 ### US-MOB-31 · Delete a photo from the phone
 **Feature:** F-MOB-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `MobPhotoViewer`, `MobPhotoViewerAndroid`, `MobPhotoDelete`
@@ -537,8 +538,9 @@ Decision: D-277
 - **Given** "Delete photo", **when** I tap it, **then** "Delete this photo?" says "It's removed from the job and deleted from storage." with "Cancel" and "Delete photo"; when I confirm, the photo goes, the viewer moves to the next one (or closes), and a toast says "Photo deleted".
 - **Given** I'm offline, **when** I open a sent photo I may delete, **then** "Delete photo" is shown dimmed with "Connect to delete this photo."; nothing is queued.
 - **Given** a photo waiting to be sent, **when** I tap "Discard", **then** "Discard this photo?" says "It hasn't been sent yet. Discarding deletes it from this phone." with "Keep" and "Discard"; confirming takes it out of the outbox.
-- **Given** an Owner using the app on a locked photo, **when** they tap "Delete photo", **then** they're asked for a reason, as on the web.
+- **Given** an Owner using the app on a locked photo, **when** they tap "Delete photo", **then** "Delete a locked photo?" asks for a "Reason", as on the web, and "Delete photo" works once there is one.
 - **Given** the photo became locked or was deleted since the phone last refreshed, **when** I confirm, **then** I see the same message as the web and the photos refresh.
 
 **Implementation notes**
-- API: `DELETE /jobs/:id/photos/:photoId` straight away, not through the outbox (D-277). Field always has `job_photos.edit_own` and never `job_photos.edit_others`. Discarding a waiting photo deletes its outbox item and its file in the app's folder.
+- API: `DELETE /jobs/:id/photos/:photoId` straight away, not through the outbox (D-277). The phone knows no rights of its own: "Delete photo" follows each row's `canDelete` from `GET /jobs/:id/photos`. Field always has `job_photos.edit_own` and never `job_photos.edit_others`. Discarding a waiting photo takes it out of its outbox item (`outbox.removePhoto`), or removes the item with its last photo.
+- Tests: `apps/mobile/src/__tests__/us-mob-31.test.tsx`.

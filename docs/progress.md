@@ -683,9 +683,9 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 
 ### Milestone 2 · job photos (D-277)
 
-- [ ] US-JOB-39 · Delete a job photo added by mistake
-- [ ] US-MOB-30 · Look at a job's photos full screen
-- [ ] US-MOB-31 · Delete a photo from the phone
+- [x] US-JOB-39 · Delete a job photo added by mistake
+- [x] US-MOB-30 · Look at a job's photos full screen
+- [x] US-MOB-31 · Delete a photo from the phone
 
 ### After the v1.0 tag
 

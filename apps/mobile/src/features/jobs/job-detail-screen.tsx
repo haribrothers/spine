@@ -81,19 +81,20 @@ function MilestoneRow({ milestone, primary, first, locale, waiting, onComplete }
 }
 
 /** A photo the server has, or one still on the phone (`localUri`, shown with "Waiting"). */
-export type TilePhoto = { kind: "sent"; photo: JobPhoto } | { kind: "waiting"; key: string; localUri: string; createdAt: string };
+export type TilePhoto = { kind: "sent"; photo: JobPhoto } | { kind: "waiting"; key: string; localUri: string; createdAt: string; itemId: string; caption?: string | null };
 
 export function tileKey(tile: TilePhoto): string {
   return tile.kind === "sent" ? tile.photo.id : tile.key;
 }
 
-export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: string; size?: number }) {
+/** US-MOB-30: with `onPress`, the tile is a button that opens the photo full screen. */
+export function PhotoTile({ tile, overlay, size, onPress }: { tile: TilePhoto; overlay?: string; size?: number; onPress?: () => void }) {
   const t = useT();
   const sent = useFileUri(tile.kind === "sent" ? tile.photo.fileId : "");
   const ink = useCameraInk();
   const waiting = tile.kind === "waiting";
   const uri = tile.kind === "sent" ? sent : tile.localUri;
-  return (
+  const body = (
     <View testID={waiting ? "photo-waiting" : undefined} className="overflow-hidden rounded-md bg-surface-sunken dark:bg-surface-sunken-dark" style={size ? { width: size, height: size } : { flex: 1, aspectRatio: 1 }}>
       <Image
         source={uri ? { uri } : undefined}
@@ -116,6 +117,19 @@ export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: 
         </View>
       ) : null}
     </View>
+  );
+  if (!onPress) return body;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={tile.kind === "sent" ? (tile.photo.caption ?? t("mobileWork.jobDetail.sitePhoto")) : t("mobileWork.jobDetail.sitePhotoWaiting")}
+      accessibilityHint={t("mobileWork.photoViewer.openHint")}
+      testID={`photo-tile-${tileKey(tile)}`}
+      style={size ? { width: size, height: size } : { flex: 1, aspectRatio: 1 }}
+    >
+      {body}
+    </Pressable>
   );
 }
 
@@ -226,7 +240,7 @@ export function JobDetailScreen({ id }: { id: string }) {
   const pending = (milestones.data ?? []).filter((m) => m.status === "pending");
   const ordered = [...(milestones.data ?? [])].sort((a, b) => a.sequence - b.sequence);
   const photoList: TilePhoto[] = [
-    ...waiting.photos.map(({ photo, queuedAt }) => ({ kind: "waiting" as const, key: photo.uri, localUri: photo.uri, createdAt: new Date(queuedAt).toISOString() })).reverse(),
+    ...waiting.photos.map(({ photo, queuedAt, itemId }) => ({ kind: "waiting" as const, key: photo.uri, localUri: photo.uri, createdAt: new Date(queuedAt).toISOString(), itemId, caption: photo.caption ?? null })).reverse(),
     ...(photos.data ?? []).map((photo) => ({ kind: "sent" as const, photo })),
   ];
   const contact = job.siteContact;
@@ -324,7 +338,12 @@ export function JobDetailScreen({ id }: { id: string }) {
           {photoList.length ? (
             <View className="flex-row gap-1">
               {photoList.slice(0, PREVIEW_PHOTOS).map((tile, index) => (
-                <PhotoTile key={tileKey(tile)} tile={tile} overlay={index === PREVIEW_PHOTOS - 1 && photoList.length > PREVIEW_PHOTOS ? `+${photoList.length - PREVIEW_PHOTOS + 1}` : undefined} />
+                <PhotoTile
+                  key={tileKey(tile)}
+                  tile={tile}
+                  overlay={index === PREVIEW_PHOTOS - 1 && photoList.length > PREVIEW_PHOTOS ? `+${photoList.length - PREVIEW_PHOTOS + 1}` : undefined}
+                  onPress={() => (index === PREVIEW_PHOTOS - 1 && photoList.length > PREVIEW_PHOTOS ? router.push(`/jobs/${id}/photos`) : router.push(`/photo-viewer?jobId=${id}&key=${encodeURIComponent(tileKey(tile))}`))}
+                />
               ))}
               {Array.from({ length: Math.max(0, PREVIEW_PHOTOS - photoList.length) }).map((_, index) => (
                 <View key={`empty-${index}`} style={{ flex: 1, aspectRatio: 1 }} />

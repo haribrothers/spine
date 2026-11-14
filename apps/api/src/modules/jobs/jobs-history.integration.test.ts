@@ -1,3 +1,4 @@
+import type { FilesService } from "../files/files.service";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -72,7 +73,7 @@ describe("Jobs history (requires local Postgres)", () => {
     const conversionGuard = new QuoteConversionGuardService(db, new SettingsService(db));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
 
-    jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
+    jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering, {} as FilesService);
     milestonesService = new MilestonesService(db, auditLog, invoices, notifications);
 
     const ownerEmail = `jobs-history-owner-${randomUUID()}@example.com`;

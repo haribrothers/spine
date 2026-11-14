@@ -54,6 +54,8 @@
   --color-inverse-surface: #211f1a;
   --color-inverse-on-surface: #ffffff;
   --color-inverse-on-surface-muted: #d3d0c9;
+  /* US-JOB-39: a destructive action on the always-dark photo viewer (6.4:1 on inverse-surface). */
+  --color-inverse-danger: #f17b72;
 
   /* WCAG AA a11y pass (2026-08-06): darkened from #187a48 (4.44:1 on
      paid-bg — fails 4.5:1 at the 12px chip text size) to #177044 (5.40:1). */
@@ -430,6 +432,7 @@
   --color-inverse-surface: var(--color-inverse-surface);
   --color-inverse-on-surface: var(--color-inverse-on-surface);
   --color-inverse-on-surface-muted: var(--color-inverse-on-surface-muted);
+  --color-inverse-danger: var(--color-inverse-danger);
   --color-on-surface: var(--color-on-surface);
   --color-on-surface-muted: var(--color-on-surface-muted);
   --color-border: var(--color-border);
