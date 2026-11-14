@@ -1,0 +1,164 @@
+---
+/**
+ * US-SITE-02 — "Enquiry → Quote → Job → Invoice → Payment → Books", told
+ * with one example job. On a wide, tall screen the section stays pinned and
+ * scrolling moves the job through the six steps; on phones, short screens
+ * and with reduced motion it's a plain list of the same six (motion.ts sets
+ * data-static). Without JavaScript it's the list too.
+ */
+import Icon from "./Icon.astro";
+import { home } from "../locales/en/home";
+
+const t = home.flow;
+const { enquiry, quote, job, invoice, payment, books } = t;
+---
+
+<section id="flow" class="flow" data-static="1" aria-labelledby="flow-title">
+  <div class="flow-pin">
+    <div class="wrap">
+      <div class="flow-head">
+        <div>
+          <p class="kicker">{t.kicker}</p>
+          <h2 id="flow-title" class="h2">{t.title}</h2>
+        </div>
+        <p class="sub">{t.sub}</p>
+      </div>
+
+      <ol class="track" aria-label={t.steps.join(" → ")}>
+        {
+          t.steps.map((step, i) => (
+            <li class:list={["stp", i === t.steps.length - 1 && "books"]} data-state={i === 0 ? "now" : "next"}>
+              <button type="button" data-step={i}>
+                <span class="dot" aria-hidden="true">{i + 1}</span>
+                <span class="lbl">{step}</span>
+              </button>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="flow-body">
+        <div class="pair" id="step-1">
+          <div class="copy" data-active="1">
+            <p class="n">01 · {t.steps[0]}</p>
+            <h3>{t.copy[0].title}</h3>
+            <p>{t.copy[0].body}</p>
+          </div>
+          <div class="doc" data-active="1">
+            <div class="doc-h"><span class="doc-id">{enquiry.id}</span><span class="pill t-info">{enquiry.tag}</span></div>
+            <p class="doc-t">{enquiry.title}</p>
+            <div>{enquiry.lines.map(([k, v]) => <div class="dl"><span class="muted">{k}</span><span>{v}</span></div>)}</div>
+          </div>
+        </div>
+
+        <div class="pair" id="step-2">
+          <div class="copy">
+            <p class="n">02 · {t.steps[1]}</p>
+            <h3>{t.copy[1].title}</h3>
+            <p>{t.copy[1].body}</p>
+          </div>
+          <div class="doc">
+            <div class="doc-h"><span class="doc-id mono">{quote.id}</span><span class="pill t-paid"><Icon name="check" size="sm" />{quote.tag}</span></div>
+            <p class="doc-t">{quote.title}</p>
+            <div>
+              {quote.lines.map(([k, v]) => <div class="dl"><span>{k}</span><span class="num">{v}</span></div>)}
+              <div class="dl muted"><span>{quote.tax[0]}</span><span class="num">{quote.tax[1]}</span></div>
+              <div class="dl dl-tot"><span>{quote.total[0]}</span><span class="num">{quote.total[1]}</span></div>
+            </div>
+            <p class="doc-note">{quote.note}</p>
+          </div>
+        </div>
+
+        <div class="pair" id="step-3">
+          <div class="copy">
+            <p class="n">03 · {t.steps[2]}</p>
+            <h3>{t.copy[2].title}</h3>
+            <p>{t.copy[2].body}</p>
+          </div>
+          <div class="doc">
+            <div class="doc-h"><span class="doc-id mono">{job.id}</span><span class="pill t-info">{job.tag}</span></div>
+            <p class="doc-t">{job.title}</p>
+            <div class="ms">
+              {
+                job.milestones.map((m) => (
+                  <>
+                    <span>{m.name}</span>
+                    <span class={`pill t-${m.tone}`}>{m.tag}</span>
+                    <div class="bar">
+                      <i style={`--w: ${m.done}%`} />
+                    </div>
+                  </>
+                ))
+              }
+            </div>
+            <div class="dl dl-sep muted"><span>{job.retention}</span><span>{job.margin} <b class="good">{job.marginValue}</b></span></div>
+          </div>
+        </div>
+
+        <div class="pair" id="step-4">
+          <div class="copy">
+            <p class="n">04 · {t.steps[3]}</p>
+            <h3>{t.copy[3].title}</h3>
+            <p>{t.copy[3].body}</p>
+          </div>
+          <div class="doc">
+            <div class="doc-h"><span class="doc-id mono">{invoice.id}</span><span class="pill t-info">{invoice.tag}</span></div>
+            <p class="doc-t">{invoice.title}</p>
+            <div>
+              {invoice.lines.map(([k, v]) => <div class="dl"><span>{k}</span><span class="num">{v}</span></div>)}
+              {invoice.muted.map(([k, v]) => <div class="dl muted"><span>{k}</span><span class="num">{v}</span></div>)}
+              <div class="dl dl-tot"><span>{invoice.total[0]}</span><span class="num">{invoice.total[1]}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pair" id="step-5">
+          <div class="copy">
+            <p class="n">05 · {t.steps[4]}</p>
+            <h3>{t.copy[4].title}</h3>
+            <p>{t.copy[4].body}</p>
+          </div>
+          <div class="doc">
+            <div class="doc-h"><span class="doc-id mono">{payment.id}</span><span class="pill t-paid">{payment.tag}</span></div>
+            <p class="doc-t">{payment.title}</p>
+            <div>
+              {payment.lines.map(([k, v]) => <div class="dl"><span>{k}</span><span class="num">{v}</span></div>)}
+              <div class="dl dl-tot"><span>{payment.total[0]}</span><span class="num">{payment.total[1]}</span></div>
+            </div>
+            <p class="doc-note">{payment.note}</p>
+          </div>
+        </div>
+
+        <div class="pair" id="step-6">
+          <div class="copy">
+            <p class="n">06 · {t.steps[5]}</p>
+            <h3>{t.copy[5].title}</h3>
+            <p>{t.copy[5].body}</p>
+          </div>
+          <div class="doc">
+            <div class="doc-h"><span class="doc-id mono">{books.id}</span><span class="pill t-teal">{books.tag}</span></div>
+            <table class="jr mono">
+              <thead>
+                <tr>{books.head.map((h, i) => <th scope="col" class:list={["h", i > 1 && "rt"]}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {
+                  books.lines.map((line, row) => (
+                    <tr class="r" style={`--d: ${100 + row * 150}ms`}>
+                      {line.map((cell, i) => <td class:list={[i > 1 && "rt"]}>{cell}</td>)}
+                    </tr>
+                  ))
+                }
+              </tbody>
+              <tfoot>
+                <tr class="r tot" style={`--d: ${100 + books.lines.length * 150}ms`}>{books.total.map((cell, i) => <td class:list={[i > 1 && "rt"]}>{cell}</td>)}</tr>
+              </tfoot>
+            </table>
+            <span class="balanced"><Icon name="check" />{books.balanced}</span>
+          </div>
+        </div>
+      </div>
+      <p class="flow-hint"><Icon name="down" />{t.hint}</p>
+    </div>
+  </div>
+</section>

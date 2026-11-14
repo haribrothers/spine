@@ -667,7 +667,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 ### Milestone 2 · website and help
 
 - [x] US-SITE-01 · Set up the docs site in the monorepo
-- [x] US-SITE-02 · Show a home page for people discovering Spine
+- [x] US-SITE-02 · Show a home page for people discovering Spine (redesigned with motion, its own Astro page, D-275)
 - [x] US-SITE-03 · Find any page with search
 - [x] US-SITE-04 · Read a task-based guide for every module
 - [x] US-SITE-05 · Ship each story with its guide page

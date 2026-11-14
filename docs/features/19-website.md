@@ -35,7 +35,7 @@ Decision: D-108
 **Implementation notes**
 - `apps/docs` (package `@spine/docs`): Astro 5, `@astrojs/starlight`, `starlight-links-validator`; Starlight's built-in Pagefind search. `apps/site` (package `@spine/site`): Astro 5, sharing the docs' theme tokens ([D-270](12-decisions.md)).
 - Turbo task `build` for the site; no runtime server — the output is static HTML.
-- Built: `apps/docs` (`@spine/docs`) and `apps/site` (`@spine/site`) on Astro 7.4 and Starlight 0.42. Those are the current lines: Starlight no longer supports Astro 5, which D-108's notes assumed. The theme is generated from `docs/design/tokens.json` by `scripts/site/tokens-css.mjs` before each build, so neither site holds a colour of its own. The logo comes from `docs/logos`. `starlight-links-validator` fails the build on a broken link. CI and `pnpm verify` (the `sites` step) build both.
+- Built: `apps/docs` (`@spine/docs`) and `apps/site` (`@spine/site`) on Astro 7.4 and Starlight 0.42. Those are the current lines: Starlight no longer supports Astro 5, which D-108's notes assumed. The theme is generated from `docs/design/tokens.json` by `scripts/site/tokens-css.mjs` before each build, so neither site holds a colour of its own. The logo comes from `docs/logos`. `starlight-links-validator` fails the docs' build on a broken link, and `scripts/site/build-pages.mjs` fails on a home-page link or anchor that goes nowhere. CI and `pnpm verify` (the `sites` step) build both. Since D-275 the home page is its own Astro page rather than Starlight's splash, on the same tokens and the same theme setting.
 
 ### US-SITE-02 · Show a home page for people discovering Spine
 **Feature:** F-SITE-01 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteHome`, `SiteHomeDark`
@@ -44,13 +44,16 @@ Decision: D-108
 **Acceptance criteria**
 - **Given** the site root, **when** it opens, **then** it shows "Run your service business from one place", the one-paragraph description, and the buttons "Install in 5 minutes" and "Read the user guide".
 - **Given** the workflow strip, **when** it renders, **then** it reads "Enquiry → Quote → Job → Invoice → Payment → Books".
-- **Given** the product screenshot, **when** a reader uses dark mode, **then** the dark version of the dashboard screenshot is shown.
+- **Given** the product view (the dashboard, rebuilt in HTML from one example job, [D-275](../prd/12-decisions.md)), **when** a reader uses dark mode, **then** it's shown in the dark theme.
 - **Given** the feature cards, **when** they render, **then** they cover quotes accepted online, jobs with milestones and retention, invoices that post to the books, the offline field app, self-hosting, and a link to the developer docs.
 - **Given** the footer, **when** it renders, **then** it names the licence (AGPL-3.0, [D-263](../prd/12-decisions.md)) and links to older doc versions.
+- **Given** a wide, tall window, **when** the reader scrolls through "How it works", **then** the section stays in place and the example job moves through the six steps, ending in a journal entry whose debits equal its credits; a step's button jumps to it.
+- **Given** a phone, a short window, the reader's reduced-motion setting or no JavaScript, **when** the page renders, **then** nothing moves or is hidden: "How it works" is a list of the six steps and each demo shows its last state.
+- **Given** the theme switch ("Match my system", "Light", "Dark"), **when** the reader picks one, **then** the page switches and the docs open in the same theme (Starlight's setting, [D-100](../prd/12-decisions.md)).
 
 **Implementation notes**
-- Starlight `splash` template; screenshots from US-SITE-06.
-- Built: `apps/site/src/content/docs/index.mdx` (splash), with the workflow strip, the dashboard capture (light and dark, from US-SITE-06), six cards and a footer naming the licence and linking to the docs' versions page.
+- Its own Astro page, not Starlight's splash ([D-275](../prd/12-decisions.md)): the design is the Claude Design project "Spine home page redesign" (`SiteHome`, `SiteHomeDark`), with references from Mobbin (Twenty, Beside, Mercury, FLORA, Function, Giga).
+- Built: `apps/site/src/pages/index.astro` with `components/` (Header, Hero, Flow, Features, Install, Footer, Icon), `layouts/Page.astro`, `scripts/motion.ts` and `styles/home.css`; every word in `locales/en/home.ts`. The theme comes from `docs/design/tokens.json` (`scripts/site/tokens-css.mjs --home`); Inter and IBM Plex Mono are self-hosted (Fontsource); icons are Lucide, one import each (`@lucide/astro`). `src/pages/404.astro` is the site's missing-page answer outside `/docs/`. `scripts/us-site-02.test.mjs` builds the page and checks each criterion, that the source has no hex colours, and that the example job's figures add up.
 
 ### US-SITE-03 · Find any page with search
 **Feature:** F-SITE-01 · **Priority:** P2 · **Phase:** 12 · **Screens:** `SiteSearch`
@@ -109,7 +112,7 @@ Decision: D-113
 
 **Implementation notes**
 - Playwright, reusing `apps/e2e`'s `seededOrg` fixture; a manifest maps guide pages to routes.
-- Built: `pnpm --filter @spine/e2e screenshots` (`playwright.screenshots.config.ts`, `screenshots/capture.spec.ts`) reads `apps/docs/screenshots/*.json` (183 screens: id, route with `{placeholder}` ids from the demo data, alt, optional click and wait text) and saves `<id>-light.png` and `<id>-dark.png`. `<Screenshot id alt />` shows the one matching the reader's theme, or the description until it's captured. The run also captures the home page's dashboard.
+- Built: `pnpm --filter @spine/e2e screenshots` (`playwright.screenshots.config.ts`, `screenshots/capture.spec.ts`) reads `apps/docs/screenshots/*.json` (183 screens: id, route with `{placeholder}` ids from the demo data, alt, optional click and wait text) and saves `<id>-light.png` and `<id>-dark.png`. `<Screenshot id alt />` shows the one matching the reader's theme, or the description until it's captured. (The run captured the home page's dashboard too until the home page rebuilt it in HTML, D-275.)
 
 ### US-SITE-07 · Install Spine from the self-hosting guide
 **Feature:** F-SITE-03 · **Priority:** P1 · **Phase:** 12 · **Screens:** `SiteSelfHosting`
@@ -232,4 +235,4 @@ Decision: D-270
 **Implementation notes**
 - Cloudflare's Git integration (Workers Builds, [D-274](../prd/12-decisions.md)), one Worker with static assets whose build (`pnpm site:build`) puts the docs into the home page's `docs/` folder, with build watch paths; no GitHub workflow and no Actions minutes ([D-270](12-decisions.md), [D-273](12-decisions.md)). Web analytics off.
 - Built: the Worker's settings (build command, watch paths, branch previews, domain; `wrangler.jsonc` holds the assets folder, the 404 page and telemetry off) are in docs/release.md › The website and docs. Connecting it is the Owner's step in the Cloudflare dashboard.
-- Built (D-273): `packages/shared/src/public-site.ts` holds the domain; `scripts/site/build-pages.mjs` builds both sites into `apps/site/dist` and checks the home page's links into `/docs/`; `scripts/us-site-14.test.mjs` checks the README and the issue template agree with it and that no code names the domain itself.
+- Built (D-273): `packages/shared/src/public-site.ts` holds the domain; `scripts/site/build-pages.mjs` builds both sites into `apps/site/dist` and checks the home page's links (into `/docs/`, to its own pages and their anchors); `scripts/us-site-14.test.mjs` checks the README and the issue template agree with it and that no code names the domain itself.

@@ -1,7 +1,8 @@
 // US-SITE-14 (D-273) — the public site as Cloudflare serves it (D-274): the home
 // page (apps/site) at the root and the docs (apps/docs) under /docs/, in one
-// folder, apps/site/dist. Each build checks its own links; this then checks
-// the home page's links into /docs/ land on a page the docs built.
+// folder, apps/site/dist. The docs' build checks its own links; this then
+// checks the home page's (US-SITE-02, D-275): every site link lands on a page
+// that was built, and every #anchor on an element of the page it points at.
 //   pnpm site:build
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -25,15 +26,24 @@ function pages(dir) {
   });
 }
 
+/** The file a site path is served from, the way Cloudflare's assets resolve it. */
+const fileFor = (path) => join(dist, path, path.endsWith("/") ? "index.html" : "");
+const ids = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(([, id]) => id));
+
 const broken = [];
 for (const page of pages(dist)) {
-  for (const [, href] of readFileSync(page, "utf8").matchAll(/href="(\/docs\/[^"#?]*)/g)) {
-    const target = join(dist, href, href.endsWith("/") ? "index.html" : "");
-    if (!existsSync(target)) broken.push(`${page.slice(dist.length)} → ${href}`);
+  const html = readFileSync(page, "utf8");
+  const pagePath = page.slice(dist.length).replace(/index\.html$/, "");
+  for (const [, href] of html.matchAll(/href="((?:\/|#)[^"]*)"/g)) {
+    if (href.startsWith("//") || /\.(svg|css|js|woff2?|png|webp|ico)$/.test(href.split(/[?#]/)[0])) continue;
+    const [path, anchor] = href.split("#");
+    const target = fileFor(path || pagePath);
+    if (!existsSync(target)) broken.push(`${pagePath} → ${href} (no page)`);
+    else if (anchor && !ids(readFileSync(target, "utf8")).has(anchor)) broken.push(`${pagePath} → ${href} (no #${anchor} there)`);
   }
 }
 if (broken.length) {
-  console.error(`The home page links to docs pages that weren't built:\n  ${broken.join("\n  ")}`);
+  console.error(`The home page has links that go nowhere:\n  ${broken.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`Built the home page and the docs into ${dist.slice(root.length + 1)}; every link into /docs/ is there.`);
+console.log(`Built the home page and the docs into ${dist.slice(root.length + 1)}; every link from the home page is there.`);

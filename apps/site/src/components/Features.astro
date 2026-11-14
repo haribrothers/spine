@@ -1,0 +1,146 @@
+---
+/**
+ * US-SITE-02 — the six feature cards, each with a small working demo: a
+ * quote accepted on a phone, milestones filling, an invoice becoming journal
+ * lines, the field app syncing, install and backup, and an API call. Tiles
+ * with data-steps loop while they're on screen (motion.ts); with reduced
+ * motion they show their last step.
+ */
+import mark from "../assets/mark.svg";
+import Icon from "./Icon.astro";
+import { home } from "../locales/en/home";
+import { docs } from "../lib/links";
+
+const t = home.features;
+const { quotes, jobs, books, field, hosting, developers } = t;
+---
+
+<section id="features" class="sec" aria-labelledby="features-title">
+  <div class="wrap">
+    <div data-reveal>
+      <p class="kicker">{t.kicker}</p>
+      <h2 id="features-title" class="h2">{t.title}</h2>
+    </div>
+    <div class="bento">
+      <article class="tile s3" data-steps="4" data-ms="1600,450,1500,2800" data-reveal>
+        <div><h3>{quotes.title}</h3><p>{quotes.body}</p></div>
+        <div class="demo demo-phone" aria-hidden="true">
+          <div class="phone">
+            <div class="ph-brand"><img src={mark.src} width="22" height="22" alt="" />{home.app.org}</div>
+            <div class="muted mono">{quotes.number}</div>
+            <div class="ph-name">{quotes.name}</div>
+            <div class="dl"><span class="muted">{quotes.total}</span><b class="num">{quotes.amount}</b></div>
+            <div class="ph-state">
+              <div class="ph-btns"><span>{quotes.decline}</span><span class="acc">{quotes.accept}</span></div>
+              <div class="ph-ok"><Icon name="check" />{quotes.accepted}</div>
+            </div>
+          </div>
+          <div class="notify">
+            <span class="row-ic t-paid"><Icon name="bell" /></span>
+            <div><b>{quotes.notifyTitle}</b><div class="muted">{quotes.notifyDetail}</div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile s3" data-reveal style="--d: 80ms">
+        <div><h3>{jobs.title}</h3><p>{jobs.body}</p></div>
+        <div class="demo" aria-hidden="true">
+          <div class="mstack">
+            {
+              jobs.milestones.map((m) => (
+                <div class="mrow">
+                  <span>{m.name}</span>
+                  <span class={`pill t-${m.tone}`}>{m.tag}</span>
+                  <div class="bar">
+                    <i style={`--w: ${m.done}%`} />
+                  </div>
+                </div>
+              ))
+            }
+            <div class="ret"><span>{jobs.retention}</span><span class="num">{jobs.retentionValue}</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile s2" data-reveal>
+        <div><h3>{books.title}</h3><p>{books.body}</p></div>
+        <div class="demo" aria-hidden="true">
+          <div class="post mono">
+            <div class="inv"><span>{books.invoice[0]}</span><span>{books.invoice[1]}</span></div>
+            <span class="arrow"><Icon name="down" /></span>
+            <div class="post-lines">
+              {
+                books.lines.map(([side, account, amount], i) => (
+                  <div class="r" style={`--d: ${200 + i * 250}ms`}>
+                    <span>{side}</span>
+                    <span>{account}</span>
+                    <span class="rt">{amount}</span>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="tile s2" data-steps="3" data-ms="2200,1300,2400" data-reveal style="--d: 80ms">
+        <div><h3>{field.title}</h3><p>{field.body}</p></div>
+        <div class="demo" aria-hidden="true">
+          <div class="sync">
+            <div class="net">
+              <span class="off t-due"><Icon name="wifiOff" size="sm" />{field.offline}</span>
+              <span class="ing t-info"><Icon name="loader" size="sm" class="spin" />{field.syncing}</span>
+              <span class="ok t-paid"><Icon name="check" size="sm" />{field.synced}</span>
+            </div>
+            {
+              field.tasks.map((task) => (
+                <div class="task">
+                  <Icon name={task.icon} />
+                  {task.label}
+                  <em>{field.saved}</em>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </article>
+
+      <article class="tile s2" data-reveal style="--d: 160ms">
+        <div><h3>{hosting.title}</h3><p>{hosting.body}</p></div>
+        <div class="demo" aria-hidden="true">
+          <div class="term mono">
+            {
+              hosting.lines.map((line, i) => (
+                <div class={line.kind} style={`--d: ${100 + i * 350}ms`}>
+                  {line.kind === "cmd" && <span class="p">$ </span>}
+                  {line.text}
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </article>
+
+      <article class="tile s6" data-reveal>
+        <div class="dev">
+          <div>
+            <h3>{developers.title}</h3>
+            <p>{developers.body}</p>
+            <div class="links">
+              <a class="btn btn-s btn-sm" href={docs.architecture}>{developers.architecture}</a>
+              <a class="btn btn-s btn-sm" href={docs.api}>{developers.api}<Icon name="arrow" /></a>
+            </div>
+          </div>
+          <pre class="code mono" aria-hidden="true"><code><span class="c">{developers.comment}</span>
+<span class="k">POST</span> /api/payments
+Idempotency-Key: <span class="s">7f3c…a91e</span>
+
+{"{"} <span class="s">"contactId"</span>: <span class="s">"9b2e…41c7"</span>, <span class="s">"date"</span>: <span class="s">"2026-11-14"</span>,
+  <span class="s">"method"</span>: <span class="s">"bank_transfer"</span>, <span class="s">"currency"</span>: <span class="s">"USD"</span>,
+  <span class="s">"amount"</span>: <span class="n">"1007285"</span>,
+  <span class="s">"allocations"</span>: [{"{"} <span class="s">"invoiceId"</span>: <span class="s">"d41a…08f3"</span>, <span class="s">"amount"</span>: <span class="n">"1007285"</span> {"}"}] {"}"}</code></pre>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

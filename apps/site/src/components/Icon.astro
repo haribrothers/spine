@@ -1,0 +1,63 @@
+---
+/** US-SITE-02 — the home page's Lucide icons, imported one by one. Decorative: the text next to each says what it means. */
+import ArrowDown from "@lucide/astro/icons/arrow-down";
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+import Bell from "@lucide/astro/icons/bell";
+import BookOpen from "@lucide/astro/icons/book-open";
+import CalendarDays from "@lucide/astro/icons/calendar-days";
+import Camera from "@lucide/astro/icons/camera";
+import Check from "@lucide/astro/icons/check";
+import CircleAlert from "@lucide/astro/icons/circle-alert";
+import Copy from "@lucide/astro/icons/copy";
+import CreditCard from "@lucide/astro/icons/credit-card";
+import FilePenLine from "@lucide/astro/icons/file-pen-line";
+import FileText from "@lucide/astro/icons/file-text";
+import Hammer from "@lucide/astro/icons/hammer";
+import Landmark from "@lucide/astro/icons/landmark";
+import LayoutDashboard from "@lucide/astro/icons/layout-dashboard";
+import LoaderCircle from "@lucide/astro/icons/loader-circle";
+import Lock from "@lucide/astro/icons/lock";
+import Monitor from "@lucide/astro/icons/monitor";
+import Moon from "@lucide/astro/icons/moon";
+import Receipt from "@lucide/astro/icons/receipt";
+import Sun from "@lucide/astro/icons/sun";
+import Users from "@lucide/astro/icons/users";
+import WifiOff from "@lucide/astro/icons/wifi-off";
+
+const icons = {
+  alert: CircleAlert,
+  arrow: ArrowRight,
+  bank: Landmark,
+  bell: Bell,
+  book: BookOpen,
+  calendar: CalendarDays,
+  camera: Camera,
+  card: CreditCard,
+  check: Check,
+  copy: Copy,
+  dashboard: LayoutDashboard,
+  down: ArrowDown,
+  file: FileText,
+  hammer: Hammer,
+  loader: LoaderCircle,
+  lock: Lock,
+  monitor: Monitor,
+  moon: Moon,
+  quote: FilePenLine,
+  receipt: Receipt,
+  sun: Sun,
+  users: Users,
+  wifiOff: WifiOff,
+};
+export type IconName = keyof typeof icons;
+
+interface Props {
+  name: IconName;
+  size?: "sm" | "md";
+  class?: string;
+}
+const { name, size = "md", class: className } = Astro.props;
+const Svg = icons[name];
+---
+
+<span class:list={["ic", size === "sm" && "ic-sm", className]} aria-hidden="true"><Svg stroke-width={1.75} /></span>

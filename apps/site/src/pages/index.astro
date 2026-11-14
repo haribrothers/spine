@@ -1,0 +1,16 @@
+---
+/** US-SITE-02 (D-275) — the home page at spine.<domain>. */
+import Page from "../layouts/Page.astro";
+import Hero from "../components/Hero.astro";
+import Flow from "../components/Flow.astro";
+import Features from "../components/Features.astro";
+import Install from "../components/Install.astro";
+import { home } from "../locales/en/home";
+---
+
+<Page title={home.meta.title} description={home.meta.description}>
+  <Hero />
+  <Flow />
+  <Features />
+  <Install />
+</Page>
