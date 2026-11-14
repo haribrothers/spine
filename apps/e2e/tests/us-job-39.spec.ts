@@ -29,7 +29,7 @@ test.describe("US-JOB-39", () => {
     await photos.getByRole("button", { name: "Actions for Wrong site" }).click();
     await page.getByRole("menuitem", { name: "Delete photo" }).click();
     await page.getByTestId("photo-delete-dialog").getByRole("button", { name: "Delete photo" }).click();
-    await expect(page.getByText("Photo deleted")).toBeVisible();
+    await expect(page.getByTestId("toast").getByText("Photo deleted").first()).toBeVisible();
     await expect(photos.getByTestId("photo-tile")).toHaveCount(2);
     await expect(photos.getByRole("button", { name: "Open Wrong site full size" })).toHaveCount(0);
 
@@ -64,7 +64,7 @@ test.describe("US-JOB-39", () => {
     await expect(confirm).toBeDisabled();
     await dialog.getByLabel("Reason").fill("Shows the neighbour's house");
     await confirm.click();
-    await expect(page.getByText("Photo deleted")).toBeVisible();
+    await expect(page.getByTestId("toast").getByText("Photo deleted").first()).toBeVisible();
     await expect(photos.getByTestId("photo-tile")).toHaveCount(0);
 
     const activity = await api<Activity[]>(page, "GET", `/jobs/${job.id}/activity`);
