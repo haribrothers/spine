@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — The website publishes after each merge (US-SITE-14 done)
+
+- **Checked live:** the `spine-site` Worker is connected. `https://spine.h4loom.com/` and `/docs/` answer 200, `http://` redirects with a 301, and the redesigned home page from PR #20 went live after its merge. The Owner checked the rest in Cloudflare: a branch push gets a preview address, a change outside the sites starts no build, and a failed build leaves the live site as it was.
+- **Spec:** US-SITE-14 is ticked in progress. Its implementation note in 19-website now says the Worker is connected, where it said connecting was the Owner's step. No contract or screen changes.
+
 ### 2026-11-14 — Fix: the dependency audit after two new node-forge advisories
 
 - **Why:** `pnpm audit --prod` (the first step of `pnpm verify` and of CI) started failing on GHSA-rhr8-3pm8-cq29 and GHSA-6qrw-m8cv-hcxf, published 2026-11-10: both high, in `node-forge` 1.4.0, which reaches production through better-auth › drizzle-orm › expo-sqlite › expo's CLI.
