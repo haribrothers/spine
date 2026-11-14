@@ -366,7 +366,7 @@ Decision: D-192
 
 **Implementation notes**
 - Content: India's prices (in rupees), HSN/SAC codes and GST slabs are written by hand on every item and typed line of each industry pack (`in: { price, hsnSac, slab }`), checked against the slabs from 22 September 2025; its contacts, GST treatments and PANs are in `countries.ts`. The second SEZ invoice is zero-rated by hand (under LUT); the voided invoice is raised and voided the same day, so this month's GSTR-1 and Tax Summary agree.
-- Edge: India's demos don't release retention until [Q-21](../prd/13-risks-open-questions.md) is answered.
+- Edge: India's demos release retention like the others; GSTR-1 leaves the release invoice out ([D-276](../prd/12-decisions.md), which answered Q-21).
 - Edge: the business isn't in a union territory, so UTGST isn't shown.
 
 ### US-ONB-20 · Start from a template for my industry
@@ -491,7 +491,7 @@ Decision: D-216
 - **Given** any demo with jobs, **when** it's loaded, **then** every job has an end date, the finished job's in the past.
 - **Given** the job in progress, **when** I look at it, **then** a completed milestone hasn't been invoiced yet: "Ready to bill" counts it and the job's next step is "Invoice <milestone>".
 - **Given** the jobs, **when** they show, **then** each has a cost budget and the newest is near it ("Over or near budget" shows 1 for people who can see job profitability), and one job has a % complete estimate.
-- **Given** the finished job, **when** I open it, **then** its status is Completed; where the demo releases retention it's released, and otherwise (India, Q-21) it's held and "Release retention" is the next step.
+- **Given** the finished job, **when** I open it, **then** its status is Completed; where the demo releases retention (construction and fit-out, in every country, [D-276](../prd/12-decisions.md)) it's released, and otherwise it's held and "Release retention" is the next step.
 - **Given** a customer with a job, **when** I start a new job for them, **then** the drawer fills in their site address.
 
 **Implementation notes**

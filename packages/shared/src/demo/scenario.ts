@@ -449,8 +449,7 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
             ...(timing.complete[i] !== undefined ? { completeInDays: timing.complete[i] } : {}),
             ...(timing.paidAfter[i] !== undefined ? { paidAfterDays: timing.paidAfter[i] } : {}),
           })),
-          // Not in India: GSTR-1 would count a retention-release invoice as a supply of its own (Q-21).
-          releaseRetention: key === "c" && pack.jobs!.releaseRetention && job.retentionPct > 0 && !india,
+          releaseRetention: key === "c" && pack.jobs!.releaseRetention && job.retentionPct > 0,
           milestoneTax: india ? { tax: gstTax(18), hsnSac: job.sac } : { tax: countryTax(country, "standard", false) ?? { intra: null, supplyClass: "zero_rated" as const } },
           note: `Kick-off on site at ${siteAddress}. Crew and dates follow the milestones below.`,
           photoCaption: "Site at kick-off.",

@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, inArray, isNull, lte } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNull, lte, ne } from "drizzle-orm";
 import type { SupplyClass, SupplyType, TaxComponent } from "@spine/shared";
 import type { Database } from "../../db/client";
 import { bankTransactions, creditNoteLines, creditNotes, expenses, invoiceLines, invoices, vendorBillLines, vendorBills, vendorCreditLines, vendorCredits } from "../../db/schema";
@@ -46,7 +46,8 @@ export async function loadTaxBreakdown(db: Database, orgId: string, from: string
     .select({ line: invoiceLines, supplyType: invoices.supplyType })
     .from(invoiceLines)
     .innerJoin(invoices, eq(invoiceLines.invoiceId, invoices.id))
-    .where(and(eq(invoices.orgId, orgId), eq(invoices.status, "issued"), eq(invoiceLines.type, "item"), gte(invoices.issueDate, start), lte(invoices.issueDate, end)));
+    // D-276: a retention release isn't a sale of its own; its retention was taxed on the progress invoices.
+    .where(and(eq(invoices.orgId, orgId), eq(invoices.status, "issued"), ne(invoices.type, "retention_release"), eq(invoiceLines.type, "item"), gte(invoices.issueDate, start), lte(invoices.issueDate, end)));
   for (const { line, supplyType } of invoiceRows) raw.push({ ...line, side: "sales", source: "invoice", sign: 1n, taxable: line.lineSubtotalAmount, supplyType });
 
   const creditRows = await db

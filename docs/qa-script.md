@@ -3859,6 +3859,10 @@ Use an Indian business with GSTIN 29AAACK0000A1ZK (Karnataka), and issue documen
 7. Switch Filing to Quarterly: the periods read like "Jul – Sep 2026", and the figures cover the three months.
 8. As Staff without "View financial statements" the page says you don't have access. Field users can't open it.
 9. The audit log shows "GSTR-1 file · Downloaded" with the period and format.
+10. Retention releases are left out ([D-276](prd/12-decisions.md)). Take a job with 10% retention, issue a ₹1,00,000 progress invoice at GST 18% with SAC 995414, note GSTR-1 and the Tax Summary for the month, then press **Release retention** on the job:
+    - GSTR-1's cards and tables don't change. The progress invoice is in B2B; the ₹10,000 release invoice isn't in B2B, Nil or Documents issued, and no "no HSN/SAC" problem is listed for it.
+    - The Tax Summary's taxable sales and supply classes don't change.
+    - **Regression:** the release invoice still shows in Invoices, Receivables and the job's activity; the job's billed to date doesn't change.
 
 ## 176. GSTR-1 checks and Excel (US-TAX-17, Phase 9)
 
@@ -5690,7 +5694,7 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 12 (D-194).
-- India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
+- India's construction and fit-out demos release retention like the others; GSTR-1 leaves the release invoice out ([D-276](prd/12-decisions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - No AI control shows in a form until US-AI-08 onwards, so the budget, the 30-requests-in-10-minutes limit and "AI didn't answer" are checked through the API until then. The Model picker offers to "Create" a typed model name. Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.

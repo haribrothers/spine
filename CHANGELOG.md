@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — GSTR-1 leaves retention releases out (D-276, answers Q-21)
+
+- **Why:** GSTR-1 counted a retention-release invoice as a supply of its own: an untaxed B2B invoice with no HSN/SAC, in the totals and in Documents issued. The retention had already been taxed on the progress invoices that held it back (D-130). Indian practice is the same: GST is paid on the full RA bill, retention included, and the release is a receipt against those bills, not a new tax invoice. Tally clears retention from its own ledger at final settlement, the same way.
+- **GSTR-1:** `retention_release` invoices join deposit requests and opening invoices as not supplies, so they're left out of every table and Documents issued. Releases still take the next invoice number, so the series can skip one there.
+- **Tax Summary:** releases never showed in its sales (they carry no tax or supply class), but voiding a release issued in an earlier period took its amount off the period's taxable sales. Now voiding one changes nothing, and the per-line breakdown leaves releases out.
+- **Demo data:** India's construction and fit-out demos release retention like the other countries (D-192).
+- **Checks:** `apps/api/src/modules/tax/gstr1/d-276.http.integration.test.ts` compares GSTR-1 (summary and JSON) and the Tax Summary before and after a release, and after voiding one issued last month. Without the fix, three of its four checks fail. `us-onb-18.test.ts` now expects releases in every country.
+- **Spec:** D-276; Q-21 closed; 06-ledger-posting-rules (a note under P10); US-TAX-16's implementation notes; 01-onboarding (the demo edge case and criterion); QA script §175 step 10 and the demo note. Guide: "Export GSTR-1" and "Hold and release retention" say what's left out and why.
+
 ### 2026-11-14 — The website publishes after each merge (US-SITE-14 done)
 
 - **Checked live:** the `spine-site` Worker is connected. `https://spine.h4loom.com/` and `/docs/` answer 200, `http://` redirects with a 301, and the redesigned home page from PR #20 went live after its merge. The Owner checked the rest in Cloudflare: a branch push gets a preview address, a change outside the sites starts no build, and a failed build leaves the live site as it was.
