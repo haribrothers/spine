@@ -599,3 +599,23 @@ Decision: D-215
 
 **Implementation notes**
 - API: `apps/api/assets/demo/`; `DemoSeederService` uploads them through `StorageDriver`.
+
+### US-JOB-39 · Delete a job photo added by mistake
+**Feature:** F-JOB-05 · **Priority:** P2 · **Phase:** 12 · **Screens:** `JobPhotosViewer`, `JobPhotoDelete`, `JobPhotoDeleteLocked`
+**As** the person who added a photo, or an Owner, **I want** to delete a wrong photo, **so that** the job's record shows only what belongs to it.
+
+Decision: D-277
+
+**Acceptance criteria**
+- **Given** a photo I added, on a job that's Active or On hold, that's a site photo or belongs to a milestone that isn't invoiced, **when** I open its menu on the grid or the viewer, **then** "Delete photo" is there (red, last, after a divider).
+- **Given** "Delete photo", **when** I choose it, **then** "Delete this photo?" says "It's removed from the job and deleted from storage. The job's activity keeps a note that it was removed.", with "Cancel" and "Delete photo"; nothing is deleted until I confirm.
+- **Given** I confirm, **when** it succeeds, **then** the toast says "Photo deleted", the photo leaves the grid (the viewer moves to the next photo, or closes if it was the last one), the job's Activity shows "Photo removed" with who removed it and the photo's caption or milestone, and the stored file is deleted.
+- **Given** someone else's photo that's still open to deletion, **when** I'm an Owner, or Staff whose Team has "Delete others' job photos", **then** I can delete it the same way; otherwise "Delete photo" isn't there.
+- **Given** a locked photo (the job is Completed or Cancelled, or its milestone is invoiced), **when** a Staff or Field user opens it, **then** "Delete photo" isn't there.
+- **Given** a locked photo, **when** an Owner chooses "Delete photo", **then** "Delete a photo from a <completed job | cancelled job | invoiced milestone>?" asks for a "Reason" (required) and says "The job's activity keeps the reason."; the Activity entry shows it.
+- **Given** the photo was locked or deleted by someone else after I opened the page, **when** I confirm, **then** I see the error ("This photo can't be deleted any more: <the job is completed | the milestone is invoiced>. Ask an Owner." or "This photo has already been deleted.") and the grid refreshes.
+
+**Implementation notes**
+- API: `DELETE /jobs/:id/photos/:photoId { reason? }` (Idempotency-Key). Ownership in the service, before the lock check: own needs `job_photos.edit_own`, someone else's `job_photos.edit_others`; locked needs Owner and a reason. `GET /jobs/:id/photos` rows gain `locked` and `lockedBy`.
+- Data: `job_photos.removed_at`, `removed_by_user_id`, `removal_reason`; a removed photo is left out of every read (the grid, the job's photo count, `GET /mobile/today`) and its file is deleted through `StorageDriver` once nothing else uses it (as US-OPS-35). Audited as `photo_removed`; the job's activity shows it.
+- UI: `photos-section.tsx` (each tile's menu), `photo-viewer.tsx` (the viewer's actions), `useConfirm()` and `useToast()`; the menu icon from `lib/menu-icons.ts`.

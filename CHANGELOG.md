@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — Spec: delete job photos, and see them full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, D-277)
+
+- **Why:** a wrong photo on a job couldn't be removed anywhere, and the field app's photo tiles didn't open.
+- **Agreed (D-277):** the person who added a photo can delete it while the job is Active or On hold and its milestone isn't invoiced. Milestone photos stay open after completion because they're added at that moment. Owners, and Staff whose Team has "Delete others' job photos" (`job_photos.edit_others`, until now reserved), can delete other people's open photos; Field never. A locked photo is Owner-only, with a reason. Removal works like removing an attachment (US-OPS-35): marked removed, audited, file deleted. On the phone a full-screen viewer (swipe, zoom, caption, who and when, no Save or Share); deleting needs a connection; a photo waiting to send can be discarded.
+- **Spec:** new stories in 07-jobs and 17-mobile; D-277; `job_photos` gains `removed_at`, `removed_by_user_id`, `removal_reason`; `DELETE /jobs/:id/photos/:photoId`, `locked`/`lockedBy` on photo rows and `photo_removed` in job activity (05-api); the capability matrix and a rule in 07-security; Phase 12 and progress list the three stories. Screens come next: `JobPhotosViewer` (updated), `JobPhotoDelete`, `JobPhotoDeleteLocked`, `MobPhotoViewer`, `MobPhotoViewerAndroid`, `MobPhotoDelete`.
+
 ### 2026-11-14 — GSTR-1 leaves retention releases out (D-276, answers Q-21)
 
 - **Why:** GSTR-1 counted a retention-release invoice as a supply of its own: an untaxed B2B invoice with no HSN/SAC, in the totals and in Documents issued. The retention had already been taxed on the progress invoices that held it back (D-130). Indian practice is the same: GST is paid on the full RA bill, retention included, and the release is a receipt against those bills, not a new tax invoice. Tally clears retention from its own ledger at final settlement, the same way.

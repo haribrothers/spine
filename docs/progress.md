@@ -681,6 +681,12 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-SITE-13 · Read docs for the version I run
 - [x] US-SITE-14 · Publish the site after each merge (the `spine-site` Worker is connected and publishes from `main`, D-274)
 
+### Milestone 2 · job photos (D-277)
+
+- [ ] US-JOB-39 · Delete a job photo added by mistake
+- [ ] US-MOB-30 · Look at a job's photos full screen
+- [ ] US-MOB-31 · Delete a photo from the phone
+
 ### After the v1.0 tag
 
 - [ ] US-MOB-29 · Get the field app from the App Store and Play Store

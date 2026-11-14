@@ -507,3 +507,38 @@ Decision: D-266
 
 **Implementation notes**
 - Submitted after the tag; store review doesn't hold 1.0. `demo.h4loom.com` runs `SEED_DEMO` and resets nightly.
+
+### US-MOB-30 · Look at a job's photos full screen
+**Feature:** F-MOB-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `MobPhotoViewer`, `MobPhotoViewerAndroid`
+**As** a field user, **I want** to open a photo on the job, **so that** I can check what I or the crew took.
+
+Decision: D-277
+
+**Acceptance criteria**
+- **Given** a photo on a job's page or its Photos screen, **when** I tap it, **then** it opens full screen with "<n> of <total>", its caption, "Site photo" or the milestone's name, and "Added by <name> · <day, time>".
+- **Given** the viewer, **when** I swipe left or right, **then** I move through the same photos in the same order as the screen I came from; with VoiceOver or TalkBack, "Next photo" and "Previous photo" do the same.
+- **Given** a photo, **when** I pinch or double-tap, **then** it zooms, and I can pan the zoomed photo; double-tap again fits it back.
+- **Given** the viewer, **when** I tap Close or swipe down, **then** I'm back where I was; with reduce motion on, it opens and closes without the zoom transition.
+- **Given** a photo still waiting to be sent, **when** I open it, **then** it shows from the phone with "Waiting to send" instead of who added it.
+- **Given** I'm offline, **when** I open a photo that's been sent, **then** it shows if the phone has it cached, otherwise "This photo will show when you're back online."
+- **Given** the viewer, **when** I look for Save or Share, **then** there are none: site photos stay out of the camera roll.
+
+**Implementation notes**
+- Opened from `PhotoTile` on `job-detail-screen.tsx` and `job-photos-screen.tsx`; images through `useFileUri` (`GET /files/:id` with the bearer token). Light and dark: the viewer uses the camera's ink tokens (US-MOB-20) in both themes.
+
+### US-MOB-31 · Delete a photo from the phone
+**Feature:** F-MOB-04 · **Priority:** P2 · **Phase:** 12 · **Screens:** `MobPhotoViewer`, `MobPhotoViewerAndroid`, `MobPhotoDelete`
+**As** a field user, **I want** to delete a photo I took by mistake, **so that** the job shows only the right ones.
+
+Decision: D-277
+
+**Acceptance criteria**
+- **Given** a sent photo I may delete (the same rule as the web, US-JOB-39), **when** I open it in the viewer, **then** there's "Delete photo"; otherwise there isn't.
+- **Given** "Delete photo", **when** I tap it, **then** "Delete this photo?" says "It's removed from the job and deleted from storage." with "Cancel" and "Delete photo"; when I confirm, the photo goes, the viewer moves to the next one (or closes), and a toast says "Photo deleted".
+- **Given** I'm offline, **when** I open a sent photo I may delete, **then** "Delete photo" is shown dimmed with "Connect to delete this photo."; nothing is queued.
+- **Given** a photo waiting to be sent, **when** I tap "Discard", **then** "Discard this photo?" says "It hasn't been sent yet. Discarding deletes it from this phone." with "Keep" and "Discard"; confirming takes it out of the outbox.
+- **Given** an Owner using the app on a locked photo, **when** they tap "Delete photo", **then** they're asked for a reason, as on the web.
+- **Given** the photo became locked or was deleted since the phone last refreshed, **when** I confirm, **then** I see the same message as the web and the photos refresh.
+
+**Implementation notes**
+- API: `DELETE /jobs/:id/photos/:photoId` straight away, not through the outbox (D-277). Field always has `job_photos.edit_own` and never `job_photos.edit_others`. Discarding a waiting photo deletes its outbox item and its file in the app's folder.
