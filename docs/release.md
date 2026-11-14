@@ -29,26 +29,54 @@ How a version of Spine is numbered, written up and published. The decisions behi
 7. **The field app**, when it changed: build and submit it as [15-mobile-release.md](prd/15-mobile-release.md) describes (for a beta, `scripts/mobile/build-beta.sh`, [docs/beta.md](beta.md)).
 8. **The website and docs** publish themselves from `main` (US-SITE-14, below). For a new **minor** version (1.1, 1.2 …), first add the previous minor to `apps/docs/src/versions.json` (`{ "archived": [{ "slug": "1.0" }] }`, newest first) and build once: `starlight-versions` copies the current docs into `src/content/docs/1.0/`. Commit that copy with the version bump, then update the docs for the new version. The version menu appears from the first archived version (US-SITE-13).
 
-## The website and docs (US-SITE-14, D-273)
+## The website and docs (US-SITE-14, D-273, D-274)
 
-One Cloudflare Pages project builds from this repo with Cloudflare's Git integration: no GitHub workflow and no Actions minutes. `pnpm site:build` puts the home page (`apps/site`) at the root and the docs (`apps/docs`) under `/docs/`. It's public even while the repo is private. Set it up once in the Cloudflare dashboard (Workers & Pages › Create › Pages › Connect to Git, choosing `haribrothers/spine`):
+The site is one Cloudflare **Worker with static assets** (`spine-site`), built by Workers Builds, Cloudflare's Git integration: no GitHub workflow and no Actions minutes. `pnpm site:build` puts the home page (`apps/site`) at the root and the docs (`apps/docs`) under `/docs/`, in `apps/site/dist`. `wrangler.jsonc` at the repo root tells Wrangler to serve that folder, to answer a missing page with the nearest `404.html`, to allow branch previews (`wrangler preview` needs its `previews` block, even empty), and to send no telemetry, so Cloudflare's default deploy and preview commands work unchanged. It's public even while the repo is private.
 
-| Setting | Value |
-|---|---|
-| Project name | `spine-site` |
-| Production branch | `main` |
-| Framework preset | None |
-| Root directory | `/` |
-| Build command | `pnpm install --frozen-lockfile --filter @spine/site... --filter @spine/docs... && pnpm site:build` |
-| Build output directory | `apps/site/dist` |
-| Environment variables | `NODE_VERSION=22`, `PNPM_VERSION=9.15.9` |
-| Build watch paths (include) | `apps/site/*`, `apps/docs/*`, `packages/shared/src/public-site.ts`, `docs/design/tokens.json`, `scripts/site/*`, `package.json`, `pnpm-lock.yaml` |
-| Custom domain | `spine.h4loom.com` |
-| Web Analytics | Off |
+Cloudflare's dashboard combines Workers and Pages, and **Create** makes a Worker. That's what this setup expects, so there's no Pages option to look for.
 
-- **The domain** is set once, in `packages/shared/src/public-site.ts` (D-273). To change it, edit that file, then run `pnpm test:scripts`: it names the files that spell the addresses out (the README, `.github/ISSUE_TEMPLATE/config.yml`). Then change the project's custom domain to match.
-- **The bare domain** (`h4loom.com`) isn't part of the site. To send it to the home page, add a Cloudflare redirect rule from `h4loom.com/*` to `https://spine.h4loom.com/${1}`.
-- A push to any other branch gets a preview address (Pages' preview deployments), to check before merging.
+### 1. Create the Worker from the repo
+1. In the Cloudflare dashboard, open **Workers & Pages** (under Compute in the sidebar) › **Create application**.
+2. Choose **Continue with GitHub** (or **Import a repository**), authorise the Cloudflare app for `haribrothers/spine`, and select the repo.
+3. Fill in the form as the table in step 2 shows, then **Create and deploy**.
+
+### 2. Build settings
+For an existing Worker: **Workers & Pages** › select `spine-site` › **Settings** › **Build**. Each part has its own edit (pencil) button. Changes apply to the next build.
+
+| Where in Settings › Build | Field | Value |
+|---|---|---|
+| Git repository | Repository | `haribrothers/spine` |
+| Build configuration | Build command | `pnpm install --frozen-lockfile --filter @spine/site... --filter @spine/docs... && pnpm site:build` |
+| Build configuration | Deploy command | `npx wrangler deploy` (the default) |
+| Build configuration | Preview command (non-production branches) | the default, `npx wrangler preview` (older screens: `npx wrangler versions upload`) |
+| Build configuration | Root directory | `/` (leave empty) |
+| Build variables and secrets | Variables | `NODE_VERSION` = `22`, `PNPM_VERSION` = `9.15.9` |
+| Branch control | Production branch | `main` |
+| Branch control | Enable Preview Builds | On |
+| Build watch paths | Include paths | `apps/site/*`, `apps/docs/*`, `packages/shared/src/public-site.ts`, `docs/design/tokens.json`, `scripts/site/*`, `package.json`, `pnpm-lock.yaml`, `wrangler.jsonc` |
+| Build watch paths | Exclude paths | none |
+
+Build variables apply only to the build; nothing goes under **Settings › Variables and secrets** (runtime), since the site has no code. There's no output-directory field: `wrangler.jsonc` names the folder.
+
+### 3. Domain and previews
+**Settings** › **Domains & Routes**:
+- **Custom domain:** **Add** › **Custom domain** › `spine.h4loom.com` › **Add Custom Domain**. The domain has to be a zone on this Cloudflare account. Cloudflare creates the DNS record and the certificate. It refuses a hostname that already has a CNAME record, so delete any existing `spine` CNAME first.
+- **workers.dev** and **Preview URLs:** on (`wrangler.jsonc` sets both). The `spine-site.<subdomain>.workers.dev` address is where the first build lands, before the domain is added.
+- Leave **Observability** (Workers Logs) off. Cloudflare's Web Analytics isn't added to a Worker, so there's nothing to turn off.
+
+### 4. Check it
+Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page.
+
+A branch's preview (`<branch>-spine-site.<subdomain>.workers.dev`) serves the same pages, but a made-up address there gets Cloudflare's plain "Not found" instead of the site's 404 page: Worker Previews don't apply `not_found_handling` (seen with Wrangler 4.158; Cloudflare's docs don't cover it). Check the 404 pages on production.
+
+If a branch build fails with "Your Wrangler configuration is missing a `previews` block", the commit predates that block in `wrangler.jsonc`; rebase it on `main`.
+
+If the deploy step fails with "The Cloudflare application detection logic has been run in the root of a workspace", Wrangler didn't find `wrangler.jsonc`: check that **Root directory** is `/` and that the commit being built has the file.
+
+### Afterwards
+- **The domain** is set once, in `packages/shared/src/public-site.ts` (D-273). To change it, edit that file, then run `pnpm test:scripts`: it names the files that spell the addresses out (the README, `.github/ISSUE_TEMPLATE/config.yml`). Then change the Worker's custom domain to match.
+- **The bare domain** (`h4loom.com`) isn't part of the site. To send it to the home page, add a Cloudflare redirect rule from `h4loom.com/*` to `https://spine.h4loom.com/${1}` (in the `h4loom.com` zone, **Rules** › **Redirect Rules**). The bare domain needs a proxied DNS record for the rule to run.
+- A push to any other branch gets a preview address (Preview Builds), to check before merging. It's listed on the build in **Deployments** and on the commit in GitHub.
 - A merge that doesn't touch the watch paths doesn't build it.
 - A failed build — a broken internal link fails it (`starlight-links-validator`, and the check of the home page's links into `/docs/`) — leaves the live site as it was.
 - CI and `pnpm verify` run the same `pnpm site:build` on every change to either site, so a pull request shows a broken link before it reaches `main`.

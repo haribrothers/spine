@@ -24,7 +24,7 @@ const STEPS = [
   { name: "lint", command: "pnpm turbo run lint" },
   { name: "typecheck", command: "pnpm turbo run typecheck" },
   { name: "unit", command: "pnpm turbo run test --filter=!@spine/e2e && pnpm test:scripts" },
-  // US-SITE-01, US-SITE-14: the home page with the docs under /docs/, as Pages publishes it, every internal link checked.
+  // US-SITE-01, US-SITE-14: the home page with the docs under /docs/, as Cloudflare publishes it (D-274), every internal link checked.
   // US-SITE-10: openapi.json is regenerated (commit the change if it moved).
   { name: "sites", command: "pnpm --filter @spine/api openapi ../docs/openapi.json && pnpm site:build" },
   { name: "integration", command: "pnpm --filter @spine/api test:integration", databases: ["spine_test"] },

@@ -222,7 +222,7 @@ Decision: D-111
 Decision: D-270
 
 **Acceptance criteria**
-- **Given** a merge to `main` that changes `apps/site/**`, `apps/docs/**` or the API's OpenAPI document, **when** Cloudflare Pages sees it, **then** the site is built and deployed: the home page at `spine.h4loom.com` and the docs under `/docs/` on it ([D-273](../prd/12-decisions.md)).
+- **Given** a merge to `main` that changes `apps/site/**`, `apps/docs/**` or the API's OpenAPI document, **when** Cloudflare's Git integration (Workers Builds) sees it, **then** the site is built and deployed: the home page at `spine.h4loom.com` and the docs under `/docs/` on it ([D-273](../prd/12-decisions.md)).
 - **Given** the domain changes, **when** it's changed in `packages/shared/src/public-site.ts`, **then** both sites, the app's Help menu and the tests use the new addresses, and a test names any file that still spells out the old ones (the README, GitHub's issue template).
 - **Given** a branch, **when** it's pushed, **then** it gets a preview address to check before merging.
 - **Given** a merge that doesn't touch the site, **when** it lands, **then** the publish workflow doesn't run.
@@ -230,6 +230,6 @@ Decision: D-270
 - **Given** the repo is private until the v1.0 tag ([D-262](../prd/12-decisions.md)), **when** the site publishes before then, **then** the site is still public.
 
 **Implementation notes**
-- Cloudflare Pages' Git integration, one project whose build (`pnpm site:build`) puts the docs into the home page's `docs/` folder, with build watch paths; no GitHub workflow and no Actions minutes ([D-270](12-decisions.md), [D-273](12-decisions.md)). Web analytics off.
-- Built: the Cloudflare Pages project's settings (build command, output folder, watch paths, domain, analytics off) are in docs/release.md › The website and docs. Connecting it is the Owner's step in the Cloudflare dashboard.
+- Cloudflare's Git integration (Workers Builds, [D-274](../prd/12-decisions.md)), one Worker with static assets whose build (`pnpm site:build`) puts the docs into the home page's `docs/` folder, with build watch paths; no GitHub workflow and no Actions minutes ([D-270](12-decisions.md), [D-273](12-decisions.md)). Web analytics off.
+- Built: the Worker's settings (build command, watch paths, branch previews, domain; `wrangler.jsonc` holds the assets folder, the 404 page and telemetry off) are in docs/release.md › The website and docs. Connecting it is the Owner's step in the Cloudflare dashboard.
 - Built (D-273): `packages/shared/src/public-site.ts` holds the domain; `scripts/site/build-pages.mjs` builds both sites into `apps/site/dist` and checks the home page's links into `/docs/`; `scripts/us-site-14.test.mjs` checks the README and the issue template agree with it and that no code names the domain itself.
