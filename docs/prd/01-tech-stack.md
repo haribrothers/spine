@@ -48,7 +48,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 
 ## `apps/site` and `apps/docs` — website, user guide and developer docs (Phase 12)
 
-`apps/site` is the home page at `spine.h4loom.com` (Astro); `apps/docs` is everything people read, under `/docs/` on the same site (Astro + Starlight) ([D-270](12-decisions.md), [D-273](12-decisions.md)). The domain is set once, in `packages/shared/src/public-site.ts`.
+`apps/site` is the home page at `spine.h4loom.com` (a plain Astro page with its own layout and motion, [D-275](12-decisions.md)); `apps/docs` is everything people read, under `/docs/` on the same site (Astro + Starlight) ([D-270](12-decisions.md), [D-273](12-decisions.md)). The domain is set once, in `packages/shared/src/public-site.ts`.
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -56,7 +56,8 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Search | Pagefind (built into Starlight) | Runs in the browser, so it works in the offline bundled guide |
 | API reference | `starlight-openapi`, from the API's OpenAPI document | Generated, so it never drifts from the code |
 | Versions | `starlight-versions`, one per minor release from 1.0 ([D-111](12-decisions.md)) | Self-hosters on older versions read matching docs |
-| Link checks | `starlight-links-validator` | Broken links fail the build |
+| Link checks | `starlight-links-validator` for the docs; `scripts/site/build-pages.mjs` for the home page's links and anchors | Broken links fail the build |
+| Home page | Astro page, CSS and a small script for motion (no animation library), Fontsource for Inter and IBM Plex Mono, `@lucide/astro` icons ([D-275](12-decisions.md)) | Free layout; respects reduced motion; no outside requests |
 | Hosting | Cloudflare Workers static assets, one Worker built by Workers Builds ([D-274](12-decisions.md)): `pnpm site:build` puts `apps/site` at `spine.h4loom.com` and `apps/docs` under `/docs/` ([D-273](12-decisions.md)) | One domain and one set of settings; free; works while the repo is private; a preview per branch |
 | In-app copy | The user guide and self-hosting sections are bundled into the web image at `/help` ([D-110](12-decisions.md)) | Help works offline and matches the installed version |
 

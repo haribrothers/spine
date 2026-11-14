@@ -6,7 +6,6 @@ import type { Page } from "@playwright/test";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
 const lists = join(__dirname, "../../docs/screenshots");
 const out = join(__dirname, "../../docs/src/assets/screens");
-const home = join(__dirname, "../../site/src/assets/screens");
 
 interface Shot {
   id: string;
@@ -69,7 +68,6 @@ async function capture(page: Page, shot: Shot, theme: "light" | "dark", ids: Rec
 
 test("US-SITE-06 · capture the guide's screens in light and dark mode", async ({ page, seededOrg: _ }) => {
   mkdirSync(out, { recursive: true });
-  mkdirSync(home, { recursive: true });
   const ids: Record<string, string | null> = {};
   for (const [key, list] of Object.entries(RECORDS)) ids[key] = await firstId(page, list);
   const shots = readdirSync(lists)
@@ -82,6 +80,4 @@ test("US-SITE-06 · capture the guide's screens in light and dark mode", async (
     }
     for (const theme of ["light", "dark"] as const) if (!(await capture(page, shot, theme, ids, join(out, `${shot.id}-${theme}.webp`)))) break;
   }
-  // The home page's product screenshot (US-SITE-02).
-  for (const theme of ["light", "dark"] as const) await capture(page, { id: "dashboard", path: "/dashboard", alt: "", wait: "Cash" }, theme, ids, join(home, `dashboard-${theme}.webp`));
 });

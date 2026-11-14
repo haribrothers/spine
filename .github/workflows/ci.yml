@@ -79,6 +79,7 @@ jobs:
               - "!apps/docs/**"
               - "!scripts/site/**"
               - "!scripts/us-site-14.test.mjs"
+              - "!scripts/us-site-02.test.mjs"
               - "!wrangler.jsonc"
       # What the integration suite exercises; the field app and its native
       # packages are covered by the unit tests alone.
@@ -104,6 +105,7 @@ jobs:
               - "apps/site/**"
               - "scripts/site/**"
               - "scripts/us-site-14.test.mjs"
+              - "scripts/us-site-02.test.mjs"
               - "wrangler.jsonc"
               - "docs/design/tokens.json"
             tokens:
@@ -202,8 +204,9 @@ jobs:
         run: pnpm --filter @spine/site --filter @spine/docs lint
 
       # US-SITE-14: the addresses come from public-site.ts and the Worker serves the build's folder.
+      # US-SITE-02: the home page's copy, links, theme and example job, on its own build.
       - name: Site script tests
-        run: node --test scripts/us-site-14.test.mjs
+        run: node --test scripts/us-site-14.test.mjs scripts/us-site-02.test.mjs
 
       # US-SITE-01, US-SITE-14: the home page with the docs under /docs/; a broken internal link fails the build.
       - name: Build the docs site and home page
@@ -418,6 +421,10 @@ jobs:
           restore-keys: |
             next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
             next-e2e-${{ runner.os }}-
+
+      # US-SITE-02's spec serves the built home page and docs (it skips without them).
+      - name: Build the website
+        run: pnpm site:build
 
       # Stops after five failing specs (maxFailures in playwright.config.ts).
       - name: Run E2E suite

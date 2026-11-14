@@ -1,0 +1,22 @@
+---
+/** US-SITE-14 (D-274) — what Cloudflare serves for a missing page outside /docs/ (the docs have their own 404). */
+import Page from "../layouts/Page.astro";
+import { home } from "../locales/en/home";
+import { docs } from "../lib/links";
+
+const t = home.notFound;
+---
+
+<Page title={t.title} description={t.body}>
+  <section class="sec notfound">
+    <div class="wrap">
+      <p class="kicker">404</p>
+      <h1 class="h2">{t.heading}</h1>
+      <p class="sub">{t.body}</p>
+      <div class="cta cta-start">
+        <a class="btn btn-p" href="/">{t.home}</a>
+        <a class="btn btn-s" href={docs.home}>{t.docs}</a>
+      </div>
+    </div>
+  </section>
+</Page>

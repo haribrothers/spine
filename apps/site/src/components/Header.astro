@@ -1,0 +1,36 @@
+---
+/** US-SITE-02 — logo, the page's sections, the docs, and the theme switch ("Match my system", "Light", "Dark"). */
+import logoLight from "../assets/logo-light.svg";
+import logoDark from "../assets/logo-dark.svg";
+import Icon from "./Icon.astro";
+import { home } from "../locales/en/home";
+import { REPO_URL, docs } from "../lib/links";
+
+const t = home.nav;
+const isHome = Astro.url.pathname === "/";
+const section = (id: string) => (isHome ? `#${id}` : `/#${id}`);
+---
+
+<header class="hdr" data-scrolled="0">
+  <div class="wrap hdr-in">
+    <a class="brand" href="/" aria-label={t.home}>
+      <img class="logo logo-l" src={logoLight.src} width="89" height="26" alt="" />
+      <img class="logo logo-d" src={logoDark.src} width="89" height="26" alt="" />
+    </a>
+    <nav class="nav" aria-label={t.label}>
+      <a href={section("flow")}>{t.how}</a>
+      <a href={section("features")}>{t.features}</a>
+      <a href={section("install")}>{t.install}</a>
+      <a href={docs.home}>{t.docs}</a>
+      <a class="nav-gh" href={REPO_URL}><Icon name="github" />{t.github}</a>
+    </nav>
+    <div class="hdr-act">
+      <div class="seg" role="group" aria-label={home.theme.label} data-theme-switch>
+        <button type="button" data-theme-choice="auto" aria-label={home.theme.auto} title={home.theme.auto} aria-pressed="true"><Icon name="monitor" /></button>
+        <button type="button" data-theme-choice="light" aria-label={home.theme.light} title={home.theme.light} aria-pressed="false"><Icon name="sun" /></button>
+        <button type="button" data-theme-choice="dark" aria-label={home.theme.dark} title={home.theme.dark} aria-pressed="false"><Icon name="moon" /></button>
+      </div>
+      <a class="btn btn-p btn-sm hdr-cta" href={docs.install}>{t.install}</a>
+    </div>
+  </div>
+</header>

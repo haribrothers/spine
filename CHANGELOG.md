@@ -80,6 +80,24 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — Fix: the dependency audit after two new node-forge advisories
+
+- **Why:** `pnpm audit --prod` (the first step of `pnpm verify` and of CI) started failing on GHSA-rhr8-3pm8-cq29 and GHSA-6qrw-m8cv-hcxf, published 2026-11-10: both high, in `node-forge` 1.4.0, which reaches production through better-auth › drizzle-orm › expo-sqlite › expo's CLI.
+- **Fix:** a pnpm override pins `node-forge` to ^1.4.3 (the patch release that fixes these and its other open advisories), like the existing overrides in the root `package.json`.
+
+### 2026-11-14 — A redesigned home page with motion (US-SITE-02, D-275)
+
+- **Why:** the home page was Starlight's stock splash: a left-aligned hero, a strip of pills, a flat screenshot and six identical cards, with nothing showing how Spine works. Redesigned in Claude Design from Mobbin references (Twenty, Beside, Mercury, FLORA, Function, Giga) and approved before building.
+- **The page** (`apps/site`, now its own Astro page; the docs stay on Starlight):
+  - a centred hero over the dashboard rebuilt in HTML, which tilts flat as you scroll, counts its figures up and has the example job's events arriving at its corner;
+  - "How it works", pinned while scrolling moves one job from enquiry through quote, job, invoice and payment to a balanced journal entry (5% retention to 1150), with step buttons;
+  - six feature cards with small working demos;
+  - the install commands with a copy button, and a 404 page.
+  Every word is in `src/locales/en/home.ts`; the colours, radii, shadows and motion timings are generated from `docs/design/tokens.json` (`tokens-css.mjs --home`). Inter and IBM Plex Mono are self-hosted (Fontsource) and the icons are Lucide (`@lucide/astro`; the GitHub links use Lucide 0.469's GitHub glyph, which later versions dropped), so the page makes no outside requests.
+- **Motion and access:** motion runs only when the reader hasn't asked for reduced motion; phones, short windows, reduced motion and no JavaScript get the same content as a still list. The theme switch uses Starlight's stored setting, so the docs open in the same theme. axe finds no WCAG 2.1 AA violations in either theme.
+- **Checks:** `scripts/us-site-02.test.mjs` builds the page and checks the copy, buttons, workflow, theme tokens, feature cards, footer, 404, no hex colours in the source, and that the example job's figures add up. `apps/e2e/tests/us-site-02.spec.ts` checks the pinned story, the step buttons, the theme carried into the docs, the reduced-motion and phone lists, and accessibility. CI's E2E job builds the site first. `scripts/site/build-pages.mjs` now checks every home-page link and `#anchor`, replacing `starlight-links-validator` there.
+- **Spec:** US-SITE-02's screenshot criterion becomes "the product view follows the reader's theme", plus criteria for the pinned story, reduced motion and the shared theme. The screenshot run no longer captures the home page (US-SITE-06). D-275, `SiteHome`/`SiteHomeDark` (new images), 01-tech-stack, 02-architecture, 11-testing-release, progress and QA script §279 are updated.
+
 ### 2026-11-14 — The website redirects http to https, and builds only when it changes (US-SITE-14)
 
 - **Why:** once `spine.h4loom.com` was live, `http://` still answered 200 over plain HTTP. The zone's Always Use HTTPS setting now sends a 301 to the https address.
