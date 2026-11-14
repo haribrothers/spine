@@ -264,6 +264,7 @@ Decision: D-148
 
 **Implementation notes**
 - API: `GET /exports/gstr1?period=YYYY-MM|YYYY-Qn&format=json|xlsx` (`reports.view_financial_statements`). Mapping lives in one module (`apps/api/src/modules/tax/gstr1/`) with fixture tests per table.
+- Not supplies, so left out of every table and Documents issued: deposit requests, opening invoices and retention releases ([D-276](../prd/12-decisions.md); the retention was taxed on the progress invoices). `d-276.http.integration.test.ts` checks GSTR-1 and the Tax Summary don't change when retention is released or a release is voided.
 
 ### US-TAX-17 · Check GSTR-1 figures before uploading
 **Feature:** F-TAX-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `Gstr1Export`

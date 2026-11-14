@@ -1123,6 +1123,12 @@ Total: 543 stories.
 - US-SITE-13 · Read docs for the version I run (P2)
 - US-SITE-14 · Publish the site after each merge (P2)
 
+*Milestone 2 · job photos (D-277)*
+
+- US-JOB-39 · Delete a job photo added by mistake (P2)
+- US-MOB-30 · Look at a job's photos full screen (P2)
+- US-MOB-31 · Delete a photo from the phone (P2)
+
 *After the v1.0 tag*
 
 - US-MOB-29 · Get the field app from the App Store and Play Store (P1)

@@ -3859,6 +3859,10 @@ Use an Indian business with GSTIN 29AAACK0000A1ZK (Karnataka), and issue documen
 7. Switch Filing to Quarterly: the periods read like "Jul – Sep 2026", and the figures cover the three months.
 8. As Staff without "View financial statements" the page says you don't have access. Field users can't open it.
 9. The audit log shows "GSTR-1 file · Downloaded" with the period and format.
+10. Retention releases are left out ([D-276](prd/12-decisions.md)). Take a job with 10% retention, issue a ₹1,00,000 progress invoice at GST 18% with SAC 995414, note GSTR-1 and the Tax Summary for the month, then press **Release retention** on the job:
+    - GSTR-1's cards and tables don't change. The progress invoice is in B2B; the ₹10,000 release invoice isn't in B2B, Nil or Documents issued, and no "no HSN/SAC" problem is listed for it.
+    - The Tax Summary's taxable sales and supply classes don't change.
+    - **Regression:** the release invoice still shows in Invoices, Receivables and the job's activity; the job's billed to date doesn't change.
 
 ## 176. GSTR-1 checks and Excel (US-TAX-17, Phase 9)
 
@@ -5678,6 +5682,27 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said.
 4. docs/release.md matches what happened for the last beta release.
 
+## 281. Delete a job photo, and see photos full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, Phase 12)
+
+Use a job that's Active, with a few site photos (one added by you, one by someone else), a milestone completed with a photo, and a milestone invoiced with a photo. Sign in as an Owner, as Staff without and with "Delete others' job photos", and as a Field user on the job's crew.
+
+1. Web, as the person who added a site photo: on **Photos**, hover a photo and open **⋯**: "Open", "Download", then "Delete photo" in red after a divider. Choose it: "Delete this photo?" with "It's removed from the job and deleted from storage. The job's activity keeps a note that it was removed." **Cancel** leaves it. Do it again and confirm: "Photo deleted", the photo goes, the tab's count drops, and **Activity** shows "Photo removed" with your name and its caption.
+2. Open a photo full size: **Delete photo** sits between Download and Close (red text on the dark bar). Delete it: the next photo in the group shows; deleting the last one closes the viewer.
+3. As Staff without "Delete others' job photos", open someone else's photo: no **Delete photo** in the menu or the viewer. As Staff with it: it's there and works. As Field (on the phone or the web): only on their own photos.
+4. A milestone completed but not invoiced: its photos can still be deleted by whoever added them.
+5. A milestone invoiced: the tab says "Photos with an invoiced milestone are locked: only an Owner can delete them, with a reason." Staff and Field don't see Delete. As the Owner, choose it: "Locked · its milestone is invoiced", "Delete a photo from an invoiced milestone?", and **Delete photo** stays disabled until you type a **Reason**. Confirm: Activity shows "Photo removed · <caption> · <reason>".
+6. Mark the job **Completed**: every photo shows as locked (Owner only, with a reason). Cancelled: the same. Back to Active: they open again (except an invoiced milestone's).
+7. Open the deleted photo's old link (`/files/<id>` from step 1, copied before deleting): 404.
+8. Two tabs: delete a photo in one, then try in the other: "This photo has already been deleted." and the grid refreshes.
+9. Phone: on a job, tap a photo in the strip: it opens full screen, "1 of n", dark whatever the theme. The strip's last "+n" tile still opens **Photos**. From **Photos**, tap any photo: the same viewer, on that photo.
+10. Swipe left and right; pinch to zoom and drag; double-tap to zoom and again to fit; swipe down to close. With VoiceOver/TalkBack, the photo offers **Next photo** and **Previous photo**. With Reduce Motion on, it opens and closes without the fade.
+11. The details show the caption, the milestone or "Site photo", and "Added by <name> · <when>". No Save or Share anywhere.
+12. On your own photo, **Delete photo** → the system alert "Delete this photo?" → **Delete photo**: "Photo deleted", the next photo shows; on the web the photo is gone too.
+13. Airplane mode: **Delete photo** is dimmed with "Connect to delete this photo."; nothing appears in the sync queue. A photo the phone hasn't opened before says "This photo will show when you're back online."
+14. Take two photos offline: each shows "Waiting to send" and "Saved on this phone · …" with **Discard**. Discard one ("Discard this photo?" → **Discard**): it leaves the job and the sync queue; discard the other: the queue item goes.
+15. As an Owner on the phone, a locked photo: **Delete photo** asks "Delete a locked photo?" with a **Reason**; it's sent with it.
+16. **Regression:** adding photos on the web and the phone, the milestone-completion photos, the Photos tab's groups and upload tiles, the viewer's Download and arrows (US-JOB-36), the job's Activity, Today's "photos taken" count (it no longer counts deleted photos), and the sync queue's photo items.
+
 ## Known gaps — don't file these as bugs
 
 - Status, payment-method, capability and report labels that `@spine/shared` exports are still English in code; they move with emails, PDFs and API errors in 1.1 (US-OPS-16, D-268).
@@ -5690,7 +5715,7 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 12 (D-194).
-- India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
+- India's construction and fit-out demos release retention like the others; GSTR-1 leaves the release invoice out ([D-276](prd/12-decisions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - No AI control shows in a form until US-AI-08 onwards, so the budget, the 30-requests-in-10-minutes limit and "AI didn't answer" are checked through the API until then. The Model picker offers to "Create" a typed model name. Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.

@@ -679,7 +679,13 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-SITE-11 · Open help for the page I'm on
 - [x] US-SITE-12 · Read the guide without internet
 - [x] US-SITE-13 · Read docs for the version I run
-- [ ] US-SITE-14 · Publish the site after each merge (settings ready in docs/release.md; waiting for the Owner to connect the `spine-site` Worker, D-274)
+- [x] US-SITE-14 · Publish the site after each merge (the `spine-site` Worker is connected and publishes from `main`, D-274)
+
+### Milestone 2 · job photos (D-277)
+
+- [x] US-JOB-39 · Delete a job photo added by mistake
+- [x] US-MOB-30 · Look at a job's photos full screen
+- [x] US-MOB-31 · Delete a photo from the phone
 
 ### After the v1.0 tag
 

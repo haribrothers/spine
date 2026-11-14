@@ -932,6 +932,13 @@
       "when": 1792476381483,
       "tag": "0132_agent_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1794669916107,
+      "tag": "0133_job_photo_removal",
+      "breakpoints": true
     }
   ]
 }

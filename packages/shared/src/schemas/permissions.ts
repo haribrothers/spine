@@ -709,13 +709,13 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     group: "Manage Jobs",
   },
   "job_photos.edit_own": {
-    label: "Add own job photos",
-    description: "Attach a site photo to a job. There is no edit/delete action for job photos in v1 — this only gates adding one.",
+    label: "Add and delete own job photos",
+    description: "Attach a site photo to a job, and delete a photo you added while the job is open and its milestone isn't invoiced (D-277).",
     group: "Manage Jobs",
   },
   "job_photos.edit_others": {
-    label: "(Reserved — no others-editable action exists for job photos yet)",
-    description: "Job photos have no update/delete route at all today, so this capability currently has nothing to gate — kept for shape-consistency with every other resource in this pattern, in case an edit action is added later.",
+    label: "Delete others' job photos",
+    description: "Delete a photo someone else added, while the job is open and its milestone isn't invoiced. A locked photo is Owner-only, with a reason (D-277).",
     group: "Manage Jobs",
   },
   "variation_orders.edit_own": {

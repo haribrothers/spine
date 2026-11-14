@@ -234,5 +234,5 @@ Decision: D-270
 
 **Implementation notes**
 - Cloudflare's Git integration (Workers Builds, [D-274](../prd/12-decisions.md)), one Worker with static assets whose build (`pnpm site:build`) puts the docs into the home page's `docs/` folder, with build watch paths; no GitHub workflow and no Actions minutes ([D-270](12-decisions.md), [D-273](12-decisions.md)). Web analytics off.
-- Built: the Worker's settings (build command, watch paths, branch previews, domain; `wrangler.jsonc` holds the assets folder, the 404 page and telemetry off) are in docs/release.md › The website and docs. Connecting it is the Owner's step in the Cloudflare dashboard.
+- Built: the Worker's settings (build command, watch paths, branch previews, domain; `wrangler.jsonc` holds the assets folder, the 404 page and telemetry off) are in docs/release.md › The website and docs. The Owner connected it in the Cloudflare dashboard on 2026-11-14 and checked publishing from `main`, branch previews, skipped builds and failed builds.
 - Built (D-273): `packages/shared/src/public-site.ts` holds the domain; `scripts/site/build-pages.mjs` builds both sites into `apps/site/dist` and checks the home page's links (into `/docs/`, to its own pages and their anchors); `scripts/us-site-14.test.mjs` checks the README and the issue template agree with it and that no code names the domain itself.

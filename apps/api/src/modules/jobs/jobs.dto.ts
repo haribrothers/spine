@@ -31,6 +31,12 @@ export class AddJobPhotoDto {
   caption?: string | null;
 }
 
+/** US-JOB-39 — a reason is required only from an Owner deleting a locked photo. */
+export class RemoveJobPhotoDto {
+  @ApiPropertyOptional({ type: "string", nullable: true, description: "Required when an Owner deletes a locked photo (job Completed or Cancelled, or its milestone invoiced); kept in the job's activity." })
+  reason?: string | null;
+}
+
 export class AddJobNoteDto {
   @ApiProperty()
   body!: string;

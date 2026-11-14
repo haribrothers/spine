@@ -93,6 +93,7 @@ const ACTION_VERBS: Record<string, string> = {
   milestone_invoiced: "invoiced",
   milestones_set: "set the milestones of",
   photo_added: "added a photo to",
+  photo_removed: "removed a photo from",
   note_added: "added a note to",
   variation_order_created: "added a variation order to",
   variation_order_applied: "applied a variation order to",

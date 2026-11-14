@@ -8,6 +8,7 @@ import {
   setMilestonesSchema,
   completeMilestoneSchema,
   addJobPhotoSchema,
+  removeJobPhotoSchema,
   addJobNoteSchema,
   createVariationOrderSchema,
   assignJobSchema,
@@ -21,7 +22,7 @@ import { MilestonesService } from "./milestones.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { VariationOrdersService } from "./variation-orders.service";
 import { JobCostingService } from "./job-costing.service";
-import { AddJobNoteDto, AddJobPhotoDto, AssignJobDto, CompleteMilestoneDto } from "./jobs.dto";
+import { AddJobNoteDto, AddJobPhotoDto, AssignJobDto, CompleteMilestoneDto, RemoveJobPhotoDto } from "./jobs.dto";
 
 /**
  * PRD F4 — jobs and their milestones. GET routes are readable by any
@@ -298,7 +299,7 @@ export class JobsController {
   async listPhotos(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     await this.jobAccess.check(orgId, session.user.id, id);
-    return this.jobsService.listPhotos(orgId, id);
+    return this.jobsService.listPhotos(orgId, id, session.user.id);
   }
 
   /** S-04.10 (web upload) — attach an already-uploaded file (`POST /files`) as a general job/site photo. Field-reachable; `job_photos.edit_own` gates create, ownership check happens in the service. */
@@ -312,6 +313,22 @@ export class JobsController {
     await this.jobAccess.check(orgId, session.user.id, id);
     const input = addJobPhotoSchema.parse(body);
     return this.jobsService.addPhoto(orgId, id, session.user.id, input);
+  }
+
+  /**
+   * US-JOB-39 (D-277) — delete a photo added by mistake. The caller must
+   * reach the job (Field: assigned, else 404); ownership, the lock and the
+   * Owner's reason are checked in the service.
+   */
+  @Delete(":id/photos/:photoId")
+  @OrgRoles(["owner", "staff", "field"])
+  @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: RemoveJobPhotoDto, required: false })
+  async removePhoto(@Session() session: UserSession, @Param("id") id: string, @Param("photoId") photoId: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
+    const input = removeJobPhotoSchema.parse(body ?? {});
+    return this.jobsService.removePhoto(orgId, id, session.user.id, photoId, input);
   }
 
   /** `GET /jobs/:id/photos/:photoId/history` — mirrors the milestones history route above, scoped to a single job photo (`entityType: "job_photo"`). Create-only resource, so this shows a single "created" row. */

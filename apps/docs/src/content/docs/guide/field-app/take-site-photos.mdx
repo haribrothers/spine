@@ -1,6 +1,6 @@
 ---
 title: Take site photos for a job
-description: Capture photos tagged to a job, with captions and an optional milestone, even with no signal.
+description: Capture photos tagged to a job, with captions and an optional milestone, even with no signal; look at them full screen and delete a wrong one.
 sidebar:
   order: 6
 ---
@@ -21,6 +21,24 @@ import { Aside, Steps } from "@astrojs/starlight/components";
 </Steps>
 
 "Photos upload in the background. You can keep working — check progress from the sync pill on Today." Until they've sent, the job shows them with a **Waiting** badge.
+
+## Look at a photo
+
+Tap any photo on a job, or on its **Photos** screen, to open it full screen. The top shows where you are ("3 of 12"); the bottom shows its caption, the milestone (or "Site photo") and who added it when.
+
+- **Swipe** left or right to move between photos. With VoiceOver or TalkBack, use the **Next photo** and **Previous photo** actions.
+- **Pinch** or **double-tap** to zoom, and drag to look around. Double-tap again to fit it back.
+- **Swipe down** or press **✕** to close.
+
+A photo still waiting to send shows **Waiting to send**. Offline, a photo the phone hasn't kept says "This photo will show when you're back online." There's no Save or Share: site photos stay out of your camera roll.
+
+## Delete a photo
+
+On a photo you're allowed to delete, press **Delete photo**, then **Delete photo** again in "Delete this photo?". It's removed from the job and deleted from storage, and the next photo shows.
+
+- You can delete your own photos while the job is open and the photo's milestone isn't invoiced. Field crew can't delete other people's photos.
+- **Deleting needs a connection.** Offline, **Delete photo** is dimmed with "Connect to delete this photo."
+- **A photo that hasn't sent yet** has **Discard** instead: "It hasn't been sent yet. Discarding deletes it from this phone." Press **Discard** to confirm, or **Keep**.
 
 ## If you said no to the camera
 

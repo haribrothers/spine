@@ -3258,6 +3258,45 @@ Links to: `JobPhotosGrouped`
 
 Shows: "Steel structure · 2 of 3" · "Download" "Close" · previous and next · "Roof trusses" · "Added by Ravi Kumar with “Steel structure” · 2 Oct, 4:38 PM · ← → to move, Esc to close"
 
+## Deleting job photos, and the phone's photo viewer
+
+Drawn in Claude Design for US-JOB-39, US-MOB-30 and US-MOB-31 (D-277): the Design canvas "Spine — job photos: delete and preview" (web row: the Photos tab menu, the viewer, both delete dialogs, each with a light/dark switch; phone row: the iOS viewer, delete, offline and discard states, and the Android viewer), from `docs/design/tokens.json` and the screens above. Images are captured from the built app by the screenshot run (US-SITE-06); until then each entry lists what it shows. `JobPhotosViewer` (above) gains "Delete photo" between Download and Close, in `inverse-danger`.
+
+### JobPhotoDelete — Delete this photo?
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-JOB-39 · **Source:** Claude Design
+
+Links to: `JobPhotosGrouped`, `JobPhotosViewer`
+
+Shows: a photo's ⋯ menu "Open" "Download" then, after a divider, "Delete photo" (red) · "Delete this photo?" · "It's removed from the job and deleted from storage. The job's activity keeps a note that it was removed." · "Cancel" "Delete photo" · the toast "Photo deleted"
+
+### JobPhotoDeleteLocked — An Owner deleting a locked photo
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-JOB-39 · **Source:** Claude Design
+
+Links to: `JobPhotosViewer`
+
+Shows: "Locked · its milestone is invoiced" · "Delete a photo from an invoiced milestone?" · "It's removed from the job and deleted from storage. Only Owners can delete a locked photo. The job's activity keeps the reason." · "Reason" (required) · "Cancel" "Delete photo" · on the Photos tab, "Photos with an invoiced milestone are locked: only an Owner can delete them, with a reason."
+
+### MobPhotoViewer — A photo full screen (iOS)
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-MOB-30, US-MOB-31 · **Source:** Claude Design
+
+Links to: `MobJobPhotos`, `MobJobDetail`, `MobPhotoDelete`
+
+Shows: dark in both themes (the camera's ink) · ✕ · "3 of 12" · the photo (swipe, pinch or double-tap to zoom, swipe down to close) · "Roof trusses" · "Steel structure" · "Added by Ravi Kumar · Today, 4:38 PM" · "Delete photo" · offline: "Delete photo" dimmed with "Connect to delete this photo." · a waiting photo: "Waiting to send" · "Saved on this phone · …" · "Discard"
+
+### MobPhotoViewerAndroid — A photo full screen (Android)
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-MOB-30, US-MOB-31 · **Source:** Claude Design
+
+Links to: `MobJobPhotosAndroid`, `MobPhotoDelete`
+
+Shows: the iOS viewer's content in Material: back arrow, "3 of 12", and the same details. As built, both platforms share one screen, with "Delete photo" as the button at the bottom; the canvas's trash icon in the Android top bar was not used.
+
+### MobPhotoDelete — Delete or discard on the phone
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-MOB-31 · **Source:** Claude Design
+
+Links to: `MobPhotoViewer`
+
+Shows: the system alert "Delete this photo?" · "It's removed from the job and deleted from storage." · "Cancel" "Delete photo" · "Discard this photo?" · "It hasn't been sent yet. Discarding deletes it from this phone." · "Keep" "Discard" · an Owner on a locked photo: "Delete a locked photo?" with "Reason"
+
 ## Invoices you can work from
 
 Drawn in Claude Design for US-INV-27 to US-INV-35 (D-217): project "Spine web — refinements before Phase 10", canvas "11 Invoices". The list's cards are Outstanding, Overdue and Due in 7 days (balance totals with counts, each filtering the list) and Paid this month; each row has one status badge, what kind of invoice it is under the number, the issue date, a due countdown or "Paid 2 Oct", and the balance with a bar of what's paid; the row menu acts. The invoice page has the number as its title, one primary button for the next step, a strip of Total, Paid, Retention held or Credited and Balance due, the lines as a table with the totals, Paid and Balance due under them, and Activity beside them. The builder has compact rows, due-date quick picks from the business's terms and a bar that stays in view. These refine `InvoicesList`, `InvoiceDetail`, `InvoiceDetailDraft` and `InvoiceBuilder`. In the built page, Paid this month counts payments rather than invoices; payments, credit notes and attachments follow the lines in the left column; a draft's More menu holds Duplicate, View history and Delete draft; and the duplicated draft's toast reads "Duplicated from INV-0031. Check the dates and lines, then save."

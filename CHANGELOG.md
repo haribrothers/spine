@@ -80,6 +80,34 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-14 — Delete job photos, and see them full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, D-277)
+
+- **API:** `DELETE /jobs/:id/photos/:photoId { reason? }`: ownership first (own `job_photos.edit_own`, Field always on assigned jobs; others' `job_photos.edit_others`, never Field, else 403 `PHOTO_NOT_YOURS`), then the lock (job Completed or Cancelled, or milestone invoiced: Owner only, 409 `PHOTO_LOCKED`, and a reason, 400 `REASON_REQUIRED`). The row is marked removed (who, when, reason), audited as `photo_removed` (the job's activity shows it), and the stored file deleted once nothing else uses it. `GET /jobs/:id/photos` leaves removed photos out and gains `locked`, `lockedBy` and `canDelete`; the files' owner lookup and Today's photo count skip removed photos. Migration `0133_job_photo_removal`: the three columns, and `file_id` now empties (set null) when its file is deleted, as attachments do. The two photo capabilities are relabelled "Add and delete own job photos" and "Delete others' job photos"; the OpenAPI document is regenerated.
+- **Web:** each photo on the Photos tab has a ⋯ menu (Open, Download, Delete photo); the viewer has Delete photo beside Download; `delete-photo-dialog.tsx` asks first, and asks an Owner for a reason on a locked photo. A new fixed `inverse-danger` token (#F17B72) colours Delete on the dark viewer. "Photo removed" in the job's activity.
+- **Field app:** tapping a photo on a job or its Photos screen opens `/photo-viewer`: full screen and dark like the camera, "<n> of <total>", swipe, pinch or double-tap zoom, swipe down to close, Next/Previous photo for screen readers, the caption, milestone and who added it, no Save or Share. "Delete photo" follows the row's `canDelete`, needs a connection and is never queued; a waiting photo has "Discard", which takes it out of the outbox. Zoom is built on `PanResponder`, so no new native module or prebuild.
+- **Checks:** `us-job-39.http.integration.test.ts` (5), `apps/e2e/tests/us-job-39.spec.ts` (2, runs in `pnpm verify`), `us-mob-30.test.tsx` (7), `us-mob-31.test.tsx` (7). API, web, shared, UI and mobile suites pass.
+- **Spec and docs:** the stories gain the designed copy (the lock line, "Only Owners can delete a locked photo", the Photos tab's note) and `canDelete`; D-277's as-built note; 04-data-model (`file_id`); screens.md gains the five screens; QA script §281; the guide's "Add site photos to a job" (delete) and "Take site photos for a job" (look at and delete a photo).
+
+### 2026-11-14 — Spec: delete job photos, and see them full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, D-277)
+
+- **Why:** a wrong photo on a job couldn't be removed anywhere, and the field app's photo tiles didn't open.
+- **Agreed (D-277):** the person who added a photo can delete it while the job is Active or On hold and its milestone isn't invoiced. Milestone photos stay open after completion because they're added at that moment. Owners, and Staff whose Team has "Delete others' job photos" (`job_photos.edit_others`, until now reserved), can delete other people's open photos; Field never. A locked photo is Owner-only, with a reason. Removal works like removing an attachment (US-OPS-35): marked removed, audited, file deleted. On the phone a full-screen viewer (swipe, zoom, caption, who and when, no Save or Share); deleting needs a connection; a photo waiting to send can be discarded.
+- **Spec:** new stories in 07-jobs and 17-mobile; D-277; `job_photos` gains `removed_at`, `removed_by_user_id`, `removal_reason`; `DELETE /jobs/:id/photos/:photoId`, `locked`/`lockedBy` on photo rows and `photo_removed` in job activity (05-api); the capability matrix and a rule in 07-security; Phase 12 and progress list the three stories. Screens come next: `JobPhotosViewer` (updated), `JobPhotoDelete`, `JobPhotoDeleteLocked`, `MobPhotoViewer`, `MobPhotoViewerAndroid`, `MobPhotoDelete`.
+
+### 2026-11-14 — GSTR-1 leaves retention releases out (D-276, answers Q-21)
+
+- **Why:** GSTR-1 counted a retention-release invoice as a supply of its own: an untaxed B2B invoice with no HSN/SAC, in the totals and in Documents issued. The retention had already been taxed on the progress invoices that held it back (D-130). Indian practice is the same: GST is paid on the full RA bill, retention included, and the release is a receipt against those bills, not a new tax invoice. Tally clears retention from its own ledger at final settlement, the same way.
+- **GSTR-1:** `retention_release` invoices join deposit requests and opening invoices as not supplies, so they're left out of every table and Documents issued. Releases still take the next invoice number, so the series can skip one there.
+- **Tax Summary:** releases never showed in its sales (they carry no tax or supply class), but voiding a release issued in an earlier period took its amount off the period's taxable sales. Now voiding one changes nothing, and the per-line breakdown leaves releases out.
+- **Demo data:** India's construction and fit-out demos release retention like the other countries (D-192).
+- **Checks:** `apps/api/src/modules/tax/gstr1/d-276.http.integration.test.ts` compares GSTR-1 (summary and JSON) and the Tax Summary before and after a release, and after voiding one issued last month. Without the fix, three of its four checks fail. `us-onb-18.test.ts` now expects releases in every country.
+- **Spec:** D-276; Q-21 closed; 06-ledger-posting-rules (a note under P10); US-TAX-16's implementation notes; 01-onboarding (the demo edge case and criterion); QA script §175 step 10 and the demo note. Guide: "Export GSTR-1" and "Hold and release retention" say what's left out and why.
+
+### 2026-11-14 — The website publishes after each merge (US-SITE-14 done)
+
+- **Checked live:** the `spine-site` Worker is connected. `https://spine.h4loom.com/` and `/docs/` answer 200, `http://` redirects with a 301, and the redesigned home page from PR #20 went live after its merge. The Owner checked the rest in Cloudflare: a branch push gets a preview address, a change outside the sites starts no build, and a failed build leaves the live site as it was.
+- **Spec:** US-SITE-14 is ticked in progress. Its implementation note in 19-website now says the Worker is connected, where it said connecting was the Owner's step. No contract or screen changes.
+
 ### 2026-11-14 — Fix: the dependency audit after two new node-forge advisories
 
 - **Why:** `pnpm audit --prod` (the first step of `pnpm verify` and of CI) started failing on GHSA-rhr8-3pm8-cq29 and GHSA-6qrw-m8cv-hcxf, published 2026-11-10: both high, in `node-forge` 1.4.0, which reaches production through better-auth › drizzle-orm › expo-sqlite › expo's CLI.

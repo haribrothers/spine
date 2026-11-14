@@ -41,6 +41,7 @@ A job with 0% retention shows no retention row. The **Retention held** card on t
 - It creates an issued invoice for the held amount, with its own invoice number, due on your usual payment terms. Find it in **Invoices** and send it to the customer.
 - The amount moves from Retention Receivable to Accounts Receivable. It isn't counted as revenue again: that was counted on the progress invoices.
 - It doesn't count towards the job's billed to date and gets no progress claim number.
+- It carries no tax: tax was charged on the full progress claims, retention included. It isn't in the Tax Summary's sales, and for GST businesses it's left out of GSTR-1 ([Export GSTR-1](../../tax/export-gstr-1/)).
 
 <Aside type="danger">Releasing retention can't be undone. The invoice is issued straight away: it can't be edited or deleted, only voided or credited.</Aside>
 

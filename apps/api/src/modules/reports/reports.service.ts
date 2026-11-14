@@ -1,6 +1,6 @@
 import { billingFigures, budgetFigures, comparePeriods, inPayablesAge, type CompareLine, type MoneyInOutReport, type PlCompareMode, type ProfitAndLossComparison } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, isNull, lte, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { TAX_SETTLEMENT_SOURCES } from "../tax/tax-payments.service";
 import { billedByJob, costByJob } from "../jobs/job-costing.service";
 import { orgClock } from "../../common/org-clock";
@@ -1159,6 +1159,8 @@ export class ReportsService {
         and(
           eq(invoices.orgId, orgId),
           eq(invoices.status, "void"),
+          // D-276: retention releases never count as taxable sales, so voiding one adjusts nothing.
+          ne(invoices.type, "retention_release"),
           gte(invoices.voidedAt, new Date(from)),
           lte(invoices.voidedAt, new Date(toEnd)),
           sql`${invoices.issueDate} < ${from}`,

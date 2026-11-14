@@ -133,6 +133,7 @@ export const JOB_ACTIVITY_TYPES = [
   "variation_order_created",
   "variation_order_applied",
   "photo_added",
+  "photo_removed",
   "note_added",
   "crew_assigned",
   "crew_unassigned",
@@ -151,4 +152,37 @@ export interface JobActivityEntry {
   detail: string | null;
   /** What it points at: the source quote, the invoice, or the variation quote. */
   linkId?: string | null;
+}
+
+/**
+ * US-JOB-39 (D-277) — deleting a job photo. A photo is locked once its job
+ * is Completed or Cancelled, or its milestone is invoiced; then only an
+ * Owner can delete it, with a reason.
+ */
+export const JOB_PHOTO_LOCK_REASONS = ["job_completed", "job_cancelled", "milestone_invoiced"] as const;
+export type JobPhotoLockReason = (typeof JOB_PHOTO_LOCK_REASONS)[number];
+export const PHOTO_NOT_YOURS = "PHOTO_NOT_YOURS";
+export const PHOTO_NOT_YOURS_MESSAGE = "You can delete only photos you added.";
+export const PHOTO_LOCKED = "PHOTO_LOCKED";
+export const REASON_REQUIRED = "REASON_REQUIRED";
+export const PHOTO_REASON_REQUIRED_MESSAGE = "Give a reason for deleting this photo. The job's activity keeps it.";
+export const PHOTO_ALREADY_DELETED_MESSAGE = "This photo has already been deleted.";
+const LOCKED_BECAUSE: Record<JobPhotoLockReason, string> = {
+  job_completed: "the job is completed",
+  job_cancelled: "the job is cancelled",
+  milestone_invoiced: "the milestone is invoiced",
+};
+export const photoLockedMessage = (reason: JobPhotoLockReason) => `This photo can't be deleted any more: ${LOCKED_BECAUSE[reason]}. Ask an Owner.`;
+
+export const removeJobPhotoSchema = z.object({
+  reason: z.string().trim().max(500).optional().nullable(),
+});
+export type RemoveJobPhotoInput = z.infer<typeof removeJobPhotoSchema>;
+
+/** Which lock, if any, applies to a photo: the job's status first, then its milestone's. */
+export function jobPhotoLock(jobStatus: string, milestoneStatus: string | null): JobPhotoLockReason | null {
+  if (jobStatus === "completed") return "job_completed";
+  if (jobStatus === "cancelled") return "job_cancelled";
+  if (milestoneStatus === "invoiced") return "milestone_invoiced";
+  return null;
 }

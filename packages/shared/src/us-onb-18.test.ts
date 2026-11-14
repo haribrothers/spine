@@ -65,10 +65,10 @@ describe("US-ONB-18", () => {
     expect(plan.contacts.every((c) => c.type !== "customer" || c.lead)).toBe(true);
   });
 
-  it("starts jobs only where the template has them, and releases retention only on construction and fit-out outside India", () => {
+  it("starts jobs only where the template has them, and releases retention on construction and fit-out in every country (D-276)", () => {
     for (const { industry, plan } of all.filter((p) => p.plan.ordering === "dated")) {
       expect(plan.jobs.length, industry).toBe(industry === "professional_services" ? 0 : 3);
-      expect(plan.jobs.some((j) => j.releaseRetention), `${plan.country} ${industry}`).toBe(plan.country !== "IN" && (industry === "construction" || industry === "interior_design"));
+      expect(plan.jobs.some((j) => j.releaseRetention), `${plan.country} ${industry}`).toBe(industry === "construction" || industry === "interior_design");
     }
   });
 

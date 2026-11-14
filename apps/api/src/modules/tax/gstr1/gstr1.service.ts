@@ -18,8 +18,11 @@ import { parseGstr1Period, type Gstr1Period } from "./period";
 export const GSTR1_NOT_SET_UP = "Set up GST first: add your GSTIN and state in Settings › GST.";
 export const GSTR1_FOOTER = "Spine prepares this file; it doesn't file your return. Check it, then upload it on the GST portal.";
 
-/** Invoices that aren't supplies in GSTR-1: deposit requests (tax is charged on the final invoice) and opening balances. */
-const NOT_SUPPLIES = ["advance", "opening"] as const;
+/**
+ * Invoices that aren't supplies in GSTR-1: deposit requests (tax is charged on the final invoice), opening balances,
+ * and retention releases (D-276: the retention was taxed on the progress invoices that held it back).
+ */
+const NOT_SUPPLIES = ["advance", "opening", "retention_release"] as const;
 
 const dateText = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
 

@@ -37,6 +37,11 @@ export interface JobPhoto {
   caption: string | null;
   milestoneId: string | null;
   createdAt: string;
+  /** US-MOB-30 — who added it, for the viewer (newer servers). */
+  uploadedByName?: string | null;
+  /** US-MOB-31 (D-277) — whether the signed-in person may delete it; a locked one needs an Owner's reason. */
+  canDelete?: boolean;
+  locked?: boolean;
 }
 
 export interface QuoteToPresent {

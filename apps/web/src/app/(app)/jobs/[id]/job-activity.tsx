@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, Skeleton, cn } from "@spine/ui";
 import type { JobActivityEntry } from "@spine/shared";
-import { Check, Flag, GitBranch, Image as ImageIcon, LockOpen, ListChecks, MessageSquare, Pencil, Plus, Receipt, RefreshCw, UserMinus, Users } from "lucide-react";
+import { Check, Flag, GitBranch, Image as ImageIcon, ImageOff, LockOpen, ListChecks, MessageSquare, Pencil, Plus, Receipt, RefreshCw, UserMinus, Users } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { t as translate, useT } from "../../../../lib/i18n";
 import { formatMoney, orgLocaleTag } from "../../../../lib/money";
@@ -45,6 +45,8 @@ export function jobActivityText(item: JobActivityItem, currency: string): { titl
       const n = item.photos ?? 1;
       return { title: translate("jobs.activity.photosAdded", { count: n }), rest: d ? translate("jobs.activity.withDetail", { detail: d }) : null };
     }
+    case "photo_removed":
+      return { title: translate("jobs.activity.photoRemoved"), rest: d ? `· ${d}` : null };
     case "note_added":
       return { title: translate("jobs.activity.noteAdded"), rest: null };
     case "crew_assigned":
@@ -67,6 +69,7 @@ const ICONS: Record<JobActivityEntry["type"], React.ComponentType<{ size?: numbe
   variation_order_created: GitBranch,
   variation_order_applied: GitBranch,
   photo_added: ImageIcon,
+  photo_removed: ImageOff,
   note_added: MessageSquare,
   crew_assigned: Users,
   crew_unassigned: UserMinus,

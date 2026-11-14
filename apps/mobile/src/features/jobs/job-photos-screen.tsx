@@ -54,7 +54,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
   const queued = useOutboxItems();
   const list = useMemo<TilePhoto[]>(
     () => [
-      ...jobWaiting(queued, id).photos.map(({ photo, queuedAt }) => ({ kind: "waiting" as const, key: photo.uri, localUri: photo.uri, createdAt: new Date(queuedAt).toISOString() })),
+      ...jobWaiting(queued, id).photos.map(({ photo, queuedAt, itemId }) => ({ kind: "waiting" as const, key: photo.uri, localUri: photo.uri, createdAt: new Date(queuedAt).toISOString(), itemId, caption: photo.caption ?? null })),
       ...(photos.data ?? []).map((photo) => ({ kind: "sent" as const, photo })),
     ],
     [queued, id, photos.data],
@@ -101,7 +101,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
         renderItem={({ item: row }) => (
           <View className="flex-row" style={{ gap: GAP, marginBottom: GAP }}>
             {row.map((photo) => (
-              <PhotoTile key={tileKey(photo)} tile={photo} size={tile} />
+              <PhotoTile key={tileKey(photo)} tile={photo} size={tile} onPress={() => router.push(`/photo-viewer?jobId=${id}&key=${encodeURIComponent(tileKey(photo))}`)} />
             ))}
           </View>
         )}
