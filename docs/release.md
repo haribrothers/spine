@@ -64,8 +64,16 @@ Build variables apply only to the build; nothing goes under **Settings › Varia
 - **workers.dev** and **Preview URLs:** on (`wrangler.jsonc` sets both). The `spine-site.<subdomain>.workers.dev` address is where the first build lands, before the domain is added.
 - Leave **Observability** (Workers Logs) off. Cloudflare's Web Analytics isn't added to a Worker, so there's nothing to turn off.
 
+**HTTPS:** the custom domain gets a certificate, but `http://` is still answered as plain HTTP until the zone redirects it. In the `h4loom.com` zone (**Domains** › `h4loom.com`) › **SSL/TLS** › **Edge Certificates**:
+- **Always Use HTTPS:** on. It redirects every `http://` request in the zone with a 301, keeping the path and query string. It takes effect within seconds, with no Save button.
+- **Minimum TLS Version:** TLS 1.2. **Automatic HTTPS Rewrites:** on.
+- **HTTP Strict Transport Security (HSTS):** leave it off until every hostname in the zone serves HTTPS. Browsers remember it for months, so it's hard to undo.
+- Leave the encryption mode (**SSL/TLS** › **Overview**) as it is: a Worker custom domain has no origin server behind it.
+
+Always Use HTTPS applies to every hostname in the zone. To redirect only the site, leave it off and add a redirect rule instead (**Rules** › **Overview** › **Create rule** › **Redirect Rule**): custom filter expression **SSL/HTTPS** equals **Off** and **Hostname** equals `spine.h4loom.com`; then **Dynamic**, expression `concat("https://", http.host, http.request.uri)`, status **301**, **Preserve query string** ticked; **Deploy**.
+
 ### 4. Check it
-Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page.
+Retry the latest build (**Deployments**, or push a commit). The build log ends "Built the home page and the docs into apps/site/dist" and then Wrangler's upload. Open the workers.dev address, then `https://spine.h4loom.com/`: the home page at `/`, the docs at `/docs/`, and a made-up address under `/docs/` shows the docs' 404 page. `curl -sI http://spine.h4loom.com/docs/` answers `301` with `location: https://spine.h4loom.com/docs/`.
 
 A branch's preview (`<branch>-spine-site.<subdomain>.workers.dev`) serves the same pages, but a made-up address there gets Cloudflare's plain "Not found" instead of the site's 404 page: Worker Previews don't apply `not_found_handling` (seen with Wrangler 4.158; Cloudflare's docs don't cover it). Check the 404 pages on production.
 
