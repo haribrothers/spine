@@ -36,12 +36,14 @@ Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More 
 
 The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+.
 
-**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example`. You don't need the `.apk` (the field app for Android) or `docker-compose.coolify.yml`. With the [GitHub CLI](https://cli.github.com/), use the newest release's tag, for example `v1.0.0-beta.2`:
+**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example`. You don't need the `.apk` (the field app for Android) or `docker-compose.coolify.yml`. Or, in a terminal, with the newest release's tag:
 
 ```bash
 mkdir spine && cd spine
-gh release download v1.0.0-beta.2 --repo haribrothers/spine \
-  -p '*.sh' -p docker-compose.yml -p Caddyfile -p env.example -p SHA256SUMS
+v=v1.0.0-beta.2
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
+  curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
+done
 ```
 
 **2. Run the installer** from that folder, with the address people will open Spine at:

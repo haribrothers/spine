@@ -63,7 +63,7 @@ jobs:
       - name: Back up, wipe, restore and compare
         run: scripts/ci/restore-verify.sh
 
-      # The previous release's images, which are private until the repo is public at v1.0.
+      # The previous release's images (public since D-278; logging in does no harm).
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:

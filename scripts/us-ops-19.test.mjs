@@ -11,9 +11,11 @@ const PAGES = ["README.md", "apps/docs/src/content/docs/self-hosting/install.md"
 const FILES = ["install.sh", "backup.sh", "restore.sh", "upgrade.sh", "docker-compose.yml", "Caddyfile", "env.example"];
 
 describe("US-OPS-19 · the README gets a stranger to an install", () => {
-  it("names this version's tag in the download command, since without one gh finds no release while there are only betas", () => {
+  it("downloads this version's files by name, with nothing to install or sign in to (GitHub's latest release skips betas)", () => {
     for (const page of PAGES) {
-      assert.ok(read(page).includes(`gh release download v${version} --repo haribrothers/spine`), `${page} downloads v${version}`);
+      const text = read(page);
+      assert.ok(text.includes(`v=v${version}\n`), `${page} downloads v${version}`);
+      assert.ok(text.includes('curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"'), `${page} downloads each file with curl`);
     }
   });
 

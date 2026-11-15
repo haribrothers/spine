@@ -14,11 +14,7 @@ Coolify's screens change between versions. If a name below doesn't match yours, 
 ## Before you start
 
 - A Coolify server (v4) whose proxy is running, and a DNS `A` record for `spine.example.com` pointing at it.
-- While the repo is private, the server must be able to pull Spine's images. On the server, as the user that runs Docker (usually root):
-
-  ```sh
-  echo <GitHub token with read:packages> | docker login ghcr.io -u <your GitHub user> --password-stdin
-  ```
+- Spine's images are public, so the server needs no GitHub login to pull them. They're amd64 and arm64 from `1.0.0-beta.3`; earlier betas are amd64 only.
 
 ## Deploy
 

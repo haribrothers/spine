@@ -11,15 +11,19 @@ Spine runs on any Linux or macOS machine, or Windows with WSL2, that has **Docke
 
 On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder, for example `/opt/spine`: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example` (and `SHA256SUMS` to check them). You don't need the `.apk`, which is the field app for Android, or `docker-compose.coolify.yml`, which is for [Coolify](../coolify/).
 
-With the [GitHub CLI](https://cli.github.com/), name the newest release's tag, for example `v1.0.0-beta.2` (without a tag, `gh` only finds full releases, not betas):
+Or download them in a terminal, naming the newest release's tag:
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-gh release download v1.0.0-beta.2 --repo haribrothers/spine \
-  -p '*.sh' -p docker-compose.yml -p Caddyfile -p env.example -p SHA256SUMS
+v=v1.0.0-beta.2
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example SHA256SUMS; do
+  curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
+done
 sha256sum --check --ignore-missing SHA256SUMS   # on macOS: shasum -a 256 --check --ignore-missing SHA256SUMS
 chmod +x *.sh
 ```
+
+The images are built for amd64 (Intel and AMD) and arm64 (Apple Silicon Macs, ARM servers) from `v1.0.0-beta.3`. Releases before it are amd64 only, so on an ARM machine they stop with "no matching manifest for linux/arm64": use a newer release.
 
 ## 2. Run the installer
 

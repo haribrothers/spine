@@ -5,12 +5,14 @@ sidebar:
   order: 2
 ---
 
-On a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+, download the newest release's files from the [releases page](https://github.com/haribrothers/spine/releases) into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example`. Or, with the [GitHub CLI](https://cli.github.com/) and the newest release's tag:
+On a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+, download the newest release's files from the [releases page](https://github.com/haribrothers/spine/releases) into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example`. Or, in a terminal, with the newest release's tag:
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-gh release download v1.0.0-beta.2 --repo haribrothers/spine \
-  -p '*.sh' -p docker-compose.yml -p Caddyfile -p env.example -p SHA256SUMS
+v=v1.0.0-beta.2
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
+  curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
+done
 chmod +x *.sh
 ./install.sh --app-url https://spine.example.com
 ```
