@@ -19,7 +19,7 @@ How a version of Spine is numbered, written up and published. The decisions behi
 ## Steps
 
 1. **Finish the phase.** Every story is ticked in `docs/progress.md`, its pull request is merged into `main`, and `pnpm verify` passed on the merged commit.
-2. **Set the version.** On a branch: bump `version` in the root `package.json`, the two `SPINE_VERSION` defaults above, and write `docs/releases/v<version>.md`. Run `pnpm test` (the scripts' tests check the versions agree). Merge it.
+2. **Set the version.** On a branch: bump `version` in the root `package.json`, the two `SPINE_VERSION` defaults above and the tag in the `gh release download` command (in `README.md`, `apps/docs/src/content/docs/self-hosting/install.md` and `get-started/install.md`), and write `docs/releases/v<version>.md`. Run `pnpm test` (the scripts' tests check the versions agree). Merge it.
 3. **Tag `main`.** `git tag v<version> && git push origin v<version>`. Tags are made by the Owner.
 4. **CI runs everything.** On a `v*` tag, CI runs lint, typecheck, unit, integration, the E2E suite, the self-hosting check (install, back up, restore) and the upgrade check from the previous release (`upgrade-verify`, `install.sh --non-interactive` then `upgrade.sh`). Nothing is published unless all of them pass.
 5. **The release workflow publishes** (`.github/workflows/release.yml`):

@@ -5681,8 +5681,9 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 
 1. On GitHub, the repository's front page shows the README with screenshots (they switch with GitHub's theme), the licence as "AGPL-3.0", and Contributing, Code of conduct and Security policy in the sidebar.
 2. New issue offers "Something isn't working", "An idea or a feature", and links to report a security problem and to the docs; a new pull request shows the checklist.
-3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said.
-4. docs/release.md matches what happened for the last beta release.
+3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said. Do it once with `--app-url http://localhost` (Spine opens at `http://localhost` on plain HTTP). If you can, do it once more with a real domain (Caddy gets the certificate).
+4. The `gh release download` command in the README, with the newest release's tag, downloads only the seven files plus `SHA256SUMS` (no `.apk`), and `shasum -a 256 --check --ignore-missing SHA256SUMS` (`sha256sum` on Linux) says OK for each. The docs' **Self-hosting › Install Spine** and **Get started › Install in 5 minutes** pages give the same files and command.
+5. docs/release.md matches what happened for the last beta release.
 
 ## 281. Delete a job photo, and see photos full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, Phase 12)
 

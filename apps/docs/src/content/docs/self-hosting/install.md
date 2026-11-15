@@ -9,15 +9,17 @@ Spine runs on any Linux or macOS machine, or Windows with WSL2, that has **Docke
 
 ## 1. Download the release
 
-Download the latest release's files into a folder, for example `/opt/spine`:
+On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder, for example `/opt/spine`: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example` (and `SHA256SUMS` to check them). You don't need the `.apk`, which is the field app for Android, or `docker-compose.coolify.yml`, which is for [Coolify](../coolify/).
+
+With the [GitHub CLI](https://cli.github.com/), name the newest release's tag, for example `v1.0.0-beta.2` (without a tag, `gh` only finds full releases, not betas):
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-gh release download --repo haribrothers/spine   # or download them from the releases page
+gh release download v1.0.0-beta.2 --repo haribrothers/spine \
+  -p '*.sh' -p docker-compose.yml -p Caddyfile -p env.example -p SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS   # on macOS: shasum -a 256 --check --ignore-missing SHA256SUMS
 chmod +x *.sh
 ```
-
-The release has `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile`, `env.example` and `SHA256SUMS`.
 
 ## 2. Run the installer
 
@@ -26,6 +28,8 @@ The release has `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-c
 ```
 
 Use the address people will open Spine at. Without `--app-url` it asks for it; `--non-interactive` uses `APP_URL` from the environment, or `http://localhost`.
+
+To try Spine on your own computer, use `--app-url http://localhost`, or `http://<this computer's IP address>` to open it from other devices on your network. Caddy then serves plain HTTP and skips the certificate, and port 80 must be free. That's fine for trying Spine out, but the field app and browser notifications need a real domain with HTTPS ([HTTPS and domains](../https-and-domains/)).
 
 The installer:
 
