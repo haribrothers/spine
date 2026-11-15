@@ -32,6 +32,9 @@ Owners open **Settings › Team › Email log** to see every email with its stat
 | What you see | What to do |
 |---|---|
 | `install.sh` says Docker or Compose is too old | Install Docker 24+ with Compose 2.20+ (`docker compose version`) |
+| "port is already allocated" or "address already in use" when Spine starts | Another program has port 80 or 443: `sudo lsof -nP -iTCP:80 -sTCP:LISTEN` names it. Stop it, or install on another port with `--port 8080` ([Install](../install/#port-80-already-in-use)) |
+| `http://spine.local` (or another name of your own) doesn't open | Spine doesn't announce names on the network: add the name to the hosts file ([how](../https-and-domains/#only-on-your-network)), or use `http://localhost`. Caddy answers only at `APP_URL`, so the name must be the one in `.env` |
+| `./install.sh --app-url …` ran, but the old address is still used | An existing `.env` is kept as it is. Change `APP_URL` and `API_URL` in `.env`, then `docker compose --profile minimal up -d` |
 | The address doesn't open, or the certificate fails | Check the DNS record points at this machine and ports 80 and 443 are open; `docker compose logs caddy` says why |
 | "Spine won't start" in the API log after an upgrade | A migration failed and nothing changed. The log names the snapshot; go back to the previous `SPINE_VERSION` in `.env` and start, or restore the backup `upgrade.sh` made, then report the error |
 | Emails stay queued | `SMTP_*` aren't set, or are wrong; the email log shows the error |

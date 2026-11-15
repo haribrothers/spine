@@ -5468,6 +5468,11 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 7. With Docker stopped: "Docker is installed but isn't running…". Without Docker: "Docker isn't installed. Install Docker 24 or newer…". Both exit with an error.
 8. `docker images`: `spine-api` and `spine-web` are a few hundred MB each, not several GB.
 9. Regression: `pnpm dev` and `pnpm verify` work as before (the API now also applies migrations when it starts; `MIGRATE_ON_START=false` turns that off).
+10. **Another port (D-279):** in a fresh folder, with something on port 80 (or not), run `./install.sh --app-url http://localhost --port 8080`. It says "Wrote docker-compose.override.yml: Spine uses port 8080 instead of 80 and 443." and "Spine is running at http://localhost:8080". `grep URL .env` shows `APP_URL=http://localhost:8080` and `API_URL=http://localhost:8080/api`. `docker compose ps` shows Caddy publishing only 8080. Open it, sign up and issue an invoice. `./backup.sh` and `docker compose --profile minimal down` then `up -d` keep the port.
+11. `--app-url https://localhost:8443` (no `--port`): the same on 8443, over HTTPS with Caddy's own certificate. The browser warns until you trust Caddy's root, as **HTTPS and domains › HTTPS on your own computer** describes; then it opens without a warning.
+12. Refusals, each with nothing written: `--port web` ("--port must be a number from 1 to 65535"), `--app-url http://localhost:8080 --port 9090` ("Give the port once"), a folder that already has a `docker-compose.override.yml` ("is already here"), and Compose older than 2.24.4 ("can't publish Spine on another port").
+13. Run `./install.sh --app-url http://other.example --port 9000` on the folder from step 10: "Keeping your existing .env", then "--app-url and --port only apply when there's no .env yet" and how to change the address. Spine stays on 8080.
+14. Regression: `./install.sh --app-url http://localhost` with nothing on port 80 writes no `docker-compose.override.yml`, and Spine opens at `http://localhost` as before. `./install.sh --help` lists `--port`.
 
 ## 261. Back up everything into one file (US-OPS-03, Phase 12)
 
@@ -5684,6 +5689,7 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said. Do it once with `--app-url http://localhost` (Spine opens at `http://localhost` on plain HTTP). If you can, do it once more with a real domain (Caddy gets the certificate).
 4. In an empty folder, the README's `curl` loop (with the newest release's tag) downloads the seven files, with no GitHub account. `shasum -a 256 --check --ignore-missing SHA256SUMS` (`sha256sum` on Linux, after downloading `SHA256SUMS` too) says OK for each. The docs' **Self-hosting › Install Spine** and **Get started › Install in 5 minutes** pages give the same files and command. On an Apple Silicon Mac or ARM server, a release from `v1.0.0-beta.3` on installs without "no matching manifest".
 5. docs/release.md matches what happened for the last beta release.
+6. The README's install section says what `.env` is and how to change the address, and how to use another port when port 80 is taken. The docs' **HTTPS and domains** page has the hosts-file entry for `spine.local`, HTTPS on your own computer and another port; its links to **Install** land on "Port 80 already in use" and "Your settings: .env".
 
 ## 281. Delete a job photo, and see photos full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, Phase 12)
 

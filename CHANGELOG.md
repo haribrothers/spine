@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-15 — The installer takes another port, and the docs explain `.env` and `.local` names (US-OPS-01, D-279)
+
+- **What a beta tester hit:** port 80 was already in use, and the docs only said "port 80 must be free". `./install.sh --app-url http://spine.local` installed, but the address didn't open, and a second run with another `--app-url` changed nothing, with no word on why.
+- **`--port`:** `./install.sh --app-url http://localhost --port 8080` puts the port in `APP_URL` and `API_URL` and writes `docker-compose.override.yml`, which publishes that port instead of 80 and 443. A port in the address (`--app-url https://localhost:8443`) does the same. The installer refuses a bad port, two different ports, Compose older than 2.24.4 (`ports: !override` came in 2.24.4) and an existing `docker-compose.override.yml`, before writing anything. Checked on the `v1.0.0-beta.3` images: on 18080 Docker published only that port, and the web app, the API and sign-up answered there; on `https://localhost:18443` the same, over Caddy's own certificate.
+- **An existing `.env`:** the installer still keeps it, and now says that `--app-url` and `--port` weren't used and how to change the address.
+- **Docs:** the README and the install pages say what `.env` is (hidden, in the install folder, kept by a second run, holds the secrets), and how to use another port. **HTTPS and domains** adds a hosts-file entry for names like `spine.local` (Spine doesn't announce them), HTTPS on your own computer with Caddy's own certificate, and changing the port. **Troubleshooting** adds a port that's in use, a `.local` name that doesn't open, and an address that didn't change. **Configuration** says a port in `APP_URL` also goes in the override file.
+- Tests (`scripts/us-ops-01.test.mjs`) cover the port, the refusals and the kept `.env`, and have a real `docker compose config` read the override file where Docker is installed.
+
 ### 2026-11-15 — Fix: the home page's pinned-story E2E test starts at the first step (US-SITE-02)
 
 - The re-made `v1.0.0-beta.3` tag's run stopped at E2E on one test: "scrolling the pinned story" expected the first step and found the third ("Milestones and retention"). Nothing was published. `scrollIntoViewIfNeeded()` centres the 5.6-screen section, which is the third step; locally the checks ran before the page's scroll handler caught up, so they passed, while on CI's runner the handler got there first. The home page itself was right.

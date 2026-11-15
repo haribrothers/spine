@@ -33,16 +33,34 @@ The images are built for amd64 (Intel and AMD) and arm64 (Apple Silicon Macs, AR
 
 Use the address people will open Spine at. Without `--app-url` it asks for it; `--non-interactive` uses `APP_URL` from the environment, or `http://localhost`.
 
-To try Spine on your own computer, use `--app-url http://localhost`, or `http://<this computer's IP address>` to open it from other devices on your network. Caddy then serves plain HTTP and skips the certificate, and port 80 must be free. That's fine for trying Spine out, but the field app and browser notifications need a real domain with HTTPS ([HTTPS and domains](../https-and-domains/)).
+To try Spine on your own computer, use `--app-url http://localhost`, or `http://<this computer's IP address>` to open it from other devices on your network. Caddy then serves plain HTTP and skips the certificate. That's fine for trying Spine out, but the field app and browser notifications need a real domain with HTTPS ([HTTPS and domains](../https-and-domains/)). A name like `http://spine.local` works only once it's in your computer's hosts file ([how](../https-and-domains/#only-on-your-network)).
+
+### Port 80 already in use
+
+Spine uses ports 80 and 443. If another program already has them (another web server, another Docker app), the start stops with "port is already allocated" or "address already in use". See what has the port with `sudo lsof -nP -iTCP:80 -sTCP:LISTEN`, and stop it, or give Spine another port:
+
+```bash
+./install.sh --app-url http://localhost --port 8080
+```
+
+Spine then opens at `http://localhost:8080`. The installer puts the port in the address and writes `docker-compose.override.yml`, which publishes that port instead of 80 and 443; Docker Compose reads it with `docker-compose.yml` every time, so backups and upgrades keep the port. A port in the address does the same (`--app-url http://localhost:8080`). This needs Compose 2.24.4 or newer. Another port is for your own computer or network: Let's Encrypt needs ports 80 and 443 to give a domain its certificate.
 
 The installer:
 
 1. checks Docker and Compose;
-2. writes `.env` with a random `AUTH_SECRET` and database password (an existing `.env` is never changed);
+2. writes `.env` with the address, a random `AUTH_SECRET` and database password (an existing `.env` is never changed);
 3. downloads Spine's images and starts it, waiting until it's healthy;
 4. prints the address and the commands for logs, backups, upgrades and stopping.
 
 The first start takes a minute or two while the images download and the database is set up.
+
+### Your settings: `.env`
+
+`.env` is Spine's settings file, in the folder you installed in. Its name starts with a dot, so `ls` hides it: `ls -a` shows it, and `grep APP_URL .env` shows the address. Docker Compose reads it every time Spine starts. Caddy answers only at `APP_URL`, and sign-in works only there.
+
+Running `./install.sh` again keeps `.env` as it is ("Keeping your existing .env"), and `--app-url` and `--port` are left unused. To change the address, change `APP_URL` and `API_URL` together in `.env` (a new port also goes in `docker-compose.override.yml`), then run `docker compose --profile minimal up -d`. [Configuration](../configuration/) lists every setting.
+
+`.env` holds Spine's secrets. Keep a copy somewhere safe, and never share it or commit it: restoring a backup on another machine needs the same `AUTH_SECRET`.
 
 ## 3. Create the first account
 

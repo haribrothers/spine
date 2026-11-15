@@ -17,7 +17,7 @@ chmod +x *.sh
 ./install.sh --app-url https://spine.example.com
 ```
 
-On your own computer, use `--app-url http://localhost` instead: plain HTTP, fine for trying Spine out ([more](../../self-hosting/install/#2-run-the-installer)).
+On your own computer, use `--app-url http://localhost` instead: plain HTTP, fine for trying Spine out. If port 80 is already in use, add `--port 8080` and open `http://localhost:8080` ([more](../../self-hosting/install/#port-80-already-in-use)). The installer writes your settings to `.env` in that folder ([what's in it](../../self-hosting/install/#your-settings-env)).
 
 Open the address it prints and create your account: the first person to sign up owns the business. Then [issue your first invoice](../first-steps/#issue-your-first-invoice).
 

@@ -39,6 +39,8 @@ Legacy: S-10.7
 - **Given** `.env` already exists, **when** I run the script again, **then** it doesn't overwrite it and just starts the services.
 - **Given** a stopwatch from `git clone` to the first issued invoice on a machine with Docker, **when** a new user follows only the README, **then** it takes under 5 minutes (NFR-MNT-01).
 - **Given** a missing prerequisite, **when** the script runs, **then** it exits non-zero with a message naming what to install.
+- **Given** ports 80 and 443 are in use, **when** I run `./install.sh --app-url http://localhost --port 8080` (or give the port in the address), **then** `APP_URL` and `API_URL` carry the port, `docker-compose.override.yml` publishes that port instead of 80 and 443, and Spine opens at `http://localhost:8080`. A port that isn't 1–65535, two different ports, Compose older than 2.24.4 or an existing `docker-compose.override.yml` stop it before anything is written ([D-279](../prd/12-decisions.md)).
+- **Given** `.env` already exists, **when** I pass `--app-url` or `--port`, **then** nothing changes and it says to change `APP_URL` and `API_URL` in `.env` instead.
 
 **Implementation notes**
 - New `scripts/install.sh` (POSIX shell, shellcheck-clean); the published `docker-compose.yml` pulls `ghcr.io/haribrothers/spine-api` and `spine-web` at the release's version ([D-262](../prd/12-decisions.md)); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).

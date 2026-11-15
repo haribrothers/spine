@@ -53,9 +53,9 @@ chmod +x *.sh
 ./install.sh --app-url https://spine.example.com
 ```
 
-Trying it on your own computer? Use `--app-url http://localhost` instead, or `http://<this computer's IP address>` to open it from other devices on your network. Spine then runs on plain HTTP, which is fine for trying it out; the field app and browser notifications need a real domain with HTTPS. Port 80 must be free.
+Trying it on your own computer? Use `--app-url http://localhost` instead, or `http://<this computer's IP address>` to open it from other devices on your network. Spine then runs on plain HTTP, which is fine for trying it out; the field app and browser notifications need a real domain with HTTPS. Is port 80 already in use? Add `--port 8080`, and Spine opens at `http://localhost:8080`. A name like `spine.local` only opens once it's in your computer's hosts file ([HTTPS and domains](https://spine.h4loom.com/docs/self-hosting/https-and-domains/)).
 
-It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
+It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. `.env` is Spine's settings file, in the same folder (`ls -a` shows it): the address, the secrets and every other [setting](https://spine.h4loom.com/docs/self-hosting/configuration/). Running `./install.sh` again keeps it as it is, `--app-url` and `--port` included; to change the address later, change `APP_URL` and `API_URL` in it and run `docker compose --profile minimal up -d`. Keep a copy somewhere safe: restoring a backup needs its `AUTH_SECRET`. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
 
 ## Back up and restore
 

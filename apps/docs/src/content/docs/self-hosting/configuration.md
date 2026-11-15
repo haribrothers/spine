@@ -15,7 +15,7 @@ Most of what an Owner changes day to day — the business profile, tax, numberin
 
 | Variable | What it is | Without it |
 |---|---|---|
-| `APP_URL` | The address people open Spine at, e.g. `https://spine.example.com` | Spine won't start |
+| `APP_URL` | The address people open Spine at, e.g. `https://spine.example.com`. Change `API_URL` with it; a port in it (`http://localhost:8080`) also goes in `docker-compose.override.yml` ([Another port](../https-and-domains/#another-port)) | Spine won't start |
 | `AUTH_SECRET` | A long random secret for sessions and stored keys. `install.sh` generates it. **Keep a copy**: restoring a backup on a new machine needs the same one | Spine won't start |
 | `DATABASE_URL` | The Postgres connection, `postgres://spine:<password>@db:5432/spine` | Spine won't start |
 
