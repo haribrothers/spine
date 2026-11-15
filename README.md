@@ -40,7 +40,7 @@ The long version, with every setting, is the [self-hosting guide](https://spine.
 
 ```bash
 mkdir spine && cd spine
-v=v1.0.0-beta.2
+v=v1.0.0-beta.3
 for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done

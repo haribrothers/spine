@@ -86,6 +86,7 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - **Which files:** the README's "Install in 5 minutes" and both install pages in the docs list the seven files to download from the newest release, and say you don't need the `.apk` or the Coolify compose file. A `curl` loop downloads them by the release's tag, with nothing to install or sign in to. The old `gh release download --repo …` failed with "release not found", because GitHub doesn't count a pre-release as the latest release (and `gh` needs signing in).
 - **On your own computer:** `--app-url http://localhost`, or the computer's IP address for other devices on the network, runs Spine on plain HTTP. It's fine for trying Spine out; the field app and notifications need a domain with HTTPS.
 - A test (`scripts/us-ops-19.test.mjs`) checks the README and both install pages download this version's tag and list every file an install needs. `docs/release.md` adds the tag to the version bump.
+- **Version 1.0.0-beta.3**, the first beta with arm64 images, with release notes in `docs/releases/v1.0.0-beta.3.md`.
 - US-OPS-19 is still waiting for the Owner's clean-machine test (QA section 280).
 
 ### 2026-11-15 — The security review, refreshed: CSV exports can't carry a formula (US-OPS-18 done)

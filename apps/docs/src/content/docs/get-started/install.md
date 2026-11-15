@@ -9,7 +9,7 @@ On a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-v=v1.0.0-beta.2
+v=v1.0.0-beta.3
 for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
