@@ -44,7 +44,12 @@ test.describe("US-SITE-02 · a home page for people discovering Spine", () => {
     await page.goto(`${base}/`);
     const flow = page.locator("#flow");
     await expect(flow).toHaveAttribute("data-static", "0");
-    await flow.scrollIntoViewIfNeeded();
+    // To the story's start. scrollIntoViewIfNeeded() centres the 5.6-screen section, which is the third step:
+    // the checks below passed only when they ran before the page's scroll handler caught up (not on CI's runner).
+    await flow.evaluate((el) => {
+      const win = el.ownerDocument.defaultView!;
+      win.scrollTo({ top: el.getBoundingClientRect().top + win.scrollY, behavior: "instant" });
+    });
     await expect.poll(() => states(page)).toBe("now,next,next,next,next,next");
     await expect(page.locator(".copy[data-active='1'] h3")).toHaveText("Capture it once");
 

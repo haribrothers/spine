@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-15 — Fix: the home page's pinned-story E2E test starts at the first step (US-SITE-02)
+
+- The re-made `v1.0.0-beta.3` tag's run stopped at E2E on one test: "scrolling the pinned story" expected the first step and found the third ("Milestones and retention"). Nothing was published. `scrollIntoViewIfNeeded()` centres the 5.6-screen section, which is the third step; locally the checks ran before the page's scroll handler caught up, so they passed, while on CI's runner the handler got there first. The home page itself was right.
+- The test now scrolls to the section's start, and the first step is still showing half a second later.
+
 ### 2026-11-15 — Fix: integration tests no longer sign up against another program on the Mac (D-239)
 
 - **What happened:** now and then a test file stopped while setting up with "Signup failed: 404 not found" or "401 Unauthorized" (US-SET-08, US-INV-24, US-TEAM-19 to 23 today), only when run on a Mac and never in CI. Each file's API listened on a free port on every interface, and the tests call `127.0.0.1`. On macOS another program can already hold the same port on `127.0.0.1` alone (VS Code, Claude Code, Bitwarden, OrbStack all do), and the calls reached it instead.
