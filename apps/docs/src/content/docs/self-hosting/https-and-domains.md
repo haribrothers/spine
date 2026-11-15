@@ -51,7 +51,7 @@ On Windows the file is `C:\Windows\System32\drivers\etc\hosts`.
 
 ## HTTPS on your own computer
 
-With `APP_URL=https://localhost` (or an IP address, or a `.local` name), Caddy can't get a certificate from Let's Encrypt, so it makes its own from a private authority it creates. Browsers warn about it until you trust that authority. On a Mac, from the folder you installed in:
+With `APP_URL=https://localhost` (or a `.local` name in the hosts file), Caddy can't get a certificate from Let's Encrypt, so it makes its own from a private authority it creates. Browsers warn about it until you trust that authority. On a Mac, from the folder you installed in:
 
 ```bash
 docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
@@ -59,6 +59,8 @@ sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keyc
 ```
 
 On Linux, copy `caddy-root.crt` to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`; Firefox keeps its own list (**Settings › Privacy & Security › Certificates › Import**). Phones don't trust it unless you install it on each one, so for the field app use a real domain. Spine tells browsers to use only HTTPS for its address (HSTS), so once you've opened `https://localhost`, the browser opens `localhost` over HTTPS for other projects too.
+
+Not on an IP address: with `APP_URL=https://192.168.1.20`, browsers stop with `ERR_SSL_PROTOCOL_ERROR` ("sent an invalid response"), and `http://192.168.1.20` redirects there too. A browser sends no name when it opens an IP address over HTTPS, and inside Docker Caddy can't tell which certificate to use. For an IP address, use `http://`. For HTTPS on your network, use a name in each computer's hosts file instead.
 
 ## Another port
 
