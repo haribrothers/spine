@@ -39,7 +39,12 @@ export async function createTestApp(options: { port?: number } = {}): Promise<Te
   // Ephemeral port — parallel test files never collide. A fixed port is for
   // flows where the server's own address matters (OAuth issuer and MCP
   // resource, US-MCP-03): those files set API_URL to it before loading the app.
-  await app.listen(options.port ?? 0);
+  // The ephemeral port is bound on 127.0.0.1, the address the tests call. Bound
+  // on every interface, macOS could hand out a port another program already
+  // holds on 127.0.0.1 (an editor, a password manager), and calls to
+  // 127.0.0.1 then reached that program instead: sign-up answered 404 or 401.
+  if (options.port) await app.listen(options.port);
+  else await app.listen(0, "127.0.0.1");
   const address = app.getHttpServer().address();
   const port = typeof address === "object" && address ? address.port : 0;
   const baseUrl = options.port ? `http://localhost:${port}` : `http://127.0.0.1:${port}`;
