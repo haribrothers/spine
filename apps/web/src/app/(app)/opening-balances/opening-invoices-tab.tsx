@@ -28,7 +28,7 @@ import {
   StatCard,
   useConfirm,
 } from "@spine/ui";
-import { STATEMENT_DATE_FORMATS, parseStatementAmount, parseStatementDate, type OpeningImportResult, type OpeningInvoice, type StatementDateFormat } from "@spine/shared";
+import { STATEMENT_DATE_FORMATS, restoreCsvFormula, parseStatementAmount, parseStatementDate, type OpeningImportResult, type OpeningInvoice, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { t, useT } from "../../../lib/i18n";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
@@ -375,6 +375,7 @@ function OpeningInvoiceImport({ open, onOpenChange, currency, onImported, onUnma
       header: true,
       skipEmptyLines: "greedy",
       transformHeader: (h) => h.trim(),
+      transform: restoreCsvFormula,
       complete: (parsed) => {
         const cols = parsed.meta.fields ?? [];
         if (!cols.length) {

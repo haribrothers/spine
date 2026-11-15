@@ -33,7 +33,7 @@ import Screenshot from "../../../../components/Screenshot.astro";
 
 ## What's in the ZIP
 
-- One CSV (or JSON) file per table, each with a header row.
+- One CSV (or JSON) file per table, each with a header row. In CSV files, a cell that starts with `=`, `+`, `-` or `@` (other than a plain number) gets a `'` in front, so a spreadsheet shows it as text instead of running it as a formula.
 - A `files/` folder when you chose **Files**.
 - A `README.txt` that describes each file.
 

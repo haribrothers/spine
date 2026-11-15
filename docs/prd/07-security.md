@@ -208,6 +208,7 @@ No new capabilities: every new figure reuses an existing grant, in both the API 
 - **Email drafts and one-off changes** (US-SET-21, D-188): `GET /email-drafts/:type/:id` needs the same right as sending that email, and the send routes accept a different address only from someone who may send it; templates are read with every member's settings but changed only by an Owner.
 - **Exports leave the server**: GSTR-1 and Tally files hold every customer's GSTIN, addresses and amounts. Downloads are audited (who, period, format), never cached by the server, and never emailed by Spine.
 - **UPI**: the UPI ID is shown on PDFs by design; no gateway keys are stored. Email templates are rendered with HTML escaping of every placeholder value; only Spine's own placeholders are accepted ([D-153](12-decisions.md)).
+- **CSV exports can't carry a formula** (US-OPS-18): every CSV Spine writes (reports, the tax summary, the audit log, the data export, the catalogue export and the import's problem rows) puts a `'` in front of a cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return, unless it's a plain number. One rule, `CSV_FORMULA_CELL` in `packages/shared/src/csv.ts`, used by the API's `toCsv` and the web app's `Papa.unparse`; Spine's own CSV imports take the `'` off again (`restoreCsvFormula`).
 - **Statement files** are parsed in memory, limited to 2 MB and 5,000 rows, and only the parsed lines are stored — the uploaded CSV itself is not kept.
 
 ## Added with the AI assistant (Phase 10, D-162–D-173, D-242)

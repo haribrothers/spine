@@ -24,7 +24,7 @@ import Screenshot from "../../../../components/Screenshot.astro";
 
 ## What each format gives you
 
-- **CSV**: one row per account, job, customer or document, with plain decimal amounts and the currency in its own column. The file is named after the report and its range.
+- **CSV**: one row per account, job, customer or document, with plain decimal amounts and the currency in its own column. The file is named after the report and its range. A cell that starts with `=`, `+`, `-` or `@` (other than a plain number) gets a `'` in front, so your spreadsheet shows it as text instead of running it as a formula. Names and descriptions can come from customers and bank statements, so this keeps a crafted one from doing anything when you open the file.
 - **Excel (.xlsx)**: amounts are numbers with two decimals, not text. Headings are bold, the first row is frozen, and the business name, report name and range are in the first rows.
 - **PDF**: your logo, business name, report name, range or date, and basis (accrual or cash), with page numbers and "Prepared *date*" in the footer. A report with more than five amount columns turns landscape. The PDF is always light, even if you use Spine in dark mode.
 - **Print**: opens your browser's print dialog. The sidebar, toolbars and buttons are left out, and the report fills the page with its title, range and business name. On long tables, column headings repeat on every page and rows aren't split across pages.

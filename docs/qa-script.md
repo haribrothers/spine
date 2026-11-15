@@ -5649,9 +5649,11 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 1. On the beta server, open any page and look at the response headers (browser dev tools › Network): `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` and, over HTTPS, `Strict-Transport-Security`. `/api/health` has `DENY`, `nosniff` and `no-referrer`, and no `X-Powered-By`.
 2. Open a quote link 21 times within a minute from one phone: the 21st says to slow down. From another device the link still opens.
 3. Change one character of a quote link, or open `/accept-invite/<anything>`: the same "link doesn't work" page as any wrong link.
-4. `pnpm audit --prod --audit-level high` passes; `docker run --rm -v "$PWD":/repo zricethezav/gitleaks:v8.24.3 git /repo` reports no leaks.
-5. The Owner reads docs/security-review.md and signs it off (name and date).
-6. Regression: quote acceptance, invitations, sign-in from the phone app and file downloads work behind Caddy and on Coolify.
+4. `pnpm audit --prod --audit-level high` passes; `docker run --rm -v "$PWD":/repo ghcr.io/gitleaks/gitleaks:v8.24.3 git /repo --gitleaks-ignore-path /repo/.gitleaksignore` reports no leaks.
+5. Add a contact named `=HYPERLINK("https://example.com","Open")` and a catalogue item called `+box` priced at 12. Export Contacts › Customer statement (or any report listing the contact) as CSV, Settings › Data export as CSV, and the Catalogue. Open each file in Excel or Google Sheets: the cells show the text with a leading `'` (Sheets hides it) and nothing runs as a formula. Negative amounts are still numbers you can sum.
+6. Import the catalogue file you just exported: `+box` comes back as `+box`, without the `'`.
+7. The Owner reads docs/security-review.md and signs it off (name and date).
+8. Regression: quote acceptance, invitations, sign-in from the phone app and file downloads work behind Caddy and on Coolify. Report exports (CSV, Excel, PDF), the audit log CSV, the tax summary CSV, the data export, and contact, catalogue and opening-balance imports still work with ordinary files.
 
 ## 279. The website, the docs and help in the app (US-SITE-01 to US-SITE-14, Phase 12)
 
