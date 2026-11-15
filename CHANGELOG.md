@@ -85,6 +85,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - **What happened:** now and then a test file stopped while setting up with "Signup failed: 404 not found" or "401 Unauthorized" (US-SET-08, US-INV-24, US-TEAM-19 to 23 today), only when run on a Mac and never in CI. Each file's API listened on a free port on every interface, and the tests call `127.0.0.1`. On macOS another program can already hold the same port on `127.0.0.1` alone (VS Code, Claude Code, Bitwarden, OrbStack all do), and the calls reached it instead.
 - **Fixed:** the test API's free port is bound on `127.0.0.1`, as the AI stub's already was, so macOS hands out only ports nothing else there is using. Files that need a fixed port (the agent sign-in tests, US-MCP-03 to 07) are unchanged.
 
+### 2026-11-15 — Fix: the web image builds again, and v1.0.0-beta.3 is tagged again on the fix (US-SITE-12)
+
+- **What went wrong:** the first `v1.0.0-beta.3` tag's run stopped at the self-hosting check: the web image couldn't build. Building the in-app help (US-SITE-12) generates its theme from `docs/design/tokens.json`, and `.dockerignore` left the whole `docs/` folder out of the image's build context. Neither `pnpm verify` nor a pull request builds the images, so nothing caught it before the tag. Nothing was published: no release, no images.
+- **Fixed:** `.dockerignore` keeps `docs/design/tokens.json`. A test (`scripts/us-site-12.test.mjs`) applies `.dockerignore` and fails if that file is left out, or if the rest of the spec, secrets or local data get in.
+- **The tag:** since nothing was published under it, `v1.0.0-beta.3` is deleted and made again on the fixed commit. `docs/release.md` now allows that only when a tag's run published nothing; once anything is published, the next version is tagged instead.
+
 ### 2026-11-15 — The repo is public; the README says which files to download and how to install on your own computer (US-OPS-19, D-278)
 
 - **Public repo (D-278):** a beta tester on an Apple Silicon Mac got "no matching manifest for linux/arm64": the betas' images were amd64 only while the repo was private. The repo went public today, ahead of 1.0. From `v1.0.0-beta.3`, every release publishes amd64 and arm64 images, the nightly self-hosting checks run, and servers download releases and images without a GitHub token. The beta and Coolify guides drop the token and `docker login` steps. New commits use the GitHub noreply address.

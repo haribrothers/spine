@@ -105,5 +105,6 @@ If the deploy step fails with "The Cloudflare application detection logic has be
 
 ## If a release goes wrong
 
-- A check failed: fix it on a branch, merge, and tag the next patch (`v1.0.1`). Never move or reuse a tag.
+- A check failed before anything was published (no GitHub release, no images on GHCR): fix it on a branch and merge, then delete the tag (`git push origin :refs/tags/v<version>` and `git tag -d v<version>`) and tag the fixed commit with the same version. Nobody can have that version, so it still names one build.
+- A check failed after something was published: fix it on a branch, merge, and tag the next patch (`v1.0.1`). Never move or reuse a tag once anything is published under it.
 - A published release is broken: mark the GitHub release as a pre-release (so `latest` and the update banner stop offering it), publish a fixed patch, and say so in its notes.
