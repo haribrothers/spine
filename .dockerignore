@@ -23,6 +23,8 @@ apps/mobile
 apps/showcase-native
 apps/design-system
 docs
+# …except the design tokens: the in-app help's theme is generated from them (US-SITE-12).
+!docs/design/tokens.json
 
 # Backups hold the whole database (US-OPS-03).
 backups
