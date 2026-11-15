@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
   cn,
 } from "@spine/ui";
-import type { CatalogBundle, TaxProfile } from "@spine/shared";
+import { CSV_FORMULA_CELL, type CatalogBundle, type TaxProfile } from "@spine/shared";
 import { ChevronDown, Download, Package, Plus, RefreshCw, Search, Upload, Wallet } from "lucide-react";
 import { replaceQuery } from "../../../lib/replace-query";
 import { apiClient } from "../../../lib/api-client";
@@ -239,7 +239,7 @@ export function CatalogExplorer({
   // US-CAT-12 — the list as filtered, in Import's columns plus Category.
   function exportCsv() {
     if (!items) return;
-    const csv = Papa.unparse({ fields: [...EXPORT_COLUMNS], data: exportRows(items, rateMap, groupMap, accountMap).map((row) => EXPORT_COLUMNS.map((c) => row[c])) });
+    const csv = Papa.unparse({ fields: [...EXPORT_COLUMNS], data: exportRows(items, rateMap, groupMap, accountMap).map((row) => EXPORT_COLUMNS.map((c) => row[c])) }, { escapeFormulae: CSV_FORMULA_CELL });
     const filename = exportFileName(new Date());
     saveBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
     showToast(t("catalog.explorer.exportedTitle"), t("catalog.explorer.exportedDescription", { count: items.length, filename }));

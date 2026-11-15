@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Papa from "papaparse";
+import { restoreCsvFormula } from "@spine/shared";
 import {
   Alert,
   AlertDescription,
@@ -88,6 +89,7 @@ export function ImportContactsDialog({
     Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
+      transform: restoreCsvFormula,
       complete: (result) => {
         if (result.errors.length > 0) {
           setParseError(result.errors[0]!.message);

@@ -26,7 +26,9 @@ import {
   CATALOG_IMPORT_FIELD_LABELS,
   CATALOG_IMPORT_FIELDS,
   CATALOG_IMPORT_SUMMARY,
+  CSV_FORMULA_CELL,
   MAX_CATALOG_IMPORT_ROWS,
+  restoreCsvFormula,
   type CatalogImportField,
   type CatalogImportResult,
   type CatalogImportRow,
@@ -85,6 +87,7 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
       header: true,
       skipEmptyLines: "greedy",
       transformHeader: (h) => h.trim(),
+      transform: restoreCsvFormula,
       complete: (parsed) => {
         const cols = parsed.meta.fields ?? [];
         if (!cols.length) {
@@ -141,7 +144,7 @@ export function ImportCatalogDialog({ open, onOpenChange, onImported }: { open: 
     const failed = result.rows.filter((r) => r.status === "failed");
     const byRow = new Map(failed.map((r) => [r.row, r.reason]));
     const out = data.map((d, i) => ({ row: i + 2, d })).filter(({ row }) => byRow.has(row)).map(({ row, d }) => ({ ...d, Problem: byRow.get(row) ?? "" }));
-    const csv = Papa.unparse(out.length ? out : [{ ...Object.fromEntries(headers.map((h) => [h, ""])), Problem: "" }]);
+    const csv = Papa.unparse(out.length ? out : [{ ...Object.fromEntries(headers.map((h) => [h, ""])), Problem: "" }], { escapeFormulae: CSV_FORMULA_CELL });
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;

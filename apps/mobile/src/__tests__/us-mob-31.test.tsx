@@ -48,7 +48,8 @@ describe("US-MOB-31 · delete a photo from the phone", () => {
     renderWithSession(<PhotoViewerScreen jobId={id} startKey="p-theirs" />, { request: asRequest(api([MINE, THEIRS])) });
     expect(await screen.findByText("2 of 2")).toBeTruthy();
     expect(screen.queryByTestId("photo-viewer-delete")).toBeNull();
-    fireEvent(screen.getByLabelText("Photo 2 of 2"), "accessibilityAction", { nativeEvent: { actionName: "previous" } });
+    // The photo itself renders once its file address has loaded, after the counter.
+    fireEvent(await screen.findByLabelText("Photo 2 of 2"), "accessibilityAction", { nativeEvent: { actionName: "previous" } });
     expect(await screen.findByTestId("photo-viewer-delete")).toBeTruthy();
   });
 

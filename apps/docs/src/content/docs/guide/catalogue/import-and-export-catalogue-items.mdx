@@ -42,6 +42,6 @@ If the file can't be read, you see "That file couldn't be read. Save it from you
 2. **Export** — Press **Export**. A file named `catalogue-` and today's date downloads, and a "Catalogue exported" toast says how many items it holds.
 </Steps>
 
-The file has the columns Import reads (Name, Description, Unit, Price, Tax, HSN/SAC code, Income account and Expense account) plus Category, so an exported file imports back.
+The file has the columns Import reads (Name, Description, Unit, Price, Tax, HSN/SAC code, Income account and Expense account) plus Category, so an exported file imports back. A cell that starts with `=`, `+`, `-` or `@` (other than a plain number) gets a `'` in front, so your spreadsheet shows it as text instead of running it as a formula; Import takes that `'` off again.
 
 <Aside type="caution" title="Import adds, it doesn't update">Importing never changes an item that's already in the catalogue; a row with the same name is skipped. To change prices on existing items, edit them, or use [Change many items at once](../change-many-items-at-once/).</Aside>

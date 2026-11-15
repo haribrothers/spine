@@ -63,12 +63,13 @@ describe("US-MOB-30 · look at a job's photos full screen", () => {
   it("moves between photos with Next and Previous photo (VoiceOver and TalkBack), in the same order as the photo screens", async () => {
     renderWithSession(<PhotoViewerScreen jobId={id} startKey="p-new" />, { request: asRequest(routes()) });
     await screen.findByText("1 of 2");
-    const photo = screen.getByLabelText("Photo 1 of 2");
+    // The photo itself renders once its file address has loaded, after the counter.
+    const photo = await screen.findByLabelText("Photo 1 of 2");
     expect(photo.props.accessibilityActions.map((a: { label: string }) => a.label)).toEqual(["Next photo", "Previous photo"]);
     fireEvent(photo, "accessibilityAction", { nativeEvent: { actionName: "next" } });
     expect(await screen.findByText("2 of 2")).toBeTruthy();
     expect(within(screen.getByTestId("photo-viewer-details")).getByText("Site photo")).toBeTruthy();
-    fireEvent(screen.getByLabelText("Photo 2 of 2"), "accessibilityAction", { nativeEvent: { actionName: "previous" } });
+    fireEvent(await screen.findByLabelText("Photo 2 of 2"), "accessibilityAction", { nativeEvent: { actionName: "previous" } });
     expect(await screen.findByText("1 of 2")).toBeTruthy();
 
     const waiting: TilePhoto = { kind: "waiting", key: "file:///outbox/photo-0.jpg", localUri: "file:///outbox/photo-0.jpg", createdAt: "2026-10-08T17:00:00.000Z", itemId: "o-1" };
