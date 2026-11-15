@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-15 — The repo is public; the README says which files to download and how to install on your own computer (US-OPS-19, D-278)
+
+- **Public repo (D-278):** a beta tester on an Apple Silicon Mac got "no matching manifest for linux/arm64": the betas' images were amd64 only while the repo was private. The repo went public today, ahead of 1.0. From `v1.0.0-beta.3`, every release publishes amd64 and arm64 images, the nightly self-hosting checks run, and servers download releases and images without a GitHub token. The beta and Coolify guides drop the token and `docker login` steps. New commits use the GitHub noreply address.
+- **Which files:** the README's "Install in 5 minutes" and both install pages in the docs list the seven files to download from the newest release, and say you don't need the `.apk` or the Coolify compose file. A `curl` loop downloads them by the release's tag, with nothing to install or sign in to. The old `gh release download --repo …` failed with "release not found", because GitHub doesn't count a pre-release as the latest release (and `gh` needs signing in).
+- **On your own computer:** `--app-url http://localhost`, or the computer's IP address for other devices on the network, runs Spine on plain HTTP. It's fine for trying Spine out; the field app and notifications need a domain with HTTPS.
+- A test (`scripts/us-ops-19.test.mjs`) checks the README and both install pages download this version's tag and list every file an install needs. `docs/release.md` adds the tag to the version bump.
+- **Version 1.0.0-beta.3**, the first beta with arm64 images, with release notes in `docs/releases/v1.0.0-beta.3.md`.
+- US-OPS-19 is still waiting for the Owner's clean-machine test (QA section 280).
+
 ### 2026-11-15 — The security review, refreshed: CSV exports can't carry a formula (US-OPS-18 done)
 
 - **Signed off:** the Owner signed off [docs/security-review.md](docs/security-review.md) on 2026-11-15, accepting the items it lists as accepted. US-OPS-18 is done.

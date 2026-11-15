@@ -34,11 +34,26 @@ Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More 
 
 ## Install in 5 minutes
 
-The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+. Download the latest release's files from the [releases page](https://github.com/haribrothers/spine/releases), then:
+The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+.
+
+**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example`. You don't need the `.apk` (the field app for Android) or `docker-compose.coolify.yml`. Or, in a terminal, with the newest release's tag:
 
 ```bash
+mkdir spine && cd spine
+v=v1.0.0-beta.3
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
+  curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
+done
+```
+
+**2. Run the installer** from that folder, with the address people will open Spine at:
+
+```bash
+chmod +x *.sh
 ./install.sh --app-url https://spine.example.com
 ```
+
+Trying it on your own computer? Use `--app-url http://localhost` instead, or `http://<this computer's IP address>` to open it from other devices on your network. Spine then runs on plain HTTP, which is fine for trying it out; the field app and browser notifications need a real domain with HTTPS. Port 80 must be free.
 
 It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
 

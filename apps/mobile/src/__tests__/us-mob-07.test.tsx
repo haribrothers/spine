@@ -33,7 +33,10 @@ describe("US-MOB-07 · keep working when there's no signal", () => {
     renderWithSession(<TodayScreen />, { request: offline });
     expect(await screen.findByTestId("offline-banner")).toBeTruthy();
     expect(screen.getByText("You're offline")).toBeTruthy();
-    expect(screen.getByTestId("offline-banner-text").props.children).toBe("Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM.");
+    // The banner shows straight away; how old the jobs are follows once they've loaded from the phone.
+    await waitFor(() =>
+      expect(screen.getByTestId("offline-banner-text").props.children).toBe("Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM."),
+    );
     // Today still shows what was saved.
     expect(await screen.findByTestId(`today-job-${MARINA.id}`)).toBeTruthy();
     expect(offlineMessage(null, "en-US")).toBe("Photos, expenses and milestone updates are saved on this phone and sync when you're back online.");

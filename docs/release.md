@@ -19,11 +19,11 @@ How a version of Spine is numbered, written up and published. The decisions behi
 ## Steps
 
 1. **Finish the phase.** Every story is ticked in `docs/progress.md`, its pull request is merged into `main`, and `pnpm verify` passed on the merged commit.
-2. **Set the version.** On a branch: bump `version` in the root `package.json`, the two `SPINE_VERSION` defaults above, and write `docs/releases/v<version>.md`. Run `pnpm test` (the scripts' tests check the versions agree). Merge it.
+2. **Set the version.** On a branch: bump `version` in the root `package.json`, the two `SPINE_VERSION` defaults above and the tag in the download command (`v=v<version>`, in `README.md`, `apps/docs/src/content/docs/self-hosting/install.md` and `get-started/install.md`), and write `docs/releases/v<version>.md`. Run `pnpm test` (the scripts' tests check the versions agree). Merge it.
 3. **Tag `main`.** `git tag v<version> && git push origin v<version>`. Tags are made by the Owner.
 4. **CI runs everything.** On a `v*` tag, CI runs lint, typecheck, unit, integration, the E2E suite, the self-hosting check (install, back up, restore) and the upgrade check from the previous release (`upgrade-verify`, `install.sh --non-interactive` then `upgrade.sh`). Nothing is published unless all of them pass.
 5. **The release workflow publishes** (`.github/workflows/release.yml`):
-   - `ghcr.io/haribrothers/spine-api` and `ghcr.io/haribrothers/spine-web`, tagged `<version>`, and `latest` too unless it's a pre-release. Images are amd64 and arm64 (amd64 only while the repo is private).
+   - `ghcr.io/haribrothers/spine-api` and `ghcr.io/haribrothers/spine-web`, tagged `<version>`, and `latest` too unless it's a pre-release. Images are amd64 and arm64 (betas before `1.0.0-beta.3` were amd64 only, while the repo was private, [D-278](prd/12-decisions.md)).
    - A GitHub release named "Spine <version>" (a pre-release for a suffixed tag) with `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, the `docker-compose.yml` that pulls those images, the `Caddyfile`, `env.example`, the Coolify Compose file and `SHA256SUMS`. `upgrade.sh` checks the files against `SHA256SUMS`.
 6. **Check it.** On a test server, `./upgrade.sh --version <version>` from the previous release keeps the data; Settings › About Spine shows the new version; the update banner appears on an install of the previous version once its daily check has run.
 7. **The field app**, when it changed: build and submit it as [15-mobile-release.md](prd/15-mobile-release.md) describes (for a beta, `scripts/mobile/build-beta.sh`, [docs/beta.md](beta.md)).

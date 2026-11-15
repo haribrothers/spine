@@ -9,7 +9,7 @@ name: Release
 #   the Caddyfile, env.example (GitHub renames a file starting with a dot), the
 #   Coolify Compose file and SHA-256 checksums.
 # arm64 images build on GitHub's arm64 runners, which public repos get free;
-# while the repo is private, pre-releases are amd64 only.
+# a private repo builds amd64 only. Public since 2026-11-15 (D-278).
 on:
   workflow_call:
 
