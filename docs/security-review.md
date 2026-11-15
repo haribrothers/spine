@@ -7,7 +7,7 @@ US-OPS-18 · [D-267](prd/12-decisions.md): in-house, against the OWASP Top 10 (2
 | Reviewed | 2026-11-04, branch `phase-12-packaging`. Refreshed 2026-11-15 against `main` at `28029273` (branch `phase-12-security-signoff`) |
 | Scope | `apps/api` (including the MCP endpoint and OAuth for connected agents), `apps/web`, `apps/mobile`, the Docker/Caddy install, `scripts/` (install, backup, restore, upgrade) |
 | Method | Code review by area, `pnpm audit --prod`, gitleaks over the whole history, a ZAP baseline scan of a running install, and automated tests for the public routes and CSV exports |
-| Result | Every finding below is fixed or accepted. Nothing high-severity is open. |
+| Result | Every finding below is fixed or accepted. Nothing high-severity is open. Signed off by the Owner on 2026-11-15 |
 
 ## OWASP Top 10
 
@@ -97,5 +97,5 @@ Nothing high-severity. The warnings:
 | | |
 |---|---|
 | Reviewed by | Claude Code, for the Owner (2026-11-04, refreshed 2026-11-15) |
-| Signed off by the Owner | _pending — Hari Prasad_ |
-| Date | |
+| Signed off by the Owner | Hari Prasad |
+| Date | 2026-11-15 |

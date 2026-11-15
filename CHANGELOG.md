@@ -80,8 +80,9 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
-### 2026-11-15 — The security review, refreshed: CSV exports can't carry a formula (US-OPS-18)
+### 2026-11-15 — The security review, refreshed: CSV exports can't carry a formula (US-OPS-18 done)
 
+- **Signed off:** the Owner signed off [docs/security-review.md](docs/security-review.md) on 2026-11-15, accepting the items it lists as accepted. US-OPS-18 is done.
 - **Fixed (CSV injection):** a cell starting with `=`, `+`, `-` or `@` went into CSV exports unchanged, so Excel or Sheets ran it as a formula. People outside the business can put text there: a customer's signer name on the public quote link, a payer's bank statement description. Such a cell now gets a leading `'` unless it's a plain number, so negative amounts stay numbers. One rule, `CSV_FORMULA_CELL` in `packages/shared/src/csv.ts`, used by the API's `toCsv` (reports, tax summary, audit log, data export) and the web app's `Papa.unparse` (the catalogue export and the import's problem rows). Contact, catalogue and opening-balance imports take the `'` off again, so an export imports back unchanged. `toCsv` also quotes a bare carriage return.
 - **Dependencies:** the six node-forge advisories in `pnpm.auditConfig.ignoreGhsas` were fixed by the 1.4.3 override and are removed, so a new one fails CI. `pnpm audit --prod --audit-level high` passes.
 - **Review:** [docs/security-review.md](docs/security-review.md) re-run against `main`: gitleaks over 678 commits finds no leaks, the full API integration suite passes, and the write-up now covers connected agents (access through the person's own rights, OAuth 2.1 with PKCE and 15-minute tokens, self-registration accepted with its limits, prompt injection accepted), every route that answers without a session, and the new job-photo delete. It's ready for the Owner's sign-off.
