@@ -866,3 +866,19 @@ Decision: D-265
 
 **Implementation notes**
 - The review pack in `docs/accounting-review.md`: the chart of accounts, every posting rule with a worked example, and the reports to check, so the accountant knows what to try.
+
+### US-OPS-53 · Run Spine from a Docker panel
+**Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 12 · **Screens:** —
+**As** someone who runs containers from a panel (Portainer, Synology Container Manager, TrueNAS, Dokploy, Easypanel), **I want** one Compose file to paste, **so that** I can run Spine without a terminal.
+
+Decision: D-281
+
+**Acceptance criteria**
+- **Given** a release, **when** it publishes, **then** it attaches `docker-compose.panels.yml`, which runs that version's db, api, web and proxy with no `.env` file, no profiles, nothing to build and no Caddyfile beside it.
+- **Given** the file in a panel, **when** `AUTH_SECRET`, `POSTGRES_PASSWORD` or `APP_URL` isn't set, **then** nothing starts and the panel shows which one is missing and what to put in it.
+- **Given** the three settings, **when** it deploys, **then** Spine opens on port 7746 at any address (D-279), `DATABASE_URL` and `API_URL` are built from them, and `SPINE_PORT` picks another port.
+- **Given** the main `docker-compose.yml` changes, **when** the scripts' tests run, **then** they fail unless the panels file has the same images and version, every setting `.env.example` has, the same API healthcheck and volumes, and the same proxy settings.
+- **Given** the guide's **Docker panels** page, **when** someone follows the section for their panel, **then** it covers deploying, the settings, the port or the panel's own domain, upgrading, backups to a bucket and restoring with `restore.sh`.
+
+**Implementation notes**
+- `docker/panels/docker-compose.yml`, copied into each release by `.github/workflows/release.yml`; `scripts/us-ops-53.test.mjs` keeps it in step and reads it with a real `docker compose config`. Required settings use Compose's `${NAME:?message}`. Behind Dokploy's or Easypanel's proxy, the `ports:` lines are deleted and the domain goes to the `caddy` service's port 7746 with `TRUSTED_PROXIES=private_ranges`. TrueNAS's "Install via YAML" and Synology's Container Manager don't fill in `${…}` from a form, so their steps type the values into the file. `restore.sh` reaches a panel's stack from a folder holding the same file as `docker-compose.yml` and a `.env` with `COMPOSE_PROJECT_NAME` and the panel's settings. Checked by deploying through Portainer 2.45 (a missing setting refused with its message; Spine opening, signing in and changing port through a stack update; a backup restored into the stack); the other panels' steps follow their documentation.

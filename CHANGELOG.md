@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-16 — Run Spine from a Docker panel: Portainer, Synology, TrueNAS, Dokploy, Easypanel (US-OPS-53, D-281)
+
+- **Why:** panels that take a pasted Compose file have no `.env` beside it and pass no `--profile`, so the main file started nothing there.
+- **The file:** `docker/panels/docker-compose.yml`, attached to each release as `docker-compose.panels.yml`. No profiles, no `.env` file, nothing beside it; every setting is a variable the panel fills in. `AUTH_SECRET`, `POSTGRES_PASSWORD` and `APP_URL` are required, so a panel refuses to start without one and names it ("Set AUTH_SECRET, a random string of at least 32 characters"); `DATABASE_URL` and `API_URL` are built from them. Spine opens on port 7746 at any address, or `SPINE_PORT`.
+- **The guide:** a new **Docker panels** page with a section each for Portainer, Synology Container Manager, TrueNAS, Dokploy and Easypanel: deploying, the settings, the port or the panel's own domain, and upgrading. Then backups to a bucket from the panel's or the machine's scheduler, and restoring with `restore.sh`. The install page links to it, and the Coolify page's "Other platforms" now points to it.
+- **Tried for real on Portainer 2.45:** a stack without `AUTH_SECRET` was refused with that message and nothing started; with the three settings Spine opened at `http://localhost:7746`, signed up and kept the session; a stack update moved it to port 18080; and a backup was restored into the running stack with `restore.sh` as the page describes, Portainer still managing it afterwards. The other panels' steps follow their documentation, and the page says so.
+- Test: `scripts/us-ops-53.test.mjs` keeps the file in step with the main one (images and version, every setting, the API's healthcheck and volumes, the proxy) and reads it with a real `docker compose config`.
+
 ### 2026-11-16 — Fix: the home page's install commands can be scrolled from the keyboard; a Budget card test no longer depends on timing (US-SITE-02, US-JOB-25)
 
 - **Install commands:** the download line is long, so its box scrolls sideways, and the accessibility check (axe) failed the home page because a keyboard couldn't reach it. The box now takes focus, with a focus ring and the name "Install commands", so the arrow keys scroll it.

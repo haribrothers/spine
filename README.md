@@ -36,7 +36,7 @@ Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More 
 
 The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+.
 
-**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml` and `env.example`. You don't need the `.apk` (the field app for Android) or `docker-compose.coolify.yml`. Or, in a terminal, with the newest release's tag:
+**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml` and `env.example`. You don't need the `.apk` (the field app for Android), `docker-compose.coolify.yml` or `docker-compose.panels.yml`. Or, in a terminal, with the newest release's tag:
 
 ```bash
 mkdir spine && cd spine
@@ -59,7 +59,7 @@ On a server with a domain, `./install.sh --app-url https://spine.example.com`: C
 
 The installer writes `.env`, Spine's settings file, in the same folder (`ls -a` shows it): the address, the port, the secrets and every other [setting](https://spine.h4loom.com/docs/self-hosting/configuration/). Running `./install.sh` again keeps it as it is; to change the address later, change `APP_URL` and `API_URL` in it and run `docker compose --profile minimal up -d`. Keep a copy somewhere safe: restoring a backup needs its `AUTH_SECRET`.
 
-Then open the address it prints and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
+Then open the address it prints and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md). From Portainer, Synology, TrueNAS, Dokploy or Easypanel: [Docker panels](https://spine.h4loom.com/docs/self-hosting/docker-panels/).
 
 ## Back up and restore
 
@@ -119,7 +119,7 @@ spine/
 │  ├─ ui-native/  # @spine/ui-native — the field app's components
 │  ├─ sdk/        # typed API client
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
-├─ docker/        # Dockerfile.api, Dockerfile.web, Dockerfile.proxy, Caddyfile, Coolify compose
+├─ docker/        # Dockerfile.api, Dockerfile.web, Dockerfile.proxy, Caddyfile, Coolify and panels compose
 ├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
 ├─ scripts/       # install, backup, restore, upgrade, verify, release and mobile scripts
 ├─ docker-compose.yml       # production stack (published images, behind Caddy)

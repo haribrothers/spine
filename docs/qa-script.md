@@ -5748,3 +5748,13 @@ Use a job that's Active, with a few site photos (one added by you, one by someon
 - Recurring meetings apply the invite list to the whole series; you can't invite someone to one occurrence.
 - The "starting soon" reminder polls every 5 minutes, so it can fire up to about 5 minutes after its configured lead time.
 - Multi-org (one Owner account across several organisations) is out of scope for v1; don't test for it.
+
+## 282. Run Spine from a Docker panel (US-OPS-53, Phase 12)
+
+1. In Portainer (2.45 or newer): **Stacks › Add stack**, name `spine`, **Web editor**, paste the release's `docker-compose.panels.yml`, and add only `POSTGRES_PASSWORD` and `APP_URL`. **Deploy the stack**: it fails with "required variable AUTH_SECRET is missing a value: Set AUTH_SECRET, a random string of at least 32 characters", and no container starts.
+2. Add `AUTH_SECRET` (`openssl rand -hex 32`) and deploy: all four containers start, `http://<the machine's IP>:7746` opens the welcome page, and sign-up and sign-in work there and at `http://localhost:7746`.
+3. Update the stack with `SPINE_PORT=8080` and the port in `APP_URL`: Spine opens on 8080, and 7746 no longer answers.
+4. Take a backup (`docker exec <api container> node apps/api/dist/scripts/backup.js --output /tmp/spine-backup-<date>.tar.gz`, then `docker cp` it out), change your name in Settings, and restore it as the **Docker panels** page's Restoring section says: the old name is back, and Portainer still shows the stack running.
+5. On Dokploy or Easypanel: deploy as the page says, with the `ports:` lines deleted and the domain on `caddy`, port `7746`. `https://<domain>` opens with a valid certificate, and Settings › Password & security shows your own address, not the proxy's.
+6. On Synology Container Manager and TrueNAS, with the placeholders replaced by values: the project or app starts and opens on port 7746.
+7. Regression: the main `docker-compose.yml` and `install.sh` behave as in section 260; the Coolify file as in section 266.

@@ -87,8 +87,4 @@ To restore a backup into a fresh Coolify deployment, or onto a plain server:
 
 ## Other platforms
 
-The same approach works on any platform whose proxy handles HTTPS in front of a Compose stack, such as Dokploy, CapRover or Portainer behind Traefik or nginx:
-
-- Use the main `docker-compose.yml`. Remove the `caddy` service's `ports:`, and set `SITE_ADDRESS=:80` and `TRUSTED_PROXIES=private_ranges`.
-- Point the platform's domain at the `caddy` service, port 80.
-- Set `APP_URL` to the public address, and `API_URL` to it plus `/api`.
+For Portainer, Synology Container Manager, TrueNAS, Dokploy, Easypanel and other panels that take a pasted Compose file, use `docker-compose.panels.yml`: see [Docker panels](../docker-panels/).

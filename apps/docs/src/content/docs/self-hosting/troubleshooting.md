@@ -2,7 +2,7 @@
 title: Troubleshooting
 description: The health check, the logs, the email log, and the most common problems with what to do.
 sidebar:
-  order: 9
+  order: 10
 ---
 
 ## Is it running?

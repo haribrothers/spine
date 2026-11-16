@@ -29,7 +29,7 @@ spine/
 │  ├─ ui-native/              @spine/ui-native (native components, tokens, tailwind preset, navigation, jest base)
 │  ├─ sdk/                    API client generated from OpenAPI
 │  └─ config/                 eslint, tsconfig, tailwind preset (CSS tokens)
-├─ docker/                    Dockerfile.api, Dockerfile.web, Dockerfile.proxy (Caddy + Caddyfile, D-280), Caddyfile
+├─ docker/                    Dockerfile.api, Dockerfile.web, Dockerfile.proxy (Caddy + Caddyfile, D-280), Caddyfile, coolify/ and panels/ Compose files (D-281)
 ├─ scripts/                   seed.ts, create-native-app.mjs (install.sh, backup.sh, restore.sh: Phase 12)
 ├─ docs/                      this spec, design, QA script
 ├─ docker-compose.yml         production (profiles minimal/full)

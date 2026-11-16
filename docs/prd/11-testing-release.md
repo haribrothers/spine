@@ -76,7 +76,7 @@ Phase 12 adds the nightly self-hosting checks (`nightly.yml`, once the repo is p
 | Artifact | Built from | Where |
 |---|---|---|
 | `spine-api`, `spine-web` and `spine-proxy` Docker images (amd64 + arm64) | `docker/Dockerfile.api`, `docker/Dockerfile.web`, `docker/Dockerfile.proxy` (Caddy with `docker/Caddyfile`, D-280) | Container registry, tagged `X.Y.Z` and `latest` |
-| `docker-compose.yml`, `Caddyfile`, `.env.example` | repo root, `docker/` | Release assets |
+| `docker-compose.yml`, `Caddyfile`, `.env.example`, `docker-compose.coolify.yml`, `docker-compose.panels.yml` | repo root, `docker/` (`docker/coolify/`, `docker/panels/`) | Release assets |
 | `install.sh`, `backup.sh`, `restore.sh` | `scripts/` | Release assets with SHA-256 checksums |
 | iOS and Android builds | `apps/mobile`: during the beta `scripts/mobile/build-beta.sh` on the Owner's Mac; from 1.0 GitHub's macOS runners (D-271) | TestFlight and the APK on the release (beta); App Store / Play Store (1.0, [15](15-mobile-release.md)) |
 | Release notes | `CHANGELOG.md` | GitHub release |

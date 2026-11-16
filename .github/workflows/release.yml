@@ -9,7 +9,8 @@ name: Release
 #   backup, restore and upgrade scripts, the Compose file pulling those images,
 #   the Caddyfile (the routing spine-proxy carries, to start your own from;
 #   upgrade.sh before D-280 downloads it too), env.example (GitHub renames a
-#   file starting with a dot), the Coolify Compose file and SHA-256 checksums.
+#   file starting with a dot), the Coolify Compose file, the Compose file for Docker panels
+#   (D-281) and SHA-256 checksums.
 # arm64 images build on GitHub's arm64 runners, which public repos get free;
 # a private repo builds amd64 only. Public since 2026-11-15 (D-278).
 on:
@@ -157,6 +158,7 @@ jobs:
           cp docker/Caddyfile dist/
           cp .env.example dist/env.example
           cp docker/coolify/docker-compose.yml dist/docker-compose.coolify.yml
+          cp docker/panels/docker-compose.yml dist/docker-compose.panels.yml
           for script in install.sh backup.sh restore.sh upgrade.sh; do cp "scripts/$script" dist/; done
           (cd dist && sha256sum -- * > SHA256SUMS)
         env:
