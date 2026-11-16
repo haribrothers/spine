@@ -287,7 +287,16 @@ case $spine_port in
     ip=$(local_ip)
     suffix=":$spine_port"
     [ "$spine_port" != 80 ] || suffix=
-    say "It also opens at http://localhost$suffix on this machine${ip:+, and at http://$ip$suffix from other devices on your network}."
+    # The addresses other than the one just printed.
+    here="http://localhost$suffix on this machine"
+    [ "http://localhost$suffix" != "$app_url" ] || here=
+    there=
+    [ -z "$ip" ] || [ "http://$ip$suffix" = "$app_url" ] || there="http://$ip$suffix from other devices on your network"
+    if [ -n "$here" ] && [ -n "$there" ]; then
+      say "It also opens at $here, and at $there."
+    elif [ -n "$here$there" ]; then
+      say "It also opens at $here$there."
+    fi
     ;;
 esac
 say ""

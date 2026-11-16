@@ -185,7 +185,25 @@ describe("US-OPS-01 · install Spine with one command", () => {
     chmodSync(join(dir, "bin", "ipconfig"), 0o755);
     const result = run(["--non-interactive"]);
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /It also opens at http:\/\/localhost:7746 on this machine, and at http:\/\/10\.85\.0\.30:7746 from other devices on your network\./);
+    assert.match(result.stdout, /Spine is running at http:\/\/localhost:7746 — open it/);
+    // Not the address it just gave again.
+    assert.match(result.stdout, /It also opens at http:\/\/10\.85\.0\.30:7746 from other devices on your network\./);
+    assert.doesNotMatch(result.stdout, /It also opens at http:\/\/localhost/);
+  });
+
+  it("the summary leaves out an address that is already the one for links", () => {
+    const { run, dir } = setup();
+    writeFileSync(join(dir, "bin", "ipconfig"), '#!/bin/sh\n[ "$2" = en0 ] && echo 10.85.0.30\n');
+    chmodSync(join(dir, "bin", "ipconfig"), 0o755);
+    const atIp = run(["--app-url", "http://10.85.0.30"]);
+    assert.equal(atIp.status, 0, atIp.stderr);
+    assert.match(atIp.stdout, /It also opens at http:\/\/localhost:7746 on this machine\.\n/);
+    const named = setup();
+    writeFileSync(join(named.dir, "bin", "ipconfig"), '#!/bin/sh\n[ "$2" = en0 ] && echo 10.85.0.30\n');
+    chmodSync(join(named.dir, "bin", "ipconfig"), 0o755);
+    const byName = named.run(["--app-url", "http://spine.local"]);
+    assert.equal(byName.status, 0, byName.stderr);
+    assert.match(byName.stdout, /It also opens at http:\/\/localhost:7746 on this machine, and at http:\/\/10\.85\.0\.30:7746 from other devices on your network\./);
   });
 
   it("with a domain: HTTPS from Caddy on 80 and 443, the plain port kept to this machine", () => {
