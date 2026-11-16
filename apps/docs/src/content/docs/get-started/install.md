@@ -14,10 +14,10 @@ for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
 chmod +x *.sh
-./install.sh --app-url https://spine.example.com
+./install.sh
 ```
 
-On your own computer, use `--app-url http://localhost` instead: plain HTTP, fine for trying Spine out. If port 80 is already in use, add `--port 8080` and open `http://localhost:8080` ([more](../../self-hosting/install/#port-80-already-in-use)). The installer writes your settings to `.env` in that folder ([what's in it](../../self-hosting/install/#your-settings-env)).
+Spine opens on port 7746 at any address: `http://localhost:7746` on that computer, `http://<its IP address>:7746` from the rest of your network. The installer asks for the address to put in links and suggests the computer's IP. Port 7746 taken? Add `--port 8080` ([more](../../self-hosting/install/#port-7746-already-in-use)). On a server with a domain, use `./install.sh --app-url https://spine.example.com` and Caddy gets the HTTPS certificate. The installer writes your settings to `.env` in that folder ([what's in it](../../self-hosting/install/#your-settings-env)).
 
 Open the address it prints and create your account: the first person to sign up owns the business. Then [issue your first invoice](../first-steps/#issue-your-first-invoice).
 

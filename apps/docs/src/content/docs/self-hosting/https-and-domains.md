@@ -1,76 +1,90 @@
 ---
 title: HTTPS and domains
-description: Serve Spine on your own domain with automatic HTTPS, directly or behind another proxy.
+description: Open Spine on your network over plain HTTP, or on HTTPS with a domain, Tailscale, a tunnel or your own proxy.
 sidebar:
   order: 7
 ---
 
-Spine's Caddy container serves the web app and the API on one address and gets a free HTTPS certificate from Let's Encrypt by itself.
+Spine's Caddy container serves the web app and the API together on one port, **7746**, at any address. On your network that's plain HTTP. For HTTPS, which the field app and browser notifications need, give Spine a domain, or put something in front that handles HTTPS: Tailscale, a Cloudflare Tunnel or your own proxy.
+
+## On your network
+
+Out of the box, Spine opens at:
+
+- `http://localhost:7746` on the machine running it;
+- `http://<its IP address>:7746`, for example `http://192.168.1.20:7746`, from every other device on the network.
+
+Sign-in works at each of these, and nothing redirects to HTTPS. `APP_URL` in `.env` is only the address Spine writes into links, so set it to one everyone can open, such as the IP. Reserve that IP for the machine in your router, so it doesn't change.
+
+Another port: `SPINE_PORT` in `.env` (`./install.sh --port 8080` on a new install), with the same port in `APP_URL` and `API_URL`. `SPINE_PORT=127.0.0.1:7746` keeps Spine to the machine itself.
+
+Over plain HTTP, passwords and sign-in cookies cross the network unencrypted. That's fine on a network you trust, such as your office's. Use HTTPS on Wi-Fi you don't control, and for anything reachable from the internet.
+
+### A name instead of an IP
+
+A name of your own, like `http://spine.local:7746`, survives the IP changing, but opens only once each computer knows where it is. Spine doesn't announce it on the network, so add it to the hosts file of each computer that opens Spine (`127.0.0.1` on the machine running Spine, its network address on the others):
+
+```bash
+echo "192.168.1.20 spine.local" | sudo tee -a /etc/hosts
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder   # macOS only
+```
+
+On Windows the file is `C:\Windows\System32\drivers\etc\hosts`. Phones don't have one, so on a phone use the IP.
 
 ## Your own domain
 
 1. Create a DNS `A` record (and `AAAA` for IPv6) for your domain, e.g. `spine.example.com`, pointing at the machine.
-2. Open ports **80** and **443** to it (Caddy needs port 80 to get the certificate).
-3. Set the address in `.env` and restart:
+2. Open ports **80** and **443** to it. Caddy needs port 80 to get the certificate.
+3. Install with the domain:
 
    ```bash
-   APP_URL=https://spine.example.com
-   API_URL=https://spine.example.com/api
+   ./install.sh --app-url https://spine.example.com
    ```
 
-Caddy requests the certificate on the first visit and renews it on its own. Every page is then served over HTTPS with HSTS.
+The installer sets `SITE_ADDRESS=spine.example.com, :7746` in `.env`, so Caddy gets the domain's certificate, and writes `docker-compose.override.yml` to publish ports 80 and 443. Port 7746 is kept to the machine itself (`SPINE_PORT=127.0.0.1:7746`): everyone else uses the domain. Caddy requests the certificate on the first visit and renews it on its own. Every page is then served over HTTPS with HSTS.
 
-## Behind another proxy
+A domain can't use another port: Let's Encrypt checks it on ports 80 and 443. If something else holds them, use one of the next two options.
 
-When another proxy in front already handles HTTPS — Coolify, Traefik, nginx, a load balancer — let it, and have Caddy listen on plain HTTP:
+## HTTPS without a domain: Tailscale
 
-```bash
-SITE_ADDRESS=:80
-TRUSTED_PROXIES=private_ranges
-```
+[Tailscale](https://tailscale.com) connects your devices in a private network, the tailnet, and gives each machine a name with a trusted HTTPS certificate, such as `https://spine.tail1234.ts.net`. It works from anywhere you're signed in to Tailscale, phones and the field app included, and nothing is opened to the internet.
 
-Point the front proxy at Caddy's port 80. `TRUSTED_PROXIES` makes Caddy believe the front proxy's `X-Forwarded-For`, so Spine sees each visitor's own address (its rate limits count per visitor). On Coolify, the Compose file does this for you: see [Running on Coolify](../coolify/).
+1. Install Tailscale on the machine running Spine and on each device that uses it. In the Tailscale admin console, turn on **MagicDNS** and **HTTPS certificates**.
+2. Install Spine with the machine's Tailscale name:
 
-## Without opening ports
+   ```bash
+   ./install.sh --app-url https://spine.tail1234.ts.net --behind-proxy
+   ```
 
-`--profile full` adds a Cloudflare Tunnel: set `CLOUDFLARE_TUNNEL_TOKEN` in `.env` from your Cloudflare dashboard, point the tunnel's public hostname at `http://caddy:80`, and set `SITE_ADDRESS=:80`.
+3. Have Tailscale serve Spine's port over HTTPS:
 
-## Only on your network
+   ```bash
+   sudo tailscale serve --bg 7746
+   ```
 
-With `APP_URL=http://localhost` or the machine's address (`http://192.168.1.20`), Caddy serves plain HTTP. The field app and browser notifications need HTTPS, so use a real domain for anything beyond trying Spine out.
+Open `https://spine.tail1234.ts.net`. Spine still opens at `http://<its IP>:7746` on your local network.
 
-A name of your own, like `http://spine.local`, opens only once the computer knows where it is. Spine doesn't announce it on the network, so add it to the hosts file of each computer that opens Spine (`127.0.0.1` on the machine running Spine, its network address on the others):
+## Behind another proxy or a tunnel
 
-```bash
-echo "127.0.0.1 spine.local" | sudo tee -a /etc/hosts
-echo "::1 spine.local" | sudo tee -a /etc/hosts
-sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder   # macOS only
-```
-
-On Windows the file is `C:\Windows\System32\drivers\etc\hosts`.
-
-## HTTPS on your own computer
-
-With `APP_URL=https://localhost` (or a `.local` name in the hosts file), Caddy can't get a certificate from Let's Encrypt, so it makes its own from a private authority it creates. Browsers warn about it until you trust that authority. On a Mac, from the folder you installed in:
+When a proxy in front already handles HTTPS (Nginx Proxy Manager, Traefik, Caddy, a NAS's reverse proxy, a load balancer), point it at Spine's port, `http://<this machine>:7746`, and install with its address:
 
 ```bash
-docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain caddy-root.crt
+./install.sh --app-url https://spine.example.com --behind-proxy
 ```
 
-On Linux, copy `caddy-root.crt` to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`; Firefox keeps its own list (**Settings › Privacy & Security › Certificates › Import**). Phones don't trust it unless you install it on each one, so for the field app use a real domain. Spine tells browsers to use only HTTPS for its address (HSTS), so once you've opened `https://localhost`, the browser opens `localhost` over HTTPS for other projects too.
+`--behind-proxy` sets `TRUSTED_PROXIES=private_ranges`, so Caddy believes the front proxy's `X-Forwarded-For` and Spine sees each visitor's own address (its rate limits count per visitor). On a machine that runs several apps, this is the usual set-up: one proxy holds ports 80 and 443 and sends each domain to its app's port. On Coolify, the Compose file does this for you: see [Running on Coolify](../coolify/).
 
-Not on an IP address: with `APP_URL=https://192.168.1.20`, browsers stop with `ERR_SSL_PROTOCOL_ERROR` ("sent an invalid response"), and `http://192.168.1.20` redirects there too. A browser sends no name when it opens an IP address over HTTPS, and inside Docker Caddy can't tell which certificate to use. For an IP address, use `http://`. For HTTPS on your network, use a name in each computer's hosts file instead.
+**Cloudflare Tunnel:** `--profile full` adds a Cloudflare Tunnel without opening any port. Set `CLOUDFLARE_TUNNEL_TOKEN` in `.env` from your Cloudflare dashboard, point the tunnel's public hostname at `http://caddy:7746`, and install with `--app-url https://<that hostname> --behind-proxy --profile full`.
 
-## Another port
+## Changing how Spine is reached
 
-When ports 80 and 443 are in use, `./install.sh --port 8080` puts Spine on that port: the port goes in the address (`http://localhost:8080`, or `https://localhost:8443`), and `docker-compose.override.yml` publishes it instead of 80 and 443 ([Install](../install/#port-80-already-in-use)). To change the port of an install, change it in `APP_URL`, `API_URL` and `docker-compose.override.yml` together:
+All of this lives in `.env` (and, for a domain, `docker-compose.override.yml`). Change it, then run `docker compose --profile minimal up -d`:
 
-```yaml
-services:
-  caddy:
-    ports: !override
-      - "8080:8080"
-```
+| Setting | What it does |
+|---|---|
+| `APP_URL`, `API_URL` | The address in links, and `<that address>/api` |
+| `SPINE_PORT` | The port Spine opens on at any address (`7746`), or `127.0.0.1:7746` for this machine only |
+| `SITE_ADDRESS` | What Caddy serves: `:7746` by default; `spine.example.com, :7746` to get the domain's certificate (with ports 80 and 443 published in `docker-compose.override.yml`) |
+| `TRUSTED_PROXIES` | The proxies Caddy believes about visitors' addresses: `private_ranges` behind a proxy |
 
-Then run `docker compose --profile minimal up -d`. Without `!override`, Docker adds the port and still takes 80 and 443. A domain on another port can't get a Let's Encrypt certificate, which needs ports 80 and 443; put Spine behind the proxy that holds them ([Behind another proxy](#behind-another-proxy)), or use a Cloudflare Tunnel.
+Links in emails you've already sent keep the address they were sent with.

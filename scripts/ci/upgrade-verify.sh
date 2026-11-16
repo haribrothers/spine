@@ -112,6 +112,8 @@ cp "$repo/docker/Caddyfile" "$repo/scripts/install.sh" "$repo/scripts/backup.sh"
 
 step "Compare"
 grep -qx "SPINE_VERSION=$version" .env || fail ".env doesn't name $version"
+# D-279: an install from before SPINE_PORT keeps its port (80, from --non-interactive's http://localhost).
+grep -qx "SPINE_PORT=80" .env || fail "the upgrade didn't keep port 80 (SPINE_PORT=80 in .env)"
 wait_for_pdfs
 sign_in
 after_tb=$(trial_balance)

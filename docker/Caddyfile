@@ -1,16 +1,18 @@
-# Spine's front door: one address for the web app and the API.
-# SITE_ADDRESS is the address (APP_URL by default, so Caddy gets the HTTPS
-# certificate itself), or `:80` behind another proxy that handles HTTPS, such
-# as Coolify's (docs/self-hosting-coolify.md). TRUSTED_PROXIES lists the
-# proxies whose X-Forwarded-For Caddy believes, so the API sees each
-# visitor's own address (`private_ranges` behind such a proxy).
+# Spine's front door: one address for the web app and the API (D-279).
+# SITE_ADDRESS is what Caddy serves. By default `:7746`: plain HTTP on port
+# 7746 for any address (localhost, this machine's IP, a name), published as
+# SPINE_PORT. With a domain, `spine.example.com, :7746`: Caddy also gets the
+# domain's HTTPS certificate on 443. Behind Coolify's proxy, `:80`
+# (docs/self-hosting-coolify.md). TRUSTED_PROXIES lists the proxies whose
+# X-Forwarded-For Caddy believes, so the API sees each visitor's own address
+# (`private_ranges` behind such a proxy).
 {
 	servers {
 		trusted_proxies static {$TRUSTED_PROXIES:127.0.0.1/32}
 	}
 }
 
-{$SITE_ADDRESS:localhost} {
+{$SITE_ADDRESS::7746} {
 	# Sign-in (Better Auth) keeps its path: the API serves it at /api/auth.
 	handle /api/auth/* {
 		reverse_proxy api:4000

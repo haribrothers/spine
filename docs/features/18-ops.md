@@ -39,8 +39,12 @@ Legacy: S-10.7
 - **Given** `.env` already exists, **when** I run the script again, **then** it doesn't overwrite it and just starts the services.
 - **Given** a stopwatch from `git clone` to the first issued invoice on a machine with Docker, **when** a new user follows only the README, **then** it takes under 5 minutes (NFR-MNT-01).
 - **Given** a missing prerequisite, **when** the script runs, **then** it exits non-zero with a message naming what to install.
-- **Given** ports 80 and 443 are in use, **when** I run `./install.sh --app-url http://localhost --port 8080` (or give the port in the address), **then** `APP_URL` and `API_URL` carry the port, `docker-compose.override.yml` publishes that port instead of 80 and 443, and Spine opens at `http://localhost:8080`. A port that isn't 1–65535, two different ports, Compose older than 2.24.4 or an existing `docker-compose.override.yml` stop it before anything is written ([D-279](../prd/12-decisions.md)).
-- **Given** `.env` already exists, **when** I pass `--app-url` or `--port`, **then** nothing changes and it says to change `APP_URL` and `API_URL` in `.env` instead.
+- **Given** a computer or office network, **when** I run `./install.sh`, **then** Spine opens on port 7746 at any address, over plain HTTP with no redirect: `http://localhost:7746` on that machine and `http://<its IP>:7746` from other devices, with sign-in working at each. It asks for the address for links (`APP_URL`), suggesting this machine's IP, and the summary names the other addresses it opens at ([D-279](../prd/12-decisions.md)).
+- **Given** port 7746 is taken, **when** I add `--port 8080` (or give the port in the address), **then** `SPINE_PORT` and `APP_URL` carry that port. A port that isn't 1–65535 or two different ports stop it before anything is written.
+- **Given** a domain, **when** I run `./install.sh --app-url https://spine.example.com`, **then** Caddy gets its HTTPS certificate on ports 80 and 443 (published in `docker-compose.override.yml`, never overwriting one that's there) and port 7746 is kept to the machine. An `https://` address on localhost, an IP or a `.local` name, or a domain with another port, stops it with what to use instead.
+- **Given** HTTPS is handled in front (Tailscale, a Cloudflare Tunnel, a proxy), **when** I add `--behind-proxy`, **then** Spine stays on its port and believes the proxy's `X-Forwarded-For`.
+- **Given** a page on another site, or on another device's address, **when** it tries to sign in or act with someone's session, **then** it's refused: sign-in trusts `APP_URL` and the local address a request came to, never a public name that isn't `APP_URL`.
+- **Given** `.env` already exists, **when** I pass `--app-url`, `--port` or `--behind-proxy`, **then** nothing changes and it says to change `APP_URL`, `API_URL` and `SPINE_PORT` in `.env` instead.
 
 **Implementation notes**
 - New `scripts/install.sh` (POSIX shell, shellcheck-clean); the published `docker-compose.yml` pulls `ghcr.io/haribrothers/spine-api` and `spine-web` at the release's version ([D-262](../prd/12-decisions.md)); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).
@@ -824,6 +828,7 @@ Decision: D-264
 - **Given** two API containers starting together, **when** both find migrations to apply, **then** only one applies them and the other waits.
 - **Given** the previous release's install with demo data, **when** CI upgrades it to this version, **then** it starts, and the trial balance and the file count are unchanged (NFR-MNT-02).
 - **Given** a beta install, **when** it's upgraded to the next beta or to 1.0, **then** everyone's data carries over ([D-265](../prd/12-decisions.md)).
+- **Given** an install from before `SPINE_PORT` ([D-279](../prd/12-decisions.md)), **when** it's upgraded, **then** it keeps how it was reached: its port (`SPINE_PORT=80` for `http://localhost`), or for an `https://` address its certificate on ports 80 and 443 (`SITE_ADDRESS` and `docker-compose.override.yml`). Someone's own override file without those ports stops the upgrade before anything changes.
 
 **Implementation notes**
 - Drizzle's migrator at boot under a Postgres advisory lock; snapshots are `pg_dump` files in the backups volume. CI job `upgrade-verify` on `v*` tags, using `install.sh --non-interactive`.

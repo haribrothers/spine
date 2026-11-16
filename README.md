@@ -46,16 +46,20 @@ for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile
 done
 ```
 
-**2. Run the installer** from that folder, with the address people will open Spine at:
+**2. Run the installer** from that folder:
 
 ```bash
 chmod +x *.sh
-./install.sh --app-url https://spine.example.com
+./install.sh
 ```
 
-Trying it on your own computer? Use `--app-url http://localhost` instead, or `http://<this computer's IP address>` to open it from other devices on your network. Spine then runs on plain HTTP, which is fine for trying it out; the field app and browser notifications need a real domain with HTTPS. Is port 80 already in use? Add `--port 8080`, and Spine opens at `http://localhost:8080`. A name like `spine.local` only opens once it's in your computer's hosts file ([HTTPS and domains](https://spine.h4loom.com/docs/self-hosting/https-and-domains/)).
+Spine opens on port **7746**, at any address: `http://localhost:7746` on that computer, and `http://<its IP address>:7746` from the other devices on your network, over plain HTTP. The installer asks for the address to put in links (emails, PDFs, invitations) and suggests the computer's IP, so the people you send them to can open them; reserve that IP for the computer in your router so it doesn't change. Port 7746 taken? Add `--port 8080`.
 
-It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. `.env` is Spine's settings file, in the same folder (`ls -a` shows it): the address, the secrets and every other [setting](https://spine.h4loom.com/docs/self-hosting/configuration/). Running `./install.sh` again keeps it as it is, `--app-url` and `--port` included; to change the address later, change `APP_URL` and `API_URL` in it and run `docker compose --profile minimal up -d`. Keep a copy somewhere safe: restoring a backup needs its `AUTH_SECRET`. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
+On a server with a domain, `./install.sh --app-url https://spine.example.com`: Caddy then gets the HTTPS certificate on ports 80 and 443. The field app and browser notifications need HTTPS. Without a domain, [Tailscale](https://spine.h4loom.com/docs/self-hosting/https-and-domains/#https-without-a-domain-tailscale) gives you one with `--behind-proxy`.
+
+The installer writes `.env`, Spine's settings file, in the same folder (`ls -a` shows it): the address, the port, the secrets and every other [setting](https://spine.h4loom.com/docs/self-hosting/configuration/). Running `./install.sh` again keeps it as it is; to change the address later, change `APP_URL` and `API_URL` in it and run `docker compose --profile minimal up -d`. Keep a copy somewhere safe: restoring a backup needs its `AUTH_SECRET`.
+
+Then open the address it prints and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
 
 ## Back up and restore
 

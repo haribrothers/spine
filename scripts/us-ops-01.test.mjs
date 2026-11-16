@@ -98,13 +98,14 @@ describe("US-OPS-01 · install Spine with one command", () => {
     assert.notEqual(value(a.env(), "AUTH_SECRET"), value(b.env(), "AUTH_SECRET"));
   });
 
-  it("asks nothing with --non-interactive or APP_URL set, defaulting to http://localhost", () => {
+  it("asks nothing with --non-interactive or APP_URL set, defaulting to http://localhost:7746", () => {
     const quiet = setup();
     assert.equal(quiet.run(["--non-interactive"]).status, 0);
-    assert.equal(value(quiet.env(), "APP_URL"), "http://localhost");
+    assert.equal(value(quiet.env(), "APP_URL"), "http://localhost:7746");
+    assert.equal(value(quiet.env(), "SPINE_PORT"), "7746");
     const fromEnv = setup();
     assert.equal(fromEnv.run([], { APP_URL: "http://192.168.1.20" }).status, 0);
-    assert.equal(value(fromEnv.env(), "API_URL"), "http://192.168.1.20/api");
+    assert.equal(value(fromEnv.env(), "API_URL"), "http://192.168.1.20:7746/api");
   });
 
   it("with .env already there, doesn't change it and just starts Spine", () => {
@@ -149,72 +150,96 @@ describe("US-OPS-01 · install Spine with one command", () => {
     assert.match(notStarted.stderr, /Spine didn't start\. See why with: docker compose logs api/);
   });
 
-  it("with --port, puts the port in the address and publishes it instead of 80 and 443", () => {
+  it("on your network: one port at any address, plain HTTP, the port in the address and no override", () => {
     const { run, env, dir } = setup();
-    const result = run(["--app-url", "http://localhost", "--port", "8080"]);
+    const result = run(["--app-url", "http://10.85.0.30"]);
     assert.equal(result.status, 0, result.stderr);
-    assert.equal(value(env(), "APP_URL"), "http://localhost:8080");
-    assert.equal(value(env(), "API_URL"), "http://localhost:8080/api");
-    const written = readFileSync(override(dir), "utf8");
-    assert.match(written, /^services:\n {2}caddy:\n {4}ports: !override\n {6}- "8080:8080"$/m);
-    assert.match(result.stdout, /Wrote docker-compose\.override\.yml: Spine uses port 8080 instead of 80 and 443\./);
-    assert.match(result.stdout, /Spine is running at http:\/\/localhost:8080 — open it/);
-    assert.match(result.calls, /^compose --profile minimal up -d --no-build --wait/m);
+    assert.equal(value(env(), "APP_URL"), "http://10.85.0.30:7746");
+    assert.equal(value(env(), "API_URL"), "http://10.85.0.30:7746/api");
+    assert.equal(value(env(), "SPINE_PORT"), "7746");
+    assert.equal(value(env(), "SITE_ADDRESS"), undefined);
+    assert.equal(existsSync(override(dir)), false);
+    assert.match(result.stdout, /Spine is running at http:\/\/10\.85\.0\.30:7746 — open it/);
+    assert.match(result.stdout, /It also opens at http:\/\/localhost:7746 on this machine/);
   });
 
-  it("a port written in the address works the same, with or without --port", () => {
-    for (const args of [["--app-url", "https://localhost:8443"], ["--app-url=https://localhost:8443", "--port=8443"], ["--port", "8443"]]) {
+  it("--port, or a port in the address, is the port Spine opens on; port 80 stays out of the address", () => {
+    for (const [args, url, port] of [
+      [["--port", "8080", "--non-interactive"], "http://localhost:8080", "8080"],
+      [["--app-url", "http://192.168.1.20:9000"], "http://192.168.1.20:9000", "9000"],
+      [["--app-url=http://192.168.1.20:9000", "--port=9000"], "http://192.168.1.20:9000", "9000"],
+      [["--app-url", "http://spine.local", "--port", "80"], "http://spine.local", "80"],
+    ]) {
       const { run, env, dir } = setup();
-      const result = run(args, args[0] === "--port" ? { APP_URL: "https://localhost" } : {});
+      const result = run(args);
       assert.equal(result.status, 0, `${args.join(" ")}: ${result.stderr}`);
-      assert.equal(value(env(), "APP_URL"), "https://localhost:8443", args.join(" "));
-      assert.match(readFileSync(override(dir), "utf8"), /- "8443:8443"/, args.join(" "));
-    }
-  });
-
-  it("the usual ports, 80 for http and 443 for https, need no override", () => {
-    for (const args of [["--app-url", "http://localhost"], ["--app-url", "http://localhost", "--port", "80"], ["--app-url", "https://spine.example.com:443"]]) {
-      const { run, dir } = setup();
-      assert.equal(run(args).status, 0, args.join(" "));
+      assert.equal(value(env(), "APP_URL"), url, args.join(" "));
+      assert.equal(value(env(), "SPINE_PORT"), port, args.join(" "));
       assert.equal(existsSync(override(dir)), false, args.join(" "));
     }
   });
 
-  it("refuses a port that isn't one, or two different ports, before writing anything", () => {
+  it("the summary names this machine's IP when it can tell, for the other devices on the network", () => {
+    const { run, dir } = setup();
+    writeFileSync(join(dir, "bin", "ipconfig"), '#!/bin/sh\n[ "$2" = en0 ] && echo 10.85.0.30\n');
+    chmodSync(join(dir, "bin", "ipconfig"), 0o755);
+    const result = run(["--non-interactive"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /It also opens at http:\/\/localhost:7746 on this machine, and at http:\/\/10\.85\.0\.30:7746 from other devices on your network\./);
+  });
+
+  it("with a domain: HTTPS from Caddy on 80 and 443, the plain port kept to this machine", () => {
+    const { run, env, dir } = setup();
+    const result = run(["--app-url", "https://spine.example.com"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(value(env(), "APP_URL"), "https://spine.example.com");
+    assert.equal(value(env(), "SITE_ADDRESS"), "spine.example.com, :7746");
+    assert.equal(value(env(), "SPINE_PORT"), "127.0.0.1:7746");
+    assert.match(readFileSync(override(dir), "utf8"), /^services:\n {2}caddy:\n {4}ports:\n {6}- "80:80"\n {6}- "443:443"$/m);
+    assert.match(result.stdout, /Wrote docker-compose\.override\.yml: Caddy takes ports 80 and 443 for spine\.example\.com's certificate\./);
+    assert.doesNotMatch(result.stdout, /It also opens at/);
+  });
+
+  it("behind something that handles HTTPS (Tailscale, a tunnel, a proxy): Spine stays on its port and believes the proxy", () => {
+    const { run, env, dir } = setup();
+    const result = run(["--app-url", "https://spine.tail1234.ts.net", "--behind-proxy"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(value(env(), "APP_URL"), "https://spine.tail1234.ts.net");
+    assert.equal(value(env(), "SPINE_PORT"), "7746");
+    assert.equal(value(env(), "SITE_ADDRESS"), undefined);
+    assert.equal(value(env(), "TRUSTED_PROXIES"), "private_ranges");
+    assert.equal(existsSync(override(dir)), false);
+  });
+
+  it("refuses what can't work, before writing anything", () => {
     for (const [args, message] of [
-      [["--app-url", "http://localhost", "--port", "web"], /--port must be a number from 1 to 65535 \(got: web\)/],
-      [["--app-url", "http://localhost", "--port", "70000"], /--port must be a number from 1 to 65535/],
+      [["--port", "web", "--non-interactive"], /--port must be a number from 1 to 65535 \(got: web\)/],
+      [["--port", "70000", "--non-interactive"], /--port must be a number from 1 to 65535/],
       [["--app-url", "http://localhost:0"], /The address's port must be a number from 1 to 65535/],
       [["--app-url", "http://localhost:8080", "--port", "9090"], /already has port 8080, and --port says 9090\. Give the port once\./],
+      [["--app-url", "https://10.85.0.30"], /10\.85\.0\.30 can't get an HTTPS certificate: it isn't a domain on the internet\. Use http:\/\/10\.85\.0\.30:7746, or for HTTPS without a domain, Tailscale/],
+      [["--app-url", "https://localhost"], /localhost can't get an HTTPS certificate/],
+      [["--app-url", "https://spine.local"], /spine\.local can't get an HTTPS certificate/],
+      [["--app-url", "https://spine.example.com:8443"], /Caddy needs ports 80 and 443 to get the certificate, so the address can't have port 8443\. .*--behind-proxy/],
       [["--port"], /--port needs a number/],
     ]) {
       const { run, dir } = setup();
       const result = run(args);
       assert.equal(result.status, 1, args.join(" "));
-      assert.match(result.stderr, message);
+      assert.match(result.stderr, message, args.join(" "));
       assert.equal(existsSync(join(dir, ".env")), false, args.join(" "));
       assert.equal(existsSync(override(dir)), false, args.join(" "));
     }
   });
 
-  it("another port needs Compose 2.24.4 or newer, and never overwrites a docker-compose.override.yml", () => {
-    const old = setup();
-    const tooOld = old.run(["--port", "8080", "--non-interactive"], { FAKE_COMPOSE_VERSION: "2.24.3" });
-    assert.equal(tooOld.status, 1);
-    assert.match(tooOld.stderr, /Docker Compose 2\.24\.3 can't publish Spine on another port\. Update to Compose 2\.24\.4 or newer/);
-    assert.equal(existsSync(join(old.dir, ".env")), false);
-    for (const version of ["2.24.4", "v2.29.7-desktop.1", "5.5.0"]) {
-      assert.equal(setup().run(["--port", "8080", "--non-interactive"], { FAKE_COMPOSE_VERSION: version }).status, 0, version);
-    }
-    assert.equal(setup().run(["--non-interactive"], { FAKE_COMPOSE_VERSION: "2.20.0" }).status, 0);
-
-    const mine = setup();
-    writeFileSync(override(mine.dir), "services: {}\n");
-    const kept = mine.run(["--port", "8080", "--non-interactive"]);
-    assert.equal(kept.status, 1);
-    assert.match(kept.stderr, /docker-compose\.override\.yml is already here.*"8080:8080"/);
-    assert.equal(readFileSync(override(mine.dir), "utf8"), "services: {}\n");
-    assert.equal(existsSync(join(mine.dir, ".env")), false);
+  it("a domain never overwrites a docker-compose.override.yml that's already there", () => {
+    const { run, dir } = setup();
+    writeFileSync(override(dir), "services: {}\n");
+    const result = run(["--app-url", "https://spine.example.com"]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /docker-compose\.override\.yml is already here.*"80:80" and "443:443"/);
+    assert.equal(readFileSync(override(dir), "utf8"), "services: {}\n");
+    assert.equal(existsSync(join(dir, ".env")), false);
   });
 
   it("with .env already there, --app-url and --port change nothing and it says how to change the address", () => {
@@ -224,19 +249,30 @@ describe("US-OPS-01 · install Spine with one command", () => {
     assert.equal(result.status, 0, result.stderr);
     assert.equal(readFileSync(join(dir, ".env"), "utf8"), "APP_URL=http://spine.local\nAUTH_SECRET=mine\n");
     assert.equal(existsSync(override(dir)), false);
-    assert.match(result.stdout, /--app-url and --port only apply when there's no \.env yet/);
-    assert.match(result.stdout, /change APP_URL and API_URL in \.env/);
+    assert.match(result.stdout, /--app-url, --port and --behind-proxy only apply when there's no \.env yet/);
+    assert.match(result.stdout, /change APP_URL and API_URL in \.env; to change the port, SPINE_PORT/);
     assert.match(result.stdout, /running at http:\/\/spine\.local/);
     assert.doesNotMatch(setup().run(["--non-interactive"]).stdout, /only apply when/);
   });
 
-  it("Docker Compose reads the override: Caddy publishes only the new port and serves the address with it", { skip: !realCompose && "no docker compose here" }, () => {
-    const { run, dir } = setup();
-    assert.equal(run(["--app-url", "http://localhost", "--port", "8080"]).status, 0);
-    const config = spawnSync("docker", ["compose", "--profile", "minimal", "config", "--format", "json"], { cwd: dir, encoding: "utf8" });
-    assert.equal(config.status, 0, config.stderr);
-    const caddy = JSON.parse(config.stdout).services.caddy;
-    assert.deepEqual(caddy.ports.map((p) => `${p.published}:${p.target}`), ["8080:8080"]);
-    assert.equal(caddy.environment.SITE_ADDRESS, "http://localhost:8080");
+  it("says what to do when another program has the port", () => {
+    const result = setup().run(["--non-interactive"], { FAKE_UP_EXIT: "1" });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /"port is already allocated" means another program has the port: install with --port <another>, or change SPINE_PORT in \.env\./);
+  });
+
+  it("Docker Compose reads it as intended: Caddy publishes Spine's port, or 80 and 443 too for a domain", { skip: !realCompose && "no docker compose here" }, () => {
+    const published = (dir) => {
+      const config = spawnSync("docker", ["compose", "--profile", "minimal", "config", "--format", "json"], { cwd: dir, encoding: "utf8" });
+      assert.equal(config.status, 0, config.stderr);
+      const caddy = JSON.parse(config.stdout).services.caddy;
+      return { ports: caddy.ports.map((p) => `${p.host_ip ? `${p.host_ip}:` : ""}${p.published}:${p.target}`).sort(), site: caddy.environment.SITE_ADDRESS };
+    };
+    const lan = setup();
+    assert.equal(lan.run(["--app-url", "http://10.85.0.30", "--port", "8080"]).status, 0);
+    assert.deepEqual(published(lan.dir), { ports: ["8080:7746"], site: ":7746" });
+    const domain = setup();
+    assert.equal(domain.run(["--app-url", "https://spine.example.com"]).status, 0);
+    assert.deepEqual(published(domain.dir), { ports: ["127.0.0.1:7746:7746", "443:443", "80:80"], site: "spine.example.com, :7746" });
   });
 });

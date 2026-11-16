@@ -67,11 +67,14 @@ services:
     depends_on:
       - web
       - api
+    # D-279: one port, plain HTTP, for any address (http://localhost:7746 and
+    # http://<this machine's IP>:7746). SPINE_PORT picks another port, or
+    # 127.0.0.1:7746 for this machine only. With a domain, ./install.sh also
+    # publishes 80 and 443 in docker-compose.override.yml for the certificate.
     ports:
-      - "80:80"
-      - "443:443"
+      - "${SPINE_PORT:-7746}:7746"
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:-${APP_URL:-localhost}}
+      SITE_ADDRESS: ${SITE_ADDRESS:-:7746}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
     volumes:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile

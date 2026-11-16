@@ -17,6 +17,12 @@ describe("US-OPS-19 · the README gets a stranger to an install", () => {
       assert.ok(text.includes(`v=v${version}\n`), `${page} downloads v${version}`);
       assert.ok(text.includes('curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"'), `${page} downloads each file with curl`);
     }
+    // The home page's install commands (US-SITE-02) are the same, one per line.
+    const home = read("apps/site/src/locales/en/home.ts");
+    assert.ok(home.includes(`"v=v${version}"`), `the home page downloads v${version}`);
+    assert.ok(home.includes('curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"'), "the home page downloads each file with curl");
+    for (const file of FILES) assert.ok(home.includes(` ${file}`), `the home page downloads ${file}`);
+    assert.doesNotMatch(home, /gh release download/, "the home page doesn't use gh, which needs signing in and skips betas");
   });
 
   it("lists every file an install needs, and the release workflow publishes each of them", () => {
@@ -28,7 +34,13 @@ describe("US-OPS-19 · the README gets a stranger to an install", () => {
     for (const file of ["Caddyfile", "env.example", "docker-compose.yml", "install.sh"]) assert.ok(workflow.includes(file), `the release publishes ${file}`);
   });
 
-  it("says how to install on your own computer", () => {
-    for (const page of PAGES) assert.ok(read(page).includes("--app-url http://localhost"), `${page} explains a local install`);
+  it("says how Spine opens on your network, on another port and with a domain (D-279)", () => {
+    for (const page of PAGES) {
+      const text = read(page);
+      assert.ok(text.includes("http://localhost:7746"), `${page} gives the address on this computer`);
+      assert.match(text, /http:\/\/<its IP address>:7746/, `${page} gives the address from other devices`);
+      assert.ok(text.includes("--port 8080"), `${page} says how to use another port`);
+      assert.ok(text.includes("--app-url https://spine.example.com"), `${page} says how to install with a domain`);
+    }
   });
 });

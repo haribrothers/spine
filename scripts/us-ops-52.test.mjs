@@ -39,7 +39,8 @@ describe("US-OPS-52 · Spine on Coolify", () => {
 
   it("offers every setting .env.example has, and keeps the API's volumes and healthcheck", () => {
     const example = [...read(".env.example").matchAll(/^#? ?([A-Z][A-Z0-9_]+)=/gm)].map((m) => m[1]);
-    const notHere = new Set(["CLOUDFLARE_TUNNEL_TOKEN", "FILES_DIR", "NODE_ENV", "POSTGRES_PASSWORD"]);
+    // SPINE_PORT is the port Docker publishes for Caddy (D-279); behind Coolify nothing is published.
+    const notHere = new Set(["CLOUDFLARE_TUNNEL_TOKEN", "FILES_DIR", "NODE_ENV", "POSTGRES_PASSWORD", "SPINE_PORT"]);
     const api = service(coolify, "api");
     for (const key of example.filter((k) => !notHere.has(k))) assert.match(api, new RegExp(`^ {6}${key}: `, "m"), key);
     for (const volume of ["spine_files:/data/files", "spine_snapshots:/data/snapshots"]) assert.ok(api.includes(volume), volume);

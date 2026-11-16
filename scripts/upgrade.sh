@@ -8,8 +8,9 @@
 # It backs up first (./backup.sh), takes the new version's release files
 # (checked against their SHA-256 sums), pulls its images and restarts. The API
 # then applies the new version's database migrations, after a snapshot.
-# Your .env is kept; only SPINE_VERSION in it changes. Spine never goes back a
-# version: to return to an older one, restore a backup made on it.
+# Your .env is kept; only SPINE_VERSION in it changes (and, once, the port an
+# install from before D-279 already used). Spine never goes back a version: to
+# return to an older one, restore a backup made on it.
 # In a clone, check out the version's tag first (git checkout v<version>).
 set -eu
 
@@ -59,7 +60,7 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     -h | --help)
-      sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) fail "Unknown option: $1 (see ./upgrade.sh --help)" ;;
@@ -149,6 +150,35 @@ if [ "$layout" = release ]; then
   fi
 fi
 
+# --- The address (D-279) ----------------------------------------------------
+
+# Spine now opens on SPINE_PORT (7746 for a new install). An install from
+# before it keeps how it was reached: its port, or its domain's certificate on
+# ports 80 and 443. Worked out now, written after the backup.
+address_port=
+address_site=
+address_override=0
+if ! grep -q '^SPINE_PORT=' .env; then
+  old_url=$(sed -n 's/^APP_URL=//p' .env | tail -n 1)
+  old_site=$(sed -n 's/^SITE_ADDRESS=//p' .env | tail -n 1)
+  case $old_site in
+    :[0-9]*) address_port=${old_site#:} ;;
+    ?*) address_port=127.0.0.1:7746 address_site="$old_site, :7746" address_override=1 ;;
+    *)
+      host_port=${old_url#*://}
+      host_port=${host_port%%/*}
+      case $old_url in
+        https://*) address_port=127.0.0.1:7746 address_site="${host_port%:443}, :7746" address_override=1 ;;
+        http://*:*) address_port=${host_port##*:} ;;
+        *) address_port=80 ;;
+      esac
+      ;;
+  esac
+  if [ "$address_override" -eq 1 ] && [ -e docker-compose.override.yml ] && ! grep -q '"443:443"' docker-compose.override.yml; then
+    fail "Spine $target publishes ports 80 and 443 for your domain from docker-compose.override.yml, and yours doesn't. Add \"80:80\" and \"443:443\" under ports: for the caddy service in it, then run this again. Nothing was changed."
+  fi
+fi
+
 # --- Back up, then switch ---------------------------------------------------
 
 say "Backing up before the upgrade…"
@@ -172,6 +202,32 @@ if grep -q '^SPINE_VERSION=' .env; then
   awk -v v="$target" '/^SPINE_VERSION=/ { print "SPINE_VERSION=" v; next } { print }' .env >.env.next && cat .env.next >.env && rm -f .env.next
 else
   printf '\n# The installed version (./upgrade.sh sets it).\nSPINE_VERSION=%s\n' "$target" >>.env
+fi
+
+if [ -n "$address_port" ]; then
+  awk '!/^SITE_ADDRESS=/' .env >.env.next && cat .env.next >.env && rm -f .env.next
+  {
+    printf '\n# How Spine is reached (D-279; ./upgrade.sh kept your address). SPINE_PORT is the\n'
+    printf '# port Spine opens on at any address, or 127.0.0.1:<port> for this machine only.\n'
+    printf 'SPINE_PORT=%s\n' "$address_port"
+    [ -z "$address_site" ] || printf '# Caddy gets the HTTPS certificate for the domain (ports 80 and 443).\nSITE_ADDRESS=%s\n' "$address_site"
+  } >>.env
+  if [ "$address_override" -eq 1 ] && [ ! -e docker-compose.override.yml ]; then
+    cat >docker-compose.override.yml <<'EOF'
+# Written by upgrade.sh (D-279): Spine has a domain, so Caddy also takes ports
+# 80 and 443 to get and serve its HTTPS certificate. Docker Compose reads this
+# file along with docker-compose.yml.
+services:
+  caddy:
+    ports:
+      - "80:80"
+      - "443:443"
+EOF
+  fi
+  case $address_port in
+    127.0.0.1:*) say "Kept your domain: Caddy still takes ports 80 and 443 (docker-compose.override.yml)." ;;
+    *) say "Kept your address: Spine stays on port $address_port (SPINE_PORT in .env)." ;;
+  esac
 fi
 
 profile=minimal

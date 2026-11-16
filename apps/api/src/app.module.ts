@@ -61,7 +61,9 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     // acceptable since this is a single-process deployment, so in-memory
     // state doesn't need to be shared across instances.
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
-    AuthModule.forRoot({ auth, isGlobal: true }),
+    // D-279: Better Auth's trusted origins are decided per request (APP_URL and the local address a
+    // request came to), which the module can't turn into CORS; main.ts's enableCors({ origin: APP_URL }) is the CORS rule.
+    AuthModule.forRoot({ auth, isGlobal: true, disableTrustedOriginsCors: true }),
     DbModule,
     QueueModule,
     EmailModule,
