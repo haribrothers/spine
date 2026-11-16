@@ -5503,6 +5503,7 @@ Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and no
 7. A backup from a newer Spine (for example a 1.1 archive on 1.0): "This backup is from Spine 1.1.0, which is newer than this install… Upgrade this install to 1.1.0 or later first". A backup from an older Spine restores, and the API brings it up to date on start ("Applied N database migrations").
 8. `scripts/ci/restore-verify.sh` (with this version's images built) passes: "the trial balance and all <n> files match". CI runs it on every release tag before publishing.
 9. Regression: `./backup.sh` and Spine's start-up behave as before.
+10. `--new-secret`: back up, set a different `AUTH_SECRET` in `.env`, `docker compose --profile minimal up -d`, then `./restore.sh <archive> --replace --new-secret`. It prints "Clearing the sign-in keys made with the old AUTH_SECRET…"; then sign in with an account from the backup: the dashboard opens and stays signed in (before this, every page after sign-in failed with "Failed to decrypt private key" in the API's log).
 
 ## 263. Upgrade Spine with one command (US-OPS-50, Phase 12)
 

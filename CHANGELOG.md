@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-16 — Fix: after a restore with --new-secret, signing in works again (US-OPS-04)
+
+- **What happened:** restoring a backup into an install with a different `AUTH_SECRET` (`./restore.sh --new-secret`) kept Better Auth's signing keys (`jwks`), which are encrypted with the old secret. Sign-in succeeded, then every page that read the session failed, with "Failed to decrypt private key" in the API's log. Found while moving an install into Runtipi.
+- **Now:** when the backup's secret isn't this install's, the restore clears those keys ("Clearing the sign-in keys made with the old AUTH_SECRET…"), Better Auth makes new ones on first use, and everyone signs in again. With the same secret, the keys come back as before.
+- The refusal message no longer mentions two-factor sign-in, which Spine doesn't have; the backups page says everyone signs in again after `--new-secret`.
+- Test: `us-ops-04.integration.test.ts` restores with another secret and checks the keys are cleared, and kept with the same secret.
+
 ### 2026-11-16 — Run Spine from a Docker panel: Portainer, Synology, TrueNAS, Dokploy, Easypanel (US-OPS-53, D-281)
 
 - **Why:** panels that take a pasted Compose file have no `.env` beside it and pass no `--profile`, so the main file started nothing there.

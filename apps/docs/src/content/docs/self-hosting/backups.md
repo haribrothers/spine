@@ -65,7 +65,7 @@ Spine stops while it restores and starts again with the backup's data. Everythin
 2. Put the old install's `AUTH_SECRET` in the new `.env` (stored keys are encrypted with it), then restart.
 3. Run `./restore.sh <archive>`.
 
-If the old `AUTH_SECRET` is lost, `./restore.sh <archive> --new-secret` restores anyway; connected AI keys and other stored secrets then need entering again.
+If the old `AUTH_SECRET` is lost, `./restore.sh <archive> --new-secret` restores anyway: everyone signs in again, and connected AI keys and other stored secrets need entering again.
 
 :::caution[Don't delete the volumes]
 `docker compose down -v` deletes your database and files. Use `docker compose down` to stop Spine.
