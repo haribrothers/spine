@@ -87,4 +87,4 @@ To restore a backup into a fresh Coolify deployment, or onto a plain server:
 
 ## Other platforms
 
-For Portainer, Synology Container Manager, TrueNAS, Dokploy, Easypanel and other panels that take a pasted Compose file, use `docker-compose.panels.yml`: see [Docker panels](../docker-panels/).
+For Portainer, Dockge, Synology Container Manager, TrueNAS, Dokploy, Easypanel and other panels that take a pasted Compose file, use `docker-compose.panels.yml`; Runtipi installs Spine from its own app store. See [Docker panels](../docker-panels/).

@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-16 — Spine for Runtipi, and Dockge on the Docker panels page (US-OPS-53, D-282)
+
+- **Runtipi** installs only from app stores, so Spine has its own: [github.com/haribrothers/spine-runtipi](https://github.com/haribrothers/spine-runtipi). The same four containers from the published images; Runtipi generates the secret, the database password and the notification keys, and asks for the address for links. The proxy is the main service on port 7746, so Runtipi's local subdomain (`https://spine.<local domain>`) or a domain reaches it. The store's README also moves an existing install in: a backup, then a one-off restore into Runtipi's Spine.
+- **Checked** against Runtipi's published schemas and its compose builder: the generated file ran on a Mac, Spine opened and signed up, and the README's migration commands, run as written, brought a backup's data back with sign-in working. Not yet on a real Runtipi.
+- **Docker panels page:** new **Dockge** and **Runtipi** sections; the install page, README and Coolify page list them.
+- **Release guide:** step 7 bumps the Runtipi store after each release.
+
 ### 2026-11-16 — Fix: after a restore with --new-secret, signing in works again (US-OPS-04)
 
 - **What happened:** restoring a backup into an install with a different `AUTH_SECRET` (`./restore.sh --new-secret`) kept Better Auth's signing keys (`jwks`), which are encrypted with the old secret. Sign-in succeeded, then every page that read the session failed, with "Failed to decrypt private key" in the API's log. Found while moving an install into Runtipi.
