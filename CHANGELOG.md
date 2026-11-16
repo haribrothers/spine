@@ -86,7 +86,8 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - **The image:** `docker/Dockerfile.proxy` is `caddy:2-alpine` plus Spine's Caddyfile. Each release builds it for amd64 and arm64 and tags it with the version, as `ghcr.io/haribrothers/spine-proxy`, next to `spine-api` and `spine-web`. Both Compose files run it; the service is still `caddy`, so installs, the tunnel, Coolify and the certificate volumes don't change.
 - **Unchanged:** the port (`SPINE_PORT`), a domain (`SITE_ADDRESS` with ports 80 and 443) and `TRUSTED_PROXIES` still come from `.env`.
 - **The Coolify file** loses its inline Caddyfile, and the test that kept it in step now checks it runs the same proxy image.
-- **Releases still publish `Caddyfile`:** as the routing to start your own from (**HTTPS and domains › Your own routing** shows how to mount it), and because `upgrade.sh` from before this downloads it. The download commands keep it until the first release with the image, since they name v1.0.0-beta.3, whose Compose file still mounts it (`docs/release.md` says when to drop it).
+- **Releases still publish `Caddyfile`:** as the routing to start your own from (**HTTPS and domains › Your own routing** shows how to mount it), and because `upgrade.sh` from before this downloads it. The download commands stop naming it from v1.0.0-beta.4, the first release with the image.
+- **Version 1.0.0-beta.4**, the first release with `spine-proxy` and one port at any address (D-279), with release notes in `docs/releases/v1.0.0-beta.4.md`.
 - CI's restore and upgrade checks build this commit's proxy image too. Tests: `scripts/release/us-ops-51.test.mjs`, `scripts/us-ops-52.test.mjs`.
 
 ### 2026-11-16 — Spine opens on one port at any address; HTTPS when you give it a domain (US-OPS-01, US-OPS-50, D-279)

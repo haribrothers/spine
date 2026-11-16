@@ -7,8 +7,8 @@ const { version } = JSON.parse(read("package.json"));
 
 /** Where a stranger reads how to download Spine: the README and the docs' two install pages. */
 const PAGES = ["README.md", "apps/docs/src/content/docs/self-hosting/install.md", "apps/docs/src/content/docs/get-started/install.md"];
-/** What an install needs from a release (the release workflow publishes them, US-OPS-51). */
-const FILES = ["install.sh", "backup.sh", "restore.sh", "upgrade.sh", "docker-compose.yml", "Caddyfile", "env.example"];
+/** What an install needs from a release (the release workflow publishes them, US-OPS-51). The routing is in the spine-proxy image (D-280), so no Caddyfile. */
+const FILES = ["install.sh", "backup.sh", "restore.sh", "upgrade.sh", "docker-compose.yml", "env.example"];
 
 describe("US-OPS-19 · the README gets a stranger to an install", () => {
   it("downloads this version's files by name, with nothing to install or sign in to (GitHub's latest release skips betas)", () => {
@@ -31,7 +31,16 @@ describe("US-OPS-19 · the README gets a stranger to an install", () => {
       const text = read(page);
       for (const file of FILES) assert.ok(text.includes(`\`${file}\``), `${page} lists ${file}`);
     }
-    for (const file of ["Caddyfile", "env.example", "docker-compose.yml", "install.sh"]) assert.ok(workflow.includes(file), `the release publishes ${file}`);
+    for (const file of ["env.example", "docker-compose.yml", "install.sh"]) assert.ok(workflow.includes(file), `the release publishes ${file}`);
+  });
+
+  it("downloads no Caddyfile: the proxy image carries Spine's routing (D-280), though releases still publish it for upgrade.sh from before it", () => {
+    for (const page of [...PAGES, "apps/site/src/locales/en/home.ts", "docs/beta.md"]) {
+      const loop = /for f in ([^;]+);/.exec(read(page));
+      assert.ok(loop, `${page} has the download loop`);
+      assert.doesNotMatch(loop[1], /Caddyfile/, `${page} doesn't download the Caddyfile`);
+    }
+    assert.match(read(".github/workflows/release.yml"), /cp docker\/Caddyfile dist\//);
   });
 
   it("says how Spine opens on your network, on another port and with a domain (D-279)", () => {

@@ -9,14 +9,14 @@ Spine runs on any Linux or macOS machine, or Windows with WSL2, that has **Docke
 
 ## 1. Download the release
 
-On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder, for example `/opt/spine`: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example` (and `SHA256SUMS` to check them). You don't need the `.apk`, which is the field app for Android, or `docker-compose.coolify.yml`, which is for [Coolify](../coolify/).
+On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder, for example `/opt/spine`: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml` and `env.example` (and `SHA256SUMS` to check them). You don't need the `.apk`, which is the field app for Android, or `docker-compose.coolify.yml`, which is for [Coolify](../coolify/).
 
 Or download them in a terminal, naming the newest release's tag:
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-v=v1.0.0-beta.3
-for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example SHA256SUMS; do
+v=v1.0.0-beta.4
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example SHA256SUMS; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
 sha256sum --check --ignore-missing SHA256SUMS   # on macOS: shasum -a 256 --check --ignore-missing SHA256SUMS
