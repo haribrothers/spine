@@ -294,6 +294,7 @@ body { margin: 0; }
 .copybtn:focus-visible { outline: 2px solid var(--term-blue); outline-offset: 2px; }
 .copybtn[data-copied='1'] { color: var(--term-green); }
 .shell pre { margin: 0; padding: 16px 18px 18px; font-size: 13px; line-height: 1.8; color: var(--term-ink); white-space: pre; overflow-x: auto; }
+.shell pre:focus-visible { outline: 2px solid var(--term-blue); outline-offset: -2px; }
 .shell .p { color: var(--term-blue); user-select: none; }
 
 /* 404 */

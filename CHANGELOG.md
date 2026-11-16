@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-16 — Fix: the home page's install commands can be scrolled from the keyboard; a Budget card test no longer depends on timing (US-SITE-02, US-JOB-25)
+
+- **Install commands:** the download line is long, so its box scrolls sideways, and the accessibility check (axe) failed the home page because a keyboard couldn't reach it. The box now takes focus, with a focus ring and the name "Install commands", so the arrow keys scroll it.
+- **US-JOB-25's E2E test** looked for "No budget set" anywhere on the job page; the cost figure at the top says it too once costing loads, so the test failed whenever that came first. It now checks the Costing card's own line.
+
 ### 2026-11-16 — Caddy ships as Spine's own image, spine-proxy, with the routing built in (US-OPS-51, US-OPS-52, D-280)
 
 - **Why:** the Compose file mounted `docker/Caddyfile` into the stock Caddy image, so it worked only with that file beside it. Panels that take a pasted Compose file (Portainer, TrueNAS, Dokploy, Easypanel) keep the YAML but not the file, and the Coolify file carried its own inline copy.

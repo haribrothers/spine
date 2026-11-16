@@ -240,6 +240,8 @@ export const home = {
     copy: "Copy",
     copied: "Copied",
     copyLabel: "Copy the install commands",
+    // The commands scroll sideways on a narrow screen, so the box takes keyboard focus (WCAG 2.1.1).
+    commandsLabel: "Install commands",
     // The README's "Install in 5 minutes" (US-OPS-19): the release's files by tag, then the installer (D-279).
     commands: [
       "mkdir spine && cd spine",

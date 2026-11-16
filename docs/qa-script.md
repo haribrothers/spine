@@ -5689,6 +5689,7 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 10. View the page source of a docs page: its canonical address is `https://spine.h4loom.com/docs/…`. The bundled guide's "See the latest online docs ↗" and the app's ? › Online docs open `https://spine.h4loom.com/docs/`.
 11. Change the domain in `packages/shared/src/public-site.ts` to `example.org` and run `pnpm test:scripts`: US-SITE-14 fails, naming the README and `.github/ISSUE_TEMPLATE/config.yml`. Put it back.
 12. Regression: the app's own pages are unaffected by `/help`; unknown addresses still show the 404 page. The docs (`/docs/`) still have their sidebar, search, theme menu and version menu, and their own 404 page; the docs' theme menu and the home page's switch agree.
+13. On a phone-width window, the home page's install commands scroll sideways. Tab reaches the commands box (a focus ring shows) and the arrow keys scroll it; a screen reader names it "Install commands".
 
 ## 280. The README, licence and contributor guide (US-OPS-19, Phase 12)
 
