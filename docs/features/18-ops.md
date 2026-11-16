@@ -840,11 +840,12 @@ Decision: D-264
 Decision: D-262
 
 **Acceptance criteria**
-- **Given** a `vX.Y.Z` tag, **when** the full CI run passes (E2E included, [D-260](../prd/12-decisions.md)), **then** the release workflow publishes `ghcr.io/haribrothers/spine-api` and `spine-web` for amd64 and arm64, tagged `X.Y.Z` and `latest`, and a GitHub release with `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile`, `.env.example`, SHA-256 checksums, and that version's release notes.
+- **Given** a `vX.Y.Z` tag, **when** the full CI run passes (E2E included, [D-260](../prd/12-decisions.md)), **then** the release workflow publishes `ghcr.io/haribrothers/spine-api`, `spine-web` and `spine-proxy` (Caddy with Spine's routing built in, [D-280](../prd/12-decisions.md)) for amd64 and arm64, tagged `X.Y.Z` and `latest`, and a GitHub release with `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile`, `.env.example`, SHA-256 checksums, and that version's release notes.
 - **Given** a pre-release tag (`vX.Y.Z-beta.N` or `-rc.N`), **when** it publishes, **then** the GitHub release is marked as a pre-release and the images are tagged with that version only, never `latest`.
 - **Given** the tag doesn't match the root `package.json` version, **when** the workflow runs, **then** it fails naming both, and publishes nothing.
 - **Given** CI fails, **when** the tag was pushed, **then** nothing is published.
 - **Given** the published `docker-compose.yml`, **when** it starts, **then** it pulls that version's images and builds nothing.
+- **Given** the published `docker-compose.yml` or the Coolify one, **when** it starts, **then** it needs no file beside it but `.env`: Caddy's routing comes in `spine-proxy`, and the port, domain and trusted proxies still come from the environment ([D-280](../prd/12-decisions.md)).
 - **Given** one web image, **when** it runs at any domain, **then** the browser reaches the API at the page's own `/api` and the web server reaches it inside the stack, so no address is baked into the image.
 
 **Implementation notes**

@@ -22,7 +22,7 @@
 | `apps/mobile` | Field app: today's jobs, photos, expenses, milestones, on-site acceptance, offline outbox | `apps/api` with `Authorization: Bearer <session token>` |
 | PostgreSQL | System of record, ledger constraints, pg-boss queues | — |
 | File storage | Logos, receipts, job photos, issued PDFs, signatures — `local` driver (Docker volume `spine_files` on the API) by default, `s3` driver optionally | — |
-| Caddy | Routing `/` → web and `/api` → api on one port (7746, any address); TLS for a domain ([D-279](12-decisions.md)) | — |
+| Caddy (`spine-proxy` image, [D-280](12-decisions.md)) | Routing `/` → web and `/api` → api on one port (7746, any address), built into the image; TLS for a domain ([D-279](12-decisions.md)) | — |
 
 **Dependency rule:** all business logic and every authorisation decision lives in `apps/api` services. `apps/web` and `apps/mobile` hide what a user can't do (UI convenience), but the API re-checks every request ([07-security](07-security.md)).
 

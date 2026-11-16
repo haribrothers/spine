@@ -88,3 +88,16 @@ All of this lives in `.env` (and, for a domain, `docker-compose.override.yml`). 
 | `TRUSTED_PROXIES` | The proxies Caddy believes about visitors' addresses: `private_ranges` behind a proxy |
 
 Links in emails you've already sent keep the address they were sent with.
+
+### Your own routing
+
+Spine's routing (`/api` to the API, everything else to the web app) is built into the `spine-proxy` image that the `caddy` service runs, so you don't need a Caddyfile. To change it, copy the release's `Caddyfile` to a file of your own, such as `Caddyfile.custom` (`upgrade.sh` replaces `Caddyfile` itself), edit it, and mount it in `docker-compose.override.yml`:
+
+```yaml
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.custom:/etc/caddy/Caddyfile
+```
+
+If the file already publishes ports 80 and 443 for a domain, add `volumes:` under the same `caddy:`. Then run `docker compose --profile minimal up -d`. After an upgrade, compare yours with the new release's `Caddyfile`.

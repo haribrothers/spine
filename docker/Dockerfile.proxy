@@ -1,0 +1,7 @@
+# Spine's proxy (D-280): Caddy with Spine's routing built in, so a Compose
+# file needs nothing beside it. Settings stay in the environment: SITE_ADDRESS
+# (`:7746` by default, a domain for its certificate, `:80` behind Coolify) and
+# TRUSTED_PROXIES. To use your own routing, mount a Caddyfile over
+# /etc/caddy/Caddyfile.
+FROM caddy:2-alpine
+COPY docker/Caddyfile /etc/caddy/Caddyfile

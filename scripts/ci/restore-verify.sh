@@ -7,6 +7,7 @@
 #
 #   docker build -f docker/Dockerfile.api -t ghcr.io/haribrothers/spine-api:<version> .
 #   docker build -f docker/Dockerfile.web -t ghcr.io/haribrothers/spine-web:<version> .
+#   docker build -f docker/Dockerfile.proxy -t ghcr.io/haribrothers/spine-proxy:<version> .
 #   scripts/ci/restore-verify.sh
 #
 # Needs port 7746 free (D-279: Spine's port, at any address).

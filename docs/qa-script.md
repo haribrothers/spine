@@ -5450,10 +5450,13 @@ Connect Claude Code (section 250) as each role in turn.
 ## 259. Publish a release with one tag (US-OPS-51, Phase 12)
 
 1. `node scripts/release/version.mjs v1.0.0-beta.1` prints `version=1.0.0-beta.1` and `prerelease=true`. `node scripts/release/version.mjs v1.0.0` fails, saying the tag doesn't match the root `package.json` version.
-2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api and web services read `image: ghcr.io/haribrothers/spine-api:1.0.0-beta.1` (and `spine-web`), there's no `build:`, and the Caddyfile mounts from `./Caddyfile`.
+2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api, web and caddy services read `image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.1}` (and `spine-web`, `spine-proxy`), there's no `build:`, and nothing mounts a Caddyfile (D-280).
 3. Build the web image (`docker build -f docker/Dockerfile.web .`) and run the stack: signing in works at `http://localhost`, and in the browser's network tab, API calls go to `http://localhost/api/...`, not port 4000.
-4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `docker-compose.coolify.yml`, `Caddyfile`, `env.example` (not `default.env.example`) and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`). `./install.sh` works straight from the downloaded files.
+4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api`, `spine-web` and, from the first release after D-280, `spine-proxy` tagged with the version (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `docker-compose.coolify.yml`, `Caddyfile`, `env.example` (not `default.env.example`) and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`). `./install.sh` works straight from the downloaded files.
 5. Regression: pull requests still run only lint, typecheck, unit (now with script tests) and integration; "Release" doesn't appear on a PR.
+6. The proxy image (D-280): `docker build -f docker/Dockerfile.proxy -t spine-proxy-test .`, then `docker run --rm spine-proxy-test cat /etc/caddy/Caddyfile` prints `docker/Caddyfile`.
+7. Install from a folder holding only the release's `docker-compose.yml`, `.env` and the scripts, with no `Caddyfile`: Spine opens at `http://localhost:7746`, sign-in works, and `/api/health` answers. With `SPINE_PORT=8080` (and the port in `APP_URL`, `API_URL`), it opens on 8080 instead.
+8. Your own routing: copy `Caddyfile` to `Caddyfile.custom`, add `handle /custom-check { respond "ok" }` at the top of the site block (a bare `respond` loses to the catch-all `handle`), mount it in `docker-compose.override.yml` as **HTTPS and domains › Your own routing** shows, and restart: `curl http://localhost:7746/custom-check` answers `ok`. Remove the override and restart: it answers with the web app again.
 
 ## 260. Install Spine with one command (US-OPS-01, Phase 12)
 
@@ -5553,7 +5556,8 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 5. With `BACKUP_REMOTE` and its keys set, add the scheduled task `node apps/api/dist/scripts/backup.js --remote-only` in the `api` container. Run it now: its log ends "Backup saved: s3://…", the bucket has a `.tar.gz.enc`, and the Owners' backup banner clears. Without `BACKUP_REMOTE` or `BACKUP_PASSPHRASE` it refuses and says which is missing.
 6. Set `SPINE_VERSION` to the next beta and redeploy: the data stays, and About Spine shows the new version.
 7. Behind Cloudflare Access with the Bypass application for `api/*`, `.well-known/*` and `quote/*`: `curl <address>/api/health` answers with the version, the phone app signs in, and a quote link opens without Access. The web pages still ask for Access's sign-in first.
-8. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
+8. Regression: the plain-Docker install (section 260) still opens on its port at any address, and with a domain gets its own certificate (D-279).
+9. The pasted file has no Caddyfile in it: the `caddy` service runs `ghcr.io/haribrothers/spine-proxy` at the same version as the api and web (D-280), and routing works as in step 3.
 
 ## 267. Load demo data to explore (US-ONB-09, Phase 12)
 

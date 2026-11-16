@@ -60,6 +60,16 @@ jobs:
           cache-from: type=gha,scope=web-amd64
           cache-to: type=gha,mode=max,scope=web-amd64
 
+      - name: Build the proxy image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.proxy
+          tags: ghcr.io/haribrothers/spine-proxy:${{ steps.version.outputs.version }}
+          load: true
+          cache-from: type=gha,scope=proxy-amd64
+          cache-to: type=gha,mode=max,scope=proxy-amd64
+
       - name: Back up, wipe, restore and compare
         run: scripts/ci/restore-verify.sh
 

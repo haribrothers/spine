@@ -122,7 +122,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 
 - Lockfile committed; `pnpm install --frozen-lockfile` in CI.
 - Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 12 (NFR-SEC-04).
-- Docker images pinned to major versions (`postgres:16-alpine`, `caddy:2-alpine`); base images rebuilt per release.
+- Docker images pinned to major versions (`postgres:16-alpine`, `caddy:2-alpine`, the base of `spine-proxy`); base images rebuilt per release.
 - OWASP Top 10 review documented before 1.0 (NFR-SEC-05): [docs/security-review.md](../security-review.md), signed off by the Owner (D-267). Secret scan with gitleaks over the whole history; reviewed findings are in `.gitleaksignore`.
 - Response headers (US-OPS-18): every page sends `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, a `Permissions-Policy` with no camera, microphone or location, and HSTS over HTTPS. Every API response sends `DENY`, `nosniff` and `Referrer-Policy: no-referrer`, and neither says which framework it runs. Vulnerabilities are reported privately ([SECURITY.md](../../SECURITY.md)).
 

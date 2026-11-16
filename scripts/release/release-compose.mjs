@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 // US-OPS-51 (D-262) — the docker-compose.yml a release publishes: the repo's
-// own, with the api and web services pulling that version's images and no
-// way to build from source, so an install builds nothing. A release's files sit
-// side by side, so the Caddyfile is mounted from `./Caddyfile`.
+// own, with the api, web and caddy services pulling that version's images
+// (caddy runs spine-proxy, D-280) and no way to build from source, so an
+// install builds nothing and needs no other file beside it.
 //   node scripts/release/release-compose.mjs 1.0.0 > dist/docker-compose.yml
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 export const IMAGE_PREFIX = "ghcr.io/haribrothers/spine";
 
+/** Each service Spine builds, and its image (`spine-<name>`). */
+export const SPINE_IMAGES = { api: "api", web: "web", caddy: "proxy" };
+
 /**
  * Drops each service's `build:` block and makes its image default to this
  * version (`${SPINE_VERSION:-<version>}`, so upgrade.sh can still choose one).
  */
-export function releaseCompose(compose, version, services = ["api", "web"]) {
+export function releaseCompose(compose, version, images = SPINE_IMAGES) {
+  const services = Object.keys(images);
   const lines = compose.split("\n");
   const out = [];
   let current = null;
@@ -29,7 +33,8 @@ export function releaseCompose(compose, version, services = ["api", "web"]) {
       }
       const image = /^( {4}image: )(\S+):\$\{SPINE_VERSION:-[^}]+\}\s*$/.exec(line);
       if (image) {
-        if (image[2] !== `${IMAGE_PREFIX}-${current}`) throw new Error(`${current} names ${image[2]}, not ${IMAGE_PREFIX}-${current}`);
+        const expected = `${IMAGE_PREFIX}-${images[current]}`;
+        if (image[2] !== expected) throw new Error(`${current} names ${image[2]}, not ${expected}`);
         out.push(`${image[1]}${image[2]}:\${SPINE_VERSION:-${version}}`);
         pinned.add(current);
         continue;
@@ -39,7 +44,7 @@ export function releaseCompose(compose, version, services = ["api", "web"]) {
   }
   const missing = services.filter((s) => !pinned.has(s));
   if (missing.length) throw new Error(`No image line to pin for: ${missing.join(", ")}`);
-  const body = out.join("\n").replaceAll("./docker/Caddyfile:", "./Caddyfile:").replace(/^(#[^\n]*\n)+/, "");
+  const body = out.join("\n").replace(/^(#[^\n]*\n)+/, "");
   return `# Spine ${version}'s self-hosted stack. ./install.sh sets it up and starts it.\n${body}`;
 }
 

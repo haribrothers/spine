@@ -42,7 +42,7 @@ Going offline on a simulator: on Android, Maestro toggles airplane mode on the e
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
 | Site publishing (Cloudflare Workers Builds, not a GitHub workflow, [D-274](12-decisions.md)) | push to `main` touching `apps/site/**`, `apps/docs/**` or `apps/api/openapi.json`; a preview for every branch | `pnpm site:build` (link-checked) → deploy the home page to `spine.h4loom.com` with the docs under `/docs/` ([D-273](12-decisions.md)) | — (main is already merged) |
 | `self-hosting`: upgrade-verify | same run, after restore-verify, with the same images | install the previous release from its GitHub release and GHCR images → sign up, seed the demo business, wait for issued PDFs → `upgrade.sh --version <this> --files <this commit's release files>` (backup, checked files, snapshot before migrations) → compare trial balance and file count; nothing to check before the first release (`scripts/ci/upgrade-verify.sh`, US-OPS-50, [D-264](12-decisions.md)) | Before a release |
-| `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api` and `spine-web` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → the field app: a beta's built on the Owner's Mac (`scripts/mobile/build-beta.sh`, D-271) and its APK attached to the release; from 1.0, store builds on GitHub's macOS runners (US-MOB-29) | — |
+| `release` | tag `v*`, after CI passes | build `ghcr.io/haribrothers/spine-api`, `spine-web` and `spine-proxy` (amd64 + arm64) → GitHub release with the scripts, Compose file and checksums; a `-beta.N` or `-rc.N` tag is a pre-release, never `latest` (US-OPS-51, [D-262](12-decisions.md)) → the field app: a beta's built on the Owner's Mac (`scripts/mobile/build-beta.sh`, D-271) and its APK attached to the release; from 1.0, store builds on GitHub's macOS runners (US-MOB-29) | — |
 
 ## Branches and pull requests
 
@@ -75,7 +75,7 @@ Phase 12 adds the nightly self-hosting checks (`nightly.yml`, once the repo is p
 
 | Artifact | Built from | Where |
 |---|---|---|
-| `spine-api` and `spine-web` Docker images (amd64 + arm64) | `docker/Dockerfile.api`, `docker/Dockerfile.web` | Container registry, tagged `X.Y.Z` and `latest` |
+| `spine-api`, `spine-web` and `spine-proxy` Docker images (amd64 + arm64) | `docker/Dockerfile.api`, `docker/Dockerfile.web`, `docker/Dockerfile.proxy` (Caddy with `docker/Caddyfile`, D-280) | Container registry, tagged `X.Y.Z` and `latest` |
 | `docker-compose.yml`, `Caddyfile`, `.env.example` | repo root, `docker/` | Release assets |
 | `install.sh`, `backup.sh`, `restore.sh` | `scripts/` | Release assets with SHA-256 checksums |
 | iOS and Android builds | `apps/mobile`: during the beta `scripts/mobile/build-beta.sh` on the Owner's Mac; from 1.0 GitHub's macOS runners (D-271) | TestFlight and the APK on the release (beta); App Store / Play Store (1.0, [15](15-mobile-release.md)) |

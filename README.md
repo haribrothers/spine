@@ -119,7 +119,7 @@ spine/
 │  ├─ ui-native/  # @spine/ui-native — the field app's components
 │  ├─ sdk/        # typed API client
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
-├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile, Coolify compose
+├─ docker/        # Dockerfile.api, Dockerfile.web, Dockerfile.proxy, Caddyfile, Coolify compose
 ├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
 ├─ scripts/       # install, backup, restore, upgrade, verify, release and mobile scripts
 ├─ docker-compose.yml       # production stack (published images, behind Caddy)
@@ -307,8 +307,8 @@ pnpm db:seed:dev
 ## Production / self-hosting
 
 The release's `docker-compose.yml` runs the published images
-(`ghcr.io/haribrothers/spine-api` and `spine-web`) behind Caddy, so the host
-needs only Docker. `install.sh` sets it up (see [Install in 5 minutes](#install-in-5-minutes));
+(`ghcr.io/haribrothers/spine-api` and `spine-web`) behind `spine-proxy`, Caddy
+with Spine's routing built in, so the host needs only Docker. `install.sh` sets it up (see [Install in 5 minutes](#install-in-5-minutes));
 from a clone it's `./scripts/install.sh`, with the same published images.
 
 The app boots with only three required environment variables

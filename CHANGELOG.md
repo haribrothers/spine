@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-16 — Caddy ships as Spine's own image, spine-proxy, with the routing built in (US-OPS-51, US-OPS-52, D-280)
+
+- **Why:** the Compose file mounted `docker/Caddyfile` into the stock Caddy image, so it worked only with that file beside it. Panels that take a pasted Compose file (Portainer, TrueNAS, Dokploy, Easypanel) keep the YAML but not the file, and the Coolify file carried its own inline copy.
+- **The image:** `docker/Dockerfile.proxy` is `caddy:2-alpine` plus Spine's Caddyfile. Each release builds it for amd64 and arm64 and tags it with the version, as `ghcr.io/haribrothers/spine-proxy`, next to `spine-api` and `spine-web`. Both Compose files run it; the service is still `caddy`, so installs, the tunnel, Coolify and the certificate volumes don't change.
+- **Unchanged:** the port (`SPINE_PORT`), a domain (`SITE_ADDRESS` with ports 80 and 443) and `TRUSTED_PROXIES` still come from `.env`.
+- **The Coolify file** loses its inline Caddyfile, and the test that kept it in step now checks it runs the same proxy image.
+- **Releases still publish `Caddyfile`:** as the routing to start your own from (**HTTPS and domains › Your own routing** shows how to mount it), and because `upgrade.sh` from before this downloads it. The download commands keep it until the first release with the image, since they name v1.0.0-beta.3, whose Compose file still mounts it (`docs/release.md` says when to drop it).
+- CI's restore and upgrade checks build this commit's proxy image too. Tests: `scripts/release/us-ops-51.test.mjs`, `scripts/us-ops-52.test.mjs`.
+
 ### 2026-11-16 — Spine opens on one port at any address; HTTPS when you give it a domain (US-OPS-01, US-OPS-50, D-279)
 
 - **What a beta tester hit:** port 80 was already in use, `http://spine.local` didn't open, `https://<IP>` gave `ERR_SSL_PROTOCOL_ERROR`, and Spine answered only at the one address in `APP_URL`, so opening it by `localhost` and by IP from another machine couldn't both work. Odoo, Open WebUI, Immich, Twenty, Plane and Plausible publish one plain-HTTP port that answers at any address and make HTTPS opt-in; Spine took 80 and 443 and assumed HTTPS.

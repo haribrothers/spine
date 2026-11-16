@@ -96,7 +96,7 @@ Set `SEED_DEMO=true` in `.env` before the first start to load a demo business (R
 | `db` | PostgreSQL 16, on the `spine_db` volume |
 | `api` | The API, with your files on the `spine_files` volume |
 | `web` | The web app |
-| `caddy` | Serves both on Spine's port, and gets the HTTPS certificate for a domain |
+| `caddy` | Serves both on Spine's port, and gets the HTTPS certificate for a domain. It runs `spine-proxy`: Caddy with Spine's routing built in |
 
 Stop Spine with `docker compose --profile minimal down` and start it again with `./install.sh` (it keeps your `.env`).
 
