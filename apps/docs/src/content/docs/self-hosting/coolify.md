@@ -7,7 +7,7 @@ sidebar:
 
 How to run Spine on a server managed by [Coolify](https://coolify.io). The plain-Docker route uses [`install.sh`](../install/); on Coolify, Coolify does that job.
 
-**How it fits:** Coolify's proxy already holds ports 80 and 443 and gets the HTTPS certificate. Spine's own Caddy runs behind it on port 80, with no published ports, and still does Spine's routing: `/api/auth/*` and the rest of `/api/*` to the API, and everything else to the web app. The Compose file for this is [`docker/coolify/docker-compose.yml`](https://github.com/haribrothers/spine/blob/main/docker/coolify/docker-compose.yml), and each release also attaches it as `docker-compose.coolify.yml`.
+**How it fits:** Coolify's proxy already holds ports 80 and 443 and gets the HTTPS certificate. Spine's own Caddy (the `spine-proxy` image, with Spine's routing built in) runs behind it on port 80, with no published ports, and still does Spine's routing: `/api/auth/*` and the rest of `/api/*` to the API, and everything else to the web app. The Compose file for this is [`docker/coolify/docker-compose.yml`](https://github.com/haribrothers/spine/blob/main/docker/coolify/docker-compose.yml), and each release also attaches it as `docker-compose.coolify.yml`.
 
 Coolify's screens change between versions. If a name below doesn't match yours, the idea is the same: a Docker Compose resource, a domain on the `caddy` service, and its environment variables.
 
@@ -87,8 +87,4 @@ To restore a backup into a fresh Coolify deployment, or onto a plain server:
 
 ## Other platforms
 
-The same approach works on any platform whose proxy handles HTTPS in front of a Compose stack, such as Dokploy, CapRover or Portainer behind Traefik or nginx:
-
-- Use the main `docker-compose.yml`. Remove the `caddy` service's `ports:`, and set `SITE_ADDRESS=:80` and `TRUSTED_PROXIES=private_ranges`.
-- Point the platform's domain at the `caddy` service, port 80.
-- Set `APP_URL` to the public address, and `API_URL` to it plus `/api`.
+For Portainer, Synology Container Manager, TrueNAS, Dokploy, Easypanel and other panels that take a pasted Compose file, use `docker-compose.panels.yml`: see [Docker panels](../docker-panels/).

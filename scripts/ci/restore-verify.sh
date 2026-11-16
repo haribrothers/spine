@@ -7,15 +7,16 @@
 #
 #   docker build -f docker/Dockerfile.api -t ghcr.io/haribrothers/spine-api:<version> .
 #   docker build -f docker/Dockerfile.web -t ghcr.io/haribrothers/spine-web:<version> .
+#   docker build -f docker/Dockerfile.proxy -t ghcr.io/haribrothers/spine-proxy:<version> .
 #   scripts/ci/restore-verify.sh
 #
-# Needs ports 80 and 443 free.
+# Needs port 7746 free (D-279: Spine's port, at any address).
 set -eu
 
 repo=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 version=$(node -p "require('$repo/package.json').version")
 work=$(mktemp -d)
-api=http://localhost/api
+api=http://localhost:7746/api
 jar="$work/cookies"
 email="restore-verify@example.com"
 password="Restore-verify-$(date +%s)"
@@ -39,7 +40,7 @@ cd "$work"
 
 sign_in() {
   rm -f "$jar"
-  curl -sf -c "$jar" -o /dev/null -H "Content-Type: application/json" -H "Origin: http://localhost" \
+  curl -sf -c "$jar" -o /dev/null -H "Content-Type: application/json" -H "Origin: http://localhost:7746" \
     -d "{\"email\":\"$email\",\"password\":\"$password\"}" "$api/auth/sign-in/email" || fail "couldn't sign in"
 }
 trial_balance() {
@@ -63,12 +64,23 @@ step "Install Spine $version"
 ./install.sh --non-interactive
 
 step "Sign up and load the demo business"
-curl -sf -o /dev/null -H "Content-Type: application/json" -H "Origin: http://localhost" \
+curl -sf -o /dev/null -H "Content-Type: application/json" -H "Origin: http://localhost:7746" \
   -d "{\"email\":\"$email\",\"password\":\"$password\",\"name\":\"Restore Verify\"}" "$api/auth/sign-up/email" || fail "couldn't sign up"
 sign_in
 seeded=$(curl -s -w '\n%{http_code}' -b "$jar" -X POST -H "Content-Type: application/json" -H "Idempotency-Key: $(node -e 'console.log(crypto.randomUUID())')" -d '{}' "$api/demo-data/seed")
 [ "$(printf '%s' "$seeded" | tail -n 1)" = 201 ] || [ "$(printf '%s' "$seeded" | tail -n 1)" = 200 ] || fail "couldn't load the demo data: $seeded"
 wait_for_pdfs
+
+step "Sign in at another of this machine's addresses; refuse another site (D-279)"
+# Spine opens at any local address on its port, and sign-in trusts the one a
+# request came to. Better Auth checks the Origin of a request with cookies, so each sends one.
+# Sign-in allows 3 attempts in 10 seconds from one address: let the last one's window pass.
+sleep 11
+curl -sf -H "Cookie: spine-probe=1" -o /dev/null -H "Content-Type: application/json" -H "Origin: http://127.0.0.1:7746" \
+  -d "{\"email\":\"$email\",\"password\":\"$password\"}" http://127.0.0.1:7746/api/auth/sign-in/email || fail "couldn't sign in at http://127.0.0.1:7746"
+refused=$(curl -s -o /dev/null -w '%{http_code}' -H "Cookie: spine-probe=1" -H "Content-Type: application/json" -H "Origin: http://evil.example.com" \
+  -d "{\"email\":\"$email\",\"password\":\"$password\"}" http://127.0.0.1:7746/api/auth/sign-in/email)
+[ "$refused" = 403 ] || fail "a sign-in from another site answered $refused, not 403"
 before_tb=$(trial_balance)
 before_files=$(file_count)
 [ "$before_files" -gt 0 ] || fail "the demo business has no files to back up"

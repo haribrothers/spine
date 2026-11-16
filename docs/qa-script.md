@@ -5450,24 +5450,36 @@ Connect Claude Code (section 250) as each role in turn.
 ## 259. Publish a release with one tag (US-OPS-51, Phase 12)
 
 1. `node scripts/release/version.mjs v1.0.0-beta.1` prints `version=1.0.0-beta.1` and `prerelease=true`. `node scripts/release/version.mjs v1.0.0` fails, saying the tag doesn't match the root `package.json` version.
-2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api and web services read `image: ghcr.io/haribrothers/spine-api:1.0.0-beta.1` (and `spine-web`), there's no `build:`, and the Caddyfile mounts from `./Caddyfile`.
+2. `node scripts/release/release-compose.mjs 1.0.0-beta.1`: the api, web and caddy services read `image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.1}` (and `spine-web`, `spine-proxy`), there's no `build:`, and nothing mounts a Caddyfile (D-280).
 3. Build the web image (`docker build -f docker/Dockerfile.web .`) and run the stack: signing in works at `http://localhost`, and in the browser's network tab, API calls go to `http://localhost/api/...`, not port 4000.
-4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api` and `spine-web` tagged `1.0.0-beta.1` (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `docker-compose.coolify.yml`, `Caddyfile`, `env.example` (not `default.env.example`) and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`). `./install.sh` works straight from the downloaded files.
+4. When the first beta is tagged: the CI run on the tag runs every job including E2E, then "Release". GHCR has `spine-api`, `spine-web` and, from the first release after D-280, `spine-proxy` tagged with the version (no `latest`), and the GitHub release is marked "Pre-release", with the scripts, `docker-compose.yml`, `docker-compose.coolify.yml`, `Caddyfile`, `env.example` (not `default.env.example`) and `SHA256SUMS` (check with `sha256sum -c SHA256SUMS`). `./install.sh` works straight from the downloaded files.
 5. Regression: pull requests still run only lint, typecheck, unit (now with script tests) and integration; "Release" doesn't appear on a PR.
+6. The proxy image (D-280): `docker build -f docker/Dockerfile.proxy -t spine-proxy-test .`, then `docker run --rm spine-proxy-test cat /etc/caddy/Caddyfile` prints `docker/Caddyfile`.
+7. Install from a folder holding only the release's `docker-compose.yml`, `.env` and the scripts, with no `Caddyfile`: Spine opens at `http://localhost:7746`, sign-in works, and `/api/health` answers. With `SPINE_PORT=8080` (and the port in `APP_URL`, `API_URL`), it opens on 8080 instead.
+8. Your own routing: copy `Caddyfile` to `Caddyfile.custom`, add `handle /custom-check { respond "ok" }` at the top of the site block (a bare `respond` loses to the catch-all `handle`), mount it in `docker-compose.override.yml` as **HTTPS and domains › Your own routing** shows, and restart: `curl http://localhost:7746/custom-check` answers `ok`. Remove the override and restart: it answers with the web app again.
 
 ## 260. Install Spine with one command (US-OPS-01, Phase 12)
 
 Use a clean Linux or macOS machine (or Windows with WSL2) with Docker 24+ and nothing of Spine on it. Start a stopwatch.
 
-1. Download the release's files (or clone the repo) and run `./install.sh` (`scripts/install.sh` in a clone). It checks Docker and Compose, asks "The address people will open Spine at [http://localhost]", and creates `.env` with a random `AUTH_SECRET` and database password. `.env` is readable only by you.
+1. Download the release's files (or clone the repo) and run `./install.sh` (`scripts/install.sh` in a clone). It checks Docker and Compose, asks "The address for links in emails and PDFs (one the people you send them to can open) [http://<this machine's IP>:7746]", and creates `.env` with a random `AUTH_SECRET` and database password. `.env` is readable only by you.
 2. It pulls the images and waits until Spine is healthy, then prints "Spine is running at <address> — open it to create the first account." and the commands for logs, backup, upgrade and stop.
 3. Open the address and sign up: the first account is the Primary Owner. Follow onboarding and issue a first invoice. Stop the stopwatch: under 5 minutes from download to issued invoice (NFR-MNT-01).
 4. `docker compose logs api` shows "Applied 133 database migrations" on the first start, and "The database is up to date" after a restart.
 5. Run `./install.sh` again: "Keeping your existing .env — nothing in it is changed.", and Spine starts as before with your data.
-6. `APP_URL=https://spine.example.com ./install.sh` on a fresh folder asks nothing. So does `./install.sh --non-interactive` (address http://localhost).
+6. `APP_URL=https://spine.example.com ./install.sh` on a fresh folder asks nothing. So does `./install.sh --non-interactive` (address http://localhost:7746).
 7. With Docker stopped: "Docker is installed but isn't running…". Without Docker: "Docker isn't installed. Install Docker 24 or newer…". Both exit with an error.
 8. `docker images`: `spine-api` and `spine-web` are a few hundred MB each, not several GB.
 9. Regression: `pnpm dev` and `pnpm verify` work as before (the API now also applies migrations when it starts; `MIGRATE_ON_START=false` turns that off).
+10. **One port at any address (D-279):** in a fresh folder, run `./install.sh` and press Enter at "The address for links in emails and PDFs": it suggests `http://<this machine's IP>:7746`. The summary says "Spine is running at http://<IP>:7746" and "It also opens at http://localhost:7746 on this machine, and at http://<IP>:7746 from other devices on your network." `grep -E '^(APP_URL|SPINE_PORT)' .env` shows both.
+11. Open `http://localhost:7746` on this machine and `http://<IP>:7746` from another computer or a phone on the same network: both open, stay on `http://` (no redirect to https), and sign-in works at each. Invite someone: the email's link uses the `APP_URL` address.
+12. `--port 8080`: Spine opens at `http://localhost:8080` and the port is in `APP_URL`. With another program on 7746 (`python3 -m http.server 7746`), a plain `./install.sh` stops with "port is already allocated" and says to use `--port` or change `SPINE_PORT`.
+13. **A domain** (a server with DNS pointing at it): `./install.sh --app-url https://spine.example.com` writes `docker-compose.override.yml` ("Caddy takes ports 80 and 443"), `SITE_ADDRESS=spine.example.com, :7746` and `SPINE_PORT=127.0.0.1:7746`. The domain opens over HTTPS; `http://<server IP>:7746` doesn't open from outside.
+14. **Behind Tailscale:** `./install.sh --app-url https://<machine>.<tailnet>.ts.net --behind-proxy`, then `sudo tailscale serve --bg 7746`: the `ts.net` address opens over HTTPS on a phone with Tailscale, and sign-in works there.
+15. Refusals, each with nothing written: `--app-url https://10.85.0.30` ("can't get an HTTPS certificate… Use http://10.85.0.30:7746, or… Tailscale"), `--app-url https://spine.example.com:8443` ("Caddy needs ports 80 and 443"), `--port web`, `--app-url http://localhost:8080 --port 9090` ("Give the port once"), and a domain with a `docker-compose.override.yml` already there.
+16. Run `./install.sh --app-url http://other.example --port 9000` on the folder from step 10: "Keeping your existing .env", then "--app-url, --port and --behind-proxy only apply when there's no .env yet" and how to change the address. Spine stays on 7746.
+17. **Upgrade from beta.3:** on an install made with beta.3's `./install.sh --app-url http://localhost`, run this version's `./upgrade.sh`: "Kept your address: Spine stays on port 80", `.env` gains `SPINE_PORT=80`, and `http://localhost` still opens. One made with `--app-url https://<domain>`: "Kept your domain", and HTTPS still works.
+18. Regression: `./install.sh --help` lists `--port` and `--behind-proxy`; restore (section 262) and backup work on port 7746.
 
 ## 261. Back up everything into one file (US-OPS-03, Phase 12)
 
@@ -5544,7 +5556,8 @@ Android only is enough for the beta (D-272). Do steps 3 and the TestFlight half 
 5. With `BACKUP_REMOTE` and its keys set, add the scheduled task `node apps/api/dist/scripts/backup.js --remote-only` in the `api` container. Run it now: its log ends "Backup saved: s3://…", the bucket has a `.tar.gz.enc`, and the Owners' backup banner clears. Without `BACKUP_REMOTE` or `BACKUP_PASSPHRASE` it refuses and says which is missing.
 6. Set `SPINE_VERSION` to the next beta and redeploy: the data stays, and About Spine shows the new version.
 7. Behind Cloudflare Access with the Bypass application for `api/*`, `.well-known/*` and `quote/*`: `curl <address>/api/health` answers with the version, the phone app signs in, and a quote link opens without Access. The web pages still ask for Access's sign-in first.
-8. Regression: the plain-Docker install (section 260) still gets its own certificate, because `SITE_ADDRESS` defaults to `APP_URL`.
+8. Regression: the plain-Docker install (section 260) still opens on its port at any address, and with a domain gets its own certificate (D-279).
+9. The pasted file has no Caddyfile in it: the `caddy` service runs `ghcr.io/haribrothers/spine-proxy` at the same version as the api and web (D-280), and routing works as in step 3.
 
 ## 267. Load demo data to explore (US-ONB-09, Phase 12)
 
@@ -5676,14 +5689,16 @@ Automated (`pnpm verify` runs them): `us-ops-17.spec.ts` (axe on every page and 
 10. View the page source of a docs page: its canonical address is `https://spine.h4loom.com/docs/…`. The bundled guide's "See the latest online docs ↗" and the app's ? › Online docs open `https://spine.h4loom.com/docs/`.
 11. Change the domain in `packages/shared/src/public-site.ts` to `example.org` and run `pnpm test:scripts`: US-SITE-14 fails, naming the README and `.github/ISSUE_TEMPLATE/config.yml`. Put it back.
 12. Regression: the app's own pages are unaffected by `/help`; unknown addresses still show the 404 page. The docs (`/docs/`) still have their sidebar, search, theme menu and version menu, and their own 404 page; the docs' theme menu and the home page's switch agree.
+13. On a phone-width window, the home page's install commands scroll sideways. Tab reaches the commands box (a focus ring shows) and the arrow keys scroll it; a screen reader names it "Install commands".
 
 ## 280. The README, licence and contributor guide (US-OPS-19, Phase 12)
 
 1. On GitHub, the repository's front page shows the README with screenshots (they switch with GitHub's theme), the licence as "AGPL-3.0", and Contributing, Code of conduct and Security policy in the sidebar.
 2. New issue offers "Something isn't working", "An idea or a feature", and links to report a security problem and to the docs; a new pull request shows the checklist.
-3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said. Do it once with `--app-url http://localhost` (Spine opens at `http://localhost` on plain HTTP). If you can, do it once more with a real domain (Caddy gets the certificate).
+3. **Clean-machine test (Owner):** on a machine that has never run Spine, with only Docker, follow only the README's "Install in 5 minutes" and issue a first invoice. Time it: under 5 minutes once the images are downloaded. Note anything that needed more than the README said. Do it once with a plain `./install.sh` (Spine opens at `http://localhost:7746`, and from another device at `http://<its IP>:7746`). If you can, do it once more with a real domain (Caddy gets the certificate).
 4. In an empty folder, the README's `curl` loop (with the newest release's tag) downloads the seven files, with no GitHub account. `shasum -a 256 --check --ignore-missing SHA256SUMS` (`sha256sum` on Linux, after downloading `SHA256SUMS` too) says OK for each. The docs' **Self-hosting › Install Spine** and **Get started › Install in 5 minutes** pages give the same files and command. On an Apple Silicon Mac or ARM server, a release from `v1.0.0-beta.3` on installs without "no matching manifest".
 5. docs/release.md matches what happened for the last beta release.
+6. The README's install section says Spine opens on port 7746 at `http://localhost:7746` and `http://<its IP address>:7746`, what the address for links is, what `.env` is, and how to use another port or a domain. The docs' **HTTPS and domains** page covers your network, a name in the hosts file, your domain, Tailscale and another proxy; its links to **Install** land on "Port 7746 already in use" and "Your settings: .env".
 
 ## 281. Delete a job photo, and see photos full screen on the phone (US-JOB-39, US-MOB-30, US-MOB-31, Phase 12)
 
@@ -5733,3 +5748,13 @@ Use a job that's Active, with a few site photos (one added by you, one by someon
 - Recurring meetings apply the invite list to the whole series; you can't invite someone to one occurrence.
 - The "starting soon" reminder polls every 5 minutes, so it can fire up to about 5 minutes after its configured lead time.
 - Multi-org (one Owner account across several organisations) is out of scope for v1; don't test for it.
+
+## 282. Run Spine from a Docker panel (US-OPS-53, Phase 12)
+
+1. In Portainer (2.45 or newer): **Stacks › Add stack**, name `spine`, **Web editor**, paste the release's `docker-compose.panels.yml`, and add only `POSTGRES_PASSWORD` and `APP_URL`. **Deploy the stack**: it fails with "required variable AUTH_SECRET is missing a value: Set AUTH_SECRET, a random string of at least 32 characters", and no container starts.
+2. Add `AUTH_SECRET` (`openssl rand -hex 32`) and deploy: all four containers start, `http://<the machine's IP>:7746` opens the welcome page, and sign-up and sign-in work there and at `http://localhost:7746`.
+3. Update the stack with `SPINE_PORT=8080` and the port in `APP_URL`: Spine opens on 8080, and 7746 no longer answers.
+4. Take a backup (`docker exec <api container> node apps/api/dist/scripts/backup.js --output /tmp/spine-backup-<date>.tar.gz`, then `docker cp` it out), change your name in Settings, and restore it as the **Docker panels** page's Restoring section says: the old name is back, and Portainer still shows the stack running.
+5. On Dokploy or Easypanel: deploy as the page says, with the `ports:` lines deleted and the domain on `caddy`, port `7746`. `https://<domain>` opens with a valid certificate, and Settings › Password & security shows your own address, not the proxy's.
+6. On Synology Container Manager and TrueNAS, with the placeholders replaced by values: the project or app starts and opens on port 7746.
+7. Regression: the main `docker-compose.yml` and `install.sh` behave as in section 260; the Coolify file as in section 266.

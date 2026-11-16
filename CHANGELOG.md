@@ -80,6 +80,40 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-16 — Run Spine from a Docker panel: Portainer, Synology, TrueNAS, Dokploy, Easypanel (US-OPS-53, D-281)
+
+- **Why:** panels that take a pasted Compose file have no `.env` beside it and pass no `--profile`, so the main file started nothing there.
+- **The file:** `docker/panels/docker-compose.yml`, attached to each release as `docker-compose.panels.yml`. No profiles, no `.env` file, nothing beside it; every setting is a variable the panel fills in. `AUTH_SECRET`, `POSTGRES_PASSWORD` and `APP_URL` are required, so a panel refuses to start without one and names it ("Set AUTH_SECRET, a random string of at least 32 characters"); `DATABASE_URL` and `API_URL` are built from them. Spine opens on port 7746 at any address, or `SPINE_PORT`.
+- **The guide:** a new **Docker panels** page with a section each for Portainer, Synology Container Manager, TrueNAS, Dokploy and Easypanel: deploying, the settings, the port or the panel's own domain, and upgrading. Then backups to a bucket from the panel's or the machine's scheduler, and restoring with `restore.sh`. The install page links to it, and the Coolify page's "Other platforms" now points to it.
+- **Tried for real on Portainer 2.45:** a stack without `AUTH_SECRET` was refused with that message and nothing started; with the three settings Spine opened at `http://localhost:7746`, signed up and kept the session; a stack update moved it to port 18080; and a backup was restored into the running stack with `restore.sh` as the page describes, Portainer still managing it afterwards. The other panels' steps follow their documentation, and the page says so.
+- Test: `scripts/us-ops-53.test.mjs` keeps the file in step with the main one (images and version, every setting, the API's healthcheck and volumes, the proxy) and reads it with a real `docker compose config`.
+
+### 2026-11-16 — Fix: the home page's install commands can be scrolled from the keyboard; a Budget card test no longer depends on timing (US-SITE-02, US-JOB-25)
+
+- **Install commands:** the download line is long, so its box scrolls sideways, and the accessibility check (axe) failed the home page because a keyboard couldn't reach it. The box now takes focus, with a focus ring and the name "Install commands", so the arrow keys scroll it.
+- **US-JOB-25's E2E test** looked for "No budget set" anywhere on the job page; the cost figure at the top says it too once costing loads, so the test failed whenever that came first. It now checks the Costing card's own line.
+
+### 2026-11-16 — Caddy ships as Spine's own image, spine-proxy, with the routing built in (US-OPS-51, US-OPS-52, D-280)
+
+- **Why:** the Compose file mounted `docker/Caddyfile` into the stock Caddy image, so it worked only with that file beside it. Panels that take a pasted Compose file (Portainer, TrueNAS, Dokploy, Easypanel) keep the YAML but not the file, and the Coolify file carried its own inline copy.
+- **The image:** `docker/Dockerfile.proxy` is `caddy:2-alpine` plus Spine's Caddyfile. Each release builds it for amd64 and arm64 and tags it with the version, as `ghcr.io/haribrothers/spine-proxy`, next to `spine-api` and `spine-web`. Both Compose files run it; the service is still `caddy`, so installs, the tunnel, Coolify and the certificate volumes don't change.
+- **Unchanged:** the port (`SPINE_PORT`), a domain (`SITE_ADDRESS` with ports 80 and 443) and `TRUSTED_PROXIES` still come from `.env`.
+- **The Coolify file** loses its inline Caddyfile, and the test that kept it in step now checks it runs the same proxy image.
+- **Releases still publish `Caddyfile`:** as the routing to start your own from (**HTTPS and domains › Your own routing** shows how to mount it), and because `upgrade.sh` from before this downloads it. The download commands stop naming it from v1.0.0-beta.4, the first release with the image.
+- **Version 1.0.0-beta.4**, the first release with `spine-proxy` and one port at any address (D-279), with release notes in `docs/releases/v1.0.0-beta.4.md`.
+- CI's restore and upgrade checks build this commit's proxy image too. Tests: `scripts/release/us-ops-51.test.mjs`, `scripts/us-ops-52.test.mjs`.
+
+### 2026-11-16 — Spine opens on one port at any address; HTTPS when you give it a domain (US-OPS-01, US-OPS-50, D-279)
+
+- **What a beta tester hit:** port 80 was already in use, `http://spine.local` didn't open, `https://<IP>` gave `ERR_SSL_PROTOCOL_ERROR`, and Spine answered only at the one address in `APP_URL`, so opening it by `localhost` and by IP from another machine couldn't both work. Odoo, Open WebUI, Immich, Twenty, Plane and Plausible publish one plain-HTTP port that answers at any address and make HTTPS opt-in; Spine took 80 and 443 and assumed HTTPS.
+- **One port, any address:** Spine opens on port **7746**: `http://localhost:7746` on its machine, `http://<its IP>:7746` from every other device, over plain HTTP with no redirect. `--port 8080` (`SPINE_PORT` in `.env`) picks another. `APP_URL` is now only the address in links (emails, PDFs, invitations, agents); the installer suggests this machine's IP and the summary lists the other addresses (not the one it has just given).
+- **Sign-in from any of them, and only them:** Better Auth trusts `APP_URL` and the local address a request came to (localhost, private and Tailscale IPs, `.local` names). A page on another site, another device's address or another port is refused (`INVALID_ORIGIN`), and so is a public name pointed at a private IP.
+- **HTTPS when asked for:** `--app-url https://spine.example.com` has Caddy get the domain's certificate on ports 80 and 443 (`docker-compose.override.yml`), with port 7746 kept to the machine. `--behind-proxy` is for Tailscale, a Cloudflare Tunnel or your own proxy in front. `https://` on localhost, an IP or a `.local` name is refused with what to use instead; the docs show Tailscale for HTTPS without a domain.
+- **Upgrades keep the address:** `upgrade.sh` gives an install from before this its port (`SPINE_PORT=80` for `http://localhost`) or, for an `https://` address, its certificate on 80 and 443.
+- **Checked on a real install** with this branch's API image: `localhost`, `127.0.0.1` and this Mac's IP all open on 7746 and sign in; the web app keeps the session at the IP; another site, another device's IP and another port are refused with 403; no HSTS over HTTP. CI's restore check now signs in at `127.0.0.1:7746` and expects another site to be refused; its upgrade check expects port 80 kept.
+- **Docs:** the README and install pages (one port, the address for links, `.env`), **HTTPS and domains** (your network, a name in the hosts file, your domain, Tailscale, another proxy or tunnel), **Configuration** (`SPINE_PORT`, `SITE_ADDRESS`) and **Troubleshooting**.
+- Tests: `scripts/us-ops-01.test.mjs` (the installer, and a real `docker compose config` of what it writes), `scripts/us-ops-50.test.mjs` (keeping the address on upgrade), `apps/api/src/auth/us-ops-01.test.ts` (which origins sign-in trusts).
+
 ### 2026-11-15 — Fix: the home page's pinned-story E2E test starts at the first step (US-SITE-02)
 
 - The re-made `v1.0.0-beta.3` tag's run stopped at E2E on one test: "scrolling the pinned story" expected the first step and found the third ("Milestones and retention"). Nothing was published. `scrollIntoViewIfNeeded()` centres the 5.6-screen section, which is the third step; locally the checks ran before the page's scroll handler caught up, so they passed, while on CI's runner the handler got there first. The home page itself was right.

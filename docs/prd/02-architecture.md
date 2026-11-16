@@ -5,7 +5,7 @@
 ```
                          ┌──────────────────────────────── one host (Docker Compose) ───────────────────────────────┐
   Owner / Staff ─ browser ─┐                                                                                          │
-  Customer ── quote link ──┼──▶ Caddy (TLS) ──▶ web  (Next.js :3000) ──server-side fetch──▶ api (NestJS :4000) ──▶ PostgreSQL 16
+  Customer ── quote link ──┼──▶ Caddy (:7746, TLS for a domain) ──▶ web  (Next.js :3000) ──server-side fetch──▶ api (NestJS :4000) ──▶ PostgreSQL 16
   Field crew ── iOS/Android┘            └──────────────────────────────────────────────▶ api        │   (data + pg-boss jobs)
                                                                                                     ├──▶ files: local volume (default) or S3
                                                                                                     ├──▶ SMTP (email, optional)
@@ -22,7 +22,7 @@
 | `apps/mobile` | Field app: today's jobs, photos, expenses, milestones, on-site acceptance, offline outbox | `apps/api` with `Authorization: Bearer <session token>` |
 | PostgreSQL | System of record, ledger constraints, pg-boss queues | — |
 | File storage | Logos, receipts, job photos, issued PDFs, signatures — `local` driver (Docker volume `spine_files` on the API) by default, `s3` driver optionally | — |
-| Caddy | TLS termination, routing `/` → web and `/api` → api | — |
+| Caddy (`spine-proxy` image, [D-280](12-decisions.md)) | Routing `/` → web and `/api` → api on one port (7746, any address), built into the image; TLS for a domain ([D-279](12-decisions.md)) | — |
 
 **Dependency rule:** all business logic and every authorisation decision lives in `apps/api` services. `apps/web` and `apps/mobile` hide what a user can't do (UI convenience), but the API re-checks every request ([07-security](07-security.md)).
 
@@ -187,7 +187,7 @@ The public site is two Astro projects published as one: `apps/site`, the home pa
 
 ## Updates
 
-Behind Caddy, one address serves everything: `/api/auth/*` goes to the API unchanged (Better Auth's own path), the rest of `/api/*` to the API without the `/api` prefix, `/.well-known/oauth-*` to the API, and everything else to the web app. The web image is built with `NEXT_PUBLIC_API_URL=/api`, so one image serves any domain (US-OPS-01, US-OPS-51).
+Behind Caddy, one port serves everything, at any address (`SITE_ADDRESS`, default `:7746`, published as `SPINE_PORT`; with a domain also its HTTPS on 80 and 443, D-279): `/api/auth/*` goes to the API unchanged (Better Auth's own path), the rest of `/api/*` to the API without the `/api` prefix, `/.well-known/oauth-*` to the API, and everything else to the web app. The web image is built with `NEXT_PUBLIC_API_URL=/api`, so one image serves any domain (US-OPS-01, US-OPS-51).
 
 
 Migrations run automatically on boot (built in US-OPS-01, under a Postgres advisory lock so one instance migrates), forward-only and idempotent, after an automatic pre-migration database snapshot (US-OPS-50). Semantic versioning; every release notes breaking changes. Once a day the server checks the latest public release and shows Owners an update banner unless disabled ([D-055](12-decisions.md)). Mobile builds ship through the stores; JavaScript-only fixes may ship over the air ([15-mobile-release](15-mobile-release.md)).

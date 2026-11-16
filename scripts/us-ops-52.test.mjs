@@ -27,19 +27,19 @@ describe("US-OPS-52 · Spine on Coolify", () => {
     assert.match(caddy, /- TRUSTED_PROXIES=private_ranges/);
   });
 
-  it("carries the same Caddyfile as the main stack, inline", () => {
-    const inline = /\n        content: \|\n((?: {10}.*\n|\n)+)/.exec(coolify)[1];
-    const text = inline.trimEnd().split("\n").map((l) => l.slice(10)).join("\n");
-    assert.equal(text, read("docker/Caddyfile").trimEnd());
+  it("routes with the same proxy image as the main stack, with no Caddyfile of its own (D-280)", () => {
+    assert.doesNotMatch(coolify, /Caddyfile|content: \|/);
+    assert.match(service(coolify, "caddy"), /image: ghcr\.io\/haribrothers\/spine-proxy:/);
   });
 
   it("runs this version's images", () => {
-    for (const app of ["api", "web"]) assert.ok(coolify.includes(`image: ghcr.io/haribrothers/spine-${app}:\${SPINE_VERSION:-${version}}`), app);
+    for (const app of ["api", "web", "proxy"]) assert.ok(coolify.includes(`image: ghcr.io/haribrothers/spine-${app}:\${SPINE_VERSION:-${version}}`), app);
   });
 
   it("offers every setting .env.example has, and keeps the API's volumes and healthcheck", () => {
     const example = [...read(".env.example").matchAll(/^#? ?([A-Z][A-Z0-9_]+)=/gm)].map((m) => m[1]);
-    const notHere = new Set(["CLOUDFLARE_TUNNEL_TOKEN", "FILES_DIR", "NODE_ENV", "POSTGRES_PASSWORD"]);
+    // SPINE_PORT is the port Docker publishes for Caddy (D-279); behind Coolify nothing is published.
+    const notHere = new Set(["CLOUDFLARE_TUNNEL_TOKEN", "FILES_DIR", "NODE_ENV", "POSTGRES_PASSWORD", "SPINE_PORT"]);
     const api = service(coolify, "api");
     for (const key of example.filter((k) => !notHere.has(k))) assert.match(api, new RegExp(`^ {6}${key}: `, "m"), key);
     for (const volume of ["spine_files:/data/files", "spine_snapshots:/data/snapshots"]) assert.ok(api.includes(volume), volume);

@@ -15,7 +15,7 @@ Most of what an Owner changes day to day — the business profile, tax, numberin
 
 | Variable | What it is | Without it |
 |---|---|---|
-| `APP_URL` | The address people open Spine at, e.g. `https://spine.example.com` | Spine won't start |
+| `APP_URL` | The address Spine writes into links (emails, PDFs, invitations), e.g. `http://192.168.1.20:7746` or `https://spine.example.com`. Spine itself opens at any address on its port ([HTTPS and domains](../https-and-domains/)); change `API_URL` with it | Spine won't start |
 | `AUTH_SECRET` | A long random secret for sessions and stored keys. `install.sh` generates it. **Keep a copy**: restoring a backup on a new machine needs the same one | Spine won't start |
 | `DATABASE_URL` | The Postgres connection, `postgres://spine:<password>@db:5432/spine` | Spine won't start |
 
@@ -26,7 +26,8 @@ Most of what an Owner changes day to day — the business profile, tax, numberin
 | `POSTGRES_PASSWORD` | set by `install.sh` | The database's password; keep it the same as in `DATABASE_URL` |
 | `API_URL` | `<APP_URL>/api` | Where the API is reached from outside (sign-in links, the address for AI agents) |
 | `SPINE_VERSION` | the release's version | Which images to run; `upgrade.sh` sets it |
-| `SITE_ADDRESS` | `APP_URL` | What Caddy serves. Set `:80` when another proxy in front handles HTTPS (see [HTTPS and domains](../https-and-domains/)) |
+| `SPINE_PORT` | `7746` | The port Spine opens on, at any address (`http://localhost:7746`, `http://<its IP>:7746`). `127.0.0.1:7746` keeps it to this machine; `install.sh` sets that with a domain |
+| `SITE_ADDRESS` | `:7746` | What Caddy serves. With a domain, `spine.example.com, :7746`: Caddy gets the domain's HTTPS certificate on ports 80 and 443, which `docker-compose.override.yml` publishes (see [HTTPS and domains](../https-and-domains/)) |
 | `TRUSTED_PROXIES` | `127.0.0.1/32` | Proxies in front of Caddy whose `X-Forwarded-For` it believes, e.g. `private_ranges` |
 | `TRUST_PROXY` | loopback and private networks | Proxies the API believes about a visitor's address, so rate limits count each visitor; `false` if nothing is in front of the API |
 | `CLOUDFLARE_TUNNEL_TOKEN` | — | Remote access through a Cloudflare Tunnel (`--profile full`) |

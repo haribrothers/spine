@@ -27,8 +27,8 @@ The repo, its releases and its images are public ([D-278](prd/12-decisions.md)),
 
    ```sh
    mkdir -p ~/spine && cd ~/spine
-   v=v1.0.0-beta.3
-   for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
+   v=v1.0.0-beta.4
+   for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example; do
      curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
    done
    chmod +x *.sh

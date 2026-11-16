@@ -1085,6 +1085,7 @@ Total: 543 stories.
 - US-OPS-04 · Restore a backup into a clean install (P1)
 - US-OPS-50 · Upgrade Spine with one command (P1)
 - US-OPS-52 · Run a beta for testers (P1)
+- US-OPS-53 · Run Spine from a Docker panel (P2)
 - US-MOB-28 · Give testers the field app through TestFlight and an APK (P1)
 
 *Milestone 2 · 1.0 — onboarding & first run*

@@ -28,7 +28,7 @@ echo "Backup saved: backups/spine-backup-20261024-020000.tar.gz (1.4M)"
 `;
 
 /** An installed release (1.0.0-beta.1) and the next one's files in a folder. */
-function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = true, nextUpgrade = null } = {}) {
+function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = true, nextUpgrade = null, env = "APP_URL=http://localhost\nAUTH_SECRET=keep-me\n" } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "spine-upgrade-"));
   const bin = join(dir, "bin");
   mkdirSync(bin);
@@ -40,7 +40,7 @@ function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = 
   copyFileSync(join(repo, "scripts/upgrade.sh"), join(install, "upgrade.sh"));
   writeFileSync(join(install, "backup.sh"), FAKE_BACKUP);
   chmodSync(join(install, "backup.sh"), 0o755);
-  writeFileSync(join(install, ".env"), "APP_URL=http://localhost\nAUTH_SECRET=keep-me\n");
+  writeFileSync(join(install, ".env"), env);
   const files = join(dir, "next");
   if (nextFiles) {
     mkdirSync(files);
@@ -60,7 +60,7 @@ function setup({ installed = "1.0.0-beta.1", next = "1.0.0-beta.2", nextFiles = 
     const result = spawnSync("sh", [join(install, "upgrade.sh"), ...args], { encoding: "utf8", env: { PATH: `${bin}:/usr/bin:/bin`, HOME: dir, FAKE_DOCKER_LOG: log, ...env } });
     return { ...result, calls: existsSync(log) ? readFileSync(log, "utf8") : "" };
   };
-  return { install, files, run, read: (f) => readFileSync(join(install, f), "utf8") };
+  return { install, files, run, read: (f) => readFileSync(join(install, f), "utf8"), has: (f) => existsSync(join(install, f)) };
 }
 
 describe("US-OPS-50 · upgrade Spine with one command", () => {
@@ -152,5 +152,48 @@ describe("the self-hosting scripts", () => {
         .flatMap((line, i) => (/\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]/.test(line) ? [`${file}:${i + 1}: ${line.trim()}`] : []));
       assert.deepEqual(bad, [], "use ${name} before a non-ASCII character");
     }
+  });
+
+  it("D-279: an install from before SPINE_PORT keeps its address — its port, or its domain on 80 and 443", () => {
+    const value = (env, key) => new RegExp(`^${key}=(.*)$`, "m").exec(env)?.[1];
+    for (const [env, port, site, override] of [
+      ["APP_URL=http://localhost\n", "80", undefined, false],
+      ["APP_URL=http://spine.local:8080\n", "8080", undefined, false],
+      ["APP_URL=https://spine.example.com\n", "127.0.0.1:7746", "spine.example.com, :7746", true],
+      ["APP_URL=https://spine.example.com\nSITE_ADDRESS=:80\nTRUSTED_PROXIES=private_ranges\n", "80", undefined, false],
+    ]) {
+      const { run, files, read, has } = setup({ env: `${env}AUTH_SECRET=keep-me\n` });
+      const result = run(["--version", "1.0.0-beta.2", "--files", files]);
+      assert.equal(result.status, 0, `${env}: ${result.stderr}`);
+      const after = read(".env");
+      assert.equal(value(after, "SPINE_PORT"), port, env);
+      assert.equal(value(after, "SITE_ADDRESS"), site, env);
+      assert.match(after, /^AUTH_SECRET=keep-me$/m, env);
+      assert.equal(value(after, "APP_URL"), value(env, "APP_URL"), env);
+      assert.equal(has("docker-compose.override.yml"), override, env);
+      if (override) assert.match(read("docker-compose.override.yml"), /- "80:80"\n {6}- "443:443"/);
+      assert.match(result.stdout, override ? /Kept your domain: Caddy still takes ports 80 and 443/ : new RegExp(`Kept your address: Spine stays on port ${port}`), env);
+    }
+  });
+
+  it("D-279: an install that already has SPINE_PORT is left as it is", () => {
+    const env = "APP_URL=http://10.85.0.30:7746\nSPINE_PORT=7746\nAUTH_SECRET=keep-me\n";
+    const { run, files, read, has } = setup({ env });
+    const result = run(["--version", "1.0.0-beta.2", "--files", files]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(read(".env").replace(/\n# The installed version[^\n]*\nSPINE_VERSION=[^\n]*\n$/, ""), env);
+    assert.equal(has("docker-compose.override.yml"), false);
+    assert.doesNotMatch(result.stdout, /Kept your/);
+  });
+
+  it("D-279: a domain with someone's own docker-compose.override.yml stops before anything changes", () => {
+    const { run, files, read, install } = setup({ env: "APP_URL=https://spine.example.com\nAUTH_SECRET=keep-me\n" });
+    writeFileSync(join(install, "docker-compose.override.yml"), "services: {}\n");
+    const result = run(["--version", "1.0.0-beta.2", "--files", files]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /publishes ports 80 and 443 for your domain from docker-compose\.override\.yml, and yours doesn't\. Add "80:80" and "443:443".*Nothing was changed\./);
+    assert.doesNotMatch(result.calls, /backup|up -d/);
+    assert.equal(read(".env"), "APP_URL=https://spine.example.com\nAUTH_SECRET=keep-me\n");
+    assert.equal(read("docker-compose.override.yml"), "services: {}\n");
   });
 });

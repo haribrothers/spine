@@ -1,0 +1,117 @@
+# Spine for Docker panels: Portainer, Synology Container Manager, TrueNAS,
+# Dokploy, Easypanel and anything else that takes a pasted Compose file
+# (D-281; the guide's "Docker panels" page). Nothing else is needed beside it:
+# no .env file, no profiles, and the routing is in the spine-proxy image.
+#
+# Fill in the settings in the panel's environment form, or, where there isn't
+# one (TrueNAS, Synology), type the values in place of the ${...} below.
+# Three are required:
+#   AUTH_SECRET        a random string of at least 32 characters; keep a copy
+#                      somewhere safe, because a restore needs the same one
+#   POSTGRES_PASSWORD  the database password, letters and digits only
+#   APP_URL            the address for links in emails and PDFs, e.g.
+#                      http://192.168.1.20:7746 or https://spine.example.com
+# Spine opens on port 7746 at any address (SPINE_PORT picks another).
+#
+# Keep in step with ../../docker-compose.yml (scripts/us-ops-53.test.mjs checks it).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spine
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD, letters and digits only}
+      POSTGRES_DB: spine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.4}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://spine:${POSTGRES_PASSWORD}@db:5432/spine
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET, a random string of at least 32 characters}
+      APP_URL: ${APP_URL:?Set APP_URL, the address for links, e.g. http://192.168.1.20:7746}
+      API_URL: ${APP_URL}/api
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-spine}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      CURRENCY: ${CURRENCY:-USD}
+      LOCALE: ${LOCALE:-en-US}
+      TZ: ${TZ:-UTC}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_REQUESTS: ${LOG_REQUESTS:-on}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      BACKUP_REMOTE: ${BACKUP_REMOTE:-}
+      BACKUP_REMOTE_ENDPOINT: ${BACKUP_REMOTE_ENDPOINT:-}
+      BACKUP_REMOTE_REGION: ${BACKUP_REMOTE_REGION:-auto}
+      BACKUP_REMOTE_ACCESS_KEY: ${BACKUP_REMOTE_ACCESS_KEY:-}
+      BACKUP_REMOTE_SECRET_KEY: ${BACKUP_REMOTE_SECRET_KEY:-}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      UPDATE_CHECK: ${UPDATE_CHECK:-}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@localhost}
+      MOBILE_MIN_VERSION: ${MOBILE_MIN_VERSION:-}
+    volumes:
+      - spine_files:/data/files
+      - spine_snapshots:/data/snapshots
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:' + (process.env.PORT || 4000) + '/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  web:
+    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.4}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      APP_URL: ${APP_URL}
+      API_URL: http://api:4000
+
+  caddy:
+    # Caddy with Spine's routing built in (D-280).
+    image: ghcr.io/haribrothers/spine-proxy:${SPINE_VERSION:-1.0.0-beta.4}
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    # Spine's port, at any address. Behind a panel's own proxy (Dokploy,
+    # Easypanel), delete these two lines and route the domain to this
+    # service's port 7746 instead.
+    ports:
+      - "${SPINE_PORT:-7746}:7746"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:7746}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  spine_files:
+  spine_snapshots:
+  caddy_data:
+  caddy_config:

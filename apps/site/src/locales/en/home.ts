@@ -233,18 +233,22 @@ export const home = {
   },
   install: {
     title: "Install in 5 minutes",
-    body: "On Linux, macOS or Windows with WSL2, with Docker 24 or later. Open the address it prints and create your account — the first person to sign up owns the business.",
+    body: "On Linux, macOS or Windows with WSL2, with Docker 24 or later. Spine opens at http://localhost:7746, and at this computer's IP from the rest of your network. Open the address it prints and create your account — the first person to sign up owns the business.",
     selfHosting: "Read the self-hosting guide",
     guide: "Read the user guide",
     terminal: "Terminal",
     copy: "Copy",
     copied: "Copied",
     copyLabel: "Copy the install commands",
+    // The commands scroll sideways on a narrow screen, so the box takes keyboard focus (WCAG 2.1.1).
+    commandsLabel: "Install commands",
+    // The README's "Install in 5 minutes" (US-OPS-19): the release's files by tag, then the installer (D-279).
     commands: [
-      "mkdir -p /opt/spine && cd /opt/spine",
-      "gh release download --repo haribrothers/spine",
+      "mkdir spine && cd spine",
+      "v=v1.0.0-beta.4",
+      'for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example; do curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"; done',
       "chmod +x *.sh",
-      "./install.sh --app-url https://spine.example.com",
+      "./install.sh",
     ],
   },
   footer: {

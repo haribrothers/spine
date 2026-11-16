@@ -26,7 +26,7 @@ const t = home.install;
           </button>
           <span class="sr-only" role="status" data-copy-status></span>
         </div>
-        <pre class="mono"><code id="install-cmd">{t.commands.map((c, i) => <><span class="p" aria-hidden="true">$ </span>{c}{i < t.commands.length - 1 && "\n"}</>)}</code></pre>
+        <pre class="mono" role="region" tabindex="0" aria-label={t.commandsLabel}><code id="install-cmd">{t.commands.map((c, i) => <><span class="p" aria-hidden="true">$ </span>{c}{i < t.commands.length - 1 && "\n"}</>)}</code></pre>
       </div>
     </div>
   </div>

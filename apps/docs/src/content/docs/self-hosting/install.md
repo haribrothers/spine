@@ -9,14 +9,14 @@ Spine runs on any Linux or macOS machine, or Windows with WSL2, that has **Docke
 
 ## 1. Download the release
 
-On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder, for example `/opt/spine`: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example` (and `SHA256SUMS` to check them). You don't need the `.apk`, which is the field app for Android, or `docker-compose.coolify.yml`, which is for [Coolify](../coolify/).
+On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder, for example `/opt/spine`: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml` and `env.example` (and `SHA256SUMS` to check them). You don't need the `.apk`, which is the field app for Android, `docker-compose.coolify.yml`, which is for [Coolify](../coolify/), or `docker-compose.panels.yml`, which is for [Docker panels](../docker-panels/).
 
 Or download them in a terminal, naming the newest release's tag:
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-v=v1.0.0-beta.3
-for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example SHA256SUMS; do
+v=v1.0.0-beta.4
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example SHA256SUMS; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
 sha256sum --check --ignore-missing SHA256SUMS   # on macOS: shasum -a 256 --check --ignore-missing SHA256SUMS
@@ -28,21 +28,51 @@ The images are built for amd64 (Intel and AMD) and arm64 (Apple Silicon Macs, AR
 ## 2. Run the installer
 
 ```bash
-./install.sh --app-url https://spine.example.com
+./install.sh
 ```
 
-Use the address people will open Spine at. Without `--app-url` it asks for it; `--non-interactive` uses `APP_URL` from the environment, or `http://localhost`.
+Spine opens on one port, **7746**, at any address: `http://localhost:7746` on the machine itself, and `http://<its IP address>:7746` from every other device on your network. That's plain HTTP, with no redirect to HTTPS.
 
-To try Spine on your own computer, use `--app-url http://localhost`, or `http://<this computer's IP address>` to open it from other devices on your network. Caddy then serves plain HTTP and skips the certificate, and port 80 must be free. That's fine for trying Spine out, but the field app and browser notifications need a real domain with HTTPS ([HTTPS and domains](../https-and-domains/)).
+The installer asks for one more thing: **the address Spine writes into links**, in emailed quotes and invoices, invitations, password resets and PDFs, and the address AI agents connect to. It suggests this machine's IP, for example `http://192.168.1.20:7746`, because a link to `localhost` only opens on this machine. Reserve that IP for the machine in your router, so it doesn't change and break links you've already sent. `--non-interactive` asks nothing: it uses `APP_URL` from the environment, or `http://localhost:7746`.
+
+| Where Spine runs | Command |
+|---|---|
+| Your computer or office network | `./install.sh` (or `--app-url http://192.168.1.20`) |
+| Port 7746 is taken | add `--port 8080` |
+| A server with a domain | `./install.sh --app-url https://spine.example.com` |
+| Behind Tailscale, a Cloudflare Tunnel or your own proxy | `./install.sh --app-url https://<its address> --behind-proxy` |
+| From Portainer, Synology, TrueNAS, Dokploy or Easypanel | No installer: paste `docker-compose.panels.yml` ([Docker panels](../docker-panels/)) |
+
+**With a domain**, Caddy also takes ports 80 and 443 and gets the domain's HTTPS certificate from Let's Encrypt. The installer writes `docker-compose.override.yml` for those two ports, and keeps port 7746 to the machine itself (`127.0.0.1:7746`). **Behind something that already handles HTTPS**, Spine stays on its port, and you point that proxy, tunnel or Tailscale at it ([HTTPS and domains](../https-and-domains/)). The field app and browser notifications need HTTPS; for HTTPS without a domain, [use Tailscale](../https-and-domains/#https-without-a-domain-tailscale).
+
+A name like `http://spine.local:7746` works only once it's in each computer's hosts file ([how](../https-and-domains/#a-name-instead-of-an-ip)).
+
+### Port 7746 already in use
+
+If another program already has the port, the start stops with "port is already allocated" or "address already in use". See what has it with `sudo lsof -nP -iTCP:7746 -sTCP:LISTEN`, and give Spine another port:
+
+```bash
+./install.sh --port 8080
+```
+
+Spine then opens at `http://localhost:8080`, and the port goes in the address for links. A port in the address does the same (`--app-url http://192.168.1.20:8080`). To change the port of an install, change `SPINE_PORT` in `.env`, and the port in `APP_URL` and `API_URL`, then run `docker compose --profile minimal up -d`.
 
 The installer:
 
 1. checks Docker and Compose;
-2. writes `.env` with a random `AUTH_SECRET` and database password (an existing `.env` is never changed);
+2. writes `.env` with the address, the port, a random `AUTH_SECRET` and database password (an existing `.env` is never changed);
 3. downloads Spine's images and starts it, waiting until it's healthy;
-4. prints the address and the commands for logs, backups, upgrades and stopping.
+4. prints the address, the other addresses it opens at, and the commands for logs, backups, upgrades and stopping.
 
 The first start takes a minute or two while the images download and the database is set up.
+
+### Your settings: `.env`
+
+`.env` is Spine's settings file, in the folder you installed in. Its name starts with a dot, so `ls` hides it: `ls -a` shows it, and `grep -E '^(APP_URL|SPINE_PORT)' .env` shows the address and the port. Docker Compose reads it every time Spine starts.
+
+Running `./install.sh` again keeps `.env` as it is ("Keeping your existing .env"), and `--app-url`, `--port` and `--behind-proxy` are left unused. To change the address for links, change `APP_URL` and `API_URL` together in `.env`, then run `docker compose --profile minimal up -d`. Links already sent keep the old address. [Configuration](../configuration/) lists every setting.
+
+`.env` holds Spine's secrets. Keep a copy somewhere safe, and never share it or commit it: restoring a backup on another machine needs the same `AUTH_SECRET`.
 
 ## 3. Create the first account
 
@@ -67,7 +97,7 @@ Set `SEED_DEMO=true` in `.env` before the first start to load a demo business (R
 | `db` | PostgreSQL 16, on the `spine_db` volume |
 | `api` | The API, with your files on the `spine_files` volume |
 | `web` | The web app |
-| `caddy` | Serves both on your address and gets the HTTPS certificate |
+| `caddy` | Serves both on Spine's port, and gets the HTTPS certificate for a domain. It runs `spine-proxy`: Caddy with Spine's routing built in |
 
 Stop Spine with `docker compose --profile minimal down` and start it again with `./install.sh` (it keeps your `.env`).
 
@@ -81,3 +111,4 @@ Stop Spine with `docker compose --profile minimal down` and start it again with 
 - [Email](../email/): send quotes, invoices and invitations.
 - [Backups and restore](../backups/): set this up before you rely on Spine.
 - [HTTPS and domains](../https-and-domains/).
+- [Docker panels](../docker-panels/): Portainer, Synology, TrueNAS, Dokploy and Easypanel.

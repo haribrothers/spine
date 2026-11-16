@@ -2,12 +2,15 @@ name: Release
 
 # US-OPS-51 (D-262) — called by CI on a v* tag once every check has passed
 # (lint, typecheck, unit, integration and E2E, D-260). Publishes:
-# - ghcr.io/haribrothers/spine-api and spine-web, tagged with the version, and
-#   `latest` too unless it's a pre-release (vX.Y.Z-beta.N, -rc.N);
+# - ghcr.io/haribrothers/spine-api, spine-web and spine-proxy (Caddy with
+#   Spine's routing built in, D-280), tagged with the version, and `latest`
+#   too unless it's a pre-release (vX.Y.Z-beta.N, -rc.N);
 # - a GitHub release (a pre-release for a suffixed tag) with the install,
 #   backup, restore and upgrade scripts, the Compose file pulling those images,
-#   the Caddyfile, env.example (GitHub renames a file starting with a dot), the
-#   Coolify Compose file and SHA-256 checksums.
+#   the Caddyfile (the routing spine-proxy carries, to start your own from;
+#   upgrade.sh before D-280 downloads it too), env.example (GitHub renames a
+#   file starting with a dot), the Coolify Compose file, the Compose file for Docker panels
+#   (D-281) and SHA-256 checksums.
 # arm64 images build on GitHub's arm64 runners, which public repos get free;
 # a private repo builds amd64 only. Public since 2026-11-15 (D-278).
 on:
@@ -50,7 +53,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        app: [api, web]
+        app: [api, web, proxy]
         platform: ${{ fromJSON(needs.version.outputs.platforms) }}
     # Each platform builds natively: emulating arm64 makes the web build take far longer.
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
@@ -104,7 +107,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        app: [api, web]
+        app: [api, web, proxy]
     steps:
       - name: Download the digests
         uses: actions/download-artifact@v4
@@ -155,6 +158,7 @@ jobs:
           cp docker/Caddyfile dist/
           cp .env.example dist/env.example
           cp docker/coolify/docker-compose.yml dist/docker-compose.coolify.yml
+          cp docker/panels/docker-compose.yml dist/docker-compose.panels.yml
           for script in install.sh backup.sh restore.sh upgrade.sh; do cp "scripts/$script" dist/; done
           (cd dist && sha256sum -- * > SHA256SUMS)
         env:

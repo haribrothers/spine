@@ -37,6 +37,7 @@ import { seedLeadStages } from "../db/seed/lead-stages";
 import { accessControl, fieldRole, ownerRole, staffRole } from "./access-control";
 import { hashPassword, verifyPassword } from "./password";
 import { spineLogger } from "../common/logging/spine-logger";
+import { sameLocalOrigin } from "./local-origins";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -80,7 +81,9 @@ export const auth = betterAuth({
       else spineLogger.log(text, "BetterAuth");
     },
   },
-  trustedOrigins: process.env.APP_URL ? [process.env.APP_URL] : undefined,
+  // D-279: APP_URL, and the local address a request came to (any address on
+  // Spine's port: localhost, this machine's IP), never another site's.
+  trustedOrigins: (request) => [...(process.env.APP_URL ? [process.env.APP_URL] : []), ...sameLocalOrigin(request)],
   emailAndPassword: {
     enabled: true,
     password: {

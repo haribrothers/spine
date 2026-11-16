@@ -36,26 +36,30 @@ Captured from the demo business by `pnpm --filter @spine/e2e screenshots`. More 
 
 The long version, with every setting, is the [self-hosting guide](https://spine.h4loom.com/docs/self-hosting/install/). You need a Linux or macOS machine (or Windows with WSL2) with Docker 24+ and Compose 2.20+.
 
-**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml`, `Caddyfile` and `env.example`. You don't need the `.apk` (the field app for Android) or `docker-compose.coolify.yml`. Or, in a terminal, with the newest release's tag:
+**1. Download the release files.** On the [releases page](https://github.com/haribrothers/spine/releases), open the newest release and download these files into one folder: `install.sh`, `backup.sh`, `restore.sh`, `upgrade.sh`, `docker-compose.yml` and `env.example`. You don't need the `.apk` (the field app for Android), `docker-compose.coolify.yml` or `docker-compose.panels.yml`. Or, in a terminal, with the newest release's tag:
 
 ```bash
 mkdir spine && cd spine
-v=v1.0.0-beta.3
-for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml Caddyfile env.example; do
+v=v1.0.0-beta.4
+for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
 ```
 
-**2. Run the installer** from that folder, with the address people will open Spine at:
+**2. Run the installer** from that folder:
 
 ```bash
 chmod +x *.sh
-./install.sh --app-url https://spine.example.com
+./install.sh
 ```
 
-Trying it on your own computer? Use `--app-url http://localhost` instead, or `http://<this computer's IP address>` to open it from other devices on your network. Spine then runs on plain HTTP, which is fine for trying it out; the field app and browser notifications need a real domain with HTTPS. Port 80 must be free.
+Spine opens on port **7746**, at any address: `http://localhost:7746` on that computer, and `http://<its IP address>:7746` from the other devices on your network, over plain HTTP. The installer asks for the address to put in links (emails, PDFs, invitations) and suggests the computer's IP, so the people you send them to can open them; reserve that IP for the computer in your router so it doesn't change. Port 7746 taken? Add `--port 8080`.
 
-It writes `.env` with fresh secrets, starts Spine and its database behind Caddy (which gets the HTTPS certificate), and prints the address. Open it and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md).
+On a server with a domain, `./install.sh --app-url https://spine.example.com`: Caddy then gets the HTTPS certificate on ports 80 and 443. The field app and browser notifications need HTTPS. Without a domain, [Tailscale](https://spine.h4loom.com/docs/self-hosting/https-and-domains/#https-without-a-domain-tailscale) gives you one with `--behind-proxy`.
+
+The installer writes `.env`, Spine's settings file, in the same folder (`ls -a` shows it): the address, the port, the secrets and every other [setting](https://spine.h4loom.com/docs/self-hosting/configuration/). Running `./install.sh` again keeps it as it is; to change the address later, change `APP_URL` and `API_URL` in it and run `docker compose --profile minimal up -d`. Keep a copy somewhere safe: restoring a backup needs its `AUTH_SECRET`.
+
+Then open the address it prints and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md). From Portainer, Synology, TrueNAS, Dokploy or Easypanel: [Docker panels](https://spine.h4loom.com/docs/self-hosting/docker-panels/).
 
 ## Back up and restore
 
@@ -115,7 +119,7 @@ spine/
 │  ├─ ui-native/  # @spine/ui-native — the field app's components
 │  ├─ sdk/        # typed API client
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
-├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile, Coolify compose
+├─ docker/        # Dockerfile.api, Dockerfile.web, Dockerfile.proxy, Caddyfile, Coolify and panels compose
 ├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
 ├─ scripts/       # install, backup, restore, upgrade, verify, release and mobile scripts
 ├─ docker-compose.yml       # production stack (published images, behind Caddy)
@@ -303,8 +307,8 @@ pnpm db:seed:dev
 ## Production / self-hosting
 
 The release's `docker-compose.yml` runs the published images
-(`ghcr.io/haribrothers/spine-api` and `spine-web`) behind Caddy, so the host
-needs only Docker. `install.sh` sets it up (see [Install in 5 minutes](#install-in-5-minutes));
+(`ghcr.io/haribrothers/spine-api` and `spine-web`) behind `spine-proxy`, Caddy
+with Spine's routing built in, so the host needs only Docker. `install.sh` sets it up (see [Install in 5 minutes](#install-in-5-minutes));
 from a clone it's `./scripts/install.sh`, with the same published images.
 
 The app boots with only three required environment variables

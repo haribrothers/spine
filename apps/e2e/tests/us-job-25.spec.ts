@@ -48,7 +48,8 @@ test.describe("US-JOB-25", () => {
     await setBudget(page, job.id, null);
     await page.goto(`/jobs/${job.id}`);
     await costing.click();
-    await expect(page.getByText("No budget set")).toBeVisible();
+    // The Costing card's own line: the cost figure at the top says it too, once costing has loaded.
+    await expect(page.getByLabel("Costing").getByText("No budget set")).toBeVisible();
     await page.getByRole("button", { name: "Set a budget" }).click();
     await expect(page.getByRole("dialog", { name: "Edit job" }).getByRole("textbox", { name: "Cost budget" })).toBeVisible();
   });

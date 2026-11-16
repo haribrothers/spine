@@ -79,7 +79,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Concern | Choice | Why |
 |---|---|---|
 | Container | Docker Compose, profiles `minimal` (db, api, web, caddy — attachments included) and `full` (+ Cloudflare tunnel); optional `rustfs` profile (`rustfs/rustfs:1.0.x`, memory-limited) for self-hosted S3 ([D-103](12-decisions.md)) | Single-host deploy |
-| Reverse proxy | Caddy 2 (automatic HTTPS) | Zero-config TLS |
+| Reverse proxy | Caddy 2, as Spine's `spine-proxy` image with the routing built in ([D-280](12-decisions.md)): web and API on one port (7746) at any address; automatic HTTPS for a domain ([D-279](12-decisions.md)) | One address for both; zero-config TLS when there's a domain |
 | Remote access | Cloudflare Tunnel (optional) | Public quote links for installs behind NAT |
 | CI | GitHub Actions: lint, typecheck, build, unit, migrations, integration; separate E2E job | |
 | E2E | Playwright 1.49 (`apps/e2e`) against real API + web on a scratch database | |
