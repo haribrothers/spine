@@ -73,6 +73,26 @@ describe("US-OPS-38 · know an action worked, wherever it takes me", () => {
     expect(titles()).toEqual(["Toast 2Line 2", "Toast 3Line 3"]);
   });
 
+  it("a toast closed just before the host goes leaves no removal waiting to run", async () => {
+    phoneWidth(false);
+    const clear = vi.spyOn(window, "clearTimeout");
+    const { unmount } = render(
+      <ToastHost max={3} duration={60_000}>
+        <Shower />
+      </ToastHost>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show" }));
+    await waitFor(() => expect(screen.getAllByTestId("toast")).toHaveLength(1));
+    const set = vi.spyOn(window, "setTimeout");
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    const removal = set.mock.results.find((r, i) => set.mock.calls[i]?.[1] === 200)?.value;
+    expect(removal).toBeDefined();
+    unmount();
+    expect(clear).toHaveBeenCalledWith(removal);
+    set.mockRestore();
+    clear.mockRestore();
+  });
+
   it("each closes after its own interval, and its × closes it", async () => {
     phoneWidth(false);
     render(

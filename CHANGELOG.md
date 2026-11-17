@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-17 — Fix: a closed toast's removal no longer outlives the toast host (US-OPS-38)
+
+- The host removes a closed toast 200 ms after closing it, so Radix can fade it out. If the host unmounted first, the removal still ran; on a slow CI runner it fired after the test environment was gone and failed the web suite with "window is not defined". The host now clears its waiting removals when it unmounts. Test: `us-ops-38.test.tsx` closes a toast, unmounts the host, and checks the removal was cleared.
+
+### 2026-11-17 — Fix: the release's upgrade check from 1.0.0-beta.4 (US-OPS-50)
+
+- **What happened:** the first `v1.0.0-beta.5` tag stopped before publishing anything. `scripts/ci/upgrade-verify.sh` installs the previous release and signs up at `http://localhost/api`, which was right up to beta.3 (port 80). Beta.4's installer opens on port 7746 (D-279), so the sign-up reached nothing.
+- **Now:** the check reads the previous install's `APP_URL` and `SPINE_PORT` from its `.env`, signs up there, and checks the upgrade keeps that port (80 when the old install had no `SPINE_PORT`). Spine itself is unchanged; the tag moves to the fixed commit, as `docs/release.md` says for a check that fails before publishing.
+
 ### 2026-11-17 — Version 1.0.0-beta.5
 
 - The restore fix (`--new-secret` clears the sign-in keys) and Spine for Runtipi, below, with release notes in `docs/releases/v1.0.0-beta.5.md`. The download commands and the three Compose files' default image tags name the new version.

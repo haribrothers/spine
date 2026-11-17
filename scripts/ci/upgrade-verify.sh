@@ -8,13 +8,12 @@
 # The previous release comes from GitHub (gh release download, GHCR images;
 # GH_TOKEN), or from PREVIOUS_VERSION and PREVIOUS_FILES_DIR (a folder with its
 # release files, its images already on this machine) to run it locally.
-# Needs ports 80 and 443 free.
+# Needs ports 80, 443 and 7746 free.
 set -eu
 
 repo=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 version=$(node -p "require('$repo/package.json').version")
 work=$(mktemp -d)
-api=http://localhost/api
 jar="$work/cookies"
 email="upgrade-verify@example.com"
 password="Upgrade-verify-$(date +%s)"
@@ -64,10 +63,18 @@ fi
 chmod +x "$work/spine"/*.sh
 cd "$work/spine"
 ./install.sh --non-interactive
+# The address the previous release installed itself at: http://localhost (port
+# 80) before 1.0.0-beta.4, http://localhost:7746 from it (D-279). Its port must
+# survive the upgrade; before SPINE_PORT existed it was 80.
+app_url=$(sed -n 's/^APP_URL=//p' .env)
+[ -n "$app_url" ] || fail "the previous release's .env has no APP_URL"
+api="$app_url/api"
+port=$(sed -n 's/^SPINE_PORT=//p' .env)
+port=${port:-80}
 
 sign_in() {
   rm -f "$jar"
-  curl -sf -c "$jar" -o /dev/null -H "Content-Type: application/json" -H "Origin: http://localhost" \
+  curl -sf -c "$jar" -o /dev/null -H "Content-Type: application/json" -H "Origin: $app_url" \
     -d "{\"email\":\"$email\",\"password\":\"$password\"}" "$api/auth/sign-in/email" || fail "couldn't sign in"
 }
 trial_balance() {
@@ -86,7 +93,7 @@ wait_for_pdfs() {
 }
 
 step "Sign up and load the demo business"
-curl -sf -o /dev/null -H "Content-Type: application/json" -H "Origin: http://localhost" \
+curl -sf -o /dev/null -H "Content-Type: application/json" -H "Origin: $app_url" \
   -d "{\"email\":\"$email\",\"password\":\"$password\",\"name\":\"Upgrade Verify\"}" "$api/auth/sign-up/email" || fail "couldn't sign up"
 sign_in
 seeded=$(curl -s -w '\n%{http_code}' -b "$jar" -X POST -H "Content-Type: application/json" -H "Idempotency-Key: $(node -e 'console.log(crypto.randomUUID())')" -d '{}' "$api/demo-data/seed")
@@ -112,8 +119,8 @@ cp "$repo/docker/Caddyfile" "$repo/scripts/install.sh" "$repo/scripts/backup.sh"
 
 step "Compare"
 grep -qx "SPINE_VERSION=$version" .env || fail ".env doesn't name $version"
-# D-279: an install from before SPINE_PORT keeps its port (80, from --non-interactive's http://localhost).
-grep -qx "SPINE_PORT=80" .env || fail "the upgrade didn't keep port 80 (SPINE_PORT=80 in .env)"
+# D-279: the upgrade keeps the install's port (80 from before SPINE_PORT existed).
+grep -qx "SPINE_PORT=$port" .env || fail "the upgrade didn't keep port $port (SPINE_PORT=$port in .env)"
 wait_for_pdfs
 sign_in
 after_tb=$(trial_balance)
