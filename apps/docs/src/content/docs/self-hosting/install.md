@@ -15,7 +15,7 @@ Or download them in a terminal, naming the newest release's tag:
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-v=v1.0.0-beta.4
+v=v1.0.0-beta.5
 for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example SHA256SUMS; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
@@ -41,7 +41,8 @@ The installer asks for one more thing: **the address Spine writes into links**, 
 | Port 7746 is taken | add `--port 8080` |
 | A server with a domain | `./install.sh --app-url https://spine.example.com` |
 | Behind Tailscale, a Cloudflare Tunnel or your own proxy | `./install.sh --app-url https://<its address> --behind-proxy` |
-| From Portainer, Synology, TrueNAS, Dokploy or Easypanel | No installer: paste `docker-compose.panels.yml` ([Docker panels](../docker-panels/)) |
+| From Portainer, Dockge, Synology, TrueNAS, Dokploy or Easypanel | No installer: paste `docker-compose.panels.yml` ([Docker panels](../docker-panels/)) |
+| From Runtipi | Spine's own app store ([Docker panels › Runtipi](../docker-panels/#runtipi)) |
 
 **With a domain**, Caddy also takes ports 80 and 443 and gets the domain's HTTPS certificate from Let's Encrypt. The installer writes `docker-compose.override.yml` for those two ports, and keeps port 7746 to the machine itself (`127.0.0.1:7746`). **Behind something that already handles HTTPS**, Spine stays on its port, and you point that proxy, tunnel or Tailscale at it ([HTTPS and domains](../https-and-domains/)). The field app and browser notifications need HTTPS; for HTTPS without a domain, [use Tailscale](../https-and-domains/#https-without-a-domain-tailscale).
 
@@ -111,4 +112,4 @@ Stop Spine with `docker compose --profile minimal down` and start it again with 
 - [Email](../email/): send quotes, invoices and invitations.
 - [Backups and restore](../backups/): set this up before you rely on Spine.
 - [HTTPS and domains](../https-and-domains/).
-- [Docker panels](../docker-panels/): Portainer, Synology, TrueNAS, Dokploy and Easypanel.
+- [Docker panels](../docker-panels/): Portainer, Dockge, Synology, TrueNAS, Dokploy, Easypanel and Runtipi.

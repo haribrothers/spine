@@ -1,15 +1,15 @@
 ---
 title: Docker panels
-description: Run Spine from Portainer, Synology Container Manager, TrueNAS, Dokploy or Easypanel with one pasted Compose file.
+description: Run Spine from Portainer, Dockge, Synology Container Manager, TrueNAS, Dokploy, Easypanel or Runtipi.
 sidebar:
   order: 9
 ---
 
 If you run your containers from a panel rather than a terminal, paste Spine's panel Compose file into it. Every release attaches it as **`docker-compose.panels.yml`** (in the repo: [`docker/panels/docker-compose.yml`](https://github.com/haribrothers/spine/blob/main/docker/panels/docker-compose.yml)). Nothing else goes beside it: there's no `.env` file to upload, no Caddyfile, and no profile to choose.
 
-It runs the same four containers as [`install.sh`](../install/): the database, the API, the web app and Spine's proxy. Spine opens on port **7746** at any address, for example `http://192.168.1.20:7746`. For [Coolify](../coolify/), use its own file.
+It runs the same four containers as [`install.sh`](../install/): the database, the API, the web app and Spine's proxy. Spine opens on port **7746** at any address, for example `http://192.168.1.20:7746`. For [Coolify](../coolify/), use its own file; [Runtipi](#runtipi) installs Spine from its own app store instead.
 
-The Portainer steps were checked on Portainer 2.45; the others follow each panel's own documentation. Panels change their screens between versions, so if a name below doesn't match yours, look for the same idea: a Compose project or stack, its environment variables, and for Dokploy and Easypanel, a domain.
+The Portainer steps were checked on Portainer 2.45, and Runtipi's app in a copy of how Runtipi runs apps; the others follow each panel's own documentation. Panels change their screens between versions, so if a name below doesn't match yours, look for the same idea: a Compose project or stack, its environment variables, and for Dokploy and Easypanel, a domain.
 
 ## The settings
 
@@ -45,6 +45,17 @@ The others are optional. The ones you're most likely to need:
 Open `http://<the machine's IP>:7746` and create your account.
 
 **To upgrade:** open the stack, go to **Editor**, set `SPINE_VERSION` to the new version (or paste the new release's file), turn on **Re-pull image**, and **Update the stack**.
+
+## Dockge
+
+1. **+ Compose**, and name the stack `spine`.
+2. Paste `docker-compose.panels.yml` into the compose editor.
+3. In the **.env** box beside it, add `AUTH_SECRET=…`, `POSTGRES_PASSWORD=…` and `APP_URL=…`, one per line, and any others you need.
+4. **Deploy.**
+
+Open `http://<the machine's IP>:7746`.
+
+**To upgrade:** **Edit**, set `SPINE_VERSION` in the `.env` box (or paste the new release's file), then **Update**.
 
 ## Synology Container Manager
 
@@ -94,12 +105,25 @@ Easypanel's proxy, like Dokploy's, gets the certificate and sends the traffic to
 
 **To upgrade:** set `SPINE_VERSION` in **Environment** (or paste the new release's file, deleting `ports:` again), then **Deploy**.
 
+## Runtipi
+
+Runtipi installs apps from app stores rather than a pasted file, so Spine has its own store: [github.com/haribrothers/spine-runtipi](https://github.com/haribrothers/spine-runtipi). It's the same four containers, with Runtipi generating the secret and the database password.
+
+1. **Settings › App Stores › Add App Store**, and paste `https://github.com/haribrothers/spine-runtipi`.
+2. Install **Spine** from the app store. **Address for links** is the address you'll open it at: with **expose locally** on, `https://spine.<your local domain>` (for example `https://spine.tipi.lan`); otherwise `http://<the server's IP>:7746`.
+3. Open it and create your account.
+
+Runtipi's local certificate is its own, so each device must trust it (download it from Runtipi's settings, under **Local domain**), and the field app can't use it: use Tailscale for the field app. With an `https://` address for links, sign in through that address, not over plain HTTP on the port. Runtipi's own backups include Spine's data. To move an install you already have into Runtipi, follow the store's README: it backs up the old install and restores the backup into Runtipi's Spine.
+
+**To upgrade:** **Settings › Update App Stores**, then update Spine. The store follows Spine's releases.
+
 ## HTTPS and the field app
 
 On your network Spine is plain HTTP, which is fine in an office you trust. The field app and browser notifications need HTTPS:
 
 - **Dokploy and Easypanel** give Spine its domain's certificate.
-- **On a NAS** (Portainer, Synology, TrueNAS), use Tailscale: [HTTPS without a domain](../https-and-domains/#https-without-a-domain-tailscale). Set `APP_URL` to the Tailscale address and `TRUSTED_PROXIES=private_ranges`.
+- **Runtipi** with your own domain exposed gives it a real certificate; its local subdomain doesn't (above).
+- **On a NAS or your own machine** (Portainer, Dockge, Synology, TrueNAS), use Tailscale: [HTTPS without a domain](../https-and-domains/#https-without-a-domain-tailscale). Set `APP_URL` to the Tailscale address and `TRUSTED_PROXIES=private_ranges`.
 
 ## Backups
 

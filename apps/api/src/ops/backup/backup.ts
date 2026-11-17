@@ -24,7 +24,7 @@ export interface BackupManifest {
   format: number;
   spineVersion: string;
   createdAt: string;
-  /** Which AUTH_SECRET the install had (a fingerprint, not the secret): two-factor and stored keys need the same one after a restore (US-OPS-04). */
+  /** Which AUTH_SECRET the install had (a fingerprint, not the secret): sign-in keys and stored keys need the same one after a restore (US-OPS-04). */
   authSecretFingerprint: string | null;
   database: { file: string; bytes: number; sha256: string };
   /** Each file is at `files/<id>` in the archive (never its key, which comes from the database); `key` is where it goes back. */

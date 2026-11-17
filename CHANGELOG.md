@@ -80,6 +80,24 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-17 — Version 1.0.0-beta.5
+
+- The restore fix (`--new-secret` clears the sign-in keys) and Spine for Runtipi, below, with release notes in `docs/releases/v1.0.0-beta.5.md`. The download commands and the three Compose files' default image tags name the new version.
+
+### 2026-11-16 — Spine for Runtipi, and Dockge on the Docker panels page (US-OPS-53, D-282)
+
+- **Runtipi** installs only from app stores, so Spine has its own: [github.com/haribrothers/spine-runtipi](https://github.com/haribrothers/spine-runtipi). The same four containers from the published images; Runtipi generates the secret, the database password and the notification keys, and asks for the address for links. The proxy is the main service on port 7746, so Runtipi's local subdomain (`https://spine.<local domain>`) or a domain reaches it. The store's README also moves an existing install in: a backup, then a one-off restore into Runtipi's Spine.
+- **Checked** against Runtipi's published schemas and its compose builder: the generated file ran on a Mac, Spine opened and signed up, and the README's migration commands, run as written, brought a backup's data back with sign-in working. Not yet on a real Runtipi.
+- **Docker panels page:** new **Dockge** and **Runtipi** sections; the install page, README and Coolify page list them.
+- **Release guide:** step 7 bumps the Runtipi store after each release.
+
+### 2026-11-16 — Fix: after a restore with --new-secret, signing in works again (US-OPS-04)
+
+- **What happened:** restoring a backup into an install with a different `AUTH_SECRET` (`./restore.sh --new-secret`) kept Better Auth's signing keys (`jwks`), which are encrypted with the old secret. Sign-in succeeded, then every page that read the session failed, with "Failed to decrypt private key" in the API's log. Found while moving an install into Runtipi.
+- **Now:** when the backup's secret isn't this install's, the restore clears those keys ("Clearing the sign-in keys made with the old AUTH_SECRET…"), Better Auth makes new ones on first use, and everyone signs in again. With the same secret, the keys come back as before.
+- The refusal message no longer mentions two-factor sign-in, which Spine doesn't have; the backups page says everyone signs in again after `--new-secret`.
+- Test: `us-ops-04.integration.test.ts` restores with another secret and checks the keys are cleared, and kept with the same secret.
+
 ### 2026-11-16 — Run Spine from a Docker panel: Portainer, Synology, TrueNAS, Dokploy, Easypanel (US-OPS-53, D-281)
 
 - **Why:** panels that take a pasted Compose file have no `.env` beside it and pass no `--profile`, so the main file started nothing there.

@@ -116,9 +116,10 @@ export async function restoreBackup(options: RestoreOptions): Promise<RestoreRes
     }
 
     const here = authSecretFingerprint();
-    if (manifest.authSecretFingerprint && here && manifest.authSecretFingerprint !== here && !options.newSecret) {
+    const secretChanged = Boolean(manifest.authSecretFingerprint && here && manifest.authSecretFingerprint !== here);
+    if (secretChanged && !options.newSecret) {
       throw new RestoreRefusedError(
-        "This install's AUTH_SECRET isn't the one the backup was made with, so two-factor sign-in and stored keys (such as the AI provider's) would stop working. Put the old install's AUTH_SECRET in .env and run the restore again — or pass --new-secret to restore anyway (people then set up two-factor again, and stored keys are entered again).",
+        "This install's AUTH_SECRET isn't the one the backup was made with, so stored keys (such as the AI provider's) would stop working. Put the old install's AUTH_SECRET in .env and run the restore again — or pass --new-secret to restore anyway (everyone then signs in again, and stored keys are entered again).",
       );
     }
 
@@ -135,6 +136,18 @@ export async function restoreBackup(options: RestoreOptions): Promise<RestoreRes
     }
     // The dump goes in on stdin, so pg_restore can run anywhere that reaches the database.
     await run(options.pgRestore ?? "pg_restore", ["--no-owner", "--no-privileges", "--exit-on-error", "--dbname", options.databaseUrl], join(content, manifest.database.file));
+    if (secretChanged) {
+      // Better Auth's signing keys are encrypted with AUTH_SECRET, so the old
+      // install's can't be read here, and every session check would fail.
+      // Better Auth makes new ones on first use; everyone signs in again.
+      log("Clearing the sign-in keys made with the old AUTH_SECRET…");
+      const keys = postgres(options.databaseUrl, { max: 1, onnotice: () => {} });
+      try {
+        await keys`delete from jwks`;
+      } finally {
+        await keys.end();
+      }
+    }
 
     log(`Putting back ${manifest.files.count} file${manifest.files.count === 1 ? "" : "s"}…`);
     const moved: { id: string; driver: StorageDriverName }[] = [];

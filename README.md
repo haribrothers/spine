@@ -40,7 +40,7 @@ The long version, with every setting, is the [self-hosting guide](https://spine.
 
 ```bash
 mkdir spine && cd spine
-v=v1.0.0-beta.4
+v=v1.0.0-beta.5
 for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done
@@ -59,7 +59,7 @@ On a server with a domain, `./install.sh --app-url https://spine.example.com`: C
 
 The installer writes `.env`, Spine's settings file, in the same folder (`ls -a` shows it): the address, the port, the secrets and every other [setting](https://spine.h4loom.com/docs/self-hosting/configuration/). Running `./install.sh` again keeps it as it is; to change the address later, change `APP_URL` and `API_URL` in it and run `docker compose --profile minimal up -d`. Keep a copy somewhere safe: restoring a backup needs its `AUTH_SECRET`.
 
-Then open the address it prints and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md). From Portainer, Synology, TrueNAS, Dokploy or Easypanel: [Docker panels](https://spine.h4loom.com/docs/self-hosting/docker-panels/).
+Then open the address it prints and create the first account: that person owns the business. To try it with sample data first, set `SEED_DEMO=true` in `.env` before the first start (see [`.env.example`](.env.example)). Running on Coolify instead: [docs/self-hosting-coolify.md](docs/self-hosting-coolify.md). From Portainer, Dockge, Synology, TrueNAS, Dokploy, Easypanel or Runtipi: [Docker panels](https://spine.h4loom.com/docs/self-hosting/docker-panels/).
 
 ## Back up and restore
 

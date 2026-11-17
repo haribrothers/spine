@@ -55,6 +55,8 @@ describe("US-OPS-04 · restore a backup into a clean install (requires local Pos
     await migrateOnStart(target.url); // a clean install: tables, no data
     const sql = postgres(source.url, { max: 1, onnotice: () => {} });
     await sql`insert into organization (id, name, slug, created_at) values (${orgId}, 'Harbour Road Builders', ${`harbour-${suffix}`}, now())`;
+    // Better Auth's signing key, encrypted with this install's AUTH_SECRET.
+    await sql`insert into jwks (id, public_key, private_key, created_at) values (${`key_${suffix}`}, 'public', 'encrypted-private', now())`;
     for (const [i, id] of fileIds.entries()) {
       await sourceFiles.save(fileKey(orgId, id), bytes[i]!, "application/octet-stream");
       await sql`insert into files (id, org_id, key, storage_driver, original_filename, mime_type, size_bytes) values (${id}, ${orgId}, ${fileKey(orgId, id)}, 'local', ${`f${i}`}, 'application/octet-stream', ${bytes[i]!.length})`;
@@ -124,4 +126,23 @@ describe("US-OPS-04 · restore a backup into a clean install (requires local Pos
     await expect(restore({ replace: true })).resolves.toMatchObject({ files: 2 });
     expect((await rowCounts(target.url)).organization).toBe(1);
   }, 120_000);
+
+  it("--new-secret restores with another AUTH_SECRET, and clears the sign-in keys the old one encrypted", async () => {
+    const saved = process.env.AUTH_SECRET;
+    process.env.AUTH_SECRET = "a-completely-different-secret-for-this-install";
+    try {
+      const lines: string[] = [];
+      await expect(restore({ replace: true, newSecret: true, log: (line) => lines.push(line) })).resolves.toMatchObject({ files: 2 });
+      const counts = await rowCounts(target.url);
+      expect(counts.organization).toBe(1);
+      // Better Auth couldn't decrypt them, and every session check would fail; it makes new ones on first use.
+      expect(counts.jwks).toBe(0);
+      expect(lines).toContain("Clearing the sign-in keys made with the old AUTH_SECRET…");
+    } finally {
+      process.env.AUTH_SECRET = saved;
+    }
+    // With the same secret, the keys come back with everything else.
+    await restore({ replace: true });
+    expect((await rowCounts(target.url)).jwks).toBe(1);
+  }, 180_000);
 });
