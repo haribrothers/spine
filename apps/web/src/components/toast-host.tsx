@@ -42,6 +42,16 @@ export function ToastHost({ max = 3, duration = 5000, children }: { max?: number
   const limit = phone ? Math.min(max, PHONE_MAX) : max;
   const limitRef = useRef(limit);
   limitRef.current = limit;
+  // The removals waiting for a closed toast's fade, cleared if the host goes first.
+  const removals = useRef(new Set<number>());
+
+  useEffect(() => {
+    const pending = removals.current;
+    return () => {
+      pending.forEach((timer) => window.clearTimeout(timer));
+      pending.clear();
+    };
+  }, []);
 
   useEffect(() => {
     const query = window.matchMedia?.(PHONE_QUERY);
@@ -68,7 +78,11 @@ export function ToastHost({ max = 3, duration = 5000, children }: { max?: number
   function close(id: number) {
     // Closed first so Radix can fade it, then gone.
     setToasts((current) => current.map((t) => (t.id === id ? { ...t, open: false } : t)));
-    window.setTimeout(() => setToasts((current) => current.filter((t) => t.id !== id)), 200);
+    const timer = window.setTimeout(() => {
+      removals.current.delete(timer);
+      setToasts((current) => current.filter((t) => t.id !== id));
+    }, 200);
+    removals.current.add(timer);
   }
 
   return (
