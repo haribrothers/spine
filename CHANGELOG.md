@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-17 — Version 1.0.0-beta.5
+
+- The restore fix (`--new-secret` clears the sign-in keys) and Spine for Runtipi, below, with release notes in `docs/releases/v1.0.0-beta.5.md`. The download commands and the three Compose files' default image tags name the new version.
+
 ### 2026-11-16 — Spine for Runtipi, and Dockge on the Docker panels page (US-OPS-53, D-282)
 
 - **Runtipi** installs only from app stores, so Spine has its own: [github.com/haribrothers/spine-runtipi](https://github.com/haribrothers/spine-runtipi). The same four containers from the published images; Runtipi generates the secret, the database password and the notification keys, and asks for the address for links. The proxy is the main service on port 7746, so Runtipi's local subdomain (`https://spine.<local domain>`) or a domain reaches it. The store's README also moves an existing install in: a backup, then a one-off restore into Runtipi's Spine.
