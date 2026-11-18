@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type TableSort } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip, type TableSort } from "@spine/ui";
 import type { VendorPaymentsSummary } from "@spine/shared";
 import { HandCoins, Plus, RefreshCw, Search } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -13,6 +13,8 @@ import { filenameFrom, saveBlob } from "../../../lib/save-file";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
 import { PAYMENT_RANGES, type PaymentRange } from "../payments/payments-list-state";
 import { RecordVendorPaymentDialog } from "./record-vendor-payment-dialog";
@@ -67,6 +69,7 @@ export function VendorPaymentsExplorer() {
   useEffect(() => {
     if (newParam && canCreate) setRecordOpen(true);
   }, [newParam, canCreate]);
+  const isPhone = useIsPhone();
   const loading = useRef(false);
 
   // US-PUR-49: an old `?id=` link opens the payment's page.
@@ -129,6 +132,12 @@ export function VendorPaymentsExplorer() {
   const vendors = useMemo(() => [{ value: ALL, label: t("vendorPayments.explorer.allVendors") }, ...(payments ? paymentVendors(payments) : [])], [payments]);
   const filtersOn = hasVendorPaymentFilters(state);
   const clearAll = () => update({ q: "", vendor: "", method: [], range: "all" });
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const filterChips: FilterChip[] = [
+    ...(state.vendor ? [{ key: "vendor", label: vendors.find((o) => o.value === state.vendor)?.label ?? state.vendor, onRemove: () => update({ vendor: "" }) }] : []),
+    ...state.method.map((method) => ({ key: `method-${method}`, label: PAYMENT_METHOD_LABELS[method] ?? method, onRemove: () => update({ method: state.method.filter((m) => m !== method) }) })),
+    ...(state.range !== "all" ? [{ key: "range", label: VENDOR_PAYMENT_RANGE_LABELS[state.range], onRemove: () => update({ range: "all" }) }] : []),
+  ];
   const money = (v: string) => formatMoney(BigInt(v), summary?.currency ?? "USD");
 
   async function download(p: VendorPaymentRow) {
@@ -158,7 +167,8 @@ export function VendorPaymentsExplorer() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="vendor-payment-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="vendor-payment-stats">
         <StatCard label={t("vendorPayments.explorer.paidThisMonth")} value={summary ? money(summary.paidThisMonth) : "—"} trend={{ direction: "neutral", label: summary ? t("vendorPayments.explorer.payments", { count: summary.paidThisMonthCount }) : "" }} className="h-full" />
         <StatCard label={t("vendorPayments.explorer.paidLastMonth")} value={summary ? money(summary.paidLastMonth) : "—"} trend={{ direction: "neutral", label: summary ? t("vendorPayments.explorer.payments", { count: summary.paidLastMonthCount }) : "" }} className="h-full" />
         <button
@@ -175,35 +185,53 @@ export function VendorPaymentsExplorer() {
             className="h-full"
           />
         </button>
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("vendorPayments.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <Combobox options={vendors} value={state.vendor || ALL} onValueChange={(v) => update({ vendor: v === ALL ? "" : v })} placeholder={t("vendorPayments.explorer.allVendors")} aria-label={t("vendorPayments.explorer.filterByVendor")} className="w-56" />
             <MultiSelect options={METHOD_OPTIONS} value={state.method} onValueChange={(v) => update({ method: v as PaymentMethod[] })} placeholder={t("vendorPayments.explorer.methodPlaceholder")} aria-label={t("vendorPayments.explorer.filterByMethod")} className="w-40" />
             <Combobox options={RANGE_OPTIONS} value={state.range} onValueChange={(v) => update({ range: v as PaymentRange })} aria-label={t("vendorPayments.explorer.filterByDate")} className="w-44" />
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("vendorPayments.explorer.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && <span className="whitespace-nowrap text-[12px] text-on-surface-muted">{refreshing ? t("vendorPayments.explorer.updating") : updatedLabel(updatedAt, now)}</span>}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("vendorPayments.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("vendorPayments.explorer.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("vendorPayments.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("vendorPayments.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !payments} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("vendorPayments.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button onClick={() => setRecordOpen(true)}>
-                <Plus size={14} aria-hidden />
-                {t("vendorPayments.explorer.recordPayment")}
-              </Button>
+              <FloatingActionButton>
+                <Button onClick={() => setRecordOpen(true)}>
+                  <Plus size={14} aria-hidden />
+                  {t("vendorPayments.explorer.recordPayment")}
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -224,7 +252,7 @@ export function VendorPaymentsExplorer() {
         <VendorPaymentsSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -255,7 +283,7 @@ export function VendorPaymentsExplorer() {
           onSortChange={(sort: TableSort | null) => update({ sort })}
           page={state.page}
           onPageChange={(page) => update({ page })}
-          toolbarStart={search}
+          toolbarStart={isPhone ? <span /> : search}
           onDownload={(p) => void download(p)}
         />
       )}

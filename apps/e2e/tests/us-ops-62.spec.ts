@@ -10,12 +10,12 @@ import { PANES, appRoutes, settle } from "./routes";
  * `phone` Playwright project (390×844, touch, a phone user agent). Each failure names the route
  * and the check, and the route's screenshot is attached to the report.
  *
- * Two checks switch on with the stories that build what they look for. Until then they're listed
- * here, by story, and skipped; the wave that ships the story deletes its line.
+ * A check that waits for the story that builds what it looks for is listed in WAITING_FOR, by
+ * story, and skipped; the wave that ships the story deletes its line. "main action on the first
+ * screen" checks every page that marks its main action (`data-main-action`: the lists' floating
+ * button since US-OPS-57, a record's action bar with US-OPS-58).
  */
-const WAITING_FOR: Partial<Record<Check, string>> = {
-  "main action on the first screen": "US-OPS-57 and US-OPS-58 (each page marks its main action)",
-};
+const WAITING_FOR: Partial<Record<Check, string>> = {};
 
 type Check = "sideways scroll" | "tab bar" | "main action on the first screen" | "overlapping labels" | "44px controls" | "axe";
 

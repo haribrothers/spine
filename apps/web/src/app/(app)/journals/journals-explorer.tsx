@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
 import {
   AppShellHeader,
   Button,
+  ChipStrip,
   DataTable,
   DatePicker,
   EmptyState,
+  FilterSheet,
+  FloatingActionButton,
   Select,
   SelectContent,
   SelectItem,
@@ -17,15 +20,18 @@ import {
   SelectValue,
   StatCard,
   StatusChip,
+  type FilterChip,
   type TableColumn,
 } from "@spine/ui";
 import { NO_JOURNALS, type ManualJournal } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { useMyRole } from "../../../lib/role-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { JournalDialog } from "./journal-dialog";
 import { ReportExportMenu } from "../../../components/report-export-menu";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
 import { PrintHeader, PrintRangeProvider } from "../../../components/print-header";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -55,6 +61,7 @@ export function JournalsExplorer() {
   const [to, setTo] = useState<Date | undefined>();
   const [newOpen, setNewOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const isPhone = useIsPhone();
 
   const load = useCallback(() => {
     apiClient.get<ManualJournal[]>("/manual-journals").then(setRows).catch(() => setRows([]));
@@ -82,6 +89,17 @@ export function JournalsExplorer() {
   const posted = (rows ?? []).filter((j) => j.status === "posted");
   const postedThisYear = posted.filter((j) => j.date >= yearStart).reduce((s, j) => s + BigInt(j.total), 0n);
   const money = (v: string | bigint) => formatMoney(BigInt(v), currency);
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const filterChips: FilterChip[] = [
+    ...(status !== "all" ? [{ key: "status", label: status === "posted" ? t("journals.list.posted") : t("journals.list.reversed"), onRemove: () => setStatus("all") }] : []),
+    ...(from ? [{ key: "from", label: t("journals.list.fromChip", { date: day(iso(from)) }), onRemove: () => setFrom(undefined) }] : []),
+    ...(to ? [{ key: "to", label: t("journals.list.toChip", { date: day(iso(to)) }), onRemove: () => setTo(undefined) }] : []),
+  ];
+  const clearAll = () => {
+    setStatus("all");
+    setFrom(undefined);
+    setTo(undefined);
+  };
 
   const columns: TableColumn<ManualJournal>[] = [
     {
@@ -114,14 +132,17 @@ export function JournalsExplorer() {
       />
       <PrintHeader />
       <div className="flex flex-col gap-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="journal-cards">
+        {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+        <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="journal-cards">
           <StatCard label={t("journals.list.totalJournals")} value={rows ? String(rows.length) : "—"} />
           <StatCard label={t("journals.list.posted")} value={rows ? String(posted.length) : "—"} />
           <StatCard label={t("journals.list.reversed")} value={rows ? String(rows.length - posted.length) : "—"} />
           <StatCard label={t("journals.list.postedThisYear")} value={money(postedThisYear)} trend={{ direction: "neutral", label: t("journals.list.since", { date: day(yearStart) }) }} />
-        </div>
+        </ChipStrip>
         {/* US-RPT-40 — the list layout: filters on the left, Export then the one primary action on the right. */}
-        <div className="flex flex-wrap items-center gap-3" data-print="hide">
+        {/* US-OPS-57: on a phone the filters are in a sheet (the list's own search stays with the list). */}
+        <div className="flex flex-wrap items-center gap-3 max-md:flex-col max-md:items-stretch" data-print="hide">
+          <FilterSheet className="contents" chips={filterChips} onClearAll={clearAll} showLabel={rows ? t("journals.list.showCount", { count: filtered.length }) : undefined}>
           <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
             <SelectTrigger className="w-40" aria-label={t("journals.list.statusFilter")}>
               <SelectValue />
@@ -138,9 +159,20 @@ export function JournalsExplorer() {
           <div className="w-40">
             <DatePicker value={to} onChange={setTo} placeholder={t("journals.list.to")} />
           </div>
+          </FilterSheet>
           <div className="ml-auto flex items-center gap-3">
-            <ReportExportMenu path={`/manual-journals?status=${status}${from ? `&from=${iso(from)}` : ""}${to ? `&to=${iso(to)}` : ""}`} search={search} />
-            {isOwner && <Button onClick={() => setNewOpen(true)}>{t("journals.list.newJournal")}</Button>}
+            <PhoneMoreActions>
+              <ReportExportMenu path={`/manual-journals?status=${status}${from ? `&from=${iso(from)}` : ""}${to ? `&to=${iso(to)}` : ""}`} search={search} />
+            </PhoneMoreActions>
+            {isOwner && (
+              <FloatingActionButton>
+                <Button onClick={() => setNewOpen(true)}>
+                  {/* The floating button shrinks to its icon while the page scrolls; the desktop button has none. */}
+                  {isPhone && <Plus size={14} aria-hidden />}
+                  {t("journals.list.newJournal")}
+                </Button>
+              </FloatingActionButton>
+            )}
           </div>
         </div>
         {rows?.length === 0 ? (

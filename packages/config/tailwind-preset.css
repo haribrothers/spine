@@ -472,6 +472,32 @@
   }
 }
 
+/* US-OPS-57 — a StatCard inside a ChipStrip is a compact chip on a phone: label and figure. */
+@media (max-width: 767.98px) {
+  [data-chip-strip] [data-stat-card] {
+    gap: 0;
+    padding: 8px 12px;
+    min-height: 44px;
+    border-radius: var(--radius-lg);
+  }
+  [data-chip-strip] [data-stat-label] {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  [data-chip-strip] [data-stat-value] {
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+  [data-chip-strip] [data-stat-detail],
+  [data-chip-strip] [data-stat-trend] {
+    display: none;
+  }
+}
+
 /* US-SET-10 — a preview of a customer document (Settings › Branding) stays
    light in both themes, like the PDFs and emails it stands for. */
 [data-surface="document"] {

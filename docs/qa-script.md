@@ -5820,3 +5820,14 @@ Automated: `us-ops-56.spec.ts`, `us-ops-56-phone.a11y.test.tsx`, `list-row.a11y.
 5. Pipeline: the stages are chips with counts, scrolling sideways. Tapping one shows its leads; a lead's ⋯ moves it to another stage.
 6. Contacts has no Table · List · Card switcher. On a slow connection, placeholder rows show while a list loads; an empty list shows the same empty state as on a computer.
 7. Regression, from 768px up: every list is the table it was, with its headings, checkbox column, Columns menu and pager; the pipeline is the board; Contacts' three views are back.
+
+## 288. See a list's figures, filters and main action on the first screen (US-OPS-57, Phase 12)
+
+Automated: `us-ops-57.spec.ts`, `chip-strip.a11y.test.tsx`, `filter-sheet.a11y.test.tsx`, `floating-action-button.a11y.test.tsx`. At 390×844 with touch, on Invoices, then Quotes, Jobs, Payments, Contacts, Credit notes, Expenses, Vendor bills, Vendor credits, Vendor payments, Catalogue, Receivables, Payables, Emails, Journals and Banking:
+
+1. The totals are compact chips (label and figure) in one row; swipe it sideways. The first rows of the list are on the first screen.
+2. Tap a chip (Overdue): the list shows just those, and the chip is marked. Tap it again: all of them.
+3. Search and Filters share one row. Filters opens a sheet with every filter, Clear all and "Show N …". Choose Status: Overdue and Show: a chip "Overdue ×" appears under the row and Filters reads 1. Tap × on the chip: the filter goes.
+4. The main action (New invoice, New quote, Record payment, Add contact…) is a round button above the tabs with its label; scroll the list and it shrinks to +, then comes back. With a screen reader it's still read by its name. Scroll to the end: the last row is above it, not under it.
+5. ⋯ at the top opens the page's other actions (Recurring invoices, Refresh list, Import, Export), each the full width; choosing one closes the sheet. On Receivables, tap Export there: its menu (CSV, Excel, PDF, Print) opens.
+6. Regression, from 768px up: the cards are the grid they were, the filters sit in their row with Clear filters, and New invoice and the other buttons are on the right.

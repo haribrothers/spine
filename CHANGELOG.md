@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-OPS-57: a list's figures, filters and main action on the first screen of a phone
+
+- **Figures as chips:** under 768px a list's summary cards are compact chips (label and figure) in one row that scrolls sideways, so the first rows are on the first screen. A card that filters still does when tapped. This is a new `ChipStrip` in `@spine/ui`. When its cards are only figures (journals), the row is a focusable, named region so a keyboard can scroll it.
+- **Filters in a sheet:** search and a Filters button share one row (a new `FilterSheet`). Filters opens every filter in a bottom sheet with Clear all and "Show 12 invoices". Each filter that's on shows as a chip with × under the row. On a desktop the filters are inline, as before.
+- **Main action floats:** New invoice, New quote, Record payment, Add contact and the rest float above the tab bar with their label (a new `FloatingActionButton`), shrinking to + while the list scrolls. The page leaves room under the last row for it.
+- **Other actions under ⋯:** Refresh, Import, Export, Recurring invoices, Transfer and Money in/out move into the top bar's ⋯ sheet (`PhoneMoreActions`). A menu inside it (Export) opens from there.
+- **Pages:** invoices, quotes, jobs, payments, contacts, credit notes, expenses, vendor bills, vendor credits, vendor payments, catalogue, emails, journals, banking, receivables and payables. Receivables' and payables' age cards are the shared report summary and change with US-RPT-41.
+- **Tests and docs:** `us-ops-57.spec.ts` and the `chip-strip`, `filter-sheet` and `floating-action-button` axe tests. US-OPS-62's main-action check is on for every list. Docs: ChipStrip, FilterSheet (new) and FloatingActionButton pages, the design-system pages and the phone guide; QA section 288.
+
 ### 2026-11-19 — US-OPS-56: lists as rows on a phone
 
 - **Rows for every list:** under 768px every `Table` and `DataTable` list is `ListRow`s, a new `@spine/ui` component. The title and status are on the first line, the subtitle on the second, and the amount on the right with its ⋯ (an action sheet). The title's link covers the whole row, so tapping anywhere opens the record. There are no columns, headings or sideways scroll.

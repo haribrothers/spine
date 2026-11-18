@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, TableSkeleton, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, TableSkeleton, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip } from "@spine/ui";
 import { FileMinus, ListFilter, Plus, RefreshCw, Search } from "lucide-react";
 import { useModule } from "../../../lib/modules-context";
 import { apiClient } from "../../../lib/api-client";
@@ -13,6 +13,7 @@ import { replaceQuery } from "../../../lib/replace-query";
 import { useToast } from "../../../components/toast-host";
 import { ActionError } from "../../../components/action-error";
 import { t as translate, useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
 import type { ContactOption, JobOption } from "../vendor-bills/types";
 import { ApplyVendorCreditDialog } from "./apply-vendor-credit-dialog";
@@ -35,7 +36,7 @@ import {
   type VendorCreditsListState,
 } from "./vendor-credit-state";
 import type { VendorCredit } from "./types";
-import { useSelectMode } from "../../../lib/phone-bar";
+import { useSelectMode, PhoneMoreActions } from "../../../lib/phone-bar";
 
 const ALL = "__all__";
 const STATE_OPTIONS = CREDIT_STATES.map((s) => ({ value: s, label: CREDIT_STATE_LABELS[s] }));
@@ -65,6 +66,7 @@ export function VendorCreditsExplorer() {
   const canCreate = useCapability("vendor_credits.edit_own");
   const canRecord = useCapability("vendor_credits.record");
   const jobsOn = useModule("jobsField");
+  const isPhone = useIsPhone();
   const [state, setState] = useState<VendorCreditsListState>(() => parseVendorCreditsState(new URLSearchParams(searchParams.toString())));
   const [credits, setCredits] = useState<VendorCredit[] | null>(null);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
@@ -214,12 +216,21 @@ export function VendorCreditsExplorer() {
   );
   const filtersOn = hasCreditFilters(state);
   const clearAll = () => update({ states: [], vendor: "", job: "", card: "", q: "" });
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const cardNames: Record<string, string> = { drafts: t("vendorCredits.explorer.draftsToRecord"), partly: t("vendorCredits.explorer.partlyUsed"), unused: t("vendorCredits.explorer.unusedDays", { days: UNUSED_DAYS }) };
+  const filterChips: FilterChip[] = [
+    ...state.states.map((s) => ({ key: `state-${s}`, label: CREDIT_STATE_LABELS[s] ?? s, onRemove: () => update({ states: state.states.filter((x) => x !== s) }) })),
+    ...(state.vendor ? [{ key: "vendor", label: vendorOptions.find((o) => o.value === state.vendor)?.label ?? state.vendor, onRemove: () => update({ vendor: "" }) }] : []),
+    ...(jobsOn && state.job ? [{ key: "job", label: jobOptions.find((o) => o.value === state.job)?.label ?? state.job, onRemove: () => update({ job: "" }) }] : []),
+    ...(state.card ? [{ key: "card", label: cardNames[state.card] ?? state.card, onRemove: () => update({ card: "" }) }] : []),
+  ];
 
   // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
   const selecting = useSelectMode({ available: Boolean(canRecord), onDone: () => setSelected(new Set()) });
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="credit-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="credit-stats">
         <StatCard
           label={t("vendorCredits.explorer.creditToUse")}
           value={stats ? money(stats.toUse.amount) : "—"}
@@ -237,42 +248,60 @@ export function VendorCreditsExplorer() {
           stats && stats.unused.amount > 0n ? "warning" : "default",
         )}
         {/* eslint-enable i18next/no-literal-string */}
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("vendorCredits.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as CreditState[] })} placeholder={t("vendorCredits.explorer.statePlaceholder")} aria-label={t("vendorCredits.explorer.filterByState")} className="w-40" />
             <Combobox options={vendorOptions} value={state.vendor || ALL} onValueChange={(v) => update({ vendor: v === ALL ? "" : v })} placeholder={t("vendorCredits.explorer.allVendors")} aria-label={t("vendorCredits.explorer.filterByVendor")} className="w-56" />
             {/* US-SET-24 */}
             {jobsOn && <Combobox options={jobOptions} value={state.job || ALL} onValueChange={(v) => update({ job: v === ALL ? "" : v })} placeholder={t("vendorCredits.explorer.allJobs")} aria-label={t("vendorCredits.explorer.filterByJob")} className="w-48" />}
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("vendorCredits.explorer.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="credits-updated">
                 {refreshing ? t("vendorCredits.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("vendorCredits.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !credits} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !credits} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("vendorCredits.explorer.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("vendorCredits.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("vendorCredits.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !credits} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("vendorCredits.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button asChild>
-                <Link href="/vendor-credits/new">
-                  <Plus size={14} aria-hidden />
-                  {t("vendorCredits.explorer.newVendorCredit")}
-                </Link>
-              </Button>
+              <FloatingActionButton>
+                <Button asChild>
+                  <Link href="/vendor-credits/new">
+                    <Plus size={14} aria-hidden />
+                    {t("vendorCredits.explorer.newVendorCredit")}
+                  </Link>
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -296,7 +325,7 @@ export function VendorCreditsExplorer() {
         <TableSkeleton columns={SKELETON_COLUMNS} />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -345,7 +374,7 @@ export function VendorCreditsExplorer() {
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             selected={canRecord ? selected : undefined}
             onSelectedChange={canRecord ? setSelected : undefined}
             phoneSelecting={selecting}

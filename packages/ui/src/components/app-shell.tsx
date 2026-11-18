@@ -164,7 +164,8 @@ export function AppShellContent({ className, fullWidth = false, banner, children
   return (
     <main data-print="flow" className={cn("min-h-0 min-w-0 flex-1 overflow-y-auto", className)} {...props}>
       {banner}
-      <div className={cn("mx-auto w-full p-4 md:p-6 lg:p-8", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{children}</div>
+      {/* On a phone, room under the last row for a floating main action (52px + its gap, US-OPS-57). */}
+      <div className={cn("mx-auto w-full p-4 md:p-6 lg:p-8 max-md:has-[[data-main-action]]:pb-[76px]", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{children}</div>
     </main>
   );
 }

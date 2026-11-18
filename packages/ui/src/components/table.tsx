@@ -29,6 +29,8 @@ export interface TableColumn<T> {
   align?: "left" | "right";
   /** US-OPS-56: its place in a phone row. */
   phone?: TablePhoneRole;
+  /** US-OPS-57: what it shows in a phone row, when that differs from the cell (just the number, without its note). */
+  phoneRender?: (row: T) => React.ReactNode;
 }
 
 /**
@@ -297,7 +299,7 @@ export function Table<T>({
     const roles = phoneRoles(columns);
     const cell = (role: TablePhoneRole, row: T) => {
       const column = columns.find((c) => roles.get(c.key) === role);
-      return column ? column.render(row) : null;
+      return column ? (column.phoneRender ?? column.render)(row) : null;
     };
     const footCell = (role: TablePhoneRole) => {
       const column = columns.find((c) => roles.get(c.key) === role);

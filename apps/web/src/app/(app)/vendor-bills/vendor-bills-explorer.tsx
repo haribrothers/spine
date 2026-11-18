@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip } from "@spine/ui";
 import { ClipboardList, ListFilter, Plus, RefreshCw, Repeat, Search } from "lucide-react";
 import { useModule } from "../../../lib/modules-context";
 import { apiClient } from "../../../lib/api-client";
@@ -12,6 +12,7 @@ import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { ActionError } from "../../../components/action-error";
 import { JobFilter, JobFilterNote, useJobFilter } from "../../../components/job-filter";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
@@ -33,7 +34,7 @@ import {
   type VendorBillsListState,
 } from "./vendor-bill-state";
 import type { ContactOption, VendorBill } from "./types";
-import { useSelectMode } from "../../../lib/phone-bar";
+import { useSelectMode, PhoneMoreActions } from "../../../lib/phone-bar";
 
 const ALL_VENDORS = "__all__";
 const STATE_OPTIONS = BILL_STATES.map((s) => ({ value: s, label: BILL_STATE_LABELS[s] }));
@@ -57,6 +58,7 @@ export function VendorBillsExplorer() {
   const canViewCosting = useCapability("reports.view_job_profitability");
   const jobsOn = useModule("jobsField");
   const job = useJobFilter();
+  const isPhone = useIsPhone();
   const [state, setState] = useState<VendorBillsListState>(() => parseVendorBillsState(new URLSearchParams(searchParams.toString())));
   const [bills, setBills] = useState<VendorBill[] | null>(null);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
@@ -206,12 +208,21 @@ export function VendorBillsExplorer() {
     update({ states: [], vendor: "", card: "", q: "" });
     if (job.filtering) job.setJobId("__all__");
   };
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const cardNames: Record<string, string> = { overdue: t("vendorBills.explorer.overdue"), due7: t("vendorBills.explorer.due7"), drafts: t("vendorBills.explorer.draftsToRecord") };
+  const filterChips: FilterChip[] = [
+    ...state.states.map((s) => ({ key: `state-${s}`, label: BILL_STATE_LABELS[s] ?? s, onRemove: () => update({ states: state.states.filter((x) => x !== s) }) })),
+    ...(state.vendor ? [{ key: "vendor", label: contactOptions.find((o) => o.value === state.vendor)?.label ?? state.vendor, onRemove: () => update({ vendor: "" }) }] : []),
+    ...(jobsOn && job.filtering ? [{ key: "job", label: job.selectedLabel ?? job.jobId, onRemove: () => job.setJobId("__all__") }] : []),
+    ...(state.card ? [{ key: "card", label: cardNames[state.card] ?? state.card, onRemove: () => update({ card: "" }) }] : []),
+  ];
 
   // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
   const selecting = useSelectMode({ available: Boolean(canRecord), onDone: () => setSelected(new Set()) });
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="bill-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="bill-stats">
         <StatCard
           label={t("vendorBills.explorer.toPay")}
           value={stats ? money(stats.toPay.amount) : "—"}
@@ -223,35 +234,50 @@ export function VendorBillsExplorer() {
         {card("due7", t("vendorBills.explorer.due7"), stats ? money(stats.due7.amount) : "—", stats ? t("vendorBills.explorer.due7Trend", { bills: countOf(stats.due7.count), date: by }) : "")}
         {card("drafts", t("vendorBills.explorer.draftsToRecord"), stats ? String(stats.drafts.count) : "—", stats ? t("vendorBills.explorer.inAll", { amount: money(stats.drafts.amount) }) : "")}
         {/* eslint-enable i18next/no-literal-string */}
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("vendorBills.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as BillState[] })} placeholder={t("vendorBills.explorer.statePlaceholder")} aria-label={t("vendorBills.explorer.filterByState")} className="w-40" />
             <Combobox options={contactOptions} value={state.vendor || ALL_VENDORS} onValueChange={(v) => update({ vendor: v === ALL_VENDORS ? "" : v })} placeholder={t("vendorBills.explorer.allVendors")} aria-label={t("vendorBills.explorer.filterByVendor")} className="w-56" />
             {/* US-SET-24 */}
             {jobsOn && <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />}
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("vendorBills.explorer.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="bills-updated">
                 {refreshing ? t("vendorBills.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("vendorBills.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !bills} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("vendorBills.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
+            <PhoneMoreActions>
+            {isPhone ? (
+              <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !bills} onClick={() => void load("refresh")}>
+                <RefreshCw size={16} aria-hidden />
+                {t("vendorBills.explorer.refreshList")}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label={t("vendorBills.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !bills} onClick={() => void load("refresh")}>
+                    <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("vendorBills.explorer.refreshList")}</TooltipContent>
+              </Tooltip>
+            )}
             {/* US-PUR-29 — hidden without vendor_bills.manage_recurring, which every /recurring-bills route also checks. */}
             {canManageRecurring && (
               <Button asChild variant="secondary">
@@ -261,13 +287,16 @@ export function VendorBillsExplorer() {
                 </Link>
               </Button>
             )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button asChild>
-                <Link href="/vendor-bills/new">
-                  <Plus size={14} aria-hidden />
-                  {t("vendorBills.explorer.newVendorBill")}
-                </Link>
-              </Button>
+              <FloatingActionButton>
+                <Button asChild>
+                  <Link href="/vendor-bills/new">
+                    <Plus size={14} aria-hidden />
+                    {t("vendorBills.explorer.newVendorBill")}
+                  </Link>
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -293,7 +322,7 @@ export function VendorBillsExplorer() {
         <VendorBillsSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -342,7 +371,7 @@ export function VendorBillsExplorer() {
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             selected={canRecord ? selected : undefined}
             onSelectedChange={canRecord ? setSelected : undefined}
             phoneSelecting={selecting}

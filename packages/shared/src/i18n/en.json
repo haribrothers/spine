@@ -400,7 +400,9 @@
       "setDefault": "Set as default",
       "edit": "Edit",
       "restore": "Restore",
-      "archive": "Archive"
+      "archive": "Archive",
+      "showCount_one": "Show {{count}} account",
+      "showCount_other": "Show {{count}} accounts"
     },
     "history": {
       "downloadError": "Couldn't download the report. Try again.",
@@ -805,7 +807,9 @@
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No catalogue items yet",
       "emptyDescription": "Add your first good or service to quote faster — default price and tax rate prefill every new quote line.",
-      "bundleSavedDescription": "{{name}} is under Bundles, ready to add to a quote."
+      "bundleSavedDescription": "{{name}} is under Bundles, ready to add to a quote.",
+      "showCount_one": "Show {{count}} item",
+      "showCount_other": "Show {{count}} items"
     },
     "form": {
       "saveError": "Could not save item.",
@@ -1413,6 +1417,10 @@
       "select": {
         "select": "Select",
         "done": "Done"
+      },
+      "moreActions": {
+        "open": "More actions",
+        "title": "More actions"
       }
     }
   },
@@ -1559,7 +1567,9 @@
       "noMatchQueryDescription": "Check the spelling, or search by email or phone.",
       "clearSearch": "Clear search",
       "emptyTitle": "No contacts yet",
-      "emptyDescription": "Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
+      "emptyDescription": "Add your first customer or vendor to start tracking quotes, jobs and invoices against them.",
+      "showCount_one": "Show {{count}} contact",
+      "showCount_other": "Show {{count}} contacts"
     },
     "form": {
       "createdTitle": "Contact created",
@@ -1826,7 +1836,9 @@
       "noMatchTitle": "No credit notes match these filters",
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No credit notes yet",
-      "emptyDescription": "A credit note corrects an issued invoice — what was returned, not delivered or over-billed — and takes the tax back with it."
+      "emptyDescription": "A credit note corrects an issued invoice — what was returned, not delivered or over-billed — and takes the tax back with it.",
+      "showCount_one": "Show {{count}} credit note",
+      "showCount_other": "Show {{count}} credit notes"
     },
     "newDialog": {
       "title": "New credit note",
@@ -2178,7 +2190,9 @@
       "updating": "Updating…",
       "refreshList": "Refresh list",
       "refreshFailed": "Couldn't refresh the list. Check your connection and try again.",
-      "tryAgainButton": "Try again"
+      "tryAgainButton": "Try again",
+      "showCount_one": "Show {{count}} email",
+      "showCount_other": "Show {{count}} emails"
     },
     "retryConfirm": {
       "title": "Retry this email?",
@@ -2578,7 +2592,9 @@
       "noneYet": "No expenses yet",
       "ownNote": "Your own expenses can't be selected for approval — someone else approves them.",
       "submitted": "Expense submitted",
-      "waitingWithAmount": "{{label}} for {{amount}} is waiting for approval."
+      "waitingWithAmount": "{{label}} for {{amount}} is waiting for approval.",
+      "showCount_one": "Show {{count}} expense",
+      "showCount_other": "Show {{count}} expenses"
     },
     "categories": {
       "active": "Active",
@@ -2754,7 +2770,9 @@
       "deletedDescription": "{{number}} has been permanently removed.",
       "draftInvoice": "Draft invoice",
       "actionFailedTitle": "Couldn't do that to {{number}}.",
-      "theDraftInvoice": "the draft invoice"
+      "theDraftInvoice": "the draft invoice",
+      "showCount_one": "Show {{count}} invoice",
+      "showCount_other": "Show {{count}} invoices"
     },
     "table": {
       "progressClaim": "Progress claim {{number}}",
@@ -3295,7 +3313,9 @@
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No jobs yet",
       "emptyDescription": "Start a job for work you've agreed — from an accepted quote, or straight from here.",
-      "goToQuotes": "Go to quotes"
+      "goToQuotes": "Go to quotes",
+      "showCount_one": "Show {{count}} job",
+      "showCount_other": "Show {{count}} jobs"
     },
     "newJob": {
       "quoteFallback": "Quote",
@@ -3693,7 +3713,11 @@
       "newJournal": "New journal",
       "emptyOwner": "Post one for depreciation, accruals or what your accountant sends at year end.",
       "searchPlaceholder": "Search journals",
-      "accessNote": "Members with \"View ledger / journals\" can read journals; only owners post or reverse them."
+      "accessNote": "Members with \"View ledger / journals\" can read journals; only owners post or reverse them.",
+      "showCount_one": "Show {{count}} journal",
+      "showCount_other": "Show {{count}} journals",
+      "fromChip": "From {{date}}",
+      "toChip": "To {{date}}"
     },
     "detail": {
       "reverseError": "Couldn't reverse this journal.",
@@ -5412,7 +5436,9 @@
       "noMatchTitle": "No payments match these filters",
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No payments recorded yet",
-      "emptyDescription": "Record a payment against one or more invoices, or hold it as unallocated customer credit."
+      "emptyDescription": "Record a payment against one or more invoices, or hold it as unallocated customer credit.",
+      "showCount_one": "Show {{count}} payment",
+      "showCount_other": "Show {{count}} payments"
     },
     "applyCredit": {
       "allocateSome": "Allocate at least some credit to an invoice.",
@@ -5779,7 +5805,9 @@
       "noMatchTitle": "No quotes match these filters",
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No quotes yet",
-      "emptyDescription": "Build a multi-line quote for a customer — save it as a draft, then send when it's ready."
+      "emptyDescription": "Build a multi-line quote for a customer — save it as a draft, then send when it's ready.",
+      "showCount_one": "Show {{count}} quote",
+      "showCount_other": "Show {{count}} quotes"
     },
     "toasts": {
       "revisedTitle": "{{number}} revised",
@@ -8473,6 +8501,18 @@
     },
     "actionSheet": {
       "cancel": "Cancel"
+    },
+    "filterSheet": {
+      "filters": "Filters",
+      "on_one": "{{count}} filter on",
+      "on_other": "{{count}} filters on",
+      "onLabel": "Filters that are on",
+      "remove": "Remove {{filter}}",
+      "clearAll": "Clear all",
+      "show": "Show results"
+    },
+    "chipStrip": {
+      "label": "Summary, scrolls sideways"
     }
   },
   "uiNative": {
@@ -8680,7 +8720,9 @@
       "balanceUpdated": "{{number}}'s balance has been updated.",
       "theBillsBalanceUpdated": "The bill's balance has been updated.",
       "voidedTitle": "{{number}} voided",
-      "voidedDescription": "A reversing entry took it off your books."
+      "voidedDescription": "A reversing entry took it off your books.",
+      "showCount_one": "Show {{count}} bill",
+      "showCount_other": "Show {{count}} bills"
     },
     "detail": {
       "loadFailed": "Could not load vendor bill.",
@@ -9108,7 +9150,9 @@
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No vendor credits yet",
       "emptyDescription": "Record a vendor's credit note for returned goods, an overcharge or a discount after the bill.",
-      "theVendor": "the vendor"
+      "theVendor": "the vendor",
+      "showCount_one": "Show {{count}} credit",
+      "showCount_other": "Show {{count}} credits"
     },
     "applied": {
       "title": "Credit applied",
@@ -9396,7 +9440,9 @@
       "emptyDescription": "Record a payment against one or more of a vendor's recorded bills.",
       "payment": "Payment",
       "recordedToast": "{{number}} recorded",
-      "recordedToastDescription": "It's posted to your books, and the bills it paid owe less."
+      "recordedToastDescription": "It's posted to your books, and the bills it paid owe less.",
+      "showCount_one": "Show {{count}} payment",
+      "showCount_other": "Show {{count}} payments"
     },
     "detail": {
       "loadFailed": "Couldn't load this payment.",

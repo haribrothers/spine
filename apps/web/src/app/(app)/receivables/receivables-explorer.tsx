@@ -8,6 +8,7 @@ import {
   AppShellHeader,
   Button,
   EmptyState,
+  FilterSheet,
   Input,
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   cn,
+  type FilterChip,
 } from "@spine/ui";
 import { RECEIVABLES_AGES, RECEIVABLES_AGE_LABELS, type EmailOverride, type ReceivablesAge } from "@spine/shared";
 import { Inbox, Info, RefreshCw, Search } from "lucide-react";
@@ -48,7 +50,8 @@ import type { ReceivablesInvoiceRow, ReceivablesReport } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
 import { t, useT } from "../../../lib/i18n";
-import { useSelectMode } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
+import { useSelectMode, PhoneMoreActions } from "../../../lib/phone-bar";
 const ALL_AGES = "__all__";
 const AGE_OPTIONS = ["overdue", "current", "0-30", "31-60", "61-90", "90+"] as const satisfies readonly (typeof RECEIVABLES_AGES)[number][];
 
@@ -81,6 +84,7 @@ export function ReceivablesExplorer() {
   const searchParams = useSearchParams();
   const canRemind = useCapability("invoices.send_reminder");
   // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const isPhone = useIsPhone();
   const selecting = useSelectMode({ available: Boolean(canRemind), onDone: () => setSelected(new Set()) });
   const [state, setState] = useState<ReceivablesListState>(() => parseReceivablesState(new URLSearchParams(searchParams.toString())));
   const [report, setReport] = useState<ReceivablesReport | null>(null);
@@ -210,9 +214,11 @@ export function ReceivablesExplorer() {
     </div>
   );
   const retention = report && BigInt(report.retention.held) > 0n ? report.retention : null;
+  // US-OPS-57: on a phone the age filter is a chip with × (the cards and the bar set it too).
+  const filterChips: FilterChip[] = state.age ? [{ key: "age", label: RECEIVABLES_AGE_LABELS[state.age] ?? state.age, onRemove: () => update({ age: null }) }] : [];
   const empty = (message: string, clear: () => void, label: string) => (
     <div className="flex flex-col gap-3">
-      <div className="flex">{search}</div>
+      {!isPhone && <div className="flex">{search}</div>}
       <div className="rounded-lg border border-border bg-surface">
         <EmptyState icon={<Inbox />} title={message} description={t("receivables.explorer.emptyDescription")} action={<Button variant="secondary" onClick={clear}>{label}</Button>} />
       </div>
@@ -248,34 +254,46 @@ export function ReceivablesExplorer() {
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-          <Select value={state.age ?? ALL_AGES} onValueChange={(v) => update({ age: v === ALL_AGES ? null : (v as ReceivablesAge) })}>
-            <SelectTrigger aria-label={t("receivables.explorer.showByAge")} className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_AGES}>{t("receivables.explorer.allAges")}</SelectItem>
-              {AGE_OPTIONS.map((a) => (
-                <SelectItem key={a} value={a}>
-                  {RECEIVABLES_AGE_LABELS[a]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* US-OPS-57: on a phone, search and Filters in one row, the age in a sheet. */}
+          <FilterSheet className="contents" search={isPhone ? search : undefined} chips={filterChips} onClearAll={() => update({ age: null, q: "" })}>
+            <Select value={state.age ?? ALL_AGES} onValueChange={(v) => update({ age: v === ALL_AGES ? null : (v as ReceivablesAge) })}>
+              <SelectTrigger aria-label={t("receivables.explorer.showByAge")} className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_AGES}>{t("receivables.explorer.allAges")}</SelectItem>
+                {AGE_OPTIONS.map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {RECEIVABLES_AGE_LABELS[a]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="receivables-updated">
                 {refreshing ? t("receivables.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("receivables.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("receivables.explorer.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("receivables.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
-            <ReportExportMenu path={`/reports/receivables${ageQuery}`} csvPath={`/reports/receivables/export.csv${ageQuery}`} search={state.q} />
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("receivables.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("receivables.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+              <ReportExportMenu path={`/reports/receivables${ageQuery}`} csvPath={`/reports/receivables/export.csv${ageQuery}`} search={state.q} />
+            </PhoneMoreActions>
           </div>
         </div>
         <p role="status" className="sr-only">
@@ -310,7 +328,7 @@ export function ReceivablesExplorer() {
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             actions={{
               onSendStatement: (c) => setDialog({ kind: "statement", contactId: c.contactId, email: c.email }),
               onRecordPayment: (c) => setDialog({ kind: "record", contactId: c.contactId, contactName: c.name }),
@@ -339,7 +357,7 @@ export function ReceivablesExplorer() {
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             selected={canRemind ? selected : undefined}
             onSelectedChange={canRemind ? setSelected : undefined}
             phoneSelecting={selecting}

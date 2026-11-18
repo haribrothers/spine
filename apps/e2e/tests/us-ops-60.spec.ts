@@ -27,10 +27,12 @@ async function expectBottomSheet(locator: Locator) {
   expect(Math.round(b.y + b.height)).toBeGreaterThanOrEqual(PHONE.height - 1);
 }
 
-async function openRowMenu(page: Page) {
+async function openRowMenu(page: Page, draft = false) {
   await page.goto("/invoices");
   await page.waitForLoadState("networkidle");
-  await page.getByRole("button", { name: /^Actions for/ }).first().click();
+  // A draft's menu has Delete; other tests may have issued the first row, so pick a draft when that matters.
+  const rows = draft ? page.locator("li[data-list-row]").filter({ has: page.locator("[data-list-row-title]", { hasText: /^Draft$/ }) }) : page;
+  await rows.getByRole("button", { name: /^Actions for/ }).first().click();
   await expect(page.getByRole("menu")).toBeVisible();
   await settled(page);
   return page.getByRole("menu");
@@ -76,7 +78,9 @@ test.describe("US-OPS-60 · use dialogs, menus and pickers made for my phone", (
 
   test("a select's options, a combobox (with its search) and a date picker open in a bottom sheet", async ({ page, seededOrg: _ }) => {
     await page.goto("/invoices");
-    await page.getByRole("combobox").first().click();
+    // The list's filters are in its Filters sheet on a phone (US-OPS-57).
+    await page.getByRole("button", { name: /^Filters/ }).click();
+    await page.getByRole("dialog", { name: "Filters" }).getByRole("combobox").first().click();
     await expectBottomSheet(page.getByRole("listbox"));
     await page.keyboard.press("Escape");
 
@@ -95,7 +99,7 @@ test.describe("US-OPS-60 · use dialogs, menus and pickers made for my phone", (
   });
 
   test("a confirmation stays a small alert in the middle, its buttons full width", async ({ page, seededOrg: _ }) => {
-    const menu = await openRowMenu(page);
+    const menu = await openRowMenu(page, true);
     await menu.getByRole("menuitem", { name: /^Delete/ }).click();
     const alert = page.getByRole("alertdialog");
     await expect(alert).toBeVisible();

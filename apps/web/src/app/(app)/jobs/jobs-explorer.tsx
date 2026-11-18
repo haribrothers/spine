@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip } from "@spine/ui";
 import { HardHat, Plus, RefreshCw, Search } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useT } from "../../../lib/i18n";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { formatMoney } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
@@ -50,6 +52,7 @@ export function JobsExplorer() {
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [newOpen, setNewOpen] = useState(() => searchParams.get("new") === "1");
+  const isPhone = useIsPhone();
   const loading = useRef(false);
 
   /** Sets part of the list state and writes it to the address. */
@@ -155,6 +158,13 @@ export function JobsExplorer() {
   );
 
   const filtersOn = hasJobFilters(state);
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const cardNames: Record<string, string> = { active: t("jobs.list.cardActive"), ready: t("jobs.list.cardReady"), budget: t("jobs.list.cardBudget") };
+  const filterChips: FilterChip[] = [
+    ...state.status.map((status) => ({ key: `status-${status}`, label: STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status, onRemove: () => update({ status: state.status.filter((s) => s !== status) }) })),
+    ...(state.contact ? [{ key: "contact", label: contactOptions.find((o) => o.value === state.contact)?.label ?? state.contact, onRemove: () => update({ contact: "" }) }] : []),
+    ...(state.card ? [{ key: "card", label: cardNames[state.card] ?? state.card, onRemove: () => update({ card: "" }) }] : []),
+  ];
   const clearAll = () => update({ q: "", status: [], contact: "", card: "" });
   const newJobButton = canCreate && (
     <Button onClick={() => setNewOpen(true)}>
@@ -170,7 +180,8 @@ export function JobsExplorer() {
   return (
     <div className="flex flex-col gap-6">
       {withMoney && (
-        <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", stats?.budget === null ? "lg:grid-cols-3" : "lg:grid-cols-4")} data-testid="job-stats">
+        // US-OPS-57: on a phone the cards are chips in one row that scrolls sideways.
+        <ChipStrip className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", stats?.budget === null ? "lg:grid-cols-3" : "lg:grid-cols-4")} data-testid="job-stats">
           {activeCard}
           {readyCard}
           {stats?.budget !== null && budgetCard}
@@ -182,12 +193,19 @@ export function JobsExplorer() {
             stats && stats.retention.count ? t("jobs.list.acrossJobs", { count: stats.retention.count }) : t("jobs.list.noneHeld"),
             "",
           )}
-        </div>
+        </ChipStrip>
       )}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("jobs.list.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status: status as JobStatus[] })} placeholder={t("jobs.list.statusPlaceholder")} aria-label={t("jobs.list.filterByStatus")} className="w-40" />
             <Combobox
               options={contactOptions}
@@ -197,27 +215,36 @@ export function JobsExplorer() {
               aria-label={t("jobs.list.filterByContact")}
               className="w-56"
             />
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("jobs.list.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="jobs-updated">
                 {refreshing ? t("jobs.list.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("jobs.list.refreshList")} aria-busy={refreshing} disabled={refreshing || !jobs} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !jobs} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("jobs.list.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("jobs.list.refreshList")}</TooltipContent>
-            </Tooltip>
-            {newJobButton}
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("jobs.list.refreshList")} aria-busy={refreshing} disabled={refreshing || !jobs} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("jobs.list.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+            </PhoneMoreActions>
+            {newJobButton && <FloatingActionButton>{newJobButton}</FloatingActionButton>}
           </div>
         </div>
         <p role="status" className="sr-only">
@@ -239,7 +266,7 @@ export function JobsExplorer() {
         <JobsSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -274,7 +301,7 @@ export function JobsExplorer() {
           </div>
         </div>
       ) : (
-        <JobsTable jobs={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={search} />
+        <JobsTable jobs={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={isPhone ? <span /> : search} />
       )}
 
       {canCreate && <NewJobDrawer open={newOpen} onOpenChange={setNewOpen} defaultCurrency={orgCurrency} convertedQuoteIds={convertedQuoteIds} />}

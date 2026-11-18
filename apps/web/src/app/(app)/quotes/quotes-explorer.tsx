@@ -7,8 +7,11 @@ import {
   Alert,
   AlertDescription,
   Button,
+  ChipStrip,
   Combobox,
   EmptyState,
+  FilterSheet,
+  FloatingActionButton,
   Input,
   MultiSelect,
   StatCard,
@@ -16,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   cn,
+  type FilterChip,
 } from "@spine/ui";
 import { FileText, Plus, RefreshCw, Search } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -42,6 +46,8 @@ import type { Quote } from "./types";
 import { QUOTE_TOASTS } from "./quote-row-actions";
 import { ActionError } from "../../../components/action-error";
 import { t as translate, useT } from "../../../lib/i18n";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: translate("quotes.status.draft") },
@@ -78,6 +84,7 @@ export function QuotesExplorer() {
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
+  const isPhone = useIsPhone();
   const loading = useRef(false);
   const showToast = useToast();
 
@@ -186,11 +193,19 @@ export function QuotesExplorer() {
   );
 
   const filtersOn = hasQuoteFilters(state);
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const cardNames: Record<string, string> = { open: t("quotes.explorer.open"), expiring: t("quotes.explorer.expiring"), won: t("quotes.explorer.won") };
+  const filterChips: FilterChip[] = [
+    ...state.status.map((status) => ({ key: `status-${status}`, label: STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status, onRemove: () => update({ status: state.status.filter((s) => s !== status) }) })),
+    ...(state.contact ? [{ key: "contact", label: contactOptions.find((o) => o.value === state.contact)?.label ?? state.contact, onRemove: () => update({ contact: "" }) }] : []),
+    ...(state.card ? [{ key: "card", label: cardNames[state.card] ?? state.card, onRemove: () => update({ card: "" }) }] : []),
+  ];
   const clearAll = () => update({ q: "", status: [], contact: "", card: "" });
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="quote-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="quote-stats">
         {/* eslint-disable-next-line i18next/no-literal-string -- card keys */}
         {card(t("quotes.explorer.open"), stats ? String(stats.open.count) : "—", stats ? money(stats.open) : "", "open", t("quotes.explorer.openHint"), t("quotes.explorer.openAria"))}
         {/* eslint-disable-next-line i18next/no-literal-string -- card keys and tone */}
@@ -205,11 +220,18 @@ export function QuotesExplorer() {
           stats && stats.winRate.closed ? t("quotes.explorer.winRateHint", { won: stats.winRate.won, closed: stats.winRate.closed }) : t("quotes.explorer.winRateNone"),
           "",
         )}
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("quotes.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status })} placeholder={t("quotes.explorer.statusPlaceholder")} aria-label={t("quotes.explorer.statusFilter")} className="w-40" />
             <Combobox
               options={contactOptions}
@@ -219,33 +241,44 @@ export function QuotesExplorer() {
               aria-label={t("quotes.explorer.contactFilter")}
               className="w-56"
             />
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("quotes.explorer.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="quotes-updated">
                 {refreshing ? t("quotes.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("quotes.explorer.refresh")} aria-busy={refreshing} disabled={refreshing || !quotes} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !quotes} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("quotes.explorer.refresh")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("quotes.explorer.refresh")}</TooltipContent>
-            </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("quotes.explorer.refresh")} aria-busy={refreshing} disabled={refreshing || !quotes} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("quotes.explorer.refresh")}</TooltipContent>
+                </Tooltip>
+              )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button asChild>
-                <Link href="/quotes/new">
-                  <Plus size={14} aria-hidden />
-                  {t("quotes.explorer.newQuote")}
-                </Link>
-              </Button>
+              <FloatingActionButton>
+                <Button asChild>
+                  <Link href="/quotes/new">
+                    <Plus size={14} aria-hidden />
+                    {t("quotes.explorer.newQuote")}
+                  </Link>
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -269,7 +302,7 @@ export function QuotesExplorer() {
         <QuotesSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -306,7 +339,7 @@ export function QuotesExplorer() {
           onSortChange={(sort) => update({ sort })}
           page={state.page}
           onPageChange={(page) => update({ page })}
-          toolbarStart={search}
+          toolbarStart={isPhone ? <span /> : search}
           onDeleted={handleDeleted}
           onNotify={(title, description) => {
             setActionError(null);

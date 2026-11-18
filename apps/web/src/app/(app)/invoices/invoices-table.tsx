@@ -99,6 +99,10 @@ export function InvoicesTable({
           </div>
         );
       },
+      // US-OPS-57: in a phone row, just the number; its note goes on the second line.
+      phoneRender: (row) => (
+        <Link href={`/invoices/${row.id}`}>{row.number ?? <span className="font-medium italic text-on-surface-muted">{t("invoices.table.draft")}</span>}</Link>
+      ),
       sortValue: (row) => row.number ?? "",
     },
     {
@@ -110,6 +114,7 @@ export function InvoicesTable({
           {row.contactName ?? "—"}
         </span>
       ),
+      phoneRender: (row) => [row.contactName ?? "—", invoiceKindNote(row)].filter(Boolean).join(" · "),
       sortValue: (row) => row.contactName ?? "",
     },
     {
@@ -149,6 +154,12 @@ export function InvoicesTable({
             )}
           </div>
         );
+      },
+      // One line under the amount on a phone: how it stands ("in 29 days", "6 days late"), else the date.
+      phoneRender: (row) => {
+        const note = dueNote(row, now, locale);
+        if (note.text) return <span className={TONE_CLASS[note.tone]}>{note.text}</span>;
+        return row.dueDate && invoiceState(row) !== "void" ? calendarDate(row.dueDate, now, locale) : null;
       },
       sortValue: (row) => row.dueDate ?? "",
     },

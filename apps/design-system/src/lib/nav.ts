@@ -96,6 +96,8 @@ export const nav: TopLevelSection[] = [
           { title: "Label", href: "/components/label" },
           { title: "FormField", href: "/components/form-field" },
           { title: "Field", href: "/components/field" },
+          { title: "FilterSheet", href: "/components/filter-sheet" },
+          { title: "FloatingActionButton", href: "/components/floating-action-button" },
           { title: "Form", href: "/components/form" },
           { title: "MoneyInput", href: "/components/money-input" },
           { title: "OTPField", href: "/components/otp-field" },
@@ -144,6 +146,7 @@ export const nav: TopLevelSection[] = [
         items: [
           { title: "Card", href: "/components/card" },
           { title: "StatCard", href: "/components/stat-card" },
+          { title: "ChipStrip", href: "/components/chip-strip" },
           { title: "Kanban", href: "/components/kanban" },
           { title: "ReorderableList", href: "/components/reorderable-list" },
           { title: "Timeline", href: "/components/timeline" },

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip } from "@spine/ui";
 import { Plus, Receipt, RefreshCw, Repeat, Search } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -32,7 +32,8 @@ import {
 import type { Invoice } from "./types";
 import { ActionError } from "../../../components/action-error";
 import { useT } from "../../../lib/i18n";
-import { useSelectMode } from "../../../lib/phone-bar";
+import { PhoneMoreActions, useSelectMode } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 
 const STATUS_OPTIONS = (Object.keys(INVOICE_STATE_LABELS) as InvoiceState[]).map((value) => ({ value, label: INVOICE_STATE_LABELS[value] }));
 const ALL_CONTACTS = "__all__";
@@ -67,6 +68,7 @@ export function InvoicesExplorer() {
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const isPhone = useIsPhone();
   // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
   const selecting = useSelectMode({ available: true, onDone: () => setSelectedIds(new Set()) });
   const loading = useRef(false);
@@ -197,6 +199,13 @@ export function InvoicesExplorer() {
   );
 
   const filtersOn = hasInvoiceFilters(state);
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const cardNames: Record<string, string> = { outstanding: t("invoices.explorer.cardOutstanding"), overdue: t("invoices.explorer.cardOverdue"), due7: t("invoices.explorer.cardDue7") };
+  const filterChips: FilterChip[] = [
+    ...state.status.map((status) => ({ key: `status-${status}`, label: STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status, onRemove: () => update({ status: state.status.filter((s) => s !== status) }) })),
+    ...(state.contact ? [{ key: "contact", label: contactOptions.find((o) => o.value === state.contact)?.label ?? state.contact, onRemove: () => update({ contact: "" }) }] : []),
+    ...(state.card ? [{ key: "card", label: cardNames[state.card] ?? state.card, onRemove: () => update({ card: "" }) }] : []),
+  ];
   const clearAll = () => update({ q: "", status: [], contact: "", card: "" });
   // The first of this month in the business's locale ("1 Oct", "Oct 1"). Shown once payments load, in the
   // browser, so the server's HTML (no payments yet) never carries a date that could differ from the client's.
@@ -209,16 +218,24 @@ export function InvoicesExplorer() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="invoice-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="invoice-stats">
         {outstandingCard}
         {overdueCard}
         {due7Card}
         {paidCard}
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("invoices.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status: status as InvoiceState[] })} placeholder={t("invoices.explorer.statusPlaceholder")} aria-label={t("invoices.explorer.filterByStatus")} className="w-40" />
             <Combobox
               options={contactOptions}
@@ -228,18 +245,25 @@ export function InvoicesExplorer() {
               aria-label={t("invoices.explorer.filterByContact")}
               className="w-56"
             />
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("invoices.explorer.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="invoices-updated">
                 {refreshing ? t("invoices.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
+            <PhoneMoreActions>
+            {isPhone ? (
+              <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !invoices} onClick={() => void load("refresh")}>
+                <RefreshCw size={16} aria-hidden />
+                {t("invoices.explorer.refreshList")}
+              </Button>
+            ) : (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="secondary" size="icon" aria-label={t("invoices.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !invoices} onClick={() => void load("refresh")}>
@@ -248,6 +272,7 @@ export function InvoicesExplorer() {
               </TooltipTrigger>
               <TooltipContent>{t("invoices.explorer.refreshList")}</TooltipContent>
             </Tooltip>
+            )}
             {/* US-INV-20 — hidden without invoices.manage_recurring, which every /recurring-invoices route also checks. */}
             {canManageRecurring && (
               <Button asChild variant="secondary">
@@ -257,13 +282,16 @@ export function InvoicesExplorer() {
                 </Link>
               </Button>
             )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button asChild>
-                <Link href="/invoices/new">
-                  <Plus size={14} aria-hidden />
-                  {t("invoices.explorer.newInvoice")}
-                </Link>
-              </Button>
+              <FloatingActionButton>
+                <Button asChild>
+                  <Link href="/invoices/new">
+                    <Plus size={14} aria-hidden />
+                    {t("invoices.explorer.newInvoice")}
+                  </Link>
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -301,7 +329,7 @@ export function InvoicesExplorer() {
         <InvoicesSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -338,7 +366,7 @@ export function InvoicesExplorer() {
           onSortChange={(sort) => update({ sort })}
           page={state.page}
           onPageChange={(page) => update({ page })}
-          toolbarStart={search}
+          toolbarStart={isPhone ? <span /> : search}
           onDeleted={(invoice) => {
             void load("refresh");
             showToast(t("invoices.explorer.deletedTitle"), t("invoices.explorer.deletedDescription", { number: invoice.number ?? t("invoices.explorer.draftInvoice") }));
