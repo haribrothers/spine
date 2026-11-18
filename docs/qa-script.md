@@ -5783,3 +5783,16 @@ Automated: `us-ops-62.spec.ts` runs in the `phone` Playwright project (390×844,
 2. Break a page on purpose (for example give a heading `white-space: nowrap` with a long title) and run it again: it fails naming the route and the check ("/invoices · sideways scroll"), and the HTML report has that page's screenshot.
 3. The two checks still waiting for their stories are listed at the top of the spec: "the tab bar shows" (US-OPS-54) and "the main action is on the first screen" (US-OPS-57, US-OPS-58). Each wave that ships one removes its line.
 4. Regression: `us-ops-17.spec.ts` still visits the same routes (both read `routes.ts`).
+
+## 285. Get around the web app from tabs along the bottom of my phone (US-OPS-54, Phase 12)
+
+Automated: `us-ops-54.spec.ts`, `us-ops-54.test.ts`. On a phone, or the browser's device toolbar at 390×844 with touch:
+
+1. Sign in as the Owner. Along the bottom: Home, Sales, Jobs, Money and More, each with its icon and label; Home has a tinted pill behind its icon. There's no ☰ menu and no sidebar.
+2. Tap Sales: Quotes opens, with Quotes · Contacts · Pipeline · Meetings · Catalogue in a row at the top that scrolls sideways. Tap Money: Invoices, with its row. Open Payments, go to Jobs, then tap Money again: Payments opens.
+3. The top bar shows the page's name, 🔍 and the bell; no logo and no breadcrumb. Scroll Invoices halfway, open an invoice: the top bar reads "Invoice" with ‹. Tap ‹: Invoices, scrolled where you left it. Open an invoice from a pasted link in a new tab and tap ‹: Invoices.
+4. Tap More: a sheet with every page grouped as the sidebar is, then your account, Settings, Help and Sign out; the tabs are hidden behind it. Close it with ✕, then by swiping its header down, then by tapping Users (Users opens).
+5. New quote: it fills the screen with no tabs. On Contacts, tap the search field: the tabs step aside while the keyboard is up.
+6. Sign in as the demo Field member (marcus.webb.demo@example.com): Home, Sales (Meetings), Jobs and More; no Money. Expenses is under More.
+7. Switch to dark mode: the bar, the pill and the sheet follow it, and text stays readable.
+8. Regression: from 768px up (a tablet, or a wider window) the sidebar, search with ⌘K, the account menu and page headers with their breadcrumbs are as before. US-OPS-14's dashboard checks (two key figures per row) still hold.

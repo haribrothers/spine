@@ -403,6 +403,19 @@
   }
 }
 
+/* US-OPS-54 — the tab bar along the bottom steps aside while a full-screen sheet is open,
+   and on a touch screen while a text field has focus (the keyboard is up). */
+@media (max-width: 767.98px) {
+  body:has([data-phone-fullscreen]) [data-tabbar] {
+    display: none;
+  }
+}
+@media (max-width: 767.98px) and (pointer: coarse) {
+  body:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="file"]), textarea, [contenteditable="true"]):focus) [data-tabbar] {
+    display: none;
+  }
+}
+
 /* US-SET-10 — a preview of a customer document (Settings › Branding) stays
    light in both themes, like the PDFs and emails it stands for. */
 [data-surface="document"] {
@@ -521,6 +534,16 @@
   }
 
   /* US-OPS-38 — a toast's entrance from the right; used only with motion-safe:, so reduced motion shows it at once. */
+  /* US-OPS-60: a bottom sheet or action sheet rises from the bottom edge. */
+  --animate-sheet-in: sheet-in var(--duration-slow) var(--easing-decelerate);
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
   --animate-toast-in: toast-in var(--duration-base) var(--easing-decelerate);
   @keyframes toast-in {
     from {

@@ -73,7 +73,43 @@ test.describe("US-OPS-61 · fix what's broken on a phone today", () => {
     }
   });
 
-  test("a record's breadcrumb sits on one line, the middle item shortened if needed", async ({ page, seededOrg: _ }) => {
+  test("the invoice list's selection column has no empty boxes", async ({ page, seededOrg: _ }) => {
+    await page.goto("/invoices");
+    await page.waitForLoadState("networkidle");
+    const checks = await boxes(page.locator("table").getByRole("checkbox"));
+    expect(checks.length).toBeGreaterThan(0);
+    // A checkbox keeps its own size (its 44px tap area is drawn around it, not as a blank box).
+    for (const b of checks) expect(Math.max(b.width, b.height)).toBeLessThanOrEqual(24);
+  });
+
+  test("on a touch screen the search field shows no ⌘K hint", async ({ page, seededOrg: _ }) => {
+    // On a phone, search is an icon in the top bar (US-OPS-54), with no shortcut beside it.
+    await page.goto("/dashboard");
+    const bar = page.getByTestId("app-top-bar");
+    await expect(bar.getByRole("button", { name: "Search" })).toBeVisible();
+    await expect(bar.getByText(/⌘K|Ctrl K/)).toHaveCount(0);
+  });
+
+  test("a report's tabs are one row that scrolls sideways", async ({ page, seededOrg: _ }) => {
+    await page.goto("/reports/profit-and-loss");
+    await expect(page.getByRole("tab", { name: "Profit & Loss" })).toBeVisible();
+    await expectOneRowOfTabs(page);
+  });
+});
+
+test.describe("US-OPS-61 · the desktop is unchanged", () => {
+  test.use({ viewport: { width: 1440, height: 900 }, hasTouch: false, isMobile: false });
+
+  test("with a mouse the search field still shows its shortcut", async ({ page, seededOrg: _ }) => {
+    await page.goto("/dashboard");
+    await expect(page.getByTestId("search-shortcut").first()).toBeVisible();
+  });
+});
+
+test.describe("US-OPS-61 · the breadcrumb at tablet width", () => {
+  test.use({ viewport: { width: 768, height: 1024 }, hasTouch: true, isMobile: true });
+
+  test("at tablet width a record's breadcrumb sits on one line (under 768px it isn't shown, US-OPS-54)", async ({ page, seededOrg: _ }) => {
     await page.goto("/invoices");
     await page.waitForLoadState("networkidle");
     await page.getByText("Draft", { exact: true }).first().click();
@@ -95,40 +131,13 @@ test.describe("US-OPS-61 · fix what's broken on a phone today", () => {
     expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(2);
     for (const t of texts) {
       expect(t.lines).toBeLessThanOrEqual(1);
-      expect(t.right).toBeLessThanOrEqual(PHONE.width);
+      expect(t.right).toBeLessThanOrEqual(768);
     }
   });
 
-  test("the invoice list's selection column has no empty boxes", async ({ page, seededOrg: _ }) => {
-    await page.goto("/invoices");
-    await page.waitForLoadState("networkidle");
-    const checks = await boxes(page.locator("table").getByRole("checkbox"));
-    expect(checks.length).toBeGreaterThan(0);
-    // A checkbox keeps its own size (its 44px tap area is drawn around it, not as a blank box).
-    for (const b of checks) expect(Math.max(b.width, b.height)).toBeLessThanOrEqual(24);
-  });
-
-  test("on a touch screen the search field shows no ⌘K hint", async ({ page, seededOrg: _ }) => {
+  test("on a touch screen at tablet width the sidebar's search field shows no ⌘K hint", async ({ page, seededOrg: _ }) => {
     await page.goto("/dashboard");
-    await page.getByTestId("app-top-bar").getByRole("button", { name: "Open navigation" }).click();
-    const nav = page.getByRole("dialog", { name: "Navigation" });
-    await expect(nav.getByRole("button", { name: "Search" })).toBeVisible();
-    await expect(nav.getByTestId("search-shortcut")).toBeHidden();
-    await expect(nav.getByText(/⌘K|Ctrl K/)).toBeHidden();
-  });
-
-  test("a report's tabs are one row that scrolls sideways", async ({ page, seededOrg: _ }) => {
-    await page.goto("/reports/profit-and-loss");
-    await expect(page.getByRole("tab", { name: "Profit & Loss" })).toBeVisible();
-    await expectOneRowOfTabs(page);
-  });
-});
-
-test.describe("US-OPS-61 · the desktop is unchanged", () => {
-  test.use({ viewport: { width: 1440, height: 900 }, hasTouch: false, isMobile: false });
-
-  test("with a mouse the search field still shows its shortcut", async ({ page, seededOrg: _ }) => {
-    await page.goto("/dashboard");
-    await expect(page.getByTestId("search-shortcut").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Search" }).first()).toBeVisible();
+    await expect(page.getByTestId("search-shortcut")).toBeHidden();
   });
 });

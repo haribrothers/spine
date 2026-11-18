@@ -1360,6 +1360,56 @@
       "onlineDocsHint": "Latest docs on the website",
       "footer": "Spine {{version}} · the guide on this server matches your version",
       "footerGeneric": "The guide on this server matches your version"
+    },
+    "phone": {
+      "tabs": {
+        "home": "Home",
+        "sales": "Sales",
+        "jobs": "Jobs",
+        "money": "Money",
+        "more": "More"
+      },
+      "more": {
+        "title": "Menu",
+        "pages": "All pages",
+        "help": "Help"
+      },
+      "titles": {
+        "spine": "Spine",
+        "contact": "Contact",
+        "newContact": "New contact",
+        "quote": "Quote",
+        "newQuote": "New quote",
+        "editQuote": "Edit quote",
+        "invoice": "Invoice",
+        "newInvoice": "New invoice",
+        "editInvoice": "Edit invoice",
+        "recurringInvoices": "Recurring invoices",
+        "job": "Job",
+        "payment": "Payment",
+        "creditNote": "Credit note",
+        "expense": "Expense",
+        "expenseCategories": "Expense categories",
+        "vendorBill": "Vendor bill",
+        "newVendorBill": "New vendor bill",
+        "editVendorBill": "Edit vendor bill",
+        "recurringBills": "Recurring bills",
+        "vendorCredit": "Vendor credit",
+        "newVendorCredit": "New vendor credit",
+        "editVendorCredit": "Edit vendor credit",
+        "vendorPayment": "Vendor payment",
+        "bankAccount": "Bank account",
+        "reconcile": "Reconcile",
+        "reconciliations": "Reconciliations",
+        "journal": "Journal entry",
+        "team": "Team",
+        "tallyMapping": "Tally mapping",
+        "activity": "Activity",
+        "profile": "Profile",
+        "setup": "Set up Spine",
+        "openingBalances": "Opening balances",
+        "emails": "Emails"
+      }
     }
   },
   "contacts": {
@@ -8205,9 +8255,7 @@
   },
   "ui": {
     "appShell": {
-      "openNavigation": "Open navigation",
-      "navigation": "Navigation",
-      "closeNavigation": "Close navigation"
+      "back": "Back"
     },
     "breadcrumb": {
       "label": "Breadcrumb"
@@ -8408,6 +8456,15 @@
     },
     "scrollX": {
       "label": "Table, scrolls sideways"
+    },
+    "bottomTabBar": {
+      "label": "Main"
+    },
+    "bottomSheet": {
+      "close": "Close"
+    },
+    "actionSheet": {
+      "cancel": "Cancel"
     }
   },
   "uiNative": {

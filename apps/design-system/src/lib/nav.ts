@@ -60,7 +60,10 @@ export const nav: TopLevelSection[] = [
       },
       {
         title: "Application shell",
-        items: [{ title: "AppShell", href: "/components/app-shell" }],
+        items: [
+          { title: "AppShell", href: "/components/app-shell" },
+          { title: "BottomTabBar", href: "/components/bottom-tab-bar" },
+        ],
       },
     ],
   },
@@ -169,6 +172,8 @@ export const nav: TopLevelSection[] = [
         title: "Overlays",
         items: [
           { title: "Dialog", href: "/components/dialog" },
+          { title: "BottomSheet", href: "/components/bottom-sheet" },
+          { title: "ActionSheet", href: "/components/action-sheet" },
           { title: "AlertDialog", href: "/components/alert-dialog" },
           { title: "Drawer", href: "/components/drawer" },
         ],

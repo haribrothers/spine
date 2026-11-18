@@ -1,10 +1,6 @@
 "use client";
 
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Menu, X } from "lucide-react";
 import { cn } from "../lib/cn";
-import { useT } from "../lib/i18n";
-import { DialogOverlay } from "./dialog";
 import { Breadcrumb, type BreadcrumbItem } from "./breadcrumb";
 import {
   Sidebar,
@@ -32,7 +28,7 @@ import {
  * want it (a page can skip it and lay out its own header instead).
  */
 export function AppShell({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  // US-OPS-14 (D-066): under 768px a top bar sits above the content instead of the sidebar beside it.
+  // US-OPS-54 (D-283): under 768px the top bar, the area row, the content and the tab bar stack in a column.
   return <div data-print="flow" className={cn("flex h-screen w-full flex-col overflow-hidden bg-background md:flex-row", className)} {...props} />;
 }
 
@@ -119,106 +115,6 @@ export function AppShellSidebar({
   );
 }
 
-export interface AppShellTopBarProps {
-  /** The logo, as in the sidebar. */
-  logo: React.ReactNode;
-  /** Opens `AppShellMobileNav`. */
-  onMenuClick: () => void;
-  /** Right-hand controls: notifications and the avatar menu. */
-  actions?: React.ReactNode;
-  menuLabel?: string;
-}
-
-/**
- * US-OPS-14 (D-066) — the bar across the top under 768px, in place of the
- * sidebar: a menu button, the logo, then notifications and the avatar.
- * Every control is at least 44×44px. Hidden from 768px up.
- */
-export function AppShellTopBar({ logo, onMenuClick, actions, menuLabel }: AppShellTopBarProps) {
-  const t = useT();
-  return (
-    <header data-testid="app-top-bar" className="flex h-14 shrink-0 items-center gap-1 border-b border-border bg-surface px-1.5 md:hidden">
-      <button
-        type="button"
-        onClick={onMenuClick}
-        aria-label={menuLabel ?? t("ui.appShell.openNavigation")}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
-        <Menu size={22} aria-hidden />
-      </button>
-      <div className="flex min-w-0 flex-1 items-center">{logo}</div>
-      {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
-    </header>
-  );
-}
-
-export interface AppShellMobileNavProps extends Pick<AppShellSidebarProps, "sections" | "isActive" | "renderLink" | "search"> {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  logo: React.ReactNode;
-  /** Pinned to the bottom: the person's name and menu, and help. */
-  footer?: React.ReactNode;
-  /** Read by screen readers as the panel's name. */
-  title?: string;
-}
-
-/**
- * US-OPS-14 (D-066) — the full navigation under 768px: slides in from the
- * left over a dimmed page, with a close button. Tapping the dimmed area,
- * pressing Escape or following a link closes it. Same sections as the
- * sidebar, expanded.
- */
-export function AppShellMobileNav({ open, onOpenChange, logo, sections, isActive, renderLink, search, footer, title }: AppShellMobileNavProps) {
-  const t = useT();
-  return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      <DialogPrimitive.Portal>
-        <DialogOverlay className="md:hidden" />
-        <DialogPrimitive.Content
-          aria-describedby={undefined}
-          data-testid="mobile-nav"
-          className="fixed inset-y-0 left-0 z-[var(--z-modal)] flex w-[min(300px,calc(100%-48px))] flex-col border-r border-border bg-surface shadow-overlay focus:outline-none motion-safe:animate-nav-in md:hidden"
-          // A followed link closes the panel.
-          onClick={(event) => {
-            if ((event.target as HTMLElement).closest("a[href]")) onOpenChange(false);
-          }}
-        >
-          <DialogPrimitive.Title className="sr-only">{title ?? t("ui.appShell.navigation")}</DialogPrimitive.Title>
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border pl-3 pr-1.5">
-            {logo}
-            <DialogPrimitive.Close
-              aria-label={t("ui.appShell.closeNavigation")}
-              className="flex h-11 w-11 items-center justify-center rounded-md text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={20} aria-hidden />
-            </DialogPrimitive.Close>
-          </div>
-          {search ? <div className="shrink-0 px-2 pt-2">{search}</div> : null}
-          <SidebarContent>
-            {sections.map((section) => (
-              <SidebarGroup key={section.label}>
-                <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-                {section.items.map((item) => (
-                  <SidebarNavItem key={item.href} active={isActive(item.href)} className="min-h-11" asChild>
-                    {renderLink(
-                      item,
-                      <>
-                        <span className="shrink-0 [&_svg]:h-[18px] [&_svg]:w-[18px]">{item.icon}</span>
-                        <span className="truncate">{item.label}</span>
-                      </>,
-                    )}
-                  </SidebarNavItem>
-                ))}
-              </SidebarGroup>
-            ))}
-          </SidebarContent>
-          {footer ? <SidebarFooter>{footer}</SidebarFooter> : null}
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
-  );
-}
-
 export interface AppShellHeaderProps {
   breadcrumb?: BreadcrumbItem[];
   title: string;
@@ -236,8 +132,9 @@ export function AppShellHeader({ breadcrumb, title, description, action, classNa
       {/* US-OPS-14: under 768px the actions wrap onto their own row, under the title. */}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
-          {description ? <p className="text-[14px] text-on-surface-muted">{description}</p> : null}
+          {/* US-OPS-54: under 768px the top bar shows the title, so it's here for screen readers only. */}
+          <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface max-md:sr-only">{title}</h1>
+          {description ? <p className="text-[14px] text-on-surface-muted max-md:hidden">{description}</p> : null}
         </div>
         {action ? <div className="flex min-w-0 flex-wrap items-center gap-2 md:shrink-0">{action}</div> : null}
       </div>
@@ -258,6 +155,8 @@ export interface AppShellContentProps extends React.HTMLAttributes<HTMLDivElemen
   fullWidth?: boolean;
   /** App-wide notices (`Banner`) shown full-width above the page, outside the width cap. */
   banner?: React.ReactNode;
+  /** The scrolling `<main>`, e.g. to keep a list's scroll for the back arrow (US-OPS-54). */
+  ref?: React.Ref<HTMLElement>;
 }
 
 /** The scrollable main content region, capped to the design system's 1200px max-width container by default — see `fullWidth` to opt out. */

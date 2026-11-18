@@ -3,7 +3,7 @@ import { LayoutDashboard, Receipt } from "lucide-react";
 import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { useState } from "react";
-import { AppShell, AppShellContent, AppShellHeader, AppShellMobileNav, AppShellSidebar, AppShellTopBar, type AppShellNavSection } from "./app-shell";
+import { AppShell, AppShellContent, AppShellHeader, AppShellSidebar, type AppShellNavSection } from "./app-shell";
 import { Avatar, AvatarFallback } from "./avatar";
 
 const DEMO_SECTIONS: AppShellNavSection[] = [
@@ -106,42 +106,5 @@ describe("AppShell a11y", () => {
     const firstLink = screen.getByRole("link", { name: "Dashboard" });
     expect(search.compareDocumentPosition(firstLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await expectNoA11yViolations(container);
-  });
-
-  it("US-OPS-14: the phone top bar's menu button opens the navigation, which a link or the close button closes", async () => {
-    function Phone() {
-      const [open, setOpen] = useState(false);
-      return (
-        <AppShell>
-          <AppShellTopBar logo={<span>Spine</span>} onMenuClick={() => setOpen(true)} actions={<button type="button" aria-label="Notifications" />} />
-          <AppShellMobileNav
-            open={open}
-            onOpenChange={setOpen}
-            logo={<span>Spine</span>}
-            sections={DEMO_SECTIONS}
-            isActive={(href) => href === "/dashboard"}
-            renderLink={(item, content) => (
-              <a href={item.href} aria-label={item.label} onClick={(e) => e.preventDefault()}>
-                {content}
-              </a>
-            )}
-          />
-          <AppShellContent>
-            <p>Content</p>
-          </AppShellContent>
-        </AppShell>
-      );
-    }
-    const { container } = render(<Phone />);
-    await expectNoA11yViolations(container);
-    fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    const nav = screen.getByRole("dialog", { name: "Navigation" });
-    expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("aria-current")).toBe("page");
-    await expectNoA11yViolations(nav);
-    fireEvent.click(screen.getByRole("link", { name: "Invoices" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    fireEvent.click(screen.getByRole("button", { name: "Close navigation" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -68,6 +68,8 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
           DIALOG_SIZES[size],
           className,
         )}
+        // US-OPS-54: xl fills a phone's screen, so the tab bar steps aside while it's open.
+        {...(size === "xl" ? { "data-phone-fullscreen": "" } : {})}
         {...props}
       >
         {children}

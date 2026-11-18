@@ -12,7 +12,8 @@ export interface BreadcrumbItem {
  * One line at every width (US-OPS-61): when space runs out the middle items
  * shorten with "…" first, then the last; the first keeps its text. Links are
  * inline-flex so the 44px phone tap height (US-OPS-14) centres their text
- * on the line instead of lifting it above the others.
+ * on the line instead of lifting it above the others. Under 768px it isn't shown: the top bar's
+ * back arrow does its job (US-OPS-54).
  */
 /** How an item gives way when the line is full: the middle ones first, then the last (the record). */
 function fitClass(isMiddle: boolean, isLastOfMany: boolean): string {
@@ -23,7 +24,7 @@ function fitClass(isMiddle: boolean, isLastOfMany: boolean): string {
 
 export function Breadcrumb({ items, className }: { items: BreadcrumbItem[]; className?: string }) {
   return (
-    <nav aria-label={t("ui.breadcrumb.label")} className={cn("flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden text-[13px]", className)}>
+    <nav aria-label={t("ui.breadcrumb.label")} className={cn("flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden text-[13px] max-md:hidden", className)}>
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         const isMiddle = index > 0 && !isLast;

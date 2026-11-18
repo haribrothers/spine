@@ -26,6 +26,7 @@ import { Dialog, DialogTrigger, DialogClose, DialogOverlay, DialogContent, Dialo
 
 ## Rules and behaviour
 
+- `size="xl"` fills a phone's screen and is marked `data-phone-fullscreen`, so the tab bar steps aside while it's open (US-OPS-54).
 - Full keyboard navigation.
 - Under 768px, md and lg fill the screen width with a 16px gutter each side (US-OPS-15); xl takes the whole screen there (D-236).
 - Supports modal and non-modal modes.

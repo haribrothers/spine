@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-18 — US-OPS-54: tabs along the bottom of the phone
+
+- **The phone shell:** under 768px the web app now has a top bar with the page's title (not the logo), a back arrow, search and notifications. Sales and Money pages have the area's pages in a row under it. Tabs along the bottom: Home · Sales · Jobs · Money · More. The menu button, the slide-over navigation (US-OPS-14, D-066) and the breadcrumb are gone at that width. From 768px up nothing changes.
+- **Tabs:** they come from the same `navSectionsFor` as the sidebar. A tab with no page the person can open isn't shown, and a Field member gets no Money tab: their own expenses are under More, following the story's example. Sales and Money open the list last used there, with its filters (`sessionStorage`); records aren't remembered, so tapping Money from an invoice goes back to its list.
+- **More** opens the whole menu in a full-height `BottomSheet`, grouped as the sidebar is, then the account menu, Settings, Help and Sign out (`useSignOut`, shared with the account menu). Close, a swipe down or choosing a page closes it.
+- **Back arrow:** it uses the history when Spine itself navigated, else the parent page (`parentPath`). A list's scroll is kept per address, so back returns to the same place.
+- **Tab bar out of the way:** it's hidden on builders (`/new`, `/edit`). A CSS `:has()` rule also hides it while a full-screen sheet is open (`data-phone-fullscreen`: the More sheet, Settings and other `xl` dialogs) and, on a touch screen, while a text field has focus.
+- **New in `@spine/ui`:** `BottomTabBar`, `BottomSheet`, `ActionSheet` (built now; US-OPS-60 wires it into menus) and `AppShellPhoneBar` and `AppShellAreaNav`, each with its doc page and axe test. `AppShellTopBar` and `AppShellMobileNav` are removed. `AppShellHeader`'s title is for screen readers only under 768px, since the top bar shows it, and its description is hidden. `lib/phone-shell.ts` holds the areas, titles and back targets as plain functions.
+- **Tests and docs:** `us-ops-54.spec.ts` (phone, desktop, Field, axe in light and dark) and `us-ops-54.test.ts`. The US-OPS-62 phone check now requires the tab bar on every page but builders. US-OPS-14's slide-over test is replaced. Guide page "Use Spine on your phone"; QA section 285.
+
 ### 2026-11-18 — US-OPS-62: every page is checked at phone width before each release
 
 - **A `phone` Playwright project** (390×844, touch, a phone user agent) runs `us-ops-62.spec.ts` as part of `pnpm verify` and the release run (D-260). It covers every app route, a record of each kind, every Settings pane and the bundled guide, in light and dark. It checks for sideways scroll, overlapping labels in a tab or button row, controls under 44px and axe AA. Each failure names the route and the check, writes `phone-failures.json` and attaches the page's screenshot.

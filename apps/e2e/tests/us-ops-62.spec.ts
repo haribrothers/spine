@@ -14,7 +14,6 @@ import { PANES, appRoutes, settle } from "./routes";
  * here, by story, and skipped; the wave that ships the story deletes its line.
  */
 const WAITING_FOR: Partial<Record<Check, string>> = {
-  "tab bar": "US-OPS-54 (tabs along the bottom)",
   "main action on the first screen": "US-OPS-57 and US-OPS-58 (each page marks its main action)",
 };
 
@@ -79,7 +78,10 @@ async function checkPage(page: Page, route: string, failures: Failure[], { appSh
   const sideways = await sidewaysScroll(page);
   if (sideways > 0) fail("sideways scroll", `${sideways}px`);
 
-  if (appShell && on("tab bar") && !(await page.getByRole("navigation", { name: "Main" }).isVisible())) fail("tab bar", "not shown");
+  // A builder fills the screen without it (US-OPS-59); every other app page has it (US-OPS-54).
+  // A full-screen sheet (Settings, the More menu) covers it on purpose too.
+  const builder = /\/(new|edit)$/.test(route) || (await page.locator("[data-phone-fullscreen]").count()) > 0;
+  if (appShell && !builder && on("tab bar") && !(await page.getByRole("navigation", { name: "Main" }).isVisible())) fail("tab bar", "not shown");
 
   if (on("main action on the first screen")) {
     const main = page.locator("[data-main-action]").first();
