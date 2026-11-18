@@ -663,7 +663,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-16 · Move every user-facing string into translation files
 - [x] US-OPS-17 · Pass an accessibility audit of every screen
 - [x] US-OPS-18 · Complete a security review before 1.0 (signed off by the Owner 2026-11-15)
-- [ ] US-OPS-19 · Ship the README, licence and contributor guide (README, LICENSE, CONTRIBUTING, code of conduct, issue and PR templates and docs/release.md done; waiting for the Owner's clean-machine test: follow only the README to a first invoice)
+- [x] US-OPS-19 · Ship the README, licence and contributor guide (README, LICENSE, CONTRIBUTING, code of conduct, issue and PR templates and docs/release.md; the Owner's clean-machine test passed on 2026-11-17 with 1.0.0-beta.5: only the README, a fresh machine to a first invoice in under 5 minutes)
 
 ### Milestone 2 · website and help
 

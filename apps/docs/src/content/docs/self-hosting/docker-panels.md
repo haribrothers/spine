@@ -9,7 +9,7 @@ If you run your containers from a panel rather than a terminal, paste Spine's pa
 
 It runs the same four containers as [`install.sh`](../install/): the database, the API, the web app and Spine's proxy. Spine opens on port **7746** at any address, for example `http://192.168.1.20:7746`. For [Coolify](../coolify/), use its own file; [Runtipi](#runtipi) installs Spine from its own app store instead.
 
-The Portainer steps were checked on Portainer 2.45, and Runtipi's app in a copy of how Runtipi runs apps; the others follow each panel's own documentation. Panels change their screens between versions, so if a name below doesn't match yours, look for the same idea: a Compose project or stack, its environment variables, and for Dokploy and Easypanel, a domain.
+The Portainer steps were checked on Portainer 2.45, and Runtipi's app on a real Runtipi (installed from the store, then updated from 1.0.0-beta.4 to beta.5); the others follow each panel's own documentation. Panels change their screens between versions, so if a name below doesn't match yours, look for the same idea: a Compose project or stack, its environment variables, and for Dokploy and Easypanel, a domain.
 
 ## The settings
 

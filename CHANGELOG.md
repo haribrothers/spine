@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-18 — The clean-machine test passed; Runtipi and Coolify upgrades checked for real (US-OPS-19, US-OPS-53, US-OPS-52)
+
+- **US-OPS-19 is done:** the Owner followed only the README on a fresh machine with 1.0.0-beta.5 and issued a first invoice in under 5 minutes (Phase 12's exit criterion, NFR-MNT-01).
+- **Runtipi:** Spine installed from the store on a real Runtipi and updated from 1.0.0-beta.4 to beta.5 through it. The Docker panels page no longer says it was only checked against a copy.
+- **Coolify:** an install went from 1.0.0-beta.2 to beta.5 by pasting the new file. The Coolify pages' upgrade step now names a current version, and says an install from beta.3 or earlier pastes the file once to change to the `spine-proxy` image; after that, setting `SPINE_VERSION` is enough.
+
 ### 2026-11-17 — Fix: a closed toast's removal no longer outlives the toast host (US-OPS-38)
 
 - The host removes a closed toast 200 ms after closing it, so Radix can fade it out. If the host unmounted first, the removal still ran; on a slow CI runner it fired after the test environment was gone and failed the web suite with "window is not defined". The host now clears its waiting removals when it unmounts. Test: `us-ops-38.test.tsx` closes a toast, unmounts the host, and checks the removal was cleared.

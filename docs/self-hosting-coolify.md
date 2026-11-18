@@ -61,7 +61,7 @@ On Coolify, backups go straight to an S3-compatible bucket (Cloudflare R2, Backb
 ## Upgrading to a new beta
 
 1. Run the backup task once by hand.
-2. Paste the new release's `docker-compose.coolify.yml` over the old one, or just set `SPINE_VERSION` to the new version (e.g. `1.0.0-beta.2`).
+2. Paste the new release's `docker-compose.coolify.yml` over the old one, or just set `SPINE_VERSION` to the new version (for example `1.0.0-beta.5`). From 1.0.0-beta.3 or earlier, paste the file once: it changes Caddy to Spine's own `spine-proxy` image (D-280), and from then on `SPINE_VERSION` is enough. Coolify keeps the generated secrets and the volumes either way.
 3. Redeploy. If the new version brings migrations, the API takes a database snapshot first (in the `spine_snapshots` volume), then applies them; a failed migration changes nothing.
 
 Settings › About Spine shows the new version.
