@@ -278,7 +278,7 @@ Decision: D-212
 **Implementation notes**
 - UI: `meetings-calendar.tsx` measures its height like the pipeline board (`useFillHeight`); `Calendar`'s toolbar wraps; Agenda rows take location and contact names from the page.
 - Edge: the app's left navigation has no phone layout yet, so on a phone it has to be collapsed; a phone layout for the app shell is outside this story.
-- Superseded under 768px by US-MTG-18 (D-283): a phone opens on the month with the day's meetings, and the toolbar is one row.
+- Superseded under 768px by US-MTG-18 (D-283): a phone opens on the month with the day's meetings, and the toolbar is two short rows.
 
 ### US-MTG-18 · Use a calendar made for my phone
 **Feature:** F-MTG-06 · **Priority:** P1 · **Phase:** 12 · **Screens:** `MeetingsPhoneMonth`, `MeetingsPhoneDay`, `MeetingsPhoneMonthDark`
@@ -290,7 +290,7 @@ Decision: D-283
 - **Given** a window under 768px, **when** `/meetings` opens with no view in the address, **then** it shows the month as a compact grid (one letter per weekday), today circled, a dot under each day that has meetings (up to three, in their calendars' colours, with the number for screen readers), and the chosen day's meetings listed under the grid with their time (or "All day"), title, location and contact.
 - **Given** the month, **when** I tap a day, **then** it's chosen and its meetings show under the grid; when I swipe the grid left or right, or tap the arrows, **then** the next or previous month shows; Today returns to today.
 - **Given** Day, **when** I choose it, **then** a strip of the week's seven days (with their dots) sits over a timeline of the chosen day, scrolled to the working day or to now; swiping the strip moves a week, swiping the timeline moves a day, and a line marks now.
-- **Given** the toolbar, **when** it shows, **then** it's one row: the month and year (tapping it picks another), Today, and Month · Day · Agenda as a segmented control; the mini calendar and Calendars list open from the top bar.
+- **Given** the toolbar, **when** it shows, **then** it's two short rows: the month and year (tapping it picks another), the previous and next arrows and Today, then Month · Day · Agenda as a segmented control the width of the screen; the mini calendar and Calendars list open from the top bar. (At 390px one row can't hold all of them at 44px each; found while drawing `MeetingsPhoneMonth`.)
 - **Given** Agenda, **when** I choose it, **then** it works as US-MTG-17 describes.
 - **Given** the + button, **when** I tap it, **then** New meeting opens as a full-screen sheet (US-OPS-60) on the chosen day, at the next half hour.
 - **Given** a meeting in any view, **when** I tap it, **then** its quick view opens as a bottom sheet.

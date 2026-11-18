@@ -667,7 +667,7 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 
 ### Milestone 2 · the web app as a phone app (D-283)
 
-Docs done 2026-11-18; designs next, then the build in waves, each approved by the Owner.
+Docs done 2026-11-18. Designs drawn 2026-11-18: 28 screens in `docs/design/screens.md` › "Web app at phone width", waiting for the Owner's approval. Then the build in waves, each approved by the Owner.
 
 - [ ] US-OPS-61 · Fix what's broken on a phone today
 - [ ] US-OPS-62 · Check every page at phone width before each release

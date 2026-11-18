@@ -70,7 +70,7 @@ import { CalendarView, RecurringMoveOrResizeRequest, Calendar } from "@spine/ui"
 
 ## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
 
-- Under 768px Month is a compact grid with up to three dots per busy day and the chosen day's meetings listed under it; Day is a week strip over a timeline; swipe moves month, week or day, and the arrows do the same for keyboard users; the toolbar is one row with Month · Day · Agenda as a segmented control (US-MTG-18).
+- Under 768px Month is a compact grid with up to three dots per busy day and the chosen day's meetings listed under it; Day is a week strip over a timeline; swipe moves month, week or day, and the arrows do the same for keyboard users; the toolbar is two short rows, the month and year with the arrows and Today, then Month · Day · Agenda as a segmented control the width of the screen (US-MTG-18, `MeetingsPhoneMonth`).
 
 ## Exports
 

@@ -9,10 +9,10 @@ The bar along the bottom of the web app under 768px: Home · Sales · Jobs · Mo
 ## Rules and behaviour
 
 - Up to five tabs; a tab whose pages the person can't open isn't rendered, and the others share the width.
-- The current tab is marked by its filled icon, its label weight and `aria-current="page"`, never by colour alone.
+- The icons are Lucide `House`, `FileText`, `HardHat`, `Wallet` and `Menu`. The current tab is marked by a tinted pill behind its icon (`info-bg`), a heavier label and `aria-current="page"`, never by colour alone (Lucide has no filled icons).
 - Each tab is at least 44×44px; the bar sits above the home indicator (`env(safe-area-inset-bottom)`).
 - Hidden while the keyboard, a builder or a full-screen sheet is open.
-- A `<nav>` labelled "Main"; works in light and dark from tokens. Its look follows the field app's `FloatingTabBar` ([FloatingTabBarNative](FloatingTabBarNative.md)).
+- A `<nav>` labelled "Main"; works in light and dark from tokens. It's docked to the bottom edge on `surface` with a top border, not floating, so the floating + button can sit above it; each tab's icon-over-label look follows the field app's `FloatingTabBar` ([FloatingTabBarNative](FloatingTabBarNative.md)). Drawn in `AppShellPhoneTabs`.
 
 ## Accessibility
 

@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-18 — Designs: the web app at phone width (D-283)
+
+- **28 screens drawn** for US-OPS-54 to US-OPS-60, US-MTG-18, US-RPT-41 and US-DASH-31 on the Claude Design canvas "Spine web — phone layout", exported to `docs/design/screens/*Phone*.webp`. They're listed in `docs/design/screens.md` under "Web app at phone width" (649 screens now):
+  - the shell, the More sheet and the home-screen app;
+  - Invoices as rows, in Select mode and with the Filters sheet; the Pipeline;
+  - an invoice and its action sheet; a job;
+  - the quote builder and its line sheet;
+  - Record payment as a full-screen sheet; a row's action sheet; a picker sheet;
+  - the phone month and day;
+  - Profit & Loss with its filters, and the Trial balance;
+  - the dashboard;
+  - dark versions of seven of these.
+- **One stylesheet, from the tokens.** Every board uses one `phone.css` whose values come from `tokens.json`, in light and dark. A dark board is its light board with the theme switched. The demo data is the refined screens' business (Sahyadri Retail, INV-0038, JOB-002, rupees), and its figures add up.
+- **Spec corrections the drawings found:**
+  - US-MTG-18's calendar toolbar is two short rows: at 390px the month, the arrows, Today and Month · Day · Agenda don't fit one row at 44px each. `Calendar.md` changes to match.
+  - `BottomTabBar.md` names the tab icons (`House`, `FileText`, `HardHat`, `Wallet`, `Menu`). The current tab gets a tinted pill, since Lucide has no filled icons. The bar is docked, not floating, so the + button can sit above it.
+  - `AppShellPhone`, `AppShellPhoneNav` and `MeetingsPhone` note what replaces them.
+- **Next:** the Owner reviews the designs; the build starts in waves (US-OPS-61 first) once they're approved.
+
 ### 2026-11-18 — Spec: the web app gets a phone layout of its own before 1.0 (D-283)
 
 - **Why:** screenshots of the demo business at 390×844 showed each list's first screen filled by summary cards, tables showing only their first column, the main action halfway down, a job's tabs overlapping and Issue invoice running off the screen. The phone checks passed because they only look for a page that scrolls sideways.
