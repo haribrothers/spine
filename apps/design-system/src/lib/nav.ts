@@ -113,6 +113,7 @@ export const nav: TopLevelSection[] = [
           { title: "Collapsible", href: "/components/collapsible" },
           { title: "Separator", href: "/components/separator" },
           { title: "ScrollArea", href: "/components/scroll-area" },
+          { title: "ScrollX", href: "/components/scroll-x" },
           { title: "AspectRatio", href: "/components/aspect-ratio" },
           { title: "Kbd", href: "/components/kbd" },
           { title: "SpineLogo", href: "/components/spine-logo" },

@@ -19,6 +19,8 @@ import { BreadcrumbItem, Breadcrumb } from "@spine/ui";
 ## Rules and behaviour
 
 - The last item (no href) renders as plain, non-interactive text for the current page.
+- One line at every width: when space runs out the middle items shorten with "…" first (the full label is their tooltip), then the last; the first keeps its text (US-OPS-61).
+- Under 768px each link is 44px tall to tap, with its text centred on the line.
 
 ## Exports
 

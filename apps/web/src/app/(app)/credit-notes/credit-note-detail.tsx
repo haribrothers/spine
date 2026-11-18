@@ -236,7 +236,7 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
               </p>
             )}
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="credit-note-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="credit-note-actions">
             {secondaryButtons}
             {primaryButton}
             <DropdownMenu>

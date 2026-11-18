@@ -80,6 +80,27 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-18 — US-OPS-62: every page is checked at phone width before each release
+
+- **A `phone` Playwright project** (390×844, touch, a phone user agent) runs `us-ops-62.spec.ts` as part of `pnpm verify` and the release run (D-260). It covers every app route, a record of each kind, every Settings pane and the bundled guide, in light and dark. It checks for sideways scroll, overlapping labels in a tab or button row, controls under 44px and axe AA. Each failure names the route and the check, writes `phone-failures.json` and attaches the page's screenshot.
+- **One route list:** `apps/e2e/tests/routes.ts` now holds the routes for both this check and the accessibility audit (US-OPS-17), so a new route is checked by both. `us-ops-15.spec.ts`'s 19-route sweep is gone; this check covers it.
+- **Waiting checks:** "the tab bar shows" and "the main action is on the first screen" are listed in the spec under their stories (US-OPS-54; US-OPS-57 and US-OPS-58) and switch on as those ship.
+- **What the first run found, now fixed:**
+  - Wide tables scrolled with no keyboard access (axe `scrollable-region-focusable` on document lines, the general ledger and others). They're now a new `ScrollX` box in `@spine/ui`, which becomes a focusable, named region only when it actually scrolls. `Table`, `StatementTable` and 17 table boxes in the web app use it.
+  - A payment record scrolled sideways by 114px: an `sr-only` column label is `position: absolute`, so it escaped its table's scroll box and widened the page. `ScrollX` is `relative`, so it clips such children. The toast area is pinned with `inset-x-0` too, so it can't reach past the screen either.
+  - The breadcrumb's short links ("Jobs", "Teams") were under 44px wide.
+  - The guide's site title and search were 32px; the docs theme now gives them 44px on a phone.
+  - The checks themselves: the small-controls helper skips visually hidden (`sr-only`) and off-screen controls, and the overlap check skips controls laid over others on purpose (a card's ⋯, the floating button).
+
+### 2026-11-18 — US-OPS-61: what was broken on a phone is fixed
+
+- **Tabs** (`@spine/ui` `TabsList`): under 768px the row scrolls sideways instead of wrapping, so a job's Milestones · Variation orders · Photos · Notes · Crew · Costing and the reports' statement tabs no longer land on each other. The underline becomes an inset shadow there and the focus ring is drawn inside, so the scrolling row clips neither.
+- **Record headers:** the actions on an invoice, quote, job, payment, credit note, expense, vendor bill, vendor credit and vendor payment wrap inside the screen. Issue invoice used to run off the right edge.
+- **Breadcrumb:** one line at every width. The middle items shorten with "…" (the full label is the tooltip), then the last. Each link is a 44px tap target with its text centred, so the middle item no longer sits higher than the others.
+- **Checkboxes, radio buttons and switches:** these are `<button>`s, so the phone's 44px rule (US-OPS-14) drew each one as a blank 44px box, the "empty boxes" in the invoice list. Checkbox, RadioGroupItem and Switch now carry `data-tap-area`: they keep their size, and the 44px tap area is drawn around them. Segmented buttons with `role="radio"` still get the full 44px. The phone check's small-controls helper skips them, as its comment always said.
+- **Search:** the ⌘K / Ctrl K hint is hidden on touch screens (`pointer: coarse`).
+- Tests: `us-ops-61.spec.ts` (one check per criterion, plus the desktop still showing ⌘K) and new cases in `breadcrumb.a11y.test.tsx` and `checkbox.a11y.test.tsx`. Docs: Tabs, Breadcrumb, Checkbox, RadioGroup and Switch, with their design-system pages; QA script section 283.
+
 ### 2026-11-18 — Designs: the web app at phone width (D-283)
 
 - **28 screens drawn** for US-OPS-54 to US-OPS-60, US-MTG-18, US-RPT-41 and US-DASH-31 on the Claude Design canvas "Spine web — phone layout", exported to `docs/design/screens/*Phone*.webp`. They're listed in `docs/design/screens.md` under "Web app at phone width" (649 screens now):

@@ -64,6 +64,7 @@ export * from "./components/report-toolbar";
 export * from "./components/resizable";
 export * from "./components/rich-text-editor";
 export * from "./components/scroll-area";
+export * from "./components/scroll-x";
 export * from "./components/segmented-bar";
 export * from "./components/select";
 export * from "./components/separator";

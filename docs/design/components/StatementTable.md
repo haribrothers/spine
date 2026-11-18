@@ -20,6 +20,7 @@ import { StatementTable, StatementRow, StatementColumn } from "@spine/ui";
 
 ## Rules and behaviour
 
+- Its scroll box is a [ScrollX](ScrollX.md): wider than the screen, it scrolls inside its box and is a focusable region (US-OPS-62).
 - Row kinds: `section` (uppercase heading), `line`, `subtotal` (bold), `total` (bold on the sunken band, in `<tfoot>`), `empty` (a muted line).
 - Any number of right-aligned value columns with tabular figures (comparison columns, each month).
 - Signs and arrows carry direction, never colour alone.

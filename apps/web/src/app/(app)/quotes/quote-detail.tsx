@@ -533,7 +533,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             </p>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="quote-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="quote-actions">
             {/* eslint-disable-next-line i18next/no-literal-string -- button variants */}
             {secondary.map((a) => renderAction(a, "secondary"))}
             {/* eslint-disable-next-line i18next/no-literal-string -- button variants */}

@@ -458,7 +458,8 @@ export function SearchButton({ onClick, collapsed = false }: { onClick: () => vo
     >
       <Search size={15} aria-hidden />
       <span className="flex-1 text-left">{t("common.search.button")}</span>
-      <kbd className="rounded-sm border border-border bg-surface px-1.5 text-[11px] font-medium text-on-surface-muted">{shortcut}</kbd>
+      {/* US-OPS-61: a touch screen has no keyboard shortcut to show. */}
+      <kbd className="rounded-sm border border-border bg-surface px-1.5 text-[11px] font-medium text-on-surface-muted [@media(pointer:coarse)]:hidden" data-testid="search-shortcut">{shortcut}</kbd>
     </button>
   );
 }

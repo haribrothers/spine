@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AppShellHeader, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, cn } from "@spine/ui";
+import { AppShellHeader, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, cn, ScrollX } from "@spine/ui";
 import { auditActionLabel, auditActionTone, auditDetails, auditEntityLabel, AUDIT_PAGE_SIZE, type AuditLogPage } from "@spine/shared";
 import { Download } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
@@ -131,7 +131,7 @@ export function AuditLogExplorer() {
             <Spinner />
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
             <table className="w-full min-w-[760px] text-[14px]" data-testid="audit-table">
               <thead className="bg-surface-sunken text-left text-[13px] text-on-surface-muted">
                 <tr>
@@ -176,7 +176,7 @@ export function AuditLogExplorer() {
                 )}
               </tbody>
             </table>
-          </div>
+          </ScrollX>
         )}
 
         {data && total > 0 && (

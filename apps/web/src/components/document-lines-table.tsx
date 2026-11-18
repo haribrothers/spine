@@ -1,7 +1,7 @@
 "use client";
 
 import { SUPPLY_CLASS_LABELS } from "@spine/shared";
-import { Card, cn } from "@spine/ui";
+import { Card, cn, ScrollX } from "@spine/ui";
 import type { SupplyClass } from "@spine/shared";
 import { formatMoney } from "../lib/money";
 import { useT } from "../lib/i18n";
@@ -62,7 +62,7 @@ export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { d
   return (
     <Card className="overflow-hidden p-0" data-testid={`${testIdPrefix}-lines`}>
       <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("invoices.linesTable.lines")}</h3>
-      <div className="overflow-x-auto">
+      <ScrollX label={t("ui.scrollX.label")}>
         <table className="w-full min-w-[560px] border-collapse text-[13.5px]">
           <thead>
             <tr className="bg-surface-sunken text-left text-[12px] font-medium text-on-surface-muted">
@@ -101,7 +101,7 @@ export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { d
             )}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       <dl className="ml-auto grid w-full max-w-xs grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 text-[13px]" data-testid={`${testIdPrefix}-totals`}>
         <dt className="text-on-surface-muted">{t("invoices.linesTable.subtotal")}</dt>
         <dd className="text-right tabular-nums">{money(quote.subtotalAmount)}</dd>

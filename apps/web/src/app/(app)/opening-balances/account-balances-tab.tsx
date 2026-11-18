@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Button, DatePicker, MoneyInput, Spinner, StatCard, StatusChip } from "@spine/ui";
+import { Alert, AlertDescription, Button, DatePicker, MoneyInput, Spinner, StatCard, StatusChip, ScrollX } from "@spine/ui";
 import { OPENING_ADJUSTMENT_NOTE, dayBefore, type OpeningBalanceAccountRow, type OpeningBalancesView } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { t, useT } from "../../../lib/i18n";
@@ -123,7 +123,7 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
         </Alert>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
         <table className="w-full text-[14px]" data-testid="opening-grid">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
@@ -182,7 +182,7 @@ export function AccountBalancesTab({ view, currency, onSaved }: { view: OpeningB
             </tr>
           </tfoot>
         </table>
-      </div>
+      </ScrollX>
       {adjustment !== 0n && (
         <Alert variant="warning">
           <AlertDescription>

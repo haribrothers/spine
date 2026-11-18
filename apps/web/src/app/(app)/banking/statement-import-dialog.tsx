@@ -23,8 +23,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
-} from "@spine/ui";
+  Spinner, ScrollX } from "@spine/ui";
 import {
   STATEMENT_DATE_FORMATS,
   STATEMENT_MAX_BYTES,
@@ -331,7 +330,7 @@ export function StatementImportDialog({
                   </div>
                   <div className="flex flex-col gap-2">
                     <h3 className="text-[14px] font-semibold text-on-surface">{t("banking.import.firstRows")}</h3>
-                    <div className="overflow-x-auto rounded-md border border-border">
+                    <ScrollX label={t("ui.scrollX.label")} className="rounded-md border border-border">
                       <table className="w-full text-[13px]" data-testid="statement-preview">
                         <thead>
                           <tr className="border-b border-border bg-surface-sunken text-left text-on-surface-muted">
@@ -354,7 +353,7 @@ export function StatementImportDialog({
                           ))}
                         </tbody>
                       </table>
-                    </div>
+                    </ScrollX>
                   </div>
                 </>
               )}

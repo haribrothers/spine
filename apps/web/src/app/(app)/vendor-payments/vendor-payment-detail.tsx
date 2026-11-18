@@ -20,8 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Spinner,
-  useConfirm,
-} from "@spine/ui";
+  useConfirm, ScrollX } from "@spine/ui";
 import { ArrowRightLeft, Building2, CalendarDays, ChevronDown, Download, Hash, Landmark, Mail } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
@@ -219,7 +218,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
               )}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="vendor-payment-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="vendor-payment-actions">
             <Button variant={emailIsNext ? "secondary" : "primary"} onClick={() => void download()} disabled={downloading}>
               {downloading ? <Spinner size="sm" /> : <Download size={14} aria-hidden />}
               {t("vendorPayments.detail.downloadRemittance")}
@@ -287,7 +286,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
         <div className="flex min-w-0 flex-col gap-4">
           <Card className="p-0" data-testid="vendor-payment-paid-to">
             <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorPayments.detail.paidTo")}</h3>
-            <div className="overflow-x-auto">
+            <ScrollX label={t("ui.scrollX.label")}>
               <table className="w-full text-[13.5px]">
                 <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
                   <tr>
@@ -315,7 +314,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollX>
           </Card>
           <AttachmentsSection entityType="vendor_payment" entityId={payment.id} />
           {payment.notes && (

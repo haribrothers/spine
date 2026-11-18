@@ -1,5 +1,7 @@
 import { Fragment } from "react";
 import { cn } from "../lib/cn";
+import { t } from "../lib/server-t";
+import { ScrollX } from "./scroll-x";
 
 export interface StatementColumn {
   key: string;
@@ -65,7 +67,7 @@ export function StatementTable({ columns, rows, className, "data-testid": testId
     </Fragment>
   );
   return (
-    <div className={cn("overflow-x-auto rounded-lg border border-border bg-surface", className)}>
+    <ScrollX label={t("ui.scrollX.label")} className={cn("rounded-lg border border-border bg-surface", className)}>
       <table className="w-full border-collapse text-[13px]" data-testid={testId}>
         <thead className="border-b border-border bg-surface-sunken">
           <tr>
@@ -79,6 +81,6 @@ export function StatementTable({ columns, rows, className, "data-testid": testId
         <tbody>{rows.filter((row) => row.kind !== "total").map((row) => renderRow(row))}</tbody>
         {rows.some((row) => row.kind === "total") && <tfoot>{rows.filter((row) => row.kind === "total").map((row) => renderRow(row))}</tfoot>}
       </table>
-    </div>
+    </ScrollX>
   );
 }

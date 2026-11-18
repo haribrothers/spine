@@ -8405,6 +8405,9 @@
         "saveChanges": "Save changes",
         "createEvent": "Create event"
       }
+    },
+    "scrollX": {
+      "label": "Table, scrolls sideways"
     }
   },
   "uiNative": {

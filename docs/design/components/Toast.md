@@ -21,6 +21,7 @@ import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, Toas
 
 ## Rules and behaviour
 
+- The viewport is pinned with `inset-x-0` under 640px, so it can never reach past a phone's screen (US-OPS-62).
 - In the web app, toasts come from one `ToastHost` in the app layout via `useToast()`; a toast shown before opening another page stays visible there. They stack newest on top, up to `max` (default 3; 2 at phone width) — a new toast over the limit closes the oldest — and each closes after `duration` (default 5000 ms), paused on hover or focus (D-223, US-OPS-38).
 - Automatically closes after a set duration.
 - Swipe to dismiss on touch devices.

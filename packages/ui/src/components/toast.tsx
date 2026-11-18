@@ -41,7 +41,8 @@ export const ToastViewport = forwardRef<
   <ToastPrimitive.Viewport
     ref={ref}
     className={cn(
-      "fixed bottom-0 right-0 z-[var(--z-toast)] flex w-full flex-col-reverse gap-2 p-3 outline-none sm:max-w-sm sm:p-4",
+      // US-OPS-62: inset-x-0, not right-0 + w-full, so on a phone it can never reach past the screen.
+      "fixed inset-x-0 bottom-0 z-[var(--z-toast)] flex flex-col-reverse gap-2 p-3 outline-none sm:left-auto sm:w-full sm:max-w-sm sm:p-4",
       className,
     )}
     {...props}

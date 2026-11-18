@@ -242,7 +242,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
               )}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="bill-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="bill-actions">
             {canEdit && (
               <Button variant="secondary" asChild>
                 <Link href={`/vendor-bills/${bill.id}/edit`}>

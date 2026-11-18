@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
+import { ScrollX } from "./scroll-x";
 import { useT } from "../lib/i18n";
 import { Checkbox } from "./checkbox";
 import { Pagination } from "./pagination";
@@ -235,7 +236,7 @@ export function Table<T>({
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
         <table className="w-full border-collapse text-[13px]">
           <thead className="sticky top-0 z-[var(--z-sticky-header)] border-b border-border bg-surface-sunken">
             <tr>
@@ -424,7 +425,7 @@ export function Table<T>({
             </tfoot>
           )}
         </table>
-      </div>
+      </ScrollX>
       {configurablePageSize ? (
         <PaginationBar
           page={page}

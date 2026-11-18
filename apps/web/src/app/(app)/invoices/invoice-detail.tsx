@@ -564,7 +564,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             )}
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="invoice-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="invoice-actions">
             {secondaryButtons}
             {primaryButton}
             <DropdownMenu>

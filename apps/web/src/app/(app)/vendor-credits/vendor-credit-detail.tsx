@@ -241,7 +241,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               )}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="credit-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="credit-actions">
             {canEdit && (
               <Button variant="secondary" asChild>
                 <Link href={`/vendor-credits/${credit.id}/edit`}>

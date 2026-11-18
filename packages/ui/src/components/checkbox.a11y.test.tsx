@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { Checkbox } from "./checkbox";
 import { Label } from "./label";
@@ -43,5 +43,10 @@ describe("Checkbox a11y", () => {
       </div>,
     );
     await expectNoA11yViolations(container);
+  });
+
+  it("US-OPS-61: is marked to keep its own size on a phone, with the tap area drawn around it", () => {
+    const { getByRole } = render(<Checkbox aria-label="Select row" />);
+    expect(getByRole("checkbox").hasAttribute("data-tap-area")).toBe(true);
   });
 });

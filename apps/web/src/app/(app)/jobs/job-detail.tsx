@@ -411,7 +411,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
             {job.notes && <p className="mt-1 max-w-3xl whitespace-pre-wrap text-[13px] text-on-surface-muted">{job.notes}</p>}
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="job-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="job-actions">
             {canEditJob && (
               <Button variant="secondary" onClick={() => setEditOpen(true)}>
                 <Pencil size={15} aria-hidden />

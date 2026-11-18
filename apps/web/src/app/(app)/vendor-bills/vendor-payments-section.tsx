@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Spinner } from "@spine/ui";
+import { Card, Spinner, ScrollX } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { PAYMENT_METHOD_LABELS, type BillVendorPaymentRow } from "./types";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
@@ -44,7 +44,7 @@ export function VendorPaymentsSection({ billId, refreshKey }: { billId: string; 
       ) : payments.length === 0 ? (
         <p className="px-4 pb-4 text-[13px] text-on-surface-muted">{t("vendorBills.paymentsSection.empty")}</p>
       ) : (
-        <div className="overflow-x-auto">
+        <ScrollX label={t("ui.scrollX.label")}>
           <table className="w-full text-[13.5px]">
             <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
               <tr>
@@ -72,7 +72,7 @@ export function VendorPaymentsSection({ billId, refreshKey }: { billId: string; 
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       )}
     </Card>
   );

@@ -216,7 +216,7 @@ export function ExpenseDetail({ expenseId, currentUserId }: { expenseId: string;
               </span>
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="expense-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="expense-actions">
             {canReject && (
               <Button variant="secondary" onClick={() => setRejectOpen(true)} disabled={busy}>
                 <X size={14} aria-hidden />

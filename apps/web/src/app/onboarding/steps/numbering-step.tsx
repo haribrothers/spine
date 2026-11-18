@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, FormField, Input, Spinner } from "@spine/ui";
+import { Button, FormField, Input, Spinner, ScrollX } from "@spine/ui";
 import { t as translate, useT } from "../../../lib/i18n";
 
 export interface NumberingSequenceValue {
@@ -56,7 +56,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel, onChang
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-md border border-border-strong bg-surface">
         <table className="w-full min-w-[480px] text-[13px]">
           <thead>
             <tr className="border-b border-border-strong bg-surface-muted text-left text-on-surface-muted">
@@ -118,7 +118,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel, onChang
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
 
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (

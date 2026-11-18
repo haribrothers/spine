@@ -5761,3 +5761,25 @@ Use a job that's Active, with a few site photos (one added by you, one by someon
 7. Regression: the main `docker-compose.yml` and `install.sh` behave as in section 260; the Coolify file as in section 266.
 8. Dockge: **+ Compose**, paste the file, put the three settings in the `.env` box and **Deploy**: Spine opens on port 7746 and sign-in works.
 9. Runtipi (D-282): add `https://github.com/haribrothers/spine-runtipi` under **Settings › App Stores**, install Spine with **expose locally** on and the address `https://spine.<local domain>`. With the local certificate trusted, that address opens, sign-up and sign-in work, and Settings › About Spine shows the store's version. Then follow the store README's "Move an existing Spine install into Runtipi" with a backup from a plain install: sign in with an account from the backup, and its data is there.
+
+## 283. Fix what's broken on a phone today (US-OPS-61, Phase 12)
+
+Automated: `us-ops-61.spec.ts`. At 390×844 (a phone, or the browser's device toolbar with touch on):
+
+1. Open a job: Milestones, Variation orders, Photos, Notes, Crew and Costing sit in one row with their counts, none on two lines or on top of another; swipe the row to reach the last tabs.
+2. Open a draft invoice: Edit, Preview PDF, Issue invoice and More all fit inside the screen, wrapping onto a second row; nothing runs off the right edge. Do the same on an issued invoice, a quote, a job, a payment, a credit note, an expense, a vendor bill, a vendor credit and a vendor payment.
+3. On the same records, the breadcrumb ("Billing › Invoices › …") is one line with every item level; a long record name shortens with "…".
+4. Open Invoices: the selection boxes in the table are small squares with ticks when chosen, not big empty boxes; ticking one still shows the bulk bar.
+5. Open ☰: the search field reads "Search…" with no ⌘K hint.
+6. Open Reports › Profit & loss: Profit & Loss, Balance Sheet, Trial Balance and Cash Flow sit in one row that scrolls sideways.
+7. Checkboxes, radio buttons and switches elsewhere (Settings › Notifications, the filter sheet's options, a new contact's Type) keep their small size and are still easy to tap.
+8. Regression, at desktop width: tabs, breadcrumbs, record headers and checkboxes look and work as before; the search field shows ⌘K (Ctrl K on Windows); segmented buttons (the dashboard's Accrual · Cash and 3M · 6M · 12M) keep their size on a phone.
+
+## 284. Check every page at phone width before each release (US-OPS-62, Phase 12)
+
+Automated: `us-ops-62.spec.ts` runs in the `phone` Playwright project (390×844, touch, a phone user agent) as part of `pnpm verify` and before every release. It opens every route in `apps/e2e/tests/routes.ts` (the same list as the accessibility check), every Settings pane and the bundled guide, in light and dark.
+
+1. Run `pnpm --filter @spine/e2e test --project=phone`. It passes.
+2. Break a page on purpose (for example give a heading `white-space: nowrap` with a long title) and run it again: it fails naming the route and the check ("/invoices · sideways scroll"), and the HTML report has that page's screenshot.
+3. The two checks still waiting for their stories are listed at the top of the spec: "the tab bar shows" (US-OPS-54) and "the main action is on the first screen" (US-OPS-57, US-OPS-58). Each wave that ships one removes its line.
+4. Regression: `us-ops-17.spec.ts` still visits the same routes (both read `routes.ts`).

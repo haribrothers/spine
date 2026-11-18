@@ -38,6 +38,7 @@ import { TableColumn, Table } from "@spine/ui";
 
 ## Rules and behaviour
 
+- Its scroll box is a [ScrollX](ScrollX.md): when the table is wider than the screen it scrolls sideways inside it and is a focusable region the keyboard can scroll (US-OPS-62).
 - `footer` adds a totals row, keyed by column, on the sunken band in the table's `<tfoot>` (a report's "Total"); columns left out stay blank (US-RPT-40).
 - Column-level sorting via a sortValue accessor — click a header to toggle ascending/descending/off.
 - Automatic client-side pagination once data exceeds pageSize.

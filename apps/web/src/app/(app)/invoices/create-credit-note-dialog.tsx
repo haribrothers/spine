@@ -22,8 +22,7 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  cn,
-} from "@spine/ui";
+  cn, ScrollX } from "@spine/ui";
 import { Info, Send } from "lucide-react";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
@@ -209,7 +208,7 @@ export function CreateCreditNoteDialog({
                 </div>
               )}
 
-              <div className="overflow-x-auto rounded-md border border-border" data-testid="credit-lines">
+              <ScrollX label={t("ui.scrollX.label")} className="rounded-md border border-border" data-testid="credit-lines">
                 <table className="w-full min-w-155 border-collapse text-[13px]">
                   <thead>
                     <tr className="bg-surface-sunken text-left text-[12px] text-on-surface-muted">
@@ -289,7 +288,7 @@ export function CreateCreditNoteDialog({
                     })}
                   </tbody>
                 </table>
-              </div>
+              </ScrollX>
 
               <FormField label={t("invoices.createCreditNote.reason")} helperText={t("invoices.createCreditNote.reasonHelp")}>
                 {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("invoices.createCreditNote.reasonPlaceholder")} />}

@@ -25,8 +25,7 @@ import {
   FormField,
   Spinner,
   Textarea,
-  useConfirm,
-} from "@spine/ui";
+  useConfirm, ScrollX } from "@spine/ui";
 import type { EmailOverride, PaymentAppliedTo } from "@spine/shared";
 import { ArrowRightLeft, Banknote, CalendarDays, ChevronDown, Download, Hash, Landmark, Mail, MoreHorizontal, Undo2, User } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -249,7 +248,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
               )}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="payment-actions">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="payment-actions">
             {secondaryButtons}
             {primaryButton}
             <DropdownMenu>
@@ -297,7 +296,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
             {appliedTo.length === 0 ? (
               <p className="px-4 pb-4 text-[13px] text-on-surface-muted">{t("payments.detail.notAppliedAny", { name: payment.contactName ?? t("payments.detail.theCustomer") })}</p>
             ) : (
-              <div className="overflow-x-auto">
+              <ScrollX label={t("ui.scrollX.label")}>
                 <table className="w-full text-[13.5px]">
                   <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
                     <tr>
@@ -349,7 +348,7 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollX>
             )}
           </Card>
           {payment.notes && (

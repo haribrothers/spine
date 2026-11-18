@@ -378,19 +378,22 @@
    Links inside running text keep the text's line height. Checkboxes,
    radios and switches keep their look and get a 44px tap area around them. */
 @media (max-width: 767.98px) {
-  :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *)) {
+  /* US-OPS-61: Checkbox, RadioGroupItem and Switch are <button>s marked data-tap-area; they
+     keep their own size, with the tap area drawn around them below (they were blank 44px
+     boxes). A segmented button with role="radio" still gets the full 44px. */
+  :where(button:not([data-tap-area]), [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *)) {
     min-height: 44px;
   }
-  :where(button, [role="button"], [role="combobox"]) {
+  :where(button:not([data-tap-area]), [role="button"], [role="combobox"]) {
     min-width: 44px;
   }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"]), textarea) {
     min-height: 44px;
   }
-  :where([role="checkbox"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="radio"]) {
+  :where([data-tap-area], [role="checkbox"], [role="switch"], input[type="checkbox"], input[type="radio"]) {
     position: relative;
   }
-  :where([role="checkbox"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="radio"])::after {
+  :where([data-tap-area], [role="checkbox"], [role="switch"], input[type="checkbox"], input[type="radio"])::after {
     content: "";
     position: absolute;
     inset: 50% auto auto 50%;

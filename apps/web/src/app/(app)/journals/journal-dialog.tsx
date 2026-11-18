@@ -24,8 +24,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
-} from "@spine/ui";
+  Spinner, ScrollX } from "@spine/ui";
 import { JOURNAL_CONTROL_CODES, JOURNAL_CONTROL_HINT, JOURNAL_OUT_BY, type ManualJournal } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
@@ -156,7 +155,7 @@ export function JournalDialog({
               {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder={t("journals.dialog.reasonPlaceholder")} />}
             </FormField>
           </div>
-          <div className="overflow-x-auto rounded-md border border-border">
+          <ScrollX label={t("ui.scrollX.label")} className="rounded-md border border-border">
             <table className="w-full text-[13px]" data-testid="journal-lines">
               <thead>
                 <tr className="border-b border-border bg-surface-sunken text-left text-on-surface-muted">
@@ -234,7 +233,7 @@ export function JournalDialog({
                 </tr>
               </tfoot>
             </table>
-          </div>
+          </ScrollX>
           <div>
             <Button variant="secondary" size="sm" onClick={() => setLines((ls) => [...ls, blank()])}>
               <Plus size={14} aria-hidden />

@@ -12,7 +12,13 @@ export const TabsList = forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
-    className={cn("flex items-center gap-4 border-b border-border", className)}
+    // US-OPS-61: under 768px the row scrolls sideways rather than wrapping, so no label or count
+    // lands on another. The underline becomes an inset shadow there, because a scrolling box
+    // would clip the triggers' -1px overlap with a real border.
+    className={cn(
+      "flex items-center gap-4 border-b border-border max-md:overflow-x-auto max-md:overflow-y-hidden max-md:border-b-0 max-md:shadow-[inset_0_-1px_0_var(--color-border)] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden",
+      className,
+    )}
     {...props}
   />
 ));
@@ -25,7 +31,7 @@ export const TabsTrigger = forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "relative -mb-px rounded-t-sm border-b-2 border-transparent px-1 py-2.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface data-[state=active]:border-primary data-[state=active]:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+      "relative -mb-px shrink-0 whitespace-nowrap rounded-t-sm border-b-2 border-transparent px-1 py-2.5 text-[13px] max-md:mb-0 max-md:inline-flex max-md:items-center max-md:gap-1.5 max-md:focus-visible:ring-inset font-medium text-on-surface-muted transition-colors hover:text-on-surface data-[state=active]:border-primary data-[state=active]:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       className,
     )}
     {...props}
