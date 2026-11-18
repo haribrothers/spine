@@ -18,7 +18,7 @@ export default function CommandPalettePage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px it fills the screen, with Cancel instead of Esc (US-OPS-60).", 
             "A modal dialog named by `label`; the field is a combobox controlling a listbox of options.",
             "Arrow keys move the highlight (announced through aria-activedescendant), Enter picks, Escape closes and returns focus.",
             "Group headings, a second line and a status per result; an empty message or hint when there's nothing to show.",

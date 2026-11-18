@@ -396,9 +396,10 @@ export function SearchPalette({
       }
       footer={
         <>
-          <span>{t("common.search.footerMove")}</span>
-          <span>{t("common.search.footerOpen")}</span>
-          <span>{t("common.search.footerClose")}</span>
+          {/* US-OPS-60: no keyboard hints on a touch screen. */}
+          <span className="[@media(pointer:coarse)]:hidden">{t("common.search.footerMove")}</span>
+          <span className="[@media(pointer:coarse)]:hidden">{t("common.search.footerOpen")}</span>
+          <span className="[@media(pointer:coarse)]:hidden">{t("common.search.footerClose")}</span>
           {archivable && (
             <label className="ml-auto flex cursor-pointer items-center gap-2 font-medium text-on-surface">
               <Checkbox

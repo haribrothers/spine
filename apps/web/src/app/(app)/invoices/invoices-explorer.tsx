@@ -32,6 +32,7 @@ import {
 import type { Invoice } from "./types";
 import { ActionError } from "../../../components/action-error";
 import { useT } from "../../../lib/i18n";
+import { useSelectMode } from "../../../lib/phone-bar";
 
 const STATUS_OPTIONS = (Object.keys(INVOICE_STATE_LABELS) as InvoiceState[]).map((value) => ({ value, label: INVOICE_STATE_LABELS[value] }));
 const ALL_CONTACTS = "__all__";
@@ -66,6 +67,8 @@ export function InvoicesExplorer() {
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const selecting = useSelectMode({ available: true, onDone: () => setSelectedIds(new Set()) });
   const loading = useRef(false);
   const showToast = useToast();
 
@@ -343,6 +346,7 @@ export function InvoicesExplorer() {
           onActionFailed={(invoice, message) => setActionError({ title: t("invoices.explorer.actionFailedTitle", { number: invoice.number ?? t("invoices.explorer.theDraftInvoice") }), message })}
           selected={selectedIds}
           onToggleSelected={toggleSelected}
+          phoneSelecting={selecting}
         />
       )}
     </div>

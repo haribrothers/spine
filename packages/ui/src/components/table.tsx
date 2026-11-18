@@ -9,6 +9,17 @@ import { Checkbox } from "./checkbox";
 import { Pagination } from "./pagination";
 import { PaginationBar } from "./pagination-bar";
 import { usePrintMode } from "../lib/print-mode";
+import { usePhone } from "../lib/use-phone";
+import { Button } from "./button";
+import { ListRow } from "./list-row";
+
+/**
+ * US-OPS-56 (D-283) — where a column's value goes in a phone row: the title (number or name),
+ * the status badge, the second line, the amount on the right and the line under it, or the
+ * row's ⋯. "select" is a list's own checkbox, shown only in Select mode. "hidden" leaves it
+ * out on a phone. Unset, a column is placed by `phoneRoles`.
+ */
+export type TablePhoneRole = "title" | "badge" | "subtitle" | "trailing" | "trailingSub" | "action" | "select" | "hidden";
 
 export interface TableColumn<T> {
   key: string;
@@ -16,7 +27,43 @@ export interface TableColumn<T> {
   render: (row: T) => React.ReactNode;
   sortValue?: (row: T) => string | number | bigint;
   align?: "left" | "right";
+  /** US-OPS-56: its place in a phone row. */
+  phone?: TablePhoneRole;
 }
+
+/**
+ * Each column's place in a phone row: the roles a list gives, and for the rest the first
+ * column as the title, a status column as the badge, the second as the subtitle, the last
+ * right-aligned one as the amount and an actions column as the ⋯. Others are left out.
+ */
+export function phoneRoles<T>(columns: TableColumn<T>[]): Map<string, TablePhoneRole> {
+  const roles = new Map<string, TablePhoneRole>();
+  for (const c of columns) if (c.phone) roles.set(c.key, c.phone);
+  const taken = (role: TablePhoneRole) => [...roles.values()].includes(role);
+  const free = columns.filter((c) => !roles.has(c.key));
+  const pick = (role: TablePhoneRole, find: (c: TableColumn<T>) => boolean) => {
+    if (taken(role)) return;
+    const column = free.find((c) => !roles.has(c.key) && find(c));
+    if (column) roles.set(column.key, role);
+  };
+  pick("select", (c) => c.key === "select");
+  pick("action", (c) => c.key === "actions");
+  pick("action", (c) => c.header === "" && c.key !== "select");
+  pick("badge", (c) => /status|state/i.test(c.key));
+  pick("title", () => true);
+  const lastRight = [...free].reverse().find((c) => !roles.has(c.key) && c.align === "right");
+  if (lastRight && !taken("trailing")) roles.set(lastRight.key, "trailing");
+  pick("subtitle", (c) => c.align !== "right");
+  for (const c of columns) if (!roles.has(c.key)) roles.set(c.key, "hidden");
+  return roles;
+}
+
+// The phone row's slots, named once here (outside JSX).
+const ROLE_TITLE: TablePhoneRole = "title";
+const ROLE_SUBTITLE: TablePhoneRole = "subtitle";
+
+/** US-OPS-56: a phone list shows this many rows, then Load more adds as many again. */
+export const PHONE_PAGE = 25;
 
 export interface TableProps<T> {
   columns: TableColumn<T>[];
@@ -70,6 +117,10 @@ export interface TableProps<T> {
   renderExpanded?: (row: T) => React.ReactNode;
   /** The chevron's accessible name, e.g. "Show Halcyon's invoices"; defaults to "Show more" / "Show less". */
   expandLabel?: (row: T, expanded: boolean) => string;
+  /** US-OPS-56: on a phone, rows show their checkboxes only in Select mode (the page's Select button). */
+  phoneSelecting?: boolean;
+  /** US-OPS-56: false keeps a genuine grid a table on a phone (with `ScrollX`), for reports like the trial balance. */
+  phoneRows?: boolean;
 }
 
 export type SortDirection = "asc" | "desc";
@@ -112,8 +163,12 @@ export function Table<T>({
   onSortChange,
   renderExpanded,
   expandLabel,
+  phoneSelecting = false,
+  phoneRows = true,
 }: TableProps<T>) {
   const t = useT();
+  const phone = usePhone();
+  const [phoneShown, setPhoneShown] = useState(PHONE_PAGE);
   const [sortState, setSortState] = useState<TableSort | null>(null);
   const sortControlled = sortProp !== undefined;
   const sort = sortControlled ? sortProp : sortState;
@@ -232,6 +287,96 @@ export function Table<T>({
       else next.add(key);
       return next;
     });
+  }
+
+  // US-OPS-56 (D-283): on a phone each record is a ListRow — no columns, headings or sideways scroll —
+  // with Load more in place of pages. A grouped table shows each group's primary row (a quote's
+  // latest version; the others open from the record); an expandable row has its chevron as its
+  // action and opens underneath. Grids that ask to (phoneRows={false}) and print stay tables.
+  if (phone && phoneRows && !printing) {
+    const roles = phoneRoles(columns);
+    const cell = (role: TablePhoneRole, row: T) => {
+      const column = columns.find((c) => roles.get(c.key) === role);
+      return column ? column.render(row) : null;
+    };
+    const footCell = (role: TablePhoneRole) => {
+      const column = columns.find((c) => roles.get(c.key) === role);
+      return column && footer ? footer[column.key] : null;
+    };
+    const all = groupBy ? (sortedGroups ?? []).map((g) => g.primary) : sorted;
+    const rows = all.slice(0, phoneShown);
+    const selecting = selectable && phoneSelecting;
+    return (
+      <div className={cn("flex flex-col gap-3", className)} data-testid="phone-list">
+        {rows.length > 0 ? (
+          <ul className="overflow-hidden rounded-lg border border-border bg-surface">
+            {rows.map((row) => {
+              const key = rowKey(row);
+              const chosen = selecting && selected!.has(key);
+              const isOpen = expandable && expanded.has(key);
+              const toggle = expandable ? (
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={`${key}-more`}
+                  aria-label={expandLabel ? expandLabel(row, isOpen) : isOpen ? t("ui.table.showLess") : t("ui.table.showMore")}
+                  onClick={() => toggleExpanded(key)}
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <ChevronRight size={18} aria-hidden className={cn("transition-transform", isOpen && "rotate-90")} />
+                </button>
+              ) : null;
+              return (
+                <Fragment key={key}>
+                <ListRow
+                  selected={chosen}
+                  leading={
+                    selecting ? (
+                      <Checkbox aria-label={selectLabel ? t("ui.table.selectNamed", { name: selectLabel(row) }) : t("ui.table.selectRow")} checked={chosen} onCheckedChange={() => toggleRow(key)} />
+                    ) : phoneSelecting ? (
+                      cell("select", row)
+                    ) : undefined
+                  }
+                  title={cell(ROLE_TITLE, row)}
+                  badge={cell("badge", row)}
+                  subtitle={cell(ROLE_SUBTITLE, row)}
+                  trailing={cell("trailing", row)}
+                  trailingSub={cell("trailingSub", row)}
+                  className={phoneSelecting ? "[&_[data-list-row-title]_a]:pointer-events-none" : undefined}
+                  action={
+                    phoneSelecting ? undefined : toggle ? (
+                      <span className="flex items-center">
+                        {cell("action", row)}
+                        {toggle}
+                      </span>
+                    ) : (
+                      cell("action", row)
+                    )
+                  }
+                />
+                {isOpen ? (
+                  <li id={`${key}-more`} className="border-b border-border bg-surface-sunken/30 last:border-b-0">
+                    {renderExpanded!(row)}
+                  </li>
+                ) : null}
+                </Fragment>
+              );
+            })}
+            {footer ? <ListRow title={footCell(ROLE_TITLE)} trailing={footCell("trailing")} className="bg-surface-sunken" /> : null}
+          </ul>
+        ) : null}
+        {all.length > rows.length ? (
+          <div className="flex flex-col items-center gap-1">
+            <Button variant="secondary" className="w-full" onClick={() => setPhoneShown((n) => n + PHONE_PAGE)}>
+              {t("ui.table.loadMore")}
+            </Button>
+            <p className="text-[12px] text-on-surface-muted" aria-live="polite">
+              {t("ui.table.shownOf", { shown: rows.length, total: all.length })}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (

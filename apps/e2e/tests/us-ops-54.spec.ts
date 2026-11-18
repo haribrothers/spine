@@ -49,6 +49,8 @@ test.describe("US-OPS-54 · get around the web app from tabs along the bottom of
 
   test("More opens the whole menu in a sheet, with my account, Settings, Help and Sign out; it closes", async ({ page, seededOrg: _ }) => {
     await page.goto("/invoices");
+    // After the page has hydrated, so the tap opens the sheet.
+    await page.waitForLoadState("networkidle");
     await tabBar(page).getByRole("button", { name: "More" }).click();
     const sheet = page.getByRole("dialog", { name: "Menu" });
     await expect(sheet).toBeVisible();

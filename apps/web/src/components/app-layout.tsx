@@ -21,6 +21,7 @@ import { moduleForPage } from "@spine/shared";
 import { navSectionsFor } from "../lib/nav-sections";
 import { pageAccessFor } from "../lib/page-access";
 import { areaFor, areaHref, areaPages, isBuilder, isTopLevel, parentPath, rememberAreaPage, titleFor, visibleAreas, type AreaKey } from "../lib/phone-shell";
+import { PhoneBarProvider, usePhoneBarSlot } from "../lib/phone-bar";
 import { RoleProvider } from "../lib/role-context";
 import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
@@ -93,7 +94,10 @@ export function AppLayout(props: AppLayoutProps) {
           {/* US-AUTH-16: the person, and their saved theme, for every page. */}
           <AccountProvider>
             <ModulesProvider>
-              <AppLayoutShell {...props} />
+              {/* US-OPS-54: a page's one action in the phone top bar (Select, Done). */}
+              <PhoneBarProvider>
+                <AppLayoutShell {...props} />
+              </PhoneBarProvider>
               {/* US-SET-33: ?settings=<pane> opens Settings on any page. */}
               <Suspense>
                 <SettingsRoute isOwner={props.isOwner} />
@@ -127,6 +131,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
   // US-OPS-22: the search palette, opened by ⌘K / Ctrl+K or the search button.
   const [searchOpen, setSearchOpen] = useState(false);
   const isPhone = useIsPhone();
+  const pageAction = usePhoneBarSlot();
   const [moreOpen, setMoreOpen] = useState(false);
   const fullWidth = FULL_WIDTH_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
 
@@ -222,6 +227,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
             onBack={isTopLevel(path, shown) ? undefined : goBack}
             actions={
               <>
+                {pageAction}
                 <button
                   type="button"
                   onClick={() => setSearchOpen(true)}

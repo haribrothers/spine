@@ -80,6 +80,8 @@ export function MultiSelect({
         <Popover.Content
           align="start"
           sideOffset={4}
+          // US-OPS-60: on a phone the options open in a bottom sheet, the search at its top.
+          data-phone-sheet=""
           className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-raised"
         >
           <div role="listbox" aria-multiselectable="true" className="max-h-64 overflow-y-auto p-1">
@@ -98,7 +100,7 @@ export function MultiSelect({
                       toggle(option.value);
                     }
                   }}
-                  className="flex cursor-pointer select-none items-center justify-between rounded-sm px-2 py-1.5 text-[14px] text-on-surface outline-none hover:bg-surface-sunken data-[selected=true]:bg-surface-sunken"
+                  className="flex cursor-pointer select-none items-center justify-between rounded-sm px-2 py-1.5 text-[14px] text-on-surface outline-none hover:bg-surface-sunken data-[selected=true]:bg-surface-sunken max-md:min-h-11 max-md:px-4 max-md:text-[16px]"
                   data-selected={isSelected}
                 >
                   {option.label}

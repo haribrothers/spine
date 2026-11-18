@@ -33,6 +33,7 @@ import {
   type VendorBillsListState,
 } from "./vendor-bill-state";
 import type { ContactOption, VendorBill } from "./types";
+import { useSelectMode } from "../../../lib/phone-bar";
 
 const ALL_VENDORS = "__all__";
 const STATE_OPTIONS = BILL_STATES.map((s) => ({ value: s, label: BILL_STATE_LABELS[s] }));
@@ -206,6 +207,8 @@ export function VendorBillsExplorer() {
     if (job.filtering) job.setJobId("__all__");
   };
 
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const selecting = useSelectMode({ available: Boolean(canRecord), onDone: () => setSelected(new Set()) });
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="bill-stats">
@@ -342,6 +345,7 @@ export function VendorBillsExplorer() {
             toolbarStart={search}
             selected={canRecord ? selected : undefined}
             onSelectedChange={canRecord ? setSelected : undefined}
+            phoneSelecting={selecting}
             handlers={handlers}
           />
         </div>

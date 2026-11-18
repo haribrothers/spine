@@ -35,6 +35,7 @@ export function PayablesBillsTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   actions,
 }: {
   bills: PayablesBillRow[];
@@ -46,6 +47,8 @@ export function PayablesBillsTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   actions: BillActions;
 }) {
   const t = useT();
@@ -106,6 +109,7 @@ export function PayablesBillsTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.billNumber}
       defaultHidden={["date", "totalAmount", "paidAmount"]}
     />

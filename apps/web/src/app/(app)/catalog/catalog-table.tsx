@@ -23,6 +23,7 @@ export function CatalogTable({
   groups,
   selected,
   onSelectedChange,
+  phoneSelecting,
   sort,
   onSortChange,
   page,
@@ -38,6 +39,8 @@ export function CatalogTable({
   groups: Map<string, TaxGroupOption>;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   sort?: TableSort | null;
   onSortChange?: (sort: TableSort | null) => void;
   page?: number;
@@ -136,6 +139,7 @@ export function CatalogTable({
       toolbarStart={toolbarStart}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.name}
       sort={sort}
       onSortChange={onSortChange}

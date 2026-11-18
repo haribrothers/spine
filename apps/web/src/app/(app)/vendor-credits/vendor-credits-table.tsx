@@ -28,6 +28,7 @@ export function VendorCreditsTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   handlers,
 }: {
   credits: VendorCredit[];
@@ -39,6 +40,8 @@ export function VendorCreditsTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   handlers: CreditRowHandlers;
 }) {
   const t = useT();
@@ -123,6 +126,7 @@ export function VendorCreditsTable({
         onPageChange={onPageChange}
         selected={selected}
         onSelectedChange={onSelectedChange}
+        phoneSelecting={phoneSelecting}
         selectLabel={(row) => creditLabel(row)}
       />
     </div>

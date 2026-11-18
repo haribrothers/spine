@@ -164,9 +164,12 @@ export function CommandPalette({
           }}
           className={cn(
             "fixed left-1/2 top-[8vh] z-[var(--z-modal)] flex max-h-[80vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-overlay focus:outline-none motion-safe:animate-palette-in",
+            // US-OPS-60 (D-283): on a phone search fills the screen, with Cancel instead of Esc.
+            "max-md:inset-0 max-md:left-0 max-md:top-0 max-md:h-dvh max-md:max-h-none max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:rounded-none max-md:border-0 max-md:pt-[env(safe-area-inset-top)]",
             className,
           )}
           data-testid="command-palette"
+          data-phone-fullscreen=""
         >
           <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
           <span className="sr-only" role="status">
@@ -187,7 +190,8 @@ export function CommandPalette({
               <DialogPrimitive.Close asChild>
                 {/* Escape closes too; out of the tab order so Tab goes from the field to the toolbar (US-OPS-49). */}
                 <button type="button" tabIndex={-1} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={t("ui.commandPalette.closeSearch")}>
-                  <Kbd>{t("ui.commandPalette.escKey")}</Kbd>
+                  <Kbd className="max-md:hidden">{t("ui.commandPalette.escKey")}</Kbd>
+                  <span className="hidden px-1 text-[15px] font-semibold text-primary max-md:inline">{t("ui.commandPalette.cancel")}</span>
                 </button>
               </DialogPrimitive.Close>
             </div>

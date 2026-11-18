@@ -80,6 +80,28 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-OPS-56: lists as rows on a phone
+
+- **Rows for every list:** under 768px every `Table` and `DataTable` list is `ListRow`s, a new `@spine/ui` component. The title and status are on the first line, the subtitle on the second, and the amount on the right with its ⋯ (an action sheet). The title's link covers the whole row, so tapping anywhere opens the record. There are no columns, headings or sideways scroll.
+- **Placing the columns:** a column can carry a phone role (`title`, `badge`, `subtitle`, `trailing`, `trailingSub`, `action`, `select`, `hidden`). Otherwise `phoneRoles` places them: the first column as the title, a status column as the badge, the second as the subtitle, the last right-aligned one as the amount and an actions column as the ⋯. So all 33 lists have rows. Invoices carries an explicit mapping, with the balance due and its due line on the right.
+- **Other list shapes:** a grouped table (quote versions) shows the latest version's row, an expandable one (receivables by customer) opens under its row, and a totals footer becomes a last row. `phoneRows={false}` keeps a grid a table.
+- **Load more** replaces the pager after 25 ("25 of 87"); Columns and the page-size picker aren't offered.
+- **Select mode:** invoices, catalogue, vendor bills, vendor credits, payables and receivables get Select in the top bar (`useSelectMode`, through a new page-action slot in the phone top bar). Checkboxes show only while selecting. The bulk bar docks along the bottom, and Done clears the selection.
+- **Pipeline:** one stage at a time, with the stages as chips (with counts) above that scroll sideways. Its leads stay compact cards in a new `KanbanStack`, and moving one is in its menu.
+- **Contacts and loading:** Contacts always shows rows, with no Table · List · Card switcher. While a list loads, `TableSkeleton` shows placeholder rows.
+- **Tests and docs:** `us-ops-56.spec.ts`, `us-ops-56-phone.a11y.test.tsx` and `list-row.a11y.test.tsx` (including `phoneRoles`). The phone check measures a row title's link by its row. Docs: ListRow, Table, DataTable, Kanban and TableSkeleton, the design-system pages and the phone guide; QA section 287.
+
+### 2026-11-18 — US-OPS-60: dialogs, menus and pickers made for a phone
+
+- **In the shared components, so no screen changed:** under 768px every `Dialog` fills the screen and slides up. Its `DialogFooter` becomes the bar at the top, Cancel on the left and the action on the right, and the ✕ steps aside. A `<form>` wrapping body and footer is `display: contents` there, so the footer can move.
+- **Menus:** every `DropdownMenu` is an action sheet (`data-phone-sheet="action"`). It floats 8px above the bottom edge over a dimmed page, with 52px rows and 20px icons. A destructive action is in the danger colour and still asks first (D-218), and the sheet ends with Cancel. `sheetTitle` heads it with what it acts on.
+- **Pickers:** `Select`, `Combobox` (search at the top), `MultiSelect` and `DatePicker` open their options in a bottom sheet with 44px rows. One CSS rule in the preset overrides Radix's popper positioning for anything marked `data-phone-sheet` and draws the dimmed page behind it.
+- **Confirmations** (`AlertDialog`) stay a small alert in the middle, their buttons full width and stacked, the action on top.
+- **Drawers** (notifications, filter panels) open from the bottom at 70% of the screen. Dragging the grabber up takes one to full height; dragging down goes back, then closes it.
+- **Search** fills the screen with Cancel in place of Esc, and its keyboard hints are hidden on touch screens.
+- **Accessibility:** focus stays inside every sheet (Radix), each is named by its title, and Escape closes it. With reduced motion nothing slides (`motion-safe:`, and the sheet keyframes sit under `prefers-reduced-motion: no-preference`).
+- **Tests and docs:** `us-ops-60.spec.ts` (phone and desktop) and `us-ops-60-phone.a11y.test.tsx`. US-OPS-15's dialog and drawer widths gave way to these. The docs for Dialog, DropdownMenu, Select, Combobox, DatePicker, Drawer, AlertDialog, MultiSelect and Command, and their design-system pages, are updated; QA section 286.
+
 ### 2026-11-18 — US-OPS-54: tabs along the bottom of the phone
 
 - **The phone shell:** under 768px the web app now has a top bar with the page's title (not the logo), a back arrow, search and notifications. Sales and Money pages have the area's pages in a row under it. Tabs along the bottom: Home · Sales · Jobs · Money · More. The menu button, the slide-over navigation (US-OPS-14, D-066) and the breadcrumb are gone at that width. From 768px up nothing changes.

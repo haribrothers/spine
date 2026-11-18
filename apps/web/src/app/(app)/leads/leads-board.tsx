@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { replaceQuery } from "../../../lib/replace-query";
 import { useFillHeight } from "../../../lib/use-fill-height";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -27,6 +28,7 @@ import {
   Input,
   KanbanBoard,
   KanbanColumn,
+  KanbanStack,
   MultiSelect,
   Select,
   SelectContent,
@@ -141,6 +143,9 @@ export function LeadsBoard() {
   const [announcement, setAnnouncement] = useState("");
   const [viewSettings, setViewSettings] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // US-OPS-56: the stage shown on a phone.
+  const isPhone = useIsPhone();
+  const [phoneStageId, setPhoneStageId] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null);
@@ -413,6 +418,13 @@ export function LeadsBoard() {
   const drawerLead = drawerLeadId ? (leads.find((l) => l.id === drawerLeadId) ?? null) : null;
   const filtered = hasPipelineFilters(state);
   const shownStages = state.stages.length ? stages.filter((s) => state.stages.includes(s.id)) : stages;
+  /** A stage's leads as the board shows them: a closed stage shows the last 30 days unless it's filtered on. */
+  const leadsIn = (stage: LeadStage) => {
+    const closed = stage.kind !== "open";
+    const inStage = visible.filter((l) => l.stageId === stage.id && (!closed || state.stages.length > 0 || closedWithin(l, CLOSED_WINDOW_DAYS, now)));
+    return inStage.sort(closed ? byClosedNewest : SORTERS[state.sort]);
+  };
+  const phoneStage = shownStages.find((s) => s.id === phoneStageId) ?? shownStages.find((s) => s.kind === "open") ?? shownStages[0];
   const ownerValue = state.owner || ALL;
 
   return (
@@ -553,6 +565,59 @@ export function LeadsBoard() {
               </Button>
             }
           />
+        </div>
+      ) : isPhone ? (
+        // US-OPS-56 (D-283): on a phone one stage at a time — its leads one under another, the
+        // stages as chips above that scroll sideways (with each stage's count). Moving a lead is
+        // in its ⋯ (an action sheet on a phone).
+        <div className="flex flex-col gap-3" data-testid="pipeline-phone">
+          <div role="tablist" aria-label={t("leads.board.stagesLabel")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {shownStages.map((stage) => {
+              const chosen = stage.id === phoneStage?.id;
+              return (
+                <button
+                  key={stage.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={chosen}
+                  onClick={() => setPhoneStageId(stage.id)}
+                  className={cn(
+                    "inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    chosen ? "border-primary bg-info-bg text-primary" : "border-border-strong bg-surface text-on-surface",
+                  )}
+                >
+                  {stage.name}
+                  <span className={cn("text-[12px] font-semibold", chosen ? "text-primary" : "text-on-surface-muted")}>{leadsIn(stage).length}</span>
+                </button>
+              );
+            })}
+          </div>
+          {phoneStage ? (
+            <KanbanStack role="tabpanel" aria-label={phoneStage.name}>
+              {leadsIn(phoneStage).map((lead) => (
+                <LeadCard
+                  key={lead.id}
+                  lead={lead}
+                  contactName={contactName(lead)}
+                  ownerName={ownerName(lead)}
+                  stages={stages}
+                  now={now}
+                  showValue={viewSettings.showValue}
+                  showSource={viewSettings.showSource}
+                  canMove={canEdit(lead)}
+                  canDelete={canDelete(lead)}
+                  menuOpen={menuFor === lead.id}
+                  onMenuOpenChange={(open) => setMenuFor(open ? lead.id : null)}
+                  onOpen={() => openLead(lead)}
+                  onMove={(target) => void moveLead(lead, target)}
+                  onDelete={() => setDeleteLead(lead)}
+                />
+              ))}
+              {leadsIn(phoneStage).length === 0 && (
+                <p className="rounded-md border border-dashed border-border-strong px-2 py-3.5 text-center text-[13px] text-on-surface-muted">{t("leads.board.noLeadsInStage")}</p>
+              )}
+            </KanbanStack>
+          ) : null}
         </div>
       ) : (
         <div ref={board.ref} style={board.height ? { height: board.height } : undefined} className="min-h-[420px]" data-testid="pipeline-board">

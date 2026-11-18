@@ -27,6 +27,7 @@ export function VendorBillsTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   handlers,
 }: {
   bills: VendorBill[];
@@ -38,6 +39,8 @@ export function VendorBillsTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   handlers: BillRowHandlers;
 }) {
   const t = useT();
@@ -135,6 +138,7 @@ export function VendorBillsTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.billNumber}
     />
   );

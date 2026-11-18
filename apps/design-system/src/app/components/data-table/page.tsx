@@ -50,7 +50,7 @@ export default function DataTablePage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px each record is a ListRow, placed by its columns' phone roles, with Load more and Select mode (US-OPS-56).", 
             "Client-side search filtering via a searchKey accessor.",
             "onSearchChange reports the search text, so a page can export exactly the rows on screen.",
             "A Columns dropdown lets the user hide/show individual columns without losing sort state.",

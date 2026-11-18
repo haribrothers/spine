@@ -5796,3 +5796,27 @@ Automated: `us-ops-54.spec.ts`, `us-ops-54.test.ts`. On a phone, or the browser'
 6. Sign in as the demo Field member (marcus.webb.demo@example.com): Home, Sales (Meetings), Jobs and More; no Money. Expenses is under More.
 7. Switch to dark mode: the bar, the pill and the sheet follow it, and text stays readable.
 8. Regression: from 768px up (a tablet, or a wider window) the sidebar, search with ⌘K, the account menu and page headers with their breadcrumbs are as before. US-OPS-14's dashboard checks (two key figures per row) still hold.
+
+## 286. Use dialogs, menus and pickers made for my phone (US-OPS-60, Phase 12)
+
+Automated: `us-ops-60.spec.ts`, `us-ops-60-phone.a11y.test.tsx`. At 390×844 with touch:
+
+1. Payments › Record payment: it slides up and fills the screen. Cancel is top left and Record payment top right; there's no ✕. Tap into Amount: the field stays above the keyboard. Escape (or Cancel) closes it.
+2. Invoices, a row's ⋯: an action sheet rises with each action's icon, Delete or Void in red, and Cancel at the end. Tap the dimmed page or Cancel: it closes. Choose Delete on a draft: a small alert in the middle asks first, its two buttons full width.
+3. Open the Status filter: its options rise in a sheet from the bottom. On a new quote, Contact: a sheet with its search at the top. Tap Valid until's date: the month rises in a sheet.
+4. The bell: notifications rise from the bottom. Drag the grabber up: it takes the whole screen. Drag it down: it shrinks, and again: it closes.
+5. 🔍: search fills the screen with Cancel at the top right; no ⌘K, Esc or "Enter to open" hints.
+6. With Settings › Accessibility › Reduce motion on (or the browser's reduced-motion setting), the sheets appear without sliding.
+7. Regression, from 768px up: dialogs are centred with their footer at the bottom and ✕ at the top right, menus drop down beside their button with no Cancel, selects and date pickers open under their field, drawers come in from the side, and search is the centred palette with ⌘K and Esc.
+
+## 287. Read any list as rows made for my phone (US-OPS-56, Phase 12)
+
+Automated: `us-ops-56.spec.ts`, `us-ops-56-phone.a11y.test.tsx`, `list-row.a11y.test.tsx`. At 390×844 with touch:
+
+1. Open Quotes, Invoices, Credit notes, Contacts, Jobs, Payments, Receivables, Vendor bills, Expenses, Catalogue and Team › Users. Each shows one row per record, with no column headings and nothing scrolling sideways.
+2. On Invoices, a row reads its number and status, then the contact, with the balance and its due line on the right. Tap the row's middle, not the number: the invoice opens. Its ⋯ opens an action sheet.
+3. Tap Select (top bar): each row gets a checkbox and the ⋯ steps aside. Tick two: a dark bar along the bottom shows "2 selected" and the bulk actions. Tap Done: the checkboxes and the bar go. Repeat on Vendor bills and Receivables.
+4. With more than 25 records (the demo catalogue, or after adding some), the list ends with Load more and "25 of N"; tapping it adds the next 25. There's no Columns button and no page-size picker.
+5. Pipeline: the stages are chips with counts, scrolling sideways. Tapping one shows its leads; a lead's ⋯ moves it to another stage.
+6. Contacts has no Table · List · Card switcher. On a slow connection, placeholder rows show while a list loads; an empty list shows the same empty state as on a computer.
+7. Regression, from 768px up: every list is the table it was, with its headings, checkbox column, Columns menu and pager; the pipeline is the board; Contacts' three views are back.

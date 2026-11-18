@@ -33,8 +33,9 @@ import { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectL
 - Typeahead support.
 - Renders at the z-popover stacking tier, above Dialog/Drawer's z-modal tier — a Select opened from inside a Dialog or Drawer always renders on top of it, never hidden behind it. See the "Inside a Dialog" example below.
 
-## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
 
+- Built (US-OPS-60): `SelectContent` is marked `data-phone-sheet`; it docks to the bottom edge over a dimmed page, with 44px rows at 16px.
 - Under 768px the options open in a `BottomSheet` (US-OPS-60).
 
 ## Exports

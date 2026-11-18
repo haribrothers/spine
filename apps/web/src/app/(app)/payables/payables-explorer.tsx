@@ -46,6 +46,7 @@ import { draftsNote, emptyAge, filterBills, parsePayablesState, payablesQuery, v
 import type { PayablesBillRow, PayablesReport } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useSelectMode } from "../../../lib/phone-bar";
 const ALL_AGES = "__all__";
 
 type Dialog = { kind: "pay"; contactId: string; billIds: string[] } | { kind: "credit"; row: PayablesBillRow } | null;
@@ -65,6 +66,8 @@ export function PayablesExplorer() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canPay = useCapability("vendor_payments.edit_own");
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const selecting = useSelectMode({ available: Boolean(canPay), onDone: () => setSelected(new Set()) });
   const [state, setState] = useState<PayablesListState>(() => parsePayablesState(new URLSearchParams(searchParams.toString())));
   const [report, setReport] = useState<PayablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -310,6 +313,7 @@ export function PayablesExplorer() {
             toolbarStart={search}
             selected={canPay ? selected : undefined}
             onSelectedChange={canPay ? setSelected : undefined}
+            phoneSelecting={selecting}
             actions={{
               onPay: (row) => pay(row.contactId, [row.id]),
               onApplyCredit: (row) => setDialog({ kind: "credit", row }),

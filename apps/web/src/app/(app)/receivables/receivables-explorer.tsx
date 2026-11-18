@@ -48,6 +48,7 @@ import type { ReceivablesInvoiceRow, ReceivablesReport } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
 import { t, useT } from "../../../lib/i18n";
+import { useSelectMode } from "../../../lib/phone-bar";
 const ALL_AGES = "__all__";
 const AGE_OPTIONS = ["overdue", "current", "0-30", "31-60", "61-90", "90+"] as const satisfies readonly (typeof RECEIVABLES_AGES)[number][];
 
@@ -79,6 +80,8 @@ export function ReceivablesExplorer() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canRemind = useCapability("invoices.send_reminder");
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const selecting = useSelectMode({ available: Boolean(canRemind), onDone: () => setSelected(new Set()) });
   const [state, setState] = useState<ReceivablesListState>(() => parseReceivablesState(new URLSearchParams(searchParams.toString())));
   const [report, setReport] = useState<ReceivablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -339,6 +342,7 @@ export function ReceivablesExplorer() {
             toolbarStart={search}
             selected={canRemind ? selected : undefined}
             onSelectedChange={canRemind ? setSelected : undefined}
+            phoneSelecting={selecting}
             actions={{
               onRecordPayment: (row) => setDialog({ kind: "record", contactId: row.contactId, contactName: row.contactName, invoiceId: row.id }),
               onApplyCredit: (row) => setDialog({ kind: "credit", row }),

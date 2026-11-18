@@ -91,7 +91,13 @@ export function InvoicesBulkBar({
   }
 
   return (
-    <div role="region" aria-label={t("invoices.bulk.regionLabel")} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-inverse-surface px-4 py-3">
+    // US-OPS-56: on a phone it sits along the bottom in Select mode, where the tab bar was.
+    <div
+      role="region"
+      aria-label={t("invoices.bulk.regionLabel")}
+      data-phone-fullscreen=""
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-inverse-surface px-4 py-3 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-[var(--z-sticky-header)] max-md:rounded-none max-md:pb-[max(12px,env(safe-area-inset-bottom))]"
+    >
       <p className="text-[14px] text-inverse-on-surface">
         <span className="font-semibold">{t("invoices.bulk.selectedCount", { n: selected.length })}</span>
         <span className="text-inverse-on-surface-muted">{t("invoices.bulk.outstanding", { amount: formatMoney(outstanding, currency) })}</span>

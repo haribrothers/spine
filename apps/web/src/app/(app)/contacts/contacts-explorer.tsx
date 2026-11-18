@@ -44,6 +44,7 @@ import { useToast } from "../../../components/toast-host";
 
 import { SectionLink } from "../../../components/section-link";
 import { t as translate, useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: translate("contacts.common.typeCustomer") },
   { value: "vendor", label: translate("contacts.common.typeVendor") },
@@ -84,6 +85,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [view, setView] = useState<ContactView>("table");
+  const isPhone = useIsPhone();
   const [hydrated, setHydrated] = useState(false);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
@@ -289,7 +291,8 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
               </TooltipTrigger>
               <TooltipContent>{t("contacts.explorer.refreshList")}</TooltipContent>
             </Tooltip>
-            <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
+            {/* US-OPS-56: on a phone contacts are always rows, so the switcher isn't offered. */}
+            {isPhone ? null : <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />}
             {canCreate && <span className="mx-0.5 h-6 w-px bg-border" aria-hidden />}
             {canCreate && (
               <Button variant="secondary" onClick={() => setImportOpen(true)}>
@@ -353,7 +356,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
             )}
           </div>
         </div>
-      ) : view === "table" ? (
+      ) : view === "table" || isPhone ? (
         <ContactsTable contacts={contacts} onChanged={handleRowChanged} page={state.page} onPageChange={(next) => update({ page: next })} toolbarStart={search} />
       ) : (
         <div className="flex flex-col gap-3">

@@ -416,6 +416,62 @@
   }
 }
 
+/* US-OPS-60 (D-283) — dialogs, menus and pickers made for a phone. Under 768px:
+   - A popover marked data-phone-sheet (Select, Combobox, MultiSelect, DatePicker) docks to the
+     bottom edge as a sheet, with the page dimmed behind it; "action" (DropdownMenu) floats 8px in
+     with its own Cancel. Radix's inline positioning is overridden here, so every menu and picker
+     changes without its screen changing.
+   - A Dialog fills the screen; its footer becomes the bar at the top (Cancel on the left, the
+     action on the right), and a <form> wrapping body and footer lays them out as if it weren't
+     there. A dialog with no footer keeps its ✕. */
+@media (max-width: 767.98px) {
+  [data-radix-popper-content-wrapper]:has(> [data-phone-sheet]) {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    transform: none !important;
+    min-width: 0 !important;
+    width: auto !important;
+    z-index: var(--z-modal) !important;
+  }
+  [data-radix-popper-content-wrapper]:has(> [data-phone-sheet="action"]) {
+    inset: auto 8px max(8px, env(safe-area-inset-bottom)) 8px !important;
+  }
+  [data-phone-sheet] {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(80dvh, 640px) !important;
+    overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    border-width: 0 !important;
+    box-shadow: var(--shadow-overlay) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  [data-phone-sheet="action"] {
+    border-radius: var(--radius-lg) !important;
+    padding: 0 !important;
+  }
+  /* The dimmed page behind a sheet; it's part of the sheet, so a tap on it is a tap outside. */
+  [data-phone-sheet]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-scrim);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-phone-sheet] {
+      animation: var(--animate-sheet-in);
+    }
+  }
+
+  [data-dialog] > form {
+    display: contents;
+  }
+  [data-dialog]:has([data-dialog-footer]) > [data-dialog-close] {
+    display: none;
+  }
+}
+
 /* US-SET-10 — a preview of a customer document (Settings › Branding) stays
    light in both themes, like the PDFs and emails it stands for. */
 [data-surface="document"] {

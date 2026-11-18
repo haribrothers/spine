@@ -1409,6 +1409,10 @@
         "setup": "Set up Spine",
         "openingBalances": "Opening balances",
         "emails": "Emails"
+      },
+      "select": {
+        "select": "Select",
+        "done": "Done"
       }
     }
   },
@@ -3904,7 +3908,8 @@
       "deleteTitle": "Delete this lead?",
       "deleteDescription": "This can't be undone. The lead's follow-ups and activities go with it; the contact and any quotes stay.",
       "cancel": "Cancel",
-      "deleteLead": "Delete lead"
+      "deleteLead": "Delete lead",
+      "stagesLabel": "Stages"
     }
   },
   "meetings": {
@@ -8322,7 +8327,8 @@
     "commandPalette": {
       "opening": "Opening…",
       "closeSearch": "Close search",
-      "escKey": "Esc"
+      "escKey": "Esc",
+      "cancel": "Cancel"
     },
     "dataTable": {
       "searchPlaceholder": "Search…",
@@ -8370,7 +8376,9 @@
       "showLess": "Show less",
       "showMore": "Show more",
       "selectNamed": "Select {{name}}",
-      "selectRow": "Select row"
+      "selectRow": "Select row",
+      "loadMore": "Load more",
+      "shownOf": "{{shown}} of {{total}}"
     },
     "toast": {
       "dismiss": "Dismiss"

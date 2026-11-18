@@ -25,8 +25,9 @@ import { DatePicker } from "@spine/ui";
 - Hosted in a Popover, closes automatically on selection.
 - Field trigger shares Input/Select's chrome and height for a consistent form row.
 
-## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
 
+- Built (US-OPS-60): the popover is marked `data-phone-sheet`; the month docks to the bottom edge, centred.
 - Under 768px the calendar opens in a `BottomSheet` (US-OPS-60).
 
 ## Exports

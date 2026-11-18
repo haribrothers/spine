@@ -34,8 +34,9 @@ import { Dialog, DialogTrigger, DialogClose, DialogOverlay, DialogContent, Dialo
 - Focus is fully managed and customizable.
 - The overlay dims the page and blocks interaction while open.
 
-## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
 
+- Built (US-OPS-60): every dialog fills the screen and slides up (`max-md:` classes, `motion-safe`). `DialogFooter` becomes the bar at the top, Cancel on the left and the action on the right, and the ✕ steps aside for it (`[data-dialog]:has([data-dialog-footer])`). A `<form>` wrapping body and footer is `display: contents` there, so the footer can move. It's marked `data-phone-fullscreen`, so the tab bar hides while it's open.
 - Under 768px a form dialog opens as a full-screen sheet that slides up, with Cancel on the left and its action on the right of the header; the field being typed in stays above the keyboard (US-OPS-60). Reduced motion: it appears without sliding.
 
 ## Exports

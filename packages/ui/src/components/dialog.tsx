@@ -43,6 +43,9 @@ const DIALOG_SIZES = {
   xl: "max-w-[min(1152px,calc(100vw-48px))] h-[min(960px,90vh)] max-md:h-dvh max-md:w-full max-md:max-w-none max-md:rounded-none max-md:border-0",
 } as const;
 
+const PHONE_FULL_SCREEN =
+  "max-md:inset-0 max-md:left-0 max-md:top-0 max-md:h-dvh max-md:max-h-none max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-none max-md:border-0 max-md:motion-safe:animate-sheet-in";
+
 export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   /**
    * `"md"` (default) is the standard centered task dialog (e.g. confirming
@@ -63,18 +66,21 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          // US-OPS-15: under 768px a 16px gutter each side (xl is the whole screen there, D-236).
           "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-surface shadow-overlay focus:outline-none md:w-full",
           DIALOG_SIZES[size],
+          // US-OPS-60 (D-283): under 768px every dialog fills the screen as a sheet that slides up.
+          PHONE_FULL_SCREEN,
           className,
         )}
-        // US-OPS-54: xl fills a phone's screen, so the tab bar steps aside while it's open.
-        {...(size === "xl" ? { "data-phone-fullscreen": "" } : {})}
+        data-dialog=""
+        // US-OPS-54: full screen on a phone, so the tab bar steps aside while it's open.
+        data-phone-fullscreen=""
         {...props}
       >
         {children}
         <DialogPrimitive.Close
           aria-label={t("ui.dialog.close")}
+          data-dialog-close=""
           className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X size={16} />
@@ -121,9 +127,20 @@ export const DialogDescription = forwardRef<
 ));
 DialogDescription.displayName = "DialogDescription";
 
-/** Fixed to the bottom, never scrolls. Owns its own padding — matches DrawerFooter exactly. */
+/**
+ * Fixed to the bottom, never scrolls. Owns its own padding — matches DrawerFooter exactly.
+ * US-OPS-60: under 768px it's the bar at the top of the full-screen sheet instead, Cancel on the
+ * left and the action on the right, and the ✕ steps aside for it.
+ */
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex shrink-0 items-center justify-end gap-2 border-t border-border p-5", className)} {...props} />
+    <div
+      data-dialog-footer=""
+      className={cn(
+        "flex shrink-0 items-center justify-end gap-2 border-t border-border p-5 max-md:order-first max-md:justify-between max-md:border-b max-md:border-t-0 max-md:px-2 max-md:py-1.5 max-md:pt-[max(6px,env(safe-area-inset-top))]",
+        className,
+      )}
+      {...props}
+    />
   );
 }

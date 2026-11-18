@@ -135,6 +135,22 @@ const COLLAPSED_WIDTH = 56;
  * pipeline with many cards in one stage must not push the whole page into
  * a tall scroll.
  */
+/**
+ * US-OPS-56 (D-283) — one column's cards one under another, for a phone that shows one stage
+ * at a time. It gives the cards the board's context, so their menus and opening work as on the
+ * board; cards move between stages from their menu, not by dragging.
+ */
+export function KanbanStack({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  return (
+    <KanbanContext.Provider value={{ draggedId, setDraggedId }}>
+      <div className={cn("flex flex-col gap-2", className)} {...props}>
+        {children}
+      </div>
+    </KanbanContext.Provider>
+  );
+}
+
 export function KanbanColumn({
   title,
   accent,

@@ -46,7 +46,7 @@ export default function MultiSelectPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px the options open in a bottom sheet (US-OPS-60).", 
             "Selecting an option toggles it — no need to hold a modifier key.",
             "The trigger measures its own width and shows as many selected labels as fit before collapsing the remainder into a \"+N\" chip, remeasured on resize.",
             "Each option shows a checkmark when selected, matching Select's affordance.",

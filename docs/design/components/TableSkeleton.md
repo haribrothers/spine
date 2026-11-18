@@ -23,6 +23,7 @@ import { TableSkeletonColumn, TableSkeleton } from "@spine/ui";
 
 ## Rules and behaviour
 
+- Under 768px it shows `ListRowSkeleton` placeholder rows instead of the table (US-OPS-56), by CSS, so it works server-rendered.
 - Renders the real &lt;thead&gt; with the given columns' header text and alignment, not a placeholder bar.
 - Body rows are Skeleton bars, one per column, respecting each column's align and optional width.
 - rows controls how many placeholder rows render (defaults to 8).

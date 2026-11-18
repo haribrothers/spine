@@ -19,6 +19,7 @@ import { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, Comman
 
 ## Rules and behaviour
 
+- `CommandPalette` (search): on a phone it fills the screen, with Cancel in place of the Esc key; the app hides its keyboard hints on touch screens (US-OPS-60).
 - Fuzzy, type-to-filter search across items and groups.
 - Full keyboard navigation.
 - Composable into a Combobox trigger or a full-screen CommandDialog.

@@ -38,9 +38,9 @@ import { DataTable } from "@spine/ui";
 - Selection and a parent-kept sort pass through to Table (US-CAT-12, US-CAT-13).
 - Composes Table underneath rather than reimplementing row rendering.
 
-## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
 
-- Under 768px each row renders as a `ListRow` from the columns' phone roles (`title`, `subtitle`, `trailing`, `badge`) or a `phoneRow` renderer: no headings, no sideways scroll. Columns and the page-size picker are hidden, Load more replaces the pager ("25 of 87"), and selecting is a Select mode from the top bar (US-OPS-56).
+- Built (US-OPS-56): each row renders as a `ListRow`, with no headings and no sideways scroll. A column's `phone` role places it: `title`, `badge`, `subtitle`, `trailing`, `trailingSub`, `action`, `select` or `hidden`. Without one, `phoneRoles` places the first column as the title, a status column as the badge, the second as the subtitle, the last right-aligned one as the amount and an actions column as the ⋯. Columns and the page-size picker are hidden, and Load more replaces the pager ("25 of 87"). Checkboxes show only in Select mode (`phoneSelecting`, from the page's Select in the top bar). `phoneRows={false}` keeps a grid a table.
 - Search stays; sort moves into the list's Filters sheet (US-OPS-57).
 
 ## Exports

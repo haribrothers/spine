@@ -67,6 +67,7 @@ export function ReceivablesTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   actions,
 }: {
   invoices: ReceivablesInvoiceRow[];
@@ -78,6 +79,8 @@ export function ReceivablesTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   actions: InvoiceActions;
 }) {
   const t = useT();
@@ -156,6 +159,7 @@ export function ReceivablesTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.number ?? t("receivables.table.selectLabel")}
       defaultHidden={["issueDate", "totalAmount", "paidAmount"]}
     />

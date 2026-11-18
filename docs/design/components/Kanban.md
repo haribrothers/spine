@@ -35,6 +35,7 @@ import { KanbanBoard, KanbanColumn, KanbanCard } from "@spine/ui";
 
 ## Rules and behaviour
 
+- `KanbanStack` (US-OPS-56): one column's cards one under another, with the board's context, for a phone that shows one stage at a time; cards move from their menu there.
 - Drag a card from one column and drop it on another to move it — KanbanColumn's onDrop receives the dragged card's id; what a "move" means (a PUT request, local state, etc.) is entirely the caller's concern.
 - Each column has a fixed height (100% of the board) and its own independently scrolling card list via ScrollArea — the board's overall height never grows with card count.
 - title/meta/subtitle are free-form ReactNode, not fixed to "name + count" — meta is typically a count, subtitle a running value total, but neither is required.

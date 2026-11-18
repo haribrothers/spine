@@ -65,7 +65,7 @@ export default function ComboboxPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px the options open in a bottom sheet with the search at its top (US-OPS-60).", 
             "Type-to-filter search over the option list.",
             "Keyboard navigable — arrow keys move the highlight, Enter selects.",
             "Hosted in a Popover, matching the field's trigger width.",

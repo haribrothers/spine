@@ -74,9 +74,11 @@ test.describe("US-OPS-61 · fix what's broken on a phone today", () => {
   });
 
   test("the invoice list's selection column has no empty boxes", async ({ page, seededOrg: _ }) => {
+    // On a phone the ticks show in Select mode (US-OPS-56).
     await page.goto("/invoices");
     await page.waitForLoadState("networkidle");
-    const checks = await boxes(page.locator("table").getByRole("checkbox"));
+    await page.getByTestId("app-top-bar").getByRole("button", { name: "Select" }).click();
+    const checks = await boxes(page.getByTestId("phone-list").getByRole("checkbox"));
     expect(checks.length).toBeGreaterThan(0);
     // A checkbox keeps its own size (its 44px tap area is drawn around it, not as a blank box).
     for (const b of checks) expect(Math.max(b.width, b.height)).toBeLessThanOrEqual(24);

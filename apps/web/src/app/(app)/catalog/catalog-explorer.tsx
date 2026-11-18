@@ -53,6 +53,7 @@ import type { Account, AccountsByType, CatalogItem, TaxGroupOption, TaxRateOptio
 import { useToast } from "../../../components/toast-host";
 import { ActionError } from "../../../components/action-error";
 import { t as translate, useT } from "../../../lib/i18n";
+import { useSelectMode } from "../../../lib/phone-bar";
 
 const STATUS_OPTIONS = [
   { value: "active", label: translate("catalog.common.active") },
@@ -299,6 +300,8 @@ export function CatalogExplorer({
   const priceSet = Boolean(state.min.trim() || state.max.trim());
   const selectable = canCreate || canDelete;
 
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const selecting = useSelectMode({ available: Boolean(selectable), onDone: () => setSelected(new Set()) });
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="catalog-stats">
@@ -477,6 +480,7 @@ export function CatalogExplorer({
           groups={groupMap}
           selected={selectable ? selected : undefined}
           onSelectedChange={selectable ? setSelected : undefined}
+          phoneSelecting={selecting}
           sort={state.sort}
           onSortChange={(sort) => update({ sort })}
           page={state.page}

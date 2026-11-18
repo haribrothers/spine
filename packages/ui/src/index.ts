@@ -51,6 +51,7 @@ export * from "./components/password-input";
 export * from "./components/password-strength-meter";
 export * from "./components/label";
 export * from "./components/layout";
+export * from "./components/list-row";
 export * from "./components/menubar";
 export * from "./components/money-input";
 export * from "./components/multi-select";

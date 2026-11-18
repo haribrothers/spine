@@ -53,7 +53,7 @@ export default function DialogPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px it fills the screen as a sheet, its footer the bar at the top: Cancel left, the action right (US-OPS-60).", 
             "Under 768px, md and lg fill the screen width with a 16px gutter each side (US-OPS-15); xl takes the whole screen there (D-236).",
             "Full keyboard navigation.",
             "Supports modal and non-modal modes.",
