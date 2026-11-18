@@ -29,6 +29,10 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuSub, 
 - An item's direct `svg` child is its icon: 14 px, muted, 10 px before the label, red on a `destructive` item; items are at least 32 px tall. Screens never add their own spacing; action items take their icon from the D-222 vocabulary, destructive items come last after a `DropdownMenuSeparator` (US-OPS-37).
 - Renders at the z-popover stacking tier, above Dialog/Drawer's z-modal tier — a DropdownMenu opened from inside a Dialog or Drawer always renders on top of it.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px a menu opens as an `ActionSheet` from the bottom, with each item's icon (D-222) and Cancel; destructive items use the danger colour and still ask first (US-OPS-60).
+
 ## Exports
 
 `DropdownMenu` · `DropdownMenuTrigger` · `DropdownMenuGroup` · `DropdownMenuSub` · `DropdownMenuRadioGroup` · `DropdownMenuContent` · `DropdownMenuItem` · `DropdownMenuCheckboxItem` · `DropdownMenuRadioItem` · `DropdownMenuLabel` · `DropdownMenuSeparator` · `DropdownMenuSubTrigger` · `DropdownMenuSubContent`

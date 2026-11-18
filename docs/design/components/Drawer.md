@@ -26,6 +26,10 @@ import { Drawer, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, Drawer
 - Same focus-trap and Escape-to-close behavior as Dialog.
 - Renders above Dialog/Drawer content at the z-modal tier — a Select or DropdownMenu opened from inside a Drawer correctly renders above it, at the z-popover tier.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px it opens as a `BottomSheet` that can be dragged to full height and swiped down to close (US-OPS-60).
+
 ## Exports
 
 `Drawer` · `DrawerTrigger` · `DrawerClose` · `DrawerContentProps` · `DrawerContent` · `DrawerHeader` · `DrawerBody` · `DrawerTitle` · `DrawerDescription` · `DrawerFooter`

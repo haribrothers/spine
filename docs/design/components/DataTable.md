@@ -38,6 +38,11 @@ import { DataTable } from "@spine/ui";
 - Selection and a parent-kept sort pass through to Table (US-CAT-12, US-CAT-13).
 - Composes Table underneath rather than reimplementing row rendering.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px each row renders as a `ListRow` from the columns' phone roles (`title`, `subtitle`, `trailing`, `badge`) or a `phoneRow` renderer: no headings, no sideways scroll. Columns and the page-size picker are hidden, Load more replaces the pager ("25 of 87"), and selecting is a Select mode from the top bar (US-OPS-56).
+- Search stays; sort moves into the list's Filters sheet (US-OPS-57).
+
 ## Exports
 
 `DataTableProps` · `DataTable`

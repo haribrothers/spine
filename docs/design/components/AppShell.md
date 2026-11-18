@@ -45,6 +45,11 @@ import { AppShell, AppShellNavItem, AppShellNavSection, AppShellSidebar, AppShel
 - Under 768px (US-OPS-14, D-066) the sidebar is hidden and `AppShellTopBar` shows a menu button, the logo and the app's actions (notifications, avatar). The menu button opens `AppShellMobileNav`: the same sections sliding in from the left over a dimmed page, with a close button. Tapping the dimmed area, Escape or a followed link closes it. Every control is at least 44×44px. AppShellContent's padding drops to 16px.
 - AppShellHeader's breadcrumb and action are optional — a page can render AppShellContent directly and build its own header if AppShellHeader doesn't fit.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px the sidebar and the top bar's menu button give way to `BottomTabBar` (Home · Sales · Jobs · Money · More); the top bar shows the page title, a back arrow on records, builders and pages below an area's first page, search, notifications and at most one action. Breadcrumbs aren't shown. Tabs come from the same capability checks as the sidebar (US-OPS-54).
+- Clears the notch and the home indicator with `env(safe-area-inset-*)`, for the home-screen app (US-OPS-55).
+
 ## Exports
 
 `AppShell` · `AppShellTopBar` · `AppShellTopBarProps` · `AppShellMobileNav` · `AppShellMobileNavProps` · `AppShellNavItem` · `AppShellNavSection` · `AppShellSidebarProps` · `AppShellSidebar` · `AppShellHeaderProps` · `AppShellHeader` · `AppShellContentProps` · `AppShellContent`

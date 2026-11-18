@@ -68,6 +68,10 @@ import { CalendarView, RecurringMoveOrResizeRequest, Calendar } from "@spine/ui"
 - US-MTG-15: `openRequest` opens an occurrence's quick view once its day is on screen.
 - US-MTG-17: `views` limits the views offered; Agenda rows show the time range, place and `agendaDetails`, stacking on narrow screens; the toolbar wraps.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px Month is a compact grid with up to three dots per busy day and the chosen day's meetings listed under it; Day is a week strip over a timeline; swipe moves month, week or day, and the arrows do the same for keyboard users; the toolbar is one row with Month · Day · Agenda as a segmented control (US-MTG-18).
+
 ## Exports
 
 `CalendarView` · `RecurringMoveOrResizeRequest` · `CalendarProps` · `Calendar`

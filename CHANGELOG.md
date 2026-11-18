@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-18 — Spec: the web app gets a phone layout of its own before 1.0 (D-283)
+
+- **Why:** screenshots of the demo business at 390×844 showed each list's first screen filled by summary cards, tables showing only their first column, the main action halfway down, a job's tabs overlapping and Issue invoice running off the screen. The phone checks passed because they only look for a page that scrolls sideways.
+- **Decision D-283** (supersedes D-045 and D-066): under 768px every screen has a phone layout. Tabs along the bottom (Home · Sales · Jobs · Money · More); lists as two-line rows; figures and filters as chips; filters in a sheet; a floating + for the main action; records with the main action at the bottom; builders with lines edited in a sheet; dialogs, menus and pickers as sheets; a phone calendar; reports with filters behind one line. Spine opens from the home screen without the browser bar. Desktop doesn't change. It ships before 1.0, in waves of betas.
+- **New stories:** US-OPS-54 to US-OPS-62 (F-OPS-14), US-MTG-18 (F-MTG-06), US-RPT-41 (F-RPT-14), US-DASH-31 (F-DASH-12), in Phase 12 and `docs/progress.md`. US-OPS-61 fixes today's phone bugs first, and US-OPS-62 checks every route at phone width before each release.
+- **Also updated:** NFR-COMP-02 and NFR-A11Y-02, the test layers, risk R-32, the design system (rule 13, the phone layout rules, a phone section on 13 component pages, and planned pages for BottomTabBar, BottomSheet, ActionSheet, ListRow, ChipStrip, FloatingActionButton, ActionBar and RecordHeader), and the docs index's counts, recounted from the feature files (205 features, 639 stories).
+- **Next:** the phone screens in `docs/design/screens.md`, for the Owner's approval before anything is built.
+
 ### 2026-11-18 — The clean-machine test passed; Runtipi and Coolify upgrades checked for real (US-OPS-19, US-OPS-53, US-OPS-52)
 
 - **US-OPS-19 is done:** the Owner followed only the README on a fresh machine with 1.0.0-beta.5 and issued a first invoice in under 5 minutes (Phase 12's exit criterion, NFR-MNT-01).

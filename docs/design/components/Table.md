@@ -49,6 +49,10 @@ import { TableColumn, Table } from "@spine/ui";
 - Alternating hover tint on rows.
 - Set groupBy to cluster rows that share a key (e.g. every version of the same quote) into one expandable group instead of showing every row flat — sorting and pagination then operate over groups, not raw rows.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px a list renders as `ListRow`s (US-OPS-56). A grid (Trial balance, GSTR-1, comparisons, aging) stays a table with `stickyFirstColumn`: the first column stays put while the rest scroll inside their box (US-RPT-41).
+
 ## Exports
 
 `TableColumn` · `TableProps` · `TableSort` · `SortDirection` · `Table`

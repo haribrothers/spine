@@ -24,6 +24,10 @@ import { StatementTable, StatementRow, StatementColumn } from "@spine/ui";
 - Any number of right-aligned value columns with tabular figures (comparison columns, each month).
 - Signs and arrows carry direction, never colour alone.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px it renders as an indented list: section headings, each account with its amount on the right, bold subtotals and the total last; a comparison's other period shows muted under each amount; tapping an account drills down (US-RPT-41).
+
 ## Exports
 
 `StatementColumn` · `StatementRow` · `StatementTableProps` · `StatementTable`

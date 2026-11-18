@@ -665,6 +665,23 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-18 · Complete a security review before 1.0 (signed off by the Owner 2026-11-15)
 - [x] US-OPS-19 · Ship the README, licence and contributor guide (README, LICENSE, CONTRIBUTING, code of conduct, issue and PR templates and docs/release.md; the Owner's clean-machine test passed on 2026-11-17 with 1.0.0-beta.5: only the README, a fresh machine to a first invoice in under 5 minutes)
 
+### Milestone 2 · the web app as a phone app (D-283)
+
+Docs done 2026-11-18; designs next, then the build in waves, each approved by the Owner.
+
+- [ ] US-OPS-61 · Fix what's broken on a phone today
+- [ ] US-OPS-62 · Check every page at phone width before each release
+- [ ] US-OPS-54 · Get around the web app from tabs along the bottom of my phone
+- [ ] US-OPS-60 · Use dialogs, menus and pickers made for my phone
+- [ ] US-OPS-56 · Read any list as rows made for my phone
+- [ ] US-OPS-57 · See a list's figures, filters and main action on the first screen
+- [ ] US-OPS-58 · Read and act on a record on my phone
+- [ ] US-OPS-59 · Build a quote or invoice on my phone
+- [ ] US-MTG-18 · Use a calendar made for my phone
+- [ ] US-RPT-41 · Read reports on my phone
+- [ ] US-DASH-31 · See my dashboard laid out for my phone
+- [ ] US-OPS-55 · Open Spine from my phone's home screen like an app
+
 ### Milestone 2 · website and help
 
 - [x] US-SITE-01 · Set up the docs site in the monorepo

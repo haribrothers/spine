@@ -26,6 +26,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@spine/ui";
 - Full keyboard navigation.
 - Supports automatic/manual activation.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px the tab list is one row that scrolls sideways, with counts beside their labels; labels never wrap or overlap, and the chosen tab scrolls into view (US-OPS-58, US-OPS-61).
+
 ## Exports
 
 `Tabs` · `TabsList` · `TabsTrigger` · `TabsContent`

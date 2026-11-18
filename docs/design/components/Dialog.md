@@ -33,6 +33,10 @@ import { Dialog, DialogTrigger, DialogClose, DialogOverlay, DialogContent, Dialo
 - Focus is fully managed and customizable.
 - The overlay dims the page and blocks interaction while open.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px a form dialog opens as a full-screen sheet that slides up, with Cancel on the left and its action on the right of the header; the field being typed in stays above the keyboard (US-OPS-60). Reduced motion: it appears without sliding.
+
 ## Exports
 
 `Dialog` · `DialogTrigger` · `DialogClose` · `DialogOverlay` · `DialogContentProps` · `DialogContent` · `DialogHeader` · `DialogBody` · `DialogTitle` · `DialogDescription` · `DialogFooter`

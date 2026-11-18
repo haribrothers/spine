@@ -2,7 +2,7 @@
 
 What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 12 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
-**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1), `ToggleStates` (P2), `ToggleStatesDark` (P2), `SearchPaletteRecent` (P2), `SearchPaletteRecentDark` (P2), `SearchPaletteGoTo` (P2), `SearchPaletteAmount` (P2), `SearchPaletteScoped` (P2), `SearchPalettePhone` (P2), `SidebarSearchField` (P2)
+**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1), `ToggleStates` (P2), `ToggleStatesDark` (P2), `SearchPaletteRecent` (P2), `SearchPaletteRecentDark` (P2), `SearchPaletteGoTo` (P2), `SearchPaletteAmount` (P2), `SearchPaletteScoped` (P2), `SearchPalettePhone` (P2), `SidebarSearchField` (P2), `AppShellPhoneTabs` (P1), `AppShellPhoneTabsDark` (P1), `AppShellPhoneMore` (P1), `AppShellPhoneStandalone` (P2), `InvoicesPhone` (P1), `InvoicesPhoneDark` (P1), `InvoicesPhoneSelect` (P1), `InvoicesPhoneFilters` (P1), `PipelinePhone` (P2), `InvoiceDetailPhone` (P1), `InvoiceDetailPhoneDark` (P1), `InvoiceDetailPhoneActions` (P1), `JobDetailPhone` (P1), `QuoteBuilderPhone` (P1), `QuoteBuilderPhoneDark` (P1), `QuoteBuilderPhoneLine` (P1), `RecordPaymentPhone` (P1), `ActionSheetPhone` (P1), `ActionSheetPhoneDark` (P1), `PickerSheetPhone` (P2)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
 
 ## Features
@@ -22,6 +22,7 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 | F-OPS-11 | Menus that read at a glance: an icon for every action, one spacing | P2 | Refinements | `MenuIcons`, `MenuIconsDark` |
 | F-OPS-12 | Every major action asks first and says when it's done | P2 | Refinements | `ToastAfterNavigate`, `ToastStack`, `ToastStackDark`, `ToastStackPhone` |
 | F-OPS-13 | Search that finds more and takes me further | P2 | Refinements | `SearchPalette`, `SearchPaletteDark`, `SearchPaletteRecent`, `SearchPaletteRecentDark`, `SearchPaletteGoTo`, `SearchPaletteAmount`, `SearchPaletteScoped`, `SearchPalettePhone`, `SidebarSearchField` |
+| F-OPS-14 | The web app as a phone app: tabs along the bottom, lists, records, builders and sheets made for a phone, checked on every page (D-283) | P1 | 12 | `AppShellPhoneTabs`, `AppShellPhoneMore`, `InvoicesPhone`, `InvoicesPhoneFilters`, `InvoiceDetailPhone`, `QuoteBuilderPhone`, `ActionSheetPhone` |
 
 ## User stories
 
@@ -241,6 +242,7 @@ Finding: C19 · Decision: D-066
 
 **Implementation notes**
 - `@spine/ui` `AppShell` responsive mode.
+- Superseded in part by D-283: the menu button and slide-over give way to tabs along the bottom (US-OPS-54).
 - Built: `AppShellTopBar` and `AppShellMobileNav` in `@spine/ui`. The web layout renders them instead of the sidebar while `useIsPhone()` matches, so notifications and the account menu aren't mounted twice. `AppShellHeader`'s actions wrap under the title. The Tailwind preset gives every control a 44px minimum under 768px (`:where()`, so components keep their sizes above it). Links in running text keep their line height, and checkboxes, radios and switches get a 44px tap area drawn around them. The dashboard's key figures are two per row, and content padding is 16px.
 
 ### US-OPS-15 · Keep wide tables usable on small screens
@@ -253,6 +255,7 @@ Finding: C19 · Decision: D-066
 - **Given** a form under 768px, **when** it renders, **then** fields stack in one column.
 
 **Implementation notes**
+- Superseded in part by D-283: lists become phone rows (US-OPS-56) and dialogs and drawers become sheets (US-OPS-60); genuinely tabular reports keep scrolling inside their box (US-RPT-41).
 - Playwright checks at 390×844 for every route (NFR-COMP-02).
 - Built: `Table` already scrolls inside its card, and `main` is `min-w-0`. `DialogContent` (md, lg) and `AlertDialogContent` are `calc(100% - 32px)` wide under 768px; xl stays full-screen (D-236). `DrawerContent` is `calc(100% - 16px)`. Form grids that went to two columns at `sm:` now wait for `md:`, and the bare two- to four-column grids in the line editors, catalogue form and job dates stack. `us-ops-15.spec.ts` checks 19 routes at 390×844.
 
@@ -883,3 +886,154 @@ Decision: D-281
 
 **Implementation notes**
 - `docker/panels/docker-compose.yml`, copied into each release by `.github/workflows/release.yml`; `scripts/us-ops-53.test.mjs` keeps it in step and reads it with a real `docker compose config`. Required settings use Compose's `${NAME:?message}`. Behind Dokploy's or Easypanel's proxy, the `ports:` lines are deleted and the domain goes to the `caddy` service's port 7746 with `TRUSTED_PROXIES=private_ranges`. TrueNAS's "Install via YAML" and Synology's Container Manager don't fill in `${…}` from a form, so their steps type the values into the file. `restore.sh` reaches a panel's stack from a folder holding the same file as `docker-compose.yml` and a `.env` with `COMPOSE_PROJECT_NAME` and the panel's settings. Checked by deploying through Portainer 2.45 (a missing setting refused with its message; Spine opening, signing in and changing port through a stack update; a backup restored into the stack); the other panels' steps follow their documentation.
+
+### US-OPS-54 · Get around the web app from tabs along the bottom of my phone
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** `AppShellPhoneTabs`, `AppShellPhoneMore`, `AppShellPhoneTabsDark`
+**As** an owner or staff member using Spine on my phone, **I want** the areas I use most one tap away at the bottom of the screen, **so that** it works like the other apps on my phone.
+
+Decision: D-283 (supersedes D-066)
+
+**Acceptance criteria**
+- **Given** a window under 768px, **when** any app page loads, **then** a bar along the bottom holds Home, Sales, Jobs, Money and More, each with its icon and label, and the current one is marked by more than its colour; the menu button and slide-over menu are gone.
+- **Given** Sales, Jobs or Money, **when** I tap it, **then** it opens the page I last used in that area (the first time: Quotes, Jobs and Invoices), and the area's other pages are one tap away in a row at the top of the page that scrolls sideways (Sales: Quotes, Contacts, Pipeline, Meetings, Catalogue; Money: Invoices, Payments, Receivables, Credit notes, Bills, Expenses, Payables, Banking, Reports).
+- **Given** a person who can't open any page in an area (a Field member and Money, say), **when** the bar shows, **then** that tab isn't there, and the others share the width.
+- **Given** More, **when** I tap it, **then** a sheet rises with the whole menu, grouped as the sidebar is, then my account, Settings (for an Owner), Help and Sign out; it closes when I swipe it down, tap Close or choose a page.
+- **Given** any page, **when** it shows, **then** the top bar has the page's title (not the logo), search, notifications and at most one action for the page; a record, a builder or a page below an area's first page also has a back arrow that returns to where I came from, with the list's scroll, search and filters as I left them. Breadcrumbs aren't shown under 768px.
+- **Given** the keyboard is open, or a builder or full-screen sheet is showing, **when** I look, **then** the tab bar is hidden.
+- **Given** the bar, **when** it's measured, **then** each tab is at least 44×44px, it sits above the phone's home indicator, it's a navigation landmark labelled "Main" with the current tab marked `aria-current="page"`, and it works in light and dark.
+- **Given** a window 768px or wider, **when** any page loads, **then** the sidebar and header are as they are today.
+
+**Implementation notes**
+- `@spine/ui` gains `BottomTabBar` and `AppShell` a phone mode (title, back, one action); the web layout picks the tabs from the same capability checks the sidebar uses, so a hidden page is hidden in both (CLAUDE.md: the capability list the UI renders is the one the API enforces). The back arrow uses the history when it came from inside Spine, else the area's first page.
+- Supersedes US-OPS-14's menu button and slide-over; its 44px rule and two-per-row key figures stay.
+
+### US-OPS-55 · Open Spine from my phone's home screen like an app
+**Feature:** F-OPS-14 · **Priority:** P2 · **Phase:** 12 · **Screens:** `AppShellPhoneStandalone`
+**As** an owner who opens Spine many times a day, **I want** it on my home screen without the browser around it, **so that** it feels like an app.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** the web app's manifest, **when** a phone reads it, **then** it says `display: "standalone"`, starts at the dashboard, and gives the name, short name, icons and the light and dark theme colours from the tokens.
+- **Given** Spine added to the home screen, **when** I open it from there, **then** there's no browser address bar or toolbar, and the top bar and tab bar stay clear of the notch and the home indicator.
+- **Given** a page with a back arrow, **when** I'm in the home-screen app, **then** the arrow takes me back (there's no browser Back button there); the phone's own back gesture works too.
+- **Given** a link to another site (the public docs site, a contact's website), **when** I open it from the home-screen app, **then** it opens in the browser, not inside Spine.
+
+**Implementation notes**
+- `apps/web/src/app/manifest.ts` (`display: "browser"` today). Safe areas with `env(safe-area-inset-*)` and `viewport-fit=cover`.
+- Not in this story: a service worker or offline use (the field app is the offline tool). On iPhone a home-screen app keeps its own sign-in, so people sign in once inside it; the guide says so.
+
+### US-OPS-56 · Read any list as rows made for my phone
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** `InvoicesPhone`, `InvoicesPhoneSelect`, `InvoicesPhoneDark`, `PipelinePhone`
+**As** an owner on my phone, **I want** each list to show who, what, how much and its state at a glance, **so that** I don't scroll sideways through a desktop table.
+
+Decision: D-283 (supersedes the list part of US-OPS-15)
+
+**Acceptance criteria**
+- **Given** a list page (quotes, invoices, credit notes, contacts, jobs, payments, receivables, bills, vendor credits, vendor payments, payables, expenses, emails, catalogue, journals, banking accounts and registers, recurring invoices and bills, users and teams) or a list report, **when** it renders under 768px, **then** each record is one row: its title (number or name) and status on the first line, a subtitle (contact and date, or job) on the second, and its amount on the right; there are no columns, column headings or sideways scrolling.
+- **Given** a row, **when** I tap it, **then** its record opens; a row that opens nothing shows no chevron.
+- **Given** a row that has actions on the desktop, **when** I tap its ⋯, **then** they open as an action sheet with the same icons (D-222), and a major action still asks first (D-218).
+- **Given** a list I can select from (bulk send, bulk delete), **when** I tap Select in the top bar, **then** each row shows a checkbox, the bottom shows how many are chosen and the bulk actions, and Done ends selecting; there's no checkbox column otherwise.
+- **Given** more records than the first 25, **when** I reach the end of the list, **then** "Load more" adds the next 25 and the count reads "25 of 87"; Columns and the page-size picker aren't shown.
+- **Given** the Pipeline board, **when** it shows under 768px, **then** one stage's leads show as rows, with the stages as chips above that scroll sideways (with each stage's count), and moving a lead is in its action sheet.
+- **Given** Contacts' Table, List and Card views, **when** it opens under 768px, **then** it shows the rows and the switcher isn't offered.
+- **Given** loading or no records, **when** the list shows, **then** placeholder rows show while it loads, and the empty state is the desktop's.
+
+**Implementation notes**
+- `Table`/`DataTable` columns gain a phone role (`title`, `subtitle`, `trailing`, `badge`), or a list passes a `phoneRow` renderer for a row that needs more; same data, search and sort. One mapping per list; 31 lists use `DataTable` and two use `Table`. `ListRow` in `@spine/ui`.
+
+### US-OPS-57 · See a list's figures, filters and main action on the first screen
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** `InvoicesPhone`, `InvoicesPhoneFilters`
+**As** an owner on my phone, **I want** the list itself on the first screen, **so that** I'm not scrolling past cards and filters to reach it.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** a list page with summary cards (Outstanding, Overdue, …), **when** it opens under 768px, **then** they show as compact chips (label and figure) in one row that scrolls sideways, each still filtering the list when tapped, and the first rows of the list are on the first screen at 390×844.
+- **Given** a list's filters, **when** they show, **then** there's one row: a search field and a Filters button showing how many filters are on; Filters opens a sheet with every filter and the sort, with Show results and Clear all; each filter that's on shows as a chip under the search, with × to remove it.
+- **Given** the page's main action (New quote, Record payment, Add lead), **when** the list shows, **then** it's a floating button above the tab bar with its label ("New quote"), which shrinks to + while the list scrolls and keeps its label for screen readers; other page actions (Import, Export, Refresh) are under the top bar's ⋯.
+
+**Implementation notes**
+- `ChipStrip` and `FloatingActionButton` in `@spine/ui`; the filter bar's controls render into a `BottomSheet` under 768px. Follows the list page order (tabs, cards, filter bar, search) as chips, then search and Filters.
+
+### US-OPS-58 · Read and act on a record on my phone
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** `InvoiceDetailPhone`, `InvoiceDetailPhoneActions`, `JobDetailPhone`, `InvoiceDetailPhoneDark`
+**As** an owner on my phone, **I want** a record's state, amount and next step in view, **so that** I can act on it without hunting.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** a record (quote, invoice, credit note, job, contact, payment, bill, expense, vendor credit, vendor payment, recurring schedule), **when** it opens under 768px, **then** its top shows the number or name, its status and its key amount (total, or balance due), then the contact, with the back arrow in the top bar instead of breadcrumbs.
+- **Given** its actions, **when** they show, **then** the main one for its state (Send, Issue, Record payment, Raise invoice) is a full-width button in a bar at the bottom, and the rest are under the top bar's ⋯ as an action sheet; nothing runs off the screen.
+- **Given** a record's figures (a job's contract, billed, cost, margin and complete), **when** they show, **then** they're two per row.
+- **Given** tabs (a job's Milestones, Variation orders, Photos, Notes, Crew and Costing), **when** they show, **then** they're one row that scrolls sideways, with each count beside its label, never wrapping or overlapping, and the chosen tab scrolled into view.
+- **Given** a document's lines, **when** they show, **then** each is a card with the item and description, "4 × $650.00", its tax and the line amount, with the totals under them in the PDF's order.
+- **Given** lists inside a record (payments, activity, attachments), **when** they show, **then** they use the phone rows (US-OPS-56).
+
+**Implementation notes**
+- A shared `RecordHeader` and `ActionBar` in `@spine/ui`; `Tabs` scrolls sideways under 768px; `DocumentLines` renders cards under 768px.
+
+### US-OPS-59 · Build a quote or invoice on my phone
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** `QuoteBuilderPhone`, `QuoteBuilderPhoneLine`, `QuoteBuilderPhoneDark`
+**As** an owner quoting on site, **I want** a builder made for my phone, **so that** I can send the quote before I leave.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** a builder (quote, invoice, credit note, bill, vendor credit, recurring invoice or bill), **when** it opens under 768px, **then** it fills the screen without the tab bar, with Cancel at the top left, and its fields in one column.
+- **Given** its lines, **when** they show, **then** each is a card (US-OPS-58); Add item opens a sheet with the catalogue search, description, quantity, unit price, discount and tax, kept with Done; tapping a line opens it in the same sheet, with Move up, Move down and Delete there.
+- **Given** the totals and actions, **when** the builder shows, **then** a slim bar at the bottom has the total (tap it for the subtotal and tax) and the main button (Save and send, or Issue), with Save as draft and Preview PDF under ⋯; while I type, the bar stays clear of the keyboard and the field I'm in.
+- **Given** unsaved changes, **when** I tap Cancel or go back, **then** the existing guard asks before anything is lost.
+
+**Implementation notes**
+- The line editors (`quote-line-editor.tsx` and the invoice, bill and credit equivalents) render cards plus one `LineSheet` under 768px; the document builder bar gets a phone layout.
+
+### US-OPS-60 · Use dialogs, menus and pickers made for my phone
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** `RecordPaymentPhone`, `ActionSheetPhone`, `PickerSheetPhone`, `ActionSheetPhoneDark`
+**As** someone using Spine on a phone, **I want** dialogs, menus and pickers that fit a thumb, **so that** I'm not pinching at small pop-ups.
+
+Decision: D-283 (supersedes the dialog and drawer part of US-OPS-15)
+
+**Acceptance criteria**
+- **Given** a dialog with a form (Record payment, New contact, Edit job), **when** it opens under 768px, **then** it fills the screen as a sheet that slides up, with Cancel on the left and its action (Save, Record) on the right of its header; the field I'm typing in stays above the keyboard.
+- **Given** a menu (a row's ⋯, a page's ⋯, Export), **when** I open it, **then** an action sheet rises from the bottom with each action's icon and a Cancel; a destructive action is in the danger colour and still asks first (D-218).
+- **Given** a select or combobox, **when** I open it, **then** its options open in a bottom sheet, with search at the top for a combobox; a date picker opens its calendar in a bottom sheet.
+- **Given** a confirmation (Issue, Void, Delete), **when** it shows, **then** it stays a small alert in the middle of the screen, with its buttons full width.
+- **Given** a drawer (notifications, a filter panel), **when** it opens, **then** it's a bottom sheet that can be dragged up to full height and swiped down to close.
+- **Given** search, **when** I open it, **then** it fills the screen with Cancel, as `SearchPalettePhone` draws it, and no keyboard shortcut (⌘K) is shown on a touch screen.
+- **Given** any sheet, **when** it's open, **then** focus stays inside it, it's labelled by its title, Escape and Close close it, and with reduced motion it appears without sliding.
+
+**Implementation notes**
+- `BottomSheet` and `ActionSheet` in `@spine/ui` (on Radix Dialog); `Dialog`, `DropdownMenu`, `Select`, `Combobox`, `DatePicker` and `Drawer` render them under 768px, so screens don't change. Toasts stay as US-OPS-38 has them.
+
+### US-OPS-61 · Fix what's broken on a phone today
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
+**As** an owner using the current betas on my phone, **I want** the layout bugs fixed straight away, **so that** I can use it while the phone layout is built.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** a job at 390px, **when** its tabs show, **then** no label or count overlaps another or wraps onto two lines.
+- **Given** an invoice at 390px, **when** its header shows, **then** Edit, Preview PDF and Issue invoice fit inside the screen.
+- **Given** a record or builder at 390px, **when** its breadcrumb shows, **then** its items sit on one line, the middle ones shortened with … if needed.
+- **Given** the invoice list at 390px, **when** it shows, **then** the selection column has no empty boxes.
+- **Given** a touch screen, **when** the search field shows, **then** it has no ⌘K hint.
+- **Given** a report with tabs at 390px, **when** they show, **then** they're one row that scrolls sideways.
+
+**Implementation notes**
+- Ships in the next beta, before the rest of F-OPS-14; US-OPS-54 to US-OPS-60 later replace some of these screens, and its checks join US-OPS-62.
+
+### US-OPS-62 · Check every page at phone width before each release
+**Feature:** F-OPS-14 · **Priority:** P1 · **Phase:** 12 · **Screens:** —
+**As** the owner shipping Spine, **I want** every page checked at phone width, **so that** a layout like today's can't pass again.
+
+Decision: D-283 · NFR-COMP-02
+
+**Acceptance criteria**
+- **Given** the E2E suite, **when** it runs, **then** a phone project (390×844, touch, a phone user agent) opens every route with the demo business: lists, records, builders, report pages, settings, team and help, in light and dark.
+- **Given** each route, **when** it loads, **then** the page doesn't scroll sideways, the tab bar shows, the page's main action is visible without scrolling, no two labels in a tab row or button row overlap, every control is at least 44×44px, and axe finds no AA violations.
+- **Given** a route that fails, **when** the run ends, **then** the report names the route and the check, and keeps a screenshot of the page.
+- **Given** `pnpm verify` or a `v*` tag, **when** it runs, **then** the phone project runs too (D-260).
+
+**Implementation notes**
+- A `phone` project in `apps/e2e/playwright.config.ts`; the route list is shared with the axe check (US-OPS-17), so a new route is checked in both. Replaces `us-ops-15.spec.ts`'s 19 routes.

@@ -1063,12 +1063,12 @@ Total: 543 stories.
 
 **Two milestones ([D-265](12-decisions.md)).** Milestone 1 builds what a release needs and ends with `v1.0.0-beta.1`, which the Owner runs on their own server for an accountant and other testers, with the field app through TestFlight and an APK. Milestone 2 finishes the phase while the beta runs; fixes ship as further betas. 1.0 is tagged when both are done and the accountant has signed off.
 
-**Deliverables:** Install script, backup/restore with CI-verified restore, upgrades, health checks, logs, update notice, demo seed, system pages, phone-width web layout, reduced motion, i18n extraction, accessibility audit, security review, README, licence, the public website and docs (Astro + Starlight: home page, user guide, self-hosting, developer docs, API reference) with the guide bundled into every install for offline help, and the v1.0 release.
+**Deliverables:** Install script, backup/restore with CI-verified restore, upgrades, health checks, logs, update notice, demo seed, system pages, the web app's phone layout (tabs along the bottom, lists, records, builders, sheets, calendar and reports made for a phone, [D-283](12-decisions.md)), reduced motion, i18n extraction, accessibility audit, security review, README, licence, the public website and docs (Astro + Starlight: home page, user guide, self-hosting, developer docs, API reference) with the guide bundled into every install for offline help, and the v1.0 release.
 
 **Done when:**
 - A stranger installs on a clean machine using only the README and issues their first invoice in under 5 minutes (NFR-MNT-01).
 - Backup → restore is verified nightly in CI (NFR-REL-03).
-- Every route passes axe AA and works at 390×844 (NFR-A11Y-02, NFR-COMP-02).
+- Every route passes axe AA, at desktop and phone width, and has its phone layout, checked at 390×844 on every route (NFR-A11Y-02, NFR-COMP-02, US-OPS-62).
 - The security review is written up with no open high-severity items (NFR-SEC-05).
 - The accountant's review is signed off in `docs/accounting-review.md`, and each beta upgraded in place with testers' data intact (NFR-MNT-02).
 - Every feature has a user-guide page, and the Help menu opens the bundled guide offline.
@@ -1106,6 +1106,23 @@ Total: 543 stories.
 - US-OPS-17 · Pass an accessibility audit of every screen (P1)
 - US-OPS-18 · Complete a security review before 1.0 (P1)
 - US-OPS-19 · Ship the README, licence and contributor guide (P1)
+
+*Milestone 2 · the web app as a phone app ([D-283](12-decisions.md)) — before the 1.0 tag, shipped in waves as further betas*
+
+- US-OPS-61 · Fix what's broken on a phone today (P1) — first, in the next beta
+- US-OPS-62 · Check every page at phone width before each release (P1) — with the first wave, so each later wave is checked
+- US-OPS-54 · Get around the web app from tabs along the bottom of my phone (P1)
+- US-OPS-60 · Use dialogs, menus and pickers made for my phone (P1)
+- US-OPS-56 · Read any list as rows made for my phone (P1)
+- US-OPS-57 · See a list's figures, filters and main action on the first screen (P1)
+- US-OPS-58 · Read and act on a record on my phone (P1)
+- US-OPS-59 · Build a quote or invoice on my phone (P1)
+- US-MTG-18 · Use a calendar made for my phone (P1)
+- US-RPT-41 · Read reports on my phone (P2)
+- US-DASH-31 · See my dashboard laid out for my phone (P2)
+- US-OPS-55 · Open Spine from my phone's home screen like an app (P2)
+
+Order of work: docs, then the phone designs in `docs/design/screens.md` (the shell and the Invoices list; invoice detail and New quote; the calendar; Profit & Loss and the dashboard), each approved by the Owner before it's built. Waves: the fixes and the phone checks; the shell and sheets; lists; records and builders; the calendar, reports and dashboard; the home-screen app.
 
 *Milestone 2 · website and help*
 

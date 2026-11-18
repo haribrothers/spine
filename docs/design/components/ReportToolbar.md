@@ -25,6 +25,10 @@ import { ReportToolbar, ReportFilter, ReportFilterCheckbox } from "@spine/ui";
 - `loading` shows a spinner ("Updating the report") after the filters; the figures on screen stay until the new ones arrive.
 - Hidden in print.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+
+- Under 768px the filters collapse to one summary line ("Jan 1 – Nov 18, 2026 · Accrual · No comparison") that opens a `BottomSheet` with every filter; Export moves under the top bar's ⋯ (US-RPT-41).
+
 ## Exports
 
 `ReportToolbarProps` · `ReportToolbar` · `ReportFilterProps` · `ReportFilter` · `ReportFilterCheckboxProps` · `ReportFilterCheckbox`
