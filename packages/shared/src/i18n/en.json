@@ -2004,6 +2004,8 @@
       "overdueInvoices_other": "{{count}} invoices"
     },
     "attention": {
+      "showAll": "Show all {{n}}",
+      "showFewer": "Show fewer",
       "caughtUp": "You're all caught up",
       "emptyText": "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you.",
       "title": "Needs your attention",

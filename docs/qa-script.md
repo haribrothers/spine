@@ -5889,3 +5889,14 @@ Automated: `us-rpt-41.spec.ts`, `us-rpt-41-phone.a11y.test.tsx`. At 390×844 wit
 8. Receivables and Payables: the age cards are chips.
 9. Tally › Account mapping (Owner): each account's group picker is in its row.
 10. Regression, from 768px up: every report's filters, Export, cards, chart, tables and the Reports page are as they were.
+
+## 293. See my dashboard laid out for my phone (US-DASH-31, Phase 12)
+
+Automated: `us-dash-31.spec.ts`. At 390×844 with touch, as the Owner:
+
+1. Home: "Good morning, <name> · Thu, Nov 19" in one line, then Needs your attention, then the key figures two per row, then Today, Get started and the other cards one under another. Nothing is cut off on the right; the greeting and the first attention item are on the first screen.
+2. Needs your attention: each row has its icon, what it is and its detail, and its button on the right (Send reminder, Review, Approve). With more than three, "Show all 5" shows the rest, then "Show fewer".
+3. ⋯ at the top: Accrual and Cash; choose Cash — the figures change and the choice is kept. There's no Edit layout.
+4. On a computer, hide a card with Edit layout; back on the phone it's hidden there too.
+5. As Staff and Field: the same order without what they can't see (no key figures for Field).
+6. Regression, from 768px up: the header with Accrual/Cash and Edit layout, the side column from 1440px and the grid are as they were.

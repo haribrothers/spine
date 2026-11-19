@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-DASH-31: the dashboard laid out for a phone
+
+- **What needs you first:** under 768px the dashboard is one column. It starts with a one-line greeting and the date ("Good morning, Priya · Thu, Nov 19"), then Needs your attention, the key figures two per row, Today, Get started and the other cards one per row, in the layout chosen on a wider screen.
+- **Attention rows:** each item's action (Send reminder, Review, Approve) is a button on the right of its row, and the title wraps to two lines. With more than three items, "Show all <n>" opens the rest. The note "Cleared items disappear automatically" isn't shown on a phone.
+- **Header:** Accrual or Cash is under the top bar's ⋯, and Edit layout isn't offered on a phone. The greeting and the first attention item are on the first screen at 390×844.
+- **Tests and docs:** `us-dash-31.spec.ts`; the phone guide; QA section 293.
+
 ### 2026-11-19 — US-RPT-41: reports that read on a phone
 
 - **Filters in one line:** under 768px a report's filters are one line saying what's chosen ("Jan 1 – Nov 19, 2026 · Accrual · No comparison"). It opens a "Report filters" sheet with every filter and Show report (`ReportToolbar` `summary`; helpers `filterSummary`, `rangeSummary`, `asOfSummary`). Export is under the top bar's ⋯ through the web app's `components/report-toolbar.tsx` wrapper. Every report passes its summary.
