@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Version 1.0.0-beta.6
+
+- The web app's phone layout (D-283: US-OPS-54 to US-OPS-62, US-MTG-18, US-RPT-41, US-DASH-31) and the fixes from the Owner's review on a phone, below, with release notes in `docs/releases/v1.0.0-beta.6.md`. The download commands and the three Compose files' default image tags name the new version.
+
 ### 2026-11-19 — Fix: on a phone, the area's row shows the page you're on
 
 - On Reports (and Banking or Payables, at the end of the Money row) the row of the area's pages under the title now scrolls so the page you're on is in view and underlined (`AppShellAreaNav`). Before, only the Money tab looked selected, because the page's own link was off-screen to the right. Reports stays under Money, the Owner's choice. US-OPS-54 checks it on Reports and Banking.
