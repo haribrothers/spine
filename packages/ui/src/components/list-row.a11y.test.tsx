@@ -41,7 +41,7 @@ describe("US-OPS-56 · phoneRoles", () => {
     expect(Object.fromEntries(roles)).toEqual({ name: "title", email: "subtitle", phone: "hidden", owed: "trailing" });
   });
 
-  it("the title keeps to one line; badges wrap under it rather than squeezing it", () => {
+  it("the title keeps to one line beside its badge, truncating if it must", () => {
     const { container } = render(
       <ul>
         <ListRow title={<a href="/quotes/1">DEMO-QUO-0002</a>} badge={<span>Accepted · Viewed 1×</span>} trailing="$9,06,948.00" />
@@ -50,6 +50,7 @@ describe("US-OPS-56 · phoneRoles", () => {
     const title = container.querySelector("[data-list-row-title]")!;
     expect(title.className).toContain("truncate");
     expect(title.className).toContain("[&_*]:whitespace-nowrap");
-    expect(title.parentElement!.className).toContain("flex-wrap");
+    expect(title.parentElement!.className).not.toContain("flex-wrap");
+    expect(title.nextElementSibling!.className).toContain("shrink-0");
   });
 });

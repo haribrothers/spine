@@ -114,6 +114,13 @@ export function QuotesTable({
           <ViewedChip quote={row} now={now} />
         </div>
       ),
+      // On a phone, the status beside the number; "Viewed" would squeeze the number.
+      phoneRender: (row) => (
+        <>
+          <Badge className={STATUS_BADGE_CLASS[row.status]}>{QUOTE_STATUS_LABELS[row.status]}</Badge>
+          {row.isExpired && <Badge className="bg-overdue-bg text-overdue">{t("quotes.status.expired")}</Badge>}
+        </>
+      ),
       sortValue: (row) => row.status,
     },
     {

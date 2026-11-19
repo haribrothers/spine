@@ -72,8 +72,10 @@ test.describe("US-OPS-54 · get around the web app from tabs along the bottom of
     await expect(page.getByRole("dialog", { name: "Menu" })).toHaveCount(0);
     await expect(tabBar(page).getByRole("button", { name: "More" })).toBeVisible();
 
-    // A swipe down on its header closes it.
+    // A swipe down on its header closes it — once it has finished rising (CI is slower).
     await tabBar(page).getByRole("button", { name: "More" }).click();
+    await expect(page.getByRole("dialog", { name: "Menu" })).toBeVisible();
+    await page.waitForFunction(() => (globalThis as unknown as { document: { getAnimations(): unknown[] } }).document.getAnimations().length === 0);
     const header = page.getByRole("dialog", { name: "Menu" }).getByRole("heading", { name: "Menu" });
     const h = (await header.boundingBox())!;
     await page.mouse.move(h.x + 20, h.y + 5);
