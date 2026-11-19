@@ -82,7 +82,8 @@ export default defineConfig({
       url: "http://localhost:3110",
       cwd: "../..",
       reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
+      // The guide plus a production build of the web app take about four minutes from cold.
+      timeout: 420_000,
       stdout: "pipe",
       stderr: "pipe",
     },
