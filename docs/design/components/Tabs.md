@@ -26,6 +26,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@spine/ui";
 - Full keyboard navigation.
 - Supports automatic/manual activation.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
+
+- Under 768px the tab list is one row that scrolls sideways, with counts beside their labels; labels never wrap or overlap (built, US-OPS-61). The underline is an inset shadow there and the focus ring is drawn inside, so the scrolling row clips neither.
+- The chosen tab scrolls into view when the page opens on it (`?tab=costing`) and when it changes; only the row scrolls, never the page (built, US-OPS-58). Test: `us-ops-58-phone.a11y.test.tsx`.
+
 ## Exports
 
 `Tabs` · `TabsList` · `TabsTrigger` · `TabsContent`

@@ -14,8 +14,7 @@ import {
   AlertDialogTitle,
   Button,
   StatCard,
-  StatusChip,
-} from "@spine/ui";
+  StatusChip, ScrollX } from "@spine/ui";
 import type { OpeningBalancesView, OpeningBill, OpeningCustomerCredit, OpeningInvoice, OpeningVendorCredit } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
@@ -133,7 +132,7 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
         </Alert>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
         <table className="w-full text-[14px]" data-testid="review-trial-balance">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
@@ -164,7 +163,7 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
             </tfoot>
           )}
         </table>
-      </div>
+      </ScrollX>
 
       <AlertDialog open={confirm !== null} onOpenChange={(open) => !open && setConfirm(null)}>
         <AlertDialogContent>

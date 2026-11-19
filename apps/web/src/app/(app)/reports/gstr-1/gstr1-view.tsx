@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, ReportFilter, ReportToolbar, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, StatementTable } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, ReportFilter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, StatementTable } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { FINANCIAL_STATEMENTS_NO_ACCESS } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { useCurrency } from "../analysis-shared";
-import { ReportFootnote, ReportKpis, useReport } from "../report-kit";
+import { filterSummary, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { useReportDetail } from "../report-shell";
 import type { Gstr1DocumentRange, Gstr1Problem, Gstr1Summary } from "./types";
 import { t, useT } from "../../../../lib/i18n";
@@ -106,6 +107,7 @@ export function Gstr1View() {
     <>
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(filing === "monthly" ? t("reports.gstr1.monthly") : t("reports.gstr1.quarterly"), options.find((o) => o.value === period)?.label)}
         filters={
           <>
             <ReportFilter label={t("reports.gstr1.filing")}>

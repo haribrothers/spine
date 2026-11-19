@@ -3,6 +3,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useT } from "../lib/i18n";
+import { usePhone } from "../lib/use-phone";
 import { Button } from "./button";
 import {
   DropdownMenu,
@@ -48,6 +49,12 @@ export interface DataTableProps<T> {
   /** Passed to `Table`: rows that open to show more under them (US-PAY-27). */
   renderExpanded?: (row: T) => React.ReactNode;
   expandLabel?: (row: T, expanded: boolean) => string;
+  /** US-OPS-56: on a phone, the rows show checkboxes only in Select mode. */
+  phoneSelecting?: boolean;
+  /** US-OPS-56: false keeps it a table on a phone. */
+  phoneRows?: boolean;
+  /** US-RPT-41: on a phone the first column stays put while the others scroll sideways (with `phoneRows={false}`). */
+  stickyFirstColumn?: boolean;
 }
 
 /**
@@ -82,8 +89,13 @@ export function DataTable<T>({
   defaultHidden,
   renderExpanded,
   expandLabel,
+  phoneSelecting,
+  phoneRows,
+  stickyFirstColumn,
 }: DataTableProps<T>) {
   const t = useT();
+  // US-OPS-56: a phone row places every column by its role, so Columns isn't offered there.
+  const phone = usePhone() && phoneRows !== false;
   const searchText = searchPlaceholder ?? t("ui.dataTable.searchPlaceholder");
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(defaultHidden ?? []));
@@ -105,13 +117,13 @@ export function DataTable<T>({
               setQuery(event.target.value);
               onSearchChange?.(event.target.value);
             }}
-            className="w-64"
+            className="w-64 max-md:w-full"
           />
         ) : (
           <div />
         )}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild className={phone ? "hidden" : undefined}>
             <Button variant="secondary" size="sm">
               <SlidersHorizontal size={14} />
               {t("ui.dataTable.columns")}
@@ -138,7 +150,7 @@ export function DataTable<T>({
         </DropdownMenu>
       </div>
       <Table
-        columns={visibleColumns}
+        columns={phone ? columns : visibleColumns}
         data={filtered}
         rowKey={rowKey}
         pageSize={pageSize}
@@ -157,6 +169,9 @@ export function DataTable<T>({
         onSortChange={onSortChange}
         renderExpanded={renderExpanded}
         expandLabel={expandLabel}
+        phoneSelecting={phoneSelecting}
+        phoneRows={phoneRows}
+        stickyFirstColumn={stickyFirstColumn}
       />
     </div>
   );

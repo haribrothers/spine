@@ -95,13 +95,15 @@ describe("US-SET-26 · see the Spine logo across the web app", () => {
     expect(JSON.parse(read("packages/shared/src/i18n/en.json")).publicQuote.sentWithSpine).toBe("Sent with Spine");
   });
 
-  it("gives browsers and home screens the app icon, and keeps Spine a normal website", () => {
+  it("gives browsers and home screens the app icon (and, since US-OPS-55, opens from the home screen as an app)", () => {
     expect(read("apps/web/src/app/icon.svg")).toMatch(/#04E9BC[\s\S]*#054DC1/);
     const ico = readFileSync(path.join(root, "apps/web/src/app/favicon.ico"));
     expect(ico.readUInt16LE(4)).toBe(3); // 16, 32 and 48 px
     expect(png("apps/web/src/app/apple-icon.png")).toEqual({ width: 180, height: 180 });
     const manifest = read("apps/web/src/app/manifest.ts");
-    expect(manifest).toContain('display: "browser"');
+    // US-OPS-55 (D-283): opened from the home screen it's an app, starting at the dashboard.
+    expect(manifest).toContain('display: "standalone"');
+    expect(manifest).toContain('start_url: "/dashboard"');
     for (const [icon, size] of [["icon-192", 192], ["icon-512", 512], ["icon-maskable-512", 512]] as const) {
       expect(manifest).toContain(`/icons/${icon}.png`);
       expect(png(`apps/web/public/icons/${icon}.png`)).toEqual({ width: size, height: size });

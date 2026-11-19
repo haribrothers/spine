@@ -67,6 +67,7 @@ export function ReceivablesTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   actions,
 }: {
   invoices: ReceivablesInvoiceRow[];
@@ -78,6 +79,8 @@ export function ReceivablesTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   actions: InvoiceActions;
 }) {
   const t = useT();
@@ -102,10 +105,15 @@ export function ReceivablesTable({
           )}
         </div>
       ),
+      // US-OPS-56: on a phone, the number alone; the customer and the job go on the second line.
+      phone: "title",
+      phoneRender: (row) => <SectionLink href={`/invoices/${row.id}`}>{row.number ?? t("receivables.table.invoice")}</SectionLink>,
       sortValue: (row) => row.number ?? "",
     },
     {
       key: "contact",
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName ?? "—", row.jobName, row.type === "advance" ? t("receivables.table.deposit") : null].filter(Boolean).join(" · "),
       header: t("receivables.table.customer"),
       render: (row) => (
         <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
@@ -116,6 +124,9 @@ export function ReceivablesTable({
     },
     {
       key: "dueDate",
+      // Under the balance on a phone: how late it is, in words.
+      phone: "trailingSub",
+      phoneRender: (row) => <span className={row.daysOverdue > 0 ? "text-overdue" : undefined}>{howLate(row)}</span>,
       header: t("receivables.table.due"),
       render: (row) => (
         <div className="flex flex-col whitespace-nowrap">
@@ -127,13 +138,21 @@ export function ReceivablesTable({
       ),
       sortValue: (row) => row.dueDate ?? "",
     },
-    { key: "late", header: t("receivables.table.howLate"), render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue },
-    { key: "issueDate", header: t("receivables.table.issued"), render: (row) => <span className="whitespace-nowrap">{date(row.issueDate)}</span>, sortValue: (row) => row.issueDate ?? "" },
-    { key: "totalAmount", header: t("receivables.table.invoiceTotal"), align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
-    { key: "paidAmount", header: t("receivables.table.paidSoFar"), align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
-    { key: "balanceDue", header: t("receivables.table.balanceDue"), align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
+    {
+      key: "late",
+      // On a phone only an overdue age is worth a badge; how late it is in words sits under the amount.
+      phone: "badge",
+      phoneRender: (row) => (row.bucket === "current" ? null : <Badge className={BUCKET_BADGE_CLASS[row.bucket]}>{AGING_BUCKET_LABELS[row.bucket]}</Badge>),
+      header: t("receivables.table.howLate"),
+      render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue,
+    },
+    { key: "issueDate", phone: "hidden", header: t("receivables.table.issued"), render: (row) => <span className="whitespace-nowrap">{date(row.issueDate)}</span>, sortValue: (row) => row.issueDate ?? "" },
+    { key: "totalAmount", phone: "hidden", header: t("receivables.table.invoiceTotal"), align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "paidAmount", phone: "hidden", header: t("receivables.table.paidSoFar"), align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
+    { key: "balanceDue", phone: "trailing", header: t("receivables.table.balanceDue"), align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -156,6 +175,7 @@ export function ReceivablesTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.number ?? t("receivables.table.selectLabel")}
       defaultHidden={["issueDate", "totalAmount", "paidAmount"]}
     />

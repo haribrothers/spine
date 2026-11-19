@@ -21,8 +21,7 @@ import {
   FormField,
   Input,
   Spinner,
-  StatusChip,
-} from "@spine/ui";
+  StatusChip, ScrollX } from "@spine/ui";
 import type { ManualJournal } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
@@ -141,7 +140,7 @@ export function JournalDetail({ journalId }: { journalId: string }) {
 
           <Card className="flex flex-col gap-3">
             <h2 className="text-[15px] font-semibold text-on-surface">{t("journals.detail.lines")}</h2>
-            <div className="overflow-x-auto rounded-md border border-border">
+            <ScrollX label={t("ui.scrollX.label")} className="rounded-md border border-border">
               <table className="w-full text-[14px]" data-testid="journal-detail-lines">
                 <thead>
                   <tr className="border-b border-border bg-surface-sunken text-left text-on-surface-muted">
@@ -175,7 +174,7 @@ export function JournalDetail({ journalId }: { journalId: string }) {
                   </tr>
                 </tfoot>
               </table>
-            </div>
+            </ScrollX>
           </Card>
 
           {journal.reversal && (

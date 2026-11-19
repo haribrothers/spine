@@ -90,6 +90,8 @@ export function Combobox({
         <Popover.Content
           align="start"
           sideOffset={4}
+          // US-OPS-60: on a phone the options open in a bottom sheet, the search at its top.
+          data-phone-sheet=""
           className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-raised"
         >
           <CommandPrimitive shouldFilter className="w-full">
@@ -114,7 +116,7 @@ export function Combobox({
                     onValueChange(option.value);
                     handleOpenChange(false);
                   }}
-                  className="flex cursor-pointer items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-[14px] text-on-surface data-[selected=true]:bg-surface-sunken"
+                  className="flex cursor-pointer items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-[14px] text-on-surface data-[selected=true]:bg-surface-sunken max-md:min-h-11 max-md:px-4 max-md:text-[16px]"
                 >
                   {option.description ? (
                     <span className="flex min-w-0 flex-col">

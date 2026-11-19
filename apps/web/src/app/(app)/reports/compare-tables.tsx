@@ -5,6 +5,7 @@ import { changePercent, type CompareLine, type ProfitAndLossComparison } from "@
 import { formatMoney } from "../../../lib/money";
 import type { BalanceSheetReport, ReportAccountLine } from "./types";
 import { useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 
 /** "▲ +$6,059.53" / "▼ −$1,324.53" / "$0.00": an arrow and a sign, never colour alone. */
 export function changeText(diff: bigint, currency: string): string {
@@ -27,6 +28,8 @@ export function percentText(current: bigint, previous: bigint): string {
  */
 export function PlCompareTable({ comparison, totals, currency }: { comparison: ProfitAndLossComparison; totals: { income: string; expenses: string; netProfit: string }; currency: string }) {
   const t = useT();
+  // US-RPT-41: on a phone two periods are an indented list (the other period's amount under each); Change columns are left out there.
+  const phone = useIsPhone();
   const monthly = comparison.mode === "monthly";
   const money = (v: string | bigint) => formatMoney(v, currency);
   const columns: StatementColumn[] = [
@@ -34,10 +37,12 @@ export function PlCompareTable({ comparison, totals, currency }: { comparison: P
     ...comparison.columns.map((c, i) => ({ key: `c${i}`, header: c.label, align: "right" as const })),
     ...(monthly
       ? [{ key: "total", header: t("reports.common.total"), align: "right" as const }]
-      : [
-          { key: "change", header: t("reports.common.change"), align: "right" as const },
-          { key: "pct", header: t("reports.common.changePercent"), align: "right" as const },
-        ]),
+      : phone
+        ? []
+        : [
+            { key: "change", header: t("reports.common.change"), align: "right" as const },
+            { key: "pct", header: t("reports.common.changePercent"), align: "right" as const },
+          ]),
   ];
   const cells = (label: string, amounts: string[], total: string): Record<string, React.ReactNode> => {
     const out: Record<string, React.ReactNode> = { account: label };
@@ -67,6 +72,7 @@ export function PlCompareTable({ comparison, totals, currency }: { comparison: P
 /** US-RPT-27 — the Balance Sheet on two dates side by side. */
 export function BsCompareTable({ report, comparison, currency, labels }: { report: BalanceSheetReport; comparison: BalanceSheetReport; currency: string; labels: [string, string] }) {
   const t = useT();
+  const phone = useIsPhone();
   const money = (v: string | bigint) => formatMoney(v, currency);
   const key = (l: ReportAccountLine) => l.accountId ?? `current-${l.code}`;
   const merge = (a: ReportAccountLine[], b: ReportAccountLine[]) => {
@@ -100,7 +106,8 @@ export function BsCompareTable({ report, comparison, currency, labels }: { repor
         { key: "account", header: t("reports.common.account") },
         { key: "now", header: labels[0], align: "right" },
         { key: "then", header: labels[1], align: "right" },
-        { key: "change", header: t("reports.common.change"), align: "right" },
+        // US-RPT-41: on a phone the two dates are an indented list, the earlier amount under each; Change is left out there.
+        ...(phone ? [] : [{ key: "change", header: t("reports.common.change"), align: "right" as const }]),
       ]}
       rows={rows}
     />

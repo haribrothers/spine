@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { Receipt } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, Progress, ReportToolbar, StatCard, type TableColumn } from "@spine/ui";
+import { Alert, AlertDescription, DataTable, EmptyState, Progress, StatCard, type TableColumn } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { type AnalysisDocumentRef, type ExpensesByCategoryReport, type ExpensesByCategoryRow, type PurchasesByVendorReport, type PurchasesByVendorRow } from "@spine/shared";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { formatMoney } from "../../../../lib/money";
 import { useMyRole } from "../../../../lib/role-context";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { DocumentsDialog, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
+import { RangeFilters, rangeSummary, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { DrilldownDialog } from "../reports-explorer";
 import { t, useT } from "../../../../lib/i18n";
 
@@ -59,9 +60,9 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
         ),
       sortValue: (r) => r.code,
     },
-    { key: "share", header: t("reports.purchases.share"), render: (r) => <Progress className="w-48" value={Number(r.percentOfTotal ?? 0)} aria-label={t("reports.purchases.shareAria", { name: r.name, pct: r.percentOfTotal ?? 0 })} /> },
-    { key: "amount", header: t("reports.common.amount"), align: "right", render: (r) => <span className="tabular-nums">{money(r.amount)}</span>, sortValue: (r) => BigInt(r.amount) },
-    { key: "pct", header: t("reports.purchases.percentOfTotal"), align: "right", render: (r) => (r.percentOfTotal === null ? "—" : `${r.percentOfTotal}%`) },
+    { key: "share", header: t("reports.purchases.share"), phone: "hidden", render: (r) => <Progress className="w-48" value={Number(r.percentOfTotal ?? 0)} aria-label={t("reports.purchases.shareAria", { name: r.name, pct: r.percentOfTotal ?? 0 })} /> },
+    { key: "amount", header: t("reports.common.amount"), align: "right", phone: "trailing", render: (r) => <span className="tabular-nums">{money(r.amount)}</span>, sortValue: (r) => BigInt(r.amount) },
+    { key: "pct", header: t("reports.purchases.percentOfTotal"), align: "right", phone: "trailingSub", render: (r) => (r.percentOfTotal === null ? "—" : `${r.percentOfTotal}%`) },
   ];
   const vendorColumns: TableColumn<PurchasesByVendorRow>[] = [
     {
@@ -83,7 +84,7 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
   return (
     <>
       <ReportTabs value={tab} tabs={TABS} />
-      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
+      <ReportToolbar loading={loading} summary={rangeSummary(from, to)} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
 
       {error && (
         <Alert variant="critical">

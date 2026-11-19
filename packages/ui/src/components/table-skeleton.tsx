@@ -1,5 +1,6 @@
 import { cn } from "../lib/cn";
 import { Skeleton } from "./skeleton";
+import { ListRowSkeleton } from "./list-row";
 
 export interface TableSkeletonColumn {
   key: string;
@@ -26,7 +27,13 @@ export interface TableSkeletonProps {
 export function TableSkeleton({ columns, rows = 8, className }: TableSkeletonProps) {
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      {/* US-OPS-56: on a phone, placeholder rows the height of the list's rows. */}
+      <ul aria-hidden className="overflow-hidden rounded-lg border border-border bg-surface md:hidden">
+        {Array.from({ length: Math.min(rows, 8) }, (_, i) => (
+          <ListRowSkeleton key={i} />
+        ))}
+      </ul>
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface max-md:hidden">
         <table className="w-full border-collapse text-[13px]">
           <thead className="border-b border-border bg-surface-sunken">
             <tr>

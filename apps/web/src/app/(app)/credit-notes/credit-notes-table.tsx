@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { DataTable, cn, type TableColumn, type TableSort } from "@spine/ui";
+import { Badge, DataTable, cn, type TableColumn, type TableSort } from "@spine/ui";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { CreditNoteRowActions } from "./credit-note-row-actions";
-import { whereItWent } from "./credit-notes-list-state";
+import { CREDIT_NOTE_STATE_LABELS, creditNoteState, whereItWent } from "./credit-notes-list-state";
+import { STATE_BADGE } from "./credit-note-detail";
 import type { CreditNoteRow } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
@@ -53,10 +54,17 @@ export function CreditNotesTable({
           )}
         </div>
       ),
+      // US-OPS-56: on a phone, the number alone; the customer and the invoice go on the second line.
+      phone: "title",
+      phoneRender: (row) => (
+        <Link href={`/credit-notes/${row.id}`}>{row.number ?? <span className="font-medium italic text-on-surface-muted">{t("creditNotes.table.draft")}</span>}</Link>
+      ),
       sortValue: (row) => row.number ?? "",
     },
     {
       key: "contact",
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName ?? "—", row.invoiceNumber ?? row.reason].filter(Boolean).join(" · "),
       header: t("creditNotes.table.customer"),
       render: (row) => (
         <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
@@ -67,6 +75,7 @@ export function CreditNotesTable({
     },
     {
       key: "invoice",
+      phone: "hidden",
       header: t("creditNotes.columns.invoice"),
       render: (row) =>
         row.invoiceNumber ? (
@@ -80,6 +89,7 @@ export function CreditNotesTable({
     },
     {
       key: "date",
+      phone: "trailingSub",
       header: t("creditNotes.columns.date"),
       render: (row) => {
         const day = (row.issuedAt ?? row.date ?? "").slice(0, 10);
@@ -89,6 +99,7 @@ export function CreditNotesTable({
     },
     {
       key: "total",
+      phone: "trailing",
       header: t("creditNotes.columns.total"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
@@ -96,6 +107,12 @@ export function CreditNotesTable({
     },
     {
       key: "where",
+      // On a phone, where the money went is said by the state badge: Draft, Credit left or Credited.
+      phone: "badge",
+      phoneRender: (row) => {
+        const state = creditNoteState(row);
+        return <Badge className={STATE_BADGE[state]}>{CREDIT_NOTE_STATE_LABELS[state]}</Badge>;
+      },
       header: t("creditNotes.table.whereItWent"),
       render: (row) => {
         if (row.status !== "issued") return <span className="text-[12.5px] italic text-on-surface-muted">{t("creditNotes.table.draftNotIssued")}</span>;
@@ -115,6 +132,7 @@ export function CreditNotesTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

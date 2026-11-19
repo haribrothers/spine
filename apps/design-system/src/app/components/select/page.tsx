@@ -47,7 +47,7 @@ export default function SelectPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px the options open in a bottom sheet (US-OPS-60).", 
             "Can be controlled or uncontrolled.",
             "Offers 2 positioning modes.",
             "Supports items, labels, groups of options.",

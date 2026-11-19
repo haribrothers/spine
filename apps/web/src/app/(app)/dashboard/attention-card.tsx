@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Button, Card, Spinner, cn } from "@spine/ui";
 import { describeAttention, type AttentionItem, type AttentionKind } from "@spine/shared";
 import { ArrowUpRight, Check, CircleAlert, Clock, DollarSign, MailX, OctagonAlert, Percent } from "lucide-react";
 import { formatMoney } from "../../../lib/money";
 import { WidgetSkeleton } from "./dashboard-skeleton";
 import { useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
+
+/** US-DASH-31: on a phone the first three show, then "Show all <n>". */
+const PHONE_SHOWN = 3;
 
 const KIND_STYLE: Record<AttentionKind, { icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>; tone: string }> = {
   invoices_overdue: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
@@ -86,6 +91,8 @@ export function AttentionCard({
   className?: string;
 }) {
   const t = useT();
+  const phone = useIsPhone();
+  const [all, setAll] = useState(false);
   if (items !== null && items.length === 0) {
     return (
       <Card className={cn("flex flex-col items-center justify-center gap-2 py-8 text-center", className)} data-testid="attention-card">
@@ -109,7 +116,7 @@ export function AttentionCard({
             </span>
           )}
         </h2>
-        <span className="text-[12px] text-on-surface-muted">{note}</span>
+        <span className="text-[12px] text-on-surface-muted max-md:hidden">{note}</span>
       </div>
       {!items ? (
         <div className="pt-2">
@@ -117,19 +124,20 @@ export function AttentionCard({
         </div>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
-          {items.map((item) => {
+          {(phone && !all ? items.slice(0, PHONE_SHOWN) : items).map((item) => {
             const text = describeAttention(item, (minor) => formatMoney(BigInt(minor), item.currency), today);
             const { icon: Icon, tone } = KIND_STYLE[item.kind];
             const action = actionFor ? actionFor(item, text.action) : { label: text.action, href: attentionHref(item) };
             return (
-              <li key={item.kind} className="flex items-start gap-3 py-3 @[28rem]:items-center" data-kind={item.kind}>
+              <li key={item.kind} className="flex items-start gap-3 py-3 @[28rem]:items-center max-md:items-center" data-kind={item.kind}>
                 <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", tone)}>
                   <Icon size={16} aria-hidden />
                 </span>
                 {/* US-DASH-29: in the narrow side column the button goes under the text. */}
-                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 @[28rem]:flex-row @[28rem]:items-center @[28rem]:gap-3">
+                {/* US-DASH-31: on a phone the button is on the right, the text in two lines beside it. */}
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 @[28rem]:flex-row @[28rem]:items-center @[28rem]:gap-3 max-md:flex-row max-md:items-center max-md:gap-3">
                   <div className="flex w-full min-w-0 flex-1 flex-col">
-                    <span className="text-[14px] font-semibold text-on-surface">{text.title}</span>
+                    <span className="text-[14px] font-semibold text-on-surface max-md:line-clamp-2">{text.title}</span>
                     <span className="truncate text-[13px] text-on-surface-muted" title={text.detail}>{text.detail}</span>
                   </div>
                   {action.href ? (
@@ -146,6 +154,16 @@ export function AttentionCard({
             );
           })}
         </ul>
+      )}
+      {phone && items && items.length > PHONE_SHOWN && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          aria-expanded={all}
+          className="-mx-5 -mb-5 flex h-12 items-center justify-center border-t border-border text-[15px] font-semibold text-primary hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+        >
+          {all ? t("dashboard.attention.showFewer") : t("dashboard.attention.showAll", { n: items.length })}
+        </button>
       )}
     </Card>
   );

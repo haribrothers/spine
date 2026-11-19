@@ -21,8 +21,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
-} from "@spine/ui";
+  Spinner, ScrollX } from "@spine/ui";
 import { AlertTriangle, FileUp, Upload } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import type { Contact } from "../types";
@@ -285,7 +284,7 @@ export function ImportContactsDialog({
                 {errorCount > 0 && <Badge className="bg-overdue/10 text-overdue">{t("contacts.import.withErrors", { count: errorCount })}</Badge>}
                 {duplicateCount > 0 && <Badge className="bg-due-soon/10 text-due-soon">{t("contacts.import.possibleDuplicates", { count: duplicateCount })}</Badge>}
               </div>
-              <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+              <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
                 <table className="w-full min-w-[720px] border-collapse text-[13px]">
                   <thead className="sticky top-0 bg-surface-sunken">
                     <tr>
@@ -325,7 +324,7 @@ export function ImportContactsDialog({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollX>
             </div>
           )}
 

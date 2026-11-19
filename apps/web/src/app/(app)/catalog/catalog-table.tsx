@@ -23,6 +23,7 @@ export function CatalogTable({
   groups,
   selected,
   onSelectedChange,
+  phoneSelecting,
   sort,
   onSortChange,
   page,
@@ -38,6 +39,8 @@ export function CatalogTable({
   groups: Map<string, TaxGroupOption>;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   sort?: TableSort | null;
   onSortChange?: (sort: TableSort | null) => void;
   page?: number;
@@ -72,27 +75,39 @@ export function CatalogTable({
           )}
         </div>
       ),
+      // US-OPS-56: on a phone, the name on one line; tapping the row edits it, as the name does.
+      phone: "title",
+      phoneRender: (row) => (
+        <button type="button" onClick={() => onEdit(row)} className="max-w-full truncate text-left">
+          {row.name}
+        </button>
+      ),
       sortValue: (row) => row.name.toLowerCase(),
     },
     {
       key: "category",
+      phone: "subtitle",
+      phoneRender: (row) => [row.category, taxLabel(row, rates, groups, gst).text].filter(Boolean).join(" · "),
       header: t("catalog.common.category"),
       render: (row) => row.category ?? "—",
       sortValue: (row) => row.category ?? "",
     },
     {
       key: "unit",
+      phone: "trailingSub",
       header: t("catalog.table.unit"),
       render: (row) => row.unit,
     },
     {
       key: "hsnSac",
+      phone: "hidden",
       header: t("catalog.table.hsnSac"),
       render: (row) => <span className={cn("tabular-nums", !row.hsnSac && "text-on-surface-muted")}>{row.hsnSac ?? "—"}</span>,
       sortValue: (row) => row.hsnSac ?? "",
     },
     {
       key: "defaultPrice",
+      phone: "trailing",
       header: t("catalog.table.defaultPrice"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.defaultPriceAmount), row.defaultPriceCurrency)}</span>,
@@ -100,6 +115,9 @@ export function CatalogTable({
     },
     {
       key: "tax",
+      // Only Archived is worth a badge on a phone; the tax is on the second line.
+      phone: "badge",
+      phoneRender: (row) => (row.archivedAt ? <Badge>{t("catalog.common.archived")}</Badge> : null),
       header: t("catalog.common.tax"),
       render: (row) => {
         const label = taxLabel(row, rates, groups, gst);
@@ -117,6 +135,7 @@ export function CatalogTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -136,6 +155,7 @@ export function CatalogTable({
       toolbarStart={toolbarStart}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.name}
       sort={sort}
       onSortChange={onSortChange}

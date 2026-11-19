@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner, cn } from "@spine/ui";
-import { Check, Circle, Flag, Lock, Plus, Trash2 } from "lucide-react";
+import { Alert, AlertDescription, Badge, Button, Card, DatePicker, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, FormField, Input, NativeSelect, Spinner, cn } from "@spine/ui";
+import { Check, Circle, Flag, Lock, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useT } from "../../../../lib/i18n";
 import { useCanEditOwnership } from "../../../../lib/capabilities-context";
@@ -13,6 +13,8 @@ import { calendarDate } from "../../quotes/quotes-list-state";
 import { billedByMilestones, inOrder, milestoneDueText } from "../job-page-state";
 
 import { useCanOpen } from "../../../../components/section-link";
+import { MENU_ICONS } from "../../../../lib/menu-icons";
+import { useIsPhone } from "../../../../lib/use-is-phone";
 const STATUS_BADGE_CLASS: Record<Milestone["status"], string> = {
   pending: "bg-draft-bg text-draft",
   completed: "bg-due-soon-bg text-due-soon",
@@ -87,6 +89,9 @@ export function MilestonesSection({
   const [saveError, setSaveError] = useState<string | null>(null);
   const now = useMemo(() => new Date(), []);
   const locale = orgLocaleTag();
+  // US-OPS-58: on a phone each milestone is a row with its actions under ⋯; history opens from there.
+  const phone = useIsPhone();
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   // US-JOB-20: milestones are owned through the job, by whoever created it.
   const canManage = useCanEditOwnership(job.createdByUserId ?? null, {
@@ -325,6 +330,82 @@ export function MilestonesSection({
         {ordered.map((m) => {
           const due = milestoneDueText(m.dueDate, now, locale);
           const share = m.amount === undefined ? null : m.amountType === "percent" ? t("jobs.milestones.shareOfContract", { pct: m.amount }) : t("jobs.milestones.fixedAmount");
+          const icon = (
+            <span
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full border",
+                m.status === "invoiced" ? "border-transparent bg-paid text-on-primary" : m.status === "completed" ? "border-primary bg-info-bg text-primary" : "border-border-strong bg-surface text-on-surface-muted",
+              )}
+              aria-hidden
+            >
+              {m.status === "invoiced" ? <Check size={14} /> : m.status === "completed" ? <Flag size={13} /> : <Circle size={12} />}
+            </span>
+          );
+          const detail = (
+            <>
+              {[share, m.status === "pending" ? null : m.completedAt ? t("jobs.milestones.completedOn", { date: calendarDate(m.completedAt, now, locale) }) : null].filter(Boolean).join(" · ")}
+              {m.status === "pending" && (
+                <>
+                  {share ? " · " : ""}
+                  <span className={due.tone === "over" ? "font-medium text-overdue" : due.tone === "soon" ? "font-medium text-due-soon" : ""}>{due.text}</span>
+                </>
+              )}
+              {m.status === "completed" && <span className="font-medium text-overdue">{t("jobs.milestones.notInvoiced")}</span>}
+            </>
+          );
+          if (phone) {
+            // US-OPS-58: a phone row — the name and its share on the left, the amount and status
+            // on the right, and the milestone's step and its history under ⋯.
+            const canMark = m.status === "pending" && canComplete(m);
+            const canRaise = m.status === "completed" && canInvoice;
+            const canView = m.status === "invoiced" && !!m.invoicedInvoiceId && canOpenInvoices;
+            return (
+              <li key={m.id} className="grid grid-cols-[28px_minmax(0,1fr)_auto_44px] items-center gap-x-3 py-2.5 pl-4 pr-1" data-testid="milestone-row">
+                {icon}
+                <div className="min-w-0">
+                  <span className="block truncate text-[15px] font-semibold text-on-surface">{m.name}</span>
+                  <p className="text-[12.5px] text-on-surface-muted">{detail}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-[14px] font-semibold tabular-nums text-on-surface">{m.resolvedAmount !== undefined ? formatMoney(BigInt(m.resolvedAmount), job.currency) : ""}</span>
+                  <Badge className={STATUS_BADGE_CLASS[m.status]}>{MILESTONE_STATUS_LABELS[m.status]}</Badge>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label={t("jobs.milestones.actionsFor", { name: m.name })} disabled={invoicingId === m.id}>
+                      {invoicingId === m.id ? <Spinner size="sm" /> : <MoreHorizontal size={18} aria-hidden />}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" sheetTitle={m.name}>
+                    {canMark && (
+                      <DropdownMenuItem onSelect={() => onComplete(m)}>
+                        <MENU_ICONS.approve aria-hidden />
+                        {t("jobs.milestones.markComplete")}
+                      </DropdownMenuItem>
+                    )}
+                    {canRaise && (
+                      <DropdownMenuItem onSelect={() => onInvoice(m)}>
+                        <MENU_ICONS.convertToInvoice aria-hidden />
+                        {t("jobs.milestones.raiseInvoice")}
+                      </DropdownMenuItem>
+                    )}
+                    {canView && (
+                      <DropdownMenuItem asChild>
+                        <a href={`/invoices/${m.invoicedInvoiceId}`}>
+                          <MENU_ICONS.open aria-hidden />
+                          {t("jobs.milestones.viewInvoice")}
+                        </a>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onSelect={() => setHistoryId(m.id)}>
+                      <MENU_ICONS.history aria-hidden />
+                      {t("jobs.milestones.viewHistory")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </li>
+            );
+          }
           return (
             <li key={m.id} className="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-3 px-4 py-3 sm:grid-cols-[28px_minmax(0,1fr)_auto_auto]" data-testid="milestone-row">
               <span
@@ -383,6 +464,9 @@ export function MilestonesSection({
           );
         })}
       </ol>
+      {phone && historyId && (
+        <HistorySection key={historyId} endpoint={`/jobs/${job.id}/milestones/${historyId}/history`} subjectLabel={t("jobs.milestones.thisMilestone")} open onOpenChange={(open) => !open && setHistoryId(null)} />
+      )}
 
       {withMoney && job.status === "completed" && held > 0n && (
         <p className="flex items-center gap-2 border-t border-border px-4 py-3 text-[13px] text-on-surface-muted" data-testid="retention-held">

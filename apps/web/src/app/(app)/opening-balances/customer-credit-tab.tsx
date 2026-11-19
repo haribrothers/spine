@@ -20,8 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
-  useConfirm,
-} from "@spine/ui";
+  useConfirm, ScrollX } from "@spine/ui";
 import type { OpeningCustomerCredit } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
@@ -105,7 +104,7 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
         <table className="w-full text-[14px]" data-testid="opening-credits">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
@@ -141,7 +140,7 @@ export function CustomerCreditTab({ currency, locked, onChanged }: { currency: s
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent size="md">
           <DialogHeader>

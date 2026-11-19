@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip } from "@spine/ui";
 import type { CustomerRefund } from "@spine/shared";
 import { Plus, RefreshCw, Search, Undo2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -31,6 +31,8 @@ import {
 } from "./credit-notes-list-state";
 import type { CreditNoteRow } from "./types";
 import { useT } from "../../../lib/i18n";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 
 const WHERE_OPTIONS = (Object.keys(WHERE_LABELS) as WhereItWent[]).map((value) => ({ value, label: WHERE_LABELS[value] }));
 const ALL_CONTACTS = "__all__";
@@ -63,6 +65,7 @@ export function CreditNotesExplorer() {
   const [announcement, setAnnouncement] = useState("");
   const [pickOpen, setPickOpen] = useState(false);
   const [crediting, setCrediting] = useState<Invoice | null>(null);
+  const isPhone = useIsPhone();
   const loading = useRef(false);
 
   function update(patch: Partial<CreditNotesListState>) {
@@ -146,10 +149,17 @@ export function CreditNotesExplorer() {
   );
   const filtersOn = hasCreditNoteFilters(state);
   const clearAll = () => update({ q: "", where: [], contact: "", card: "" });
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const filterChips: FilterChip[] = [
+    ...state.where.map((where) => ({ key: `where-${where}`, label: WHERE_LABELS[where] ?? where, onRemove: () => update({ where: state.where.filter((w) => w !== where) }) })),
+    ...(state.contact ? [{ key: "contact", label: contactOptions.find((o) => o.value === state.contact)?.label ?? state.contact, onRemove: () => update({ contact: "" }) }] : []),
+    ...(state.card ? [{ key: "card", label: t("creditNotes.explorer.creditToUse"), onRemove: () => update({ card: "" }) }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="credit-note-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="credit-note-stats">
         <StatCard
           label={t("creditNotes.explorer.creditedThisMonth")}
           value={stats ? money(stats.credited) : "—"}
@@ -180,11 +190,18 @@ export function CreditNotesExplorer() {
           trend={{ direction: "neutral", label: refunded ? t("creditNotes.explorer.paidBackSince", { date: monthStart }) : t("creditNotes.explorer.paidBackThisMonth") }}
           className="h-full"
         />
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("creditNotes.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={WHERE_OPTIONS} value={state.where} onValueChange={(where) => update({ where: where as WhereItWent[] })} placeholder={t("creditNotes.explorer.wherePlaceholder")} aria-label={t("creditNotes.explorer.filterByWhere")} className="w-44" />
             <Combobox
               options={contactOptions}
@@ -194,31 +211,42 @@ export function CreditNotesExplorer() {
               aria-label={t("creditNotes.explorer.filterByContact")}
               className="w-56"
             />
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("creditNotes.explorer.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="credit-notes-updated">
                 {refreshing ? t("creditNotes.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("creditNotes.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !notes} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !notes} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("creditNotes.explorer.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("creditNotes.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("creditNotes.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing || !notes} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("creditNotes.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+            </PhoneMoreActions>
             {canIssue && (
-              <Button onClick={() => setPickOpen(true)}>
-                <Plus size={14} aria-hidden />
-                {t("creditNotes.explorer.newCreditNote")}
-              </Button>
+              <FloatingActionButton>
+                <Button onClick={() => setPickOpen(true)}>
+                  <Plus size={14} aria-hidden />
+                  {t("creditNotes.explorer.newCreditNote")}
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -241,7 +269,7 @@ export function CreditNotesExplorer() {
         <CreditNotesSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -265,7 +293,7 @@ export function CreditNotesExplorer() {
           </div>
         </div>
       ) : (
-        <CreditNotesTable creditNotes={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={search} />
+        <CreditNotesTable creditNotes={rows} now={today} sort={state.sort} onSortChange={(sort) => update({ sort })} page={state.page} onPageChange={(page) => update({ page })} toolbarStart={isPhone ? <span /> : search} />
       )}
 
       <NewCreditNoteDialog

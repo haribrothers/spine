@@ -26,6 +26,7 @@ import {
   MiniCalendar,
   Drawer,
   DrawerBody,
+  FloatingActionButton,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
@@ -39,7 +40,7 @@ import {
   type CalendarEventInstance,
   type CalendarView,
 } from "@spine/ui";
-import { Building2, CalendarDays, ChevronDown, PanelRightClose, PanelRightOpen, Plus, Users, X } from "lucide-react";
+import { Building2, CalendarDays, ChevronDown, ListFilter, PanelRightClose, PanelRightOpen, Plus, Users, X } from "lucide-react";
 import { replaceQuery } from "../../../lib/replace-query";
 import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
@@ -55,6 +56,7 @@ import { useFillHeight } from "../../../lib/use-fill-height";
 import { orgLocaleTag } from "../../../lib/money";
 import { useToast } from "../../../components/toast-host";
 import { SectionLink } from "../../../components/section-link";
+import { usePhoneBarAction } from "../../../lib/phone-bar";
 import {
   DEFAULT_VIEW,
   UPCOMING_DAYS,
@@ -317,7 +319,8 @@ export function MeetingsCalendar() {
     } catch {
       // storage unavailable; use the default
     }
-    const initialView = params.view ?? (isNarrow ? "agenda" : isCalendarView(stored) ? stored : DEFAULT_VIEW);
+    // US-MTG-18: the month on a phone (it was Agenda before the phone layout).
+    const initialView = params.view ?? (isNarrow ? "month" : isCalendarView(stored) ? stored : DEFAULT_VIEW);
     const initialDate = params.date ?? new Date();
     setNarrow(isNarrow);
     setCompact(window.matchMedia(COMPACT_QUERY).matches);
@@ -703,6 +706,22 @@ export function MeetingsCalendar() {
   // fixed placeholder and is only ever set to a real `new Date()` client-side
   // (see the mount effect above), so SSR never emits text that could differ
   // from the client's own clock.
+  // US-MTG-18: on a phone the mini calendar and Calendars open from the top bar; + floats.
+  usePhoneBarAction(
+    narrow ? (
+      <button
+        type="button"
+        aria-label={t("meetings.calendar.calendars")}
+        aria-haspopup="dialog"
+        onClick={() => setSheetOpen(true)}
+        className="flex h-11 w-11 items-center justify-center rounded-full text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <ListFilter size={22} aria-hidden />
+      </button>
+    ) : null,
+    [narrow],
+  );
+
   if (!hydrated) {
     return <div ref={fill.ref} style={fill.height ? { height: fill.height } : undefined} className="min-h-[480px] animate-pulse rounded-lg border border-border bg-surface-sunken" />;
   }
@@ -713,6 +732,8 @@ export function MeetingsCalendar() {
   function renderSidebar(inSheet: boolean) {
     return (
       <>
+          {/* US-MTG-18: on a phone the month view is the calendar; the sheet holds the rest. */}
+          {!narrow && (
           <MiniCalendar
             selected={date}
             onSelect={(picked) => {
@@ -732,6 +753,7 @@ export function MeetingsCalendar() {
               )
             }
           />
+          )}
 
           <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
             <div className="flex items-center gap-2">
@@ -839,7 +861,7 @@ export function MeetingsCalendar() {
   }
 
   return (
-    <div ref={fill.ref} style={fill.height ? { height: fill.height } : undefined} className="flex min-h-[480px] gap-4" data-testid="meetings-calendar">
+    <div ref={fill.ref} style={fill.height ? { height: fill.height } : undefined} className="flex min-h-[480px] gap-4 max-md:-mx-4" data-testid="meetings-calendar">
       <Calendar
         className="min-h-0 min-w-0 flex-1"
         events={events}
@@ -847,10 +869,11 @@ export function MeetingsCalendar() {
         onViewChange={changeView}
         date={date}
         onDateChange={changeDate}
-        views={narrow ? ["day", "month", "agenda"] : undefined}
+        views={narrow ? ["month", "day", "agenda"] : undefined}
         createRequest={createRequest}
         openRequest={openRequest}
         toolbarAction={
+          narrow ? undefined : (
           <>
             {compact && (
               <Button variant="secondary" size="icon" className="h-8 w-8" aria-label={t("meetings.calendar.miniCalendar")} onClick={() => setSheetOpen(true)}>
@@ -864,6 +887,7 @@ export function MeetingsCalendar() {
               </Button>
             )}
           </>
+          )
         }
         agendaDetails={(instance) => {
           if (instance.event.id.startsWith("activity-")) return null;
@@ -980,10 +1004,18 @@ export function MeetingsCalendar() {
         }}
       />
 
+      {narrow && canCreateMeetings && (
+        <FloatingActionButton className="[&>*]:w-[52px] [&>*]:px-0">
+          <Button onClick={() => setCreateRequest(newMeetingRange(date, new Date()))} aria-label={t("meetings.calendar.newMeeting")}>
+            <Plus aria-hidden />
+          </Button>
+        </FloatingActionButton>
+      )}
+
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
         <DrawerContent size="sm" aria-describedby={undefined}>
           <DrawerHeader>
-            <DrawerTitle>{t("meetings.calendar.miniCalendar")}</DrawerTitle>
+            <DrawerTitle>{narrow ? t("meetings.calendar.calendars") : t("meetings.calendar.miniCalendar")}</DrawerTitle>
           </DrawerHeader>
           <DrawerBody className="flex flex-col gap-5">{sheetOpen && renderSidebar(true)}</DrawerBody>
         </DrawerContent>

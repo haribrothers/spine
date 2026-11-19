@@ -49,6 +49,8 @@ import {
   useCapability,
 } from "../../../lib/capabilities-context";
 import { orgLocaleTag } from "../../../lib/money";
+import { useIsPhone } from "../../../lib/use-is-phone";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
 
 /** `YYYY-MM-DD` in the browser's own calendar. */
 function localToday(): string {
@@ -173,13 +175,22 @@ export function DashboardShell({
   // US-DASH-12 — what's waiting, and the header that counts it.
   const [attention, setAttention] = useState<AttentionItem[] | null>(null);
   const [business, setBusiness] = useState<string | null>(null);
-  const [now] = useState(() => new Date());
+  // The greeting and the date come from this device's clock, after it mounts: the server's time
+  // zone (often UTC in Docker) can differ from the person's, and rendering them there gave
+  // "Good morning" on the server and "Good afternoon" here — a hydration mismatch.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
   // US-DASH-18: a Field user's header counts their active jobs.
   const [fieldJobs, setFieldJobs] = useState<number | null>(null);
   // US-DASH-20: the Construction template shows retention and jobs in progress by default.
   const [template, setTemplate] = useState<string | null>(null);
   const [templateKnown, setTemplateKnown] = useState(false);
   const wide = useWidePlus();
+  // US-DASH-31: on a phone, one column in the order that needs the person first; no Edit layout.
+  const phone = useIsPhone();
+  useEffect(() => {
+    if (phone) setEditing(false);
+  }, [phone]);
   const { capabilities, loading: capabilitiesLoading } = useCapabilities();
   const { modules } = useModules();
   const jobsOn = modules?.jobsField === true;
@@ -297,7 +308,10 @@ export function DashboardShell({
   const columnsClass = role === "field" ? "lg:grid-cols-2" : "lg:grid-cols-2 xl:grid-cols-3 wide-plus:grid-cols-2";
 
   const firstName = userName?.trim().split(/\s+/)[0];
-  const dateLine = now.toLocaleDateString(orgLocaleTag(), {
+  const greeting = !now ? (firstName ?? t("dashboard.shell.breadcrumbDashboard")) : firstName ? t("dashboard.shell.greetingWithName", { greeting: greetingFor(now.getHours()), name: firstName }) : greetingFor(now.getHours());
+  // "Wed 18 Nov", for the phone's one-line greeting.
+  const shortDate = now?.toLocaleDateString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short" }) ?? "";
+  const dateLine = now?.toLocaleDateString(orgLocaleTag(), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -333,9 +347,10 @@ export function DashboardShell({
         <AppShellHeader
           className="mb-0"
           breadcrumb={[{ label: t("dashboard.shell.breadcrumbOverview") }, { label: t("dashboard.shell.breadcrumbDashboard") }]}
-          title={firstName ? t("dashboard.shell.greetingWithName", { greeting: greetingFor(now.getHours()), name: firstName }) : greetingFor(now.getHours())}
+          title={greeting}
           description={subtitle}
           action={
+            phone ? undefined : (
             <div className="flex flex-wrap items-center gap-2">
               {seesProfit && <BasisSwitch />}
               <Button variant="secondary" onClick={() => setEditing((v) => !v)}>
@@ -350,8 +365,22 @@ export function DashboardShell({
                 )}
               </Button>
             </div>
+            )
           }
         />
+        {phone && (
+          // US-DASH-31: the greeting in one line with the date (the page's h1 above it is for screen readers on a phone).
+          <p aria-hidden className="-mb-2 -mt-5 truncate text-[16px] text-on-surface" data-testid="dashboard-phone-greeting">
+            <span className="font-semibold">{greeting}</span>
+            {shortDate && <span className="text-on-surface-muted"> · {shortDate}</span>}
+          </p>
+        )}
+        {/* US-DASH-31: Accrual or Cash is under the top bar's ⋯ on a phone. */}
+        {phone && seesProfit && (
+          <PhoneMoreActions>
+            <BasisSwitch />
+          </PhoneMoreActions>
+        )}
         {role === "owner" && <LedgerIntegrityAlert />}
         {role === "owner" && <StorageIntegrityAlert />}
 
@@ -363,7 +392,28 @@ export function DashboardShell({
           data-testid="dashboard-body"
           className="grid grid-cols-1 gap-4 wide-plus:grid-cols-[minmax(0,1fr)_340px] wide-plus:items-start"
         >
-          {!layoutKnown ? (
+          {phone && layoutKnown ? (
+            <>
+              <AttentionCard
+                items={attention}
+                today={localToday()}
+                note={role === "owner" ? t("dashboard.shell.ownerNote") : t("dashboard.shell.memberNote")}
+                actionFor={actionFor}
+                emptyText={role === "field" ? t("dashboard.shell.fieldEmpty") : undefined}
+              />
+              {role !== "field" && <KpiRow />}
+              <TodayCard />
+              {role === "owner" && <SetupChecklist />}
+              {displayed.map((entry) => {
+                const Widget = WIDGET_COMPONENTS[entry.widgetKey as DashboardWidgetKey];
+                return Widget ? (
+                  <div key={entry.widgetKey} className="min-w-0" data-widget={entry.widgetKey}>
+                    <Widget />
+                  </div>
+                ) : null;
+              })}
+            </>
+          ) : !layoutKnown ? (
             <DashboardSkeleton
               field={role === "field"}
               side={(cards) => <SideColumn>{cards}</SideColumn>}

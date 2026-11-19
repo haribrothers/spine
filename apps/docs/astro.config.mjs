@@ -82,6 +82,7 @@ export default defineConfig({
           items: [
             { label: "Overview", slug: "guide" },
             ...GUIDE.map(([directory, label]) => ({ label, collapsed: true, items: [{ autogenerate: { directory: `guide/${directory}` } }] })),
+            { label: "Use Spine on your phone", slug: "guide/use-spine-on-your-phone" },
             { label: "Keyboard shortcuts", slug: "guide/keyboard-shortcuts" },
           ],
         },

@@ -39,6 +39,7 @@ export default function TabsPage() {
             "Supports horizontal/vertical orientation.",
             "Full keyboard navigation.",
             "Supports automatic/manual activation.",
+            "Under 768px the row scrolls sideways; labels never wrap or overlap (US-OPS-61).",
           ]}
         />
       </DocSection>

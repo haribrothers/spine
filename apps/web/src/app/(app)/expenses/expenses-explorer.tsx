@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, Button, Combobox, EmptyState, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, ChipStrip, Combobox, EmptyState, FilterSheet, FloatingActionButton, Input, MultiSelect, StatCard, Tooltip, TooltipContent, TooltipTrigger, cn, type FilterChip } from "@spine/ui";
 import { ListFilter, Plus, Receipt, RefreshCw, Search } from "lucide-react";
 import { useModule } from "../../../lib/modules-context";
 import { apiClient } from "../../../lib/api-client";
@@ -37,6 +37,8 @@ import {
 } from "./expense-state";
 import type { Expense, ExpenseCategory } from "./types";
 import { useT } from "../../../lib/i18n";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 
 const ALL = "__all__";
 const STATE_OPTIONS = EXPENSE_STATES.map((s) => ({ value: s, label: EXPENSE_STATE_LABELS[s] }));
@@ -78,6 +80,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const isPhone = useIsPhone();
   const [formOpen, setFormOpen] = useState(() => searchParams.get("new") === "1");
   const [editing, setEditing] = useState<Expense | null>(null);
   const [approving, setApproving] = useState<Expense | null>(null);
@@ -232,56 +235,84 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
     update({ states: [], category: "", by: "", card: "", q: "" });
     if (job.filtering) job.setJobId("__all__");
   };
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const cardNames: Record<string, string> = { wait: t("expenses.state.wait"), bill: t("expenses.explorer.readyToBill"), rej: t("expenses.explorer.rejected") };
+  const filterChips: FilterChip[] = [
+    ...state.states.map((s) => ({ key: `state-${s}`, label: EXPENSE_STATE_LABELS[s] ?? s, onRemove: () => update({ states: state.states.filter((x) => x !== s) }) })),
+    ...(state.category ? [{ key: "category", label: categoryOptions.find((o) => o.value === state.category)?.label ?? state.category, onRemove: () => update({ category: "" }) }] : []),
+    ...(state.by && role !== "field" ? [{ key: "by", label: people.find((o) => o.value === state.by)?.label ?? state.by, onRemove: () => update({ by: "" }) }] : []),
+    ...(jobsOn && job.filtering ? [{ key: "job", label: job.selectedLabel ?? job.jobId, onRemove: () => job.setJobId(ALL) }] : []),
+    ...(state.card ? [{ key: "card", label: cardNames[state.card] ?? state.card, onRemove: () => update({ card: "" }) }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="expense-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="expense-stats">
         {/* eslint-disable i18next/no-literal-string -- card()'s keys and tones are codes, not copy */}
         {card("wait", t("expenses.state.wait"), stats ? money(stats.waiting.amount) : "—", stats ? `${countOf(stats.waiting.count)}${canApprove && !isOwner ? t("expenses.explorer.fromOthers") : ""}` : "", stats && stats.waiting.count > 0 ? "warning" : "default")}
         <StatCard label={t("expenses.explorer.approvedThisMonth")} value={stats ? money(stats.approvedThisMonth.amount) : "—"} trend={{ direction: "neutral", label: stats ? countOf(stats.approvedThisMonth.count) : "" }} className="h-full" />
         {card("bill", t("expenses.explorer.readyToBill"), stats ? money(stats.toBill.amount) : "—", stats ? `${countOf(stats.toBill.count)}${t("expenses.explorer.toBillHint")}` : "")}
         {card("rej", t("expenses.explorer.rejected"), stats ? String(stats.rejected.count) : "—", t("expenses.explorer.toFix"))}
         {/* eslint-enable i18next/no-literal-string */}
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={rows ? t("expenses.explorer.showCount", { count: rows.length }) : undefined}
+          >
             <MultiSelect options={STATE_OPTIONS} value={state.states} onValueChange={(v) => update({ states: v as ExpenseState[] })} placeholder={t("expenses.explorer.statePlaceholder")} aria-label={t("expenses.common.filterByState")} className="w-44" />
             <Combobox options={categoryOptions} value={state.category || ALL} onValueChange={(v) => update({ category: v === ALL ? "" : v })} placeholder={t("expenses.explorer.allCategories")} aria-label={t("expenses.explorer.filterByCategory")} className="w-48" />
             {role !== "field" && <Combobox options={people} value={state.by || ALL} onValueChange={(v) => update({ by: v === ALL ? "" : v })} placeholder={t("expenses.explorer.submittedByPlaceholder")} aria-label={t("expenses.explorer.filterBySubmitter")} className="w-44" />}
             {/* US-SET-24 */}
             {jobsOn && <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />}
-            {filtersOn && (
+            {filtersOn && !isPhone && (
               <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("expenses.common.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="expenses-updated">
                 {refreshing ? t("expenses.common.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("expenses.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !expenses} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !expenses} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("expenses.common.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("expenses.common.refreshList")}</TooltipContent>
-            </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("expenses.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !expenses} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("expenses.common.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button
-                onClick={() => {
-                  setEditing(null);
-                  setFormOpen(true);
-                }}
-              >
-                <Plus size={14} aria-hidden />
-                {t("expenses.common.submitExpense")}
-              </Button>
+              <FloatingActionButton>
+                <Button
+                  onClick={() => {
+                    setEditing(null);
+                    setFormOpen(true);
+                  }}
+                >
+                  <Plus size={14} aria-hidden />
+                  {t("expenses.common.submitExpense")}
+                </Button>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -307,7 +338,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         <ExpensesSkeleton />
       ) : rows.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -362,7 +393,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             selection={
               canApprove || canReject
                 ? {

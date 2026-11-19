@@ -26,14 +26,14 @@ test.describe("US-MTG-17", () => {
     await expect(page.getByRole("dialog").filter({ hasText: "Slab pour review" })).toBeVisible();
   });
 
-  test("on a phone it opens in Agenda with no Week, and the mini calendar opens in a sheet", async ({ page }) => {
+  test("on a phone there's no Week, and the mini calendar opens in a sheet (since US-MTG-18 it opens on the month)", async ({ page }) => {
     test.setTimeout(120_000);
     await meetingsOrg(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/meetings");
     // US-OPS-14: a phone has the top bar, not the sidebar, so the calendar has the whole width.
     await expect(page.getByTestId("app-top-bar")).toBeVisible();
-    await expect(page.getByRole("radio", { name: "Agenda view" })).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("radio", { name: "Month view" })).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("radio", { name: "Week view" })).toHaveCount(0);
     const overflows = await page.evaluate("(() => { const c = document.querySelector('[data-testid=\"meetings-calendar\"]'); return c ? c.scrollWidth > c.clientWidth + 1 : true; })()");
     expect(overflows).toBe(false);
@@ -42,9 +42,10 @@ test.describe("US-MTG-17", () => {
     await page.goto("/meetings?view=week");
     await expect(page.getByRole("radio", { name: "Day view" })).toHaveAttribute("aria-checked", "true");
 
-    await page.getByRole("button", { name: "Mini calendar" }).click();
-    const sheet = page.getByRole("dialog", { name: "Mini calendar" });
-    await expect(sheet.getByRole("grid")).toBeVisible();
-    await expect(sheet.getByText("Calendars")).toBeVisible();
+    // Since US-MTG-18 the phone's sheet is Calendars without the mini calendar (the month view is it).
+    await page.getByTestId("app-top-bar").getByRole("button", { name: "Calendars" }).click();
+    const sheet = page.getByRole("dialog", { name: "Calendars" });
+    await expect(sheet.getByTestId("meetings-by-contact")).toBeVisible();
+    await expect(sheet.getByRole("grid")).toHaveCount(0);
   });
 });

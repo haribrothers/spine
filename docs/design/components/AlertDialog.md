@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
 
 ## Rules and behaviour
 
+- On a phone it stays a small alert in the middle of the screen, its buttons full width and stacked, the action on top (US-OPS-60).
 - Focus is trapped and automatically managed.
 - Under 768px it fills the screen width with a 16px gutter each side (US-OPS-15).
 - Can be controlled or uncontrolled.

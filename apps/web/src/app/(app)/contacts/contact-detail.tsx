@@ -18,6 +18,11 @@ import {
   Badge,
   Button,
   Checkbox,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   FormField,
   Input,
   Select,
@@ -31,6 +36,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  ActionBar,
 } from "@spine/ui";
 import { ArrowLeft } from "lucide-react";
 import { GST_TREATMENT_LABELS, gstStateLabel, gstinRequired, type GstTreatment } from "@spine/shared";
@@ -52,6 +58,8 @@ import { loadCustomerCredit } from "../../../lib/customer-credit";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { useLoadFailure } from "../../../lib/use-load-failure";
 import { t as translate, useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
   customer: translate("contacts.common.typeCustomer"),
@@ -114,6 +122,10 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   const [website, setWebsite] = useState("");
 
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens a menu with the actions beside Edit.
+  const more = usePhoneRecordMenu();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const canEdit = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.edit_own", others: "contacts.edit_others" });
   // US-PAY-14 — statements show what a customer owes, so they follow the receivables report's capability.
   const canSendStatement = useCapability("reports.view_receivables");
@@ -299,10 +311,11 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           clearer for a detail page one level deep, matching common CRM
           detail-page conventions (Attio/Twenty/Jobber references from the
           prior pass). */}
+      {/* US-OPS-58: on a phone the back arrow is in the top bar. */}
       <button
         type="button"
         onClick={() => router.push("/contacts")}
-        className="flex w-fit items-center gap-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface"
+        className="flex w-fit items-center gap-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface max-md:hidden"
       >
         <ArrowLeft size={14} />
         {t("contacts.detail.back")}
@@ -357,9 +370,13 @@ export function ContactDetail({ contactId }: { contactId: string }) {
         </div>
 
         {!editing && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-md:hidden">
             {/* US-SET-13 (D-061): History opens the same dialog as on every other record. */}
-            <HistorySection endpoint={`/contacts/${contactId}/history`} subjectLabel={t("contacts.detail.historySubject")} ownEntityType="contact" />
+            {more.phone ? (
+              <HistorySection endpoint={`/contacts/${contactId}/history`} subjectLabel={t("contacts.detail.historySubject")} ownEntityType="contact" open={historyOpen} onOpenChange={setHistoryOpen} />
+            ) : (
+              <HistorySection endpoint={`/contacts/${contactId}/history`} subjectLabel={t("contacts.detail.historySubject")} ownEntityType="contact" />
+            )}
             {canRefund && credit > 0n && contact.type !== "vendor" && (
               <Button variant="secondary" onClick={() => setRefundOpen(true)}>
                 {t("contacts.detail.refund")}
@@ -372,9 +389,11 @@ export function ContactDetail({ contactId }: { contactId: string }) {
             )}
             {/* Edit is the single primary (filled) action per docs/DESIGN.md; archive/restore/delete are secondary or danger. Each gated by contacts.edit_own/edit_others (Edit) or contacts.delete_own/delete_others (Archive/Restore/Delete) — own vs. others resolved from contact.createdByUserId, mirroring ContactsService's own server-side checks. */}
             {canEdit && (
-              <Button variant="primary" onClick={startEdit}>
-                {t("contacts.common.edit")}
-              </Button>
+              <ActionBar>
+                <Button variant="primary" onClick={startEdit}>
+                  {t("contacts.common.edit")}
+                </Button>
+              </ActionBar>
             )}
             {canDelete &&
               (archived ? (
@@ -387,7 +406,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
                 </Button>
               ))}
             {canDelete && (
-              <AlertDialog>
+              <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <AlertDialogTrigger asChild>
                   <Button variant="danger" disabled={busy}>
                     {t("contacts.common.delete")}
@@ -406,6 +425,45 @@ export function ContactDetail({ contactId }: { contactId: string }) {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            )}
+            {/* US-OPS-58: a phone's ⋯ menu — the actions beside Edit. Only the top bar's ⋯ opens it. */}
+            {more.phone && (
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <span hidden />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sheetTitle={contact.name} sheetDescription={contact.email ?? undefined} {...more.content}>
+                  {canRefund && credit > 0n && contact.type !== "vendor" && (
+                    <DropdownMenuItem onSelect={() => setRefundOpen(true)}>
+                      <MENU_ICONS.refund aria-hidden />
+                      {t("contacts.detail.refund")}
+                    </DropdownMenuItem>
+                  )}
+                  {canSendStatement && contact.type !== "vendor" && (
+                    <DropdownMenuItem onSelect={() => setStatementOpen(true)}>
+                      <MENU_ICONS.statement aria-hidden />
+                      {t("contacts.detail.sendStatement")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("contacts.detail.viewHistory")}
+                  </DropdownMenuItem>
+                  {canDelete && (
+                    <>
+                      <DropdownMenuItem onSelect={() => void (archived ? handleRestore() : handleArchive())} disabled={busy}>
+                        {archived ? <MENU_ICONS.restore aria-hidden /> : <MENU_ICONS.archive aria-hidden />}
+                        {archived ? t("contacts.common.restore") : t("contacts.common.archive")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)} disabled={busy}>
+                        <MENU_ICONS.delete aria-hidden />
+                        {t("contacts.common.delete")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         )}

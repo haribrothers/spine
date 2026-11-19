@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CreditCard, Landmark, ListFilter, MoreHorizontal, RefreshCw, Search, Wallet } from "lucide-react";
+import { CreditCard, Landmark, ListFilter, MoreHorizontal, Plus, RefreshCw, Search, Wallet } from "lucide-react";
 import {
   Alert,
   AlertDescription,
   Badge,
   Button,
+  ChipStrip,
   DataTable,
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   EmptyState,
+  FilterSheet,
+  FloatingActionButton,
   Input,
   Select,
   SelectContent,
@@ -33,11 +36,14 @@ import {
   TooltipTrigger,
   cn,
   useConfirm,
+  type FilterChip,
   type TableColumn,
 } from "@spine/ui";
 import { MONEY_ACCOUNT_KIND_LABELS, type BankTransaction, type BankTransactionDirection, type BankTransfer, type MoneyAccount, type MoneyAccountKind } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { t, useT } from "../../../lib/i18n";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { formatMoney } from "../../../lib/money";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
@@ -89,6 +95,7 @@ export function BankingExplorer() {
   const [editing, setEditing] = useState<MoneyAccount | null>(null);
   const [recording, setRecording] = useState<Recording>(null);
   const [importing, setImporting] = useState<MoneyAccount | null>(null);
+  const isPhone = useIsPhone();
   const loading = useRef(false);
   const showToast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -237,11 +244,22 @@ export function BankingExplorer() {
           </span>
         );
       },
+      // US-OPS-56: on a phone, the name alone; Default is its badge and the bank goes on the second line.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/banking/${row.id}`}>{row.name}</Link>,
       sortValue: (row) => row.name.toLowerCase(),
     },
-    { key: "kind", header: t("banking.explorer.colType"), render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind], sortValue: (row) => row.kind },
+    {
+      key: "kind",
+      phone: "subtitle",
+      phoneRender: (row) => [MONEY_ACCOUNT_KIND_LABELS[row.kind], bankLine(row)].filter(Boolean).join(" · "),
+      header: t("banking.explorer.colType"),
+      render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind],
+      sortValue: (row) => row.kind,
+    },
     {
       key: "balance",
+      phone: "trailing",
       header: t("banking.explorer.colBalance"),
       align: "right",
       render: (row) => (
@@ -254,6 +272,9 @@ export function BankingExplorer() {
     },
     {
       key: "reconciliation",
+      // On a phone, the Default badge sits in this slot; reconciliation is said under the balance.
+      phone: "badge",
+      phoneRender: (row) => (row.isDefault ? <Badge className="bg-primary/10 text-primary">{t("banking.explorer.defaultBadge")}</Badge> : null),
       header: t("banking.explorer.colReconciliation"),
       render: (row) =>
         row.lastReconciledOn ? (
@@ -265,6 +286,16 @@ export function BankingExplorer() {
     },
     {
       key: "unreconciled",
+      // Under the balance on a phone: how many lines are left to reconcile, else when it was last reconciled.
+      phone: "trailingSub",
+      phoneRender: (row) =>
+        (row.unreconciledCount ?? 0) > 0 ? (
+          <span className="text-due-soon">{t("banking.explorer.unreconciledCount", { n: row.unreconciledCount ?? 0 })}</span>
+        ) : row.lastReconciledOn ? (
+          t("banking.explorer.reconciledTo", { date: formatDay(row.lastReconciledOn) })
+        ) : (
+          t("banking.explorer.neverReconciled")
+        ),
       header: t("banking.explorer.colUnreconciled"),
       render: (row) =>
         (row.unreconciledCount ?? 0) > 0 ? (
@@ -278,6 +309,7 @@ export function BankingExplorer() {
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -315,6 +347,13 @@ export function BankingExplorer() {
       <Input type="search" placeholder={t("banking.explorer.searchPlaceholder")} aria-label={t("banking.explorer.searchPlaceholder")} value={state.q} onChange={(e) => update({ q: e.target.value })} className="pl-9" />
     </div>
   );
+  const clearAll = () => update({ type: null, unreconciled: false, q: "" });
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone).
+  const typeNames: Record<string, string> = { bank: t("banking.explorer.typeBank"), cash: t("banking.explorer.typeCash"), card: t("banking.explorer.typeCard") };
+  const filterChips: FilterChip[] = [
+    ...(state.type ? [{ key: "type", label: typeNames[state.type] ?? state.type, onRemove: () => update({ type: null }) }] : []),
+    ...(state.unreconciled ? [{ key: "unreconciled", label: t("banking.explorer.cardUnreconciled"), onRemove: () => update({ unreconciled: false }) }] : []),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -331,7 +370,8 @@ export function BankingExplorer() {
         </TabsList>
 
         <TabsContent value={state.tab} className="flex flex-col gap-6 pt-0">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="banking-cards">
+          {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+          <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="banking-cards">
             <StatCard label={t("banking.explorer.cardBankCash")} value={totals ? formatMoney(totals.cash, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cashLabel } : undefined} className="h-full" />
             <StatCard label={t("banking.explorer.cardOwed")} value={totals ? formatMoney(totals.owed, currency) : "—"} trend={totals ? { direction: "neutral", label: totals.cardLabel } : undefined} className="h-full" />
             <button
@@ -348,7 +388,7 @@ export function BankingExplorer() {
                 trend={{ direction: "neutral", label: state.unreconciled ? t("banking.explorer.cardShowing") : (totals?.unreconciledLabel ?? "") }}
                 className={cn("h-full transition-colors hover:border-border-strong", state.unreconciled && "border-primary bg-info-bg/60 ring-1 ring-primary")}
               />
-              <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4", state.unreconciled ? "text-primary" : "text-on-surface-muted")} />
+              <ListFilter size={14} aria-hidden className={cn("absolute right-4 top-4 max-md:hidden", state.unreconciled ? "text-primary" : "text-on-surface-muted")} />
             </button>
             <StatCard
               label={t("banking.explorer.cardLastReconciled")}
@@ -356,34 +396,51 @@ export function BankingExplorer() {
               trend={totals?.lastReconciled ? { direction: "neutral", label: totals.lastReconciled.name } : undefined}
               className="h-full"
             />
-          </div>
+          </ChipStrip>
 
           <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-            <Select value={state.type ?? ALL_TYPES} onValueChange={(v) => update({ type: v === ALL_TYPES ? null : (v as MoneyAccountKind) })}>
-              <SelectTrigger aria-label={t("banking.explorer.filterType")} className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_TYPES}>{t("banking.explorer.allTypes")}</SelectItem>
-                <SelectItem value="bank">{t("banking.explorer.typeBank")}</SelectItem>
-                <SelectItem value="cash">{t("banking.explorer.typeCash")}</SelectItem>
-                <SelectItem value="card">{t("banking.explorer.typeCard")}</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* US-OPS-57: on a phone, search and Filters in one row, the type in a sheet. */}
+            <FilterSheet
+              className="contents"
+              search={isPhone ? search : undefined}
+              chips={filterChips}
+              onClearAll={clearAll}
+              showLabel={rows ? t("banking.explorer.showCount", { count: rows.length }) : undefined}
+            >
+              <Select value={state.type ?? ALL_TYPES} onValueChange={(v) => update({ type: v === ALL_TYPES ? null : (v as MoneyAccountKind) })}>
+                <SelectTrigger aria-label={t("banking.explorer.filterType")} className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_TYPES}>{t("banking.explorer.allTypes")}</SelectItem>
+                  <SelectItem value="bank">{t("banking.explorer.typeBank")}</SelectItem>
+                  <SelectItem value="cash">{t("banking.explorer.typeCash")}</SelectItem>
+                  <SelectItem value="card">{t("banking.explorer.typeCard")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </FilterSheet>
             <div className="flex flex-wrap items-center justify-end gap-2">
               {updatedAt !== null && (
                 <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="banking-updated">
                   {refreshing ? t("banking.explorer.updating") : updatedLabel(updatedAt, now)}
                 </span>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="secondary" size="icon" aria-label={t("banking.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
-                    <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("banking.explorer.refreshList")}</TooltipContent>
-              </Tooltip>
+              <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("banking.explorer.refreshList")}
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("banking.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load()}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("banking.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
               {canRecord && (
                 <>
                   <Button variant="secondary" onClick={() => setRecording({ kind: "transfer" })} disabled={active.length < 2}>
@@ -400,15 +457,20 @@ export function BankingExplorer() {
                   </Button>
                 </>
               )}
+              </PhoneMoreActions>
               {isOwner && (
-                <Button
-                  onClick={() => {
-                    setEditing(null);
-                    setDialogOpen(true);
-                  }}
-                >
-                  {t("banking.explorer.addAccount")}
-                </Button>
+                <FloatingActionButton>
+                  <Button
+                    onClick={() => {
+                      setEditing(null);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    {/* The floating button shrinks to its icon while the page scrolls; the desktop button has none. */}
+                    {isPhone && <Plus size={14} aria-hidden />}
+                    {t("banking.explorer.addAccount")}
+                  </Button>
+                </FloatingActionButton>
               )}
             </div>
           </div>
@@ -417,7 +479,7 @@ export function BankingExplorer() {
             <TableSkeleton columns={TABLE_COLUMNS} />
           ) : rows.length === 0 ? (
             <div className="flex flex-col gap-3">
-              <div className="flex">{search}</div>
+              {!isPhone && <div className="flex">{search}</div>}
               <div className="rounded-lg border border-border bg-surface">
                 {state.tab === "archived" && !state.q.trim() && !state.type ? (
                   <EmptyState icon={<Landmark />} title={t("banking.explorer.emptyArchivedTitle")} description={t("banking.explorer.emptyArchivedBody")} />
@@ -427,7 +489,7 @@ export function BankingExplorer() {
                     title={t("banking.explorer.emptyNoMatchTitle")}
                     description={t("banking.explorer.emptyNoMatchBody")}
                     action={
-                      <Button variant="secondary" onClick={() => update({ type: null, unreconciled: false, q: "" })}>
+                      <Button variant="secondary" onClick={clearAll}>
                         {t("banking.explorer.clearFilters")}
                       </Button>
                     }
@@ -437,7 +499,7 @@ export function BankingExplorer() {
             </div>
           ) : (
             <div data-testid="money-accounts-table">
-              <DataTable columns={columns} data={rows} rowKey={(row) => row.id} toolbarStart={search} configurablePageSize />
+              <DataTable columns={columns} data={rows} rowKey={(row) => row.id} toolbarStart={isPhone ? <span /> : search} configurablePageSize />
             </div>
           )}
         </TabsContent>

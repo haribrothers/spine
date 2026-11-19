@@ -289,10 +289,15 @@ export function TeamPage({ teamId }: { teamId: string }) {
           </span>
         </span>
       ),
+      // US-OPS-56: on a phone, the name on one line and their email on the second.
+      phone: "title",
+      phoneRender: (m) => m.name,
       sortValue: (m) => m.name.toLowerCase(),
     },
     {
       key: "also",
+      phone: "subtitle",
+      phoneRender: (m) => m.email,
       header: t("team.teamPage.alsoOn"),
       render: (m) => {
         const other = (m.teams ?? []).filter((team) => team.id !== teamId);
@@ -309,9 +314,10 @@ export function TeamPage({ teamId }: { teamId: string }) {
         );
       },
     },
-    { key: "lastActive", header: t("team.users.columns.lastActive"), render: (m) => <span className="whitespace-nowrap">{lastActiveLabel(m.lastActiveAt)}</span>, sortValue: (m) => m.lastActiveAt ?? "" },
+    { key: "lastActive", phone: "trailingSub", header: t("team.users.columns.lastActive"), render: (m) => <span className="whitespace-nowrap">{lastActiveLabel(m.lastActiveAt)}</span>, sortValue: (m) => m.lastActiveAt ?? "" },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (m) => (
         <div className="flex justify-end">

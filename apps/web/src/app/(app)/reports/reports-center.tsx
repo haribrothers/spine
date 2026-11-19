@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Star } from "lucide-react";
+import { ChevronRight, Search, Star } from "lucide-react";
 import { Card, Input } from "@spine/ui";
 import { REPORTS, REPORT_GROUPS, canOpenReport, matchesReportSearch, ownedByOffModule, type ReportEntry } from "@spine/shared";
 import { useModules } from "../../../lib/modules-context";
@@ -97,14 +97,19 @@ export function ReportsCenter() {
             const rows = shown.filter((r) => r.group === group);
             if (!rows.length) return null;
             return (
-              <Card key={group} className="flex flex-col gap-1" data-testid="report-group">
-                <h2 className="pb-2 text-[15px] font-semibold text-on-surface">{group}</h2>
-                <ul className="flex flex-col">
+              // US-RPT-41: on a phone each group is a heading over full-width rows that run edge to edge.
+              <Card key={group} className="flex flex-col gap-1 max-md:-mx-4 max-md:gap-0 max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:p-0" data-testid="report-group">
+                <h2 className="pb-2 text-[15px] font-semibold text-on-surface max-md:px-4 max-md:text-[12px] max-md:uppercase max-md:tracking-wide max-md:text-on-surface-muted">{group}</h2>
+                <ul className="flex flex-col max-md:border-b max-md:border-border max-md:bg-surface">
                   {rows.map((r) => {
                     const starred = favourites.includes(r.slug);
                     return (
-                      <li key={r.slug} className="flex items-center justify-between border-t border-border py-2">
-                        <Link href={r.href} className="text-[14px] text-primary hover:underline">
+                      // On a phone the whole row opens the report (the link covers it); the star stays its own 44px button above it.
+                      <li key={r.slug} className="flex items-center justify-between border-t border-border py-2 max-md:relative max-md:min-h-11 max-md:py-0 max-md:pl-4 max-md:pr-2">
+                        <Link
+                          href={r.href}
+                          className="text-[14px] text-primary hover:underline max-md:flex-1 max-md:py-3 max-md:text-[15px] max-md:text-on-surface max-md:no-underline max-md:after:absolute max-md:after:inset-0 max-md:after:content-['']"
+                        >
                           {r.label}
                         </Link>
                         <button
@@ -112,10 +117,11 @@ export function ReportsCenter() {
                           aria-pressed={starred}
                           aria-label={starred ? t("reports.center.removeFavourite", { name: r.label }) : t("reports.center.addFavourite", { name: r.label })}
                           onClick={() => toggle(r.slug)}
-                          className="flex h-8 w-8 items-center justify-center rounded-sm text-on-surface-muted hover:text-due-soon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          className="flex h-8 w-8 items-center justify-center rounded-sm text-on-surface-muted hover:text-due-soon focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary max-md:relative max-md:z-[1] max-md:h-11 max-md:w-11"
                         >
                           <Star size={16} className={starred ? "fill-current text-due-soon" : ""} aria-hidden />
                         </button>
+                        <ChevronRight size={18} aria-hidden className="hidden shrink-0 text-on-surface-muted max-md:block" />
                       </li>
                     );
                   })}

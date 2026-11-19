@@ -35,6 +35,9 @@ import {
   Input,
   RichTextContent,
   Spinner,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
 } from "@spine/ui";
 import { Banknote, Bell, CalendarDays, ChevronDown, Clock, Download, HardHat, MapPin, Pencil, Receipt, Send, User } from "lucide-react";
 import Link from "next/link";
@@ -63,6 +66,7 @@ import { calendarDate } from "../quotes/quotes-list-state";
 import { SectionLink } from "../../../components/section-link";
 import { useLoadFailure } from "../../../lib/use-load-failure";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
  * always JSON-parses responses, so this opens the route directly in a new
@@ -99,6 +103,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const [creditNoteOpen, setCreditNoteOpen] = useState(false);
   const [creditNotesRefreshKey, setCreditNotesRefreshKey] = useState(0);
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
 
   const hasEditCapability = useCanEditOwnership(invoice?.createdByUserId ?? null, { own: "invoices.edit_own", others: "invoices.edit_others" });
   const hasDeleteCapability = useCanEditOwnership(invoice?.createdByUserId ?? null, { own: "invoices.delete_own", others: "invoices.delete_others" });
@@ -428,13 +434,39 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const secondaryButtons = secondary.map((a) => renderAction(a, "secondary"));
   const primaryButton = primary && renderAction(primary, "primary");
 
+  // US-OPS-58: on a phone the buttons beside More (Edit, Download PDF) are items in its menu.
+  const PHONE_MENU_ICONS: Record<string, typeof MENU_ICONS.edit> = { edit: MENU_ICONS.edit, pdf: MENU_ICONS.download, pay: MENU_ICONS.recordPayment, issue: MENU_ICONS.issue, remind: MENU_ICONS.remind };
+  const phoneMenuItem = (a: Action) => {
+    const Icon = PHONE_MENU_ICONS[a.key] ?? MENU_ICONS.open;
+    return a.href ? (
+      <DropdownMenuItem key={a.key} asChild>
+        {a.external ? (
+          <a href={a.href} target="_blank" rel="noreferrer">
+            <Icon aria-hidden />
+            {a.label}
+          </a>
+        ) : (
+          <Link href={a.href}>
+            <Icon aria-hidden />
+            {a.label}
+          </Link>
+        )}
+      </DropdownMenuItem>
+    ) : (
+      <DropdownMenuItem key={a.key} onSelect={a.onClick}>
+        <Icon aria-hidden />
+        {a.label}
+      </DropdownMenuItem>
+    );
+  };
+
   // US-INV-30: Total, Paid, Retention held or Credited, Balance due — once issued.
   // D-219: the bar under Paid counts payments only; credit shows under Credited.
   const dueTotal = BigInt(invoice.totalAmount) - retentionAmount;
   const share = dueTotal > 0n ? Math.min(100, Number((amountPaid * 100n) / dueTotal)) : 0;
   const taxNote = (invoice.taxLines ?? []).length === 1 ? t("invoices.detail.taxNoteNamed", { label: invoice.taxLines![0]!.label, amount: money(BigInt(invoice.taxLines![0]!.amount)) }) : BigInt(invoice.taxAmount) > 0n ? t("invoices.detail.taxNoteTax", { amount: money(BigInt(invoice.taxAmount)) }) : t("invoices.detail.noTax");
   const figure = (label: string, value: string, note: React.ReactNode, testId: string, opts: { bar?: number; tone?: string } = {}) => (
-    <div key={label} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
+    <div key={label} className="flex min-w-0 flex-col gap-1 p-4" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className={cn("text-[19px] font-bold leading-tight tabular-nums", opts.tone ?? "text-on-surface")}>{value}</span>
       <span className="text-[12px] text-on-surface-muted">{note}</span>
@@ -465,6 +497,16 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         ].filter(Boolean)
       : [];
 
+  // US-OPS-58: the key amount at the top on a phone — the balance due while there is one, else the total.
+  const owing = invoice.status === "issued" && balanceDue > 0n;
+  const headerAmount = {
+    label: owing ? t("invoices.detail.figBalance") : t("invoices.detail.figTotal"),
+    value: money(owing ? balanceDue : BigInt(invoice.totalAmount)),
+    // The due line moves here from the meta line on a phone: "Due Nov 14 · Overdue 5 days".
+    note: owing && invoice.dueDate ? [t("invoices.detail.dueOn", { date: calendarDate(invoice.dueDate, today, locale) }), due.text].filter(Boolean).join(" · ") : undefined,
+    tone: owing && invoice.isOverdue ? ("overdue" as const) : state === "paid" ? ("paid" as const) : ("default" as const),
+  };
+
   const afterTotal: AfterTotalRow[] = [
     ...(retentionAmount > 0n ? [{ label: t("invoices.detail.retentionHeldPercent", { percent: invoice.retention?.percent ?? "0" }), amount: retentionAmount, subtract: true }] : []),
     ...(amountPaid > 0n ? [{ label: t("invoices.detail.paid"), amount: amountPaid, subtract: true, tone: "paid" as const }] : []),
@@ -479,10 +521,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {/* US-INV-30: the number is the page title; the breadcrumb leads back to Invoices. */}
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("invoices.detail.breadcrumbBilling") }, { label: t("invoices.detail.breadcrumbInvoices"), href: "/invoices" }, { label: invoice.number ?? t("invoices.detail.draftInvoice") }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{invoice.number ?? t("invoices.detail.draftInvoice")}</h1>
+        <RecordHeader
+          title={invoice.number ?? t("invoices.detail.draftInvoice")}
+          badges={
+            <>
               <Badge className={STATE_BADGE_CLASS[state]} data-testid="invoice-state">
                 {INVOICE_STATE_LABELS[state]}
               </Badge>
@@ -490,7 +532,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">{t("invoices.detail.deposit")}</Badge>}
               {invoice.type === "opening" && <Badge className="bg-draft-bg text-draft">{t("invoices.detail.openingBalance")}</Badge>}
               {invoice.type === "retention_release" && <Badge className="bg-draft-bg text-draft">{t("invoices.detail.retentionRelease")}</Badge>}
-            </div>
+            </>
+          }
+          amount={headerAmount}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="invoice-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
@@ -512,7 +557,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               ) : (
                 invoice.dueDate &&
                 state !== "void" && (
-                  <span className="inline-flex items-center gap-1.5" data-testid="invoice-due">
+                  <span className={cn("inline-flex items-center gap-1.5", owing && "max-md:hidden")} data-testid="invoice-due">
                     <CalendarDays size={14} aria-hidden />
                     {t("invoices.detail.dueOn", { date: calendarDate(invoice.dueDate, today, locale) })}
                     {due.text && state !== "paid" && (
@@ -558,82 +603,91 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 </span>
               )}
             </p>
-            {/* US-JOB-29 (D-128): the claim number is given at issue. */}
-            {invoice.type === "progress" && !invoice.progressClaimNo && invoice.status === "draft" && (
-              <p className="text-[12.5px] text-on-surface-muted">{t("invoices.detail.claimNumberLater")}</p>
-            )}
-          </div>
-
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="invoice-actions">
-            {secondaryButtons}
-            {primaryButton}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" disabled={busy}>
-                  {t("invoices.detail.more")} <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {pdf && primary?.key !== "pdf" && !secondary.some((a) => a.key === "pdf") && (
-                  <DropdownMenuItem asChild>
-                    <a href={pdf.href} target="_blank" rel="noreferrer">
-                      <MENU_ICONS.download aria-hidden />
-                      {pdf.label}
-                    </a>
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="invoice-actions">
+              {secondaryButtons}
+              {primaryButton && <ActionBar>{primaryButton}</ActionBar>}
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" disabled={busy}>
+                    {t("invoices.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={invoice.number ?? t("invoices.detail.draftInvoice")}
+                  sheetDescription={invoice.status === "issued" && balanceDue > 0n ? t("invoices.detail.sheetDue", { contact: invoice.contactName ?? "", amount: money(balanceDue) }) : (invoice.contactName ?? undefined)}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && secondary.map((a) => phoneMenuItem(a))}
+                  {pdf && primary?.key !== "pdf" && !secondary.some((a) => a.key === "pdf") && (
+                    <DropdownMenuItem asChild>
+                      <a href={pdf.href} target="_blank" rel="noreferrer">
+                        <MENU_ICONS.download aria-hidden />
+                        {pdf.label}
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  {canSendEmail && (
+                    <DropdownMenuItem onSelect={() => setSendDialog("invoice")}>
+                      <MENU_ICONS.email aria-hidden />
+                      {t("invoices.detail.emailInvoice")}
+                    </DropdownMenuItem>
+                  )}
+                  {canRecordPayment && primary?.key !== "pay" && !secondary.some((a) => a.key === "pay") && (
+                    <DropdownMenuItem onSelect={() => setPaymentOpen(true)}>
+                      <MENU_ICONS.recordPayment aria-hidden />
+                      {t("invoices.detail.recordPayment")}
+                    </DropdownMenuItem>
+                  )}
+                  {canApplyCredit && (
+                    <DropdownMenuItem onSelect={() => setApplyCreditOpen(true)}>
+                      <MENU_ICONS.applyCredit aria-hidden />
+                      {t("invoices.detail.applyCredit")}
+                    </DropdownMenuItem>
+                  )}
+                  {canIssueCreditNote && (
+                    <DropdownMenuItem onSelect={() => setCreditNoteOpen(true)}>
+                      <MENU_ICONS.issueCreditNote aria-hidden />
+                      {t("invoices.detail.issueCreditNote")}
+                    </DropdownMenuItem>
+                  )}
+                  {canDuplicate && (
+                    <DropdownMenuItem onSelect={() => void handleDuplicate()}>
+                      <MENU_ICONS.duplicate aria-hidden />
+                      {t("invoices.detail.duplicateAsDraft")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("invoices.detail.viewHistory")}
                   </DropdownMenuItem>
-                )}
-                {canSendEmail && (
-                  <DropdownMenuItem onSelect={() => setSendDialog("invoice")}>
-                    <MENU_ICONS.email aria-hidden />
-                    {t("invoices.detail.emailInvoice")}
-                  </DropdownMenuItem>
-                )}
-                {canRecordPayment && primary?.key !== "pay" && !secondary.some((a) => a.key === "pay") && (
-                  <DropdownMenuItem onSelect={() => setPaymentOpen(true)}>
-                    <MENU_ICONS.recordPayment aria-hidden />
-                    {t("invoices.detail.recordPayment")}
-                  </DropdownMenuItem>
-                )}
-                {canApplyCredit && (
-                  <DropdownMenuItem onSelect={() => setApplyCreditOpen(true)}>
-                    <MENU_ICONS.applyCredit aria-hidden />
-                    {t("invoices.detail.applyCredit")}
-                  </DropdownMenuItem>
-                )}
-                {canIssueCreditNote && (
-                  <DropdownMenuItem onSelect={() => setCreditNoteOpen(true)}>
-                    <MENU_ICONS.issueCreditNote aria-hidden />
-                    {t("invoices.detail.issueCreditNote")}
-                  </DropdownMenuItem>
-                )}
-                {canDuplicate && (
-                  <DropdownMenuItem onSelect={() => void handleDuplicate()}>
-                    <MENU_ICONS.duplicate aria-hidden />
-                    {t("invoices.detail.duplicateAsDraft")}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("invoices.detail.viewHistory")}
-                </DropdownMenuItem>
-                {(canVoid || canDelete) && <DropdownMenuSeparator />}
-                {canVoid && (
-                  <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
-                    <MENU_ICONS.void aria-hidden />
-                    {t("invoices.detail.voidInvoice")}
-                  </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
-                    <MENU_ICONS.delete aria-hidden />
-                    {t("invoices.detail.deleteDraft")}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel={t("invoices.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                  {(canVoid || canDelete) && <DropdownMenuSeparator />}
+                  {canVoid && (
+                    <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
+                      <MENU_ICONS.void aria-hidden />
+                      {t("invoices.detail.voidInvoice")}
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
+                      <MENU_ICONS.delete aria-hidden />
+                      {t("invoices.detail.deleteDraft")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel={t("invoices.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        >
+          {/* US-JOB-29 (D-128): the claim number is given at issue. */}
+          {invoice.type === "progress" && !invoice.progressClaimNo && invoice.status === "draft" && (
+            <p className="text-[12.5px] text-on-surface-muted">{t("invoices.detail.claimNumberLater")}</p>
+          )}
+        </RecordHeader>
       </div>
 
       {error && (
@@ -660,9 +714,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {invoice.emailStatus === "failed" && <EmailFailedAlert error={invoice.emailError} recordId={invoice.id} />}
 
       {figures.length > 0 && (
-        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")} data-testid="invoice-figures">
-          {figures}
-        </div>
+        // US-OPS-58: two per row on a phone.
+        <RecordFigures data-testid="invoice-figures">{figures}</RecordFigures>
       )}
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">

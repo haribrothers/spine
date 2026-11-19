@@ -17,6 +17,16 @@ import { defineConfig, devices } from "@playwright/test";
  */
 /** US-ONB-17, US-ONB-18 — specs that load or delete demo data outside `seededOrg`. */
 const DEMO_DATA_SPECS = /us-onb-1[78]\.spec\.ts$/;
+/** US-OPS-62 — the every-route check that runs on a phone (NFR-COMP-02). */
+const PHONE_SPECS = /us-ops-62\.spec\.ts$/;
+/** US-OPS-62: a phone, 390×844 with touch (`pointer: coarse`) and a phone user agent, in Chromium. */
+const PHONE_DEVICE = {
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 3,
+  isMobile: true,
+  hasTouch: true,
+  userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+};
 
 export default defineConfig({
   testDir: "./tests",
@@ -40,15 +50,20 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: DEMO_DATA_SPECS,
+      testIgnore: [DEMO_DATA_SPECS, PHONE_SPECS],
     },
-    // Specs that load or delete demo data of their own run last: the demo Staff and Field
+    {
+      name: "phone",
+      use: { ...devices["Desktop Chrome"], ...PHONE_DEVICE },
+      testMatch: PHONE_SPECS,
+    },
+    // Specs that load or delete demo data of their own run last (after the phone check too): the demo Staff and Field
     // logins follow the latest demo, and every other spec expects them in `seededOrg`.
     {
       name: "demo-data",
       use: { ...devices["Desktop Chrome"] },
       testMatch: DEMO_DATA_SPECS,
-      dependencies: ["chromium"],
+      dependencies: ["chromium", "phone"],
     },
   ],
   webServer: [
@@ -67,7 +82,8 @@ export default defineConfig({
       url: "http://localhost:3110",
       cwd: "../..",
       reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
+      // The guide plus a production build of the web app take about four minutes from cold.
+      timeout: 420_000,
       stdout: "pipe",
       stderr: "pipe",
     },

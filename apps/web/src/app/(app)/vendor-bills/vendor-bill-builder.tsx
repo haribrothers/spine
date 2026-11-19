@@ -4,13 +4,15 @@ import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea, cn, useConfirm } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, DropdownMenuItem, FormField, Input, Spinner, Textarea, cn, useConfirm } from "@spine/ui";
 import { FILE_TOO_LARGE, MAX_ATTACHMENT_BYTES, type DocumentSuggestion, type PossibleDuplicateVendorBill } from "@spine/shared";
 import { FileCheck, Plus } from "lucide-react";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useToast } from "../../../components/toast-host";
 import { t as translate, useT } from "../../../lib/i18n";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
+import { usePhoneBuilderCancel } from "../../../lib/phone-bar";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { DUE_PICKS, daysAfter, pickedDueDays } from "../invoices/due-terms";
 import { orgLocaleTag } from "../../../lib/money";
@@ -445,6 +447,9 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
     else router.back();
   }
 
+  // US-OPS-59: on a phone, Cancel is at the top left of the screen.
+  usePhoneBuilderCancel(cancel);
+
   function pickDue(next: Date | undefined) {
     dueTouched.current = true;
     mine("dueDate", setDueDate)(next);
@@ -627,7 +632,28 @@ export function VendorBillBuilder({ bill, source }: { bill?: VendorBill; source?
       />
 
       {/* US-PUR-35: totals and actions stay in view, as on invoices. */}
-      <DocumentBuilderBar totals={totals} currency={currency} taxLabel={pos.active ? "GST" : t("vendorBills.builder.tax")} dirty={dirty} testIdPrefix="bill">
+      <DocumentBuilderBar
+        totals={totals}
+        currency={currency}
+        taxLabel={pos.active ? "GST" : t("vendorBills.builder.tax")}
+        dirty={dirty}
+        testIdPrefix="bill"
+        // US-OPS-59: on a phone, Save and record (Save draft without the right to record), with Save draft under ⋯.
+        phoneMain={
+          <Button type="button" onClick={() => void (canRecord ? handleSaveAndRecord() : handleSaveDraft())} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : canRecord ? <FileCheck size={14} aria-hidden /> : null}
+            {canRecord ? t("vendorBills.builder.saveAndRecord") : bill ? t("vendorBills.builder.saveDraft") : t("vendorBills.builder.saveAsDraft")}
+          </Button>
+        }
+        phoneMore={
+          canRecord ? (
+            <DropdownMenuItem disabled={saving} onSelect={() => void handleSaveDraft()}>
+              <MENU_ICONS.edit aria-hidden />
+              {bill ? t("vendorBills.builder.saveDraft") : t("vendorBills.builder.saveAsDraft")}
+            </DropdownMenuItem>
+          ) : undefined
+        }
+      >
         <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
           {t("vendorBills.builder.cancel")}
         </Button>

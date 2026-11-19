@@ -20,7 +20,12 @@ export default function BreadcrumbPage() {
       </ComponentPreview>
 
       <DocSection id="features" title="Features">
-        <FeatureList items={["The last item (no href) renders as plain, non-interactive text for the current page."]} />
+        <FeatureList
+          items={[
+            "The last item (no href) renders as plain, non-interactive text for the current page.",
+            "One line at every width: the middle items shorten with … first, then the last (US-OPS-61).",
+          ]}
+        />
       </DocSection>
 
       <DocSection id="anatomy" title="Anatomy">

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, cn, DatePicker, ReportFilter } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, ChipStrip, cn, DatePicker, ReportFilter } from "@spine/ui";
+import { format } from "date-fns";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { t, useT } from "../../../lib/i18n";
 
@@ -63,19 +64,19 @@ export function RangeFilters({ from, to, onFrom, onTo }: { from: Date; to: Date;
   );
 }
 
-/** One row of equal-width KPI cards: three or four. */
+/** One row of equal-width KPI cards: three or four. US-RPT-41: chips in a row that scrolls sideways on a phone. */
 export function ReportKpis({ children, count, "data-testid": testId }: { children: React.ReactNode; count: 3 | 4; "data-testid"?: string }) {
   return (
-    <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", count === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4")} data-testid={testId ?? "report-kpis"} data-slot="report-kpis">
+    <ChipStrip className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", count === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4")} data-testid={testId ?? "report-kpis"} data-slot="report-kpis">
       {children}
-    </div>
+    </ChipStrip>
   );
 }
 
 /** The report's one chart, in a card under the KPI cards. */
 export function ReportChart({ title, children, "data-testid": testId }: { title: string; children: React.ReactNode; "data-testid"?: string }) {
   return (
-    <Card data-testid={testId}>
+    <Card data-testid={testId} className="max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:px-3">
       <CardHeader>
         <CardTitle className="text-[15px]">{title}</CardTitle>
       </CardHeader>
@@ -101,4 +102,20 @@ export function marginText(netProfit: string | bigint, income: string | bigint):
   const sign = tenths < 0n ? "−" : "";
   const abs = tenths < 0n ? -tenths : tenths;
   return `${sign}${abs / 10n}.${abs % 10n}%`;
+}
+
+/** US-RPT-41: a report's filters in one line for a phone — "Jan 1 – Nov 18, 2026 · Accrual · No comparison". */
+export function filterSummary(...parts: (string | false | null | undefined)[]): string {
+  return parts.filter(Boolean).join(" · ");
+}
+
+/** "Jan 1 – Nov 18, 2026" (the year once when both dates share it). */
+export function rangeSummary(from: Date, to: Date): string {
+  const sameYear = from.getFullYear() === to.getFullYear();
+  return t("reports.common.rangeSummary", { from: format(from, sameYear ? "MMM d" : "MMM d, yyyy"), to: format(to, "MMM d, yyyy") });
+}
+
+/** "As of Nov 18, 2026". */
+export function asOfSummary(date: Date): string {
+  return t("reports.common.asOfSummary", { date: format(date, "MMM d, yyyy") });
 }

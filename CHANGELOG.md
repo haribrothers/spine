@@ -80,6 +80,178 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Version 1.0.0-beta.6
+
+- The web app's phone layout (D-283: US-OPS-54 to US-OPS-62, US-MTG-18, US-RPT-41, US-DASH-31) and the fixes from the Owner's review on a phone, below, with release notes in `docs/releases/v1.0.0-beta.6.md`. The download commands and the three Compose files' default image tags name the new version.
+
+### 2026-11-19 — Fix: on a phone, the area's row shows the page you're on
+
+- On Reports (and Banking or Payables, at the end of the Money row) the row of the area's pages under the title now scrolls so the page you're on is in view and underlined (`AppShellAreaNav`). Before, only the Money tab looked selected, because the page's own link was off-screen to the right. Reports stays under Money, the Owner's choice. US-OPS-54 checks it on Reports and Banking.
+
+### 2026-11-19 — Search on a phone gets room to breathe (the Owner chose the layout)
+
+- **Roomy top bar:** on a phone the search screen leaves 16px above the field (below the notch) and 12px under it. The field is filled and rounded, 44px tall, with the icon inside and Cancel beside it (`CommandPalette`). The scopes (All, Sales, Jobs, Billing, Purchases) are pills that scroll sideways, and Include archived is a pill with them instead of a footer of its own. Results are 60px rows. From 768px up, search is unchanged.
+- **Tests:** US-OPS-60's search test checks the room above the field, the field's height, Cancel beside it and the pills under it. Its combobox-sheet check now waits for the sheet to finish rising, since it was measuring mid-animation now and then.
+
+### 2026-11-19 — Fix: the dashboard's cards on a phone (from the Owner's review)
+
+- **Income and expenses:** the three totals stack one per line on a narrow card (label left, amount right) instead of running into each other; three across when the card is wide, like Payables and Tax already were.
+- **Links in line:** on a phone a link made 44px tall keeps its text in the middle (`align-content: center` in the tap-size rule), so each card's heading link (Open calendar, Banking, View jobs) sits level with its title and Retention held's Release sits beside its amount, across the app.
+- **Accounts:** each account's name covers its row (the row is the tap target), so the name, its note, the icon and the balance line up. **Today:** a narrower time column on a phone.
+- **Tests:** US-DASH-31 checks that no figure on the phone dashboard leaves its card or overlaps another (crore-sized amounts showed it; the E2E business's small amounts didn't).
+
+### 2026-11-19 — Fix: phone lists, the pipeline, the meetings sheet and the dashboard greeting (from the Owner's review)
+
+- **List rows:** on a phone a row's title stays on one line, and badges that don't fit beside it wrap under it (`ListRow`). Every list now gives its columns explicit phone roles, with a one-line title. That covers quotes (the number, with the quote's title beside the contact), contacts (logo and name, then "type · email", and only Archived as a badge), jobs, expenses, payments (the amount and customer were missing), credit notes, vendor bills, vendor credits, vendor payments, the catalogue and bundles, emails, journals, banking (accounts, register and reconciliations), receivables and payables (both views), team users, invites and teams, recurring schedules and expense categories. A title link or button covers the row and is exempt from the 44px rule. US-OPS-62 now also fails a route whose row titles wrap.
+- **Search and Filters** span the width of the page on a phone (`FilterSheet`). A card's filter icon no longer sits on a chip's label.
+- **Pipeline:** on a phone it now follows its design. The stages are chips at the top, the figures are one line ("9 leads · $102,465.00 open · Win rate 67%"), and search and Filters share a row (stage, owner, source, sort and view in the sheet). The stage's leads are rows (`LeadRow`: title, contact and source, value, next follow-up), with "Move a lead to another stage from its ⋯ menu." Refresh is under ⋯, and Add lead floats.
+- **Meetings:** on a phone the top bar's sheet is "Calendars": the people's calendars, My activities, Upcoming and Meetings by contact. The mini calendar is gone from it, because the month view is the calendar (the Owner's call). Each contact's count lines up with its name.
+- **Dashboard greeting:** "Good morning/afternoon" and the date come from the device's clock after it loads. They were rendered in the server's time zone (UTC in Docker) and then again in the browser's, a hydration error whenever the two disagreed (it predates the phone work). A test opens the dashboard with the browser on UTC+14.
+
+### 2026-11-19 — US-OPS-55: open Spine from the home screen like an app
+
+- **Standalone:** the web manifest says `display: "standalone"` and starts at `/dashboard` (with `id` and `scope`), keeping the name, short name, icons and the tokens' background colour. The root layout adds `viewport-fit=cover` and the iPhone home-screen tags (`appleWebApp`). Opened from the home screen, Spine has no address bar or toolbar. The top bar and tab bar already keep clear of the notch and the home indicator (`env(safe-area-inset-*)`).
+- **Getting around:** the back arrow works as before, and so does the phone's own back gesture. In the home-screen app, a link to another site (the docs, a contact's website) opens in the browser (`useOpenOtherSitesInBrowser` in `lib/standalone.ts`); links within Spine, mailto: and tel: are unchanged.
+- **Not in this story:** a service worker or offline use. `sw.js` still only handles push; the field app is the offline tool.
+- **US-OPS-62 done:** with the floating buttons, action bars and builders in, every phone check is on (none waits on a later story). The `phone` project runs on every route in light and dark, in `pnpm verify` and before each release.
+- **Tests and docs:** `us-ops-55.spec.ts`; US-SET-26's unit and E2E tests now expect `standalone`. D-206 and US-SET-26 note the change; the phone guide explains adding Spine to the home screen (and signing in once inside it on an iPhone); QA section 294.
+
+### 2026-11-19 — US-DASH-31: the dashboard laid out for a phone
+
+- **What needs you first:** under 768px the dashboard is one column. It starts with a one-line greeting and the date ("Good morning, Priya · Thu, Nov 19"), then Needs your attention, the key figures two per row, Today, Get started and the other cards one per row, in the layout chosen on a wider screen.
+- **Attention rows:** each item's action (Send reminder, Review, Approve) is a button on the right of its row, and the title wraps to two lines. With more than three items, "Show all <n>" opens the rest. The note "Cleared items disappear automatically" isn't shown on a phone.
+- **Header:** Accrual or Cash is under the top bar's ⋯, and Edit layout isn't offered on a phone. The greeting and the first attention item are on the first screen at 390×844.
+- **Tests and docs:** `us-dash-31.spec.ts`; the phone guide; QA section 293.
+
+### 2026-11-19 — US-RPT-41: reports that read on a phone
+
+- **Filters in one line:** under 768px a report's filters are one line saying what's chosen ("Jan 1 – Nov 19, 2026 · Accrual · No comparison"). It opens a "Report filters" sheet with every filter and Show report (`ReportToolbar` `summary`; helpers `filterSummary`, `rangeSummary`, `asOfSummary`). Export is under the top bar's ⋯ through the web app's `components/report-toolbar.tsx` wrapper. Every report passes its summary.
+- **Cards and charts:** a report's cards are chips in a row that scrolls sideways (`ReportKpis` is a `ChipStrip`, so the receivables and payables age cards are too). A chart is the screen's width, with its legend under it, fewer month labels and a narrower axis (`GroupedBarChart`).
+- **Statements as lists:** `StatementTable` on a phone, with one label column and one or two amounts, is an indented list. It has section headings, each account with its amount, the other period's amount muted under it when comparing, bold subtotals and the total last. A drill-down link or button covers the whole row, with a chevron. P&L's and the Balance Sheet's two-period comparisons drop the Change columns on a phone, so they read as that list. Wider statements (each month, the ledger, the day book, GSTR-1, the tax summary by type) stay tables with a sticky first column.
+- **Grids and lists:** `Table` and `DataTable` get `stickyFirstColumn` (with `phoneRows={false}`). The trial balance uses it, with the code above the name. List reports use phone rows, with their main figure on the right. The Tally mapping's group picker is now shown on a phone. The Reports page is grouped rows, each 44px and tappable across, with its star.
+- **Tests and docs:** `us-rpt-41.spec.ts` and `us-rpt-41-phone.a11y.test.tsx`. Docs: ReportToolbar, StatementTable, Table, DataTable, the GroupedBarChart page and the phone guide; QA section 292.
+
+### 2026-11-19 — US-MTG-18: a calendar made for a phone
+
+- **Month first:** under 768px Meetings opens on the month (it was Agenda): a compact grid with one letter per weekday, today ringed, the chosen day filled, up to three dots per day in the calendars' colours (with the count in the day's name for screen readers), and the chosen day's meetings listed under it. Each row has its time (or All day), colour, title, place and contact. Tap a day to choose it. Swipe the grid or use the arrows for the next or previous month, and Today comes back. Arrow keys move the day.
+- **Day:** a strip of the week's days, with their dots, over the day's timeline, with "3 meetings · 1 later" and the line at now. Swiping the strip moves a week and swiping the timeline moves a day. On a phone the timeline has no drag to create, move or resize, so a swipe isn't mistaken for one. A tap opens the meeting, and + creates one.
+- **Toolbar:** two short rows. The month and year (tap it for a Pick a month sheet), the arrows and Today; then Month · Day · Agenda as a segmented control across the screen. The mini calendar and Calendars open from a filter button in the top bar, and New meeting is a floating + that opens full screen on the chosen day.
+- **Quick view:** a meeting's quick view is a bottom sheet in every view. `BottomSheet` gets `hideHeader` for content with its own title and close.
+- **Where:** new `calendar-phone.tsx` in `@spine/ui` (`CalendarPhoneToolbar`, `CalendarPhoneMonth`, `CalendarWeekStrip`, `CalendarQuickViewSheet`, `useSwipe`), used by `Calendar` on a phone. The event colours moved to `lib/calendar-colors.ts`. From 768px up the calendar is unchanged.
+- **Tests and docs:** `us-mtg-18.spec.ts` and `calendar-phone.a11y.test.tsx`. US-MTG-17's phone test now expects the month and the top bar's filter button. Docs: Calendar, BottomSheet, the design-system page and the phone guide; QA section 291.
+
+### 2026-11-19 — US-OPS-59: build a quote or invoice on a phone
+
+- **A builder fills the screen:** under 768px New quote, New invoice, New vendor bill, New vendor credit and their Edit pages have no tab bar. The top bar is Cancel at the top left with the title centred (`AppShellPhoneBar` `onCancel`). Cancel runs the builder's own cancel through `usePhoneBuilderCancel`, so "Leave without saving?" asks first, as Back already did. Fields are one column.
+- **Lines as cards and one sheet:** each line is a card (item and amount, description, "3 × $450.00", "10% off", its tax). Add item opens a new `LineSheet` (Cancel · New line · Done) with the item and catalogue search, description, quantity, unit price, discount, tax, price includes tax, HSN/SAC, supply type (and the account on a bill), and what the line comes to. It edits a copy that only Done keeps. Tapping a card opens it in the same sheet ("Line 2 of 3") with Move up, Move down and Delete. A new builder's untouched blank line isn't shown. `BottomSheet` gets `headerLeading` for the sheet's Cancel.
+- **A slim bar:** `DocumentBuilderBar` on a phone is the total (tap it for the subtotal and tax), ⋯ with Save as draft and Preview PDF, and the main button (Save and send, Save and issue, Save and record). It steps aside with the tab bar while a field has focus, so the keyboard and the field have room.
+- **Everywhere it applies:** the quote and invoice builders share the quote line editor. Vendor bills and vendor credits get the same cards and sheet (`PhoneBillLines`, also used by the recurring bill dialog), and so does the recurring invoice dialog. The credit note dialog's invoice lines are cards with their tick box and quantity. The dialogs were already full screen (US-OPS-60).
+- **Tests and docs:** `us-ops-59.spec.ts` and `us-ops-59-phone.a11y.test.tsx`. US-OPS-54's back test now opens a record from the list (New invoice is a builder now). Docs: BottomSheet, AppShell and ActionBar, the design-system pages and the phone guide; QA section 290.
+
+### 2026-11-19 — US-OPS-58: read and act on a record on a phone
+
+- **The top of a record:** under 768px a record shows its number and status, then the amount that matters (an invoice's or bill's balance due while there is one, else its total; a payment's amount; a credit's amount left), then the contact. The breadcrumb gives way to the top bar's back arrow. This is a new `RecordHeader` in `@spine/ui`. The due line sits under the amount, so on an invoice or bill it leaves the meta line on a phone.
+- **One main action at the bottom:** the next step for the record's state (Send reminder, Issue invoice, Record payment, Record bill, Approve, Invoice a milestone) is a full-width button in a new `ActionBar`. It renders into an `ActionBarSlot` that the shell places between the page and the tab bar, so it never covers the page, and it steps aside with the tab bar for full-screen dialogs and the keyboard.
+- **Everything else under ⋯:** the record's More menu opens from the top bar as an action sheet headed by its number and a line about it (`usePhoneRecordMenu`; `DropdownMenuContent` gets `sheetDescription`). Buttons that sit beside More on a desktop (Edit, Preview PDF, Raise variation) are in it too, and focus returns to ⋯ when it closes.
+- **Figures, tabs and lines:** figures are two per row in a new `RecordFigures`. Tabs scroll the chosen one into view, including when the page opens on it (`?tab=crew`) and when counts arrive. A quote's or invoice's lines are cards ("4 × $650.00", "Tax 18%") with the totals under them. A job's milestones, and the invoices a payment paid or bills a vendor payment paid, are phone rows.
+- **Pages:** invoice, quote, credit note, job, contact, payment, vendor bill, expense, vendor credit and vendor payment. Recurring schedules have no record page (they're a list with a dialog), so there's nothing to change there. The contact page keeps its own header (logo and name under the shell's title); its Edit is the bar and the rest are under ⋯. With five figures a credit note's desktop strip is now one row of five.
+- **Tests and docs:** `us-ops-58.spec.ts`, `us-ops-58-phone.a11y.test.tsx`, `action-bar.a11y.test.tsx` and `record-header.a11y.test.tsx`. The US-OPS-61 invoice check now looks for Issue invoice in the bar and Edit and Preview PDF under ⋯. Docs: ActionBar and RecordHeader built (89 web components), DropdownMenu and Tabs updated, the design-system pages and the phone guide; QA section 289. `@spine/ui` now lists `react-dom` (the bar's portal), which the workspace already had.
+
+### 2026-11-19 — US-OPS-57: a list's figures, filters and main action on the first screen of a phone
+
+- **Figures as chips:** under 768px a list's summary cards are compact chips (label and figure) in one row that scrolls sideways, so the first rows are on the first screen. A card that filters still does when tapped. This is a new `ChipStrip` in `@spine/ui`. When its cards are only figures (journals), the row is a focusable, named region so a keyboard can scroll it.
+- **Filters in a sheet:** search and a Filters button share one row (a new `FilterSheet`). Filters opens every filter in a bottom sheet with Clear all and "Show 12 invoices". Each filter that's on shows as a chip with × under the row. On a desktop the filters are inline, as before.
+- **Main action floats:** New invoice, New quote, Record payment, Add contact and the rest float above the tab bar with their label (a new `FloatingActionButton`), shrinking to + while the list scrolls. The page leaves room under the last row for it.
+- **Other actions under ⋯:** Refresh, Import, Export, Recurring invoices, Transfer and Money in/out move into the top bar's ⋯ sheet (`PhoneMoreActions`). A menu inside it (Export) opens from there.
+- **Pages:** invoices, quotes, jobs, payments, contacts, credit notes, expenses, vendor bills, vendor credits, vendor payments, catalogue, emails, journals, banking, receivables and payables. Receivables' and payables' age cards are the shared report summary and change with US-RPT-41.
+- **Tests and docs:** `us-ops-57.spec.ts` and the `chip-strip`, `filter-sheet` and `floating-action-button` axe tests. US-OPS-62's main-action check is on for every list. Docs: ChipStrip, FilterSheet (new) and FloatingActionButton pages, the design-system pages and the phone guide; QA section 288.
+
+### 2026-11-19 — US-OPS-56: lists as rows on a phone
+
+- **Rows for every list:** under 768px every `Table` and `DataTable` list is `ListRow`s, a new `@spine/ui` component. The title and status are on the first line, the subtitle on the second, and the amount on the right with its ⋯ (an action sheet). The title's link covers the whole row, so tapping anywhere opens the record. There are no columns, headings or sideways scroll.
+- **Placing the columns:** a column can carry a phone role (`title`, `badge`, `subtitle`, `trailing`, `trailingSub`, `action`, `select`, `hidden`). Otherwise `phoneRoles` places them: the first column as the title, a status column as the badge, the second as the subtitle, the last right-aligned one as the amount and an actions column as the ⋯. So all 33 lists have rows. Invoices carries an explicit mapping, with the balance due and its due line on the right.
+- **Other list shapes:** a grouped table (quote versions) shows the latest version's row, an expandable one (receivables by customer) opens under its row, and a totals footer becomes a last row. `phoneRows={false}` keeps a grid a table.
+- **Load more** replaces the pager after 25 ("25 of 87"); Columns and the page-size picker aren't offered.
+- **Select mode:** invoices, catalogue, vendor bills, vendor credits, payables and receivables get Select in the top bar (`useSelectMode`, through a new page-action slot in the phone top bar). Checkboxes show only while selecting. The bulk bar docks along the bottom, and Done clears the selection.
+- **Pipeline:** one stage at a time, with the stages as chips (with counts) above that scroll sideways. Its leads stay compact cards in a new `KanbanStack`, and moving one is in its menu.
+- **Contacts and loading:** Contacts always shows rows, with no Table · List · Card switcher. While a list loads, `TableSkeleton` shows placeholder rows.
+- **Tests and docs:** `us-ops-56.spec.ts`, `us-ops-56-phone.a11y.test.tsx` and `list-row.a11y.test.tsx` (including `phoneRoles`). The phone check measures a row title's link by its row. Docs: ListRow, Table, DataTable, Kanban and TableSkeleton, the design-system pages and the phone guide; QA section 287.
+
+### 2026-11-18 — US-OPS-60: dialogs, menus and pickers made for a phone
+
+- **In the shared components, so no screen changed:** under 768px every `Dialog` fills the screen and slides up. Its `DialogFooter` becomes the bar at the top, Cancel on the left and the action on the right, and the ✕ steps aside. A `<form>` wrapping body and footer is `display: contents` there, so the footer can move.
+- **Menus:** every `DropdownMenu` is an action sheet (`data-phone-sheet="action"`). It floats 8px above the bottom edge over a dimmed page, with 52px rows and 20px icons. A destructive action is in the danger colour and still asks first (D-218), and the sheet ends with Cancel. `sheetTitle` heads it with what it acts on.
+- **Pickers:** `Select`, `Combobox` (search at the top), `MultiSelect` and `DatePicker` open their options in a bottom sheet with 44px rows. One CSS rule in the preset overrides Radix's popper positioning for anything marked `data-phone-sheet` and draws the dimmed page behind it.
+- **Confirmations** (`AlertDialog`) stay a small alert in the middle, their buttons full width and stacked, the action on top.
+- **Drawers** (notifications, filter panels) open from the bottom at 70% of the screen. Dragging the grabber up takes one to full height; dragging down goes back, then closes it.
+- **Search** fills the screen with Cancel in place of Esc, and its keyboard hints are hidden on touch screens.
+- **Accessibility:** focus stays inside every sheet (Radix), each is named by its title, and Escape closes it. With reduced motion nothing slides (`motion-safe:`, and the sheet keyframes sit under `prefers-reduced-motion: no-preference`).
+- **Tests and docs:** `us-ops-60.spec.ts` (phone and desktop) and `us-ops-60-phone.a11y.test.tsx`. US-OPS-15's dialog and drawer widths gave way to these. The docs for Dialog, DropdownMenu, Select, Combobox, DatePicker, Drawer, AlertDialog, MultiSelect and Command, and their design-system pages, are updated; QA section 286.
+
+### 2026-11-18 — US-OPS-54: tabs along the bottom of the phone
+
+- **The phone shell:** under 768px the web app now has a top bar with the page's title (not the logo), a back arrow, search and notifications. Sales and Money pages have the area's pages in a row under it. Tabs along the bottom: Home · Sales · Jobs · Money · More. The menu button, the slide-over navigation (US-OPS-14, D-066) and the breadcrumb are gone at that width. From 768px up nothing changes.
+- **Tabs:** they come from the same `navSectionsFor` as the sidebar. A tab with no page the person can open isn't shown, and a Field member gets no Money tab: their own expenses are under More, following the story's example. Sales and Money open the list last used there, with its filters (`sessionStorage`); records aren't remembered, so tapping Money from an invoice goes back to its list.
+- **More** opens the whole menu in a full-height `BottomSheet`, grouped as the sidebar is, then the account menu, Settings, Help and Sign out (`useSignOut`, shared with the account menu). Close, a swipe down or choosing a page closes it.
+- **Back arrow:** it uses the history when Spine itself navigated, else the parent page (`parentPath`). A list's scroll is kept per address, so back returns to the same place.
+- **Tab bar out of the way:** it's hidden on builders (`/new`, `/edit`). A CSS `:has()` rule also hides it while a full-screen sheet is open (`data-phone-fullscreen`: the More sheet, Settings and other `xl` dialogs) and, on a touch screen, while a text field has focus.
+- **New in `@spine/ui`:** `BottomTabBar`, `BottomSheet`, `ActionSheet` (built now; US-OPS-60 wires it into menus) and `AppShellPhoneBar` and `AppShellAreaNav`, each with its doc page and axe test. `AppShellTopBar` and `AppShellMobileNav` are removed. `AppShellHeader`'s title is for screen readers only under 768px, since the top bar shows it, and its description is hidden. `lib/phone-shell.ts` holds the areas, titles and back targets as plain functions.
+- **Tests and docs:** `us-ops-54.spec.ts` (phone, desktop, Field, axe in light and dark) and `us-ops-54.test.ts`. The US-OPS-62 phone check now requires the tab bar on every page but builders. US-OPS-14's slide-over test is replaced. Guide page "Use Spine on your phone"; QA section 285.
+
+### 2026-11-18 — US-OPS-62: every page is checked at phone width before each release
+
+- **A `phone` Playwright project** (390×844, touch, a phone user agent) runs `us-ops-62.spec.ts` as part of `pnpm verify` and the release run (D-260). It covers every app route, a record of each kind, every Settings pane and the bundled guide, in light and dark. It checks for sideways scroll, overlapping labels in a tab or button row, controls under 44px and axe AA. Each failure names the route and the check, writes `phone-failures.json` and attaches the page's screenshot.
+- **One route list:** `apps/e2e/tests/routes.ts` now holds the routes for both this check and the accessibility audit (US-OPS-17), so a new route is checked by both. `us-ops-15.spec.ts`'s 19-route sweep is gone; this check covers it.
+- **Waiting checks:** "the tab bar shows" and "the main action is on the first screen" are listed in the spec under their stories (US-OPS-54; US-OPS-57 and US-OPS-58) and switch on as those ship.
+- **What the first run found, now fixed:**
+  - Wide tables scrolled with no keyboard access (axe `scrollable-region-focusable` on document lines, the general ledger and others). They're now a new `ScrollX` box in `@spine/ui`, which becomes a focusable, named region only when it actually scrolls. `Table`, `StatementTable` and 17 table boxes in the web app use it.
+  - A payment record scrolled sideways by 114px: an `sr-only` column label is `position: absolute`, so it escaped its table's scroll box and widened the page. `ScrollX` is `relative`, so it clips such children. The toast area is pinned with `inset-x-0` too, so it can't reach past the screen either.
+  - The breadcrumb's short links ("Jobs", "Teams") were under 44px wide.
+  - The guide's site title and search were 32px; the docs theme now gives them 44px on a phone.
+  - The checks themselves: the small-controls helper skips visually hidden (`sr-only`) and off-screen controls, and the overlap check skips controls laid over others on purpose (a card's ⋯, the floating button).
+
+### 2026-11-18 — US-OPS-61: what was broken on a phone is fixed
+
+- **Tabs** (`@spine/ui` `TabsList`): under 768px the row scrolls sideways instead of wrapping, so a job's Milestones · Variation orders · Photos · Notes · Crew · Costing and the reports' statement tabs no longer land on each other. The underline becomes an inset shadow there and the focus ring is drawn inside, so the scrolling row clips neither.
+- **Record headers:** the actions on an invoice, quote, job, payment, credit note, expense, vendor bill, vendor credit and vendor payment wrap inside the screen. Issue invoice used to run off the right edge.
+- **Breadcrumb:** one line at every width. The middle items shorten with "…" (the full label is the tooltip), then the last. Each link is a 44px tap target with its text centred, so the middle item no longer sits higher than the others.
+- **Checkboxes, radio buttons and switches:** these are `<button>`s, so the phone's 44px rule (US-OPS-14) drew each one as a blank 44px box, the "empty boxes" in the invoice list. Checkbox, RadioGroupItem and Switch now carry `data-tap-area`: they keep their size, and the 44px tap area is drawn around them. Segmented buttons with `role="radio"` still get the full 44px. The phone check's small-controls helper skips them, as its comment always said.
+- **Search:** the ⌘K / Ctrl K hint is hidden on touch screens (`pointer: coarse`).
+- Tests: `us-ops-61.spec.ts` (one check per criterion, plus the desktop still showing ⌘K) and new cases in `breadcrumb.a11y.test.tsx` and `checkbox.a11y.test.tsx`. Docs: Tabs, Breadcrumb, Checkbox, RadioGroup and Switch, with their design-system pages; QA script section 283.
+
+### 2026-11-18 — Designs: the web app at phone width (D-283)
+
+- **28 screens drawn** for US-OPS-54 to US-OPS-60, US-MTG-18, US-RPT-41 and US-DASH-31 on the Claude Design canvas "Spine web — phone layout", exported to `docs/design/screens/*Phone*.webp`. They're listed in `docs/design/screens.md` under "Web app at phone width" (649 screens now):
+  - the shell, the More sheet and the home-screen app;
+  - Invoices as rows, in Select mode and with the Filters sheet; the Pipeline;
+  - an invoice and its action sheet; a job;
+  - the quote builder and its line sheet;
+  - Record payment as a full-screen sheet; a row's action sheet; a picker sheet;
+  - the phone month and day;
+  - Profit & Loss with its filters, and the Trial balance;
+  - the dashboard;
+  - dark versions of seven of these.
+- **One stylesheet, from the tokens.** Every board uses one `phone.css` whose values come from `tokens.json`, in light and dark. A dark board is its light board with the theme switched. The demo data is the refined screens' business (Sahyadri Retail, INV-0038, JOB-002, rupees), and its figures add up.
+- **Spec corrections the drawings found:**
+  - US-MTG-18's calendar toolbar is two short rows: at 390px the month, the arrows, Today and Month · Day · Agenda don't fit one row at 44px each. `Calendar.md` changes to match.
+  - `BottomTabBar.md` names the tab icons (`House`, `FileText`, `HardHat`, `Wallet`, `Menu`). The current tab gets a tinted pill, since Lucide has no filled icons. The bar is docked, not floating, so the + button can sit above it.
+  - `AppShellPhone`, `AppShellPhoneNav` and `MeetingsPhone` note what replaces them.
+- **Next:** the Owner reviews the designs; the build starts in waves (US-OPS-61 first) once they're approved.
+
+### 2026-11-18 — Spec: the web app gets a phone layout of its own before 1.0 (D-283)
+
+- **Why:** screenshots of the demo business at 390×844 showed each list's first screen filled by summary cards, tables showing only their first column, the main action halfway down, a job's tabs overlapping and Issue invoice running off the screen. The phone checks passed because they only look for a page that scrolls sideways.
+- **Decision D-283** (supersedes D-045 and D-066): under 768px every screen has a phone layout. Tabs along the bottom (Home · Sales · Jobs · Money · More); lists as two-line rows; figures and filters as chips; filters in a sheet; a floating + for the main action; records with the main action at the bottom; builders with lines edited in a sheet; dialogs, menus and pickers as sheets; a phone calendar; reports with filters behind one line. Spine opens from the home screen without the browser bar. Desktop doesn't change. It ships before 1.0, in waves of betas.
+- **New stories:** US-OPS-54 to US-OPS-62 (F-OPS-14), US-MTG-18 (F-MTG-06), US-RPT-41 (F-RPT-14), US-DASH-31 (F-DASH-12), in Phase 12 and `docs/progress.md`. US-OPS-61 fixes today's phone bugs first, and US-OPS-62 checks every route at phone width before each release.
+- **Also updated:** NFR-COMP-02 and NFR-A11Y-02, the test layers, risk R-32, the design system (rule 13, the phone layout rules, a phone section on 13 component pages, and planned pages for BottomTabBar, BottomSheet, ActionSheet, ListRow, ChipStrip, FloatingActionButton, ActionBar and RecordHeader), and the docs index's counts, recounted from the feature files (205 features, 639 stories).
+- **Next:** the phone screens in `docs/design/screens.md`, for the Owner's approval before anything is built.
+
+### 2026-11-18 — The clean-machine test passed; Runtipi and Coolify upgrades checked for real (US-OPS-19, US-OPS-53, US-OPS-52)
+
+- **US-OPS-19 is done:** the Owner followed only the README on a fresh machine with 1.0.0-beta.5 and issued a first invoice in under 5 minutes (Phase 12's exit criterion, NFR-MNT-01).
+- **Runtipi:** Spine installed from the store on a real Runtipi and updated from 1.0.0-beta.4 to beta.5 through it. The Docker panels page no longer says it was only checked against a copy.
+- **Coolify:** an install went from 1.0.0-beta.2 to beta.5 by pasting the new file. The Coolify pages' upgrade step now names a current version, and says an install from beta.3 or earlier pastes the file once to change to the `spine-proxy` image; after that, setting `SPINE_VERSION` is enough.
+
 ### 2026-11-17 — Fix: a closed toast's removal no longer outlives the toast host (US-OPS-38)
 
 - The host removes a closed toast 200 ms after closing it, so Radix can fade it out. If the host unmounted first, the removal still ran; on a slow CI runner it fired after the test environment was gone and failed the web suite with "window is not defined". The host now clears its waiting removals when it unmounts. Test: `us-ops-38.test.tsx` closes a toast, unmounts the host, and checks the removal was cleared.

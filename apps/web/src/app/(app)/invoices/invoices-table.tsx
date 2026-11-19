@@ -49,6 +49,7 @@ export function InvoicesTable({
   onActionFailed,
   selected,
   onToggleSelected,
+  phoneSelecting,
 }: {
   invoices: Invoice[];
   now: Date;
@@ -62,6 +63,8 @@ export function InvoicesTable({
   onToggleSelected?: (invoice: Invoice, selected: boolean) => void;
   onDeleted: (invoice: Invoice) => void;
   onActionFailed?: (invoice: Invoice, message: string) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
 }) {
   const t = useT();
   const locale = orgLocaleTag();
@@ -79,6 +82,7 @@ export function InvoicesTable({
       : []),
     {
       key: "number",
+      phone: "title",
       header: t("invoices.columns.number"),
       render: (row) => {
         const note = invoiceKindNote(row);
@@ -95,20 +99,27 @@ export function InvoicesTable({
           </div>
         );
       },
+      // US-OPS-57: in a phone row, just the number; its note goes on the second line.
+      phoneRender: (row) => (
+        <Link href={`/invoices/${row.id}`}>{row.number ?? <span className="font-medium italic text-on-surface-muted">{t("invoices.table.draft")}</span>}</Link>
+      ),
       sortValue: (row) => row.number ?? "",
     },
     {
       key: "contact",
+      phone: "subtitle",
       header: t("invoices.columns.contact"),
       render: (row) => (
         <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
         </span>
       ),
+      phoneRender: (row) => [row.contactName ?? "—", invoiceKindNote(row)].filter(Boolean).join(" · "),
       sortValue: (row) => row.contactName ?? "",
     },
     {
       key: "status",
+      phone: "badge",
       header: t("invoices.columns.status"),
       render: (row) => {
         const state = invoiceState(row);
@@ -122,12 +133,14 @@ export function InvoicesTable({
     },
     {
       key: "issued",
+      phone: "hidden",
       header: t("invoices.table.issued"),
       render: (row) => (row.issueDate && row.status !== "draft" ? calendarDate(row.issueDate, now, locale) : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.issueDate ?? row.createdAt,
     },
     {
       key: "dueDate",
+      phone: "trailingSub",
       header: t("invoices.table.due"),
       render: (row) => {
         const note = dueNote(row, now, locale);
@@ -142,10 +155,17 @@ export function InvoicesTable({
           </div>
         );
       },
+      // One line under the amount on a phone: how it stands ("in 29 days", "6 days late"), else the date.
+      phoneRender: (row) => {
+        const note = dueNote(row, now, locale);
+        if (note.text) return <span className={TONE_CLASS[note.tone]}>{note.text}</span>;
+        return row.dueDate && invoiceState(row) !== "void" ? calendarDate(row.dueDate, now, locale) : null;
+      },
       sortValue: (row) => row.dueDate ?? "",
     },
     {
       key: "total",
+      phone: "hidden",
       header: t("invoices.columns.total"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
@@ -153,6 +173,7 @@ export function InvoicesTable({
     },
     {
       key: "balanceDue",
+      phone: "trailing",
       header: t("invoices.columns.balanceDue"),
       align: "right",
       // US-OPS-21: a void invoice owes nothing, so it shows "—", not its old total.
@@ -174,6 +195,7 @@ export function InvoicesTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -194,6 +216,7 @@ export function InvoicesTable({
       onSortChange={onSortChange}
       page={page}
       onPageChange={onPageChange}
+      phoneSelecting={phoneSelecting}
     />
   );
 }

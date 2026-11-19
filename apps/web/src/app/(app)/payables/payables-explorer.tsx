@@ -8,6 +8,7 @@ import {
   AppShellHeader,
   Button,
   EmptyState,
+  FilterSheet,
   Input,
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   cn,
+  type FilterChip,
 } from "@spine/ui";
 import { PAYABLES_AGES, PAYABLES_AGE_LABELS, type PayablesAge } from "@spine/shared";
 import { HandCoins, Info, RefreshCw, Search } from "lucide-react";
@@ -35,6 +37,7 @@ import { AgingSummary } from "../../../components/aging-summary";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { RecordVendorPaymentDialog } from "../vendor-payments/record-vendor-payment-dialog";
 import { ApplyCreditToBillDialog } from "../vendor-bills/apply-credit-to-bill-dialog";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
@@ -46,6 +49,7 @@ import { draftsNote, emptyAge, filterBills, parsePayablesState, payablesQuery, v
 import type { PayablesBillRow, PayablesReport } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
+import { useSelectMode, PhoneMoreActions } from "../../../lib/phone-bar";
 const ALL_AGES = "__all__";
 
 type Dialog = { kind: "pay"; contactId: string; billIds: string[] } | { kind: "credit"; row: PayablesBillRow } | null;
@@ -65,6 +69,9 @@ export function PayablesExplorer() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const canPay = useCapability("vendor_payments.edit_own");
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const isPhone = useIsPhone();
+  const selecting = useSelectMode({ available: Boolean(canPay), onDone: () => setSelected(new Set()) });
   const [state, setState] = useState<PayablesListState>(() => parsePayablesState(new URLSearchParams(searchParams.toString())));
   const [report, setReport] = useState<PayablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -184,9 +191,11 @@ export function PayablesExplorer() {
     </div>
   );
   const drafts = report ? draftsNote(report.drafts, formatMoney(BigInt(report.drafts.amount), currency)) : null;
+  // US-OPS-57: on a phone the age filter is a chip with × (the cards and the bar set it too).
+  const filterChips: FilterChip[] = state.age ? [{ key: "age", label: PAYABLES_AGE_LABELS[state.age] ?? state.age, onRemove: () => update({ age: null }) }] : [];
   const empty = (message: string, clear: () => void, label: string) => (
     <div className="flex flex-col gap-3">
-      <div className="flex">{search}</div>
+      {!isPhone && <div className="flex">{search}</div>}
       <div className="rounded-lg border border-border bg-surface">
         <EmptyState icon={<HandCoins />} title={message} description={t("payables.explorer.emptyAgeDescription")} action={<Button variant="secondary" onClick={clear}>{label}</Button>} />
       </div>
@@ -225,34 +234,46 @@ export function PayablesExplorer() {
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3" data-print="hide">
-          <Select value={state.age ?? ALL_AGES} onValueChange={(v) => update({ age: v === ALL_AGES ? null : (v as PayablesAge) })}>
-            <SelectTrigger aria-label={t("payables.explorer.showByAge")} className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_AGES}>{t("payables.explorer.allAges")}</SelectItem>
-              {PAYABLES_AGES.map((a) => (
-                <SelectItem key={a} value={a}>
-                  {PAYABLES_AGE_LABELS[a]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* US-OPS-57: on a phone, search and Filters in one row, the age in a sheet. */}
+          <FilterSheet className="contents" search={isPhone ? search : undefined} chips={filterChips} onClearAll={() => update({ age: null, q: "" })}>
+            <Select value={state.age ?? ALL_AGES} onValueChange={(v) => update({ age: v === ALL_AGES ? null : (v as PayablesAge) })}>
+              <SelectTrigger aria-label={t("payables.explorer.showByAge")} className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_AGES}>{t("payables.explorer.allAges")}</SelectItem>
+                {PAYABLES_AGES.map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {PAYABLES_AGE_LABELS[a]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="payables-updated">
                 {refreshing ? t("payables.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("payables.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("payables.explorer.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("payables.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
-            <ReportExportMenu path={`/reports/payables${ageQuery}`} csvPath={`/reports/payables/export.csv${ageQuery}`} search={state.q} />
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="secondary" size="icon" aria-label={t("payables.explorer.refreshList")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("payables.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+              <ReportExportMenu path={`/reports/payables${ageQuery}`} csvPath={`/reports/payables/export.csv${ageQuery}`} search={state.q} />
+            </PhoneMoreActions>
           </div>
         </div>
         <p role="status" className="sr-only">
@@ -287,7 +308,7 @@ export function PayablesExplorer() {
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             actions={{
               onPay: (v) => pay(v.contactId, []),
               // The vendor's credit goes against their oldest bill first; the dialog says which.
@@ -307,9 +328,10 @@ export function PayablesExplorer() {
             onSortChange={(sort) => update({ sort })}
             page={state.page}
             onPageChange={(page) => update({ page })}
-            toolbarStart={search}
+            toolbarStart={isPhone ? <span /> : search}
             selected={canPay ? selected : undefined}
             onSelectedChange={canPay ? setSelected : undefined}
+            phoneSelecting={selecting}
             actions={{
               onPay: (row) => pay(row.contactId, [row.id]),
               onApplyCredit: (row) => setDialog({ kind: "credit", row }),

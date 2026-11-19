@@ -27,7 +27,7 @@ export default function TableSkeletonPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px it shows placeholder rows (US-OPS-56).", 
             "Renders the real <thead> with the given columns' header text and alignment, not a placeholder bar.",
             "Body rows are Skeleton bars, one per column, respecting each column's align and optional width.",
             "rows controls how many placeholder rows render (defaults to 8).",

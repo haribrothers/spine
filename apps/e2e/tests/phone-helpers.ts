@@ -16,7 +16,7 @@ export async function sidewaysScroll(page: Page): Promise<number> {
 /** Visible controls smaller than 44×44px to tap: "label (w×h)". Links inside running text, and checkboxes, radios and switches (their tap area is drawn around them), are left out. */
 export async function smallControls(page: Page, within = "body"): Promise<string[]> {
   return page.evaluate((root) => {
-    type Rect = { width: number; height: number };
+    type Rect = { width: number; height: number; right: number; bottom: number };
     type El = {
       getBoundingClientRect(): Rect;
       closest(s: string): El | null;
@@ -31,9 +31,20 @@ export async function smallControls(page: Page, within = "body"): Promise<string
     const out: string[] = [];
     for (const el of Array.from(scope.querySelectorAll(selector))) {
       if (el.closest("p, td")) continue;
+      // The guide's prose (US-SITE-12): links in its lists and heading anchors are running text too.
+      if (el.closest(".sl-markdown-content")) continue;
+      // Checkbox, RadioGroupItem and Switch are buttons whose 44px tap area is drawn around them (US-OPS-61).
+      if (el.closest("[data-tap-area], [role=\"checkbox\"], [role=\"switch\"]")) continue;
       if (el.checkVisibility && !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) continue;
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) continue;
+      // A row title's link is stretched over the whole row (US-OPS-56): its tap area is the row.
+      const r = (el.closest("[data-list-row-title]") ? el.closest("[data-list-row]") ?? el : el).getBoundingClientRect();
+      // Visually hidden (sr-only) controls are reached through their visible label.
+      if (r.width <= 2 || r.height <= 2) continue;
+      // Drawn off the screen until focused (a skip link): not something to tap.
+      if (r.bottom <= 0 || r.right <= 0) continue;
+      // Clipped away until focused (Starlight's skip link): not shown, so not something to tap.
+      const style = (globalThis as unknown as { getComputedStyle(e: El): { clip: string; clipPath: string } }).getComputedStyle(el);
+      if (style.clip === "rect(0px, 0px, 0px, 0px)" || style.clipPath === "inset(50%)") continue;
       if (r.width < 43.5 || r.height < 43.5) out.push(`${el.getAttribute("aria-label") ?? el.textContent?.trim().slice(0, 40)} (${Math.round(r.width)}×${Math.round(r.height)})`);
     }
     return out;

@@ -37,7 +37,8 @@ export function DatePicker({ value, onChange, placeholder, className, disabled }
           <CalendarIcon size={16} className="shrink-0 text-on-surface-muted" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start">
+      {/* US-OPS-60: on a phone the calendar opens in a bottom sheet. */}
+      <PopoverContent align="start" data-phone-sheet="" className="max-md:flex max-md:justify-center">
         <MiniCalendar
           selected={value}
           onSelect={(date) => {

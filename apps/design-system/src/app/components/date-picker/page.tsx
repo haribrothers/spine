@@ -29,7 +29,7 @@ export default function DatePickerPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px the calendar opens in a bottom sheet (US-OPS-60).", 
             "A month-grid Calendar with prev/next navigation, no external date library dependency.",
             "Hosted in a Popover, closes automatically on selection.",
             "Field trigger shares Input/Select's chrome and height for a consistent form row.",

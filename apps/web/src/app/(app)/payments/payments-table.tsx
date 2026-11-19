@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
+import { Badge, DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
@@ -56,26 +56,33 @@ export function PaymentsTable({
           )}
         </div>
       ),
+      // US-OPS-56: on a phone, the number alone; who paid and how go on the second line.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/payments/${row.id}`}>{row.number ?? t("payments.table.payment")}</Link>,
       sortValue: (row) => row.number ?? "",
     },
     {
       key: "date",
+      phone: "trailingSub",
       header: t("payments.columns.date"),
       render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>,
       sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}`,
     },
     {
       key: "contact",
+      phone: "subtitle",
       header: t("payments.columns.customer"),
       render: (row) => (
         <span className="block max-w-56 truncate" title={row.contactName ?? undefined}>
           {row.contactName ?? "—"}
         </span>
       ),
+      phoneRender: (row) => [row.contactName ?? "—", PAYMENT_METHOD_LABELS[row.method]].join(" · "),
       sortValue: (row) => row.contactName ?? "",
     },
     {
       key: "method",
+      phone: "hidden",
       header: t("payments.columns.method"),
       render: (row) => (
         <div className="flex flex-col">
@@ -87,6 +94,7 @@ export function PaymentsTable({
     },
     {
       key: "amount",
+      phone: "trailing",
       header: t("payments.columns.amount"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>,
@@ -94,6 +102,7 @@ export function PaymentsTable({
     },
     {
       key: "applied",
+      phone: "hidden",
       header: t("payments.columns.appliedTo"),
       render: (row) => {
         const to = row.appliedTo ?? [];
@@ -116,6 +125,9 @@ export function PaymentsTable({
     },
     {
       key: "credit",
+      // On a phone, a badge on the payments that still have credit to use.
+      phone: "badge",
+      phoneRender: (row) => (BigInt(row.unallocatedAmount) > 0n ? <Badge className="bg-due-soon-bg text-due-soon">{t("payments.state.credit")}</Badge> : null),
       header: t("payments.columns.creditLeft"),
       align: "right",
       render: (row) =>
@@ -130,6 +142,7 @@ export function PaymentsTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

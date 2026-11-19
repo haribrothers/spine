@@ -2,7 +2,7 @@
 
 The books Spine keeps underneath: a seeded chart of accounts owners can extend, fiscal periods that can be closed, and the reports an owner and accountant need — Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and job profitability — all derived from journal lines, all drillable to the source documents and exportable to CSV. From Phase 8 it also holds opening balances, adjusting journals, the accountant's reports (general ledger, day book, cash flow, comparisons, sales and purchase analysis), CSV, Excel, PDF and print on every report, a cash-basis P&L and read access for an accountant's Team; Phase 9 adds tax by type and the Tally export.
 
-**Screens:** `ReportsPL` (P1), `ReportsEmpty` (P2), `ReportsBalanceSheet` (P1), `ReportsJobProfitability` (P1), `AccountDrilldownDialog` (P1), `SettingsAccounts` (P2), `AddAccountDialog` (P2), `TeamPrivileges` (P1), `ReportsTrialBalance` (P2), `ReportsTaxSummary` (P1), `DashboardOwner` (P1), `ReportsJobProfitabilityChart` (P1), `OpeningBalances` (P1), `OpeningBalancesDocuments` (P1), `OpeningBalancesReview` (P1), `ManualJournalDialog` (P1), `ManualJournalDetail` (P1), `ManualJournalsList` (P2), `ReportsCenter` (P1), `ReportsGeneralLedger` (P1), `ReportsDayBook` (P1), `ReportsCashFlow` (P1), `ReportsPLCompare` (P1), `ReportsSalesByCustomer` (P1), `ReportsExpensesByCategory` (P1), `ReportsPaymentsRegister` (P2), `ReportsCreditsRegister` (P2), `ReportExportMenu` (P1), `ReportPdf` (P1), `ReportsPLCashBasis` (P1), `TeamPrivilegesBooks` (P1), `ReportsTaxSummaryByType` (P1), `ReportsTallyExport` (P1), `TallyGroupMapping` (P2)
+**Screens:** `ReportsPL` (P1), `ReportsEmpty` (P2), `ReportsBalanceSheet` (P1), `ReportsJobProfitability` (P1), `AccountDrilldownDialog` (P1), `SettingsAccounts` (P2), `AddAccountDialog` (P2), `TeamPrivileges` (P1), `ReportsTrialBalance` (P2), `ReportsTaxSummary` (P1), `DashboardOwner` (P1), `ReportsJobProfitabilityChart` (P1), `OpeningBalances` (P1), `OpeningBalancesDocuments` (P1), `OpeningBalancesReview` (P1), `ManualJournalDialog` (P1), `ManualJournalDetail` (P1), `ManualJournalsList` (P2), `ReportsCenter` (P1), `ReportsGeneralLedger` (P1), `ReportsDayBook` (P1), `ReportsCashFlow` (P1), `ReportsPLCompare` (P1), `ReportsSalesByCustomer` (P1), `ReportsExpensesByCategory` (P1), `ReportsPaymentsRegister` (P2), `ReportsCreditsRegister` (P2), `ReportExportMenu` (P1), `ReportPdf` (P1), `ReportsPLCashBasis` (P1), `TeamPrivilegesBooks` (P1), `ReportsTaxSummaryByType` (P1), `ReportsTallyExport` (P1), `TallyGroupMapping` (P2), `ReportsPLPhone` (P2), `ReportsPLPhoneFilters` (P2), `ReportsTrialBalancePhone` (P2)
 **Depends on:** every posting module (06-ledger-posting-rules), 15 Team (report capabilities), 20 Banking (money accounts), 11 Tax (tax types, Phase 9).
 
 ## Features
@@ -22,6 +22,7 @@ The books Spine keeps underneath: a seeded chart of accounts owners can extend, 
 | F-RPT-11 | Export and print every report | P1 | 8 | `ReportExportMenu`, `ReportPdf` |
 | F-RPT-12 | Cash-basis profit and loss | P1 | 8 | `ReportsPLCashBasis` |
 | F-RPT-13 | Export to Tally | P1 | 9 | `ReportsTallyExport`, `TallyGroupMapping` |
+| F-RPT-14 | Reports on a phone: filters behind one line, statements as lists, tables only where the data is a grid (D-283) | P2 | 12 | `ReportsPLPhone`, `ReportsPLPhoneFilters`, `ReportsTrialBalancePhone` |
 
 ## User stories
 
@@ -596,3 +597,21 @@ Decision: D-149
 
 **Implementation notes**
 - API: `GET/PUT /exports/tally/mapping` (roles: owner). Data: `settings` key `tally_mapping`.
+
+### US-RPT-41 · Read reports on my phone
+**Feature:** F-RPT-14 · **Priority:** P2 · **Phase:** 12 · **Screens:** `ReportsPLPhone`, `ReportsPLPhoneFilters`, `ReportsTrialBalancePhone`
+**As** an owner checking how the month went, **I want** reports that read on my phone, **so that** I don't need a laptop to see my profit.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** a report under 768px, **when** it opens, **then** the filters are one line under the title saying what's chosen ("Jan 1 – Nov 18, 2026 · Accrual · No comparison"), which opens a Filters sheet with every filter; Export is under the top bar's ⋯; sibling reports' tabs are one row that scrolls sideways.
+- **Given** the report's cards, **when** they show, **then** they're chips in a row that scrolls sideways (US-OPS-57), and a chart is the screen's width with its legend under it.
+- **Given** a statement (Profit & Loss, Balance Sheet, Cash Flow, Tax Summary), **when** it renders, **then** it's an indented list: section headings, each account with its amount on the right, bold subtotals and the total last; tapping an account opens its drill-down; with a comparison, each amount has the other period's under it in muted text.
+- **Given** a list report (sales, purchases, registers, receivables by invoice, job profitability), **when** it renders, **then** it uses the phone rows (US-OPS-56).
+- **Given** a report whose data is a grid (Trial balance, GSTR-1, a comparison of three or more periods, aging by age), **when** it renders, **then** it stays a table whose first column stays put while the others scroll sideways inside their box, and the page itself never scrolls sideways.
+- **Given** the Reports page, **when** it opens, **then** its reports are list rows grouped as on the desktop.
+
+**Implementation notes**
+- `StatementTable` renders the indented list under 768px; `ReportToolbar` renders the summary line and a `BottomSheet`; `Table` gains a sticky first column for the grids.
+- Supersedes US-RPT-40's toolbar and table layout under 768px only.

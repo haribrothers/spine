@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
+import { Badge, DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, type TableColumn, type TableSort } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { MENU_ICONS } from "../../../lib/menu-icons";
 import { useT } from "../../../lib/i18n";
 import { calendarDate } from "../quotes/quotes-list-state";
-import { AgeCell } from "../receivables/receivables-table";
+import { AgeCell, BUCKET_BADGE_CLASS } from "../receivables/receivables-table";
+import { howLate } from "../receivables/receivables-list-state";
+import { AGING_BUCKET_LABELS } from "../receivables/types";
 import type { PayablesBillRow } from "./types";
 
 import { SectionLink } from "../../../components/section-link";
@@ -35,6 +37,7 @@ export function PayablesBillsTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   actions,
 }: {
   bills: PayablesBillRow[];
@@ -46,6 +49,8 @@ export function PayablesBillsTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   actions: BillActions;
 }) {
   const t = useT();
@@ -64,10 +69,15 @@ export function PayablesBillsTable({
           {row.jobName && <span className="truncate text-[12px] text-on-surface-muted">{row.jobName}</span>}
         </div>
       ),
+      // US-OPS-56: on a phone, the number alone; the vendor and the job go on the second line.
+      phone: "title",
+      phoneRender: (row) => <SectionLink href={`/vendor-bills/${row.id}`}>{row.billNumber}</SectionLink>,
       sortValue: (row) => row.billNumber,
     },
     {
       key: "contact",
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName ?? "—", row.jobName].filter(Boolean).join(" · "),
       header: t("payables.columns.vendor"),
       render: (row) => (
         <SectionLink href={`/contacts/${row.contactId}`} className="block max-w-56 truncate text-on-surface hover:text-primary hover:underline" title={row.contactName ?? undefined}>
@@ -76,14 +86,29 @@ export function PayablesBillsTable({
       ),
       sortValue: (row) => row.contactName ?? "",
     },
-    { key: "dueDate", header: t("payables.columns.due"), render: (row) => <span className="whitespace-nowrap">{date(row.dueDate)}</span>, sortValue: (row) => row.dueDate ?? "" },
-    { key: "late", header: t("payables.columns.howLate"), render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue },
-    { key: "date", header: t("payables.columns.billDate"), render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => row.date },
-    { key: "totalAmount", header: t("payables.columns.billTotal"), align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
-    { key: "paidAmount", header: t("payables.columns.paidSoFar"), align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
-    { key: "balanceDue", header: t("payables.columns.balanceDue"), align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
+    {
+      key: "dueDate",
+      // Under the balance on a phone: how late it is, in words.
+      phone: "trailingSub",
+      phoneRender: (row) => <span className={row.daysOverdue > 0 ? "text-overdue" : undefined}>{howLate(row)}</span>,
+      header: t("payables.columns.due"), render: (row) => <span className="whitespace-nowrap">{date(row.dueDate)}</span>,
+      sortValue: (row) => row.dueDate ?? "",
+    },
+    {
+      key: "late",
+      // On a phone only an overdue age is worth a badge; how late it is in words sits under the amount.
+      phone: "badge",
+      phoneRender: (row) => (row.bucket === "current" ? null : <Badge className={BUCKET_BADGE_CLASS[row.bucket]}>{AGING_BUCKET_LABELS[row.bucket]}</Badge>),
+      header: t("payables.columns.howLate"),
+      render: (row) => <AgeCell row={row} />, sortValue: (row) => row.daysOverdue,
+    },
+    { key: "date", phone: "hidden", header: t("payables.columns.billDate"), render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => row.date },
+    { key: "totalAmount", phone: "hidden", header: t("payables.columns.billTotal"), align: "right", render: (row) => money(row, row.totalAmount), sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "paidAmount", phone: "hidden", header: t("payables.columns.paidSoFar"), align: "right", render: (row) => money(row, row.paidAmount), sortValue: (row) => BigInt(row.paidAmount) },
+    { key: "balanceDue", phone: "trailing", header: t("payables.columns.balanceDue"), align: "right", render: (row) => money(row, row.balanceDue), sortValue: (row) => BigInt(row.balanceDue) },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -106,6 +131,7 @@ export function PayablesBillsTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.billNumber}
       defaultHidden={["date", "totalAmount", "paidAmount"]}
     />

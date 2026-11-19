@@ -397,7 +397,7 @@ Decisions: [D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)
 - **Given** dark mode, **when** a page with the logo renders, **then** the wordmark is light text from the first frame, with no swap after the page loads.
 - **Given** a business has picked another theme (US-SET-09), **when** the logo renders, **then** the wordmark stays Spine blue (`#2954E5`); the theme changes only the app's accent colour.
 - **Given** a browser tab or bookmark, **when** Spine is open, **then** its icon is the app-icon tile (the white-edged mark on the teal-to-blue square): an SVG for current browsers, and `favicon.ico` at 16, 32 and 48 px for the rest.
-- **Given** "Add to Home Screen", **when** it's used on an iPhone or iPad, **then** the icon is the 180 px iOS app-icon art; **when** it's used in Chrome on Android, **then** the web manifest's 192 and 512 px icons and a maskable icon are used. The browser's bar takes the page colour (`#F7F6F3` light, `#121110` dark), and Spine stays a normal website (no install prompt).
+- **Given** "Add to Home Screen", **when** it's used on an iPhone or iPad, **then** the icon is the 180 px iOS app-icon art; **when** it's used in Chrome on Android, **then** the web manifest's 192 and 512 px icons and a maskable icon are used. The browser's bar takes the page colour (`#F7F6F3` light, `#121110` dark), and Spine stays a normal website (no install prompt). Since US-OPS-55 (D-283) it opens from the home screen as an app (`display: "standalone"`), still with no install prompt.
 - **Given** a browser push notification, **when** it shows, **then** it carries the square app icon, and on Android a one-colour badge.
 - **Given** the public quote page, **when** a customer opens it, **then** "Sent with Spine" has the 20 px mark before it.
 - **Given** a screen reader, **when** it reaches the logo, **then** it hears "Spine" once; where the word Spine is already next to it (the quote footer), the logo is skipped.
@@ -407,7 +407,7 @@ Decisions: [D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)
 **Implementation notes**
 - `SpineLogo` in `@spine/ui`: inline SVG from the `docs/logos` paths (the same as `@spine/ui-native`'s), mark, horizontal or vertical, clamped to the brand minimums (20 px mark, 96 px wide lockup), read as "Spine" unless `decorative`.
 - Brand tokens in `packages/config`: `--color-brand-teal`, `--color-brand-sky`, `--color-brand-deep` and `--color-brand-wordmark` (light `#2954E5`, dark `#F3F2EE`), outside the `[data-brand]` theme rules so no theme changes them; for the logo and icons only (US-MOB-27).
-- Icons through Next.js's file conventions: `app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`, and `app/manifest.ts` (`display: "browser"`). `public/sw.js` uses `/icons/notification-192.png` and `/icons/badge-96.png`. `themeColor` in the root layout's viewport, per colour scheme.
+- Icons through Next.js's file conventions: `app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`, and `app/manifest.ts` (`display: "browser"`; `"standalone"` since US-OPS-55). `public/sw.js` uses `/icons/notification-192.png` and `/icons/badge-96.png`. `themeColor` in the root layout's viewport, per colour scheme.
 
 ### US-SET-27 · See every email Spine sends
 **Feature:** F-SET-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `EmailLog`, `EmailLogDark`

@@ -123,8 +123,11 @@ export function MoneyInOutChart() {
           </p>
         ) : (
           <>
+            {/* Three across when they fit; on a narrow card (a phone) one per line, label left and
+                amount right, so big amounts never run into each other. */}
+            <div className="@container">
             <dl
-              className="grid grid-cols-3 gap-3"
+              className="grid grid-cols-1 gap-1.5 @[30rem]:grid-cols-3 @[30rem]:gap-3 [&>div]:flex-row [&>div]:items-baseline [&>div]:justify-between [&>div]:gap-3 @[30rem]:[&>div]:flex-col @[30rem]:[&>div]:items-start @[30rem]:[&>div]:gap-0 [&_dd]:whitespace-nowrap"
               data-testid="money-in-out-totals"
             >
               <div className="flex flex-col">
@@ -161,6 +164,7 @@ export function MoneyInOutChart() {
                 </dd>
               </div>
             </dl>
+            </div>
             <GroupedBarChart
               data={rows}
               series={[

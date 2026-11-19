@@ -62,3 +62,29 @@ figure.spine-screenshot figcaption {
   color: var(--sl-color-text-accent);
   margin-inline-start: 0.5rem;
 }
+
+/* US-OPS-62 — the guide on a phone (it opens inside the web app at /help): the header's
+   site title, search and menu are at least 44×44px to tap, like the app's own controls. */
+@media (max-width: 50rem) {
+  .site-title,
+  site-search button,
+  starlight-menu-button button {
+    min-height: 44px;
+  }
+  site-search button,
+  starlight-menu-button button[aria-expanded] {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+  }
+  :root {
+    --sl-menu-button-size: 2.75rem;
+  }
+  .site-title,
+  .spine-bundled-banner a,
+  .hero .actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

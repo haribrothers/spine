@@ -38,6 +38,8 @@ export const SelectContent = forwardRef<
       ref={ref}
       position={position}
       sideOffset={4}
+      // US-OPS-60: on a phone the options open in a bottom sheet.
+      data-phone-sheet=""
       className={cn(
         "z-[var(--z-popover)] max-h-80 w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-raised",
         className,
@@ -70,6 +72,8 @@ export const SelectItem = forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 pr-7 text-[14px] text-on-surface outline-none data-[highlighted]:bg-surface-sunken data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      // US-OPS-60: a bottom sheet's rows on a phone.
+      "max-md:min-h-11 max-md:px-4 max-md:text-[16px]",
       className,
     )}
     {...props}

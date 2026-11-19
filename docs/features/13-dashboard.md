@@ -2,7 +2,7 @@
 
 One dashboard that adapts to who's looking: a pinned row of key figures, charts for owners and permitted staff, "my day" widgets for everyone, an organisation-wide activity feed, and per-user layout that follows the person across devices. Every widget is gated server-side by the same right as its full report, so the dashboard adds no new access.
 
-**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1), `DashboardOwnerBooks` (P1), `DashboardLoading` (P2), `DashboardWide` (P2), `DashboardWideDark` (P2), `DashboardLaptop` (P2), `DashboardBigFigures` (P2)
+**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1), `DashboardOwnerBooks` (P1), `DashboardLoading` (P2), `DashboardWide` (P2), `DashboardWideDark` (P2), `DashboardLaptop` (P2), `DashboardBigFigures` (P2), `DashboardPhone` (P2), `DashboardPhoneDark` (P2)
 **Depends on:** 12 Reports, 03 Contacts (activities, leads), 04 Meetings, 07 Jobs, 08 Invoicing, 15 Team (capabilities).
 
 ## Features
@@ -20,6 +20,7 @@ One dashboard that adapts to who's looking: a pinned row of key figures, charts 
 | F-DASH-09 | Books cards: payables, top expenses, account balances, ready to bill, tax, cash basis | P1 | 8 | `DashboardOwnerBooks` |
 | F-DASH-10 | Polish: loading placeholders, figures that fit, packed cards and a side column | P2 | Refinements | `DashboardLoading`, `DashboardWide`, `DashboardLaptop`, `DashboardBigFigures` |
 | F-DASH-11 | Failed emails in Needs your attention | P2 | Refinements | `DashboardAttentionEmails` |
+| F-DASH-12 | The dashboard on a phone (D-283) | P2 | 12 | `DashboardPhone`, `DashboardPhoneDark` |
 
 ## User stories
 
@@ -469,3 +470,17 @@ Decision: D-220
 **Implementation notes**
 - API: `GET /dashboard/attention` kind `emails_failed` (Owner only), from `email_log`.
 
+### US-DASH-31 · See my dashboard laid out for my phone
+**Feature:** F-DASH-12 · **Priority:** P2 · **Phase:** 12 · **Screens:** `DashboardPhone`, `DashboardPhoneDark`
+**As** an owner opening Spine on my phone first thing, **I want** what needs me at the top, **so that** I can deal with it in a minute.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** the dashboard under 768px, **when** it opens, **then** in order: a one-line greeting with the date, Needs your attention, the key figures two per row, then the charts and the other cards one per row; Accrual or Cash is under the top bar's ⋯.
+- **Given** Needs your attention, **when** it shows, **then** each item is a row with its icon, what it is and its detail, and its action (Send reminder, Review, Approve) as a button on the right; with more than three, "Show all <n>" opens the rest.
+- **Given** the first screen at 390×844, **when** it shows, **then** the greeting and at least the first attention item are on it, and nothing is cut off at the right.
+- **Given** Edit layout, **when** I'm under 768px, **then** it isn't offered; the layout chosen on a wider screen applies, in one column.
+
+**Implementation notes**
+- `dashboard-shell.tsx`'s one-column order under 768px; the attention row's phone layout in `@spine/ui` (`ListRow` with a trailing action). Keeps US-OPS-14's two-per-row key figures.

@@ -28,6 +28,7 @@ export function VendorCreditsTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   handlers,
 }: {
   credits: VendorCredit[];
@@ -39,6 +40,8 @@ export function VendorCreditsTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   handlers: CreditRowHandlers;
 }) {
   const t = useT();
@@ -56,9 +59,12 @@ export function VendorCreditsTable({
           {row.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorCredits.table.openingBalance")}</Badge>}
         </span>
       ),
+      // US-OPS-56: on a phone, the number alone (their number for a draft); Opening balance goes with the state badge.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/vendor-credits/${row.id}`}>{creditLabel(row)}</Link>,
       sortValue: (row) => row.number ?? "",
     },
-    { key: "ref", header: t("vendorCredits.columns.theirNo"), render: (row) => row.vendorReference ?? muted, sortValue: (row) => row.vendorReference ?? "" },
+    { key: "ref", phone: "hidden", header: t("vendorCredits.columns.theirNo"), render: (row) => row.vendorReference ?? muted, sortValue: (row) => row.vendorReference ?? "" },
     {
       key: "contact",
       header: t("vendorCredits.columns.vendor"),
@@ -67,11 +73,14 @@ export function VendorCreditsTable({
           {row.contactName ?? "—"}
         </SectionLink>
       ),
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName ?? "—", row.billNumber ?? row.jobName].filter(Boolean).join(" · "),
       sortValue: (row) => row.contactName ?? "",
     },
-    { key: "date", header: t("vendorCredits.columns.date"), render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => row.date.slice(0, 10) },
+    { key: "date", phone: "trailingSub", header: t("vendorCredits.columns.date"), render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => row.date.slice(0, 10) },
     {
       key: "bill",
+      phone: "hidden",
       header: t("vendorCredits.columns.againstBill"),
       render: (row) =>
         row.billId ? (
@@ -85,14 +94,27 @@ export function VendorCreditsTable({
     },
     {
       key: "job",
+      phone: "hidden",
       header: t("vendorCredits.columns.job"),
       render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : muted),
       sortValue: (row) => row.jobName ?? "",
     },
-    { key: "state", header: t("vendorCredits.columns.state"), render: (row) => <CreditStateBadge credit={row} testId="credit-row-state" />, sortValue: (row) => CREDIT_STATES.indexOf(creditState(row)) },
-    { key: "total", header: t("vendorCredits.columns.total"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
+    {
+      key: "state",
+      phone: "badge",
+      header: t("vendorCredits.columns.state"),
+      render: (row) => <CreditStateBadge credit={row} testId="credit-row-state" />,
+      phoneRender: (row) => (
+        <>
+          <CreditStateBadge credit={row} testId="credit-row-state" />
+          {row.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorCredits.table.openingBalance")}</Badge>}
+        </>
+      ), sortValue: (row) => CREDIT_STATES.indexOf(creditState(row)),
+    },
+    { key: "total", phone: "hidden", header: t("vendorCredits.columns.total"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
     {
       key: "left",
+      phone: "trailing",
       header: t("vendorCredits.columns.leftToUse"),
       align: "right",
       render: (row) => (row.status === "void" ? muted : <span className="tabular-nums">{formatMoney(BigInt(row.status === "draft" ? row.totalAmount : row.balanceAmount), row.currency)}</span>),
@@ -100,6 +122,7 @@ export function VendorCreditsTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -123,6 +146,7 @@ export function VendorCreditsTable({
         onPageChange={onPageChange}
         selected={selected}
         onSelectedChange={onSelectedChange}
+        phoneSelecting={phoneSelecting}
         selectLabel={(row) => creditLabel(row)}
       />
     </div>

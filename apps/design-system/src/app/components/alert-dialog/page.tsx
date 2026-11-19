@@ -50,7 +50,7 @@ export default function AlertDialogPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px it stays a small alert in the middle, its buttons full width (US-OPS-60).", 
             "Under 768px it fills the screen width with a 16px gutter each side (US-OPS-15).",
             "Focus is trapped and automatically managed.",
             "Can be controlled or uncontrolled.",

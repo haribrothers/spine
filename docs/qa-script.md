@@ -5761,3 +5761,167 @@ Use a job that's Active, with a few site photos (one added by you, one by someon
 7. Regression: the main `docker-compose.yml` and `install.sh` behave as in section 260; the Coolify file as in section 266.
 8. Dockge: **+ Compose**, paste the file, put the three settings in the `.env` box and **Deploy**: Spine opens on port 7746 and sign-in works.
 9. Runtipi (D-282): add `https://github.com/haribrothers/spine-runtipi` under **Settings › App Stores**, install Spine with **expose locally** on and the address `https://spine.<local domain>`. With the local certificate trusted, that address opens, sign-up and sign-in work, and Settings › About Spine shows the store's version. Then follow the store README's "Move an existing Spine install into Runtipi" with a backup from a plain install: sign in with an account from the backup, and its data is there.
+
+## 283. Fix what's broken on a phone today (US-OPS-61, Phase 12)
+
+Automated: `us-ops-61.spec.ts`. At 390×844 (a phone, or the browser's device toolbar with touch on):
+
+1. Open a job: Milestones, Variation orders, Photos, Notes, Crew and Costing sit in one row with their counts, none on two lines or on top of another; swipe the row to reach the last tabs.
+2. Open a draft invoice: Edit, Preview PDF, Issue invoice and More all fit inside the screen, wrapping onto a second row; nothing runs off the right edge. Do the same on an issued invoice, a quote, a job, a payment, a credit note, an expense, a vendor bill, a vendor credit and a vendor payment.
+3. On the same records, the breadcrumb ("Billing › Invoices › …") is one line with every item level; a long record name shortens with "…".
+4. Open Invoices: the selection boxes in the table are small squares with ticks when chosen, not big empty boxes; ticking one still shows the bulk bar.
+5. Open ☰: the search field reads "Search…" with no ⌘K hint.
+6. Open Reports › Profit & loss: Profit & Loss, Balance Sheet, Trial Balance and Cash Flow sit in one row that scrolls sideways.
+7. Checkboxes, radio buttons and switches elsewhere (Settings › Notifications, the filter sheet's options, a new contact's Type) keep their small size and are still easy to tap.
+8. Regression, at desktop width: tabs, breadcrumbs, record headers and checkboxes look and work as before; the search field shows ⌘K (Ctrl K on Windows); segmented buttons (the dashboard's Accrual · Cash and 3M · 6M · 12M) keep their size on a phone.
+
+## 284. Check every page at phone width before each release (US-OPS-62, Phase 12)
+
+Automated: `us-ops-62.spec.ts` runs in the `phone` Playwright project (390×844, touch, a phone user agent) as part of `pnpm verify` and before every release. It opens every route in `apps/e2e/tests/routes.ts` (the same list as the accessibility check), every Settings pane and the bundled guide, in light and dark.
+
+1. Run `pnpm --filter @spine/e2e test --project=phone`. It passes.
+2. Break a page on purpose (for example give a heading `white-space: nowrap` with a long title) and run it again: it fails naming the route and the check ("/invoices · sideways scroll"), and the HTML report has that page's screenshot.
+3. The two checks still waiting for their stories are listed at the top of the spec: "the tab bar shows" (US-OPS-54) and "the main action is on the first screen" (US-OPS-57, US-OPS-58). Each wave that ships one removes its line.
+4. Regression: `us-ops-17.spec.ts` still visits the same routes (both read `routes.ts`).
+
+## 285. Get around the web app from tabs along the bottom of my phone (US-OPS-54, Phase 12)
+
+Automated: `us-ops-54.spec.ts`, `us-ops-54.test.ts`. On a phone, or the browser's device toolbar at 390×844 with touch:
+
+1. Sign in as the Owner. Along the bottom: Home, Sales, Jobs, Money and More, each with its icon and label; Home has a tinted pill behind its icon. There's no ☰ menu and no sidebar.
+2. Tap Sales: Quotes opens, with Quotes · Contacts · Pipeline · Meetings · Catalogue in a row at the top that scrolls sideways. Tap Money: Invoices, with its row. Open Payments, go to Jobs, then tap Money again: Payments opens.
+3. The top bar shows the page's name, 🔍 and the bell; no logo and no breadcrumb. Scroll Invoices halfway, open an invoice: the top bar reads "Invoice" with ‹. Tap ‹: Invoices, scrolled where you left it. Open an invoice from a pasted link in a new tab and tap ‹: Invoices.
+4. Tap More: a sheet with every page grouped as the sidebar is, then your account, Settings, Help and Sign out; the tabs are hidden behind it. Close it with ✕, then by swiping its header down, then by tapping Users (Users opens).
+5. New quote: it fills the screen with no tabs. On Contacts, tap the search field: the tabs step aside while the keyboard is up.
+6. Sign in as the demo Field member (marcus.webb.demo@example.com): Home, Sales (Meetings), Jobs and More; no Money. Expenses is under More.
+7. Switch to dark mode: the bar, the pill and the sheet follow it, and text stays readable.
+8. Regression: from 768px up (a tablet, or a wider window) the sidebar, search with ⌘K, the account menu and page headers with their breadcrumbs are as before. US-OPS-14's dashboard checks (two key figures per row) still hold.
+
+## 286. Use dialogs, menus and pickers made for my phone (US-OPS-60, Phase 12)
+
+Automated: `us-ops-60.spec.ts`, `us-ops-60-phone.a11y.test.tsx`. At 390×844 with touch:
+
+1. Payments › Record payment: it slides up and fills the screen. Cancel is top left and Record payment top right; there's no ✕. Tap into Amount: the field stays above the keyboard. Escape (or Cancel) closes it.
+2. Invoices, a row's ⋯: an action sheet rises with each action's icon, Delete or Void in red, and Cancel at the end. Tap the dimmed page or Cancel: it closes. Choose Delete on a draft: a small alert in the middle asks first, its two buttons full width.
+3. Open the Status filter: its options rise in a sheet from the bottom. On a new quote, Contact: a sheet with its search at the top. Tap Valid until's date: the month rises in a sheet.
+4. The bell: notifications rise from the bottom. Drag the grabber up: it takes the whole screen. Drag it down: it shrinks, and again: it closes.
+5. 🔍: search fills the screen with Cancel at the top right; no ⌘K, Esc or "Enter to open" hints.
+6. With Settings › Accessibility › Reduce motion on (or the browser's reduced-motion setting), the sheets appear without sliding.
+7. Regression, from 768px up: dialogs are centred with their footer at the bottom and ✕ at the top right, menus drop down beside their button with no Cancel, selects and date pickers open under their field, drawers come in from the side, and search is the centred palette with ⌘K and Esc.
+
+## 287. Read any list as rows made for my phone (US-OPS-56, Phase 12)
+
+Automated: `us-ops-56.spec.ts`, `us-ops-56-phone.a11y.test.tsx`, `list-row.a11y.test.tsx`. At 390×844 with touch:
+
+1. Open Quotes, Invoices, Credit notes, Contacts, Jobs, Payments, Receivables, Vendor bills, Expenses, Catalogue and Team › Users. Each shows one row per record, with no column headings and nothing scrolling sideways.
+2. On Invoices, a row reads its number and status, then the contact, with the balance and its due line on the right. Tap the row's middle, not the number: the invoice opens. Its ⋯ opens an action sheet.
+3. Tap Select (top bar): each row gets a checkbox and the ⋯ steps aside. Tick two: a dark bar along the bottom shows "2 selected" and the bulk actions. Tap Done: the checkboxes and the bar go. Repeat on Vendor bills and Receivables.
+4. With more than 25 records (the demo catalogue, or after adding some), the list ends with Load more and "25 of N"; tapping it adds the next 25. There's no Columns button and no page-size picker.
+5. Pipeline: the stages are chips with counts, scrolling sideways. Tapping one shows its leads; a lead's ⋯ moves it to another stage.
+6. Contacts has no Table · List · Card switcher. On a slow connection, placeholder rows show while a list loads; an empty list shows the same empty state as on a computer.
+7. Regression, from 768px up: every list is the table it was, with its headings, checkbox column, Columns menu and pager; the pipeline is the board; Contacts' three views are back.
+
+## 288. See a list's figures, filters and main action on the first screen (US-OPS-57, Phase 12)
+
+Automated: `us-ops-57.spec.ts`, `chip-strip.a11y.test.tsx`, `filter-sheet.a11y.test.tsx`, `floating-action-button.a11y.test.tsx`. At 390×844 with touch, on Invoices, then Quotes, Jobs, Payments, Contacts, Credit notes, Expenses, Vendor bills, Vendor credits, Vendor payments, Catalogue, Receivables, Payables, Emails, Journals and Banking:
+
+1. The totals are compact chips (label and figure) in one row; swipe it sideways. The first rows of the list are on the first screen.
+2. Tap a chip (Overdue): the list shows just those, and the chip is marked. Tap it again: all of them.
+3. Search and Filters share one row. Filters opens a sheet with every filter, Clear all and "Show N …". Choose Status: Overdue and Show: a chip "Overdue ×" appears under the row and Filters reads 1. Tap × on the chip: the filter goes.
+4. The main action (New invoice, New quote, Record payment, Add contact…) is a round button above the tabs with its label; scroll the list and it shrinks to +, then comes back. With a screen reader it's still read by its name. Scroll to the end: the last row is above it, not under it.
+5. ⋯ at the top opens the page's other actions (Recurring invoices, Refresh list, Import, Export), each the full width; choosing one closes the sheet. On Receivables, tap Export there: its menu (CSV, Excel, PDF, Print) opens.
+6. Regression, from 768px up: the cards are the grid they were, the filters sit in their row with Clear filters, and New invoice and the other buttons are on the right.
+
+## 289. Read and act on a record on my phone (US-OPS-58, Phase 12)
+
+Automated: `us-ops-58.spec.ts`, `us-ops-58-phone.a11y.test.tsx`, `action-bar.a11y.test.tsx`, `record-header.a11y.test.tsx`; the US-OPS-61 invoice actions check. At 390×844 with touch, open an overdue invoice, then a draft invoice, a quote, a job, a contact, a payment, a credit note, a vendor bill, a vendor credit, a vendor payment and an expense:
+
+1. The top shows the number (or name) and its status, then the key amount (an overdue invoice: "Balance due", the amount in red and "Due … · Overdue N days"), then the contact and the other details. There's no breadcrumb; the back arrow at the top returns to the list.
+2. The next step for its state (Send reminder, Issue invoice on a draft, Record payment, Invoice a milestone on a job) is one full-width button at the bottom, above the tabs. Scroll to the end: it doesn't cover the last section. With the keyboard open in a field, the bar and the tabs step aside.
+3. ⋯ at the top opens the record's other actions as an action sheet headed by its number (and on an invoice "contact · amount due"), with each action's icon and Cancel. A draft invoice's Edit and Preview PDF are there. Void or Delete still asks first. Escape or Cancel closes it and puts focus back on ⋯.
+4. Figures (an invoice's Total, Paid, Balance due; a job's Contract, Billed, Cost, Margin, Complete) are two per row; a last one on its own spans the row.
+5. A job's tabs are one row that scrolls sideways with each count beside its label. Open a job with `?tab=crew`: the Crew tab is in view and chosen.
+6. A quote's or invoice's lines are cards: item and amount, description, "4 × $650.00" (and "10% off"), "Tax 18%"; headings sit between them as small titles; Subtotal, tax, Total (and Paid, Balance due) are under them.
+7. A job's milestones are rows: name and its share on the left, the amount and status on the right, ⋯ with Mark complete, Raise invoice or View invoice, and View history.
+8. Payments, activity and attachments inside a record are rows that fit the screen; nothing scrolls sideways.
+9. Regression, from 768px up: each record's header, its buttons and More menu, the breadcrumb, the figures in one row, the lines table and the milestone list are as they were.
+
+## 290. Build a quote or invoice on my phone (US-OPS-59, Phase 12)
+
+Automated: `us-ops-59.spec.ts`, `us-ops-59-phone.a11y.test.tsx`. At 390×844 with touch, open New quote, then a draft quote's Edit, New invoice, New vendor bill, New vendor credit, Issue credit note on an invoice, and New recurring invoice and New recurring bill:
+
+1. The builder fills the screen: no tabs at the bottom, Cancel at the top left with the title centred, no search or notifications; every field is one under another and nothing scrolls sideways.
+2. Lines are cards: item and amount, description, "3 × $450.00" (and "10% off"), the tax ("Sales Tax 15%"). A new quote's empty first line isn't shown as a card.
+3. Add item opens a sheet: Cancel · New line · Done, then Item (search the catalogue; a bundle adds its lines), Description, Quantity, Unit price, Discount %, Tax, Price includes tax (and HSN/SAC, supply type with GST; Account on a bill), and what the line comes to. Cancel adds nothing; Done adds the card.
+4. Tap a card: the same sheet, "Line 2 of 3", with Move up, Move down (disabled at the ends) and Delete at the bottom. Change the quantity and Cancel: nothing changed. Change it and Done: the card shows it.
+5. The bar at the bottom: the total; tap it for the subtotal and tax. The main button (Save and send, Save and issue, Save and record) and ⋯ with Save as draft and Preview PDF (no preview on bills). Recording a bill still asks first.
+6. Tap into a field (the title, a line's quantity): the bar and the tabs step aside while the keyboard is up, and come back after.
+7. Change something and tap Cancel (or the phone's back): "Leave without saving?" — Keep editing keeps your change; Leave goes back.
+8. Credit note: each invoice line is a card with its tick box and, once ticked, its quantity. Recurring invoice and bill: their lines are cards with the same sheet.
+9. Dark mode: the cards, sheet and bar use the dark surfaces.
+10. Regression, from 768px up: the builders' line rows (drag handle, columns, row menu), the bar with Subtotal, Tax, Total, Cancel, Preview PDF and Save buttons, and the credit note's table are as they were.
+
+## 291. Use a calendar made for my phone (US-MTG-18, Phase 12)
+
+Automated: `us-mtg-18.spec.ts`, `calendar-phone.a11y.test.tsx`; `us-mtg-17.spec.ts` (phone defaults updated). At 390×844 with touch, with meetings on a few days this month:
+
+1. Open Meetings: it shows the month (Month is chosen); weekdays are single letters; today is ringed; each day with meetings has up to three dots in their calendars' colours; with a screen reader a day reads "Wednesday 10 March, 2 meetings".
+2. Under the grid, the chosen day's meetings: time and end time (or All day), the colour bar, title, place and contact; "Nothing on this day." when empty. Tap another day: it's filled and its meetings show.
+3. Swipe the grid left: next month; right: previous. The arrows do the same; Today returns to today. Tap "November 2026 ⌄": Pick a month — change the year with the arrows, tap June.
+4. Day: the week's seven days with their dots over the timeline, scrolled to the working day (or now), a red line at now on today, and "3 meetings · 1 later". Swipe the strip: a week; swipe the timeline: a day. Scrolling up and down doesn't change the day.
+5. Agenda: as before (US-MTG-17).
+6. The toolbar is two rows: month, arrows and Today; then Month · Day · Agenda across the screen. The filter icon in the top bar opens Calendars: the people's calendars, My activities, Upcoming and Meetings by contact, with no mini calendar (the month view is the calendar); each contact's count lines up with its name.
+7. Tap +: New event opens full screen on the chosen day (today: the next half hour; another day: 9:00). Tap a meeting in any view: its quick view rises as a bottom sheet with its own title and close.
+8. Dark mode: dots, today's ring and the chosen day read clearly.
+9. Regression, from 768px up: the toolbar, Week, the month grid with event chips, the quick view popover beside the event, and drag to create, move and resize in Day and Week are as they were.
+
+## 292. Read reports on my phone (US-RPT-41, Phase 12)
+
+Automated: `us-rpt-41.spec.ts`, `us-rpt-41-phone.a11y.test.tsx`. At 390×844 with touch:
+
+1. Reports: each group's reports are rows the width of the screen, 44px or taller, each with its star; tap one to open it.
+2. Profit & Loss: under the tabs (one row; swipe it for Cash Flow), one line "Jan 1 – Nov 19, 2026 · Accrual · No comparison". Tap it: Report filters with From, To, Compare with and Basis, one per row; change Basis to Cash and tap Show report — the line says Cash. ⋯ at the top has Export, and its menu opens.
+3. The cards are chips in one row that scrolls sideways. The chart is the screen's width; its months don't overlap; the legend is under it.
+4. The statement is a list: INCOME, each account indented with its amount and a chevron, Total income in bold, Net profit last on a grey band. Tap anywhere on an account's row: its entries open. Compare with Previous period: each amount has last period's under it in grey. Compare with Each month: a table whose Account column stays put as you swipe the months.
+5. Balance Sheet, Cash Flow and Tax Summary read the same way; each line says what its filters are ("As of Nov 19, 2026 · …").
+6. Trial Balance: a table — code above each account name in a column that stays put while Debit and Credit scroll; the page itself never scrolls sideways. GSTR-1, the general ledger and the day book are tables like it.
+7. Sales by customer, Sales by item, Expenses by category, Payments received, Job profitability: one row per line, the main figure on the right.
+8. Receivables and Payables: the age cards are chips.
+9. Tally › Account mapping (Owner): each account's group picker is in its row.
+10. Regression, from 768px up: every report's filters, Export, cards, chart, tables and the Reports page are as they were.
+
+## 293. See my dashboard laid out for my phone (US-DASH-31, Phase 12)
+
+Automated: `us-dash-31.spec.ts`. At 390×844 with touch, as the Owner:
+
+1. Home: "Good morning, <name> · Thu, Nov 19" in one line, then Needs your attention, then the key figures two per row, then Today, Get started and the other cards one under another. Nothing is cut off on the right; the greeting and the first attention item are on the first screen.
+2. Needs your attention: each row has its icon, what it is and its detail, and its button on the right (Send reminder, Review, Approve). With more than three, "Show all 5" shows the rest, then "Show fewer".
+3. ⋯ at the top: Accrual and Cash; choose Cash — the figures change and the choice is kept. There's no Edit layout.
+4. On a computer, hide a card with Edit layout; back on the phone it's hidden there too.
+5. As Staff and Field: the same order without what they can't see (no key figures for Field).
+6. Regression, from 768px up: the header with Accrual/Cash and Edit layout, the side column from 1440px and the grid are as they were.
+
+## 294. Open Spine from my phone's home screen like an app (US-OPS-55, Phase 12)
+
+Automated: `us-ops-55.spec.ts`; `us-set-26.test.tsx` (manifest). On a real iPhone and an Android phone, signed in to your Spine:
+
+1. iPhone (Safari): Share › Add to Home Screen. Android (Chrome): ⋮ › Add to Home screen / Install app. The icon is Spine's.
+2. Open it from the icon: no address bar or browser toolbar; it starts on the dashboard; the top bar sits below the notch and the tab bar above the home indicator, in light and dark.
+3. On an iPhone, sign in once inside it (it keeps its own sign-in).
+4. Open an invoice, then the back arrow: back to Invoices. Swipe back (iPhone) or use the back gesture (Android): the same.
+5. Tap a link to another site (Help in More, a contact's website): it opens in the browser, and Spine stays where it was.
+6. Regression: in the browser (not from the home screen), everything is as before; on a computer nothing changes.
+
+## 295. Phone lists, the pipeline and the meetings sheet after the Owner's review (Phase 12)
+
+Automated: `us-ops-57.spec.ts` (pipeline), `us-ops-62.spec.ts` (row titles on one line), `us-mtg-17.spec.ts`, `us-mtg-18.spec.ts`, `us-dash-31.spec.ts` (time zones). At 390×844:
+
+1. Quotes, Contacts, Jobs, Expenses, Payments, Credit notes, Vendor bills, Vendor credits, Vendor payments, Catalogue, Emails, Banking, Receivables, Payables, Team: each row's title (number or name) is one line; its badges sit beside it or wrap under it; the second line says who it's for and one more thing; the amount is on the right with its note. Contacts show "Customer · email" and only Archived as a badge.
+2. Search and Filters span the page's width on every list.
+3. A chip that filters (Overdue, Waiting for approval) shows no icon over its label.
+4. Pipeline: stage chips first, then "9 leads · $… open · Win rate 67%", then search and Filters, then the stage's leads as rows, "Move a lead to another stage from its ⋯ menu.", Add lead floating; ⋯ at the top has Refresh.
+5. Meetings: the filter icon opens Calendars — the people's calendars, My activities, Upcoming, Meetings by contact (counts in line with the names), no mini calendar.
+6. Dashboard: with the server in UTC and the phone in another time zone, the greeting matches the phone's time and no error shows. With large amounts (the demo business), Income and expenses lists its totals one per line; every card's heading link is level with its title; Accounts rows line up; nothing overlaps.
+7. Regression, from 768px up: every list's columns, the pipeline board and the meetings sidebar with its mini calendar are as they were.
+8. Search (top bar's magnifier): 16px of room above the field, which is a filled rounded box with the icon inside and Cancel beside it; the scopes are pills under it with room before the list; Include archived (when there's something archived) is a pill with them; results are tall enough to tap; from 768px up search is as it was.
+9. Open Reports from More, then Banking: the Money tab is chosen and the row under the title has Reports (then Banking) in view and underlined.

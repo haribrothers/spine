@@ -60,7 +60,7 @@ export function TodayCard({ className }: { className?: string }) {
           {entries.map((entry) => (
             <li key={`${entry.kind}-${entry.id}`} data-kind={entry.kind}>
               <Link href={entry.href} className="flex items-stretch gap-3 rounded-sm py-3 hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <span className="w-24 shrink-0 text-[12px] text-on-surface-muted">{entry.when}</span>
+                <span className="w-24 shrink-0 text-[12px] text-on-surface-muted max-md:w-[72px]">{entry.when}</span>
                 <span className={cn("w-0.5 shrink-0 rounded-full", BAR[entry.kind])} aria-hidden />
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-[14px] font-semibold text-on-surface">{entry.title}</span>

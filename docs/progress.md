@@ -663,7 +663,24 @@ Spec and screens before building (D-256–D-259), on `phase-11-mcp`.
 - [x] US-OPS-16 · Move every user-facing string into translation files
 - [x] US-OPS-17 · Pass an accessibility audit of every screen
 - [x] US-OPS-18 · Complete a security review before 1.0 (signed off by the Owner 2026-11-15)
-- [ ] US-OPS-19 · Ship the README, licence and contributor guide (README, LICENSE, CONTRIBUTING, code of conduct, issue and PR templates and docs/release.md done; waiting for the Owner's clean-machine test: follow only the README to a first invoice)
+- [x] US-OPS-19 · Ship the README, licence and contributor guide (README, LICENSE, CONTRIBUTING, code of conduct, issue and PR templates and docs/release.md; the Owner's clean-machine test passed on 2026-11-17 with 1.0.0-beta.5: only the README, a fresh machine to a first invoice in under 5 minutes)
+
+### Milestone 2 · the web app as a phone app (D-283)
+
+Docs done 2026-11-18. Designs drawn 2026-11-18: 28 screens in `docs/design/screens.md` › "Web app at phone width", approved by the Owner the same day. The build goes in waves; wave 1 (US-OPS-61, US-OPS-62) committed 2026-11-18; wave 2 (US-OPS-54, US-OPS-60) done 2026-11-18; wave 3 (the lists): US-OPS-56 and US-OPS-57 done 2026-11-19; wave 4 (records and builders): US-OPS-58 and US-OPS-59 done 2026-11-19; wave 5: US-MTG-18, US-RPT-41 and US-DASH-31 done 2026-11-19; wave 6: US-OPS-55 done 2026-11-19. US-OPS-62's checks are all on (nothing left waiting) and run in `pnpm verify` and the release's E2E. Next: `pnpm verify` and the PR.
+
+- [x] US-OPS-61 · Fix what's broken on a phone today (job and report tabs, record headers, breadcrumbs, the selection boxes, the ⌘K hint)
+- [x] US-OPS-62 · Check every page at phone width before each release (the phone project runs on every route, light and dark; its tab-bar check is on since US-OPS-54; the main-action check covers the lists' floating button since US-OPS-57 and a record's action bar since US-OPS-58)
+- [x] US-OPS-54 · Get around the web app from tabs along the bottom of my phone (a Field member gets no Money tab; their expenses are under More)
+- [x] US-OPS-60 · Use dialogs, menus and pickers made for my phone
+- [x] US-OPS-56 · Read any list as rows made for my phone (the pipeline's leads stay compact cards, one stage at a time)
+- [x] US-OPS-57 · See a list's figures, filters and main action on the first screen
+- [x] US-OPS-58 · Read and act on a record on my phone
+- [x] US-OPS-59 · Build a quote or invoice on my phone
+- [x] US-MTG-18 · Use a calendar made for my phone
+- [x] US-RPT-41 · Read reports on my phone
+- [x] US-DASH-31 · See my dashboard laid out for my phone
+- [x] US-OPS-55 · Open Spine from my phone's home screen like an app
 
 ### Milestone 2 · website and help
 

@@ -6,7 +6,10 @@ import {
   Alert,
   AlertDescription,
   Button,
+  ChipStrip,
   EmptyState,
+  FilterSheet,
+  FloatingActionButton,
   Input,
   MultiSelect,
   PaginationBar,
@@ -15,8 +18,9 @@ import {
   TooltipContent,
   TooltipTrigger,
   cn,
+  type FilterChip,
 } from "@spine/ui";
-import { RefreshCw, Search, Upload, Users } from "lucide-react";
+import { Plus, RefreshCw, Search, Upload, Users } from "lucide-react";
 import { replaceQuery } from "../../../lib/replace-query";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -44,6 +48,8 @@ import { useToast } from "../../../components/toast-host";
 
 import { SectionLink } from "../../../components/section-link";
 import { t as translate, useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: translate("contacts.common.typeCustomer") },
   { value: "vendor", label: translate("contacts.common.typeVendor") },
@@ -84,6 +90,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   const [now, setNow] = useState(() => Date.now());
   const [announcement, setAnnouncement] = useState("");
   const [view, setView] = useState<ContactView>("table");
+  const isPhone = useIsPhone();
   const [hydrated, setHydrated] = useState(false);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
@@ -231,10 +238,28 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
 
   const filtersOn = hasFilters(state);
   const searching = state.q.trim().length > 0;
+  const clearAll = () => update({ types: [], status: ["active"], q: "" });
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone). Status
+  // "Active" alone is the default, so it gets no chip; removing the last status goes back to it.
+  const defaultStatus = state.status.length === 1 && state.status[0] === "active";
+  const filterChips: FilterChip[] = [
+    ...state.types.map((type) => ({ key: `type-${type}`, label: TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type, onRemove: () => update({ types: state.types.filter((x) => x !== type) }) })),
+    ...(defaultStatus
+      ? []
+      : state.status.map((status) => ({
+          key: `status-${status}`,
+          label: ARCHIVED_OPTIONS.find((o) => o.value === status)?.label ?? status,
+          onRemove: () => {
+            const rest = state.status.filter((s) => s !== status);
+            update({ status: rest.length > 0 ? rest : ["active"] });
+          },
+        }))),
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="contact-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="contact-stats">
         {statButton(t("contacts.explorer.statTotal"), stats.total, null, t("contacts.explorer.statTotalHint"))}
         {statButton(t("contacts.explorer.statCustomers"), stats.customers, STAT_TYPES.customers, t("contacts.explorer.statCustomersHint"))}
         {statButton(t("contacts.explorer.statVendors"), stats.vendors, STAT_TYPES.vendors, t("contacts.explorer.statVendorsHint"))}
@@ -246,11 +271,18 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
             className="h-full transition-colors hover:border-border-strong"
           />
         </SectionLink>
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={contacts ? t("contacts.explorer.showCount", { count: contacts.length }) : undefined}
+          >
             <MultiSelect
               options={TYPE_OPTIONS}
               value={state.types}
@@ -267,37 +299,55 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
               aria-label={t("contacts.explorer.filterByStatus")}
               className="w-36"
             />
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="contacts-updated">
                 {refreshing ? t("contacts.explorer.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  aria-label={t("contacts.explorer.refreshList")}
-                  aria-busy={refreshing}
-                  disabled={refreshing || !all}
-                  onClick={() => void load("refresh")}
-                >
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+            <PhoneMoreActions>
+              {isPhone ? (
+                <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !all} onClick={() => void load("refresh")}>
+                  <RefreshCw size={16} aria-hidden />
+                  {t("contacts.explorer.refreshList")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("contacts.explorer.refreshList")}</TooltipContent>
-            </Tooltip>
-            <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
-            {canCreate && <span className="mx-0.5 h-6 w-px bg-border" aria-hidden />}
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      aria-label={t("contacts.explorer.refreshList")}
+                      aria-busy={refreshing}
+                      disabled={refreshing || !all}
+                      onClick={() => void load("refresh")}
+                    >
+                      <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("contacts.explorer.refreshList")}</TooltipContent>
+                </Tooltip>
+              )}
+              {/* US-OPS-56: on a phone contacts are always rows, so the switcher isn't offered. */}
+              {isPhone ? null : <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />}
+              {canCreate && !isPhone && <span className="mx-0.5 h-6 w-px bg-border" aria-hidden />}
+              {canCreate && (
+                <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                  <Upload size={14} />
+                  {t("contacts.explorer.importCsv")}
+                </Button>
+              )}
+            </PhoneMoreActions>
             {canCreate && (
-              <Button variant="secondary" onClick={() => setImportOpen(true)}>
-                <Upload size={14} />
-                {t("contacts.explorer.importCsv")}
-              </Button>
+              <FloatingActionButton>
+                <Button onClick={() => setDrawerOpen(true)}>
+                  {/* The floating button shrinks to its icon while the page scrolls; the desktop button has none. */}
+                  {isPhone && <Plus size={14} aria-hidden />}
+                  {t("contacts.explorer.addContact")}
+                </Button>
+              </FloatingActionButton>
             )}
-            {canCreate && <Button onClick={() => setDrawerOpen(true)}>{t("contacts.explorer.addContact")}</Button>}
           </div>
         </div>
         <p role="status" className="sr-only">
@@ -319,7 +369,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
         <ContactsSkeleton view={hydrated ? view : "table"} />
       ) : contacts.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -327,7 +377,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
                 title={t("contacts.explorer.noMatchFilters")}
                 description={t("contacts.explorer.noMatchFiltersDescription")}
                 action={
-                  <Button variant="secondary" onClick={() => update({ types: [], status: ["active"], q: "" })}>
+                  <Button variant="secondary" onClick={clearAll}>
                     {t("contacts.explorer.clearFilters")}
                   </Button>
                 }
@@ -353,8 +403,8 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
             )}
           </div>
         </div>
-      ) : view === "table" ? (
-        <ContactsTable contacts={contacts} onChanged={handleRowChanged} page={state.page} onPageChange={(next) => update({ page: next })} toolbarStart={search} />
+      ) : view === "table" || isPhone ? (
+        <ContactsTable contacts={contacts} onChanged={handleRowChanged} page={state.page} onPageChange={(next) => update({ page: next })} toolbarStart={isPhone ? <span /> : search} />
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex">{search}</div>

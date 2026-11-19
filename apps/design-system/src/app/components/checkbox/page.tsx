@@ -26,6 +26,7 @@ export default function CheckboxPage() {
             "Can be controlled or uncontrolled.",
             "Supports indeterminate state.",
             "Full keyboard navigation.",
+            "Under 768px it keeps its 18px size, with a 44px tap area drawn around it (US-OPS-61).",
           ]}
         />
       </DocSection>

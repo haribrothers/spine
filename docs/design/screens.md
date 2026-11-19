@@ -1,6 +1,6 @@
 # Screens
 
-Every screen in the product: 621 in total (60 added for Phases 8–9 on 2026-10-06, D-133; the refinements before Phase 10; 17 for the AI assistant, reworked for Phase 10, D-162, D-242; and 10 for connected agents in Phase 11, D-256). **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
+Every screen in the product: 649 in total (60 added for Phases 8–9 on 2026-10-06, D-133; the refinements before Phase 10; 17 for the AI assistant, reworked for Phase 10, D-162, D-242; 10 for connected agents in Phase 11, D-256; and 28 for the web app at phone width in Phase 12, D-283). **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
 
 The design canvas with every drawn screen: [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY). Phase 8–9 screens are on its pages "Phase 8 · Books completeness" and "Phase 9 · Tax, documents and setup" (the AI assistant screens are in its "AI assistant" groups); they share one sidebar component (`V1Sidebar`) that adds Banking, Vendor Credits and Journals to the navigation.
 
@@ -2343,6 +2343,8 @@ Shows: "From:" · "Riverstone Builders <quotes@riverstone.example>" · "Subject:
 
 Links to: `AppShellPhoneNav`
 
+Superseded under D-283 by `DashboardPhone` and `AppShellPhoneTabs` (tabs along the bottom, no breadcrumb, attention first); kept as a record of the Phase 8 layout.
+
 Shows: "AM" · "Overview › Dashboard" · "Welcome, Alex Morgan" · "Cash position" · "12,024.75 USD" · "Receivables" · "35,165.50 USD" · "Overdue invoices" · "Revenue this month" · "45,265.00 USD" · "Upcoming meetings" · "View calendar" · "Monday site stand-up" · "Mon, Oct 5, 8:00 AM" · "Progress review — Phase 2 townhomes" · "Tue, Oct 6, 2:30 PM" · "Receivables aging" · "View all" · "Current 30,623.00 · 1–30 days 4,542.50" · "Tables scroll sideways in their own box at this width; charts stack one per row."
 
 ### EmailDailyDigest — Daily digest email
@@ -3059,6 +3061,8 @@ Shows: "1:00 PM – 2:00 PM" · "Plot 14, Whitefield, Bengaluru" · "Karthik Sub
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-17 · **Source:** Claude Design
 
 ![MeetingsPhone](screens/MeetingsPhone.webp)
+
+Since US-MTG-18 a phone opens on the month (`MeetingsPhoneMonth`); Agenda is still one tap away and works as drawn here.
 
 Links to: —
 
@@ -5469,6 +5473,8 @@ Shows: "Something went wrong on our side" · "Spine couldn't finish loading this
 
 Links to: `AppShellPhone`
 
+Superseded under D-283 by `AppShellPhoneMore`: the slide-over menu becomes the More tab's sheet.
+
 Shows: "Welcome, Alex Morgan" · "Overview" · "Dashboard" · "Sales" · "Contacts" · "Pipeline" · "Meetings" · "Catalogue" · "Quotes" · "Jobs" · "Billing" · "Invoices" · "Credit Notes" · "Payments" · "Receivables" · "Purchases" · "Vendor Bills" · "Expenses" · "Vendor Payments" · "Payables" · "Reports" · "Team" · "Users" · "Teams" · "Audit log" · "AM" · "Alex Morgan"
 
 ### SearchPalette — Global search (Cmd/Ctrl+K)
@@ -5993,3 +5999,286 @@ Shows: Record type "Agent request" · "Drafted a quote" (Quote · Draft · Harbo
 Links to: `AuditLogAgent`
 
 Shows: "Draft quote" with no number (it's given one when sent) · "Claude created this draft for you. Check the lines, prices and customer before you send it — nothing has gone to Harbour Road Residences." · catalogue lines with totals worked out by Spine · Activity "Created as a draft · via Claude for Priya Raman" · "Edit" "Send quote"
+
+## Web app at phone width (D-283)
+
+How the web app looks under 768px for Owners and Staff: tabs along the bottom, lists as rows, records with their main action at the bottom, full-screen builders, sheets instead of pop-ups, a phone calendar, reports as indented lists and the dashboard in phone order ([D-283](../prd/12-decisions.md), [features/18-ops.md](../features/18-ops.md) F-OPS-14, US-MTG-18, US-RPT-41, US-DASH-31). 768px and up doesn't change.
+
+Drawn in Claude Design for US-OPS-54 to US-OPS-60, US-MTG-18, US-RPT-41 and US-DASH-31: canvas [Spine web — phone layout](https://claude.ai/artifact/XsR79hmzQMj7EzVgYNF78C), in three rows (shell and lists; records, builders and sheets; calendar, reports and dashboard). Every board is 390×844 and uses one shared stylesheet, `phone.css`, whose values are copied from `tokens.json` (light and dark), with Inter and Lucide icons. Each dark board is its light board with only the theme switched, so the two can't drift. The data is the refined screens' demo business on Wednesday 18 November 2026: Sahyadri Retail, INV-0038, JOB-002, rupees, and the figures add up (invoice lines to totals, P&L to net profit, the trial balance to equal sides).
+
+Patterns every phone screen shares:
+- **Top bar** (56px): the page's title, search, notifications and one ⋯ for the page's other actions; records, builders' parents and pages below an area's first page add a back arrow on the left. No breadcrumb, no logo, no ⌘K.
+- **Area row**: Sales and Money pages show the area's pages in a row under the top bar that scrolls sideways, the current one underlined.
+- **Tab bar**: Home (`House`), Sales (`FileText`), Jobs (`HardHat`), Money (`Wallet`), More (`Menu`); the current tab has a tinted pill behind its icon and a heavier label. It shows on lists and records; builders, full-screen sheets and Select mode hide it.
+- **Lists**: summary chips that scroll sideways, then search with Filters, then rows (title and status, subtitle, amount and its state on the right, ⋯), with a floating button for the main action above the tab bar.
+- **Sheets**: bottom sheets have a grabber, a title and Close; action sheets have a header naming the record, each action with its menu icon (D-222), a danger-coloured destructive action ending in "…" because it still asks first (D-218), and a separate Cancel. A form dialog is a full-screen sheet with Cancel on the left and its action on the right.
+
+### AppShellPhoneTabs — The phone shell on Sales › Quotes: top bar, area row, rows and the tab bar
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-54, US-OPS-56, US-OPS-57 · **Source:** Claude Design
+
+![AppShellPhoneTabs](screens/AppShellPhoneTabs.webp)
+
+Links to: `AppShellPhoneMore`, `QuoteBuilderPhone`, `PipelinePhone`, `MeetingsPhoneMonth`
+
+Shows: "Quotes" with search, notifications (3) and ⋯ · area row "Quotes" (current) "Contacts" "Pipeline" "Meetings" "Catalogue" · chips "Open ₹42,18,600" "Waiting for reply ₹18,40,000" "Expire this week ₹5,10,000" "Accepted this month" · "Search quotes" with "Filters" · rows: "Draft" (italic) "Ananya Rao · Kitchen and dining refit" "₹3,84,200"; "QUO-0034" "Sent" "Halcyon Tech Parks · Lobby fit-out" "₹12,80,000" "Valid to 2 Dec"; "QUO-0033" "Viewed"; "QUO-0032" "Expiring" "Expires Fri"; "QUO-0031" "Accepted" "JOB-002"; "QUO-0030" "Declined"; "QUO-0028" "Expired" · floating "+ New quote" · tabs "Home" "Sales" (current) "Jobs" "Money" "More"
+
+### AppShellPhoneTabsDark — The phone shell in dark mode
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-54 · **Source:** Claude Design
+
+![AppShellPhoneTabsDark](screens/AppShellPhoneTabsDark.webp)
+
+Links to: `AppShellPhoneTabs`
+
+Shows: The same Quotes page from the dark tokens: `surface` #191815 bars on a #121110 page, status colours from their dark values, the primary button and the current tab in #6b8aff with dark text on filled controls (`on-primary`)
+
+### AppShellPhoneMore — More: the whole menu in a sheet
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-54 · **Source:** Claude Design
+
+![AppShellPhoneMore](screens/AppShellPhoneMore.webp)
+
+Links to: `AppShellPhoneTabs`
+
+The sheet scrolls; the board shows its top. Groups and pages are the ones the person can open, from the same checks as the sidebar.
+
+Shows: A sheet over the page with a grabber, "Menu" and Close · the sidebar's groups in two columns, each page with its icon: "Overview" Dashboard · "Sales" Contacts, Pipeline, Meetings, Catalogue, Quotes (current, tinted) · "Jobs" · "Billing" Invoices, Credit notes, Payments, Receivables · "Purchases" Vendor bills, Vendor credits, Expenses, Vendor payments, Payables · "Money" Banking · "Reports" Reports, Journals · and, as it scrolls, "Team" Users, Teams, Audit log, then "Priya Raman · Owner · Meridian Builders" with "Settings", "Help" and "Sign out"
+
+### AppShellPhoneStandalone — Spine opened from the home screen
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-OPS-55 · **Source:** Claude Design
+
+![AppShellPhoneStandalone](screens/AppShellPhoneStandalone.webp)
+
+Links to: `DashboardPhone`
+
+Shows: The dashboard with no browser bar: the top bar sits below the notch area and the tab bar above the home indicator (`env(safe-area-inset-*)`); nothing else changes
+
+### InvoicesPhone — Invoices as rows made for a phone
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-56, US-OPS-57 · **Source:** Claude Design
+
+![InvoicesPhone](screens/InvoicesPhone.webp)
+
+Links to: `InvoiceDetailPhone`, `InvoicesPhoneSelect`, `InvoicesPhoneFilters`, `ActionSheetPhone`
+
+Shows: "Invoices" with "Select", search, notifications and ⋯ · area row "Invoices" (current) "Payments" "Receivables" "Credit notes" "Bills" "Expenses" · chips "Outstanding · 5 ₹45,58,015" "Overdue · 3 ₹17,38,015" (red) "Due in 7 days · 2 ₹28,20,000" (amber) "Paid this month ₹9,62,740" · "Search invoices" "Filters" · rows with the balance due: "Draft" "Ananya Rao · Bathroom refit — 2nd floor" "₹2,24,790.00" "Not issued"; "INV-0046" "Due" "Sahyadri Retail · Progress claim 3" "₹25,84,000.00" "Due 25 Nov"; "INV-0045" "Part paid" "Due in 2 days"; "INV-0044" "Overdue" "Lakshmi Multispeciality Hospital" "6 days late"; "INV-0043" "Paid" "Paid 12 Nov"; "INV-0040" "Overdue" "13 days late"; "INV-0038" "Overdue" "₹13,25,514.50" "45 days late"; "INV-0036" "Void" "Voided 30 Oct" · floating "+ New invoice" · "Money" tab current
+
+### InvoicesPhoneDark — Invoices in dark mode
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-56 · **Source:** Claude Design
+
+![InvoicesPhoneDark](screens/InvoicesPhoneDark.webp)
+
+Links to: `InvoicesPhone`
+
+Shows: The same list from the dark tokens; badges keep their text-on-tint pairs (`overdue` on `overdue-bg` and so on), each above 4.5:1
+
+### InvoicesPhoneSelect — Selecting invoices for a bulk send
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-56 · **Source:** Claude Design
+
+![InvoicesPhoneSelect](screens/InvoicesPhoneSelect.webp)
+
+Links to: `InvoicesPhone`
+
+Shows: Top bar "Select all" · "3 selected" · "Done" · the Overdue chip on and a "Status: Overdue ×" filter chip, "Filters 1" · rows with ticked boxes in place of ⋯, tinted: INV-0044, INV-0040, INV-0038 · "3 of 3 overdue invoices" · in place of the tab bar: "3 selected · ₹17,38,014.50 outstanding", "Download PDFs" and "Send reminders (3)" (which asks first, D-218)
+
+### InvoicesPhoneFilters — Every filter and the sort in one sheet
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-57 · **Source:** Claude Design
+
+![InvoicesPhoneFilters](screens/InvoicesPhoneFilters.webp)
+
+Links to: `InvoicesPhone`
+
+Shows: A sheet over the list: "Filters" with Close · "Status" chips Draft, Due, Part paid, "Overdue" (on, with a tick), Paid, Void · "Contact All contacts ›", "Job Any job ›", "Issued Any time ›" · "Sort by" Issued, newest first (chosen) / Due date, soonest first / Balance due, largest first / Number · "Clear all" and "Show 3 invoices"
+
+### PipelinePhone — The pipeline one stage at a time
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-56 · **Source:** Claude Design
+
+![PipelinePhone](screens/PipelinePhone.webp)
+
+Links to: `AppShellPhoneTabs`
+
+Shows: Area row with "Pipeline" current · stage chips with counts "New 2" "Qualified 4" (chosen) "Proposal 3" "Won 4" "Lost 1" · "4 leads · ₹34,10,500 open" "Win rate 80%" · "Search leads" "Filters" · rows "Office interiors — 3rd floor" "Halcyon Tech Parks · Referral" "₹12,40,000" "Follow up today"; "Clinic expansion" "Meeting Fri"; "Showroom refit" "12 days in stage"; "Data hall cooling" · "Move a lead to another stage from its ⋯ menu." · floating "+ Add lead"
+
+### InvoiceDetailPhone — An invoice on a phone: state, amount and the next step
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-58 · **Source:** Claude Design
+
+![InvoiceDetailPhone](screens/InvoiceDetailPhone.webp)
+
+Links to: `InvoicesPhone`, `InvoiceDetailPhoneActions`, `RecordPaymentPhone`
+
+Below the lines, as it scrolls: the totals in the PDF's order, Payments and Activity as phone rows.
+
+Shows: Back arrow, "Invoice", search, notifications, ⋯ · "INV-0038" "Overdue" "Progress claim 2" · "Balance due ₹13,25,514.50" (red) "45 days overdue · due 4 Oct" · "Sahyadri Retail Pvt Ltd" (link) · "Issued 4 Sept" "JOB-002 · Steel structure" · figures two per row: "Total ₹24,47,910.00 incl. IGST ₹3,73,410.00", "Paid ₹10,00,000.00" with a bar, "Retention held ₹1,22,395.50 5%, released at handover", "Last reminder 3 Nov Automatic, at 30 days overdue" · "Lines · 3" "Amounts include tax" "Steel structure — milestone 2 of 3" · line cards "Fabricated steel columns and trusses ₹20,74,440.00 Erected and bolted to the approved drawings. 1 × ₹17,58,000.00 IGST 18%" and "Crane hire and erection crew ₹3,02,670.00 6 days × ₹45,000.00 · 5% off" · bar at the bottom "Send reminder" (full width) above the tab bar
+
+### InvoiceDetailPhoneDark — An invoice in dark mode
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-58 · **Source:** Claude Design
+
+![InvoiceDetailPhoneDark](screens/InvoiceDetailPhoneDark.webp)
+
+Links to: `InvoiceDetailPhone`
+
+Shows: The same invoice from the dark tokens; the balance in `overdue` #f17b72 and the paid figure in `paid` #4ade94
+
+### InvoiceDetailPhoneActions — An invoice's other actions in an action sheet
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-58, US-OPS-60 · **Source:** Claude Design
+
+![InvoiceDetailPhoneActions](screens/InvoiceDetailPhoneActions.webp)
+
+Links to: `InvoiceDetailPhone`, `RecordPaymentPhone`
+
+Shows: Header "INV-0038" "Sahyadri Retail Pvt Ltd · ₹13,25,514.50 due" · "Record payment" (Banknote) · "Email invoice" (Mail) · "Download PDF" (Download) · "Copy customer link" (Link2) · "Duplicate" (Copy) · "Issue credit note" (FileMinus) · "View history" (History) · "Void invoice…" (Ban, danger) · "Cancel"
+
+### JobDetailPhone — A job on a phone: figures two per row, tabs that scroll
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-58 · **Source:** Claude Design
+
+![JobDetailPhone](screens/JobDetailPhone.webp)
+
+Links to: `InvoiceDetailPhone`
+
+A milestone's status sits under its amount so a long name has the width of the row.
+
+Shows: Back arrow, "Job", ⋯ · "JOB-002" "Active" "Warehouse extension" · "Sahyadri Retail Pvt Ltd" "Baner Road, Pune" "Started 22 Jul · Due 30 Nov" "From QUO-0031" · "Contract ₹68,00,000 incl. 1 variation", "Billed ₹44,80,000" with a bar, "Cost ₹38,40,000 71% of ₹54,00,000 budget", "Margin ₹6,40,000 14.3% so far", "Complete 70%" with a bar "Updated 8 Nov" · tabs in one row "Milestones 4" (current) "Variation orders 1" "Photos 6" "Notes 2" "Crew 2" "Costing" · milestone rows "Site preparation 20% · INV-0021, paid ₹13,60,000 Invoiced", "Steel structure 40% · INV-0038, overdue ₹27,20,000 Invoiced", "Cladding and services 20% · not invoiced yet ₹13,60,000 Completed" · bar "Invoice Cladding and services" · "Jobs" tab current
+
+### QuoteBuilderPhone — Building a quote on a phone
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-59 · **Source:** Claude Design
+
+![QuoteBuilderPhone](screens/QuoteBuilderPhone.webp)
+
+Links to: `QuoteBuilderPhoneLine`, `PickerSheetPhone`
+
+Shows: Full screen, no tab bar: "Cancel" "New quote" · "Customer Sahyadri Retail Pvt Ltd ›" "Job None — quote first ›" · "Title Mezzanine floor — warehouse" · "Issue date 18 Nov 2026" "Valid until 18 Dec 2026" · "Lines · 3" "Tap a line to change it" · cards "Mezzanine steel deck ₹6,37,200.00 120 sq m × ₹4,500.00 GST 18%", "Staircase and handrails ₹1,41,600.00", "Fire-rated board lining ₹1,29,800.00 80 sq m × ₹1,375.00" · "+ Add item" · "Notes to the customer None ›" "Terms Standard terms ›" · bar "Total incl. GST ⌃ ₹9,08,600.00", ⋯ (Save as draft, Preview PDF) and "Save and send"
+
+### QuoteBuilderPhoneDark — The quote builder in dark mode
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-59 · **Source:** Claude Design
+
+![QuoteBuilderPhoneDark](screens/QuoteBuilderPhoneDark.webp)
+
+Links to: `QuoteBuilderPhone`
+
+Shows: The same builder from the dark tokens
+
+### QuoteBuilderPhoneLine — Editing a line in a sheet
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-59 · **Source:** Claude Design
+
+![QuoteBuilderPhoneLine](screens/QuoteBuilderPhoneLine.webp)
+
+Links to: `QuoteBuilderPhone`
+
+Add item opens the same sheet, empty, titled "New line".
+
+Shows: A sheet over the builder: "Cancel" "Line 1 of 3" "Done" · "Item" with search "Mezzanine steel deck" "From the catalogue · STL-DECK-01 · search to pick another" · "Description" · "Quantity 120" (focused) "Unit sq m" · "Unit price ₹4,500.00" "Discount 0 %" · "Tax GST 18% (CGST 9% + SGST 9%)" · "120 × ₹4,500.00 ₹5,40,000.00" "GST 18% ₹97,200.00" "Line amount ₹6,37,200.00" · "Move up" (off on the first line) "Move down" "Delete"
+
+### RecordPaymentPhone — A form dialog as a full-screen sheet: Record payment
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-60 · **Source:** Claude Design
+
+![RecordPaymentPhone](screens/RecordPaymentPhone.webp)
+
+Links to: `InvoiceDetailPhone`
+
+Shows: "Cancel" "Record payment" "Record" · "INV-0038 Sahyadri Retail Pvt Ltd" "Balance due ₹13,25,514.50" · "Amount received ₹ 13,25,514.50" (focused) "Pays the invoice in full. Retention of ₹1,22,395.50 stays held until handover." · "Date received 18 Nov 2026" "Method Bank transfer" · "Paid into HDFC Current ••2187" · "Reference NEFT HDFC0024419" · "Email a receipt To accounts@sahyadriretail.example" (on) · "Recording posts the payment to the books: debit HDFC Current, credit Accounts receivable."
+
+### ActionSheetPhone — A row's actions in an action sheet
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-56, US-OPS-60 · **Source:** Claude Design
+
+![ActionSheetPhone](screens/ActionSheetPhone.webp)
+
+Links to: `InvoicesPhone`
+
+Shows: Over the invoice list: header "INV-0044" "Lakshmi Multispeciality Hospital · ₹3,45,000.00 · 6 days late" · "View" (Eye) "Record payment" "Send reminder" (Bell) "Email invoice" "Download PDF" "Duplicate" "Void…" (danger) · "Cancel" — the desktop row menu's actions and icons, in the same order
+
+### ActionSheetPhoneDark — An action sheet in dark mode
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-60 · **Source:** Claude Design
+
+![ActionSheetPhoneDark](screens/ActionSheetPhoneDark.webp)
+
+Links to: `ActionSheetPhone`
+
+Shows: The same sheet from the dark tokens: groups on `neutral-100` over the darker scrim, "Void…" in #f17b72
+
+### PickerSheetPhone — A combobox's options in a bottom sheet
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-OPS-60 · **Source:** Claude Design
+
+![PickerSheetPhone](screens/PickerSheetPhone.webp)
+
+Links to: `QuoteBuilderPhone`
+
+A select opens the same sheet without the search; a date picker opens its month grid in it.
+
+Shows: Over the builder: "Customer" with Close · "Search contacts" (focused) · "Recent": "Sahyadri Retail Pvt Ltd Company · Pune · 4 open jobs" (ticked), "Halcyon Tech Parks Pvt Ltd", "Lakshmi Multispeciality Hospital", "Nimbus Data Systems Pvt Ltd", "Ananya Rao Person · Pune" · "+ New contact"
+
+### MeetingsPhoneMonth — The month made for a phone
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-MTG-18 · **Source:** Claude Design
+
+![MeetingsPhoneMonth](screens/MeetingsPhoneMonth.webp)
+
+Links to: `MeetingsPhoneDay`, `AppShellPhoneTabs`
+
+Two short rows of controls, not one: at 390px the month, the arrows, Today and the three views don't fit in one row at 44px each (US-MTG-18 updated).
+
+Shows: "Meetings" with Calendars, search and notifications · area row "Meetings" current · "November 2026 ⌄" with ‹ › and "Today" · "Month" (chosen) "Day" "Agenda" · weekday letters S M T W T F S · the month with a dot under each busy day (up to three, in their calendars' colours) and today, 18, filled · "Today · Wednesday 18 November" "3 meetings" · "8:00 AM–8:30 AM Site stand-up · JOB-002 Baner Road, Pune · Sahyadri Retail" · "11:30 AM–12:30 PM Clinic expansion walkthrough Nashik Road · Lakshmi Multispeciality" · "4:00 PM–4:30 PM Weekly crew scheduling Office · internal" · round + "New meeting"
+
+### MeetingsPhoneMonthDark — The phone month in dark mode
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-MTG-18 · **Source:** Claude Design
+
+![MeetingsPhoneMonthDark](screens/MeetingsPhoneMonthDark.webp)
+
+Links to: `MeetingsPhoneMonth`
+
+Shows: The same month from the dark tokens; the dots keep their calendar colours from the dark category values
+
+### MeetingsPhoneDay — A week strip over the day
+**Priority:** P1 · **Phase:** 12 · **Stories:** US-MTG-18 · **Source:** Claude Design
+
+![MeetingsPhoneDay](screens/MeetingsPhoneDay.webp)
+
+Links to: `MeetingsPhoneMonth`
+
+Shows: "Day" chosen · the week S 15 to S 21 with dots, today 18 filled · "Wednesday 18 November" "3 meetings · 1 later" · the timeline from 8 AM with "Site stand-up · JOB-002 8:00", the now line at 10:40 AM in red and "Clinic expansion walkthrough 11:30 AM – 12:30 PM · Nashik Road" · round + "New meeting"
+
+### ReportsPLPhone — Profit & Loss as an indented list
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-RPT-41 · **Source:** Claude Design
+
+![ReportsPLPhone](screens/ReportsPLPhone.webp)
+
+Links to: `ReportsPLPhoneFilters`, `ReportsTrialBalancePhone`
+
+Each account opens its drill-down. With a comparison, each amount has the other period's under it in muted text.
+
+Shows: Back arrow "Profit & Loss" ⋯ (Export) · report tabs "Profit & Loss" (current) "Balance sheet" "Cash flow" "Trial balance" "Tax summary" · "1 Apr – 18 Nov 2026 · Accrual · No comparison ›" · chips "Income ₹1,24,60,000" "Expenses ₹96,12,400" "Net profit ₹28,47,600" "Margin 22.9%" · "INCOME" "Sales — construction ₹1,18,20,000.00 ›" "Sales — services ₹6,40,000.00 ›" "Total income ₹1,24,60,000.00" · "COST OF SALES" Materials, Subcontractors, Equipment hire "Total cost of sales ₹76,80,000.00" "Gross profit ₹47,80,000.00" · "OPERATING EXPENSES" Salaries, Rent, Vehicle and travel, Insurance, Utilities, Software "Total operating expenses ₹19,32,400.00" · "Net profit ₹28,47,600.00" last
+
+### ReportsPLPhoneFilters — A report's filters in one sheet
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-RPT-41 · **Source:** Claude Design
+
+![ReportsPLPhoneFilters](screens/ReportsPLPhoneFilters.webp)
+
+Links to: `ReportsPLPhone`
+
+Shows: "Report filters" with Close · "Period" chips This month, This quarter, "This financial year" (on), Last financial year, Custom · "From 1 Apr 2026" "To 18 Nov 2026" · "Basis" Accrual (chosen) / Cash · "Compare with" No comparison (chosen) / Previous period / Same period last year · "Job All jobs ›" · "Hide accounts with no balance" (on) · "Clear all" "Show report"
+
+### ReportsTrialBalancePhone — A grid report with a fixed first column
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-RPT-41 · **Source:** Claude Design
+
+![ReportsTrialBalancePhone](screens/ReportsTrialBalancePhone.webp)
+
+Links to: `ReportsPLPhone`
+
+The page itself never scrolls sideways; only the box does.
+
+Shows: Back arrow "Trial balance" · report tabs with "Trial balance" current · "As of 18 Nov 2026 · No zero balances ›" · a table in its own box: "Account" (code above name) stays put while "Debit" and "Credit" scroll under it, drawn part-way through the scroll · 1010 HDFC Current to 4100 Sales — construction · "Balanced — total debits equal total credits, ₹1,73,35,285.00 each." as a muted footnote (D-180)
+
+### DashboardPhone — The dashboard in phone order
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-DASH-31 · **Source:** Claude Design
+
+![DashboardPhone](screens/DashboardPhone.webp)
+
+Links to: `AppShellPhoneStandalone`, `InvoicesPhoneSelect`, `MeetingsPhoneMonth`
+
+The charts and the other cards follow, one per row, in the layout chosen on a wider screen; Edit layout isn't offered.
+
+Shows: "Dashboard" with search, notifications and ⋯ (Accrual or Cash) · "Good morning, Priya · Wed 18 Nov" · "Needs your attention 6": "3 invoices are overdue ₹17,38,015 · oldest INV-0038, 45 days" "Send reminders"; "2 expenses to approve Ravi Kumar · travel ₹8,500 · materials ₹19,200" "Review"; "QUO-0034 needs discount approval Halcyon Tech Parks · 25% off · ₹12,80,000" "Approve"; "Show all 6" · figures two per row "Cash position ₹12,02,475 ▲ 8.2%", "Profit this month ₹4,86,200 ▲ 18.0%", "Receivables ₹45,58,015 5 invoices open", "Overdue ₹17,38,015 3 invoices" · "Today" "Open calendar" "8:00 AM Site stand-up · JOB-002" · "Home" tab current
+
+### DashboardPhoneDark — The dashboard in dark mode
+**Priority:** P2 · **Phase:** 12 · **Stories:** US-DASH-31 · **Source:** Claude Design
+
+![DashboardPhoneDark](screens/DashboardPhoneDark.webp)
+
+Links to: `DashboardPhone`
+
+Shows: The same dashboard from the dark tokens

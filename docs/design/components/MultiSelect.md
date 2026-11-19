@@ -24,6 +24,7 @@ import { MultiSelectOption, MultiSelect } from "@spine/ui";
 
 ## Rules and behaviour
 
+- On a phone its options open in a bottom sheet (`data-phone-sheet`), with 44px rows (US-OPS-60).
 - Selecting an option toggles it — no need to hold a modifier key.
 - The trigger measures its own width and shows as many selected labels as fit before collapsing the remainder into a "+N" chip, remeasured on resize.
 - Each option shows a checkmark when selected, matching Select's affordance.

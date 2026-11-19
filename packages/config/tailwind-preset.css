@@ -378,25 +378,134 @@
    Links inside running text keep the text's line height. Checkboxes,
    radios and switches keep their look and get a 44px tap area around them. */
 @media (max-width: 767.98px) {
-  :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *)) {
+  /* US-OPS-61: Checkbox, RadioGroupItem and Switch are <button>s marked data-tap-area; they
+     keep their own size, with the tap area drawn around them below (they were blank 44px
+     boxes). A segmented button with role="radio" still gets the full 44px. A list row's title
+     link or button is exempt: it covers its whole row, which is the tap target (US-OPS-56). */
+  :where(button:not([data-tap-area], [data-list-row-title] *), [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *, [data-list-row-title] *)) {
     min-height: 44px;
   }
-  :where(button, [role="button"], [role="combobox"]) {
+  :where(button:not([data-tap-area], [data-list-row-title] *), [role="button"], [role="combobox"]) {
     min-width: 44px;
+  }
+  /* A link made 44px tall keeps its text in the middle of that height, so it lines up with what's
+     beside it (a card's title, a count, an amount) instead of sitting at the top. */
+  :where(a[href]:not(p *, td *, [data-list-row-title] *)) {
+    align-content: center;
   }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"]), textarea) {
     min-height: 44px;
   }
-  :where([role="checkbox"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="radio"]) {
+  :where([data-tap-area], [role="checkbox"], [role="switch"], input[type="checkbox"], input[type="radio"]) {
     position: relative;
   }
-  :where([role="checkbox"], [role="radio"], [role="switch"], input[type="checkbox"], input[type="radio"])::after {
+  :where([data-tap-area], [role="checkbox"], [role="switch"], input[type="checkbox"], input[type="radio"])::after {
     content: "";
     position: absolute;
     inset: 50% auto auto 50%;
     width: max(100%, 44px);
     height: max(100%, 44px);
     translate: -50% -50%;
+  }
+}
+
+/* US-OPS-54 — the tab bar along the bottom steps aside while a full-screen sheet is open,
+   and on a touch screen while a text field has focus (the keyboard is up). A record's action
+   bar above it (US-OPS-58) and a builder's bar (US-OPS-59) do the same. */
+@media (max-width: 767.98px) {
+  body:has([data-phone-fullscreen]) :is([data-tabbar], [data-action-bar-slot]) {
+    display: none;
+  }
+}
+@media (max-width: 767.98px) and (pointer: coarse) {
+  body:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="file"]), textarea, [contenteditable="true"]):focus) :is([data-tabbar], [data-action-bar-slot], [data-builder-bar]) {
+    display: none;
+  }
+}
+
+/* US-OPS-60 (D-283) — dialogs, menus and pickers made for a phone. Under 768px:
+   - A popover marked data-phone-sheet (Select, Combobox, MultiSelect, DatePicker) docks to the
+     bottom edge as a sheet, with the page dimmed behind it; "action" (DropdownMenu) floats 8px in
+     with its own Cancel. Radix's inline positioning is overridden here, so every menu and picker
+     changes without its screen changing.
+   - A Dialog fills the screen; its footer becomes the bar at the top (Cancel on the left, the
+     action on the right), and a <form> wrapping body and footer lays them out as if it weren't
+     there. A dialog with no footer keeps its ✕. */
+@media (max-width: 767.98px) {
+  [data-radix-popper-content-wrapper]:has(> [data-phone-sheet]) {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    transform: none !important;
+    min-width: 0 !important;
+    width: auto !important;
+    z-index: var(--z-modal) !important;
+  }
+  [data-radix-popper-content-wrapper]:has(> [data-phone-sheet="action"]) {
+    inset: auto 8px max(8px, env(safe-area-inset-bottom)) 8px !important;
+  }
+  [data-phone-sheet] {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(80dvh, 640px) !important;
+    overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    border-width: 0 !important;
+    box-shadow: var(--shadow-overlay) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  [data-phone-sheet="action"] {
+    border-radius: var(--radius-lg) !important;
+    padding: 0 !important;
+  }
+  /* The dimmed page behind a sheet; it's part of the sheet, so a tap on it is a tap outside. */
+  [data-phone-sheet]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-scrim);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-phone-sheet] {
+      animation: var(--animate-sheet-in);
+    }
+  }
+
+  [data-dialog] > form {
+    display: contents;
+  }
+  [data-dialog]:has([data-dialog-footer]) > [data-dialog-close] {
+    display: none;
+  }
+}
+
+/* US-OPS-57 — a StatCard inside a ChipStrip is a compact chip on a phone: label and figure. */
+@media (max-width: 767.98px) {
+  [data-chip-strip] [data-stat-card] {
+    gap: 0;
+    padding: 8px 12px;
+    min-height: 44px;
+    border-radius: var(--radius-lg);
+  }
+  [data-chip-strip] [data-stat-label] {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  [data-chip-strip] [data-stat-value] {
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+  [data-chip-strip] [data-stat-detail],
+  [data-chip-strip] [data-stat-trend] {
+    display: none;
+  }
+  /* A card's corner filter icon would sit on a chip's label; the chip's pressed state says it filters. */
+  [data-chip-strip] svg.absolute {
+    display: none;
   }
 }
 
@@ -518,6 +627,16 @@
   }
 
   /* US-OPS-38 — a toast's entrance from the right; used only with motion-safe:, so reduced motion shows it at once. */
+  /* US-OPS-60: a bottom sheet or action sheet rises from the bottom edge. */
+  --animate-sheet-in: sheet-in var(--duration-slow) var(--easing-decelerate);
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
   --animate-toast-in: toast-in var(--duration-base) var(--easing-decelerate);
   @keyframes toast-in {
     from {

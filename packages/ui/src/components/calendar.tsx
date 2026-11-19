@@ -47,6 +47,9 @@ import { Field } from "./field";
 import { Input } from "./input";
 import { Label } from "./label";
 import { MiniCalendar } from "./calendar-mini";
+import { colorClasses } from "../lib/calendar-colors";
+import { usePhone } from "../lib/use-phone";
+import { CalendarPhoneMonth, CalendarPhoneToolbar, CalendarQuickViewSheet, CalendarWeekStrip, useSwipe } from "./calendar-phone";
 import { NativeSelect } from "./native-select";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "./popover";
 import { Switch } from "./switch";
@@ -101,28 +104,6 @@ const HOUR_FORMAT = "h a";
 const WEEKDAY_SHORT_FORMAT = "EEE";
 const MONTH_DAY_FORMAT = "MMM d";
 const DAY_NUMBER_FORMAT = "d";
-
-/**
- * Static per-color class lookup — not built via template-string
- * interpolation (`` `bg-category-${color}-bg` ``), since Tailwind's
- * content scanner can only pick up class names it can see as literal
- * text, not ones assembled at runtime (same pattern as layout.tsx's
- * paddingScale/gapScale).
- */
-const COLOR_CLASSES: Record<CalendarEventColor, { bg: string; fg: string; dot: string; border: string }> = {
-  blue: { bg: "bg-category-blue-bg", fg: "text-category-blue", dot: "bg-category-blue", border: "border-category-blue" },
-  green: { bg: "bg-category-green-bg", fg: "text-category-green", dot: "bg-category-green", border: "border-category-green" },
-  amber: { bg: "bg-category-amber-bg", fg: "text-category-amber", dot: "bg-category-amber", border: "border-category-amber" },
-  red: { bg: "bg-category-red-bg", fg: "text-category-red", dot: "bg-category-red", border: "border-category-red" },
-  purple: { bg: "bg-category-purple-bg", fg: "text-category-purple", dot: "bg-category-purple", border: "border-category-purple" },
-  teal: { bg: "bg-category-teal-bg", fg: "text-category-teal", dot: "bg-category-teal", border: "border-category-teal" },
-  pink: { bg: "bg-category-pink-bg", fg: "text-category-pink", dot: "bg-category-pink", border: "border-category-pink" },
-  slate: { bg: "bg-category-slate-bg", fg: "text-category-slate", dot: "bg-category-slate", border: "border-category-slate" },
-};
-
-function colorClasses(color: CalendarEventColor) {
-  return COLOR_CLASSES[color];
-}
 
 function newId(): string {
   return `evt_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
@@ -402,6 +383,13 @@ export function Calendar({
   const goToday = () => onDateChange(new Date());
   const goPrev = () => onDateChange(stepDate(date, view, -1));
   const goNext = () => onDateChange(stepDate(date, view, 1));
+  // US-MTG-18: on a phone, its own toolbar, a compact month with the day's list, a week strip over
+  // the day, swipes, and the quick view as a bottom sheet.
+  const phone = usePhone();
+  const daySwipe = useSwipe(
+    () => onDateChange(addDays(date, -1)),
+    () => onDateChange(addDays(date, 1)),
+  );
 
   const handleSlotCreate = (range: DraftRange, allDay?: boolean) => {
     if (!canCreateEvents) return;
@@ -502,19 +490,25 @@ export function Calendar({
   };
 
   return (
-    <div className={cn("flex h-full min-h-[560px] flex-col overflow-hidden rounded-lg border border-border bg-surface", className)}>
-      <CalendarToolbar
-        view={view}
-        onViewChange={onViewChange}
-        date={date}
-        onDateChange={onDateChange}
-        onPrev={goPrev}
-        onNext={goNext}
-        onToday={goToday}
-        views={views}
-        action={toolbarAction}
-      />
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+    <div className={cn("flex h-full min-h-[560px] flex-col overflow-hidden rounded-lg border border-border bg-surface", phone && "min-h-0 rounded-none border-0", className)}>
+      {phone ? (
+        <CalendarPhoneToolbar date={date} view={view} views={views} viewLabels={VIEW_LABELS} onViewChange={onViewChange} onDateChange={onDateChange} onPrev={goPrev} onNext={goNext} onToday={goToday} />
+      ) : (
+        <CalendarToolbar
+          view={view}
+          onViewChange={onViewChange}
+          date={date}
+          onDateChange={onDateChange}
+          onPrev={goPrev}
+          onNext={goNext}
+          onToday={goToday}
+          views={views}
+          action={toolbarAction}
+        />
+      )}
+      {phone && view === "day" && <CalendarWeekStrip date={date} events={events} onDateChange={onDateChange} />}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" {...(phone && view === "day" ? daySwipe : {})}>
+        {phone && view === "month" && <CalendarPhoneMonth date={date} events={events} onDateChange={onDateChange} onEventClick={handleEventClick} details={agendaDetails} />}
         {view === "day" && (
           <CalendarDayView
             date={date}
@@ -527,6 +521,7 @@ export function Calendar({
             readOnlyEventIds={readOnlyEventIds}
             nonEditableEventIds={nonEditableEventIds}
             canCreateEvents={canCreateEvents}
+            gestures={!phone}
           />
         )}
         {view === "week" && (
@@ -543,7 +538,7 @@ export function Calendar({
             canCreateEvents={canCreateEvents}
           />
         )}
-        {view === "month" && (
+        {view === "month" && !phone && (
           <CalendarMonthView
             date={date}
             events={events}
@@ -573,7 +568,28 @@ export function Calendar({
         canDelete={editorState?.mode === "edit" ? !nonDeletableEventIds?.has(editorState.instance.event.id) : true}
       />
 
-      {renderEventPopover && (
+      {renderEventPopover && phone && (
+        <CalendarQuickViewSheet instance={popoverInstance} onClose={() => setPopoverInstance(null)}>
+          {popoverInstance &&
+          renderEventPopover({
+          instance: popoverInstance,
+          onEdit: (scope) => {
+            const instance = popoverInstance;
+            setPopoverInstance(null);
+            // eslint-disable-next-line i18next/no-literal-string -- a state value, not copy
+            setEditorState({ mode: "edit", instance, scope });
+          },
+          onDelete: (scope) => {
+            const instance = popoverInstance;
+            setPopoverInstance(null);
+            const occurrenceDate = scope === "occurrence" ? instance.originalOccurrenceStart : undefined;
+            onEventDelete?.(instance.event.id, scope, occurrenceDate);
+          },
+          onClose: () => setPopoverInstance(null),
+          })}
+        </CalendarQuickViewSheet>
+      )}
+      {renderEventPopover && !phone && (
         <Popover
           open={!!popoverInstance}
           onOpenChange={(open) => {
@@ -790,6 +806,8 @@ interface TimeGridProps {
   readOnlyEventIds?: Set<string>;
   nonEditableEventIds?: Set<string>;
   canCreateEvents?: boolean;
+  /** US-MTG-18: false on a phone — no drag to create, move or resize, so a sideways swipe moves the day and a tap opens the event. */
+  gestures?: boolean;
 }
 
 /**
@@ -810,6 +828,7 @@ function TimeGrid({
   readOnlyEventIds,
   nonEditableEventIds,
   canCreateEvents = true,
+  gestures = true,
 }: TimeGridProps) {
   const t = useT();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -843,7 +862,7 @@ function TimeGrid({
   const dayAt = (index: number): Date => days[index] ?? days[0] ?? new Date();
 
   const beginCreate = (dayIndex: number, e: React.PointerEvent) => {
-    if (!canCreateEvents) return;
+    if (!canCreateEvents || !gestures) return;
     const column = columnRefs.current[dayIndex];
     if (!column) return;
     const rect = column.getBoundingClientRect();
@@ -1142,7 +1161,7 @@ function TimeGrid({
                     gridHeight={gridHeight}
                     isDragging={drag?.instanceId === slot.instance.instanceId}
                     isReadOnly={readOnlyEventIds?.has(slot.instance.event.id) ?? false}
-                    isNonEditable={nonEditableEventIds?.has(slot.instance.event.id) ?? false}
+                    isNonEditable={!gestures || (nonEditableEventIds?.has(slot.instance.event.id) ?? false)}
                     onEventClick={(instance, target) => {
                       if (suppressNextClickRef.current) {
                         suppressNextClickRef.current = false;
@@ -1319,6 +1338,7 @@ interface DayLikeViewProps {
   readOnlyEventIds?: Set<string>;
   nonEditableEventIds?: Set<string>;
   canCreateEvents?: boolean;
+  gestures?: boolean;
 }
 
 function CalendarDayView({
@@ -1332,10 +1352,12 @@ function CalendarDayView({
   readOnlyEventIds,
   nonEditableEventIds,
   canCreateEvents,
+  gestures,
 }: DayLikeViewProps) {
   return (
     <TimeGrid
       days={[date]}
+      gestures={gestures}
       events={events}
       onSlotCreate={onSlotCreate}
       onEventClick={onEventClick}

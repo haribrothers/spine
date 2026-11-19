@@ -64,13 +64,16 @@ export function AccountsCard() {
               const Icon = KIND_ICON[a.kind];
               const balance = BigInt(a.balance ?? "0");
               return (
-                <li key={a.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                // The account's name links to it and covers its row, so the whole row is the tap target on a phone.
+                <li key={a.id} data-list-row="" className="relative flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <Icon className="size-4 shrink-0 text-on-surface-muted" aria-label={KIND_LABEL[a.kind]} role="img" />
                     <div className="min-w-0">
-                      <Link href={`/banking/${a.id}`} className="block truncate text-[14px] text-primary hover:underline">
-                        {a.name}
-                      </Link>
+                      <span className="block truncate" data-list-row-title="">
+                        <Link href={`/banking/${a.id}`} className="text-[14px] text-primary hover:underline after:absolute after:inset-0 after:content-['']">
+                          {a.name}
+                        </Link>
+                      </span>
                       <p className="text-[12px] text-on-surface-muted">{a.lastReconciledOn ? t("dashboard.accounts.reconciledTo", { date: shortDate(a.lastReconciledOn) }) : t("dashboard.accounts.notReconciled")}</p>
                     </div>
                   </div>

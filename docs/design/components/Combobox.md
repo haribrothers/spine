@@ -31,6 +31,11 @@ import { ComboboxOption, Combobox } from "@spine/ui";
 - Options can carry a description: a second, muted line under the label (what an expense category is for, D-228), searched along with it.
 - Optional allowCreate mode: typing a value with no matching option offers a "Create '…'" row, for open-ended, org-defined vocabularies (e.g. a catalogue item's unit or category) rather than a fixed list.
 
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
+
+- Built (US-OPS-60): the popover is marked `data-phone-sheet`; it docks to the bottom edge with the search at its top and 44px rows.
+- Under 768px the options open in a `BottomSheet` with the search field at its top (US-OPS-60).
+
 ## Exports
 
 `ComboboxOption` · `ComboboxProps` · `Combobox`

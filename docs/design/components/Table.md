@@ -38,6 +38,7 @@ import { TableColumn, Table } from "@spine/ui";
 
 ## Rules and behaviour
 
+- Its scroll box is a [ScrollX](ScrollX.md): when the table is wider than the screen it scrolls sideways inside it and is a focusable region the keyboard can scroll (US-OPS-62).
 - `footer` adds a totals row, keyed by column, on the sunken band in the table's `<tfoot>` (a report's "Total"); columns left out stay blank (US-RPT-40).
 - Column-level sorting via a sortValue accessor — click a header to toggle ascending/descending/off.
 - Automatic client-side pagination once data exceeds pageSize.
@@ -48,6 +49,11 @@ import { TableColumn, Table } from "@spine/ui";
 - Sticky header row stays visible while scrolling a tall table.
 - Alternating hover tint on rows.
 - Set groupBy to cluster rows that share a key (e.g. every version of the same quote) into one expandable group instead of showing every row flat — sorting and pagination then operate over groups, not raw rows.
+
+## Phone (under 768px, [D-283](../../prd/12-decisions.md))
+
+- Built (US-OPS-56): under 768px a list renders as `ListRow`s, placed by each column's `phone` role or `phoneRoles`, with Load more after 25 (`PHONE_PAGE`). A grouped table shows each group's primary row; an expandable row gets its chevron as the action and opens underneath; a totals `footer` becomes a last row. `phoneRows={false}` keeps a table.
+- Built (US-RPT-41): a grid (Trial balance, GSTR-1, comparisons, aging) stays a table with `phoneRows={false} stickyFirstColumn`: the first column stays put while the rest scroll inside their box. `DataTable` passes `stickyFirstColumn` through.
 
 ## Exports
 

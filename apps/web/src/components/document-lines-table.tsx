@@ -1,10 +1,11 @@
 "use client";
 
 import { SUPPLY_CLASS_LABELS } from "@spine/shared";
-import { Card, cn } from "@spine/ui";
+import { Card, cn, ScrollX } from "@spine/ui";
 import type { SupplyClass } from "@spine/shared";
 import { formatMoney } from "../lib/money";
 import { useT } from "../lib/i18n";
+import { useIsPhone } from "../lib/use-is-phone";
 
 /** What the table reads from a quote or an invoice. */
 export interface DocumentLinesSource {
@@ -47,6 +48,9 @@ export interface AfterTotalRow {
  * is one, and the tax by name (CGST and SGST on a GST document) as on the
  * PDF — then whatever follows Total (an invoice's retention, Paid and
  * Balance due).
+ * US-OPS-58: under 768px each line is a card — the item and its amount, its description,
+ * "4 × $650.00", its discount and tax — with headings as small titles between them, and the
+ * same totals under them.
  */
 export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { doc: DocumentLinesSource; testIdPrefix: string; after?: AfterTotalRow[] }) {
   const t = useT();
@@ -58,11 +62,40 @@ export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { d
   const cols = 3 + (showDiscount ? 1 : 0) + (showTax ? 1 : 0);
   const discount = BigInt(quote.discountAmount);
   const taxLines = quote.taxLines?.length ? quote.taxLines : [{ label: t("invoices.linesTable.tax"), amount: quote.taxAmount }];
+  const phone = useIsPhone();
 
   return (
     <Card className="overflow-hidden p-0" data-testid={`${testIdPrefix}-lines`}>
-      <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("invoices.linesTable.lines")}</h3>
-      <div className="overflow-x-auto">
+      <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{phone ? t("invoices.linesTable.linesCount", { count: items.length }) : t("invoices.linesTable.lines")}</h3>
+      {phone ? (
+        <ul className="flex flex-col gap-2 px-3 pb-3" data-testid={`${testIdPrefix}-line-cards`}>
+          {lines.map((line) =>
+            line.type === "item" ? (
+              <li key={line.id} className="rounded-lg border border-border bg-surface px-3.5 py-3" data-line-card="">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 text-[15px] font-semibold leading-snug text-on-surface">{line.name}</span>
+                  <span className="shrink-0 text-[15px] font-semibold tabular-nums text-on-surface">{money(line.lineTotalAmount)}</span>
+                </div>
+                {line.description && <p className="mt-0.5 text-[13px] text-on-surface-muted">{line.description}</p>}
+                {quote.placeOfSupply && line.supplyClass && line.supplyClass !== "taxable" && <p className="mt-0.5 text-[12px] text-on-surface-muted">{SUPPLY_CLASS_LABELS[line.supplyClass]}</p>}
+                <div className="mt-1.5 flex items-center justify-between gap-3 text-[13px] tabular-nums text-on-surface-muted">
+                  <span>
+                    {t("invoices.linesTable.qtyTimesRate", { qty: line.quantity, rate: money(line.unitPriceAmount) })}
+                    {line.discountPercentage > 0 && ` · ${t("invoices.linesTable.discountOff", { percent: line.discountPercentage })}`}
+                  </span>
+                  {line.taxRatePercentage > 0 && <span>{t("invoices.linesTable.taxRate", { percent: line.taxRatePercentage })}</span>}
+                </div>
+              </li>
+            ) : (
+              <li key={line.id} className={cn("px-1 pt-1 text-[13px] text-on-surface-muted", line.type === "heading" && "font-semibold")}>
+                {line.name}
+                {line.description && <span className="block text-[12.5px] font-normal">{line.description}</span>}
+              </li>
+            ),
+          )}
+        </ul>
+      ) : (
+      <ScrollX label={t("ui.scrollX.label")}>
         <table className="w-full min-w-[560px] border-collapse text-[13.5px]">
           <thead>
             <tr className="bg-surface-sunken text-left text-[12px] font-medium text-on-surface-muted">
@@ -101,8 +134,9 @@ export function DocumentLinesTable({ doc: quote, testIdPrefix, after = [] }: { d
             )}
           </tbody>
         </table>
-      </div>
-      <dl className="ml-auto grid w-full max-w-xs grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 text-[13px]" data-testid={`${testIdPrefix}-totals`}>
+      </ScrollX>
+      )}
+      <dl className="ml-auto grid w-full max-w-xs max-md:max-w-none grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 border-t border-border px-4 py-3 text-[13px]" data-testid={`${testIdPrefix}-totals`}>
         <dt className="text-on-surface-muted">{t("invoices.linesTable.subtotal")}</dt>
         <dd className="text-right tabular-nums">{money(quote.subtotalAmount)}</dd>
         {discount > 0n && (

@@ -16,6 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Spinner,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
 } from "@spine/ui";
 import { ArrowRightLeft, Banknote, ChevronDown, Download, Mail, MapPin, Receipt, Send, User } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -37,9 +40,10 @@ import { CREDIT_NOTE_STATE_LABELS, creditNoteState } from "./credit-notes-list-s
 import { SectionLink } from "../../../components/section-link";
 import { useLoadFailure } from "../../../lib/use-load-failure";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
-const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
+export const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
   draft: "bg-draft-bg text-draft",
   credit_left: "bg-due-soon-bg text-due-soon",
   credited: "bg-paid-bg text-paid",
@@ -68,6 +72,8 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
   const [emailOpen, setEmailOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
   const canApply = useCapability("payments.apply_credit");
   const canRefund = useCapability("payments.refund");
   const canSend = useCapability("invoices.send");
@@ -158,13 +164,32 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
   const secondaryButtons = secondary.map((a) => render(a, "secondary"));
   const primaryButton = render(primary, "primary");
 
+  // US-OPS-58: on a phone the buttons beside More (Download PDF, Refund) are items in its menu.
+  const PHONE_MENU_ICONS: Record<string, typeof MENU_ICONS.edit> = { pdf: MENU_ICONS.download, refund: MENU_ICONS.refund, apply: MENU_ICONS.applyCredit, email: MENU_ICONS.email };
+  const phoneMenuItem = (a: Action) => {
+    const Icon = PHONE_MENU_ICONS[a.key] ?? MENU_ICONS.open;
+    return a.href ? (
+      <DropdownMenuItem key={a.key} asChild>
+        <a href={a.href} target="_blank" rel="noreferrer">
+          <Icon aria-hidden />
+          {a.label}
+        </a>
+      </DropdownMenuItem>
+    ) : (
+      <DropdownMenuItem key={a.key} onSelect={a.onClick}>
+        <Icon aria-hidden />
+        {a.label}
+      </DropdownMenuItem>
+    );
+  };
+
   const taxNote = note.taxLines?.length
     ? t("creditNotes.detail.taxNoteNamed", { label: note.taxLines.map((taxLine) => taxLine.label.replace(/\s*\(.*\)$/, "").replace(/\s*\d+(\.\d+)?%$/, "")).join(" + "), amount: money(note.taxAmount) })
     : BigInt(note.taxAmount) > 0n
       ? t("creditNotes.detail.taxNoteTax", { amount: money(note.taxAmount) })
       : t("creditNotes.detail.noTax");
   const figure = (label: string, value: string, sub: React.ReactNode, testId: string, tone?: string) => (
-    <div key={testId} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
+    <div key={testId} className="flex min-w-0 flex-col gap-1 p-4" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className={cn("text-[19px] font-bold leading-tight tabular-nums", tone ?? "text-on-surface")}>{value}</span>
       <span className="text-[12px] text-on-surface-muted">{sub}</span>
@@ -190,18 +215,26 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
       ]
     : [];
 
+  // US-OPS-58: the key amount at the top on a phone — the credit left while there is some, else what it credited.
+  const hasLeft = issued && left > 0n;
+  const headerAmount = {
+    label: hasLeft ? t("creditNotes.detail.figLeft") : issued ? t("creditNotes.detail.figCredited") : t("creditNotes.detail.total"),
+    value: money(hasLeft ? left : note.totalAmount),
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("creditNotes.detail.breadcrumbBilling") }, { label: t("creditNotes.detail.breadcrumbCreditNotes"), href: "/credit-notes" }, { label: title }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
-              <Badge className={STATE_BADGE[state]} data-testid="credit-note-state">
-                {CREDIT_NOTE_STATE_LABELS[state]}
-              </Badge>
-            </div>
+        <RecordHeader
+          title={title}
+          badges={
+            <Badge className={STATE_BADGE[state]} data-testid="credit-note-state">
+              {CREDIT_NOTE_STATE_LABELS[state]}
+            </Badge>
+          }
+          amount={headerAmount}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="credit-note-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
@@ -230,43 +263,54 @@ export function CreditNoteDetail({ creditNoteId }: { creditNoteId: string }) {
                 </span>
               )}
             </p>
-            {note.reason && (
-              <p className="text-[13.5px] text-on-surface" data-testid="credit-note-reason">
-                {note.reason}
-              </p>
-            )}
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="credit-note-actions">
-            {secondaryButtons}
-            {primaryButton}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  {t("creditNotes.detail.more")} <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {inMore.map((a) => (
-                  <DropdownMenuItem key={a.key} onSelect={a.onClick}>
-                    {a.icon}
-                    {a.label}
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="credit-note-actions">
+              {secondaryButtons}
+              <ActionBar>{primaryButton}</ActionBar>
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary">
+                    {t("creditNotes.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={title}
+                  sheetDescription={hasLeft ? t("creditNotes.detail.sheetLeft", { contact: note.contactName ?? t("creditNotes.detail.theCustomer"), amount: money(left) }) : (note.contactName ?? undefined)}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && secondary.map((a) => phoneMenuItem(a))}
+                  {inMore.map((a) => (
+                    <DropdownMenuItem key={a.key} onSelect={a.onClick}>
+                      {a.icon}
+                      {a.label}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("creditNotes.detail.viewHistory")}
                   </DropdownMenuItem>
-                ))}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("creditNotes.detail.viewHistory")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/credit-notes/${note.id}/history`} subjectLabel={t("creditNotes.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/credit-notes/${note.id}/history`} subjectLabel={t("creditNotes.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        >
+          {note.reason && (
+            <p className="text-[13.5px] text-on-surface" data-testid="credit-note-reason">
+              {note.reason}
+            </p>
+          )}
+        </RecordHeader>
       </div>
 
       {figures.length > 0 && (
-        <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "md:grid-cols-4" : figures.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2")} data-testid="credit-note-figures">
+        // US-OPS-58: two per row on a phone.
+        <RecordFigures data-testid="credit-note-figures">
           {figures}
-        </div>
+        </RecordFigures>
       )}
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">

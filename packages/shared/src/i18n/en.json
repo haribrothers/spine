@@ -400,7 +400,9 @@
       "setDefault": "Set as default",
       "edit": "Edit",
       "restore": "Restore",
-      "archive": "Archive"
+      "archive": "Archive",
+      "showCount_one": "Show {{count}} account",
+      "showCount_other": "Show {{count}} accounts"
     },
     "history": {
       "downloadError": "Couldn't download the report. Try again.",
@@ -412,6 +414,8 @@
       "colEnd": "Statement end date",
       "colClosing": "Closing balance",
       "colMatched": "Entries matched",
+      "matchedCount_one": "{{count}} entry matched",
+      "matchedCount_other": "{{count}} entries matched",
       "colBy": "Finished by",
       "colAt": "Finished",
       "colStatus": "Status",
@@ -805,7 +809,9 @@
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No catalogue items yet",
       "emptyDescription": "Add your first good or service to quote faster — default price and tax rate prefill every new quote line.",
-      "bundleSavedDescription": "{{name}} is under Bundles, ready to add to a quote."
+      "bundleSavedDescription": "{{name}} is under Bundles, ready to add to a quote.",
+      "showCount_one": "Show {{count}} item",
+      "showCount_other": "Show {{count}} items"
     },
     "form": {
       "saveError": "Could not save item.",
@@ -969,6 +975,28 @@
     }
   },
   "common": {
+    "lineSheet": {
+      "openLine": "Line {{index}} of {{total}}: {{name}}",
+      "untitled": "No item yet",
+      "lineOf": "Line {{index}} of {{total}}",
+      "newLine": "New line",
+      "cancel": "Cancel",
+      "done": "Done",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "delete": "Delete",
+      "qtyTimesRate": "{{qty}} × {{rate}}",
+      "discountOff": "{{percent}}% off",
+      "lineAmount": "Line amount",
+      "item": "Item",
+      "description": "Description",
+      "quantity": "Quantity",
+      "unitPrice": "Unit price",
+      "discount": "Discount %",
+      "tax": "Tax",
+      "account": "Account",
+      "moved": "Moved to position {{position}} of {{total}}"
+    },
     "notFound": {
       "code": "404",
       "title": "We can't find that page",
@@ -1360,6 +1388,64 @@
       "onlineDocsHint": "Latest docs on the website",
       "footer": "Spine {{version}} · the guide on this server matches your version",
       "footerGeneric": "The guide on this server matches your version"
+    },
+    "phone": {
+      "tabs": {
+        "home": "Home",
+        "sales": "Sales",
+        "jobs": "Jobs",
+        "money": "Money",
+        "more": "More"
+      },
+      "more": {
+        "title": "Menu",
+        "pages": "All pages",
+        "help": "Help"
+      },
+      "titles": {
+        "spine": "Spine",
+        "contact": "Contact",
+        "newContact": "New contact",
+        "quote": "Quote",
+        "newQuote": "New quote",
+        "editQuote": "Edit quote",
+        "invoice": "Invoice",
+        "newInvoice": "New invoice",
+        "editInvoice": "Edit invoice",
+        "recurringInvoices": "Recurring invoices",
+        "job": "Job",
+        "payment": "Payment",
+        "creditNote": "Credit note",
+        "expense": "Expense",
+        "expenseCategories": "Expense categories",
+        "vendorBill": "Vendor bill",
+        "newVendorBill": "New vendor bill",
+        "editVendorBill": "Edit vendor bill",
+        "recurringBills": "Recurring bills",
+        "vendorCredit": "Vendor credit",
+        "newVendorCredit": "New vendor credit",
+        "editVendorCredit": "Edit vendor credit",
+        "vendorPayment": "Vendor payment",
+        "bankAccount": "Bank account",
+        "reconcile": "Reconcile",
+        "reconciliations": "Reconciliations",
+        "journal": "Journal entry",
+        "team": "Team",
+        "tallyMapping": "Tally mapping",
+        "activity": "Activity",
+        "profile": "Profile",
+        "setup": "Set up Spine",
+        "openingBalances": "Opening balances",
+        "emails": "Emails"
+      },
+      "select": {
+        "select": "Select",
+        "done": "Done"
+      },
+      "moreActions": {
+        "open": "More actions",
+        "title": "More actions"
+      }
     }
   },
   "contacts": {
@@ -1454,6 +1540,7 @@
       "historySubject": "this contact",
       "refund": "Refund",
       "sendStatement": "Send statement",
+      "viewHistory": "View history",
       "editHeading": "Edit contact",
       "tabTimeline": "Timeline",
       "tabLeads": "Leads",
@@ -1505,7 +1592,9 @@
       "noMatchQueryDescription": "Check the spelling, or search by email or phone.",
       "clearSearch": "Clear search",
       "emptyTitle": "No contacts yet",
-      "emptyDescription": "Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
+      "emptyDescription": "Add your first customer or vendor to start tracking quotes, jobs and invoices against them.",
+      "showCount_one": "Show {{count}} contact",
+      "showCount_other": "Show {{count}} contacts"
     },
     "form": {
       "createdTitle": "Contact created",
@@ -1772,7 +1861,9 @@
       "noMatchTitle": "No credit notes match these filters",
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No credit notes yet",
-      "emptyDescription": "A credit note corrects an issued invoice — what was returned, not delivered or over-billed — and takes the tax back with it."
+      "emptyDescription": "A credit note corrects an issued invoice — what was returned, not delivered or over-billed — and takes the tax back with it.",
+      "showCount_one": "Show {{count}} credit note",
+      "showCount_other": "Show {{count}} credit notes"
     },
     "newDialog": {
       "title": "New credit note",
@@ -1841,6 +1932,8 @@
       "figRefunded": "Refunded",
       "paidBack": "Paid back to the customer",
       "figLeft": "Credit left",
+      "total": "Total",
+      "sheetLeft": "{{contact}} · {{amount}} left",
       "toApplyOrRefund": "To apply or refund",
       "allUsed": "All of it is used",
       "appliedTo": "Applied to {{number}}",
@@ -1913,6 +2006,8 @@
       "overdueInvoices_other": "{{count}} invoices"
     },
     "attention": {
+      "showAll": "Show all {{n}}",
+      "showFewer": "Show fewer",
       "caughtUp": "You're all caught up",
       "emptyText": "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you.",
       "title": "Needs your attention",
@@ -2124,7 +2219,9 @@
       "updating": "Updating…",
       "refreshList": "Refresh list",
       "refreshFailed": "Couldn't refresh the list. Check your connection and try again.",
-      "tryAgainButton": "Try again"
+      "tryAgainButton": "Try again",
+      "showCount_one": "Show {{count}} email",
+      "showCount_other": "Show {{count}} emails"
     },
     "retryConfirm": {
       "title": "Retry this email?",
@@ -2400,6 +2497,7 @@
       "selfReviewNote": "Someone else needs to approve your own expense.",
       "billableNoJob": "This expense is billable but has no job, so there's no customer to bill it to. Add it to an invoice by hand.",
       "amount": "Amount",
+      "sheetAmount": "{{category}} · {{amount}}",
       "tax": "Tax",
       "paidFrom": "Paid from",
       "chosenWhenApproved": "Chosen when approved",
@@ -2524,7 +2622,9 @@
       "noneYet": "No expenses yet",
       "ownNote": "Your own expenses can't be selected for approval — someone else approves them.",
       "submitted": "Expense submitted",
-      "waitingWithAmount": "{{label}} for {{amount}} is waiting for approval."
+      "waitingWithAmount": "{{label}} for {{amount}} is waiting for approval.",
+      "showCount_one": "Show {{count}} expense",
+      "showCount_other": "Show {{count}} expenses"
     },
     "categories": {
       "active": "Active",
@@ -2700,7 +2800,9 @@
       "deletedDescription": "{{number}} has been permanently removed.",
       "draftInvoice": "Draft invoice",
       "actionFailedTitle": "Couldn't do that to {{number}}.",
-      "theDraftInvoice": "the draft invoice"
+      "theDraftInvoice": "the draft invoice",
+      "showCount_one": "Show {{count}} invoice",
+      "showCount_other": "Show {{count}} invoices"
     },
     "table": {
       "progressClaim": "Progress claim {{number}}",
@@ -2807,6 +2909,7 @@
       "figCredited": "Credited",
       "creditedNote": "From credit notes and credit",
       "figBalance": "Balance due",
+      "sheetDue": "{{contact}} · {{amount}} due",
       "dueToday": "Due today",
       "dueNote": "Due {{note}}",
       "noDueDate": "No due date",
@@ -3141,7 +3244,11 @@
       "amount": "Amount",
       "subtotal": "Subtotal",
       "discount": "Discount",
-      "total": "Total"
+      "total": "Total",
+      "linesCount": "Lines · {{count}}",
+      "qtyTimesRate": "{{qty}} × {{rate}}",
+      "discountOff": "{{percent}}% off",
+      "taxRate": "Tax {{percent}}%"
     }
   },
   "jobs": {
@@ -3182,7 +3289,8 @@
       "complete": "Complete",
       "billed": "Billed",
       "billedOver": "Billed over the contract",
-      "billedOverAria": "{{pct}}%, billed over the contract"
+      "billedOverAria": "{{pct}}%, billed over the contract",
+      "pctComplete": "{{pct}}% complete"
     },
     "due": {
       "noDueDate": "No due date",
@@ -3241,7 +3349,9 @@
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No jobs yet",
       "emptyDescription": "Start a job for work you've agreed — from an accepted quote, or straight from here.",
-      "goToQuotes": "Go to quotes"
+      "goToQuotes": "Go to quotes",
+      "showCount_one": "Show {{count}} job",
+      "showCount_other": "Show {{count}} jobs"
     },
     "newJob": {
       "quoteFallback": "Quote",
@@ -3525,6 +3635,8 @@
       "totalCost": "Total cost"
     },
     "milestones": {
+      "actionsFor": "Actions for {{name}}",
+      "viewHistory": "View history",
       "addAtLeastOne": "Add at least one milestone.",
       "needsName": "Every milestone needs a name.",
       "saveFailed": "Could not save milestones.",
@@ -3639,7 +3751,11 @@
       "newJournal": "New journal",
       "emptyOwner": "Post one for depreciation, accruals or what your accountant sends at year end.",
       "searchPlaceholder": "Search journals",
-      "accessNote": "Members with \"View ledger / journals\" can read journals; only owners post or reverse them."
+      "accessNote": "Members with \"View ledger / journals\" can read journals; only owners post or reverse them.",
+      "showCount_one": "Show {{count}} journal",
+      "showCount_other": "Show {{count}} journals",
+      "fromChip": "From {{date}}",
+      "toChip": "To {{date}}"
     },
     "detail": {
       "reverseError": "Couldn't reverse this journal.",
@@ -3712,6 +3828,8 @@
     "daysInStage_one": "{{count}} day in stage",
     "daysInStage_other": "{{count}} days in stage",
     "summary": {
+      "lineOpen": "{{amount}} open",
+      "lineWinRate": "Win rate {{rate}}",
       "leads_one": "{{count}} lead",
       "leads_other": "{{count}} leads",
       "aria": "Pipeline summary",
@@ -3803,6 +3921,7 @@
       "saveChanges": "Save changes"
     },
     "board": {
+      "moveHint": "Move a lead to another stage from its ⋯ menu.",
       "updated": "Pipeline updated",
       "loadFailed": "Could not load the pipeline.",
       "cantMove": "You can't move this lead.",
@@ -3854,7 +3973,8 @@
       "deleteTitle": "Delete this lead?",
       "deleteDescription": "This can't be undone. The lead's follow-ups and activities go with it; the contact and any quotes stay.",
       "cancel": "Cancel",
-      "deleteLead": "Delete lead"
+      "deleteLead": "Delete lead",
+      "stagesLabel": "Stages"
     }
   },
   "meetings": {
@@ -5201,6 +5321,7 @@
       "vendors_other": "{{count}} vendors",
       "vendorFallback": "Vendor",
       "never": "Never",
+      "lastPaidOn": "Last paid {{date}}",
       "showBills": "Show {{name}}'s bills",
       "hideBills": "Hide {{name}}'s bills",
       "theVendor": "the vendor",
@@ -5357,7 +5478,9 @@
       "noMatchTitle": "No payments match these filters",
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No payments recorded yet",
-      "emptyDescription": "Record a payment against one or more invoices, or hold it as unallocated customer credit."
+      "emptyDescription": "Record a payment against one or more invoices, or hold it as unallocated customer credit.",
+      "showCount_one": "Show {{count}} payment",
+      "showCount_other": "Show {{count}} payments"
     },
     "applyCredit": {
       "allocateSome": "Allocate at least some credit to an invoice.",
@@ -5410,6 +5533,7 @@
       "figRefunded": "Refunded",
       "paidBack": "Paid back to the customer",
       "figLeft": "Credit left",
+      "sheetReceived": "{{contact}} · {{amount}} received",
       "toApplyOrRefund": "To apply or refund",
       "nothingLeft": "Nothing left to apply",
       "breadcrumbBilling": "Billing",
@@ -5424,6 +5548,8 @@
       "theCustomer": "the customer",
       "colInvoice": "Invoice",
       "colInvoiceTotal": "Invoice total",
+      "rowDetail": "Total {{total}} · applied {{date}}",
+      "rowStillOwes": "{{amount}} still owed",
       "colFromPayment": "From this payment",
       "colStillOwes": "Still owes",
       "colApplied": "Applied",
@@ -5724,7 +5850,9 @@
       "noMatchTitle": "No quotes match these filters",
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No quotes yet",
-      "emptyDescription": "Build a multi-line quote for a customer — save it as a draft, then send when it's ready."
+      "emptyDescription": "Build a multi-line quote for a customer — save it as a draft, then send when it's ready.",
+      "showCount_one": "Show {{count}} quote",
+      "showCount_other": "Show {{count}} quotes"
     },
     "toasts": {
       "revisedTitle": "{{number}} revised",
@@ -5940,6 +6068,8 @@
       "validUntil": "Valid until {{date}}",
       "version": "Version {{version}}",
       "more": "More",
+      "total": "Total",
+      "sheetTotal": "{{contact}} · {{amount}}",
       "duplicateAsDraft": "Duplicate as new draft",
       "saveAsBundle": "Save lines as a bundle…",
       "emailAgain": "Email again",
@@ -6203,6 +6333,8 @@
       }
     },
     "common": {
+      "rangeSummary": "{{from}} – {{to}}",
+      "asOfSummary": "As of {{date}}",
       "reports": "Reports",
       "from": "From",
       "to": "To",
@@ -6512,6 +6644,8 @@
       "tabDayBook": "Day book",
       "allAccountsWithActivity": "All accounts with activity",
       "hideInactive": "Hide accounts with no activity",
+      "accountCount_one": "{{count}} account",
+      "accountCount_other": "{{count}} accounts",
       "lines": "Lines",
       "emptyTitle": "Nothing posted in this period",
       "emptyDescription": "Pick other dates, or untick “Hide accounts with no activity” to see every account.",
@@ -8205,9 +8339,8 @@
   },
   "ui": {
     "appShell": {
-      "openNavigation": "Open navigation",
-      "navigation": "Navigation",
-      "closeNavigation": "Close navigation"
+      "back": "Back",
+      "cancel": "Cancel"
     },
     "breadcrumb": {
       "label": "Breadcrumb"
@@ -8274,7 +8407,8 @@
     "commandPalette": {
       "opening": "Opening…",
       "closeSearch": "Close search",
-      "escKey": "Esc"
+      "escKey": "Esc",
+      "cancel": "Cancel"
     },
     "dataTable": {
       "searchPlaceholder": "Search…",
@@ -8297,7 +8431,10 @@
       "hideWidget": "Hide widget"
     },
     "reportToolbar": {
-      "updating": "Updating the report"
+      "updating": "Updating the report",
+      "filters": "Filters",
+      "sheetTitle": "Report filters",
+      "show": "Show report"
     },
     "richTextEditor": {
       "bold": "Bold",
@@ -8322,7 +8459,9 @@
       "showLess": "Show less",
       "showMore": "Show more",
       "selectNamed": "Select {{name}}",
-      "selectRow": "Select row"
+      "selectRow": "Select row",
+      "loadMore": "Load more",
+      "shownOf": "{{shown}} of {{total}}"
     },
     "toast": {
       "dismiss": "Dismiss"
@@ -8331,6 +8470,20 @@
       "goBack": "Go back"
     },
     "calendar": {
+      "phone": {
+        "pickMonth": "Pick a month",
+        "previousYear": "Previous year",
+        "nextYear": "Next year",
+        "dayLabel_one": "{{date}}, {{count}} meeting",
+        "dayLabel_other": "{{date}}, {{count}} meetings",
+        "count_one": "{{count}} meeting",
+        "count_other": "{{count}} meetings",
+        "later_one": "{{count}} later",
+        "later_other": "{{count}} later",
+        "today": "Today · {{date}}",
+        "nothing": "Nothing on this day.",
+        "week": "Week of {{date}}"
+      },
       "colors": {
         "blue": "Blue",
         "green": "Green",
@@ -8405,6 +8558,30 @@
         "saveChanges": "Save changes",
         "createEvent": "Create event"
       }
+    },
+    "scrollX": {
+      "label": "Table, scrolls sideways"
+    },
+    "bottomTabBar": {
+      "label": "Main"
+    },
+    "bottomSheet": {
+      "close": "Close"
+    },
+    "actionSheet": {
+      "cancel": "Cancel"
+    },
+    "filterSheet": {
+      "filters": "Filters",
+      "on_one": "{{count}} filter on",
+      "on_other": "{{count}} filters on",
+      "onLabel": "Filters that are on",
+      "remove": "Remove {{filter}}",
+      "clearAll": "Clear all",
+      "show": "Show results"
+    },
+    "chipStrip": {
+      "label": "Summary, scrolls sideways"
     }
   },
   "uiNative": {
@@ -8612,7 +8789,9 @@
       "balanceUpdated": "{{number}}'s balance has been updated.",
       "theBillsBalanceUpdated": "The bill's balance has been updated.",
       "voidedTitle": "{{number}} voided",
-      "voidedDescription": "A reversing entry took it off your books."
+      "voidedDescription": "A reversing entry took it off your books.",
+      "showCount_one": "Show {{count}} bill",
+      "showCount_other": "Show {{count}} bills"
     },
     "detail": {
       "loadFailed": "Could not load vendor bill.",
@@ -8655,6 +8834,7 @@
       "credits_other": "{{count}} credits",
       "none": "None",
       "balanceDue": "Balance due",
+      "sheetDue": "{{vendor}} · {{amount}} due",
       "void": "Void",
       "owed": "Owed",
       "paidInFull": "Paid in full",
@@ -9040,7 +9220,9 @@
       "noMatchDescription": "Try adjusting or clearing the filters above.",
       "emptyTitle": "No vendor credits yet",
       "emptyDescription": "Record a vendor's credit note for returned goods, an overcharge or a discount after the bill.",
-      "theVendor": "the vendor"
+      "theVendor": "the vendor",
+      "showCount_one": "Show {{count}} credit",
+      "showCount_other": "Show {{count}} credits"
     },
     "applied": {
       "title": "Credit applied",
@@ -9100,6 +9282,7 @@
       "subtotal": "Subtotal",
       "tax": "Tax",
       "totalCredit": "Total credit",
+      "sheetLeft": "{{vendor}} · {{amount}} left to use",
       "notAppliedHint": "Not applied yet. Apply it to cut what you owe on a bill.",
       "nothingApplied": "Nothing was applied to a bill.",
       "actionsFor": "Actions for {{label}}",
@@ -9328,7 +9511,9 @@
       "emptyDescription": "Record a payment against one or more of a vendor's recorded bills.",
       "payment": "Payment",
       "recordedToast": "{{number}} recorded",
-      "recordedToastDescription": "It's posted to your books, and the bills it paid owe less."
+      "recordedToastDescription": "It's posted to your books, and the bills it paid owe less.",
+      "showCount_one": "Show {{count}} payment",
+      "showCount_other": "Show {{count}} payments"
     },
     "detail": {
       "loadFailed": "Couldn't load this payment.",
@@ -9363,11 +9548,14 @@
       "viewHistory": "View history",
       "historySubject": "this vendor payment",
       "paid": "Paid",
+      "sheetPaid": "{{vendor}} · {{amount}} paid",
       "billsPaid": "Bills paid",
       "billCount": "{{count}} bills",
       "paidTo": "Paid to",
       "bill": "Bill",
       "billTotal": "Bill total",
+      "rowDetail": "Total {{total}} · due {{due}}",
+      "rowStillOwes": "{{amount}} still owed",
       "fromThisPayment": "From this payment",
       "stillOwes": "Still owes",
       "due": "Due",

@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@spine/ui";
 
 - Full keyboard navigation.
 - Can be controlled or uncontrolled.
+- Under 768px it keeps its 18px circle; its 44px tap area is drawn around it (`data-tap-area`), never as a blank box (US-OPS-61).
 
 ## Exports
 

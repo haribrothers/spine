@@ -7,7 +7,10 @@ import {
   Alert,
   AlertDescription,
   Button,
+  ChipStrip,
   EmptyState,
+  FilterSheet,
+  FloatingActionButton,
   Input,
   Label,
   MultiSelect,
@@ -19,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   cn,
+  type FilterChip,
 } from "@spine/ui";
 import { CSV_FORMULA_CELL, type CatalogBundle, type TaxProfile } from "@spine/shared";
 import { ChevronDown, Download, Package, Plus, RefreshCw, Search, Upload, Wallet } from "lucide-react";
@@ -53,6 +57,8 @@ import type { Account, AccountsByType, CatalogItem, TaxGroupOption, TaxRateOptio
 import { useToast } from "../../../components/toast-host";
 import { ActionError } from "../../../components/action-error";
 import { t as translate, useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
+import { useSelectMode, PhoneMoreActions } from "../../../lib/phone-bar";
 
 const STATUS_OPTIONS = [
   { value: "active", label: translate("catalog.common.active") },
@@ -105,6 +111,7 @@ export function CatalogExplorer({
   const [importOpen, setImportOpen] = useState(false);
   const [bundleOpen, setBundleOpen] = useState(false);
   const [priceDraft, setPriceDraft] = useState({ min: state.min, max: state.max });
+  const isPhone = useIsPhone();
   const loading = useRef(false);
   const showToast = useToast();
 
@@ -297,11 +304,45 @@ export function CatalogExplorer({
 
   const filtersOn = hasCatalogFilters(state);
   const priceSet = Boolean(state.min.trim() || state.max.trim());
+  const clearAll = () => update({ q: "", status: ["active"], categories: [], min: "", max: "", setup: "" });
+  // US-OPS-57: a chip for each filter that's on, with × to remove it (on a phone). Status
+  // "Active" alone is the default, so it gets no chip; removing the last status goes back to it.
+  const defaultStatus = state.status.length === 1 && state.status[0] === "active";
+  const setupNames: Record<string, string> = { tax: t("catalog.explorer.statMissingTax"), account: t("catalog.explorer.statNoIncome") };
+  const filterChips: FilterChip[] = [
+    ...(defaultStatus
+      ? []
+      : state.status.map((status) => ({
+          key: `status-${status}`,
+          label: STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status,
+          onRemove: () => {
+            const rest = state.status.filter((s) => s !== status);
+            update({ status: rest.length > 0 ? rest : ["active"] });
+          },
+        }))),
+    ...state.categories.map((category) => ({ key: `category-${category}`, label: category, onRemove: () => update({ categories: state.categories.filter((c) => c !== category) }) })),
+    ...(priceSet
+      ? [
+          {
+            key: "price",
+            label: priceLabel(state.min, state.max, currency, formatMoney),
+            onRemove: () => {
+              setPriceDraft({ min: "", max: "" });
+              update({ min: "", max: "" });
+            },
+          },
+        ]
+      : []),
+    ...(state.setup ? [{ key: "setup", label: setupNames[state.setup] ?? state.setup, onRemove: () => update({ setup: "" }) }] : []),
+  ];
   const selectable = canCreate || canDelete;
 
+  // US-OPS-56: on a phone the top bar's Select shows the ticks; Done clears them.
+  const selecting = useSelectMode({ available: Boolean(selectable), onDone: () => setSelected(new Set()) });
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="catalog-stats">
+      {/* US-OPS-57: on a phone the cards are chips in one row that scrolls sideways. */}
+      <ChipStrip className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="catalog-stats">
         {statButton(t("catalog.explorer.statTotal"), stats?.total ?? null, null, t("catalog.explorer.statClearHint"), t("catalog.explorer.statClearHint"))}
         <StatCard
           label={t("catalog.explorer.statCategories")}
@@ -313,11 +354,18 @@ export function CatalogExplorer({
         {statButton(t("catalog.explorer.statMissingTax"), stats?.missingTax ?? null, "tax", t("catalog.explorer.statMissingTaxHint"), t("catalog.explorer.statMissingTaxAria"))}
         {/* eslint-disable-next-line i18next/no-literal-string -- "account" is a setup filter value, not copy */}
         {statButton(t("catalog.explorer.statNoIncome"), stats?.noIncomeAccount ?? null, "account", t("catalog.explorer.statNoIncomeHint"), t("catalog.explorer.statNoIncomeAria"))}
-      </div>
+      </ChipStrip>
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          {/* US-OPS-57: on a phone, search and Filters in one row, the filters in a sheet. */}
+          <FilterSheet
+            className="flex flex-wrap items-center gap-2"
+            search={isPhone ? search : undefined}
+            chips={filterChips}
+            onClearAll={clearAll}
+            showLabel={items ? t("catalog.explorer.showCount", { count: items.length }) : undefined}
+          >
             <MultiSelect options={STATUS_OPTIONS} value={state.status} onValueChange={(status) => update({ status })} placeholder={t("catalog.explorer.statusPlaceholder")} aria-label={t("catalog.common.filterByStatus")} className="w-36" />
             <MultiSelect
               options={categoryOptions}
@@ -373,42 +421,53 @@ export function CatalogExplorer({
                 </form>
               </PopoverContent>
             </Popover>
-            {filtersOn && (
-              <Button variant="ghost" size="sm" onClick={() => update({ q: "", status: ["active"], categories: [], min: "", max: "", setup: "" })}>
+            {filtersOn && !isPhone && (
+              <Button variant="ghost" size="sm" onClick={clearAll}>
                 {t("catalog.common.clearFilters")}
               </Button>
             )}
-          </div>
+          </FilterSheet>
           <div className="flex flex-wrap items-center gap-2">
             {updatedAt !== null && (
               <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="catalog-updated">
                 {refreshing ? t("catalog.common.updating") : updatedLabel(updatedAt, now)}
               </span>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label={t("catalog.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !all} onClick={() => void load("refresh")}>
-                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("catalog.common.refreshList")}</TooltipContent>
-            </Tooltip>
+            <PhoneMoreActions>
+            {isPhone ? (
+              <Button variant="secondary" aria-busy={refreshing} disabled={refreshing || !all} onClick={() => void load("refresh")}>
+                <RefreshCw size={16} aria-hidden />
+                {t("catalog.common.refreshList")}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label={t("catalog.common.refreshList")} aria-busy={refreshing} disabled={refreshing || !all} onClick={() => void load("refresh")}>
+                    <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("catalog.common.refreshList")}</TooltipContent>
+              </Tooltip>
+            )}
             <Button variant="secondary" onClick={exportCsv} disabled={!items || items.length === 0}>
               <Download size={14} aria-hidden />
               {t("catalog.common.export")}
             </Button>
+            {/* US-CAT-09 — import from a CSV; same right as adding an item. */}
             {canCreate && (
-              <>
-                {/* US-CAT-09 — import from a CSV; same right as adding an item. */}
-                <Button variant="secondary" onClick={() => setImportOpen(true)}>
-                  <Upload size={14} aria-hidden />
-                  {t("catalog.common.import")}
-                </Button>
+              <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                <Upload size={14} aria-hidden />
+                {t("catalog.common.import")}
+              </Button>
+            )}
+            </PhoneMoreActions>
+            {canCreate && (
+              <FloatingActionButton>
                 <Button onClick={openCreate}>
                   <Plus size={14} aria-hidden />
                   {t("catalog.common.addItem")}
                 </Button>
-              </>
+              </FloatingActionButton>
             )}
           </div>
         </div>
@@ -446,7 +505,7 @@ export function CatalogExplorer({
         <CatalogSkeleton />
       ) : items.length === 0 ? (
         <div className="flex flex-col gap-3">
-          <div className="flex">{search}</div>
+          {!isPhone && <div className="flex">{search}</div>}
           <div className="rounded-lg border border-border bg-surface">
             {filtersOn ? (
               <EmptyState
@@ -454,7 +513,7 @@ export function CatalogExplorer({
                 title={state.q.trim() && !hasCatalogFilters({ ...state, q: "" }) ? t("catalog.explorer.noMatchQuery", { query: state.q.trim() }) : t("catalog.explorer.noMatchFilters")}
                 description={t("catalog.explorer.noMatchDescription")}
                 action={
-                  <Button variant="secondary" onClick={() => update({ q: "", status: ["active"], categories: [], min: "", max: "", setup: "" })}>
+                  <Button variant="secondary" onClick={clearAll}>
                     {t("catalog.common.clearFilters")}
                   </Button>
                 }
@@ -477,11 +536,12 @@ export function CatalogExplorer({
           groups={groupMap}
           selected={selectable ? selected : undefined}
           onSelectedChange={selectable ? setSelected : undefined}
+          phoneSelecting={selecting}
           sort={state.sort}
           onSortChange={(sort) => update({ sort })}
           page={state.page}
           onPageChange={(page) => update({ page })}
-          toolbarStart={search}
+          toolbarStart={isPhone ? <span /> : search}
           onEdit={openEdit}
           onDuplicate={openDuplicate}
           onChanged={handleRowChanged}

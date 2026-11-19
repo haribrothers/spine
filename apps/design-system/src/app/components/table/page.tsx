@@ -84,7 +84,7 @@ export default function TablePage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px a list is ListRows with Load more; phoneRows={false} keeps a grid a table (US-OPS-56).", 
             "Column-level sorting via a sortValue accessor — click a header to toggle ascending/descending/off.",
             "Automatic client-side pagination once data exceeds pageSize.",
             "Set configurablePageSize to render a PaginationBar (rows-per-page select + summary) instead of a fixed pageSize.",

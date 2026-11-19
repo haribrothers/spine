@@ -25,8 +25,7 @@ import {
   SelectValue,
   Spinner,
   StatCard,
-  useConfirm,
-} from "@spine/ui";
+  useConfirm, ScrollX } from "@spine/ui";
 import { STATEMENT_DATE_FORMATS, restoreCsvFormula, parseStatementAmount, parseStatementDate, type OpeningBill, type OpeningImportResult, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { t, useT } from "../../../lib/i18n";
@@ -102,7 +101,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
         <table className="w-full text-[14px]" data-testid="opening-bills">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
@@ -149,7 +148,7 @@ export function OpeningBillsTab({ currency, locked, onChanged }: { currency: str
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       <p className="text-[13px] text-on-surface-muted">{t("openingBalances.bills.footnote")}</p>
 
       <OpeningBillDialog value={editing} onClose={() => setEditing(null)} vendors={vendors} currency={currency} onSaved={() => { setEditing(null); changed(); }} />

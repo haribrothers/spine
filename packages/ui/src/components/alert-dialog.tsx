@@ -65,8 +65,9 @@ export const AlertDialogDescription = forwardRef<
 ));
 AlertDialogDescription.displayName = "AlertDialogDescription";
 
+/** US-OPS-60: a confirmation stays a small alert in the middle of a phone, its buttons full width, the action on top. */
 export function AlertDialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mt-5 flex items-center justify-end gap-2", className)} {...props} />;
+  return <div className={cn("mt-5 flex items-center justify-end gap-2 max-md:flex-col-reverse max-md:items-stretch max-md:[&>*]:w-full", className)} {...props} />;
 }
 
 export const AlertDialogCancel = forwardRef<

@@ -134,7 +134,7 @@ export default function KanbanPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["KanbanStack shows one column's cards one under another, for a phone (US-OPS-56).", 
             "Drag a card from one column and drop it on another to move it — KanbanColumn's onDrop receives the dragged card's id; what a \"move\" means (a PUT request, local state, etc.) is entirely the caller's concern.",
             "Each column has a fixed height (100% of the board) and its own independently scrolling card list via ScrollArea — the board's overall height never grows with card count.",
             "title/meta/subtitle are free-form ReactNode, not fixed to \"name + count\" — meta is typically a count, subtitle a running value total, but neither is required.",

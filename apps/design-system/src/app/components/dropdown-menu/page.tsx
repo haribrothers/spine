@@ -57,7 +57,7 @@ export default function DropdownMenuPage() {
 
       <DocSection id="features" title="Features">
         <FeatureList
-          items={[
+          items={["Under 768px it is an action sheet near the bottom edge, with larger rows and a Cancel (US-OPS-60).", 
             "Can be controlled or uncontrolled.",
             "Supports submenus with configurable reading direction.",
             "Supports items, labels, groups, checkable items (single or multiple) and a separator.",

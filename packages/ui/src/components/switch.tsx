@@ -10,6 +10,8 @@ export const Switch = forwardRef<
 >(({ className, ...props }, ref) => (
   <SwitchPrimitive.Root
     ref={ref}
+    // US-OPS-61: keeps its own size on a phone; its 44px tap area is drawn around it.
+    data-tap-area=""
     className={cn(
       "relative h-6 w-10 shrink-0 rounded-full bg-border-strong transition-colors data-[state=checked]:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50",
       className,

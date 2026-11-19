@@ -54,6 +54,7 @@ export default function GroupedBarChartPage() {
         <FeatureList
           items={[
             "A legend in text for every series and the marker — colour is never the only signal.",
+            "US-RPT-41: under 768px the legend sits under the chart, only some labels show on the x-axis so they don't overlap, and the y-axis is narrower.",
             "A dashed marker drawn across one series' bar at its own value (rows without it show none).",
             "A tooltip whose content you write, on hover and keyboard focus.",
             "An empty state when every value is zero.",

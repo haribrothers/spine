@@ -15,7 +15,7 @@ Or download them in a terminal, naming the newest release's tag:
 
 ```bash
 mkdir -p /opt/spine && cd /opt/spine
-v=v1.0.0-beta.5
+v=v1.0.0-beta.6
 for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example SHA256SUMS; do
   curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"
 done

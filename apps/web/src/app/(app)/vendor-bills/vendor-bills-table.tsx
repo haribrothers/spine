@@ -27,6 +27,7 @@ export function VendorBillsTable({
   toolbarStart,
   selected,
   onSelectedChange,
+  phoneSelecting,
   handlers,
 }: {
   bills: VendorBill[];
@@ -38,6 +39,8 @@ export function VendorBillsTable({
   toolbarStart?: React.ReactNode;
   selected?: ReadonlySet<string>;
   onSelectedChange?: (next: Set<string>) => void;
+  /** US-OPS-56: on a phone, the ticks show only in Select mode. */
+  phoneSelecting?: boolean;
   handlers: BillRowHandlers;
 }) {
   const t = useT();
@@ -56,6 +59,9 @@ export function VendorBillsTable({
           <AttachmentCount count={row.attachmentCount} />
         </span>
       ),
+      // US-OPS-56: on a phone, the number alone; Opening balance goes with the state badge.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/vendor-bills/${row.id}`}>{row.billNumber}</Link>,
       sortValue: (row) => row.billNumber,
     },
     {
@@ -66,9 +72,11 @@ export function VendorBillsTable({
           {row.contactName ?? "—"}
         </SectionLink>
       ),
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName ?? "—", row.jobName].filter(Boolean).join(" · "),
       sortValue: (row) => row.contactName ?? "",
     },
-    { key: "date", header: t("vendorBills.table.billDate"), render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
+    { key: "date", phone: "hidden", header: t("vendorBills.table.billDate"), render: (row) => <span className="whitespace-nowrap">{date(row.date)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
     {
       key: "dueDate",
       header: t("vendorBills.table.due"),
@@ -82,16 +90,25 @@ export function VendorBillsTable({
           </div>
         );
       },
+      // One line under the amount on a phone: how late it is, else the due date.
+      phone: "trailingSub",
+      phoneRender: (row) => {
+        const late = lateLabel(row, now);
+        if (late) return <span className={(daysLate(row.dueDate, now) ?? 0) > 0 ? "font-medium text-overdue" : undefined}>{late}</span>;
+        return row.dueDate && row.status !== "void" ? date(row.dueDate) : null;
+      },
       sortValue: (row) => row.dueDate ?? "",
     },
     {
       key: "job",
+      phone: "hidden",
       header: t("vendorBills.table.job"),
       render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.jobName ?? "",
     },
     {
       key: "state",
+      phone: "badge",
       header: t("vendorBills.table.state"),
       render: (row) => {
         const state = billState(row, now);
@@ -101,11 +118,23 @@ export function VendorBillsTable({
           </Badge>
         );
       },
+      phoneRender: (row) => {
+        const state = billState(row, now);
+        return (
+          <>
+            <Badge className={BILL_STATE_CLASS[state]} data-testid="bill-row-state">
+              {BILL_STATE_LABELS[state]}
+            </Badge>
+            {row.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorBills.table.openingBalance")}</Badge>}
+          </>
+        );
+      },
       sortValue: (row) => BILL_STATES.indexOf(billState(row, now)),
     },
-    { key: "total", header: t("vendorBills.table.total"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
+    { key: "total", phone: "hidden", header: t("vendorBills.table.total"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>, sortValue: (row) => BigInt(row.totalAmount) },
     {
       key: "balanceDue",
+      phone: "trailing",
       header: t("vendorBills.table.balance"),
       align: "right",
       render: (row) => (row.status === "void" ? <span className="text-on-surface-muted">—</span> : <span className="tabular-nums">{formatMoney(BigInt(row.balanceDue), row.currency)}</span>),
@@ -113,6 +142,7 @@ export function VendorBillsTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">
@@ -135,6 +165,7 @@ export function VendorBillsTable({
       onPageChange={onPageChange}
       selected={selected}
       onSelectedChange={onSelectedChange}
+      phoneSelecting={phoneSelecting}
       selectLabel={(row) => row.billNumber}
     />
   );

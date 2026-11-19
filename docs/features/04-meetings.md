@@ -2,7 +2,7 @@
 
 An Outlook-style calendar for meetings with contacts and colleagues: day, week, month and agenda views, private or org-wide visibility, invitations with responses, a quick-view popover, and recurring meetings whose single occurrences can be changed without touching the series. Reminders and invite notifications are in 14 Notifications.
 
-**Screens:** `MeetingsWeek` (P1), `MeetingsMonth` (P2), `MeetingsAgenda` (P3), `MeetingsEmpty` (P2), `MeetingQuickView` (P1), `MeetingQuickViewRecurring` (P2), `MeetingEditorDetails` (P1), `MeetingEditorPeople` (P1), `MeetingScopeChoice` (P2), `MeetingDeleteConfirm` (P2), `MeetingsWeekRefined` (P2), `MeetingsWeekRefinedDark` (P2), `MeetingsMonthRefined` (P2), `MeetingsAgendaRefined` (P2), `MeetingsPhone` (P2), `MeetingQuickViewFits` (P2)
+**Screens:** `MeetingsWeek` (P1), `MeetingsMonth` (P2), `MeetingsAgenda` (P3), `MeetingsEmpty` (P2), `MeetingQuickView` (P1), `MeetingQuickViewRecurring` (P2), `MeetingEditorDetails` (P1), `MeetingEditorPeople` (P1), `MeetingScopeChoice` (P2), `MeetingDeleteConfirm` (P2), `MeetingsWeekRefined` (P2), `MeetingsWeekRefinedDark` (P2), `MeetingsMonthRefined` (P2), `MeetingsAgendaRefined` (P2), `MeetingsPhone` (P2), `MeetingQuickViewFits` (P2), `MeetingsPhoneMonth` (P1), `MeetingsPhoneMonthDark` (P1), `MeetingsPhoneDay` (P1)
 **Depends on:** 03 Contacts (meeting ↔ contact link), 15 Team (members to invite), 14 Notifications.
 
 ## Features
@@ -14,6 +14,7 @@ An Outlook-style calendar for meetings with contacts and colleagues: day, week, 
 | F-MTG-03 | Quick view and recurring meetings | P1 | 1 | `MeetingQuickView`, `MeetingQuickViewRecurring`, `MeetingScopeChoice`, `MeetingDeleteConfirm` |
 | F-MTG-04 | Own/others meeting rights | P1 | 4 | `MeetingQuickView`, `MeetingEditorDetails` |
 | F-MTG-05 | A calendar that's easy to use: busy days in the mini calendar, a New meeting button, the working day in view, useful sidebar lists, the same place on return, and every screen size | P2 | Refinements | `MeetingsWeekRefined`, `MeetingsWeekRefinedDark`, `MeetingsMonthRefined`, `MeetingsAgendaRefined`, `MeetingsPhone`, `MeetingQuickViewFits` |
+| F-MTG-06 | A calendar made for a phone: a month with busy-day dots and the day's meetings, a week strip over the day (D-283) | P1 | 12 | `MeetingsPhoneMonth`, `MeetingsPhoneDay`, `MeetingsPhoneMonthDark` |
 
 ## User stories
 
@@ -277,4 +278,22 @@ Decision: D-212
 **Implementation notes**
 - UI: `meetings-calendar.tsx` measures its height like the pipeline board (`useFillHeight`); `Calendar`'s toolbar wraps; Agenda rows take location and contact names from the page.
 - Edge: the app's left navigation has no phone layout yet, so on a phone it has to be collapsed; a phone layout for the app shell is outside this story.
+- Superseded under 768px by US-MTG-18 (D-283): a phone opens on the month with the day's meetings, and the toolbar is two short rows.
 
+### US-MTG-18 · Use a calendar made for my phone
+**Feature:** F-MTG-06 · **Priority:** P1 · **Phase:** 12 · **Screens:** `MeetingsPhoneMonth`, `MeetingsPhoneDay`, `MeetingsPhoneMonthDark`
+**As** an owner between site visits, **I want** my calendar to work like my phone's, **so that** I can see my week and book a meeting with my thumb.
+
+Decision: D-283
+
+**Acceptance criteria**
+- **Given** a window under 768px, **when** `/meetings` opens with no view in the address, **then** it shows the month as a compact grid (one letter per weekday), today circled, a dot under each day that has meetings (up to three, in their calendars' colours, with the number for screen readers), and the chosen day's meetings listed under the grid with their time (or "All day"), title, location and contact.
+- **Given** the month, **when** I tap a day, **then** it's chosen and its meetings show under the grid; when I swipe the grid left or right, or tap the arrows, **then** the next or previous month shows; Today returns to today.
+- **Given** Day, **when** I choose it, **then** a strip of the week's seven days (with their dots) sits over a timeline of the chosen day, scrolled to the working day or to now; swiping the strip moves a week, swiping the timeline moves a day, and a line marks now.
+- **Given** the toolbar, **when** it shows, **then** it's two short rows: the month and year (tapping it picks another), the previous and next arrows and Today, then Month · Day · Agenda as a segmented control the width of the screen; the Calendars list, My activities, Upcoming and Meetings by contact open from the top bar, without the mini calendar (the month view is the calendar on a phone; the Owner's call, 2026-11-19). (At 390px one row can't hold all of them at 44px each; found while drawing `MeetingsPhoneMonth`.)
+- **Given** Agenda, **when** I choose it, **then** it works as US-MTG-17 describes.
+- **Given** the + button, **when** I tap it, **then** New meeting opens as a full-screen sheet (US-OPS-60) on the chosen day, at the next half hour.
+- **Given** a meeting in any view, **when** I tap it, **then** its quick view opens as a bottom sheet.
+
+**Implementation notes**
+- `Calendar` in `@spine/ui` gains a phone month (dots and a day list) and a week strip for Day; swiping uses pointer events, with the arrows for keyboard and switch users; reduced motion turns off the slide. `meetings-calendar.tsx`'s phone default changes from Agenda to the month.

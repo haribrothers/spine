@@ -48,17 +48,27 @@ export function ContactsTable({
           </span>
         </Link>
       ),
+      // US-OPS-56: on a phone the logo and name on one line; the rest of the row says the type and how to reach them.
+      phoneRender: (row) => (
+        <Link href={`/contacts/${row.id}`} className="inline-flex max-w-full items-center gap-2.5">
+          <ContactLogo name={row.name} fileId={row.logoFileId} size="md" editable={false} onUploaded={() => {}} />
+          <span className="truncate">{row.name}</span>
+        </Link>
+      ),
       sortValue: (row) => row.name,
     },
     {
       key: "type",
       header: t("contacts.common.type"),
       render: (row) => <Badge>{TYPE_LABELS[row.type]}</Badge>,
+      phone: "subtitle",
+      phoneRender: (row) => <span className="pl-[50px]">{[TYPE_LABELS[row.type], row.email ?? row.phone].filter(Boolean).join(" · ")}</span>,
       sortValue: (row) => row.type,
     },
     {
       key: "email",
       header: t("contacts.common.email"),
+      phone: "hidden",
       render: (row) =>
         row.email ? (
           <span className="block max-w-[13rem] truncate wide-plus:max-w-[16rem]" title={row.email}>
@@ -71,11 +81,15 @@ export function ContactsTable({
     {
       key: "phone",
       header: t("contacts.common.phone"),
+      phone: "hidden",
       render: (row) => <span className="whitespace-nowrap">{row.phone ?? "—"}</span>,
     },
     {
       key: "status",
       header: t("contacts.common.status"),
+      // On a phone only Archived is worth a badge; every other row would say "Active".
+      phone: "badge",
+      phoneRender: (row) => (row.archivedAt ? <Badge>{t("contacts.common.archived")}</Badge> : null),
       render: (row) =>
         row.archivedAt ? (
           <Badge>{t("contacts.common.archived")}</Badge>

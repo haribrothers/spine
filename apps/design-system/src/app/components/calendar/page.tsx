@@ -384,6 +384,7 @@ export default function CalendarPage() {
             "US-MTG-14: toolbarAction puts a control (e.g. New meeting) before the view switch, and createRequest opens the create dialog for a range; the quick view (renderEventPopover) flips, shifts and scrolls so it always fits in the window.",
             "US-MTG-15: openRequest opens an event's quick view once its day is on screen.",
             "US-MTG-17: views limits the views offered (e.g. no Week on a phone); Agenda rows show the time range, place and agendaDetails, and stack on narrow screens; the toolbar wraps.",
+            "US-MTG-18: under 768px a two-row toolbar (month picker, arrows, Today; then the views the width of the screen), a compact month with dots and the chosen day's list, a week strip over Day, swipes for month, week and day, and the quick view as a bottom sheet. Resize below 768px to see it.",
           ]}
         />
       </DocSection>

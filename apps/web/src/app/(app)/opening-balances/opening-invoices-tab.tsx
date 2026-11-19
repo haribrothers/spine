@@ -26,8 +26,7 @@ import {
   SelectValue,
   Spinner,
   StatCard,
-  useConfirm,
-} from "@spine/ui";
+  useConfirm, ScrollX } from "@spine/ui";
 import { STATEMENT_DATE_FORMATS, restoreCsvFormula, parseStatementAmount, parseStatementDate, type OpeningImportResult, type OpeningInvoice, type StatementDateFormat } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { t, useT } from "../../../lib/i18n";
@@ -110,7 +109,7 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      <ScrollX label={t("ui.scrollX.label")} className="rounded-lg border border-border bg-surface">
         <table className="w-full text-[14px]" data-testid="opening-invoices">
           <thead>
             <tr className="border-b border-border text-left text-on-surface-muted">
@@ -161,7 +160,7 @@ export function OpeningInvoicesTab({ currency, locked, onChanged }: { currency: 
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       <p className="text-[13px] text-on-surface-muted">{t("openingBalances.invoices.footnote")}</p>
 
       <OpeningInvoiceDialog

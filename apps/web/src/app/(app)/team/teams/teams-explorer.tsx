@@ -158,10 +158,18 @@ export function TeamsExplorer() {
           {team.description && <span className="truncate text-[12.5px] text-on-surface-muted">{team.description}</span>}
         </span>
       ),
+      // US-OPS-56: on a phone, the name alone; who's on it and what it opens go on the second line.
+      phone: "title",
+      phoneRender: (team) => <Link href={`/team/teams/${team.id}`}>{team.name}</Link>,
       sortValue: (team) => team.name.toLowerCase(),
     },
     {
       key: "members",
+      phone: "subtitle",
+      phoneRender: (team) => {
+        const s = sectionsOpened(team.granted, modules);
+        return [team.members.length === 0 ? t("team.teams.noOneYet") : peopleLabel(team.members.length), t("team.teams.sectionsCount", { works: s.works, total: s.total })].join(" · ");
+      },
       header: t("team.teams.columns.members"),
       render: (team) =>
         team.members.length === 0 ? (
@@ -182,6 +190,7 @@ export function TeamsExplorer() {
     },
     {
       key: "works",
+      phone: "hidden",
       header: t("team.teams.columns.worksIn"),
       render: (team) => {
         const s = sectionsOpened(team.granted, modules);
@@ -191,6 +200,14 @@ export function TeamsExplorer() {
     },
     {
       key: "permissions",
+      // On a phone this slot holds the team's badges: Default, Demo.
+      phone: "badge",
+      phoneRender: (team) => (
+        <>
+          {team.isDefault && <Badge className="bg-paid-bg text-paid">{t("team.common.default")}</Badge>}
+          {team.isDemo && <Badge className="bg-due-soon-bg text-due-soon">{t("team.common.demo")}</Badge>}
+        </>
+      ),
       header: t("team.teams.columns.permissions"),
       render: (team) => {
         const p = permissionCount(team.granted, modules);
@@ -200,6 +217,7 @@ export function TeamsExplorer() {
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (team) => (
         <div className="flex justify-end">

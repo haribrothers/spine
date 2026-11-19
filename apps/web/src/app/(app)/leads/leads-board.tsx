@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { replaceQuery } from "../../../lib/replace-query";
 import { useFillHeight } from "../../../lib/use-fill-height";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -24,7 +25,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   EmptyState,
+  FilterSheet,
+  FloatingActionButton,
   Input,
+  type FilterChip,
   KanbanBoard,
   KanbanColumn,
   MultiSelect,
@@ -49,13 +53,14 @@ import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
 import { authClient } from "../../../lib/auth-client";
 import { useCapability } from "../../../lib/capabilities-context";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
 import type { MemberRow } from "../../../lib/members";
 import { formatMoney } from "../../../lib/money";
-import { LeadCard } from "./lead-card";
+import { LeadCard, LeadRow } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
 import { LeadLostDialog, LeadWonDialog } from "./lead-closed-dialogs";
 import { useToast } from "../../../components/toast-host";
-import { PipelineSummaryStrip } from "./pipeline-summary";
+import { PipelineSummaryLine, PipelineSummaryStrip } from "./pipeline-summary";
 import {
   CLOSED_WINDOW_DAYS,
   SORTERS,
@@ -141,6 +146,9 @@ export function LeadsBoard() {
   const [announcement, setAnnouncement] = useState("");
   const [viewSettings, setViewSettings] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // US-OPS-56: the stage shown on a phone.
+  const isPhone = useIsPhone();
+  const [phoneStageId, setPhoneStageId] = useState<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null);
@@ -413,24 +421,78 @@ export function LeadsBoard() {
   const drawerLead = drawerLeadId ? (leads.find((l) => l.id === drawerLeadId) ?? null) : null;
   const filtered = hasPipelineFilters(state);
   const shownStages = state.stages.length ? stages.filter((s) => state.stages.includes(s.id)) : stages;
+  /** A stage's leads as the board shows them: a closed stage shows the last 30 days unless it's filtered on. */
+  const leadsIn = (stage: LeadStage) => {
+    const closed = stage.kind !== "open";
+    const inStage = visible.filter((l) => l.stageId === stage.id && (!closed || state.stages.length > 0 || closedWithin(l, CLOSED_WINDOW_DAYS, now)));
+    return inStage.sort(closed ? byClosedNewest : SORTERS[state.sort]);
+  };
+  const phoneStage = shownStages.find((s) => s.id === phoneStageId) ?? shownStages.find((s) => s.kind === "open") ?? shownStages[0];
   const ownerValue = state.owner || ALL;
+
+  const searchField = (
+    <div className="relative">
+      <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-muted" />
+      <Input
+        value={state.q}
+        onChange={(e) => update({ q: e.target.value })}
+        placeholder={t("leads.board.searchPlaceholder")}
+        aria-label={t("leads.board.searchAria")}
+        className="w-48 pl-8 max-md:w-full"
+      />
+    </div>
+  );
+  // US-OPS-57: on a phone each filter that's on is a chip with × under the search.
+  const ownerLabel = state.owner === "me" ? t("leads.board.myLeads") : state.owner === "unassigned" ? t("leads.board.unassigned") : activeMembers.find((m) => m.userId === state.owner)?.name;
+  const filterChips: FilterChip[] = [
+    ...state.stages.map((id) => ({ key: `stage-${id}`, label: stageOptions.find((o) => o.value === id)?.label ?? id, onRemove: () => update({ stages: state.stages.filter((s) => s !== id) }) })),
+    ...(state.owner ? [{ key: "owner", label: ownerLabel ?? state.owner, onRemove: () => update({ owner: "" }) }] : []),
+    ...(state.source ? [{ key: "source", label: state.source, onRemove: () => update({ source: "" }) }] : []),
+    ...(state.overdue ? [{ key: "overdue", label: t("leads.summary.overdue"), onRemove: () => update({ overdue: false }) }] : []),
+  ];
+  const stageChips = (
+    <div role="tablist" aria-label={t("leads.board.stagesLabel")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="pipeline-stage-chips">
+      {shownStages.map((stage) => {
+        const chosen = stage.id === phoneStage?.id;
+        return (
+          <button
+            key={stage.id}
+            type="button"
+            role="tab"
+            aria-selected={chosen}
+            onClick={() => setPhoneStageId(stage.id)}
+            className={cn(
+              "inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              chosen ? "border-primary bg-info-bg text-primary" : "border-border-strong bg-surface text-on-surface",
+            )}
+          >
+            {stage.name}
+            <span className={cn("text-[12px] font-semibold", chosen ? "text-primary" : "text-on-surface-muted")}>{leadsIn(stage).length}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-4">
-      <PipelineSummaryStrip summary={summary} currency={currency} overdueActive={state.overdue} onOverdueToggle={() => update({ overdue: !state.overdue })} />
+      {/* US-OPS-57 (D-283): on a phone the stages come first, then the figures in one line. */}
+      {isPhone && leads.length > 0 && stageChips}
+      {isPhone ? (
+        <PipelineSummaryLine summary={summary} currency={currency} />
+      ) : (
+        <PipelineSummaryStrip summary={summary} currency={currency} overdueActive={state.overdue} onOverdueToggle={() => update({ overdue: !state.overdue })} />
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-muted" />
-            <Input
-              value={state.q}
-              onChange={(e) => update({ q: e.target.value })}
-              placeholder={t("leads.board.searchPlaceholder")}
-              aria-label={t("leads.board.searchAria")}
-              className="w-48 pl-8"
-            />
-          </div>
+        {/* US-OPS-57: on a phone, search and Filters in one row; the filters, sort and view in a sheet. */}
+        <FilterSheet
+          className="flex flex-wrap items-center gap-2"
+          search={isPhone ? searchField : undefined}
+          chips={filterChips}
+          onClearAll={() => update({ q: "", stages: [], owner: "", source: "", overdue: false })}
+        >
+          {!isPhone && searchField}
           <MultiSelect options={stageOptions} value={state.stages} onValueChange={(next) => update({ stages: next })} placeholder={t("leads.board.allStages")} aria-label={t("leads.board.filterByStage")} className="w-32" />
           <Select value={ownerValue} onValueChange={(v) => update({ owner: v === ALL ? "" : v })}>
             <SelectTrigger aria-label={t("leads.board.filterByOwner")} className="w-32">
@@ -499,26 +561,37 @@ export function LeadsBoard() {
               </label>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </FilterSheet>
         <div className="ml-auto flex items-center gap-2">
           {updatedAt !== null && (
-            <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="pipeline-updated">
+            <span className="whitespace-nowrap text-[12px] text-on-surface-muted max-md:hidden" data-testid="pipeline-updated">
               {refreshing ? t("leads.board.updating") : updatedLabel(updatedAt, now)}
             </span>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="secondary" size="icon" aria-label={t("leads.board.refresh")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
-                <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+          <PhoneMoreActions>
+            {isPhone ? (
+              <Button variant="secondary" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                <RefreshCw size={16} aria-hidden />
+                {t("leads.board.refresh")}
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("leads.board.refresh")}</TooltipContent>
-          </Tooltip>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label={t("leads.board.refresh")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                    <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("leads.board.refresh")}</TooltipContent>
+              </Tooltip>
+            )}
+          </PhoneMoreActions>
           {canCreate && (
-            <Button onClick={() => openCreate()}>
-              <Plus size={14} aria-hidden />
-              {t("leads.board.addLead")}
-            </Button>
+            <FloatingActionButton>
+              <Button onClick={() => openCreate()}>
+                <Plus size={14} aria-hidden />
+                {t("leads.board.addLead")}
+              </Button>
+            </FloatingActionButton>
           )}
         </div>
       </div>
@@ -553,6 +626,39 @@ export function LeadsBoard() {
               </Button>
             }
           />
+        </div>
+      ) : isPhone ? (
+        // US-OPS-56 (D-283): on a phone one stage at a time — its leads one under another, the
+        // stages as chips above that scroll sideways (with each stage's count). Moving a lead is
+        // in its ⋯ (an action sheet on a phone).
+        <div className="flex flex-col gap-3" data-testid="pipeline-phone">
+          {phoneStage ? (
+            <div role="tabpanel" aria-label={phoneStage.name}>
+            <ul className="-mx-4 border-y border-border bg-surface" data-testid="pipeline-phone-rows">
+              {leadsIn(phoneStage).map((lead) => (
+                <LeadRow
+                  key={lead.id}
+                  lead={lead}
+                  contactName={contactName(lead)}
+                  ownerName={ownerName(lead)}
+                  stages={stages}
+                  now={now}
+                  showValue={viewSettings.showValue}
+                  showSource={viewSettings.showSource}
+                  canMove={canEdit(lead)}
+                  canDelete={canDelete(lead)}
+                  menuOpen={menuFor === lead.id}
+                  onMenuOpenChange={(open) => setMenuFor(open ? lead.id : null)}
+                  onOpen={() => openLead(lead)}
+                  onMove={(target) => void moveLead(lead, target)}
+                  onDelete={() => setDeleteLead(lead)}
+                />
+              ))}
+              {leadsIn(phoneStage).length === 0 && <li className="px-4 py-6 text-center text-[13px] text-on-surface-muted">{t("leads.board.noLeadsInStage")}</li>}
+            </ul>
+            </div>
+          ) : null}
+          <p className="text-center text-[12.5px] text-on-surface-muted">{t("leads.board.moveHint")}</p>
         </div>
       ) : (
         <div ref={board.ref} style={board.height ? { height: board.height } : undefined} className="min-h-[420px]" data-testid="pipeline-board">

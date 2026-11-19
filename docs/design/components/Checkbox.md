@@ -24,6 +24,7 @@ import { Checkbox } from "@spine/ui";
 - Can be controlled or uncontrolled.
 - Supports indeterminate state: `checked="indeterminate"` fills it and shows a minus, for a header box when only some rows are selected (US-CAT-12).
 - Full keyboard navigation.
+- Under 768px it keeps its 18px size; its 44px tap area is drawn around it (`data-tap-area`), never as a blank box (US-OPS-61).
 
 ## Exports
 

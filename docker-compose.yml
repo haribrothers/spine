@@ -20,7 +20,7 @@ services:
 
   api:
     # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
-    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.5}
+    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.6}
     build:
       context: .
       dockerfile: docker/Dockerfile.api
@@ -46,7 +46,7 @@ services:
 
   web:
     # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
-    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.5}
+    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.6}
     build:
       context: .
       dockerfile: docker/Dockerfile.web
@@ -65,7 +65,7 @@ services:
     # Caddy with Spine's routing built in (D-280; docker/Caddyfile in the
     # repo), so this file needs nothing beside it. Your own routing: mount a Caddyfile over
     # /etc/caddy/Caddyfile in docker-compose.override.yml.
-    image: ghcr.io/haribrothers/spine-proxy:${SPINE_VERSION:-1.0.0-beta.5}
+    image: ghcr.io/haribrothers/spine-proxy:${SPINE_VERSION:-1.0.0-beta.6}
     build:
       context: .
       dockerfile: docker/Dockerfile.proxy

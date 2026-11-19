@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, BarChart3, History, Plus, Search, X } from "lucide-react";
-import { Checkbox, CommandPalette, ToggleGroup, ToggleGroupItem, type AppShellNavSection, type CommandPaletteGroup, type CommandPaletteItem } from "@spine/ui";
+import { ArrowRight, BarChart3, Check, History, Plus, Search, X } from "lucide-react";
+import { Checkbox, CommandPalette, ToggleGroup, ToggleGroupItem, cn, type AppShellNavSection, type CommandPaletteGroup, type CommandPaletteItem } from "@spine/ui";
 import {
   REPORTS,
   SEARCH_GROUP_LIST_HREF,
@@ -40,6 +40,7 @@ import {
   matchesWordStarts,
 } from "./search-actions";
 import { t as translate, useT } from "../lib/i18n";
+import { useIsPhone } from "../lib/use-is-phone";
 
 /** Wait this long after the last keystroke before asking the server. */
 const DEBOUNCE_MS = 150;
@@ -47,6 +48,9 @@ const DEBOUNCE_MS = 150;
 const LOCAL_MAX = 3;
 /** US-OPS-46 — remembered on this device. */
 const ARCHIVED_KEY = "spine.search.includeArchived";
+/** On a phone, the scopes as pills that scroll sideways (the Owner's review). */
+const PILL_GROUP = "shrink-0 gap-2 border-0 bg-transparent p-0";
+const PILL = "h-9 shrink-0 rounded-full border border-border-strong bg-surface px-3.5 text-[14px] aria-checked:border-primary aria-checked:bg-info-bg aria-checked:text-primary aria-checked:shadow-none";
 
 type Scope = "all" | SearchScope;
 
@@ -105,6 +109,8 @@ export function SearchPalette({
   isOwner: boolean;
 }) {
   const t = useT();
+  // The Owner's review: on a phone the scopes are pills and Include archived is one of them.
+  const phone = useIsPhone();
   const router = useRouter();
   const role = useMyRole();
   const field = role === "field";
@@ -356,6 +362,15 @@ export function SearchPalette({
     </span>
   );
 
+  function toggleArchived(next: boolean) {
+    setArchived(next);
+    try {
+      window.localStorage.setItem(ARCHIVED_KEY, next ? "1" : "0");
+    } catch {
+      // A per-device convenience; without storage it's just not remembered.
+    }
+  }
+
   return (
     <CommandPalette
       open={open}
@@ -375,48 +390,50 @@ export function SearchPalette({
       }}
       pendingId={opening}
       toolbar={
-        scopes.length > 1 ? (
-          <ToggleGroup
-            type="single"
-            aria-label={t("common.search.searchIn")}
-            value={scope}
-            onValueChange={(v) => v && setScope(v as Scope)}
-            className="max-w-full overflow-x-auto"
-          >
-            <ToggleGroupItem value="all" size="sm" tooltip={false}>
-              {t("common.search.all")}
-            </ToggleGroupItem>
-            {scopes.map((s) => (
-              <ToggleGroupItem key={s} value={s} size="sm" tooltip={false}>
-                {SEARCH_SCOPE_LABELS[s]}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+        scopes.length > 1 || (phone && archivable) ? (
+          <div className="flex items-center gap-2 max-md:-mx-4 max-md:overflow-x-auto max-md:px-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+            {scopes.length > 1 && (
+              <ToggleGroup
+                type="single"
+                aria-label={t("common.search.searchIn")}
+                value={scope}
+                onValueChange={(v) => v && setScope(v as Scope)}
+                className={phone ? PILL_GROUP : "max-w-full overflow-x-auto"}
+              >
+                <ToggleGroupItem value="all" size="sm" tooltip={false} className={phone ? PILL : undefined}>
+                  {t("common.search.all")}
+                </ToggleGroupItem>
+                {scopes.map((s) => (
+                  <ToggleGroupItem key={s} value={s} size="sm" tooltip={false} className={phone ? PILL : undefined}>
+                    {SEARCH_SCOPE_LABELS[s]}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            )}
+            {phone && archivable && (
+              <button type="button" aria-pressed={archived} onClick={() => toggleArchived(!archived)} className={cn(PILL, "inline-flex shrink-0 items-center gap-1.5 border font-medium", archived ? "border-primary bg-info-bg text-primary" : "border-border-strong bg-surface text-on-surface-muted")}>
+                {archived ? <Check size={14} aria-hidden /> : <Plus size={14} aria-hidden />}
+                {t("common.search.includeArchived")}
+              </button>
+            )}
+          </div>
         ) : undefined
       }
       footer={
+        phone ? undefined : (
         <>
-          <span>{t("common.search.footerMove")}</span>
-          <span>{t("common.search.footerOpen")}</span>
-          <span>{t("common.search.footerClose")}</span>
+          {/* US-OPS-60: no keyboard hints on a touch screen. */}
+          <span className="[@media(pointer:coarse)]:hidden">{t("common.search.footerMove")}</span>
+          <span className="[@media(pointer:coarse)]:hidden">{t("common.search.footerOpen")}</span>
+          <span className="[@media(pointer:coarse)]:hidden">{t("common.search.footerClose")}</span>
           {archivable && (
             <label className="ml-auto flex cursor-pointer items-center gap-2 font-medium text-on-surface">
-              <Checkbox
-                checked={archived}
-                onCheckedChange={(v) => {
-                  const next = v === true;
-                  setArchived(next);
-                  try {
-                    window.localStorage.setItem(ARCHIVED_KEY, next ? "1" : "0");
-                  } catch {
-                    // A per-device convenience; without storage it's just not remembered.
-                  }
-                }}
-              />
+              <Checkbox checked={archived} onCheckedChange={(v) => toggleArchived(v === true)} />
               {t("common.search.includeArchived")}
             </label>
           )}
         </>
+        )
       }
     />
   );
@@ -458,7 +475,8 @@ export function SearchButton({ onClick, collapsed = false }: { onClick: () => vo
     >
       <Search size={15} aria-hidden />
       <span className="flex-1 text-left">{t("common.search.button")}</span>
-      <kbd className="rounded-sm border border-border bg-surface px-1.5 text-[11px] font-medium text-on-surface-muted">{shortcut}</kbd>
+      {/* US-OPS-61: a touch screen has no keyboard shortcut to show. */}
+      <kbd className="rounded-sm border border-border bg-surface px-1.5 text-[11px] font-medium text-on-surface-muted [@media(pointer:coarse)]:hidden" data-testid="search-shortcut">{shortcut}</kbd>
     </button>
   );
 }

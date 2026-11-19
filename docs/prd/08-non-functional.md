@@ -39,7 +39,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | ID | Requirement | Phase | Verified by |
 |---|---|---|---|
 | NFR-COMP-01 | Web works in the current and previous major versions of Chrome, Edge, Firefox and Safari | 10 | Playwright projects |
-| NFR-COMP-02 | Every web route is usable at 390×844 with no horizontal page scroll; public quote page and app shell are designed for it | 10 | Playwright at phone viewport |
+| NFR-COMP-02 | Every web route has a phone layout under 768px ([D-283](12-decisions.md)): at 390×844 the page doesn't scroll sideways, its main action is on the first screen, labels don't overlap, and every control is at least 44×44px | 12 | Playwright phone project on every route, light and dark (US-OPS-62) |
 | NFR-COMP-03 | Mobile app supports iOS 17+ and Android 10+ (API 29+) | 5 | Store build settings |
 | NFR-COMP-04 | Self-hosting runs on any 64-bit (amd64 or arm64) Linux or macOS host with Docker 24+ and Compose v2, and on Windows through WSL2 ([D-262](12-decisions.md)) | 10 | Install test on clean VMs |
 | NFR-COMP-05 | The app boots with only `DATABASE_URL`, `AUTH_SECRET`, `APP_URL` set | 0 | CI boot test |
@@ -49,7 +49,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | ID | Requirement | Phase | Verified by |
 |---|---|---|---|
 | NFR-A11Y-01 | WCAG 2.1 AA for every `@spine/ui` component, in light and dark mode | 0 | axe-core tests + coverage script |
-| NFR-A11Y-02 | Every web route passes axe-core AA with demo data | 10 | Playwright + axe (US-OPS-17) |
+| NFR-A11Y-02 | Every web route passes axe-core AA with demo data, at desktop and phone width | 10 | Playwright + axe (US-OPS-17; at phone width, US-OPS-62) |
 | NFR-A11Y-03 | Text contrast ≥ 4.5:1 (3:1 at 24px+); status never conveyed by colour alone | 0 | Token contrast check |
 | NFR-A11Y-04 | All functionality is keyboard-operable with a visible focus ring | 0 | Keyboard walkthrough in QA script |
 | NFR-A11Y-05 | Touch targets ≥ 44×44 on mobile and on the web phone layout | 5 | Snapshot measurement |

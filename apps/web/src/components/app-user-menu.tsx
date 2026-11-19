@@ -42,6 +42,24 @@ const THEME_APPLIED_KEY = "spine.theme.applied";
  * Spine (Owners), the theme switch — saved to the account so it follows
  * the person to every device (US-AUTH-16) — and Sign out.
  */
+/** Signs the person out and goes to the login page; shared by the account menu and the phone's More sheet (US-OPS-54). */
+export function useSignOut(): { signOut: () => Promise<void>; signingOut: boolean } {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+  async function signOut() {
+    setSigningOut(true);
+    try {
+      window.sessionStorage.removeItem(THEME_APPLIED_KEY);
+    } catch {
+      // Nothing stored.
+    }
+    await authClient.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+  return { signOut, signingOut };
+}
+
 export function AppUserMenu({
   name,
   email,
@@ -60,7 +78,7 @@ export function AppUserMenu({
   const openSettings = useOpenSettings(isOwner);
   const { account, setAccount } = useAccount();
   const { theme, setTheme } = useTheme();
-  const [signingOut, setSigningOut] = useState(false);
+  const { signOut: handleSignOut, signingOut } = useSignOut();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const shownName = account?.name ?? name;
@@ -76,17 +94,6 @@ export function AppUserMenu({
     }
   }
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    try {
-      window.sessionStorage.removeItem(THEME_APPLIED_KEY);
-    } catch {
-      // Nothing stored.
-    }
-    await authClient.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   const avatar = (
     <Avatar size="sm">

@@ -45,10 +45,14 @@ import {
   TabsTrigger,
   Textarea,
   cn,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
 } from "@spine/ui";
 import { CalendarDays, Check, ChevronDown, Flag, GitBranch, LockOpen, MapPin, Pencil, Receipt, User } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 import { authClient } from "../../../lib/auth-client";
 import { useCanEditOwnership, useCapabilities, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
@@ -108,6 +112,8 @@ function mapLink(address: string): string {
  */
 export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: string; currentUserId: string | null }) {
   const t = useT();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
   const loadFailed = useLoadFailure(jobId);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -289,7 +295,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
     );
 
   const figure = (label: string, value: string, note: React.ReactNode, bar?: number, testId?: string) => (
-    <div key={label} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-r sm:[&:not(:last-child)]:border-b-0" data-testid={testId}>
+    <div key={label} className="flex min-w-0 flex-col gap-1 p-4" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className="text-[19px] font-bold tabular-nums leading-tight text-on-surface">{value}</span>
       <span className="text-[12px] text-on-surface-muted">{note}</span>
@@ -339,10 +345,10 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
       {/* US-JOB-34: the number is the page title; the breadcrumb leads back to Jobs. */}
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("jobs.page.title"), href: "/jobs" }, { label: title }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
+        <RecordHeader
+          title={title}
+          badges={
+            <>
               {canEditJob ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -372,12 +378,18 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
                   {JOB_STATUS_LABELS[job.status]}
                 </Badge>
               )}
-            </div>
-            {job.number && (
-              <p className="text-[15px] font-medium text-on-surface" data-testid="job-name">
-                {job.name}
-              </p>
-            )}
+            </>
+          }
+          subtitle={
+            <>
+              {job.number && (
+                <p className="text-[15px] font-medium text-on-surface" data-testid="job-name">
+                  {job.name}
+                </p>
+              )}
+            </>
+          }
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="job-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
@@ -408,71 +420,93 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
                 </span>
               )}
             </p>
-            {job.notes && <p className="mt-1 max-w-3xl whitespace-pre-wrap text-[13px] text-on-surface-muted">{job.notes}</p>}
-          </div>
-
-          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="job-actions">
-            {canEditJob && (
-              <Button variant="secondary" onClick={() => setEditOpen(true)}>
-                <Pencil size={15} aria-hidden />
-                {t("jobs.detail.editJob")}
-              </Button>
-            )}
-            {canRaiseVariation && withMoney && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setActiveTab("variations");
-                  setRaiseRequest((n) => n + 1);
-                }}
-              >
-                <GitBranch size={15} aria-hidden />
-                {t("jobs.detail.raiseVariation")}
-              </Button>
-            )}
-            {step && (
-              <Button
-                disabled={busy || invoicingId !== null}
-                onClick={() => {
-                  if (step.kind === "invoice") void handleInvoice(step.milestone);
-                  else if (step.kind === "complete") setCompleting(step.milestone);
-                  else setReleaseOpen(true);
-                }}
-                data-testid="job-next-step"
-              >
-                {invoicingId ? <Spinner size="sm" /> : stepIcon}
-                {step.label}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  {t("jobs.detail.more")} <ChevronDown size={14} aria-hidden />
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="job-actions">
+              {canEditJob && (
+                <Button variant="secondary" onClick={() => setEditOpen(true)}>
+                  <Pencil size={15} aria-hidden />
+                  {t("jobs.detail.editJob")}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setActiveTab("photos")}>
-                  <MENU_ICONS.addPhotos aria-hidden />
-                  {t("jobs.detail.addPhotos")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("jobs.detail.viewHistory")}
-                </DropdownMenuItem>
-                {canRelease && step?.kind !== "release" && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setReleaseOpen(true)}>
-                      <MENU_ICONS.releaseRetention aria-hidden />
-                      {t("jobs.next.releaseRetention")}
+              )}
+              {canRaiseVariation && withMoney && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setActiveTab("variations");
+                    setRaiseRequest((n) => n + 1);
+                  }}
+                >
+                  <GitBranch size={15} aria-hidden />
+                  {t("jobs.detail.raiseVariation")}
+                </Button>
+              )}
+              {step && (
+                <ActionBar>
+                  <Button
+                    disabled={busy || invoicingId !== null}
+                    onClick={() => {
+                      if (step.kind === "invoice") void handleInvoice(step.milestone);
+                      else if (step.kind === "complete") setCompleting(step.milestone);
+                      else setReleaseOpen(true);
+                    }}
+                    data-testid="job-next-step"
+                  >
+                    {invoicingId ? <Spinner size="sm" /> : stepIcon}
+                    {step.label}
+                  </Button>
+                </ActionBar>
+              )}
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary">
+                    {t("jobs.detail.more")} <ChevronDown size={14} aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sheetTitle={title} sheetDescription={job.contactName ?? undefined} {...more.content}>
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && canEditJob && (
+                    <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                      <MENU_ICONS.edit aria-hidden />
+                      {t("jobs.detail.editJob")}
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/jobs/${job.id}/history`} subjectLabel={t("jobs.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                  )}
+                  {more.phone && canRaiseVariation && withMoney && (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setActiveTab("variations");
+                        setRaiseRequest((n) => n + 1);
+                      }}
+                    >
+                      <MENU_ICONS.revise aria-hidden />
+                      {t("jobs.detail.raiseVariation")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setActiveTab("photos")}>
+                    <MENU_ICONS.addPhotos aria-hidden />
+                    {t("jobs.detail.addPhotos")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("jobs.detail.viewHistory")}
+                  </DropdownMenuItem>
+                  {canRelease && step?.kind !== "release" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => setReleaseOpen(true)}>
+                        <MENU_ICONS.releaseRetention aria-hidden />
+                        {t("jobs.next.releaseRetention")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/jobs/${job.id}/history`} subjectLabel={t("jobs.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        >
+          {job.notes && <p className="mt-1 max-w-3xl whitespace-pre-wrap text-[13px] text-on-surface-muted">{job.notes}</p>}
+        </RecordHeader>
       </div>
 
       {error && (
@@ -481,9 +515,10 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </Alert>
       )}
 
-      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 5 ? "md:grid-cols-5" : figures.length === 3 ? "md:grid-cols-3" : figures.length === 1 ? "sm:max-w-xs" : "md:grid-cols-2")} data-testid="job-figures">
+      {/* US-OPS-58: two per row on a phone. */}
+      <RecordFigures className={figures.length === 1 ? "sm:max-w-xs" : undefined} data-testid="job-figures">
         {figures}
-      </div>
+      </RecordFigures>
 
       <Tabs value={activeTab === "costing" && !canViewCosting ? "milestones" : activeTab} onValueChange={(value) => setActiveTab(value as JobTab)}>
         <TabsList>

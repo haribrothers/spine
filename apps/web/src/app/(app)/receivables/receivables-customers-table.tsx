@@ -58,25 +58,38 @@ export function ReceivablesCustomersTable({
           {c.name ?? t("receivables.customersTable.customer")}
         </SectionLink>
       ),
+      // US-OPS-56: on a phone, the name; how many invoices and the last reminder go on the second line.
+      phone: "title",
+      phoneRender: (c) => <SectionLink href={`/contacts/${c.contactId}`}>{c.name ?? t("receivables.customersTable.customer")}</SectionLink>,
       sortValue: (c) => c.name ?? "",
     },
-    { key: "count", header: t("receivables.customersTable.open"), render: (c) => t("receivables.customersTable.invoiceCount", { count: c.invoiceCount }), sortValue: (c) => c.invoiceCount },
+    {
+      key: "count",
+      phone: "subtitle",
+      phoneRender: (c) =>
+        [t("receivables.customersTable.invoiceCount", { count: c.invoiceCount }), c.lastReminderOn ? t("receivables.table.lastReminded", { date: calendarDate(c.lastReminderOn, now, locale) }) : null].filter(Boolean).join(" · "),
+      header: t("receivables.customersTable.open"), render: (c) => t("receivables.customersTable.invoiceCount", { count: c.invoiceCount }),
+      sortValue: (c) => c.invoiceCount,
+    },
     {
       key: "oldest",
+      phone: "trailingSub",
       header: t("receivables.customersTable.oldest"),
       render: (c) => <span className={c.oldestDaysOverdue > 0 ? "font-medium text-overdue" : "text-on-surface-muted"}>{oldestLabel(c.oldestDaysOverdue)}</span>,
       sortValue: (c) => c.oldestDaysOverdue,
     },
     {
       key: "overdue",
+      phone: "hidden",
       header: t("receivables.customersTable.overdue"),
       align: "right",
       render: (c) => (BigInt(c.overdueAmount) > 0n ? <span className="font-semibold tabular-nums text-overdue">{money(c.overdueAmount)}</span> : <span className="text-on-surface-muted">—</span>),
       sortValue: (c) => BigInt(c.overdueAmount),
     },
-    { key: "total", header: t("receivables.customersTable.totalOwed"), align: "right", render: (c) => <span className="tabular-nums">{money(c.totalOutstanding)}</span>, sortValue: (c) => BigInt(c.totalOutstanding) },
+    { key: "total", phone: "trailing", header: t("receivables.customersTable.totalOwed"), align: "right", render: (c) => <span className="tabular-nums">{money(c.totalOutstanding)}</span>, sortValue: (c) => BigInt(c.totalOutstanding) },
     {
       key: "credit",
+      phone: "hidden",
       header: t("receivables.customersTable.creditToUse"),
       align: "right",
       render: (c) => (BigInt(c.credit) > 0n ? <span className="font-semibold tabular-nums text-due-soon">{money(c.credit)}</span> : <span className="text-on-surface-muted">—</span>),
@@ -84,12 +97,14 @@ export function ReceivablesCustomersTable({
     },
     {
       key: "reminded",
+      phone: "hidden",
       header: t("receivables.customersTable.lastReminded"),
       render: (c) => (c.lastReminderOn ? <span className="whitespace-nowrap">{calendarDate(c.lastReminderOn, now, locale)}</span> : <span className="text-on-surface-muted">{t("receivables.customersTable.never")}</span>),
       sortValue: (c) => c.lastReminderOn ?? "",
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (c) => (
         <div className="flex justify-end">

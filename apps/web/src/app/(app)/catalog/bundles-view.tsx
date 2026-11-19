@@ -92,10 +92,18 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
           {b.description && <span className="text-[12px] text-on-surface-muted">{b.description}</span>}
         </div>
       ),
+      // US-OPS-56: on a phone, the name on one line; what's in it goes on the second.
+      phone: "title",
+      phoneRender: (b) => b.name,
       sortValue: (b) => b.name,
     },
     {
       key: "lines",
+      phone: "subtitle",
+      phoneRender: (b) => {
+        const items = b.lines.filter((l) => l.type === "item");
+        return t("catalog.bundles.linesSummary", { count: items.length, names: items.map((l) => l.name).join(", ") });
+      },
       header: t("catalog.bundles.columnLines"),
       render: (b) => {
         const items = b.lines.filter((l) => l.type === "item");
@@ -108,6 +116,7 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
     },
     {
       key: "total",
+      phone: "trailing",
       header: t("catalog.common.total"),
       align: "right",
       render: (b) => <span className="tabular-nums">{formatMoney(BigInt(b.totalAmount), b.currency)}</span>,
@@ -115,11 +124,15 @@ export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: 
     },
     {
       key: "status",
+      // Only Archived is worth a badge on a phone; every other row would say Active.
+      phone: "badge",
+      phoneRender: (b) => (b.archivedAt ? <Badge>{t("catalog.common.archived")}</Badge> : null),
       header: t("catalog.common.status"),
       render: (b) => (b.archivedAt ? <Badge>{t("catalog.common.archived")}</Badge> : <Badge className="bg-paid-bg text-paid">{t("catalog.common.active")}</Badge>),
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       align: "right",
       render: (b) => <BundleRowActions bundle={b} onEdit={setEditing} onChanged={(verb) => (showToast(t(`catalog.bundles.changed.${verb}.title`), t(`catalog.bundles.changed.${verb}.description`, { name: b.name })), load())} />,
