@@ -25,9 +25,10 @@ import { StatementTable, StatementRow, StatementColumn } from "@spine/ui";
 - Any number of right-aligned value columns with tabular figures (comparison columns, each month).
 - Signs and arrows carry direction, never colour alone.
 
-## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — built (US-RPT-41)
 
 - Under 768px it renders as an indented list: section headings, each account with its amount on the right, bold subtotals and the total last; a comparison's other period shows muted under each amount; tapping an account drills down (US-RPT-41).
+- The list is used when there's one label column and one or two amount columns; a drill-down link or button in a row covers the whole row, and the row shows a chevron. With three or more amount columns (or more label columns, as in a ledger) it stays a table whose first column is sticky. It's a client component now (it reads the screen width).
 
 ## Exports
 

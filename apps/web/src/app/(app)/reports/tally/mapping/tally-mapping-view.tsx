@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Button, DataTable, ReportFilter, ReportToolbar, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, type TableColumn } from "@spine/ui";
+import { Alert, AlertDescription, Button, DataTable, ReportFilter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, type TableColumn } from "@spine/ui";
+import { ReportToolbar } from "../../../../../components/report-toolbar";
 import { FINANCIAL_STATEMENTS_NO_ACCESS, TALLY_GROUPS, type TallyGroup, type TallyMappingRow } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
 import { useMyRole } from "../../../../../lib/role-context";
@@ -55,34 +56,33 @@ export function TallyMappingView() {
     }
   }
 
+  const groupPicker = (r: TallyMappingRow, width: string) => (
+    <Select value={r.tallyGroup} onValueChange={(v) => choose(r, v as TallyGroup)} disabled={!isOwner}>
+      <SelectTrigger className={width} aria-label={t("reports.tallyMapping.tallyGroupFor", { code: r.code, name: r.name })} data-testid={`tally-group-${r.code}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {TALLY_GROUPS.map((g) => (
+          <SelectItem key={g} value={g}>
+            {g}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+  // US-RPT-41: on a phone each account is a row — its name, then code and type — with its Tally group picker on the right.
   const columns: TableColumn<TallyMappingRow>[] = [
-    { key: "code", header: t("reports.common.code"), render: (r) => r.code, sortValue: (r) => r.code },
-    { key: "name", header: t("reports.common.account"), render: (r) => r.name, sortValue: (r) => r.name },
-    { key: "type", header: t("reports.tallyMapping.spineType"), render: (r) => TYPE_LABELS[r.type], sortValue: (r) => r.type },
-    {
-      key: "group",
-      header: t("reports.tallyMapping.tallyGroup"),
-      render: (r) => (
-        <Select value={r.tallyGroup} onValueChange={(v) => choose(r, v as TallyGroup)} disabled={!isOwner}>
-          <SelectTrigger className="w-56" aria-label={t("reports.tallyMapping.tallyGroupFor", { code: r.code, name: r.name })} data-testid={`tally-group-${r.code}`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TALLY_GROUPS.map((g) => (
-              <SelectItem key={g} value={g}>
-                {g}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ),
-    },
+    { key: "code", header: t("reports.common.code"), phone: "subtitle", phoneRender: (r) => `${r.code} · ${TYPE_LABELS[r.type]}`, render: (r) => r.code, sortValue: (r) => r.code },
+    { key: "name", header: t("reports.common.account"), phone: "title", render: (r) => r.name, sortValue: (r) => r.name },
+    { key: "type", header: t("reports.tallyMapping.spineType"), phone: "hidden", render: (r) => TYPE_LABELS[r.type], sortValue: (r) => r.type },
+    { key: "group", header: t("reports.tallyMapping.tallyGroup"), phone: "action", phoneRender: (r) => groupPicker(r, "w-40"), render: (r) => groupPicker(r, "w-56") },
   ];
 
   return (
     <>
       <ReportToolbar
         loading={loading}
+        summary={type === "all" ? t("reports.tallyMapping.allAccountTypes") : TYPE_LABELS[type]}
         filters={
           <ReportFilter label={t("reports.tallyMapping.accountType")}>
             {(id) => (

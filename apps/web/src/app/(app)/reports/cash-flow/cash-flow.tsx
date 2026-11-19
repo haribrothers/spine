@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, AlertDescription, Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, ReportToolbar, StatCard, StatementTable, type StatementRow } from "@spine/ui";
+import { Alert, AlertDescription, Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, StatCard, StatementTable, type StatementRow } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { FINANCIAL_STATEMENTS_NO_ACCESS, type CashFlowLine, type CashFlowReport } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "../report-kit";
+import { RangeFilters, rangeSummary, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "../report-kit";
 import { useT } from "../../../../lib/i18n";
 
 /**
@@ -29,7 +30,7 @@ export function CashFlow() {
   return (
     <>
       <ReportTabs value="cash-flow" tabs={STATEMENT_TABS} />
-      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} />} />
+      <ReportToolbar loading={loading} summary={rangeSummary(from, to)} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} />} />
 
       {error && (
         <Alert variant="critical">

@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FileMinus } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, ReportToolbar, StatCard, type TableColumn } from "@spine/ui";
+import { Alert, AlertDescription, DataTable, EmptyState, StatCard, type TableColumn } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { type CreditRegisterReport, type CreditRegisterRow } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
+import { RangeFilters, rangeSummary, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { t, useT } from "../../../../lib/i18n";
 
 const TABS = [
@@ -67,7 +68,7 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
   return (
     <>
       <ReportTabs value={tab} tabs={TABS} />
-      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
+      <ReportToolbar loading={loading} summary={rangeSummary(from, to)} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
 
       {error && (
         <Alert variant="critical">

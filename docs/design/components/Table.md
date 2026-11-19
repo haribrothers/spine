@@ -53,7 +53,7 @@ import { TableColumn, Table } from "@spine/ui";
 ## Phone (under 768px, [D-283](../../prd/12-decisions.md))
 
 - Built (US-OPS-56): under 768px a list renders as `ListRow`s, placed by each column's `phone` role or `phoneRoles`, with Load more after 25 (`PHONE_PAGE`). A grouped table shows each group's primary row; an expandable row gets its chevron as the action and opens underneath; a totals `footer` becomes a last row. `phoneRows={false}` keeps a table.
-- Planned: A grid (Trial balance, GSTR-1, comparisons, aging) stays a table with `stickyFirstColumn`: the first column stays put while the rest scroll inside their box (US-RPT-41).
+- Built (US-RPT-41): a grid (Trial balance, GSTR-1, comparisons, aging) stays a table with `phoneRows={false} stickyFirstColumn`: the first column stays put while the rest scroll inside their box. `DataTable` passes `stickyFirstColumn` through.
 
 ## Exports
 

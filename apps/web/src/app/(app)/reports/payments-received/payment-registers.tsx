@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, ReportFilter, ReportToolbar, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, type TableColumn } from "@spine/ui";
+import { Alert, AlertDescription, DataTable, EmptyState, ReportFilter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, type TableColumn } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { type PaymentRegisterReport, type PaymentRegisterRow } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../payments/types";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportKpis, useReport } from "../report-kit";
+import { filterSummary, RangeFilters, rangeSummary, ReportKpis, useReport } from "../report-kit";
 import { t, useT } from "../../../../lib/i18n";
 
 const TABS = [
@@ -87,6 +88,7 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
       <ReportTabs value={tab} tabs={TABS} />
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(rangeSummary(from, to), account !== "all" && accounts.find((a) => a.id === account)?.name)}
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />

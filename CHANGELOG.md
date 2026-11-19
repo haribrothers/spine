@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-RPT-41: reports that read on a phone
+
+- **Filters in one line:** under 768px a report's filters are one line saying what's chosen ("Jan 1 – Nov 19, 2026 · Accrual · No comparison"). It opens a "Report filters" sheet with every filter and Show report (`ReportToolbar` `summary`; helpers `filterSummary`, `rangeSummary`, `asOfSummary`). Export is under the top bar's ⋯ through the web app's `components/report-toolbar.tsx` wrapper. Every report passes its summary.
+- **Cards and charts:** a report's cards are chips in a row that scrolls sideways (`ReportKpis` is a `ChipStrip`, so the receivables and payables age cards are too). A chart is the screen's width, with its legend under it, fewer month labels and a narrower axis (`GroupedBarChart`).
+- **Statements as lists:** `StatementTable` on a phone, with one label column and one or two amounts, is an indented list. It has section headings, each account with its amount, the other period's amount muted under it when comparing, bold subtotals and the total last. A drill-down link or button covers the whole row, with a chevron. P&L's and the Balance Sheet's two-period comparisons drop the Change columns on a phone, so they read as that list. Wider statements (each month, the ledger, the day book, GSTR-1, the tax summary by type) stay tables with a sticky first column.
+- **Grids and lists:** `Table` and `DataTable` get `stickyFirstColumn` (with `phoneRows={false}`). The trial balance uses it, with the code above the name. List reports use phone rows, with their main figure on the right. The Tally mapping's group picker is now shown on a phone. The Reports page is grouped rows, each 44px and tappable across, with its star.
+- **Tests and docs:** `us-rpt-41.spec.ts` and `us-rpt-41-phone.a11y.test.tsx`. Docs: ReportToolbar, StatementTable, Table, DataTable, the GroupedBarChart page and the phone guide; QA section 292.
+
 ### 2026-11-19 — US-MTG-18: a calendar made for a phone
 
 - **Month first:** under 768px Meetings opens on the month (it was Agenda): a compact grid with one letter per weekday, today ringed, the chosen day filled, up to three dots per day in the calendars' colours (with the count in the day's name for screen readers), and the chosen day's meetings listed under it. Each row has its time (or All day), colour, title, place and contact. Tap a day to choose it. Swipe the grid or use the arrows for the next or previous month, and Today comes back. Arrow keys move the day.

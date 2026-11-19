@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
-import { Alert, AlertDescription, EmptyState, MultiSelect, PaginationBar, ReportFilter, ReportFilterCheckbox, ReportToolbar, StatCard, StatementTable } from "@spine/ui";
+import { Alert, AlertDescription, EmptyState, MultiSelect, PaginationBar, ReportFilter, ReportFilterCheckbox, StatCard, StatementTable } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import type { GeneralLedgerAccount, GeneralLedgerReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportKpis, useReport } from "../report-kit";
+import { filterSummary, RangeFilters, rangeSummary, ReportKpis, useReport } from "../report-kit";
 import { t, useT } from "../../../../lib/i18n";
 
 const shortDay = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(orgLocaleTag(), { month: "short", day: "numeric" });
@@ -72,6 +73,11 @@ export function GeneralLedger() {
       <ReportTabs value="general-ledger" tabs={LEDGER_TABS} />
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(
+          rangeSummary(from, to),
+          accountIds.length === 1 ? (options.find((o) => o.value === accountIds[0])?.label ?? t("reports.generalLedger.accountCount", { count: 1 })) : accountIds.length > 1 && t("reports.generalLedger.accountCount", { count: accountIds.length }),
+          hideInactive && t("reports.generalLedger.hideInactive"),
+        )}
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={refilter(setFrom)} onTo={refilter(setTo)} />

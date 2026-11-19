@@ -5874,3 +5874,18 @@ Automated: `us-mtg-18.spec.ts`, `calendar-phone.a11y.test.tsx`; `us-mtg-17.spec.
 7. Tap +: New event opens full screen on the chosen day (today: the next half hour; another day: 9:00). Tap a meeting in any view: its quick view rises as a bottom sheet with its own title and close.
 8. Dark mode: dots, today's ring and the chosen day read clearly.
 9. Regression, from 768px up: the toolbar, Week, the month grid with event chips, the quick view popover beside the event, and drag to create, move and resize in Day and Week are as they were.
+
+## 292. Read reports on my phone (US-RPT-41, Phase 12)
+
+Automated: `us-rpt-41.spec.ts`, `us-rpt-41-phone.a11y.test.tsx`. At 390×844 with touch:
+
+1. Reports: each group's reports are rows the width of the screen, 44px or taller, each with its star; tap one to open it.
+2. Profit & Loss: under the tabs (one row; swipe it for Cash Flow), one line "Jan 1 – Nov 19, 2026 · Accrual · No comparison". Tap it: Report filters with From, To, Compare with and Basis, one per row; change Basis to Cash and tap Show report — the line says Cash. ⋯ at the top has Export, and its menu opens.
+3. The cards are chips in one row that scrolls sideways. The chart is the screen's width; its months don't overlap; the legend is under it.
+4. The statement is a list: INCOME, each account indented with its amount and a chevron, Total income in bold, Net profit last on a grey band. Tap anywhere on an account's row: its entries open. Compare with Previous period: each amount has last period's under it in grey. Compare with Each month: a table whose Account column stays put as you swipe the months.
+5. Balance Sheet, Cash Flow and Tax Summary read the same way; each line says what its filters are ("As of Nov 19, 2026 · …").
+6. Trial Balance: a table — code above each account name in a column that stays put while Debit and Credit scroll; the page itself never scrolls sideways. GSTR-1, the general ledger and the day book are tables like it.
+7. Sales by customer, Sales by item, Expenses by category, Payments received, Job profitability: one row per line, the main figure on the right.
+8. Receivables and Payables: the age cards are chips.
+9. Tally › Account mapping (Owner): each account's group picker is in its row.
+10. Regression, from 768px up: every report's filters, Export, cards, chart, tables and the Reports page are as they were.

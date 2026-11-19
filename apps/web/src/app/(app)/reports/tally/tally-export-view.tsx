@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Download } from "lucide-react";
-import { Alert, AlertDescription, Button, ReportToolbar, StatCard, StatementTable } from "@spine/ui";
+import { Alert, AlertDescription, Button, StatCard, StatementTable } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { FINANCIAL_STATEMENTS_NO_ACCESS } from "@spine/shared";
 import { iso, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
+import { RangeFilters, rangeSummary, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { useT } from "../../../../lib/i18n";
 import { orgLocaleTag } from "../../../../lib/money";
 
@@ -46,6 +47,7 @@ export function TallyExportView() {
     <>
       <ReportToolbar
         loading={loading}
+        summary={rangeSummary(start, to)}
         filters={<RangeFilters from={start} to={to} onFrom={setFrom} onTo={setTo} />}
         actions={
           <>

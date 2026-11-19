@@ -53,6 +53,8 @@ export interface DataTableProps<T> {
   phoneSelecting?: boolean;
   /** US-OPS-56: false keeps it a table on a phone. */
   phoneRows?: boolean;
+  /** US-RPT-41: on a phone the first column stays put while the others scroll sideways (with `phoneRows={false}`). */
+  stickyFirstColumn?: boolean;
 }
 
 /**
@@ -89,6 +91,7 @@ export function DataTable<T>({
   expandLabel,
   phoneSelecting,
   phoneRows,
+  stickyFirstColumn,
 }: DataTableProps<T>) {
   const t = useT();
   // US-OPS-56: a phone row places every column by its role, so Columns isn't offered there.
@@ -168,6 +171,7 @@ export function DataTable<T>({
         expandLabel={expandLabel}
         phoneSelecting={phoneSelecting}
         phoneRows={phoneRows}
+        stickyFirstColumn={stickyFirstColumn}
       />
     </div>
   );

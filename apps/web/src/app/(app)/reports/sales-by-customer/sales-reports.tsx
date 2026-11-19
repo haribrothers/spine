@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { BarChart3 } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, ReportToolbar, StatCard, type TableColumn } from "@spine/ui";
+import { Alert, AlertDescription, DataTable, EmptyState, StatCard, type TableColumn } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { type AnalysisDocumentRef, type SalesByCustomerReport, type SalesByCustomerRow, type SalesByItemReport, type SalesByItemRow } from "@spine/shared";
 import { formatMoney, orgLocaleTag } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { DocumentsDialog, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
+import { RangeFilters, rangeSummary, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { t, useT } from "../../../../lib/i18n";
 
 const TABS = [
@@ -51,8 +52,8 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
     { key: "invoices", header: t("reports.sales.invoices"), align: "right", render: (r) => r.invoiceCount, sortValue: (r) => r.invoiceCount },
     { key: "sales", header: t("reports.sales.salesBeforeTax"), align: "right", render: (r) => <span className="tabular-nums">{money(r.salesBeforeTax)}</span>, sortValue: (r) => BigInt(r.salesBeforeTax) },
     { key: "tax", header: t("reports.common.tax"), align: "right", render: (r) => <span className="tabular-nums">{money(r.tax)}</span> },
-    { key: "total", header: t("reports.common.total"), align: "right", render: (r) => <span className="tabular-nums">{money(r.total)}</span>, sortValue: (r) => BigInt(r.total) },
-    { key: "share", header: t("reports.sales.percentOfSales"), align: "right", render: (r) => (r.percentOfSales === null ? "—" : `${r.percentOfSales}%`) },
+    { key: "total", header: t("reports.common.total"), align: "right", phone: "trailing", render: (r) => <span className="tabular-nums">{money(r.total)}</span>, sortValue: (r) => BigInt(r.total) },
+    { key: "share", header: t("reports.sales.percentOfSales"), align: "right", phone: "trailingSub", render: (r) => (r.percentOfSales === null ? "—" : `${r.percentOfSales}%`) },
   ];
   const itemColumns: TableColumn<SalesByItemRow>[] = [
     {
@@ -65,15 +66,15 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
       ),
       sortValue: (r) => r.name,
     },
-    { key: "quantity", header: t("reports.sales.quantity"), align: "right", render: (r) => <span className="tabular-nums">{quantityText(r.quantity)}</span>, sortValue: (r) => r.quantity },
-    { key: "sales", header: t("reports.sales.salesBeforeTax"), align: "right", render: (r) => <span className="tabular-nums">{money(r.salesBeforeTax)}</span>, sortValue: (r) => BigInt(r.salesBeforeTax) },
+    { key: "quantity", header: t("reports.sales.quantity"), align: "right", phone: "trailingSub", render: (r) => <span className="tabular-nums">{quantityText(r.quantity)}</span>, sortValue: (r) => r.quantity },
+    { key: "sales", header: t("reports.sales.salesBeforeTax"), align: "right", phone: "trailing", render: (r) => <span className="tabular-nums">{money(r.salesBeforeTax)}</span>, sortValue: (r) => BigInt(r.salesBeforeTax) },
     { key: "average", header: t("reports.sales.averagePrice"), align: "right", render: (r) => <span className="tabular-nums">{r.averagePrice === null ? "—" : money(r.averagePrice)}</span> },
   ];
 
   return (
     <>
       <ReportTabs value={tab} tabs={TABS} />
-      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
+      <ReportToolbar loading={loading} summary={rangeSummary(from, to)} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
 
       {error && (
         <Alert variant="critical">

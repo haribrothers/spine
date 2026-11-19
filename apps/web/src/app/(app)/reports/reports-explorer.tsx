@@ -2,35 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Alert,
-  AlertDescription,
-  Badge,
-  Button,
-  DataTable,
-  DatePicker,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  GroupedBarChart,
-  ReportFilter,
-  ReportFilterCheckbox,
-  ReportToolbar,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Spinner,
-  StatCard,
-  StatementTable,
-  ToggleGroup,
-  ToggleGroupItem,
-  type StatementRow,
-  type TableColumn,
-} from "@spine/ui";
+import { Alert, AlertDescription, Badge, Button, DataTable, DatePicker, Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, GroupedBarChart, ReportFilter, ReportFilterCheckbox, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, StatCard, StatementTable, ToggleGroup, ToggleGroupItem, type StatementRow, type TableColumn } from "@spine/ui";
+import { ReportToolbar } from "../../../components/report-toolbar";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import {
@@ -65,12 +38,13 @@ import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { TaxPaymentDialog, TaxPaymentsList } from "./tax-payment-dialog";
 import { useToast } from "../../../components/toast-host";
 import { ReportTabs, useCurrency } from "./analysis-shared";
-import { marginText, RangeFilters, ReportChart, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "./report-kit";
+import { asOfSummary, filterSummary, marginText, RangeFilters, rangeSummary, ReportChart, ReportFootnote, ReportKpis, STATEMENT_TABS, useReport } from "./report-kit";
 import { useReportDetail } from "./report-shell";
 import { JOB_STATUS_LABELS, type Job } from "../jobs/types";
 import { STATUS_BADGE_CLASS } from "../jobs/jobs-table";
 
 import { SectionLink } from "../../../components/section-link";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import { t, useT } from "../../../lib/i18n";
 /** The local calendar date (toISOString would shift it a day in time zones ahead of UTC). */
 function toDateParam(d: Date): string {
@@ -224,6 +198,7 @@ export function ProfitAndLossTab() {
       <ReportTabs value="profit-and-loss" tabs={STATEMENT_TABS} />
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(rangeSummary(from, to), basis === "cash" ? t("reports.explorer.pl.cash") : t("reports.explorer.pl.accrual"), compare === "none" ? t("reports.common.noComparison") : PL_COMPARE_LABELS[compare])}
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />
@@ -373,6 +348,7 @@ export function BalanceSheetTab() {
       <ReportTabs value="balance-sheet" tabs={STATEMENT_TABS} />
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(asOfSummary(asOf), compare === "none" ? t("reports.common.noComparison") : t("reports.explorer.bs.previousYearEnd"))}
         filters={
           <>
             <ReportFilter label={t("reports.common.asOf")}>
@@ -501,14 +477,15 @@ export function JobProfitabilityTab() {
     },
     { key: "revenue", header: t("reports.common.revenue"), align: "right", render: (job) => <span className="tabular-nums">{money(job.revenue)}</span>, sortValue: (job) => BigInt(job.revenue) },
     { key: "cost", header: t("reports.common.cost"), align: "right", render: (job) => <span className="tabular-nums">{money(job.cost)}</span>, sortValue: (job) => BigInt(job.cost) },
-    { key: "margin", header: t("reports.common.margin"), align: "right", render: (job) => <span className="tabular-nums">{money(job.margin)}</span>, sortValue: (job) => BigInt(job.margin) },
-    { key: "marginPct", header: t("reports.explorer.jobs.marginPct"), align: "right", render: (job) => (job.marginPct === null ? "—" : `${job.marginPct}%`), sortValue: (job) => job.marginPct ?? -1 },
+    { key: "margin", header: t("reports.common.margin"), align: "right", phone: "trailing", render: (job) => <span className="tabular-nums">{money(job.margin)}</span>, sortValue: (job) => BigInt(job.margin) },
+    { key: "marginPct", header: t("reports.explorer.jobs.marginPct"), align: "right", phone: "trailingSub", render: (job) => (job.marginPct === null ? "—" : `${job.marginPct}%`), sortValue: (job) => job.marginPct ?? -1 },
   ];
 
   return (
     <>
       <ReportToolbar
         loading={loading}
+        summary={JOB_STATUS_FILTERS.find((f) => f.value === status)?.label}
         filters={
           <ReportFilter label={t("reports.common.jobs")}>
             {(id) => (
@@ -709,6 +686,7 @@ export function TrialBalanceTab() {
   const [hideZero, setHideZero] = useState(true);
   const [drilldown, setDrilldown] = useState<Drill | null>(null);
   const [search, setSearch] = useState("");
+  const phone = useIsPhone();
 
   const url = `/reports/trial-balance?asOf=${toDateParam(asOf)}&includeZero=${!hideZero}`;
   const { data: report, error, loading } = useReport<TrialBalanceReport>(url, FINANCIAL_STATEMENTS_NO_ACCESS);
@@ -716,21 +694,34 @@ export function TrialBalanceTab() {
   const money = (value: string | bigint) => (BigInt(value) === 0n ? "—" : formatMoney(value, currency));
   const difference = report ? BigInt(report.totalDebit) - BigInt(report.totalCredit) : 0n;
 
+  const accountName = (line: TrialBalanceLine) =>
+    canDrill ? (
+      <button type="button" className="text-left text-primary hover:underline" onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}>
+        {line.name}
+      </button>
+    ) : (
+      <span className="text-on-surface">{line.name}</span>
+    );
   const columns: TableColumn<TrialBalanceLine>[] = [
-    { key: "code", header: t("reports.common.code"), render: (line) => <span className="tabular-nums text-on-surface-muted">{line.code}</span>, sortValue: (line) => line.code },
-    {
-      key: "account",
-      header: t("reports.common.account"),
-      render: (line) =>
-        canDrill ? (
-          <button type="button" className="text-left text-primary hover:underline" onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}>
-            {line.name}
-          </button>
-        ) : (
-          <span className="text-on-surface">{line.name}</span>
-        ),
-      sortValue: (line) => line.name,
-    },
+    // US-RPT-41: on a phone the code sits above the name in one column, which stays put while Debit and Credit scroll.
+    ...(phone
+      ? [
+          {
+            key: "account",
+            header: t("reports.common.account"),
+            render: (line: TrialBalanceLine) => (
+              <span className="flex max-w-36 flex-col [&>*]:max-w-full [&>*]:truncate">
+                <span className="text-[12px] tabular-nums text-on-surface-muted">{line.code}</span>
+                {accountName(line)}
+              </span>
+            ),
+            sortValue: (line: TrialBalanceLine) => line.code,
+          },
+        ]
+      : [
+          { key: "code", header: t("reports.common.code"), render: (line: TrialBalanceLine) => <span className="tabular-nums text-on-surface-muted">{line.code}</span>, sortValue: (line: TrialBalanceLine) => line.code },
+          { key: "account", header: t("reports.common.account"), render: accountName, sortValue: (line: TrialBalanceLine) => line.name },
+        ]),
     { key: "debit", header: t("reports.common.debit"), align: "right", render: (line) => <span className="tabular-nums">{money(line.debit)}</span>, sortValue: (line) => BigInt(line.debit) },
     { key: "credit", header: t("reports.common.credit"), align: "right", render: (line) => <span className="tabular-nums">{money(line.credit)}</span>, sortValue: (line) => BigInt(line.credit) },
   ];
@@ -740,6 +731,7 @@ export function TrialBalanceTab() {
       <ReportTabs value="trial-balance" tabs={STATEMENT_TABS} />
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(asOfSummary(asOf), hideZero && t("reports.explorer.tb.hideZero"))}
         filters={
           <>
             <ReportFilter label={t("reports.common.asOf")}>
@@ -784,6 +776,8 @@ export function TrialBalanceTab() {
               onSearchChange={setSearch}
               configurablePageSize
               pageSizeOptions={[50, 100, 250]}
+              phoneRows={false}
+              stickyFirstColumn
               footer={{ account: t("reports.common.total"), debit: formatMoney(BigInt(report.totalDebit), currency), credit: formatMoney(BigInt(report.totalCredit), currency) }}
             />
           </div>
@@ -830,6 +824,7 @@ export function TaxSummaryTab() {
     <>
       <ReportToolbar
         loading={loading}
+        summary={rangeSummary(from, to)}
         filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />}
         actions={
           !error && (

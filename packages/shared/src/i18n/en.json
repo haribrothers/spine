@@ -6325,6 +6325,8 @@
       }
     },
     "common": {
+      "rangeSummary": "{{from}} – {{to}}",
+      "asOfSummary": "As of {{date}}",
       "reports": "Reports",
       "from": "From",
       "to": "To",
@@ -6634,6 +6636,8 @@
       "tabDayBook": "Day book",
       "allAccountsWithActivity": "All accounts with activity",
       "hideInactive": "Hide accounts with no activity",
+      "accountCount_one": "{{count}} account",
+      "accountCount_other": "{{count}} accounts",
       "lines": "Lines",
       "emptyTitle": "Nothing posted in this period",
       "emptyDescription": "Pick other dates, or untick “Hide accounts with no activity” to see every account.",
@@ -8419,7 +8423,10 @@
       "hideWidget": "Hide widget"
     },
     "reportToolbar": {
-      "updating": "Updating the report"
+      "updating": "Updating the report",
+      "filters": "Filters",
+      "sheetTitle": "Report filters",
+      "show": "Show report"
     },
     "richTextEditor": {
       "bold": "Bold",

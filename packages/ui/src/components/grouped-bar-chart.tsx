@@ -3,6 +3,7 @@
 import * as RechartsPrimitive from "recharts";
 import { cn } from "../lib/cn";
 import { useT } from "../lib/i18n";
+import { usePhone } from "../lib/use-phone";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "./chart";
 
 export interface GroupedBarChartSeries {
@@ -48,6 +49,8 @@ export interface GroupedBarChartProps {
  */
 export function GroupedBarChart({ data, series, marker, formatTick, renderTooltip, "aria-label": ariaLabel, description, emptyState, className }: GroupedBarChartProps) {
   const t = useT();
+  // US-RPT-41: on a phone the chart is the screen's width, its legend under it and only some months labelled.
+  const phone = usePhone();
   const values = data.flatMap((row) => [...series.map((s) => Number(row[s.key] ?? 0)), marker ? Number(row[marker.key] ?? 0) : 0]);
   const max = Math.max(0, ...values);
 
@@ -65,7 +68,7 @@ export function GroupedBarChart({ data, series, marker, formatTick, renderToolti
 
   return (
     <figure className={cn("flex flex-col gap-2", className)}>
-      <div className="flex flex-wrap items-center justify-end gap-4 text-[12px] text-on-surface-muted">
+      <div className={cn("flex flex-wrap items-center gap-4 text-[12px] text-on-surface-muted", phone ? "order-last justify-center" : "justify-end")}>
         {series.map((s) => (
           <span key={s.key} className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.color }} aria-hidden />
@@ -80,10 +83,10 @@ export function GroupedBarChart({ data, series, marker, formatTick, renderToolti
         )}
       </div>
       <ChartContainer config={config} className="aspect-auto h-64 w-full" role="img" aria-label={ariaLabel}>
-        <RechartsPrimitive.BarChart data={data} margin={{ top: 8, right: 8, left: 8 }} barGap={4}>
+        <RechartsPrimitive.BarChart data={data} margin={phone ? { top: 8, right: 4, left: 0 } : { top: 8, right: 8, left: 8 }} barGap={phone ? 2 : 4}>
           <RechartsPrimitive.CartesianGrid vertical={false} />
-          <RechartsPrimitive.XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} />
-          <RechartsPrimitive.YAxis domain={[0, top]} ticks={ticks} tickFormatter={formatTick} tickLine={false} axisLine={false} width={56} />
+          <RechartsPrimitive.XAxis dataKey="label" tickLine={false} axisLine={false} interval={phone ? "preserveStartEnd" : 0} minTickGap={phone ? 12 : undefined} />
+          <RechartsPrimitive.YAxis domain={[0, top]} ticks={ticks} tickFormatter={formatTick} tickLine={false} axisLine={false} width={phone ? 44 : 56} />
           <ChartTooltip
             cursor={{ fill: "var(--color-surface-sunken)" }}
             content={({ active, payload }) => {

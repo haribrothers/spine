@@ -1,8 +1,12 @@
 "use client";
 
-import { useId } from "react";
+import { ChevronRight, SlidersHorizontal } from "lucide-react";
+import { useId, useState } from "react";
 import { cn } from "../lib/cn";
 import { useT } from "../lib/i18n";
+import { usePhone } from "../lib/use-phone";
+import { BottomSheet } from "./bottom-sheet";
+import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 import { Label } from "./label";
 import { Spinner } from "./spinner";
@@ -14,6 +18,8 @@ export interface ReportToolbarProps {
   actions?: React.ReactNode;
   /** Shows a spinner after the filters while the report reloads. */
   loading?: boolean;
+  /** US-RPT-41: what's chosen, one line on a phone ("Jan 1 – Nov 18, 2026 · Accrual · No comparison"); it opens the filters in a sheet. */
+  summary?: string;
   className?: string;
 }
 
@@ -23,8 +29,48 @@ export interface ReportToolbarProps {
  * aligned to the bottom edge of the controls. Filters apply as they
  * change, so there's no Refresh button; `loading` says it's updating.
  */
-export function ReportToolbar({ filters, actions, loading = false, className }: ReportToolbarProps) {
+export function ReportToolbar({ filters, actions, loading = false, summary, className }: ReportToolbarProps) {
   const t = useT();
+  const phone = usePhone();
+  const [open, setOpen] = useState(false);
+  // US-RPT-41: on a phone the filters are one line saying what's chosen, which opens them in a sheet.
+  if (phone) {
+    return (
+      <div className={cn("-mx-4 border-b border-border", className)} data-print="hide" data-testid="report-toolbar">
+        {filters ? (
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setOpen(true)}
+            className="flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left text-[14px] text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            data-testid="report-filter-summary"
+          >
+            <SlidersHorizontal size={18} aria-hidden className="shrink-0 text-on-surface-muted" />
+            <span className="min-w-0 flex-1 truncate">
+              <span className="sr-only">{t("ui.reportToolbar.filters")}: </span>
+              {summary ?? t("ui.reportToolbar.filters")}
+            </span>
+            {loading ? <Spinner size="sm" label={t("ui.reportToolbar.updating")} /> : <ChevronRight size={18} aria-hidden className="shrink-0 text-on-surface-muted" />}
+          </button>
+        ) : null}
+        {actions}
+        {filters ? (
+          <BottomSheet
+            open={open}
+            onOpenChange={setOpen}
+            title={t("ui.reportToolbar.sheetTitle")}
+            footer={
+              <Button className="flex-1" onClick={() => setOpen(false)}>
+                {t("ui.reportToolbar.show")}
+              </Button>
+            }
+          >
+            <div className="flex flex-col gap-4 pt-1 [&>*]:w-full [&_button[role=combobox]]:w-full">{filters}</div>
+          </BottomSheet>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className={cn("flex flex-wrap items-end gap-3", className)} data-print="hide" data-testid="report-toolbar">
       {filters}

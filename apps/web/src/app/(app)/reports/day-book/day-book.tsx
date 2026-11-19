@@ -3,29 +3,13 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookOpen } from "lucide-react";
-import {
-  Alert,
-  AlertDescription,
-  EmptyState,
-  Input,
-  PaginationBar,
-  ReportFilter,
-  ReportToolbar,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  StatCard,
-  StatementTable,
-  usePrintMode,
-  type StatementRow,
-} from "@spine/ui";
+import { Alert, AlertDescription, EmptyState, Input, PaginationBar, ReportFilter, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, StatementTable, usePrintMode, type StatementRow } from "@spine/ui";
+import { ReportToolbar } from "../../../../components/report-toolbar";
 import { LEDGER_SOURCE_KINDS, type DayBookEntry, type DayBookReport } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, ReportTabs, useCurrency } from "../analysis-shared";
-import { RangeFilters, ReportKpis, useReport } from "../report-kit";
+import { filterSummary, RangeFilters, rangeSummary, ReportKpis, useReport } from "../report-kit";
 import { LEDGER_TABS } from "../general-ledger/general-ledger";
 import { useT } from "../../../../lib/i18n";
 
@@ -106,6 +90,7 @@ export function DayBook() {
       <ReportTabs value="day-book" tabs={LEDGER_TABS} />
       <ReportToolbar
         loading={loading}
+        summary={filterSummary(rangeSummary(from, to), sourceType !== "all" && LEDGER_SOURCE_KINDS.find((k) => k.key === sourceType)?.label)}
         filters={
           <>
             <RangeFilters from={from} to={to} onFrom={refilter(setFrom)} onTo={refilter(setTo)} />

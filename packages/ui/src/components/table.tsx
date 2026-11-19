@@ -123,6 +123,8 @@ export interface TableProps<T> {
   phoneSelecting?: boolean;
   /** US-OPS-56: false keeps a genuine grid a table on a phone (with `ScrollX`), for reports like the trial balance. */
   phoneRows?: boolean;
+  /** US-RPT-41: on a phone the first column stays put while the others scroll sideways (with `phoneRows={false}`). */
+  stickyFirstColumn?: boolean;
 }
 
 export type SortDirection = "asc" | "desc";
@@ -167,9 +169,12 @@ export function Table<T>({
   expandLabel,
   phoneSelecting = false,
   phoneRows = true,
+  stickyFirstColumn = false,
 }: TableProps<T>) {
   const t = useT();
   const phone = usePhone();
+  // US-RPT-41: a grid's first column held in place on a phone.
+  const stick = (column: TableColumn<T>, bg: string) => (stickyFirstColumn && phone && column === columns[0] ? cn("sticky left-0 z-[1] shadow-[1px_0_0_var(--color-border)]", bg) : "");
   const [phoneShown, setPhoneShown] = useState(PHONE_PAGE);
   const [sortState, setSortState] = useState<TableSort | null>(null);
   const sortControlled = sortProp !== undefined;
@@ -417,6 +422,7 @@ export function Table<T>({
                   className={cn(
                     "whitespace-nowrap px-3 py-2 font-medium text-on-surface-muted",
                     column.align === "right" ? "text-right" : "text-left",
+                    stick(column, "bg-surface-sunken"),
                   )}
                 >
                   {column.sortValue ? (
@@ -541,6 +547,7 @@ export function Table<T>({
                         className={cn(
                           "whitespace-nowrap px-3 py-2 text-on-surface",
                           column.align === "right" ? "text-right" : "text-left",
+                          stick(column, "bg-surface"),
                         )}
                       >
                         {column.render(row)}
@@ -564,7 +571,7 @@ export function Table<T>({
                 {expandable && <td />}
                 {selectable && !groupBy && <td />}
                 {columns.map((column) => (
-                  <td key={column.key} className={cn("whitespace-nowrap px-3 py-2.5", column.align === "right" ? "text-right tabular-nums" : "text-left")}>
+                  <td key={column.key} className={cn("whitespace-nowrap px-3 py-2.5", column.align === "right" ? "text-right tabular-nums" : "text-left", stick(column, "bg-surface-sunken"))}>
                     {footer[column.key]}
                   </td>
                 ))}
