@@ -25,6 +25,8 @@ export interface BottomSheetProps {
   headerAction?: React.ReactNode;
   /** US-OPS-59: a button on the left of the header (Cancel); the title is then centred. */
   headerLeading?: React.ReactNode;
+  /** US-MTG-18: content that has its own title and close (an event's quick view) — only the grabber shows; the title is still read. */
+  hideHeader?: boolean;
   children: React.ReactNode;
   className?: string;
   "data-testid"?: string;
@@ -37,7 +39,7 @@ export interface BottomSheetProps {
  * header closes it. With reduced motion it appears without sliding. It's for screens under
  * 768px; wider screens keep their dialogs, menus and drawers.
  */
-export function BottomSheet({ open, onOpenChange, title, description, height = "auto", footer, headerAction, headerLeading, children, className, "data-testid": testId }: BottomSheetProps) {
+export function BottomSheet({ open, onOpenChange, title, description, height = "auto", footer, headerAction, headerLeading, hideHeader = false, children, className, "data-testid": testId }: BottomSheetProps) {
   const t = useT();
   const start = useRef<number | null>(null);
   const [drag, setDrag] = useState(0);
@@ -83,6 +85,9 @@ export function BottomSheet({ open, onOpenChange, title, description, height = "
         >
           <div {...dragHandlers} className="shrink-0 touch-none select-none">
             <div aria-hidden className="mx-auto mt-2 h-[5px] w-9 rounded-full bg-border-strong" />
+            {hideHeader ? (
+              <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+            ) : (
             <div className={cn("flex min-h-[52px] items-center gap-1 py-1 pr-1", headerLeading ? "pl-1" : "pl-4")}>
               {headerLeading ? <div className="flex w-[88px] shrink-0 justify-start">{headerLeading}</div> : null}
               <DialogPrimitive.Title className={cn("min-w-0 flex-1 truncate text-[17px] font-semibold text-on-surface", headerLeading && "text-center")}>{title}</DialogPrimitive.Title>
@@ -96,6 +101,7 @@ export function BottomSheet({ open, onOpenChange, title, description, height = "
                 </DialogPrimitive.Close>
               )}
             </div>
+            )}
           </div>
           {description ? <DialogPrimitive.Description className="sr-only">{description}</DialogPrimitive.Description> : null}
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>

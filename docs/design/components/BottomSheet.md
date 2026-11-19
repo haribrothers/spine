@@ -23,6 +23,7 @@ import { BottomSheet } from "@spine/ui";
 | `footer` | `ReactNode` — the sheet's buttons | — |
 | `headerAction` | `ReactNode` — replaces Close | — |
 | `headerLeading` | `ReactNode` — a button on the left of the header (Cancel); the title is then centred (US-OPS-59, a line sheet's Cancel · title · Done) | — |
+| `hideHeader` | `boolean` — only the grabber shows; the title is still read (US-MTG-18: an event's quick view has its own title and close) | `false` |
 
 
 ## Rules and behaviour

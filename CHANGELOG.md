@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-MTG-18: a calendar made for a phone
+
+- **Month first:** under 768px Meetings opens on the month (it was Agenda): a compact grid with one letter per weekday, today ringed, the chosen day filled, up to three dots per day in the calendars' colours (with the count in the day's name for screen readers), and the chosen day's meetings listed under it. Each row has its time (or All day), colour, title, place and contact. Tap a day to choose it. Swipe the grid or use the arrows for the next or previous month, and Today comes back. Arrow keys move the day.
+- **Day:** a strip of the week's days, with their dots, over the day's timeline, with "3 meetings · 1 later" and the line at now. Swiping the strip moves a week and swiping the timeline moves a day. On a phone the timeline has no drag to create, move or resize, so a swipe isn't mistaken for one. A tap opens the meeting, and + creates one.
+- **Toolbar:** two short rows. The month and year (tap it for a Pick a month sheet), the arrows and Today; then Month · Day · Agenda as a segmented control across the screen. The mini calendar and Calendars open from a filter button in the top bar, and New meeting is a floating + that opens full screen on the chosen day.
+- **Quick view:** a meeting's quick view is a bottom sheet in every view. `BottomSheet` gets `hideHeader` for content with its own title and close.
+- **Where:** new `calendar-phone.tsx` in `@spine/ui` (`CalendarPhoneToolbar`, `CalendarPhoneMonth`, `CalendarWeekStrip`, `CalendarQuickViewSheet`, `useSwipe`), used by `Calendar` on a phone. The event colours moved to `lib/calendar-colors.ts`. From 768px up the calendar is unchanged.
+- **Tests and docs:** `us-mtg-18.spec.ts` and `calendar-phone.a11y.test.tsx`. US-MTG-17's phone test now expects the month and the top bar's filter button. Docs: Calendar, BottomSheet, the design-system page and the phone guide; QA section 291.
+
 ### 2026-11-19 — US-OPS-59: build a quote or invoice on a phone
 
 - **A builder fills the screen:** under 768px New quote, New invoice, New vendor bill, New vendor credit and their Edit pages have no tab bar. The top bar is Cancel at the top left with the title centred (`AppShellPhoneBar` `onCancel`). Cancel runs the builder's own cancel through `usePhoneBuilderCancel`, so "Leave without saving?" asks first, as Back already did. Fields are one column.

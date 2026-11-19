@@ -4086,6 +4086,7 @@
       "noByContact": "No meetings linked to a contact in this range.",
       "unknownContact": "Unknown contact",
       "miniCalendar": "Mini calendar",
+      "calendarsAndDates": "Calendars and dates",
       "newMeeting": "New meeting",
       "new": "New",
       "internal": "Internal",
@@ -8454,6 +8455,20 @@
       "goBack": "Go back"
     },
     "calendar": {
+      "phone": {
+        "pickMonth": "Pick a month",
+        "previousYear": "Previous year",
+        "nextYear": "Next year",
+        "dayLabel_one": "{{date}}, {{count}} meeting",
+        "dayLabel_other": "{{date}}, {{count}} meetings",
+        "count_one": "{{count}} meeting",
+        "count_other": "{{count}} meetings",
+        "later_one": "{{count}} later",
+        "later_other": "{{count}} later",
+        "today": "Today · {{date}}",
+        "nothing": "Nothing on this day.",
+        "week": "Week of {{date}}"
+      },
       "colors": {
         "blue": "Blue",
         "green": "Green",

@@ -5860,3 +5860,17 @@ Automated: `us-ops-59.spec.ts`, `us-ops-59-phone.a11y.test.tsx`. At 390×844 wit
 8. Credit note: each invoice line is a card with its tick box and, once ticked, its quantity. Recurring invoice and bill: their lines are cards with the same sheet.
 9. Dark mode: the cards, sheet and bar use the dark surfaces.
 10. Regression, from 768px up: the builders' line rows (drag handle, columns, row menu), the bar with Subtotal, Tax, Total, Cancel, Preview PDF and Save buttons, and the credit note's table are as they were.
+
+## 291. Use a calendar made for my phone (US-MTG-18, Phase 12)
+
+Automated: `us-mtg-18.spec.ts`, `calendar-phone.a11y.test.tsx`; `us-mtg-17.spec.ts` (phone defaults updated). At 390×844 with touch, with meetings on a few days this month:
+
+1. Open Meetings: it shows the month (Month is chosen); weekdays are single letters; today is ringed; each day with meetings has up to three dots in their calendars' colours; with a screen reader a day reads "Wednesday 10 March, 2 meetings".
+2. Under the grid, the chosen day's meetings: time and end time (or All day), the colour bar, title, place and contact; "Nothing on this day." when empty. Tap another day: it's filled and its meetings show.
+3. Swipe the grid left: next month; right: previous. The arrows do the same; Today returns to today. Tap "November 2026 ⌄": Pick a month — change the year with the arrows, tap June.
+4. Day: the week's seven days with their dots over the timeline, scrolled to the working day (or now), a red line at now on today, and "3 meetings · 1 later". Swipe the strip: a week; swipe the timeline: a day. Scrolling up and down doesn't change the day.
+5. Agenda: as before (US-MTG-17).
+6. The toolbar is two rows: month, arrows and Today; then Month · Day · Agenda across the screen. The filter icon in the top bar opens the mini calendar and Calendars.
+7. Tap +: New event opens full screen on the chosen day (today: the next half hour; another day: 9:00). Tap a meeting in any view: its quick view rises as a bottom sheet with its own title and close.
+8. Dark mode: dots, today's ring and the chosen day read clearly.
+9. Regression, from 768px up: the toolbar, Week, the month grid with event chips, the quick view popover beside the event, and drag to create, move and resize in Day and Week are as they were.

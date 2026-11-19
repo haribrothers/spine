@@ -68,9 +68,11 @@ import { CalendarView, RecurringMoveOrResizeRequest, Calendar } from "@spine/ui"
 - US-MTG-15: `openRequest` opens an occurrence's quick view once its day is on screen.
 - US-MTG-17: `views` limits the views offered; Agenda rows show the time range, place and `agendaDetails`, stacking on narrow screens; the toolbar wraps.
 
-## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — planned
+## Phone (under 768px, [D-283](../../prd/12-decisions.md)) — built (US-MTG-18)
 
 - Under 768px Month is a compact grid with up to three dots per busy day and the chosen day's meetings listed under it; Day is a week strip over a timeline; swipe moves month, week or day, and the arrows do the same for keyboard users; the toolbar is two short rows, the month and year with the arrows and Today, then Month · Day · Agenda as a segmented control the width of the screen (US-MTG-18, `MeetingsPhoneMonth`).
+- Built in `calendar-phone.tsx`: `CalendarPhoneToolbar` (the month opens a Pick a month sheet), `CalendarPhoneMonth` (one letter per weekday, today ringed, the chosen day filled, each day's name carries its count; arrow keys move the day), `CalendarWeekStrip` (with the day's count and how many are still to come today) and `useSwipe` (pointer events, `touch-action: pan-y`; a mostly vertical drag is a scroll, not a swipe). On a phone the Day timeline has no drag to create, move or resize, so a sideways swipe moves the day and a tap opens the event; the quick view (`renderEventPopover`) is a bottom sheet (`CalendarQuickViewSheet`), and `toolbarAction` isn't shown (the page puts its actions in the top bar and a floating +). The event colours live in `lib/calendar-colors.ts`.
+- Test: `calendar-phone.a11y.test.tsx`.
 
 ## Exports
 
