@@ -5900,3 +5900,14 @@ Automated: `us-dash-31.spec.ts`. At 390×844 with touch, as the Owner:
 4. On a computer, hide a card with Edit layout; back on the phone it's hidden there too.
 5. As Staff and Field: the same order without what they can't see (no key figures for Field).
 6. Regression, from 768px up: the header with Accrual/Cash and Edit layout, the side column from 1440px and the grid are as they were.
+
+## 294. Open Spine from my phone's home screen like an app (US-OPS-55, Phase 12)
+
+Automated: `us-ops-55.spec.ts`; `us-set-26.test.tsx` (manifest). On a real iPhone and an Android phone, signed in to your Spine:
+
+1. iPhone (Safari): Share › Add to Home Screen. Android (Chrome): ⋮ › Add to Home screen / Install app. The icon is Spine's.
+2. Open it from the icon: no address bar or browser toolbar; it starts on the dashboard; the top bar sits below the notch and the tab bar above the home indicator, in light and dark.
+3. On an iPhone, sign in once inside it (it keeps its own sign-in).
+4. Open an invoice, then the back arrow: back to Invoices. Swipe back (iPhone) or use the back gesture (Android): the same.
+5. Tap a link to another site (Help in More, a contact's website): it opens in the browser, and Spine stays where it was.
+6. Regression: in the browser (not from the home screen), everything is as before; on a computer nothing changes.

@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-OPS-55: open Spine from the home screen like an app
+
+- **Standalone:** the web manifest says `display: "standalone"` and starts at `/dashboard` (with `id` and `scope`), keeping the name, short name, icons and the tokens' background colour. The root layout adds `viewport-fit=cover` and the iPhone home-screen tags (`appleWebApp`). Opened from the home screen, Spine has no address bar or toolbar. The top bar and tab bar already keep clear of the notch and the home indicator (`env(safe-area-inset-*)`).
+- **Getting around:** the back arrow works as before, and so does the phone's own back gesture. In the home-screen app, a link to another site (the docs, a contact's website) opens in the browser (`useOpenOtherSitesInBrowser` in `lib/standalone.ts`); links within Spine, mailto: and tel: are unchanged.
+- **Not in this story:** a service worker or offline use. `sw.js` still only handles push; the field app is the offline tool.
+- **US-OPS-62 done:** with the floating buttons, action bars and builders in, every phone check is on (none waits on a later story). The `phone` project runs on every route in light and dark, in `pnpm verify` and before each release.
+- **Tests and docs:** `us-ops-55.spec.ts`; US-SET-26's unit and E2E tests now expect `standalone`. D-206 and US-SET-26 note the change; the phone guide explains adding Spine to the home screen (and signing in once inside it on an iPhone); QA section 294.
+
 ### 2026-11-19 — US-DASH-31: the dashboard laid out for a phone
 
 - **What needs you first:** under 768px the dashboard is one column. It starts with a one-line greeting and the date ("Good morning, Priya · Thu, Nov 19"), then Needs your attention, the key figures two per row, Today, Get started and the other cards one per row, in the layout chosen on a wider screen.

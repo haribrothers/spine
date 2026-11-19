@@ -920,7 +920,7 @@ Decision: D-283
 - **Given** a link to another site (the public docs site, a contact's website), **when** I open it from the home-screen app, **then** it opens in the browser, not inside Spine.
 
 **Implementation notes**
-- `apps/web/src/app/manifest.ts` (`display: "browser"` today). Safe areas with `env(safe-area-inset-*)` and `viewport-fit=cover`.
+- `apps/web/src/app/manifest.ts` (`display: "browser"` before this story; `"standalone"`, `start_url: "/dashboard"` now). Safe areas with `env(safe-area-inset-*)` and `viewport-fit=cover`.
 - Not in this story: a service worker or offline use (the field app is the offline tool). On iPhone a home-screen app keeps its own sign-in, so people sign in once inside it; the guide says so.
 
 ### US-OPS-56 · Read any list as rows made for my phone

@@ -22,6 +22,7 @@ import { navSectionsFor } from "../lib/nav-sections";
 import { pageAccessFor } from "../lib/page-access";
 import { areaFor, areaHref, areaPages, isBuilder, isTopLevel, parentPath, rememberAreaPage, titleFor, visibleAreas, type AreaKey } from "../lib/phone-shell";
 import { PhoneBarProvider, usePhoneBarCancel, usePhoneBarSlot } from "../lib/phone-bar";
+import { useOpenOtherSitesInBrowser } from "../lib/standalone";
 import { RoleProvider } from "../lib/role-context";
 import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
@@ -113,6 +114,8 @@ export function AppLayout(props: AppLayoutProps) {
 }
 
 function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLayoutProps) {
+  // US-OPS-55: from the home screen, links to other sites open in the browser.
+  useOpenOtherSitesInBrowser();
   const t = useT();
   const router = useRouter();
   const { capabilities } = useCapabilities();

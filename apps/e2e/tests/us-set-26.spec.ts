@@ -17,7 +17,8 @@ test.describe("US-SET-26", () => {
       expect((await request.get(url)).status(), url).toBe(200);
     }
     const manifest = (await (await request.get("/manifest.webmanifest")).json()) as { display: string; icons: { purpose: string }[] };
-    expect(manifest.display).toBe("browser");
+    // US-OPS-55 (D-283): opened from the home screen it is an app.
+    expect(manifest.display).toBe("standalone");
     expect(manifest.icons.map((icon) => icon.purpose)).toContain("maskable");
   });
 
