@@ -111,6 +111,24 @@ test.describe("US-OPS-54 · get around the web app from tabs along the bottom of
     await expect.poll(() => main.evaluate((el) => (el as unknown as { scrollTop: number }).scrollTop)).toBe(before);
   });
 
+  test("the area's row shows the page I'm on, even at its end (Reports, Banking under Money)", async ({ page, seededOrg: _ }) => {
+    for (const [path, name] of [["/reports", "Reports"], ["/banking", "Banking"]] as const) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      await expect(tabBar(page).getByRole("link", { name: "Money" })).toHaveAttribute("aria-current", "page");
+      const row = page.getByTestId("area-nav");
+      const link = row.getByRole("link", { name, exact: true });
+      await expect(link).toHaveAttribute("aria-current", "page");
+      await expect
+        .poll(async () => {
+          const r = (await row.boundingBox())!;
+          const l = (await link.boundingBox())!;
+          return l.x >= r.x - 1 && l.x + l.width <= r.x + r.width + 1;
+        }, { message: path })
+        .toBe(true);
+    }
+  });
+
   test("a record opened from a link, not from Spine, goes back to its list", async ({ page, seededOrg: _ }) => {
     await page.goto("/invoices");
     await page.waitForLoadState("networkidle");

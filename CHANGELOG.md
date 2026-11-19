@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Fix: on a phone, the area's row shows the page you're on
+
+- On Reports (and Banking or Payables, at the end of the Money row) the row of the area's pages under the title now scrolls so the page you're on is in view and underlined (`AppShellAreaNav`). Before, only the Money tab looked selected, because the page's own link was off-screen to the right. Reports stays under Money, the Owner's choice. US-OPS-54 checks it on Reports and Banking.
+
 ### 2026-11-19 — Search on a phone gets room to breathe (the Owner chose the layout)
 
 - **Roomy top bar:** on a phone the search screen leaves 16px above the field (below the notch) and 12px under it. The field is filled and rounded, 44px tall, with the icon inside and Cancel beside it (`CommandPalette`). The scopes (All, Sales, Jobs, Billing, Purchases) are pills that scroll sideways, and Include archived is a pill with them instead of a footer of its own. Results are 60px rows. From 768px up, search is unchanged.

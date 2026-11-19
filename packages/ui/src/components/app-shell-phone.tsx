@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { cn } from "../lib/cn";
 import { useT } from "../lib/i18n";
 
@@ -84,9 +85,23 @@ export interface AppShellAreaNavProps {
  * marked `aria-current`. Hidden from 768px up.
  */
 export function AppShellAreaNav({ label, items, renderLink }: AppShellAreaNavProps) {
+  const ref = useRef<HTMLElement>(null);
+  const current = items.find((item) => item.current)?.href;
+  // The page you're on is in view and underlined, even at the end of the row (Reports, Banking).
+  // Only the row scrolls, never the page.
+  useEffect(() => {
+    const row = ref.current;
+    const link = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!row || !link || row.scrollWidth <= row.clientWidth) return;
+    const box = row.getBoundingClientRect();
+    const tab = link.getBoundingClientRect();
+    if (tab.left < box.left) row.scrollLeft -= box.left - tab.left + 12;
+    else if (tab.right > box.right) row.scrollLeft += tab.right - box.right + 12;
+  }, [current]);
   if (items.length < 2) return null;
   return (
     <nav
+      ref={ref}
       aria-label={label}
       data-testid="area-nav"
       className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-surface px-3 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden"
