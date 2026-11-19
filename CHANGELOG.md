@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Fix: the dashboard's cards on a phone (from the Owner's review)
+
+- **Income and expenses:** the three totals stack one per line on a narrow card (label left, amount right) instead of running into each other; three across when the card is wide, like Payables and Tax already were.
+- **Links in line:** on a phone a link made 44px tall keeps its text in the middle (`align-content: center` in the tap-size rule), so each card's heading link (Open calendar, Banking, View jobs) sits level with its title and Retention held's Release sits beside its amount, across the app.
+- **Accounts:** each account's name covers its row (the row is the tap target), so the name, its note, the icon and the balance line up. **Today:** a narrower time column on a phone.
+- **Tests:** US-DASH-31 checks that no figure on the phone dashboard leaves its card or overlaps another (crore-sized amounts showed it; the E2E business's small amounts didn't).
+
 ### 2026-11-19 — Fix: phone lists, the pipeline, the meetings sheet and the dashboard greeting (from the Owner's review)
 
 - **List rows:** on a phone a row's title stays on one line, and badges that don't fit beside it wrap under it (`ListRow`). Every list now gives its columns explicit phone roles, with a one-line title. That covers quotes (the number, with the quote's title beside the contact), contacts (logo and name, then "type · email", and only Archived as a badge), jobs, expenses, payments (the amount and customer were missing), credit notes, vendor bills, vendor credits, vendor payments, the catalogue and bundles, emails, journals, banking (accounts, register and reconciliations), receivables and payables (both views), team users, invites and teams, recurring schedules and expense categories. A title link or button covers the row and is exempt from the 44px rule. US-OPS-62 now also fails a route whose row titles wrap.

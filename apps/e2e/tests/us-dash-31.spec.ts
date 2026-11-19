@@ -57,6 +57,38 @@ test.describe("US-DASH-31 · see my dashboard laid out for my phone", () => {
     }
   });
 
+  test("no figure runs out of its card or into another: Income and expenses stacks its totals on a phone", async ({ page, seededOrg: _ }) => {
+    await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("[data-widget]").first()).toBeVisible();
+    const problems = await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const doc = (globalThis as any).document;
+      const out: string[] = [];
+      for (const card of Array.from(doc.querySelectorAll("[data-widget], [data-testid=attention-card], [data-testid=kpi-row] > *") as ArrayLike<unknown>)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c = (card as any).getBoundingClientRect();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const figures = Array.from((card as any).querySelectorAll(".tabular-nums") as ArrayLike<any>).map((el) => ({ text: String(el.textContent).trim(), r: el.getBoundingClientRect() })).filter((f) => f.r.width > 0 && f.text);
+        for (const f of figures) if (f.r.right > c.right + 1 || f.r.left < c.left - 1) out.push(`outside its card: ${f.text}`);
+        for (let i = 0; i < figures.length; i++)
+          for (let j = i + 1; j < figures.length; j++) {
+            const a = figures[i]!.r;
+            const b = figures[j]!.r;
+            if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) out.push(`overlap: ${figures[i]!.text} / ${figures[j]!.text}`);
+          }
+      }
+      return out;
+    });
+    expect(problems).toEqual([]);
+    // The totals are one per line, label and amount on it.
+    const totals = page.getByTestId("money-in-out-totals");
+    if (await totals.count()) {
+      const rows = await totals.locator(":scope > div").evaluateAll((els) => els.map((el) => Math.round((el as unknown as { getBoundingClientRect(): { top: number } }).getBoundingClientRect().top)));
+      expect(new Set(rows).size).toBe(rows.length);
+    }
+  });
+
   test("Accrual or Cash is under ⋯; Edit layout isn't offered", async ({ page, seededOrg: _ }) => {
     await page.goto("/dashboard");
     await page.waitForLoadState("networkidle");

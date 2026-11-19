@@ -388,6 +388,11 @@
   :where(button:not([data-tap-area], [data-list-row-title] *), [role="button"], [role="combobox"]) {
     min-width: 44px;
   }
+  /* A link made 44px tall keeps its text in the middle of that height, so it lines up with what's
+     beside it (a card's title, a count, an amount) instead of sitting at the top. */
+  :where(a[href]:not(p *, td *, [data-list-row-title] *)) {
+    align-content: center;
+  }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"]), textarea) {
     min-height: 44px;
   }

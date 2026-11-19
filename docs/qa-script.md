@@ -5921,5 +5921,5 @@ Automated: `us-ops-57.spec.ts` (pipeline), `us-ops-62.spec.ts` (row titles on on
 3. A chip that filters (Overdue, Waiting for approval) shows no icon over its label.
 4. Pipeline: stage chips first, then "9 leads · $… open · Win rate 67%", then search and Filters, then the stage's leads as rows, "Move a lead to another stage from its ⋯ menu.", Add lead floating; ⋯ at the top has Refresh.
 5. Meetings: the filter icon opens Calendars — the people's calendars, My activities, Upcoming, Meetings by contact (counts in line with the names), no mini calendar.
-6. Dashboard: with the server in UTC and the phone in another time zone, the greeting matches the phone's time and no error shows.
+6. Dashboard: with the server in UTC and the phone in another time zone, the greeting matches the phone's time and no error shows. With large amounts (the demo business), Income and expenses lists its totals one per line; every card's heading link is level with its title; Accounts rows line up; nothing overlaps.
 7. Regression, from 768px up: every list's columns, the pipeline board and the meetings sidebar with its mini calendar are as they were.

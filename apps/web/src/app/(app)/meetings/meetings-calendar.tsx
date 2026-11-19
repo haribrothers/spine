@@ -847,7 +847,7 @@ export function MeetingsCalendar() {
               <ul className="flex flex-col gap-1">
                 {contactCounts.map(([contactId, count]) => (
                   <li key={contactId} className="flex items-center justify-between gap-2 text-[13px]">
-                    <SectionLink href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline max-md:leading-[44px]">
+                    <SectionLink href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline">
                       {contactsById.get(contactId)?.name ?? t("meetings.calendar.unknownContact")}
                     </SectionLink>
                     <span className="shrink-0 tabular-nums text-on-surface-muted">{count}</span>
