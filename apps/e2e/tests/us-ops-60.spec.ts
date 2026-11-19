@@ -89,9 +89,12 @@ test.describe("US-OPS-60 · use dialogs, menus and pickers made for my phone", (
     await page.getByRole("combobox", { name: /Contact/ }).first().click();
     const sheet = page.locator("[data-phone-sheet]").filter({ has: page.getByRole("listbox") });
     await expectBottomSheet(sheet);
-    const search = await box(sheet.getByRole("combobox"));
-    const firstOption = await box(sheet.getByRole("option").first());
-    expect(search.y).toBeLessThan(firstOption.y);
+    // Once the sheet has finished rising and its options have loaded, its search is above them.
+    await settled(page);
+    await expect(sheet.getByRole("option").first()).toBeVisible();
+    await expect
+      .poll(async () => (await box(sheet.getByRole("combobox"))).y < (await box(sheet.getByRole("option").first())).y)
+      .toBe(true);
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: /\d{1,2}\/\d{1,2}\/\d{4}/ }).first().click();
@@ -150,6 +153,19 @@ test.describe("US-OPS-60 · use dialogs, menus and pickers made for my phone", (
     await expect(palette.getByText("Cancel")).toBeVisible();
     // The keyboard hints are still in the page for a keyboard, but none is shown on a touch screen.
     for (const hint of await palette.getByText(/⌘K|Ctrl K|Enter to open|Esc to close|^Esc$/).all()) await expect(hint).toBeHidden();
+    // The Owner's review: room around the field — 16px above it, a filled 44px field with Cancel
+    // beside it, the scopes as pills under it, and rows a thumb can hit.
+    const field = await box(palette.getByTestId("command-palette-field"));
+    expect(field.y).toBeGreaterThanOrEqual(16);
+    expect(field.height).toBeGreaterThanOrEqual(44);
+    const cancel = await box(palette.getByText("Cancel"));
+    expect(Math.abs(cancel.y + cancel.height / 2 - (field.y + field.height / 2))).toBeLessThan(4);
+    const pills = palette.getByRole("radio");
+    if (await pills.count()) {
+      const first = await box(pills.first());
+      expect(first.y).toBeGreaterThanOrEqual(field.y + field.height + 8);
+      await expect(pills.first()).toHaveCSS("border-radius", /9999px|\d{2,}px/);
+    }
     await palette.getByText("Cancel").click();
     await expect(palette).toHaveCount(0);
   });

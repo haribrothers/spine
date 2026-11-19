@@ -176,17 +176,21 @@ export function CommandPalette({
             {pendingId ? t("ui.commandPalette.opening") : ""}
           </span>
           <CommandPrimitive label={label} shouldFilter={false} loop value={selected} onValueChange={setSelected} className="flex min-h-0 flex-1 flex-col">
-            <div className={cn("flex items-center gap-2 px-4", !toolbar && "border-b border-border")}>
-              <Search size={16} className="shrink-0 text-on-surface-muted" aria-hidden />
-              <CommandPrimitive.Input
-                ref={inputRef}
-                value={query}
-                onValueChange={onQueryChange}
-                placeholder={placeholder}
-                aria-label={label}
-                className="flex h-12 w-full bg-transparent text-[15px] text-on-surface placeholder:text-on-surface-muted focus:outline-none"
-              />
-              {loading && <Spinner size="sm" />}
+            {/* US-OPS-60 + the Owner's review: on a phone, room above (16px) and below (12px), and a
+                filled, rounded 44px field with the icon inside and Cancel beside it. */}
+            <div className={cn("flex items-center gap-2 px-4 max-md:gap-3 max-md:pb-3 max-md:pt-4", !toolbar && "border-b border-border")}>
+              <div className="flex min-w-0 flex-1 items-center gap-2 max-md:h-11 max-md:rounded-lg max-md:bg-surface-sunken max-md:px-3" data-testid="command-palette-field">
+                <Search size={16} className="shrink-0 text-on-surface-muted" aria-hidden />
+                <CommandPrimitive.Input
+                  ref={inputRef}
+                  value={query}
+                  onValueChange={onQueryChange}
+                  placeholder={placeholder}
+                  aria-label={label}
+                  className="flex h-12 w-full min-w-0 bg-transparent text-[15px] text-on-surface placeholder:text-on-surface-muted focus:outline-none max-md:h-11 max-md:min-h-0 max-md:text-[16px]"
+                />
+                {loading && <Spinner size="sm" />}
+              </div>
               <DialogPrimitive.Close asChild>
                 {/* Escape closes too; out of the tab order so Tab goes from the field to the toolbar (US-OPS-49). */}
                 <button type="button" tabIndex={-1} className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={t("ui.commandPalette.closeSearch")}>
@@ -195,7 +199,7 @@ export function CommandPalette({
                 </button>
               </DialogPrimitive.Close>
             </div>
-            {toolbar && <div className="border-b border-border px-4 pb-3">{toolbar}</div>}
+            {toolbar && <div className="border-b border-border px-4 pb-3 max-md:pt-0">{toolbar}</div>}
             {!hasResults && !loading && (emptyMessage || hint) && (
               <div className="px-3 py-8 text-center text-[13px] text-on-surface-muted" role="status">
                 {emptyMessage ?? hint}
@@ -231,7 +235,7 @@ export function CommandPalette({
                           key={item.id}
                           value={item.id}
                           onSelect={() => onSelect(item)}
-                          className="group flex min-h-12 cursor-pointer select-none items-center gap-3 rounded-md px-3 py-1.5 outline-none data-[selected=true]:bg-info-bg"
+                          className="group flex min-h-12 cursor-pointer select-none items-center gap-3 rounded-md px-3 py-1.5 outline-none data-[selected=true]:bg-info-bg max-md:min-h-[60px] max-md:py-2"
                         >
                           {item.icon && (
                             <span className="flex size-7.5 shrink-0 items-center justify-center rounded-md bg-surface-sunken text-on-surface-muted [&_svg]:size-4" aria-hidden>

@@ -19,7 +19,7 @@ import { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, Comman
 
 ## Rules and behaviour
 
-- `CommandPalette` (search): on a phone it fills the screen, with Cancel in place of the Esc key; the app hides its keyboard hints on touch screens (US-OPS-60).
+- `CommandPalette` (search): on a phone it fills the screen, with Cancel in place of the Esc key; the app hides its keyboard hints on touch screens (US-OPS-60). Since the Owner's review: 16px above the field (below the notch) and 12px under it, the field filled and rounded, 44px tall, with the icon inside and Cancel beside it (`command-palette-field`); results 60px tall. The search page puts its scopes in pills that scroll sideways and Include archived as a pill with them (no footer on a phone).
 - Fuzzy, type-to-filter search across items and groups.
 - Full keyboard navigation.
 - Composable into a Combobox trigger or a full-screen CommandDialog.

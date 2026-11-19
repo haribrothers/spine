@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Search on a phone gets room to breathe (the Owner chose the layout)
+
+- **Roomy top bar:** on a phone the search screen leaves 16px above the field (below the notch) and 12px under it. The field is filled and rounded, 44px tall, with the icon inside and Cancel beside it (`CommandPalette`). The scopes (All, Sales, Jobs, Billing, Purchases) are pills that scroll sideways, and Include archived is a pill with them instead of a footer of its own. Results are 60px rows. From 768px up, search is unchanged.
+- **Tests:** US-OPS-60's search test checks the room above the field, the field's height, Cancel beside it and the pills under it. Its combobox-sheet check now waits for the sheet to finish rising, since it was measuring mid-animation now and then.
+
 ### 2026-11-19 — Fix: the dashboard's cards on a phone (from the Owner's review)
 
 - **Income and expenses:** the three totals stack one per line on a narrow card (label left, amount right) instead of running into each other; three across when the card is wide, like Payables and Tax already were.
