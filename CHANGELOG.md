@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Fix: phone lists, the pipeline, the meetings sheet and the dashboard greeting (from the Owner's review)
+
+- **List rows:** on a phone a row's title stays on one line, and badges that don't fit beside it wrap under it (`ListRow`). Every list now gives its columns explicit phone roles, with a one-line title. That covers quotes (the number, with the quote's title beside the contact), contacts (logo and name, then "type · email", and only Archived as a badge), jobs, expenses, payments (the amount and customer were missing), credit notes, vendor bills, vendor credits, vendor payments, the catalogue and bundles, emails, journals, banking (accounts, register and reconciliations), receivables and payables (both views), team users, invites and teams, recurring schedules and expense categories. A title link or button covers the row and is exempt from the 44px rule. US-OPS-62 now also fails a route whose row titles wrap.
+- **Search and Filters** span the width of the page on a phone (`FilterSheet`). A card's filter icon no longer sits on a chip's label.
+- **Pipeline:** on a phone it now follows its design. The stages are chips at the top, the figures are one line ("9 leads · $102,465.00 open · Win rate 67%"), and search and Filters share a row (stage, owner, source, sort and view in the sheet). The stage's leads are rows (`LeadRow`: title, contact and source, value, next follow-up), with "Move a lead to another stage from its ⋯ menu." Refresh is under ⋯, and Add lead floats.
+- **Meetings:** on a phone the top bar's sheet is "Calendars": the people's calendars, My activities, Upcoming and Meetings by contact. The mini calendar is gone from it, because the month view is the calendar (the Owner's call). Each contact's count lines up with its name.
+- **Dashboard greeting:** "Good morning/afternoon" and the date come from the device's clock after it loads. They were rendered in the server's time zone (UTC in Docker) and then again in the browser's, a hydration error whenever the two disagreed (it predates the phone work). A test opens the dashboard with the browser on UTC+14.
+
 ### 2026-11-19 — US-OPS-55: open Spine from the home screen like an app
 
 - **Standalone:** the web manifest says `display: "standalone"` and starts at `/dashboard` (with `id` and `scope`), keeping the name, short name, icons and the tokens' background colour. The root layout adds `viewport-fit=cover` and the iPhone home-screen tags (`appleWebApp`). Opened from the home screen, Spine has no address bar or toolbar. The top bar and tab bar already keep clear of the notch and the home indicator (`env(safe-area-inset-*)`).

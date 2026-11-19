@@ -12,6 +12,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   KanbanCard,
+  ListRow,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -76,6 +77,7 @@ export interface LeadCardProps {
  */
 export function LeadCard({ lead, contactName, ownerName, stages, now, showValue, showSource, canDelete, canMove, menuOpen, onMenuOpenChange, onOpen, onMove, onDelete }: LeadCardProps) {
   const t = useT();
+  const menuProps = { lead, stages, canDelete, canMove, menuOpen, onMenuOpenChange, onOpen, onMove, onDelete };
   const title = lead.title || contactName || t("leads.card.untitled");
   const showContact = Boolean(lead.title && contactName);
   const cold = coldDays(lead, now);
@@ -94,44 +96,7 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
       onMenuKey={() => onMenuOpenChange(true)}
       className="gap-1.5 border-border"
       menu={
-        <DropdownMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
-          <CardMenuTrigger lead={title} />
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onSelect={onOpen}>
-              <MENU_ICONS.openDrawer aria-hidden />
-              {t("leads.card.open")}
-            </DropdownMenuItem>
-            {canMove && (
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <MENU_ICONS.moveTo aria-hidden />
-                  {t("leads.card.moveToMenu")}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="w-44">
-                  <DropdownMenuLabel>{t("leads.card.moveTo")}</DropdownMenuLabel>
-                  {stages.map((stage) => {
-                    const current = stage.id === lead.stageId;
-                    return (
-                      <DropdownMenuItem key={stage.id} disabled={current} onSelect={() => onMove(stage)}>
-                        {stage.name}
-                        {current && <Check size={14} aria-label={t("leads.card.currentStage")} className="ml-auto" />}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            )}
-            {canDelete && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem destructive onSelect={onDelete}>
-                  <MENU_ICONS.delete aria-hidden />
-                  {t("leads.card.delete")}
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LeadMenu {...menuProps} title={title} />
       }
     >
       <span className="line-clamp-2 pr-7 text-[13.5px] font-semibold leading-snug text-on-surface">{title}</span>
@@ -167,6 +132,93 @@ export function LeadCard({ lead, contactName, ownerName, stages, now, showValue,
   );
 }
 
+/** A lead's ⋯ menu: open it, move it to another stage, delete it. Shared by the card and the phone row. */
+function LeadMenu({
+  lead,
+  title,
+  stages,
+  canDelete,
+  canMove,
+  menuOpen,
+  onMenuOpenChange,
+  onOpen,
+  onMove,
+  onDelete,
+  large = false,
+}: Pick<LeadCardProps, "lead" | "stages" | "canDelete" | "canMove" | "menuOpen" | "onMenuOpenChange" | "onOpen" | "onMove" | "onDelete"> & { title: string; large?: boolean }) {
+  const t = useT();
+  return (
+    <DropdownMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
+      <CardMenuTrigger lead={title} large={large} />
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onSelect={onOpen}>
+          <MENU_ICONS.openDrawer aria-hidden />
+          {t("leads.card.open")}
+        </DropdownMenuItem>
+        {canMove && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <MENU_ICONS.moveTo aria-hidden />
+              {t("leads.card.moveToMenu")}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-44">
+              <DropdownMenuLabel>{t("leads.card.moveTo")}</DropdownMenuLabel>
+              {stages.map((stage) => {
+                const current = stage.id === lead.stageId;
+                return (
+                  <DropdownMenuItem key={stage.id} disabled={current} onSelect={() => onMove(stage)}>
+                    {stage.name}
+                    {current && <Check size={14} aria-label={t("leads.card.currentStage")} className="ml-auto" />}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+        {canDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem destructive onSelect={onDelete}>
+              <MENU_ICONS.delete aria-hidden />
+              {t("leads.card.delete")}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
+ * US-OPS-57 (D-283) — a lead as a row on a phone: its title (tap to open it), the contact and
+ * source under it, the value on the right with the next follow-up (or how long it's been in
+ * its stage), and its ⋯ with Move to and Delete.
+ */
+export function LeadRow({ lead, contactName, stages, now, showValue, showSource, canDelete, canMove, menuOpen, onMenuOpenChange, onOpen, onMove, onDelete }: LeadCardProps) {
+  const t = useT();
+  const title = lead.title || contactName || t("leads.card.untitled");
+  const overdue = isOverdue(lead, now);
+  const followUp = lead.stageKind === "open" ? lead.nextFollowUp : null;
+  const days = daysInStage(lead, now);
+  const meta = lead.stageKind === "won" ? t("leads.card.wonOn", { date: shortDate(lead.stageChangedAt) }) : lead.stageKind === "lost" ? t("leads.card.lostOn", { date: shortDate(lead.stageChangedAt) }) : daysLabel(days);
+  const subtitle = [lead.title ? contactName : null, showSource ? lead.source : null].filter(Boolean).join(" · ");
+  const note = followUp ? `${FOLLOW_UP_LABEL[followUp.type]} · ${overdue ? t("leads.card.overdueOn", { date: shortDate(followUp.dueAt) }) : followUpWhen(followUp.dueAt, now)}` : meta;
+  return (
+    <ListRow
+      data-testid="lead-row"
+      title={
+        <button type="button" onClick={onOpen} className="max-w-full truncate text-left" data-lead={lead.id}>
+          {title}
+        </button>
+      }
+      subtitle={subtitle || undefined}
+      trailing={showValue ? formatMoney(lead.valueAmount, lead.valueCurrency) : undefined}
+      trailingSub={<span className={overdue ? "text-overdue" : undefined}>{note}</span>}
+      action={<LeadMenu lead={lead} title={title} stages={stages} canDelete={canDelete} canMove={canMove} menuOpen={menuOpen} onMenuOpenChange={onMenuOpenChange} onOpen={onOpen} onMove={onMove} onDelete={onDelete} large />}
+    />
+  );
+}
+
 /** The owner's initials, with their name on hover; a dashed "—" when unassigned. */
 function OwnerChip({ name }: { name: string | null }) {
   const t = useT();
@@ -190,11 +242,11 @@ function OwnerChip({ name }: { name: string | null }) {
 }
 
 /** The card's "⋯" button. */
-function CardMenuTrigger({ lead }: { lead: string }) {
+function CardMenuTrigger({ lead, large = false }: { lead: string; large?: boolean }) {
   const t = useT();
   return (
     <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-on-surface-muted data-[state=open]:bg-surface-sunken data-[state=open]:text-on-surface" aria-label={t("leads.card.actionsFor", { lead })}>
+      <Button variant="ghost" size="icon" className={large ? "h-11 w-11 text-on-surface-muted" : "h-7 w-7 text-on-surface-muted data-[state=open]:bg-surface-sunken data-[state=open]:text-on-surface"} aria-label={t("leads.card.actionsFor", { lead })}>
         <Ellipsis size={15} aria-hidden />
       </Button>
     </DropdownMenuTrigger>

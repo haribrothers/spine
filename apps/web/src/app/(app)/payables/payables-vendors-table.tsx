@@ -59,25 +59,38 @@ export function PayablesVendorsTable({
           {v.name ?? t("payables.vendorsTable.vendorFallback")}
         </SectionLink>
       ),
+      // US-OPS-56: on a phone, the name; how many bills and when they were last paid go on the second line.
+      phone: "title",
+      phoneRender: (v) => <SectionLink href={`/contacts/${v.contactId}`}>{v.name ?? t("payables.vendorsTable.vendorFallback")}</SectionLink>,
       sortValue: (v) => v.name ?? "",
     },
-    { key: "count", header: t("payables.columns.open"), render: (v) => t("payables.vendorsTable.bills", { count: v.billCount }), sortValue: (v) => v.billCount },
+    {
+      key: "count",
+      phone: "subtitle",
+      phoneRender: (v) => [t("payables.vendorsTable.bills", { count: v.billCount }), v.lastPaidOn ? t("payables.vendorsTable.lastPaidOn", { date: calendarDate(v.lastPaidOn, now, locale) }) : null].filter(Boolean).join(" · "),
+      header: t("payables.columns.open"),
+      render: (v) => t("payables.vendorsTable.bills", { count: v.billCount }),
+      sortValue: (v) => v.billCount,
+    },
     {
       key: "oldest",
+      phone: "trailingSub",
       header: t("payables.columns.oldest"),
       render: (v) => <span className={v.oldestDaysOverdue > 0 ? "font-medium text-overdue" : "text-on-surface-muted"}>{howLate({ dueDate: v.oldestDueDate, daysOverdue: v.oldestDaysOverdue })}</span>,
       sortValue: (v) => (v.oldestDueDate ? v.oldestDaysOverdue : Number.NEGATIVE_INFINITY),
     },
     {
       key: "overdue",
+      phone: "hidden",
       header: t("payables.columns.overdue"),
       align: "right",
       render: (v) => (BigInt(v.overdueAmount) > 0n ? <span className="font-semibold tabular-nums text-overdue">{money(v.overdueAmount)}</span> : <span className="text-on-surface-muted">—</span>),
       sortValue: (v) => BigInt(v.overdueAmount),
     },
-    { key: "total", header: t("payables.columns.totalOwed"), align: "right", render: (v) => <span className="tabular-nums">{money(v.totalOutstanding)}</span>, sortValue: (v) => BigInt(v.totalOutstanding) },
+    { key: "total", phone: "trailing", header: t("payables.columns.totalOwed"), align: "right", render: (v) => <span className="tabular-nums">{money(v.totalOutstanding)}</span>, sortValue: (v) => BigInt(v.totalOutstanding) },
     {
       key: "credit",
+      phone: "hidden",
       header: t("payables.columns.creditToUse"),
       align: "right",
       render: (v) => (BigInt(v.credit) > 0n ? <span className="font-semibold tabular-nums text-due-soon">{money(v.credit)}</span> : <span className="text-on-surface-muted">—</span>),
@@ -85,12 +98,14 @@ export function PayablesVendorsTable({
     },
     {
       key: "lastPaid",
+      phone: "hidden",
       header: t("payables.columns.lastPaid"),
       render: (v) => (v.lastPaidOn ? <span className="whitespace-nowrap">{calendarDate(v.lastPaidOn, now, locale)}</span> : <span className="text-on-surface-muted">{t("payables.vendorsTable.never")}</span>),
       sortValue: (v) => v.lastPaidOn ?? "",
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (v) => (
         <div className="flex justify-end">

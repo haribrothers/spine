@@ -104,6 +104,7 @@ export function JournalsExplorer() {
   const columns: TableColumn<ManualJournal>[] = [
     {
       key: "number",
+      phone: "title",
       header: t("journals.list.colNumber"),
       render: (j) => (
         <Link href={`/journals/${j.id}`} className="font-medium text-on-surface hover:text-primary hover:underline">
@@ -112,15 +113,25 @@ export function JournalsExplorer() {
       ),
       sortValue: (j) => j.number,
     },
-    { key: "date", header: t("journals.list.colDate"), render: (j) => day(j.date), sortValue: (j) => j.date },
-    { key: "reason", header: t("journals.list.colReason"), render: (j) => j.reason },
+    { key: "date", phone: "trailingSub", header: t("journals.list.colDate"), render: (j) => day(j.date), sortValue: (j) => j.date },
+    {
+      key: "reason",
+      // US-OPS-56: on a phone, why it was posted and by whom on the second line.
+      phone: "subtitle",
+      phoneRender: (j) => [j.reason, j.postedBy?.name].filter(Boolean).join(" · "),
+      header: t("journals.list.colReason"),
+      render: (j) => j.reason,
+    },
     {
       key: "status",
+      // Only Reversed is worth a badge on a phone; every other journal is posted.
+      phone: "badge",
+      phoneRender: (j) => (j.status === "reversed" ? <StatusChip status="draft">{t("journals.list.reversed")}</StatusChip> : null),
       header: t("journals.list.colStatus"),
       render: (j) => (j.status === "reversed" ? <StatusChip status="draft">{t("journals.list.reversed")}</StatusChip> : <StatusChip status="paid">{t("journals.list.posted")}</StatusChip>),
     },
-    { key: "total", header: t("journals.list.colTotal"), align: "right", render: (j) => <span className="tabular-nums">{money(j.total)}</span>, sortValue: (j) => Number(j.total) },
-    { key: "by", header: t("journals.list.colBy"), render: (j) => j.postedBy?.name ?? "—" },
+    { key: "total", phone: "trailing", header: t("journals.list.colTotal"), align: "right", render: (j) => <span className="tabular-nums">{money(j.total)}</span>, sortValue: (j) => Number(j.total) },
+    { key: "by", phone: "hidden", header: t("journals.list.colBy"), render: (j) => j.postedBy?.name ?? "—" },
   ];
 
   return (

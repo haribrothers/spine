@@ -22,6 +22,7 @@ import { FilterSheet, type FilterChip } from "@spine/ui";
 
 ## Rules and behaviour
 
+- On a phone the search and Filters row is the full width of the page, even inside a toolbar row that wraps; the search fills what Filters leaves.
 - The Filters button shows how many filters are on; each chip has × to remove its filter (44px targets).
 - The sheet (`BottomSheet`) holds every filter control and the sort, one under another at full width, with Clear all and Show results.
 - A page hides its own inline "Clear filters" on a phone; the sheet has Clear all.

@@ -414,6 +414,8 @@
       "colEnd": "Statement end date",
       "colClosing": "Closing balance",
       "colMatched": "Entries matched",
+      "matchedCount_one": "{{count}} entry matched",
+      "matchedCount_other": "{{count}} entries matched",
       "colBy": "Finished by",
       "colAt": "Finished",
       "colStatus": "Status",
@@ -3287,7 +3289,8 @@
       "complete": "Complete",
       "billed": "Billed",
       "billedOver": "Billed over the contract",
-      "billedOverAria": "{{pct}}%, billed over the contract"
+      "billedOverAria": "{{pct}}%, billed over the contract",
+      "pctComplete": "{{pct}}% complete"
     },
     "due": {
       "noDueDate": "No due date",
@@ -3825,6 +3828,8 @@
     "daysInStage_one": "{{count}} day in stage",
     "daysInStage_other": "{{count}} days in stage",
     "summary": {
+      "lineOpen": "{{amount}} open",
+      "lineWinRate": "Win rate {{rate}}",
       "leads_one": "{{count}} lead",
       "leads_other": "{{count}} leads",
       "aria": "Pipeline summary",
@@ -3916,6 +3921,7 @@
       "saveChanges": "Save changes"
     },
     "board": {
+      "moveHint": "Move a lead to another stage from its ⋯ menu.",
       "updated": "Pipeline updated",
       "loadFailed": "Could not load the pipeline.",
       "cantMove": "You can't move this lead.",
@@ -4088,7 +4094,6 @@
       "noByContact": "No meetings linked to a contact in this range.",
       "unknownContact": "Unknown contact",
       "miniCalendar": "Mini calendar",
-      "calendarsAndDates": "Calendars and dates",
       "newMeeting": "New meeting",
       "new": "New",
       "internal": "Internal",
@@ -5316,6 +5321,7 @@
       "vendors_other": "{{count}} vendors",
       "vendorFallback": "Vendor",
       "never": "Never",
+      "lastPaidOn": "Last paid {{date}}",
       "showBills": "Show {{name}}'s bills",
       "hideBills": "Hide {{name}}'s bills",
       "theVendor": "the vendor",

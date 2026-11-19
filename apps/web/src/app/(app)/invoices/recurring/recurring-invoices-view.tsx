@@ -84,27 +84,40 @@ export function RecurringInvoicesView() {
           {row.name}
         </button>
       ),
+      // US-OPS-56: on a phone, the name on one line; tapping the row edits it, as the name does.
+      phone: "title",
+      phoneRender: (row) => (
+        <button type="button" onClick={() => setEditing(row)} className="max-w-full truncate text-left">
+          {row.name}
+        </button>
+      ),
       sortValue: (row) => row.name,
     },
     {
       key: "customer",
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName, describeRepeats(row.frequency, row.dayRule)].filter(Boolean).join(" · "),
       header: t("invoices.recurring.colCustomer"),
       render: (row) => row.contactName,
       sortValue: (row) => row.contactName,
     },
     {
       key: "repeats",
+      phone: "hidden",
       header: t("invoices.recurring.colRepeats"),
       render: (row) => describeRepeats(row.frequency, row.dayRule),
     },
     {
       key: "next",
+      phone: "trailingSub",
+      phoneRender: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : null),
       header: t("invoices.recurring.colNext"),
       render: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : "—"),
       sortValue: (row) => row.nextRunOn ?? "",
     },
     {
       key: "amount",
+      phone: "trailing",
       header: t("invoices.recurring.colAmount"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
@@ -112,16 +125,19 @@ export function RecurringInvoicesView() {
     },
     {
       key: "status",
+      phone: "badge",
       header: t("invoices.recurring.colStatus"),
       render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge>,
     },
     {
       key: "mode",
+      phone: "hidden",
       header: t("invoices.recurring.colMode"),
       render: (row) => RECURRING_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode,
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

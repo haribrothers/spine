@@ -75,22 +75,43 @@ export function RecurringBillsView() {
           {row.name}
         </button>
       ),
+      // US-OPS-56: on a phone, the name on one line; tapping the row edits it, as the name does.
+      phone: "title",
+      phoneRender: (row) => (
+        <button type="button" onClick={() => setEditing(row)} className="max-w-full truncate text-left">
+          {row.name}
+        </button>
+      ),
       sortValue: (row) => row.name,
     },
-    { key: "vendor", header: t("vendorBills.recurring.vendor"), render: (row) => row.contactName, sortValue: (row) => row.contactName },
-    { key: "repeats", header: t("vendorBills.recurring.repeats"), render: (row) => describeRepeats(row.frequency, row.dayRule) },
-    { key: "next", header: t("vendorBills.recurring.nextBill"), render: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : "—"), sortValue: (row) => row.nextRunOn ?? "" },
+    {
+      key: "vendor",
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName, describeRepeats(row.frequency, row.dayRule)].filter(Boolean).join(" · "),
+      header: t("vendorBills.recurring.vendor"), render: (row) => row.contactName,
+      sortValue: (row) => row.contactName,
+    },
+    { key: "repeats", phone: "hidden", header: t("vendorBills.recurring.repeats"), render: (row) => describeRepeats(row.frequency, row.dayRule) },
+    {
+      key: "next",
+      phone: "trailingSub",
+      phoneRender: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : null),
+      header: t("vendorBills.recurring.nextBill"), render: (row) => (row.status === "active" ? formatRunDate(row.nextRunOn) : "—"),
+      sortValue: (row) => row.nextRunOn ?? "",
+    },
     {
       key: "amount",
+      phone: "trailing",
       header: t("vendorBills.recurring.amount"),
       align: "right",
       render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.totalAmount), row.currency)}</span>,
       sortValue: (row) => BigInt(row.totalAmount),
     },
-    { key: "status", header: t("vendorBills.recurring.status"), render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge> },
-    { key: "mode", header: t("vendorBills.recurring.whenItRuns"), render: (row) => RECURRING_BILL_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode },
+    { key: "status", phone: "badge", header: t("vendorBills.recurring.status"), render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge> },
+    { key: "mode", phone: "hidden", header: t("vendorBills.recurring.whenItRuns"), render: (row) => RECURRING_BILL_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

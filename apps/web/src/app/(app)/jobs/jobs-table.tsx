@@ -89,10 +89,15 @@ export function JobsTable({
           </span>
         </div>
       ),
+      // US-OPS-56: on a phone, the number alone; the job's name goes on the second line.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/jobs/${row.id}`}>{row.number ?? row.name}</Link>,
       sortValue: (row) => row.name,
     },
     {
       key: "contact",
+      phone: "subtitle",
+      phoneRender: (row) => [row.number ? row.name : null, row.contactName].filter(Boolean).join(" · ") || null,
       header: t("jobs.table.contact"),
       render: (row) => (
         <span className="block max-w-40 truncate" title={row.contactName ?? undefined}>
@@ -103,12 +108,14 @@ export function JobsTable({
     },
     {
       key: "status",
+      phone: "badge",
       header: t("jobs.table.status"),
       render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{JOB_STATUS_LABELS[row.status]}</Badge>,
       sortValue: (row) => row.status,
     },
     {
       key: "next",
+      phone: "hidden",
       header: t("jobs.table.nextMilestone"),
       render: (row) => {
         const note = nextMilestoneNote(row, now, locale);
@@ -123,6 +130,12 @@ export function JobsTable({
     },
     {
       key: "progress",
+      // On a phone: how far along, under the contract value (or on its own for Field users, who see no money).
+      phone: withMoney ? "trailingSub" : "trailing",
+      phoneRender: (row) => {
+        const complete = completePct(row);
+        return complete === null ? null : t("jobs.table.pctComplete", { pct: complete });
+      },
       header: t("jobs.table.progress"),
       render: (row) => {
         const complete = completePct(row);
@@ -139,6 +152,7 @@ export function JobsTable({
     },
     {
       key: "endDate",
+      phone: "hidden",
       header: t("jobs.table.endDate"),
       render: (row) => (row.endDate ? calendarDate(row.endDate, now, locale) : <span className="text-on-surface-muted">—</span>),
       sortValue: (row) => row.endDate ?? "",
@@ -148,6 +162,7 @@ export function JobsTable({
     columns.push(
       {
         key: "contractValue",
+        phone: "trailing",
         header: t("jobs.table.contract"),
         align: "right",
         render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.contractValueAmount ?? 0), row.currency)}</span>,
@@ -155,6 +170,7 @@ export function JobsTable({
       },
       {
         key: "retentionPct",
+        phone: "hidden",
         header: t("jobs.table.retention"),
         render: (row) => ((row.retentionPct ?? 0) > 0 ? `${row.retentionPct}%` : "—"),
         sortValue: (row) => row.retentionPct ?? 0,
@@ -165,6 +181,7 @@ export function JobsTable({
   if (jobs.some((job) => job.budgetState !== undefined)) {
     columns.push({
       key: "budgetUsed",
+      phone: "hidden",
       header: t("jobs.table.budgetUsed"),
       align: "right",
       render: (row) => (

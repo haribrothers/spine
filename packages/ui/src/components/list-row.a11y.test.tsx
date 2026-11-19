@@ -22,7 +22,7 @@ describe("ListRow a11y", () => {
       </ul>,
     );
     const row = screen.getByRole("listitem");
-    expect(row.className).toContain("[&_[data-list-row-title]_a]:after:inset-0");
+    expect(row.className).toContain("[&_[data-list-row-title]_:is(a,button)]:after:inset-0");
     expect(screen.getByRole("button", { name: "Actions" }).parentElement!.className).toContain("z-10");
   });
 });
@@ -39,5 +39,17 @@ describe("US-OPS-56 · phoneRoles", () => {
   it("keeps the roles a list gives and fills the rest", () => {
     const roles = phoneRoles([col("name", "Name"), col("email", "Email", undefined, "subtitle"), col("phone", "Phone"), col("owed", "Owed", "right")]);
     expect(Object.fromEntries(roles)).toEqual({ name: "title", email: "subtitle", phone: "hidden", owed: "trailing" });
+  });
+
+  it("the title keeps to one line; badges wrap under it rather than squeezing it", () => {
+    const { container } = render(
+      <ul>
+        <ListRow title={<a href="/quotes/1">DEMO-QUO-0002</a>} badge={<span>Accepted · Viewed 1×</span>} trailing="$9,06,948.00" />
+      </ul>,
+    );
+    const title = container.querySelector("[data-list-row-title]")!;
+    expect(title.className).toContain("truncate");
+    expect(title.className).toContain("[&_*]:whitespace-nowrap");
+    expect(title.parentElement!.className).toContain("flex-wrap");
   });
 });

@@ -43,7 +43,7 @@ import { useT } from "../../../lib/i18n";
 import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
-const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
+export const STATE_BADGE: Record<ReturnType<typeof creditNoteState>, string> = {
   draft: "bg-draft-bg text-draft",
   credit_left: "bg-due-soon-bg text-due-soon",
   credited: "bg-paid-bg text-paid",

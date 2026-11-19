@@ -97,12 +97,22 @@ export function VendorPaymentsTable({
           {row.reference && <span className="truncate text-[12px] text-on-surface-muted">{row.reference}</span>}
         </Link>
       ),
+      // US-OPS-56: on a phone, the number alone; who was paid and how go on the second line.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/vendor-payments/${row.id}`}>{row.number ?? "—"}</Link>,
       sortValue: (row) => row.number ?? "",
     },
-    { key: "date", header: t("vendorPayments.columns.date"), render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
-    { key: "vendor", header: t("vendorPayments.columns.vendor"), render: (row) => <span className="block max-w-64 truncate">{row.contactName ?? "—"}</span>, sortValue: (row) => row.contactName ?? "" },
+    { key: "date", phone: "trailingSub", header: t("vendorPayments.columns.date"), render: (row) => <span className="whitespace-nowrap">{calendarDate(row.date.slice(0, 10), now, locale)}</span>, sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}` },
+    {
+      key: "vendor",
+      phone: "subtitle",
+      phoneRender: (row) => [row.contactName ?? "—", PAYMENT_METHOD_LABELS[row.method]].join(" · "),
+      header: t("vendorPayments.columns.vendor"), render: (row) => <span className="block max-w-64 truncate">{row.contactName ?? "—"}</span>,
+      sortValue: (row) => row.contactName ?? "",
+    },
     {
       key: "method",
+      phone: "hidden",
       header: t("vendorPayments.columns.method"),
       render: (row) => (
         <span className="flex flex-col">
@@ -112,9 +122,10 @@ export function VendorPaymentsTable({
       ),
       sortValue: (row) => row.method,
     },
-    { key: "amount", header: t("vendorPayments.columns.amount"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
+    { key: "amount", phone: "trailing", header: t("vendorPayments.columns.amount"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
     {
       key: "bills",
+      phone: "hidden",
       header: t("vendorPayments.columns.billsPaid"),
       render: (row) =>
         row.paidTo.length === 0 ? (
@@ -137,6 +148,7 @@ export function VendorPaymentsTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

@@ -84,3 +84,22 @@ export function PipelineSummaryStrip({
     </section>
   );
 }
+
+/**
+ * US-OPS-57 (D-283) — the pipeline's figures in one line on a phone: "9 leads · $102,465.00 open"
+ * and the win rate, so the stages and the leads are on the first screen.
+ */
+export function PipelineSummaryLine({ summary, currency }: { summary: PipelineSummary; currency: string }) {
+  const t = useT();
+  const totals = summary.open.totals;
+  const amount = totals.length === 0 ? formatMoney(0n, currency) : totals.map(([c, total]) => formatMoney(total, c)).join(" + ");
+  return (
+    <p className="flex items-baseline justify-between gap-3 text-[13px] text-on-surface-muted" data-testid="pipeline-summary-line">
+      <span className="min-w-0 truncate">
+        <b className="font-semibold text-on-surface">{leadsCount(summary.open.count)}</b>
+        {` · ${t("leads.summary.lineOpen", { amount })}`}
+      </span>
+      {summary.winRate.rate !== null && <span className="shrink-0">{t("leads.summary.lineWinRate", { rate: `${summary.winRate.rate}%` })}</span>}
+    </p>
+  );
+}

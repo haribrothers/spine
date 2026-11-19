@@ -304,16 +304,22 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
           </span>
         </span>
       ),
+      // US-OPS-56: on a phone, the name on one line; their role and email go on the second.
+      phone: "title",
+      phoneRender: (m) => m.name,
       sortValue: (m) => m.name.toLowerCase(),
     },
     {
       key: "role",
+      phone: "subtitle",
+      phoneRender: (m) => [ROLE_LABELS[m.role] ?? m.role, m.email].filter(Boolean).join(" · "),
       header: t("team.users.columns.role"),
       render: (m) => ROLE_LABELS[m.role] ?? m.role,
       sortValue: (m) => m.role,
     },
     {
       key: "teams",
+      phone: "hidden",
       header: t("team.users.columns.teams"),
       render: (m) =>
         m.role === "owner" ? (
@@ -338,18 +344,30 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     },
     {
       key: "lastActive",
+      phone: "trailingSub",
       header: t("team.users.columns.lastActive"),
       render: (m) => <span className={cn("whitespace-nowrap", !m.lastActiveAt && "text-on-surface-muted")}>{lastActiveLabel(m.lastActiveAt, now)}</span>,
       sortValue: (m) => m.lastActiveAt ?? "",
     },
     {
       key: "joined",
+      // On a phone this slot holds the person's badges: You, Primary owner, Demo, Deactivated.
+      phone: "badge",
+      phoneRender: (m) => (
+        <>
+          {m.id === currentMemberId && <Badge className="bg-primary/10 text-primary">{t("team.users.badges.you")}</Badge>}
+          {m.isPrimaryOwner && <Badge className="bg-paid-bg text-paid">{t("team.users.badges.primaryOwner")}</Badge>}
+          {m.isDemo && <Badge className="bg-due-soon-bg text-due-soon">{t("team.common.demo")}</Badge>}
+          {!m.isActive && <Badge>{t("team.users.badges.deactivated")}</Badge>}
+        </>
+      ),
       header: t("team.users.columns.joined"),
       render: (m) => <span className="whitespace-nowrap">{shortDate(m.createdAt, now)}</span>,
       sortValue: (m) => m.createdAt,
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (m) => (
         <div className="flex justify-end">
@@ -375,6 +393,8 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
   const inviteColumns: TableColumn<InvitationRow>[] = [
     {
       key: "email",
+      phone: "title",
+      phoneRender: (i) => i.email,
       header: t("team.users.columns.email"),
       render: (i) => <span className="font-semibold text-on-surface">{i.email}</span>,
       sortValue: (i) => i.email,
@@ -383,10 +403,14 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
       key: "role",
       header: t("team.users.columns.role"),
       render: (i) => ROLE_LABELS[i.role] ?? i.role,
+      // US-OPS-56: on a phone, the role, who invited them and when, on the second line.
+      phone: "subtitle",
+      phoneRender: (i) => [ROLE_LABELS[i.role] ?? i.role, i.inviterName, i.createdAt ? shortDate(i.createdAt, now) : null].filter(Boolean).join(" · "),
       sortValue: (i) => i.role,
     },
     {
       key: "teams",
+      phone: "hidden",
       header: t("team.users.columns.teamsOnJoining"),
       render: (i) =>
         i.teams && i.teams.length > 0 ? (
@@ -403,18 +427,21 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
     },
     {
       key: "invited",
+      phone: "hidden",
       header: t("team.users.columns.invited"),
       render: (i) => <span className="whitespace-nowrap">{[i.inviterName, i.createdAt ? shortDate(i.createdAt, now) : null].filter(Boolean).join(" · ")}</span>,
       sortValue: (i) => i.createdAt ?? "",
     },
     {
       key: "expires",
+      phone: "trailingSub",
       header: t("team.users.columns.expires"),
       render: (i) => <span className={cn("whitespace-nowrap", isExpired(i, now) && "font-medium text-overdue")}>{expiresLabel(i.expiresAt, now)}</span>,
       sortValue: (i) => i.expiresAt,
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (i) => (
         <div className="flex justify-end">

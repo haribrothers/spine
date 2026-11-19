@@ -183,9 +183,23 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   }
 
   const columns: TableColumn<AccountRegisterRow>[] = [
-    { key: "date", header: t("banking.register.colDate"), render: (row) => <span className="whitespace-nowrap">{formatDay(row.date)}</span>, sortValue: (row) => row.date },
+    { key: "date", phone: "hidden", header: t("banking.register.colDate"), render: (row) => <span className="whitespace-nowrap">{formatDay(row.date)}</span>, sortValue: (row) => row.date },
     {
       key: "what",
+      // US-OPS-56: on a phone, what it was on one line; tapping the row opens it, as the name does.
+      phone: "title",
+      phoneRender: (row) => {
+        const href = sourceHref(row);
+        const drawerKind = opensDrawer(row.sourceType);
+        if (href) return <Link href={href}>{row.what}</Link>;
+        if (drawerKind)
+          return (
+            <button type="button" className="max-w-full truncate text-left" onClick={() => setDrawer({ kind: drawerKind, id: row.sourceId, what: row.what })}>
+              {row.what}
+            </button>
+          );
+        return row.what;
+      },
       header: t("banking.register.colWhat"),
       render: (row) => {
         const href = sourceHref(row);
@@ -214,6 +228,8 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
     {
       key: "contact",
+      phone: "subtitle",
+      phoneRender: (row) => [formatDay(row.date), row.contact?.name, row.reference].filter(Boolean).join(" · "),
       header: t("banking.register.colContact"),
       render: (row) =>
         row.contact ? (
@@ -227,6 +243,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
     {
       key: "reference",
+      phone: "hidden",
       header: t("banking.register.colReference"),
       render: (row) => (
         <span className="block max-w-28 truncate text-on-surface-muted" title={row.reference ?? undefined}>
@@ -234,11 +251,34 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         </span>
       ),
     },
-    { key: "in", header: inLabel, align: "right", render: (row) => (row.in !== "0" ? <span className="tabular-nums">{money(row.in)}</span> : null), sortValue: (row) => BigInt(row.in) },
-    { key: "out", header: outLabel, align: "right", render: (row) => (row.out !== "0" ? <span className="tabular-nums">{money(row.out)}</span> : null), sortValue: (row) => BigInt(row.out) },
-    { key: "balance", header: isCard ? t("banking.register.colOwed") : t("banking.register.colBalance"), align: "right", render: (row) => <span className="tabular-nums">{money(row.balance)}</span> },
+    {
+      key: "in",
+      // On a phone, the amount that moved, with in or out said under it in words.
+      phone: "trailing",
+      phoneRender: (row) => (row.in !== "0" ? money(row.in) : money(row.out)),
+      header: inLabel,
+      align: "right", render: (row) => (row.in !== "0" ? <span className="tabular-nums">{money(row.in)}</span> : null),
+      sortValue: (row) => BigInt(row.in),
+    },
+    {
+      key: "out",
+      phone: "trailingSub",
+      phoneRender: (row) => (row.in !== "0" ? <span className="text-paid">{inLabel}</span> : outLabel),
+      header: outLabel,
+      align: "right", render: (row) => (row.out !== "0" ? <span className="tabular-nums">{money(row.out)}</span> : null),
+      sortValue: (row) => BigInt(row.out),
+    },
+    { key: "balance", phone: "hidden", header: isCard ? t("banking.register.colOwed") : t("banking.register.colBalance"), align: "right", render: (row) => <span className="tabular-nums">{money(row.balance)}</span> },
     {
       key: "reconciled",
+      // On a phone: Deleted when it was, else Reconciled once it is.
+      phone: "badge",
+      phoneRender: (row) =>
+        row.deleted && !row.sourceType.endsWith("_delete") ? (
+          <Badge>{t("banking.register.deleted")}</Badge>
+        ) : row.reconciled ? (
+          <Badge className="bg-paid-bg text-paid">{t("banking.register.reconciled")}</Badge>
+        ) : null,
       header: t("banking.register.colReconciled"),
       render: (row) =>
         row.reconciled ? (
@@ -252,6 +292,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => {
         const href = sourceHref(row);

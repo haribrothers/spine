@@ -119,19 +119,37 @@ export function ReconciliationsHistory({ accountId }: { accountId: string }) {
           {formatDay(r.statementEndDate)}
         </Link>
       ),
+      // US-OPS-56: on a phone, the statement's end date on one line; who finished it and when go on the second.
+      phone: "title",
+      phoneRender: (r) => <Link href={`/banking/${accountId}/reconciliations/${r.id}`}>{formatDay(r.statementEndDate)}</Link>,
       sortValue: (r) => r.statementEndDate,
     },
-    { key: "closing", header: t("banking.history.colClosing"), align: "right", render: (r) => <span className="tabular-nums">{formatMoney(BigInt(r.statementClosingBalance), currency)}</span> },
-    { key: "matched", header: t("banking.history.colMatched"), align: "right", render: (r) => <span className="tabular-nums">{r.entriesMatched}</span> },
-    { key: "by", header: t("banking.history.colBy"), render: (r) => r.finishedBy?.name ?? <span className="text-on-surface-muted">—</span> },
-    { key: "at", header: t("banking.history.colAt"), render: (r) => (r.finishedAt ? finishedAt(r.finishedAt) : "—") },
+    { key: "closing", phone: "trailing", header: t("banking.history.colClosing"), align: "right", render: (r) => <span className="tabular-nums">{formatMoney(BigInt(r.statementClosingBalance), currency)}</span> },
+    {
+      key: "matched",
+      phone: "trailingSub",
+      phoneRender: (r) => t("banking.history.matchedCount", { count: r.entriesMatched }),
+      header: t("banking.history.colMatched"),
+      align: "right", render: (r) => <span className="tabular-nums">{r.entriesMatched}</span>,
+    },
+    {
+      key: "by",
+      phone: "subtitle",
+      phoneRender: (r) => [r.finishedBy?.name, r.finishedAt ? finishedAt(r.finishedAt) : null].filter(Boolean).join(" · ") || null,
+      header: t("banking.history.colBy"), render: (r) => r.finishedBy?.name ?? <span className="text-on-surface-muted">—</span>,
+    },
+    { key: "at", phone: "hidden", header: t("banking.history.colAt"), render: (r) => (r.finishedAt ? finishedAt(r.finishedAt) : "—") },
     {
       key: "status",
+      // Only Latest is worth a badge on a phone; every other one is finished.
+      phone: "badge",
+      phoneRender: (r) => (r.isLatest ? <Badge className="bg-primary/10 text-primary">{t("banking.history.latest")}</Badge> : null),
       header: t("banking.history.colStatus"),
       render: (r) => (r.isLatest ? <Badge className="bg-primary/10 text-primary">{t("banking.history.latest")}</Badge> : <StatusChip status="paid">{t("banking.history.finished")}</StatusChip>),
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (r) => (
         <div className="flex justify-end">

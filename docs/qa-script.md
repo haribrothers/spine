@@ -5870,7 +5870,7 @@ Automated: `us-mtg-18.spec.ts`, `calendar-phone.a11y.test.tsx`; `us-mtg-17.spec.
 3. Swipe the grid left: next month; right: previous. The arrows do the same; Today returns to today. Tap "November 2026 ⌄": Pick a month — change the year with the arrows, tap June.
 4. Day: the week's seven days with their dots over the timeline, scrolled to the working day (or now), a red line at now on today, and "3 meetings · 1 later". Swipe the strip: a week; swipe the timeline: a day. Scrolling up and down doesn't change the day.
 5. Agenda: as before (US-MTG-17).
-6. The toolbar is two rows: month, arrows and Today; then Month · Day · Agenda across the screen. The filter icon in the top bar opens the mini calendar and Calendars.
+6. The toolbar is two rows: month, arrows and Today; then Month · Day · Agenda across the screen. The filter icon in the top bar opens Calendars: the people's calendars, My activities, Upcoming and Meetings by contact, with no mini calendar (the month view is the calendar); each contact's count lines up with its name.
 7. Tap +: New event opens full screen on the chosen day (today: the next half hour; another day: 9:00). Tap a meeting in any view: its quick view rises as a bottom sheet with its own title and close.
 8. Dark mode: dots, today's ring and the chosen day read clearly.
 9. Regression, from 768px up: the toolbar, Week, the month grid with event chips, the quick view popover beside the event, and drag to create, move and resize in Day and Week are as they were.
@@ -5911,3 +5911,15 @@ Automated: `us-ops-55.spec.ts`; `us-set-26.test.tsx` (manifest). On a real iPhon
 4. Open an invoice, then the back arrow: back to Invoices. Swipe back (iPhone) or use the back gesture (Android): the same.
 5. Tap a link to another site (Help in More, a contact's website): it opens in the browser, and Spine stays where it was.
 6. Regression: in the browser (not from the home screen), everything is as before; on a computer nothing changes.
+
+## 295. Phone lists, the pipeline and the meetings sheet after the Owner's review (Phase 12)
+
+Automated: `us-ops-57.spec.ts` (pipeline), `us-ops-62.spec.ts` (row titles on one line), `us-mtg-17.spec.ts`, `us-mtg-18.spec.ts`, `us-dash-31.spec.ts` (time zones). At 390×844:
+
+1. Quotes, Contacts, Jobs, Expenses, Payments, Credit notes, Vendor bills, Vendor credits, Vendor payments, Catalogue, Emails, Banking, Receivables, Payables, Team: each row's title (number or name) is one line; its badges sit beside it or wrap under it; the second line says who it's for and one more thing; the amount is on the right with its note. Contacts show "Customer · email" and only Archived as a badge.
+2. Search and Filters span the page's width on every list.
+3. A chip that filters (Overdue, Waiting for approval) shows no icon over its label.
+4. Pipeline: stage chips first, then "9 leads · $… open · Win rate 67%", then search and Filters, then the stage's leads as rows, "Move a lead to another stage from its ⋯ menu.", Add lead floating; ⋯ at the top has Refresh.
+5. Meetings: the filter icon opens Calendars — the people's calendars, My activities, Upcoming, Meetings by contact (counts in line with the names), no mini calendar.
+6. Dashboard: with the server in UTC and the phone in another time zone, the greeting matches the phone's time and no error shows.
+7. Regression, from 768px up: every list's columns, the pipeline board and the meetings sidebar with its mini calendar are as they were.

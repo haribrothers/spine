@@ -14,6 +14,7 @@ const MAIN_ACTIONS: [string, RegExp][] = [
   ["/expenses", /^Submit expense$/],
   ["/vendor-bills", /^New vendor bill$/],
   ["/catalog", /^Add item$/],
+  ["/leads", /^Add lead$/],
 ];
 
 test.describe("US-OPS-57 · see a list's figures, filters and main action on the first screen", () => {
@@ -115,6 +116,26 @@ test.describe("US-OPS-57 · see a list's figures, filters and main action on the
     await page.getByTestId("app-top-bar").getByRole("button", { name: "More actions" }).click();
     await page.getByRole("dialog", { name: "More actions" }).getByTestId("export-menu").click();
     await expect(page.getByRole("menuitem", { name: "CSV" })).toBeVisible();
+  });
+});
+
+test.describe("US-OPS-57 · the pipeline on a phone", () => {
+  test("the stages as chips first, the figures in one line, search and Filters in one row, then the stage's leads as rows", async ({ page, seededOrg: _ }) => {
+    await page.goto("/leads");
+    await page.waitForLoadState("networkidle");
+    const chips = (await page.getByTestId("pipeline-stage-chips").boundingBox())!;
+    const line = page.getByTestId("pipeline-summary-line");
+    await expect(line).toContainText(/\d+ leads? · .+ open/);
+    const l = (await line.boundingBox())!;
+    const row = (await page.getByTestId("filter-sheet-row").boundingBox())!;
+    expect(chips.y).toBeLessThan(l.y);
+    expect(l.y).toBeLessThan(row.y);
+    expect(row.width).toBeGreaterThan(PHONE.width - 40);
+    await expect(page.getByTestId("pipeline-summary")).toHaveCount(0);
+    const first = page.getByTestId("pipeline-phone-rows").locator("li[data-list-row]").first();
+    await expect(first).toBeVisible();
+    await expect(first.getByRole("button", { name: /^Actions for / })).toBeVisible();
+    await expect(page.getByText("Move a lead to another stage from its ⋯ menu.")).toBeVisible();
   });
 });
 

@@ -711,7 +711,7 @@ export function MeetingsCalendar() {
     narrow ? (
       <button
         type="button"
-        aria-label={t("meetings.calendar.calendarsAndDates")}
+        aria-label={t("meetings.calendar.calendars")}
         aria-haspopup="dialog"
         onClick={() => setSheetOpen(true)}
         className="flex h-11 w-11 items-center justify-center rounded-full text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -732,6 +732,8 @@ export function MeetingsCalendar() {
   function renderSidebar(inSheet: boolean) {
     return (
       <>
+          {/* US-MTG-18: on a phone the month view is the calendar; the sheet holds the rest. */}
+          {!narrow && (
           <MiniCalendar
             selected={date}
             onSelect={(picked) => {
@@ -751,6 +753,7 @@ export function MeetingsCalendar() {
               )
             }
           />
+          )}
 
           <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
             <div className="flex items-center gap-2">
@@ -844,7 +847,7 @@ export function MeetingsCalendar() {
               <ul className="flex flex-col gap-1">
                 {contactCounts.map(([contactId, count]) => (
                   <li key={contactId} className="flex items-center justify-between gap-2 text-[13px]">
-                    <SectionLink href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline">
+                    <SectionLink href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline max-md:leading-[44px]">
                       {contactsById.get(contactId)?.name ?? t("meetings.calendar.unknownContact")}
                     </SectionLink>
                     <span className="shrink-0 tabular-nums text-on-surface-muted">{count}</span>
@@ -1012,7 +1015,7 @@ export function MeetingsCalendar() {
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
         <DrawerContent size="sm" aria-describedby={undefined}>
           <DrawerHeader>
-            <DrawerTitle>{t("meetings.calendar.miniCalendar")}</DrawerTitle>
+            <DrawerTitle>{narrow ? t("meetings.calendar.calendars") : t("meetings.calendar.miniCalendar")}</DrawerTitle>
           </DrawerHeader>
           <DrawerBody className="flex flex-col gap-5">{sheetOpen && renderSidebar(true)}</DrawerBody>
         </DrawerContent>

@@ -380,11 +380,12 @@
 @media (max-width: 767.98px) {
   /* US-OPS-61: Checkbox, RadioGroupItem and Switch are <button>s marked data-tap-area; they
      keep their own size, with the tap area drawn around them below (they were blank 44px
-     boxes). A segmented button with role="radio" still gets the full 44px. */
-  :where(button:not([data-tap-area]), [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *)) {
+     boxes). A segmented button with role="radio" still gets the full 44px. A list row's title
+     link or button is exempt: it covers its whole row, which is the tap target (US-OPS-56). */
+  :where(button:not([data-tap-area], [data-list-row-title] *), [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="combobox"], select, summary, a[href]:not(p *, td *, [data-list-row-title] *)) {
     min-height: 44px;
   }
-  :where(button:not([data-tap-area]), [role="button"], [role="combobox"]) {
+  :where(button:not([data-tap-area], [data-list-row-title] *), [role="button"], [role="combobox"]) {
     min-width: 44px;
   }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"]), textarea) {
@@ -495,6 +496,10 @@
   }
   [data-chip-strip] [data-stat-detail],
   [data-chip-strip] [data-stat-trend] {
+    display: none;
+  }
+  /* A card's corner filter icon would sit on a chip's label; the chip's pressed state says it filters. */
+  [data-chip-strip] svg.absolute {
     display: none;
   }
 }

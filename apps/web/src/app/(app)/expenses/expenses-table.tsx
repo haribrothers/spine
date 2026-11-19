@@ -65,6 +65,8 @@ export function ExpensesTable({
       : []),
     {
       key: "date",
+      phone: "trailingSub",
+      phoneRender: (row) => calendarDate(row.date.slice(0, 10), now, locale),
       header: t("expenses.columns.date"),
       render: (row) => (
         <Link href={`/expenses/${row.id}`} className="whitespace-nowrap font-medium text-on-surface hover:text-primary hover:underline">
@@ -73,9 +75,12 @@ export function ExpensesTable({
       ),
       sortValue: (row) => `${row.date.slice(0, 10)}${row.createdAt}`,
     },
-    { key: "number", header: t("expenses.columns.number"), render: (row) => (row.number ? <span className="font-semibold">{row.number}</span> : muted), sortValue: (row) => row.number ?? "" },
+    { key: "number", phone: "hidden", header: t("expenses.columns.number"), render: (row) => (row.number ? <span className="font-semibold">{row.number}</span> : muted), sortValue: (row) => row.number ?? "" },
     {
       key: "description",
+      // US-OPS-56: on a phone, what it was on one line; its number, category and job go on the second.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/expenses/${row.id}`}>{row.description || row.categoryName || t("expenses.common.expense")}</Link>,
       header: t("expenses.columns.description"),
       render: (row) => (
         <Link href={`/expenses/${row.id}`} className="flex min-w-0 max-w-72 flex-col hover:text-primary">
@@ -90,14 +95,28 @@ export function ExpensesTable({
     },
     {
       key: "job",
+      phone: "subtitle",
+      phoneRender: (row) => [row.number, row.description ? row.categoryName : null, row.jobName].filter(Boolean).join(" · ") || null,
       header: t("expenses.columns.job"),
       render: (row) => (row.jobId ? <span className="block max-w-44 truncate" title={row.jobName ?? undefined}>{row.jobName ?? "—"}</span> : muted),
       sortValue: (row) => row.jobName ?? "",
     },
-    { key: "submittedBy", header: t("expenses.columns.submittedBy"), render: (row) => (row.submittedByUserId === me ? t("expenses.table.you") : (row.submittedByName ?? "—")), sortValue: (row) => row.submittedByName ?? "" },
-    { key: "paidBy", header: t("expenses.columns.paidBy"), render: (row) => (row.paidBy === "employee" ? t("expenses.table.employee") : t("expenses.table.company")), sortValue: (row) => row.paidBy },
+    { key: "submittedBy", phone: "hidden", header: t("expenses.columns.submittedBy"), render: (row) => (row.submittedByUserId === me ? t("expenses.table.you") : (row.submittedByName ?? "—")), sortValue: (row) => row.submittedByName ?? "" },
+    { key: "paidBy", phone: "hidden", header: t("expenses.columns.paidBy"), render: (row) => (row.paidBy === "employee" ? t("expenses.table.employee") : t("expenses.table.company")), sortValue: (row) => row.paidBy },
     {
       key: "state",
+      phone: "badge",
+      phoneRender: (row) => {
+        const state = expenseState(row);
+        return (
+          <>
+            <Badge className={EXPENSE_STATE_CLASS[state]} data-testid="expense-row-state">
+              {EXPENSE_STATE_LABELS[state]}
+            </Badge>
+            {readyToBill(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">{t("expenses.common.billable")}</Badge>}
+          </>
+        );
+      },
       header: t("expenses.columns.state"),
       render: (row) => {
         const state = expenseState(row);
@@ -112,9 +131,10 @@ export function ExpensesTable({
       },
       sortValue: (row) => EXPENSE_STATES.indexOf(expenseState(row)),
     },
-    { key: "amount", header: t("expenses.columns.amount"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
+    { key: "amount", phone: "trailing", header: t("expenses.columns.amount"), align: "right", render: (row) => <span className="tabular-nums">{formatMoney(BigInt(row.amount), row.currency)}</span>, sortValue: (row) => BigInt(row.amount) },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

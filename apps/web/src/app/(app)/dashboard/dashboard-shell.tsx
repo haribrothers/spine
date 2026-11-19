@@ -175,7 +175,11 @@ export function DashboardShell({
   // US-DASH-12 — what's waiting, and the header that counts it.
   const [attention, setAttention] = useState<AttentionItem[] | null>(null);
   const [business, setBusiness] = useState<string | null>(null);
-  const [now] = useState(() => new Date());
+  // The greeting and the date come from this device's clock, after it mounts: the server's time
+  // zone (often UTC in Docker) can differ from the person's, and rendering them there gave
+  // "Good morning" on the server and "Good afternoon" here — a hydration mismatch.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
   // US-DASH-18: a Field user's header counts their active jobs.
   const [fieldJobs, setFieldJobs] = useState<number | null>(null);
   // US-DASH-20: the Construction template shows retention and jobs in progress by default.
@@ -304,10 +308,10 @@ export function DashboardShell({
   const columnsClass = role === "field" ? "lg:grid-cols-2" : "lg:grid-cols-2 xl:grid-cols-3 wide-plus:grid-cols-2";
 
   const firstName = userName?.trim().split(/\s+/)[0];
-  const greeting = firstName ? t("dashboard.shell.greetingWithName", { greeting: greetingFor(now.getHours()), name: firstName }) : greetingFor(now.getHours());
+  const greeting = !now ? (firstName ?? t("dashboard.shell.breadcrumbDashboard")) : firstName ? t("dashboard.shell.greetingWithName", { greeting: greetingFor(now.getHours()), name: firstName }) : greetingFor(now.getHours());
   // "Wed 18 Nov", for the phone's one-line greeting.
-  const shortDate = now.toLocaleDateString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short" });
-  const dateLine = now.toLocaleDateString(orgLocaleTag(), {
+  const shortDate = now?.toLocaleDateString(orgLocaleTag(), { weekday: "short", day: "numeric", month: "short" }) ?? "";
+  const dateLine = now?.toLocaleDateString(orgLocaleTag(), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -368,7 +372,7 @@ export function DashboardShell({
           // US-DASH-31: the greeting in one line with the date (the page's h1 above it is for screen readers on a phone).
           <p aria-hidden className="-mb-2 -mt-5 truncate text-[16px] text-on-surface" data-testid="dashboard-phone-greeting">
             <span className="font-semibold">{greeting}</span>
-            <span className="text-on-surface-muted"> · {shortDate}</span>
+            {shortDate && <span className="text-on-surface-muted"> · {shortDate}</span>}
           </p>
         )}
         {/* US-DASH-31: Accrual or Cash is under the top bar's ⋯ on a phone. */}

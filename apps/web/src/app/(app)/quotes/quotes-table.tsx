@@ -87,12 +87,20 @@ export function QuotesTable({
           )}
         </div>
       ),
+      // US-OPS-56: on a phone the row's title is the number alone; the quote's title goes on the second line.
+      phoneRender: (row) => (
+        <Link href={`/quotes/${row.id}`} className="whitespace-nowrap">
+          {row.number ?? <span className="font-medium italic text-on-surface-muted">{t("quotes.status.draft")}</span>}
+          {row.version > 1 && <span className="ml-1.5 text-[11.5px] font-medium text-on-surface-muted">{t("quotes.table.version", { version: row.version })}</span>}
+        </Link>
+      ),
       sortValue: (row) => row.number ?? "",
     },
     {
       key: "contact",
       header: t("quotes.table.contact"),
       render: (row) => <span className="block max-w-[16rem] truncate" title={row.contactName ?? undefined}>{row.contactName ?? "—"}</span>,
+      phoneRender: (row) => [row.title, row.contactName ?? "—"].filter(Boolean).join(" · "),
       sortValue: (row) => row.contactName ?? "",
     },
     {

@@ -50,7 +50,8 @@ export function FilterSheet({ search, chips = [], onClearAll, showLabel, childre
     );
   }
   return (
-    <div className="flex flex-col gap-2" data-testid="filter-sheet-row">
+    // The full width of the page, even inside a toolbar row that wraps (US-OPS-57).
+    <div className="flex w-full basis-full flex-col gap-2" data-testid="filter-sheet-row">
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1 [&>*]:w-full">{search}</div>
         <Button variant="secondary" className="h-11 shrink-0" aria-haspopup="dialog" onClick={() => setOpen(true)}>

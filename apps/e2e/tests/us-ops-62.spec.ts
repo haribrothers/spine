@@ -17,12 +17,44 @@ import { PANES, appRoutes, settle } from "./routes";
  */
 const WAITING_FOR: Partial<Record<Check, string>> = {};
 
-type Check = "sideways scroll" | "tab bar" | "main action on the first screen" | "overlapping labels" | "44px controls" | "axe";
+type Check = "sideways scroll" | "tab bar" | "main action on the first screen" | "overlapping labels" | "list rows" | "44px controls" | "axe";
 
 /** The bundled guide (US-SITE-12) is part of what a phone opens too. */
 const HELP = ["/help/", "/help/guide/invoices/"];
 
 type Failure = { route: string; check: Check; detail: unknown };
+
+/**
+ * A list's phone rows (US-OPS-56): each title is one line, and a row's text doesn't run into its
+ * amount or ⋯. A title that wraps, or a cell squeezed by its badges, is what a desktop cell
+ * reused on a phone looks like.
+ */
+async function brokenListRows(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    // The DOM isn't in this package's types; the page's own objects, loosely typed.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const doc = (globalThis as any).document;
+    const problems: string[] = [];
+    const rows = Array.from(doc.querySelectorAll("li[data-list-row]") as ArrayLike<unknown>).slice(0, 12);
+    for (const row of rows) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const title = (row as any).querySelector("[data-list-row-title]");
+      if (!title) continue;
+      // The title's text: how far apart its lines' tops are (a logo beside it isn't text; a
+      // smaller "v2" on the same line sits a few pixels lower, a second line a whole line lower).
+      const tops: number[] = [];
+      const walker = doc.createTreeWalker(title, 4 /* NodeFilter.SHOW_TEXT */);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (!String(node.textContent ?? "").trim()) continue;
+        const range = doc.createRange();
+        range.selectNodeContents(node);
+        for (const rect of Array.from(range.getClientRects() as ArrayLike<{ top: number; height: number }>)) if (rect.height > 0) tops.push(rect.top);
+      }
+      if (tops.length && Math.max(...tops) - Math.min(...tops) > 12) problems.push(`title wraps: ${String(title.textContent ?? "").trim().slice(0, 30)}`);
+    }
+    return problems;
+  });
+}
 
 /** Controls in a tab row or a row of buttons that sit on top of each other: "a / b". */
 async function overlappingLabels(page: Page): Promise<string[]> {
@@ -93,6 +125,9 @@ async function checkPage(page: Page, route: string, failures: Failure[], { appSh
 
   const overlaps = await overlappingLabels(page);
   if (overlaps.length) fail("overlapping labels", overlaps);
+
+  const rows = on("list rows") ? await brokenListRows(page) : [];
+  if (rows.length) fail("list rows", rows);
 
   const small = await smallControls(page);
   if (small.length) fail("44px controls", small);

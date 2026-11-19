@@ -42,9 +42,10 @@ test.describe("US-MTG-17", () => {
     await page.goto("/meetings?view=week");
     await expect(page.getByRole("radio", { name: "Day view" })).toHaveAttribute("aria-checked", "true");
 
-    await page.getByTestId("app-top-bar").getByRole("button", { name: "Calendars and dates" }).click();
-    const sheet = page.getByRole("dialog", { name: "Mini calendar" });
-    await expect(sheet.getByRole("grid")).toBeVisible();
-    await expect(sheet.getByText("Calendars")).toBeVisible();
+    // Since US-MTG-18 the phone's sheet is Calendars without the mini calendar (the month view is it).
+    await page.getByTestId("app-top-bar").getByRole("button", { name: "Calendars" }).click();
+    const sheet = page.getByRole("dialog", { name: "Calendars" });
+    await expect(sheet.getByTestId("meetings-by-contact")).toBeVisible();
+    await expect(sheet.getByRole("grid")).toHaveCount(0);
   });
 });

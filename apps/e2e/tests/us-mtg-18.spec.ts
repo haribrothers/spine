@@ -108,8 +108,11 @@ test.describe("US-MTG-18 · use a calendar made for my phone", () => {
     await picker.getByRole("button", { name: "June 2027" }).click();
     await expect(toolbar).toContainText("June 2027");
 
-    await page.getByTestId("app-top-bar").getByRole("button", { name: "Calendars and dates" }).click();
-    await expect(page.getByRole("dialog", { name: "Mini calendar" }).getByText("Calendars")).toBeVisible();
+    // The sheet has the Calendars, My activities, Upcoming and Meetings by contact; the month view is the calendar.
+    await page.getByTestId("app-top-bar").getByRole("button", { name: "Calendars" }).click();
+    const calendars = page.getByRole("dialog", { name: "Calendars" });
+    await expect(calendars.getByTestId("meetings-upcoming")).toBeVisible();
+    await expect(calendars.getByRole("grid")).toHaveCount(0);
     await page.keyboard.press("Escape");
 
     // Agenda works as US-MTG-17 describes.

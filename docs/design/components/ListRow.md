@@ -26,7 +26,8 @@ import { ListRow, ListRowSkeleton } from "@spine/ui";
 
 - Slots: `title`, `badge` (status, with its text), `subtitle`, `trailing` (amount or figure, tabular numbers), `action` (a ⋯ that opens an `ActionSheet`, or a button such as Send reminder), `selected` (a checkbox in Select mode).
 - The whole row is the link to the record; the ⋯ and any button are separate targets of at least 44px.
-- Long titles and subtitles truncate with … on one line each; the amount never truncates.
+- Long titles and subtitles truncate with … on one line each; the amount never truncates. The title never wraps: badges that don't fit beside it wrap under it rather than squeezing it. A list gives its title column a one-line `phoneRender` (the number, or the name), never its stacked desktop cell.
+- The title's link or button covers the whole row; it's exempt from the 44px minimum (the row is the target). US-OPS-62 fails a route whose row titles wrap.
 - Loading placeholder rows of the same height.
 
 ## Accessibility

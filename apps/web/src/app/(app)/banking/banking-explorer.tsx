@@ -244,11 +244,22 @@ export function BankingExplorer() {
           </span>
         );
       },
+      // US-OPS-56: on a phone, the name alone; Default is its badge and the bank goes on the second line.
+      phone: "title",
+      phoneRender: (row) => <Link href={`/banking/${row.id}`}>{row.name}</Link>,
       sortValue: (row) => row.name.toLowerCase(),
     },
-    { key: "kind", header: t("banking.explorer.colType"), render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind], sortValue: (row) => row.kind },
+    {
+      key: "kind",
+      phone: "subtitle",
+      phoneRender: (row) => [MONEY_ACCOUNT_KIND_LABELS[row.kind], bankLine(row)].filter(Boolean).join(" · "),
+      header: t("banking.explorer.colType"),
+      render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind],
+      sortValue: (row) => row.kind,
+    },
     {
       key: "balance",
+      phone: "trailing",
       header: t("banking.explorer.colBalance"),
       align: "right",
       render: (row) => (
@@ -261,6 +272,9 @@ export function BankingExplorer() {
     },
     {
       key: "reconciliation",
+      // On a phone, the Default badge sits in this slot; reconciliation is said under the balance.
+      phone: "badge",
+      phoneRender: (row) => (row.isDefault ? <Badge className="bg-primary/10 text-primary">{t("banking.explorer.defaultBadge")}</Badge> : null),
       header: t("banking.explorer.colReconciliation"),
       render: (row) =>
         row.lastReconciledOn ? (
@@ -272,6 +286,16 @@ export function BankingExplorer() {
     },
     {
       key: "unreconciled",
+      // Under the balance on a phone: how many lines are left to reconcile, else when it was last reconciled.
+      phone: "trailingSub",
+      phoneRender: (row) =>
+        (row.unreconciledCount ?? 0) > 0 ? (
+          <span className="text-due-soon">{t("banking.explorer.unreconciledCount", { n: row.unreconciledCount ?? 0 })}</span>
+        ) : row.lastReconciledOn ? (
+          t("banking.explorer.reconciledTo", { date: formatDay(row.lastReconciledOn) })
+        ) : (
+          t("banking.explorer.neverReconciled")
+        ),
       header: t("banking.explorer.colUnreconciled"),
       render: (row) =>
         (row.unreconciledCount ?? 0) > 0 ? (
@@ -285,6 +309,7 @@ export function BankingExplorer() {
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

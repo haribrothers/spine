@@ -56,6 +56,13 @@ export function EmailsTable({
   const columns: TableColumn<EmailLogEntry>[] = [
     {
       key: "when",
+      // US-OPS-56: on a phone, a mail app's row: who it's to, its status, the subject, and on the right the time today or the date before.
+      phone: "trailingSub",
+      phoneRender: (row) => {
+        const at = row.sentAt ?? row.queuedAt;
+        const day = new Date(at);
+        return day.toDateString() === now.toDateString() ? day.toLocaleTimeString(locale, TIME_FORMAT) : calendarDate(at, now, locale);
+      },
       header: t("emails.columns.when"),
       render: (row) => {
         const at = row.sentAt ?? row.queuedAt;
@@ -72,6 +79,8 @@ export function EmailsTable({
     },
     {
       key: "to",
+      phone: "title",
+      phoneRender: (row) => row.toName || row.toAddress || t("emails.table.noAddress"),
       header: t("emails.columns.to"),
       render: (row) => (
         <div className="flex max-w-60 flex-col">
@@ -85,6 +94,8 @@ export function EmailsTable({
     },
     {
       key: "subject",
+      phone: "subtitle",
+      phoneRender: (row) => row.subject,
       header: t("emails.columns.subject"),
       render: (row) => {
         const note = emailNote(row, locale);
@@ -104,6 +115,7 @@ export function EmailsTable({
     },
     {
       key: "record",
+      phone: "hidden",
       header: t("emails.columns.record"),
       render: (row) => {
         const href = emailRecordHref(row.entityType, row.entityId);
@@ -120,6 +132,7 @@ export function EmailsTable({
     },
     {
       key: "status",
+      phone: "badge",
       header: t("emails.columns.status"),
       render: (row) => (
         <Badge className={STATUS_CLASS[row.status]} data-testid="email-status">
@@ -130,6 +143,7 @@ export function EmailsTable({
     },
     {
       key: "attempts",
+      phone: "hidden",
       header: t("emails.columns.attempts"),
       render: (row) => (
         <span className="whitespace-nowrap tabular-nums text-on-surface-muted">
@@ -140,6 +154,7 @@ export function EmailsTable({
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

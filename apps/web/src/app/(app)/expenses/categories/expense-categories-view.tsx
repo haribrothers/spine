@@ -127,17 +127,23 @@ export function ExpenseCategoriesView() {
           {row.description && <span className="truncate text-[12px] text-on-surface-muted">{row.description}</span>}
         </div>
       ),
+      // US-OPS-56: on a phone, the name on one line; where it posts and its tax go on the second.
+      phone: "title",
+      phoneRender: (row) => row.name,
       sortValue: (row) => row.name.toLowerCase(),
     },
     {
       key: "account",
+      phone: "subtitle",
+      phoneRender: (row) => [row.accountCode ? `${row.accountCode} ${row.accountName ?? ""}`.trim() : FALLBACK_ACCOUNT_LABEL, row.defaultTaxRateName].filter(Boolean).join(" · "),
       header: t("expenses.categories.postsTo"),
       render: (row) => (row.accountCode ? `${row.accountCode} ${row.accountName ?? ""}` : <span className="text-on-surface-muted">{FALLBACK_ACCOUNT_LABEL}</span>),
       sortValue: (row) => row.accountCode ?? "6900",
     },
-    { key: "tax", header: t("expenses.categories.defaultTax"), render: (row) => row.defaultTaxRateName ?? <span className="text-on-surface-muted">—</span>, sortValue: (row) => row.defaultTaxRateName ?? "" },
+    { key: "tax", phone: "hidden", header: t("expenses.categories.defaultTax"), render: (row) => row.defaultTaxRateName ?? <span className="text-on-surface-muted">—</span>, sortValue: (row) => row.defaultTaxRateName ?? "" },
     {
       key: "count",
+      phone: "hidden",
       header: t("expenses.categories.expensesColumn"),
       align: "right",
       render: (row) => {
@@ -155,6 +161,7 @@ export function ExpenseCategoriesView() {
     },
     {
       key: "month",
+      phone: "trailing",
       header: t("expenses.categories.approvedThisMonth"),
       align: "right",
       render: (row) => {
@@ -165,6 +172,18 @@ export function ExpenseCategoriesView() {
     },
     {
       key: "state",
+      // On a phone only Archived (and Headcount × day rate) is worth a badge; every other row would say Active.
+      phone: "badge",
+      phoneRender: (row) => (
+        <>
+          {isLabourCategory(row) && <Badge className="border border-border bg-transparent text-on-surface-muted">{t("expenses.categories.headcountDayRate")}</Badge>}
+          {row.archivedAt && (
+            <Badge className="border border-border bg-surface-sunken text-on-surface-muted" data-testid="category-state">
+              {t("expenses.categories.archived")}
+            </Badge>
+          )}
+        </>
+      ),
       header: t("expenses.categories.state"),
       render: (row) =>
         row.archivedAt ? (
@@ -180,6 +199,7 @@ export function ExpenseCategoriesView() {
     },
     {
       key: "actions",
+      phone: "action",
       header: "",
       render: (row) => (
         <div className="flex justify-end">

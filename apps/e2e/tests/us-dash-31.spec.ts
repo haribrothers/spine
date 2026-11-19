@@ -77,3 +77,20 @@ test.describe("US-DASH-31 · from 768px up", () => {
     await expect(page.getByTestId("dashboard-phone-greeting")).toHaveCount(0);
   });
 });
+
+test.describe("Dashboard · the browser's time zone isn't the server's", () => {
+  // UTC+14, against the E2E server's TZ=UTC: the hour and usually the date differ.
+  test.use({ viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false, timezoneId: "Pacific/Kiritimati" });
+
+  test("the greeting follows this device's clock, with no hydration error", async ({ page, seededOrg: _ }) => {
+    const errors: string[] = [];
+    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
+    const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: "Pacific/Kiritimati" }).format(new Date()));
+    const expected = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(expected);
+    expect(errors.filter((e) => /hydrat|#418|#423|#425/i.test(e))).toEqual([]);
+  });
+});

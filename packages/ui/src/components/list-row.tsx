@@ -38,18 +38,19 @@ export function ListRow({ title, badge, subtitle, trailing, trailingSub, leading
         "relative flex min-h-16 items-center gap-3 border-b border-border py-2.5 pl-4 last:border-b-0",
         action ? "pr-1" : "pr-4",
         selected && "bg-info-bg",
-        // The title's link covers the row; the leading checkbox and the action stay on top of it.
-        "[&_[data-list-row-title]_a]:after:absolute [&_[data-list-row-title]_a]:after:inset-0 [&_[data-list-row-title]_a]:after:content-['']",
+        // The title's link (or button) covers the row; the leading checkbox and the action stay on top of it.
+        "[&_[data-list-row-title]_:is(a,button)]:after:absolute [&_[data-list-row-title]_:is(a,button)]:after:inset-0 [&_[data-list-row-title]_:is(a,button)]:after:content-['']",
         className,
       )}
     >
       {leading ? <span className="relative z-10 flex shrink-0 items-center">{leading}</span> : null}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex min-w-0 items-center gap-2">
-          <span data-list-row-title="" className="min-w-0 truncate text-[15px] font-semibold leading-snug text-on-surface">
+        {/* The title keeps to one line; badges that don't fit beside it wrap under it, so they never squeeze it. */}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span data-list-row-title="" className="min-w-0 max-w-full truncate text-[15px] font-semibold leading-snug text-on-surface [&_*]:whitespace-nowrap">
             {title}
           </span>
-          {badge ? <span className="shrink-0">{badge}</span> : null}
+          {badge ? <span className="flex max-w-full shrink-0 flex-wrap items-center gap-1">{badge}</span> : null}
         </span>
         {subtitle ? <span className="truncate text-[13px] text-on-surface-muted">{subtitle}</span> : null}
       </span>
