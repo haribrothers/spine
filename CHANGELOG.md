@@ -80,6 +80,11 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — Fix: the release's E2E on CI (1.0.0-beta.6)
+
+- **Phone rows:** a row's title and status badge stay on one line again, and the title truncates if it must. Letting badges wrap under the title put the invoice list's status on a second line with CI's fonts, by a few pixels. The quotes list shows just the status on a phone (without "Viewed"), so the number isn't squeezed. Titles still never wrap.
+- **US-OPS-54:** the More sheet's swipe-to-close check waits for the sheet to finish rising before swiping; CI started the swipe mid-animation.
+
 ### 2026-11-19 — Version 1.0.0-beta.6
 
 - The web app's phone layout (D-283: US-OPS-54 to US-OPS-62, US-MTG-18, US-RPT-41, US-DASH-31) and the fixes from the Owner's review on a phone, below, with release notes in `docs/releases/v1.0.0-beta.6.md`. The download commands and the three Compose files' default image tags name the new version.

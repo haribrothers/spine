@@ -45,12 +45,13 @@ export function ListRow({ title, badge, subtitle, trailing, trailingSub, leading
     >
       {leading ? <span className="relative z-10 flex shrink-0 items-center">{leading}</span> : null}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        {/* The title keeps to one line; badges that don't fit beside it wrap under it, so they never squeeze it. */}
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span data-list-row-title="" className="min-w-0 max-w-full truncate text-[15px] font-semibold leading-snug text-on-surface [&_*]:whitespace-nowrap">
+        {/* The title and its badge share one line: the title keeps to that line and truncates if it
+            must (a list gives it a one-line phoneRender, never its stacked desktop cell). */}
+        <span className="flex min-w-0 items-center gap-2">
+          <span data-list-row-title="" className="min-w-0 truncate text-[15px] font-semibold leading-snug text-on-surface [&_*]:whitespace-nowrap">
             {title}
           </span>
-          {badge ? <span className="flex max-w-full shrink-0 flex-wrap items-center gap-1">{badge}</span> : null}
+          {badge ? <span className="flex shrink-0 items-center gap-1">{badge}</span> : null}
         </span>
         {subtitle ? <span className="truncate text-[13px] text-on-surface-muted">{subtitle}</span> : null}
       </span>
