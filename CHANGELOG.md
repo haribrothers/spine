@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-OPS-59: build a quote or invoice on a phone
+
+- **A builder fills the screen:** under 768px New quote, New invoice, New vendor bill, New vendor credit and their Edit pages have no tab bar. The top bar is Cancel at the top left with the title centred (`AppShellPhoneBar` `onCancel`). Cancel runs the builder's own cancel through `usePhoneBuilderCancel`, so "Leave without saving?" asks first, as Back already did. Fields are one column.
+- **Lines as cards and one sheet:** each line is a card (item and amount, description, "3 × $450.00", "10% off", its tax). Add item opens a new `LineSheet` (Cancel · New line · Done) with the item and catalogue search, description, quantity, unit price, discount, tax, price includes tax, HSN/SAC, supply type (and the account on a bill), and what the line comes to. It edits a copy that only Done keeps. Tapping a card opens it in the same sheet ("Line 2 of 3") with Move up, Move down and Delete. A new builder's untouched blank line isn't shown. `BottomSheet` gets `headerLeading` for the sheet's Cancel.
+- **A slim bar:** `DocumentBuilderBar` on a phone is the total (tap it for the subtotal and tax), ⋯ with Save as draft and Preview PDF, and the main button (Save and send, Save and issue, Save and record). It steps aside with the tab bar while a field has focus, so the keyboard and the field have room.
+- **Everywhere it applies:** the quote and invoice builders share the quote line editor. Vendor bills and vendor credits get the same cards and sheet (`PhoneBillLines`, also used by the recurring bill dialog), and so does the recurring invoice dialog. The credit note dialog's invoice lines are cards with their tick box and quantity. The dialogs were already full screen (US-OPS-60).
+- **Tests and docs:** `us-ops-59.spec.ts` and `us-ops-59-phone.a11y.test.tsx`. US-OPS-54's back test now opens a record from the list (New invoice is a builder now). Docs: BottomSheet, AppShell and ActionBar, the design-system pages and the phone guide; QA section 290.
+
 ### 2026-11-19 — US-OPS-58: read and act on a record on a phone
 
 - **The top of a record:** under 768px a record shows its number and status, then the amount that matters (an invoice's or bill's balance due while there is one, else its total; a payment's amount; a credit's amount left), then the contact. The breadcrumb gives way to the top bar's back arrow. This is a new `RecordHeader` in `@spine/ui`. The due line sits under the amount, so on an invoice or bill it leaves the meta line on a phone.

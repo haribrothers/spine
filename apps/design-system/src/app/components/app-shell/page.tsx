@@ -208,6 +208,7 @@ export default () => (
             { prop: "AppShellSidebar.search", type: "ReactNode", defaultValue: "—", description: "US-OPS-48: under the logo, above the nav — the app's Search… field, or its icon when collapsed." },
             { prop: "AppShellPhoneBar.title", type: "string", description: "The page's title, never the logo." },
             { prop: "AppShellPhoneBar.onBack", type: "() => void", defaultValue: "—", description: "Shows the back arrow." },
+            { prop: "AppShellPhoneBar.onCancel", type: "() => void", defaultValue: "—", description: "A builder: Cancel at the top left, the title centred, nothing on the right (US-OPS-59)." },
             { prop: "AppShellPhoneBar.actions", type: "ReactNode", defaultValue: "—", description: "Search, notifications and at most one action." },
             { prop: "AppShellAreaNav.label / items / renderLink", type: "string / { href, label, current }[] / (item, props) => ReactNode" },
             { prop: "AppShellHeader.breadcrumb", type: "BreadcrumbItem[]" },

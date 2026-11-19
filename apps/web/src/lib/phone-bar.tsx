@@ -11,12 +11,40 @@ import { useT } from "./i18n";
  * sets it with `usePhoneBarAction`; the shell renders it beside search and notifications.
  */
 type Slot = "action" | "more";
-const PhoneBarContext = createContext<{ slots: Record<Slot, React.ReactNode>; set: (slot: Slot, node: React.ReactNode) => void } | null>(null);
+const PhoneBarContext = createContext<{
+  slots: Record<Slot, React.ReactNode>;
+  set: (slot: Slot, node: React.ReactNode) => void;
+  /** US-OPS-59: the open builder's Cancel (it asks before unsaved changes are lost). */
+  cancel: React.MutableRefObject<(() => void) | null>;
+} | null>(null);
 
 export function PhoneBarProvider({ children }: { children: React.ReactNode }) {
   const [slots, setSlots] = useState<Record<Slot, React.ReactNode>>({ action: null, more: null });
   const set = useCallback((slot: Slot, node: React.ReactNode) => setSlots((current) => ({ ...current, [slot]: node })), []);
-  return <PhoneBarContext.Provider value={{ slots, set }}>{children}</PhoneBarContext.Provider>;
+  const cancel = useRef<(() => void) | null>(null);
+  return <PhoneBarContext.Provider value={{ slots, set, cancel }}>{children}</PhoneBarContext.Provider>;
+}
+
+/**
+ * US-OPS-59 — a builder's Cancel, for the top bar's Cancel on a phone. Pass the builder's own
+ * cancel (it asks "Leave without saving?" when there are changes). The shell calls it, or goes
+ * back when no builder registered one.
+ */
+export function usePhoneBuilderCancel(onCancel: () => void) {
+  const ref = useContext(PhoneBarContext)?.cancel;
+  useEffect(() => {
+    if (!ref) return;
+    ref.current = onCancel;
+    return () => {
+      if (ref.current === onCancel) ref.current = null;
+    };
+  });
+}
+
+/** The shell's side of `usePhoneBuilderCancel`: runs the builder's Cancel, or `fallback`. */
+export function usePhoneBarCancel(fallback: () => void): () => void {
+  const ref = useContext(PhoneBarContext)?.cancel;
+  return () => (ref?.current ?? fallback)();
 }
 
 /** The page's action and its ⋯, for the shell to render. */

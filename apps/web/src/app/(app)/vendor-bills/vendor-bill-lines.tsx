@@ -26,7 +26,8 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney } from "../../../lib/money";
 import { useT } from "../../../lib/i18n";
 import { AiSuggestedTag } from "../../../components/ai-suggested-tag";
-import { blankLine, computeLinePreview, resolveLineTaxRates, type EditableVendorBillLine } from "./vendor-bill-line-editor";
+import { blankLine, computeLinePreview, PhoneBillLines, resolveLineTaxRates, type EditableVendorBillLine } from "./vendor-bill-line-editor";
+import { useIsPhone } from "../../../lib/use-is-phone";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
 
 /** One grid for the header and every row: handle, item, qty, rate, tax, account, amount, menu. Wraps under 1024 px. */
@@ -97,29 +98,39 @@ export function VendorBillLines({
     [taxRates, taxGroups],
   );
 
+  /** A line with `patch` applied. US-TAX-11: the supply type follows the tax and the catalogue item. */
+  function patchLine(line: EditableVendorBillLine, patch: Partial<EditableVendorBillLine>): EditableVendorBillLine {
+    const merged = { ...line, ...patch };
+    return withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
+  }
+
   function updateLine(index: number, patch: Partial<EditableVendorBillLine>) {
     const next = lines.slice();
-    const merged = { ...next[index]!, ...patch };
-    // US-TAX-11: the supply type follows the tax and the catalogue item.
-    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
+    next[index] = patchLine(next[index]!, patch);
     onChange(next);
   }
 
   function applyCatalogItem(index: number, catalogItemId: string) {
+    const patch = catalogPatch(lines[index]!, catalogItemId);
+    if (patch) updateLine(index, patch);
+  }
+
+  /** What picking a catalogue item fills in on `line` (its account stays when the item has none). */
+  function catalogPatch(line: EditableVendorBillLine, catalogItemId: string): Partial<EditableVendorBillLine> | null {
     const item = catalogItems.find((i) => i.id === catalogItemId);
-    if (!item) return;
-    updateLine(index, {
+    if (!item) return null;
+    return {
       catalogItemId: item.id,
       name: item.name,
       description: item.description ?? "",
       unitPriceAmount: BigInt(item.defaultPriceAmount),
-      accountId: item.expenseAccountId ?? lines[index]!.accountId,
+      accountId: item.expenseAccountId ?? line.accountId,
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
       // US-TAX-13: the item's inter-state tax outside my state.
       ...itemTaxFor(item, supplyType, { exportUnderLut }),
       // US-TAX-14: the item's HSN/SAC code, changeable on the line.
       hsnSac: item.hsnSac ?? "",
-    });
+    };
   }
 
   // A new row starts with its Item field focused.
@@ -159,6 +170,31 @@ export function VendorBillLines({
     const line = blankLine();
     focusKey.current = line.key;
     onChange([...lines, line]);
+  }
+
+  // US-OPS-59: on a phone the lines are cards; a line is edited in a sheet, kept with Done.
+  const phone = useIsPhone();
+  if (phone) {
+    return (
+      <PhoneBillLines
+        lines={lines}
+        onChange={onChange}
+        currency={currency}
+        catalogItems={catalogItems}
+        taxRates={taxRates}
+        taxGroups={taxGroups}
+        taxOptions={taxOptions}
+        accountOptions={accountOptions}
+        showHsn={showHsn}
+        flaggedKeys={flaggedKeys}
+        aiKeys={aiKeys}
+        footerNote={footerNote}
+        patchLine={patchLine}
+        catalogPatch={catalogPatch}
+        addLabel={t("vendorBills.lines.addItem")}
+        testId="bill-line-cards"
+      />
+    );
   }
 
   return (

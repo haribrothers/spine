@@ -22,6 +22,7 @@ import { BottomSheet } from "@spine/ui";
 | `height` | `"auto" \| "full"` — `full` marks it `data-phone-fullscreen`, which hides the tab bar | `"auto"` |
 | `footer` | `ReactNode` — the sheet's buttons | — |
 | `headerAction` | `ReactNode` — replaces Close | — |
+| `headerLeading` | `ReactNode` — a button on the left of the header (Cancel); the title is then centred (US-OPS-59, a line sheet's Cancel · title · Done) | — |
 
 
 ## Rules and behaviour

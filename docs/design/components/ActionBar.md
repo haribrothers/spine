@@ -4,7 +4,7 @@
 
 The bar at the bottom of a record on a phone: the main action for the record's state as a full-width button, with ⋯ in the top bar for the rest (D-283).
 
-**Status:** built (US-OPS-58); record pages wrap their main button in it. A builder's bar with its total comes with US-OPS-59.
+**Status:** built (US-OPS-58); record pages wrap their main button in it. A builder's bar on a phone (its total, ⋯ and main button) is `DocumentBuilderBar`'s phone layout in `apps/web` (US-OPS-59), not this component.
 
 ## Import
 

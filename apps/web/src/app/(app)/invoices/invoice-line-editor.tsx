@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from "@spine/ui";
 import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
 import { bundleLines, useBundles } from "../../../lib/bundles";
 import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { LineTaxWarning } from "../../../components/place-of-supply";
 import { HsnSacField } from "../../../components/hsn-sac-field";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Heading, Plus, Trash2, Type } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { CatalogItemOption, InvoiceLineType, TaxGroupOption, TaxRateOption } from "./types";
 import { formatMoney } from "../../../lib/money";
 import { useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
+import { LineSheet, LineSheetField, LineSheetSummaryRow, PhoneLineCards, type PhoneLineCardData } from "../../../components/line-sheet";
 
 /** Client-side line shape while editing — money fields as `bigint` (never a float), matching MoneyInput's own contract. Not the same as the API's InvoiceLine (which serializes bigints as strings and includes server-computed fields this component doesn't need pre-save). Structurally identical to quotes/quote-line-editor.tsx's EditableQuoteLine — duplicated rather than shared, matching invoices.service.ts's own precedent on why the two document types stay independently owned. */
 export interface EditableInvoiceLine {
@@ -168,11 +170,15 @@ export function InvoiceLineEditor({
     [taxRates, taxGroups, t],
   );
 
+  /** A line with `patch` applied. US-TAX-11: the supply type follows the tax and the catalogue item. */
+  function patchLine(line: EditableInvoiceLine, patch: Partial<EditableInvoiceLine>): EditableInvoiceLine {
+    const merged = { ...line, ...patch };
+    return withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
+  }
+
   function updateLine(index: number, patch: Partial<EditableInvoiceLine>) {
     const next = lines.slice();
-    const merged = { ...next[index]!, ...patch };
-    // US-TAX-11: the supply type follows the tax and the catalogue item.
-    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
+    next[index] = patchLine(next[index]!, patch);
     onChange(next);
   }
 
@@ -203,9 +209,15 @@ export function InvoiceLineEditor({
   }
 
   function applyCatalogItem(index: number, catalogItemId: string) {
+    const patch = catalogPatch(catalogItemId);
+    if (patch) updateLine(index, patch);
+  }
+
+  /** What picking a catalogue item fills in on a line. */
+  function catalogPatch(catalogItemId: string): Partial<EditableInvoiceLine> | null {
     const item = catalogItems.find((i) => i.id === catalogItemId);
-    if (!item) return;
-    updateLine(index, {
+    if (!item) return null;
+    return {
       catalogItemId: item.id,
       name: item.name,
       description: item.description ?? "",
@@ -215,7 +227,48 @@ export function InvoiceLineEditor({
       ...itemTaxFor(item, supplyType, { exportUnderLut }),
       // US-TAX-14: the item's HSN/SAC code, changeable on the line.
       hsnSac: item.hsnSac ?? "",
+    };
+  }
+
+  // US-OPS-59: on a phone the lines are cards; a line is edited in a sheet, kept with Done.
+  const phone = useIsPhone();
+  if (phone) {
+    // A new schedule's one untouched blank line isn't shown as a card.
+    const shown = lines.length === 1 && isUntouchedInvoiceLine(lines[0]!) ? [] : lines;
+    const cards: PhoneLineCardData[] = shown.map((line) => {
+      const preview = computeLinePreview(line, currency, taxRates, taxGroups);
+      return {
+        key: line.key,
+        type: line.type,
+        name: line.name,
+        description: line.description,
+        amount: line.type === "item" ? formatMoney(preview.total, currency) : undefined,
+        detail:
+          line.type === "item"
+            ? [t("common.lineSheet.qtyTimesRate", { qty: line.quantity, rate: formatMoney(line.unitPriceAmount, currency) }), line.discountPercentage > 0 ? t("common.lineSheet.discountOff", { percent: line.discountPercentage }) : null].filter(Boolean).join(" · ")
+            : undefined,
+        tax: line.type === "item" ? invoiceLineTaxLabel(line, taxRates, taxGroups, t) : undefined,
+        note: flaggedKeys?.has(line.key) ? <LineTaxWarning /> : undefined,
+      };
     });
+    return (
+      <PhoneInvoiceLines
+        lines={lines}
+        shown={shown}
+        cards={cards}
+        onChange={onChange}
+        currency={currency}
+        catalogItems={catalogItems}
+        bundles={pickerBundles}
+        taxOptions={taxOptions}
+        taxRates={taxRates}
+        taxGroups={taxGroups}
+        showHsn={showHsn}
+        patchLine={patchLine}
+        catalogPatch={catalogPatch}
+        insertBundle={insertBundle}
+      />
+    );
   }
 
   return (
@@ -452,5 +505,254 @@ function FieldLabel({ label, children }: { label: string; children: React.ReactN
       <span className="text-[11px] font-medium text-on-surface-muted">{label}</span>
       {children}
     </div>
+  );
+}
+
+/** A new schedule's one untouched blank line, which isn't shown as a card on a phone. */
+function isUntouchedInvoiceLine(line: EditableInvoiceLine): boolean {
+  return line.type === "item" && !line.catalogItemId && !line.name.trim() && !line.description.trim() && line.unitPriceAmount === 0n && line.quantity === 1;
+}
+
+/** A line's tax for its card and sheet: the rate's or group's name with its percentage ("GST 18%"). */
+function invoiceLineTaxLabel(line: EditableInvoiceLine, taxRates: TaxRateOption[], taxGroups: TaxGroupOption[], t: ReturnType<typeof useT>): string | undefined {
+  const percent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
+  if (!percent) return undefined;
+  const name = line.taxRateId ? taxRates.find((r) => r.id === line.taxRateId)?.name : line.taxGroupId ? taxGroups.find((g) => g.id === line.taxGroupId)?.name : undefined;
+  if (name) return name.includes("%") ? name : `${name} ${percent}%`;
+  return t("invoices.linesTable.taxRate", { percent });
+}
+
+/**
+ * US-OPS-59 (D-283) — the lines on a phone (a recurring invoice's): one card per line, Add item
+ * (and Add heading, Add text) below, and one `LineSheet` editing a copy of the line — kept only
+ * with Done — with Move up, Move down and Delete for a line that's already there.
+ */
+function PhoneInvoiceLines({
+  lines,
+  shown,
+  cards,
+  onChange,
+  currency,
+  catalogItems,
+  bundles,
+  taxOptions,
+  taxRates,
+  taxGroups,
+  showHsn,
+  patchLine,
+  catalogPatch,
+  insertBundle,
+}: {
+  lines: EditableInvoiceLine[];
+  /** The lines shown as cards (all of them, unless the only one is an untouched blank). */
+  shown: EditableInvoiceLine[];
+  cards: PhoneLineCardData[];
+  onChange: (lines: EditableInvoiceLine[]) => void;
+  currency: string;
+  catalogItems: CatalogItemOption[];
+  bundles: PickerBundle[];
+  taxOptions: { value: string; label: string }[];
+  taxRates: TaxRateOption[];
+  taxGroups: TaxGroupOption[];
+  showHsn: boolean;
+  patchLine: (line: EditableInvoiceLine, patch: Partial<EditableInvoiceLine>) => EditableInvoiceLine;
+  catalogPatch: (catalogItemId: string) => Partial<EditableInvoiceLine> | null;
+  insertBundle: (index: number, bundleId: string) => void;
+}) {
+  const t = useT();
+  const [sheet, setSheet] = useState<{ index: number | null; draft: EditableInvoiceLine } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const editing = sheet?.index ?? null;
+  const update = (patch: Partial<EditableInvoiceLine>) => setSheet((cur) => (cur ? { ...cur, draft: patchLine(cur.draft, patch) } : cur));
+  const commit = (): EditableInvoiceLine[] => {
+    if (!sheet) return lines;
+    if (sheet.index === null) return [...shown, sheet.draft];
+    const next = lines.slice();
+    next[sheet.index] = sheet.draft;
+    return next;
+  };
+  const move = (by: -1 | 1) => {
+    if (!sheet || sheet.index === null) return;
+    const next = commit();
+    const to = sheet.index + by;
+    const [moved] = next.splice(sheet.index, 1);
+    next.splice(to, 0, moved!);
+    onChange(next);
+    setSheet({ index: to, draft: sheet.draft });
+    setAnnouncement(t("common.lineSheet.moved", { position: to + 1, total: next.length }));
+  };
+
+  return (
+    <>
+      <PhoneLineCards
+        lines={cards}
+        testId="invoice-line-cards"
+        onOpen={(index) => setSheet({ index, draft: shown[index]! })}
+        onAdd={() => setSheet({ index: null, draft: blankLine("item") })}
+        addLabel={t("invoices.lineEditor.addItem")}
+        extraAdds={
+          <>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setSheet({ index: null, draft: blankLine("heading") })}>
+              <Heading size={14} /> {t("invoices.lineEditor.addHeading")}
+            </Button>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setSheet({ index: null, draft: blankLine("text") })}>
+              <Type size={14} /> {t("invoices.lineEditor.addText")}
+            </Button>
+          </>
+        }
+      />
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
+      {sheet && (
+        <LineSheet
+          open
+          title={editing === null ? t("common.lineSheet.newLine") : t("common.lineSheet.lineOf", { index: editing + 1, total: lines.length })}
+          onCancel={() => setSheet(null)}
+          onDone={() => {
+            onChange(commit());
+            setSheet(null);
+          }}
+          onMoveUp={editing === null ? undefined : editing > 0 ? () => move(-1) : null}
+          onMoveDown={editing === null ? undefined : editing < lines.length - 1 ? () => move(1) : null}
+          onDelete={
+            editing === null
+              ? undefined
+              : () => {
+                  onChange(lines.filter((_, i) => i !== editing));
+                  setSheet(null);
+                }
+          }
+          summary={sheet.draft.type === "item" ? <InvoiceLinePreviewSummary line={sheet.draft} currency={currency} taxRates={taxRates} taxGroups={taxGroups} /> : undefined}
+        >
+          <PhoneInvoiceLineFields
+            line={sheet.draft}
+            currency={currency}
+            catalogItems={catalogItems}
+            bundles={bundles}
+            taxOptions={taxOptions}
+            taxRates={taxRates}
+            taxGroups={taxGroups}
+            showHsn={showHsn}
+            onChange={update}
+            onApplyCatalogItem={(id) => {
+              const patch = catalogPatch(id);
+              if (patch) update(patch);
+            }}
+            onPickBundle={(id) => {
+              // A bundle becomes its lines, where this line was (or after the others).
+              insertBundle(editing ?? (shown.length ? lines.length : 0), id);
+              setSheet(null);
+            }}
+          />
+        </LineSheet>
+      )}
+    </>
+  );
+}
+
+/** US-OPS-59: what the line in the sheet comes to — "4 × $650.00", its tax and the line amount. */
+function InvoiceLinePreviewSummary({ line, currency, taxRates, taxGroups }: { line: EditableInvoiceLine; currency: string; taxRates: TaxRateOption[]; taxGroups: TaxGroupOption[] }) {
+  const t = useT();
+  const preview = computeLinePreview(line, currency, taxRates, taxGroups);
+  const tax = invoiceLineTaxLabel(line, taxRates, taxGroups, t);
+  return (
+    <>
+      <LineSheetSummaryRow label={t("common.lineSheet.qtyTimesRate", { qty: line.quantity, rate: formatMoney(line.unitPriceAmount, currency) })} value={formatMoney(preview.subtotal, currency)} />
+      {tax && <LineSheetSummaryRow label={tax} value={formatMoney(preview.tax, currency)} />}
+      <LineSheetSummaryRow label={t("common.lineSheet.lineAmount")} value={formatMoney(preview.total, currency)} total />
+    </>
+  );
+}
+
+/** US-OPS-59: a line's fields in one column, for the line sheet on a phone. */
+function PhoneInvoiceLineFields({
+  line,
+  currency,
+  catalogItems,
+  bundles,
+  taxOptions,
+  taxRates,
+  taxGroups,
+  showHsn,
+  onChange,
+  onApplyCatalogItem,
+  onPickBundle,
+}: {
+  line: EditableInvoiceLine;
+  currency: string;
+  catalogItems: CatalogItemOption[];
+  bundles: PickerBundle[];
+  taxOptions: { value: string; label: string }[];
+  taxRates: TaxRateOption[];
+  taxGroups: TaxGroupOption[];
+  showHsn: boolean;
+  onChange: (patch: Partial<EditableInvoiceLine>) => void;
+  onApplyCatalogItem: (id: string) => void;
+  onPickBundle: (id: string) => void;
+}) {
+  const t = useT();
+  if (line.type !== "item") {
+    const label = line.type === "heading" ? t("invoices.lineEditor.heading") : t("invoices.lineEditor.text");
+    return (
+      <>
+        <LineSheetField label={label} htmlFor="invoice-line-sheet-name">
+          <Input id="invoice-line-sheet-name" value={line.name} onChange={(e) => onChange({ name: e.target.value })} placeholder={line.type === "heading" ? t("invoices.lineEditor.headingPlaceholder") : t("invoices.lineEditor.textPlaceholder")} />
+        </LineSheetField>
+        {line.type === "text" && (
+          <LineSheetField label={t("common.lineSheet.description")} htmlFor="invoice-line-sheet-detail">
+            <Textarea id="invoice-line-sheet-detail" rows={2} value={line.description} onChange={(e) => onChange({ description: e.target.value })} placeholder={t("invoices.lineEditor.detailPlaceholder")} />
+          </LineSheetField>
+        )}
+      </>
+    );
+  }
+  const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
+  const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
+  const applyTaxSelection = (value: string) => {
+    if (value.startsWith("rate:")) onChange({ taxRateId: value.slice(5), taxGroupId: null, taxRatePercentage: 0 });
+    else if (value.startsWith("group:")) onChange({ taxRateId: null, taxGroupId: value.slice(6), taxRatePercentage: 0 });
+    else onChange({ taxRateId: null, taxGroupId: null, taxRatePercentage: 0 });
+  };
+  return (
+    <>
+      <LineSheetField label={t("common.lineSheet.item")}>
+        <LineItemPicker
+          name={line.name}
+          onNameChange={(name) => onChange({ name })}
+          items={catalogItems}
+          bundles={bundles}
+          onPickBundle={onPickBundle}
+          currency={currency}
+          canSaveToCatalogue={false}
+          saveToCatalogue={false}
+          onPickItem={onApplyCatalogItem}
+          onOneOff={() => onChange({ catalogItemId: null })}
+        />
+      </LineSheetField>
+      <LineSheetField label={t("common.lineSheet.description")} htmlFor="invoice-line-sheet-description">
+        <Textarea id="invoice-line-sheet-description" rows={2} value={line.description} onChange={(e) => onChange({ description: e.target.value })} placeholder={t("invoices.lineEditor.descriptionPlaceholder")} />
+      </LineSheetField>
+      <div className="grid grid-cols-2 gap-3">
+        <LineSheetField label={t("common.lineSheet.quantity")} htmlFor="invoice-line-sheet-qty">
+          <Input id="invoice-line-sheet-qty" type="number" inputMode="decimal" min={0} step="0.01" value={String(line.quantity)} onChange={(e) => onChange({ quantity: Number(e.target.value) || 0 })} className="tabular-nums" />
+        </LineSheetField>
+        <LineSheetField label={t("common.lineSheet.unitPrice")} htmlFor="invoice-line-sheet-price">
+          <MoneyInput id="invoice-line-sheet-price" value={line.unitPriceAmount} onValueChange={(v) => onChange({ unitPriceAmount: v })} currency={currency} />
+        </LineSheetField>
+        <LineSheetField label={t("common.lineSheet.discount")} htmlFor="invoice-line-sheet-discount">
+          <Input id="invoice-line-sheet-discount" type="number" inputMode="decimal" min={0} max={100} step="0.01" value={String(line.discountPercentage)} onChange={(e) => onChange({ discountPercentage: Number(e.target.value) || 0 })} className="tabular-nums" />
+        </LineSheetField>
+      </div>
+      <LineSheetField label={t("common.lineSheet.tax")}>
+        <Combobox aria-label={t("invoices.lineEditor.tax")} options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder={t("invoices.lineEditor.noTax")} />
+      </LineSheetField>
+      <label className="flex items-center gap-2.5 text-[14px] text-on-surface">
+        <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })} />
+        {t("invoices.lineEditor.priceIncludesTax")}
+      </label>
+      {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => onChange({ hsnSac })} />}
+      {showsSupplyType(line.supplyClass, taxPercent) && <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />}
+    </>
   );
 }

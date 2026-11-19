@@ -7,8 +7,10 @@ import { useT } from "../lib/i18n";
 export interface AppShellPhoneBarProps {
   /** The page's title (never the logo). */
   title: string;
-  /** Shown on records, builders and pages below an area's first page. */
+  /** Shown on records and pages below an area's first page. */
   onBack?: () => void;
+  /** US-OPS-59: a builder has Cancel at the top left instead (it asks before unsaved changes are lost), the title centred and nothing on the right. */
+  onCancel?: () => void;
   /** Right-hand controls: search, notifications and at most one page action. */
   actions?: React.ReactNode;
 }
@@ -18,8 +20,26 @@ export interface AppShellPhoneBarProps {
  * back to, the page's title, then search, notifications and at most one action. Clear of
  * the notch when opened from the home screen. Hidden from 768px up.
  */
-export function AppShellPhoneBar({ title, onBack, actions }: AppShellPhoneBarProps) {
+export function AppShellPhoneBar({ title, onBack, onCancel, actions }: AppShellPhoneBarProps) {
   const t = useT();
+  if (onCancel) {
+    return (
+      <header data-testid="app-top-bar" className="flex shrink-0 flex-col border-b border-border bg-surface pt-[env(safe-area-inset-top)] md:hidden">
+        <div className="grid h-14 grid-cols-[88px_minmax(0,1fr)_88px] items-center px-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex h-11 items-center justify-self-start rounded-md px-3 text-[16px] text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {t("ui.appShell.cancel")}
+          </button>
+          <p data-testid="app-top-bar-title" className="truncate text-center text-[17px] font-semibold leading-tight text-on-surface">
+            {title}
+          </p>
+        </div>
+      </header>
+    );
+  }
   return (
     <header data-testid="app-top-bar" className="flex shrink-0 flex-col border-b border-border bg-surface pt-[env(safe-area-inset-top)] md:hidden">
       <div className="flex h-14 items-center px-1">

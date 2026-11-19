@@ -21,7 +21,7 @@ import { moduleForPage } from "@spine/shared";
 import { navSectionsFor } from "../lib/nav-sections";
 import { pageAccessFor } from "../lib/page-access";
 import { areaFor, areaHref, areaPages, isBuilder, isTopLevel, parentPath, rememberAreaPage, titleFor, visibleAreas, type AreaKey } from "../lib/phone-shell";
-import { PhoneBarProvider, usePhoneBarSlot } from "../lib/phone-bar";
+import { PhoneBarProvider, usePhoneBarCancel, usePhoneBarSlot } from "../lib/phone-bar";
 import { RoleProvider } from "../lib/role-context";
 import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
@@ -207,6 +207,8 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
     if (navigated.current && window.history.length > 1) router.back();
     else router.push(parentPath(path));
   }
+  // US-OPS-59: a builder's Cancel asks before unsaved changes are lost.
+  const cancelBuilder = usePhoneBarCancel(goBack);
 
   const tabs: BottomTabBarItem[] = visibleAreas(shown, role).map((key) => ({
     key,
@@ -225,6 +227,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
           <AppShellPhoneBar
             title={titleFor(path, navLabels)}
             onBack={isTopLevel(path, shown) ? undefined : goBack}
+            onCancel={isBuilder(path) ? cancelBuilder : undefined}
             actions={
               <>
                 {pageAction}

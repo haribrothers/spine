@@ -973,6 +973,28 @@
     }
   },
   "common": {
+    "lineSheet": {
+      "openLine": "Line {{index}} of {{total}}: {{name}}",
+      "untitled": "No item yet",
+      "lineOf": "Line {{index}} of {{total}}",
+      "newLine": "New line",
+      "cancel": "Cancel",
+      "done": "Done",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "delete": "Delete",
+      "qtyTimesRate": "{{qty}} × {{rate}}",
+      "discountOff": "{{percent}}% off",
+      "lineAmount": "Line amount",
+      "item": "Item",
+      "description": "Description",
+      "quantity": "Quantity",
+      "unitPrice": "Unit price",
+      "discount": "Discount %",
+      "tax": "Tax",
+      "account": "Account",
+      "moved": "Moved to position {{position}} of {{total}}"
+    },
     "notFound": {
       "code": "404",
       "title": "We can't find that page",
@@ -8304,7 +8326,8 @@
   },
   "ui": {
     "appShell": {
-      "back": "Back"
+      "back": "Back",
+      "cancel": "Cancel"
     },
     "breadcrumb": {
       "label": "Breadcrumb"

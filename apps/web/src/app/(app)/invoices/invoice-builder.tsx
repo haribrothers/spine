@@ -18,6 +18,7 @@ import {
   SelectValue,
   Spinner,
   cn,
+  DropdownMenuItem,
 } from "@spine/ui";
 import { DEFAULT_INVOICE_DUE_DAYS, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { Eye, Send } from "lucide-react";
@@ -25,6 +26,8 @@ import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useDocumentDefaults } from "../../../lib/document-defaults";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
+import { usePhoneBuilderCancel } from "../../../lib/phone-bar";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "../quotes/contact-picker";
@@ -248,6 +251,8 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   }
 
   const picked = pickedDueDays(issueDate, dueDate);
+  // US-OPS-59: on a phone, Cancel is at the top left of the screen.
+  usePhoneBuilderCancel(cancel);
 
   return (
     <div className="flex flex-col gap-4" {...interactionProps}>
@@ -339,7 +344,33 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
       </Card>
 
       {/* US-INV-34: totals and actions stay in view. */}
-      <DocumentBuilderBar totals={totals} currency={currency} dirty={dirty} testIdPrefix="invoice">
+      <DocumentBuilderBar
+        totals={totals}
+        currency={currency}
+        dirty={dirty}
+        testIdPrefix="invoice"
+        // US-OPS-59: on a phone, the main button and ⋯ with Save as draft and Preview PDF.
+        phoneMain={
+          <Button type="button" onClick={() => void save(canIssue ? "issue" : "view")} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : canIssue ? <Send size={14} aria-hidden /> : null}
+            {canIssue ? t("invoices.builder.saveAndIssue") : invoice ? t("invoices.builder.saveDraft") : t("invoices.builder.saveAsDraft")}
+          </Button>
+        }
+        phoneMore={
+          <>
+            {canIssue && (
+              <DropdownMenuItem disabled={saving} onSelect={() => void save("view")}>
+                <MENU_ICONS.edit aria-hidden />
+                {invoice ? t("invoices.builder.saveDraft") : t("invoices.builder.saveAsDraft")}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem disabled={saving || previewing} onSelect={() => void preview()}>
+              <MENU_ICONS.view aria-hidden />
+              {t("invoices.builder.previewPdf")}
+            </DropdownMenuItem>
+          </>
+        }
+      >
         <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
           {t("invoices.builder.cancel")}
         </Button>

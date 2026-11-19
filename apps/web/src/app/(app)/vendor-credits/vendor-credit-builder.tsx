@@ -4,12 +4,14 @@ import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea, useConfirm } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, DropdownMenuItem, FormField, Input, Spinner, Textarea, useConfirm } from "@spine/ui";
 import type { PossibleDuplicateVendorCredit } from "@spine/shared";
 import { FileCheck } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
+import { usePhoneBuilderCancel } from "../../../lib/phone-bar";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
@@ -274,6 +276,8 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
   }
 
   const dup = duplicates[0];
+  // US-OPS-59: on a phone, Cancel is at the top left of the screen.
+  usePhoneBuilderCancel(cancel);
 
   return (
     <div className="flex flex-col gap-4" {...interactionProps}>
@@ -346,7 +350,28 @@ export function VendorCreditBuilder({ credit, fromBill }: { credit?: VendorCredi
       <AttachmentsSection entityType="vendor_credit" entityId={credit?.id ?? null} pending={pendingFiles} onPendingChange={touch(setPendingFiles)} />
 
       {/* US-PUR-39: totals and actions stay in view, as on bills. */}
-      <DocumentBuilderBar totals={{ ...totals }} currency={currency} taxLabel={pos.active ? "GST" : t("vendorCredits.builder.tax")} dirty={dirty} testIdPrefix="credit">
+      <DocumentBuilderBar
+        totals={{ ...totals }}
+        currency={currency}
+        taxLabel={pos.active ? "GST" : t("vendorCredits.builder.tax")}
+        dirty={dirty}
+        testIdPrefix="credit"
+        // US-OPS-59: on a phone, Save and record (Save draft without the right to record), with Save draft under ⋯.
+        phoneMain={
+          <Button type="button" onClick={() => void (canRecord ? handleSaveAndRecord() : handleSaveDraft())} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : canRecord ? <FileCheck size={14} aria-hidden /> : null}
+            {canRecord ? t("vendorCredits.builder.saveAndRecord") : credit ? t("vendorCredits.builder.saveDraft") : t("vendorCredits.builder.saveAsDraft")}
+          </Button>
+        }
+        phoneMore={
+          canRecord ? (
+            <DropdownMenuItem disabled={saving} onSelect={() => void handleSaveDraft()}>
+              <MENU_ICONS.edit aria-hidden />
+              {credit ? t("vendorCredits.builder.saveDraft") : t("vendorCredits.builder.saveAsDraft")}
+            </DropdownMenuItem>
+          ) : undefined
+        }
+      >
         <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
           {t("vendorCredits.builder.cancel")}
         </Button>

@@ -14,6 +14,7 @@ import {
   RichTextEditor,
   Spinner,
   cn,
+  DropdownMenuItem,
 } from "@spine/ui";
 import { DEFAULT_QUOTE_VALID_DAYS, QUOTE_TITLE_MAX, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { Eye, Send } from "lucide-react";
@@ -25,6 +26,8 @@ import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "./quote-line-editor";
 import type { Quote, TaxGroupOption, TaxRateOption } from "./types";
 import { useUnsavedGuard } from "../../../lib/use-unsaved-guard";
+import { usePhoneBuilderCancel } from "../../../lib/phone-bar";
+import { MENU_ICONS } from "../../../lib/menu-icons";
 import { DocumentBuilderBar, LeaveWithoutSavingDialog } from "../../../components/document-builder-bar";
 import { useT } from "../../../lib/i18n";
 
@@ -318,6 +321,8 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   }
 
   const picked = pickedDays(validUntil, VALIDITY_PICKS);
+  // US-OPS-59: on a phone, Cancel is at the top left of the screen.
+  usePhoneBuilderCancel(cancel);
 
   return (
     <div className="flex flex-col gap-4" {...interactionProps}>
@@ -404,7 +409,33 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       </Card>
 
       {/* US-QUO-35: totals and actions stay in view. */}
-      <DocumentBuilderBar totals={totals} currency={currency} dirty={dirty} testIdPrefix="quote">
+      <DocumentBuilderBar
+        totals={totals}
+        currency={currency}
+        dirty={dirty}
+        testIdPrefix="quote"
+        // US-OPS-59: on a phone, the main button and ⋯ with Save as draft and Preview PDF.
+        phoneMain={
+          <Button type="button" onClick={() => void save(canSend ? "send" : "view")} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : canSend ? <Send size={14} aria-hidden /> : null}
+            {canSend ? t("quotes.builder.saveAndSend") : quote ? t("quotes.builder.saveDraft") : t("quotes.builder.saveAsDraft")}
+          </Button>
+        }
+        phoneMore={
+          <>
+            {canSend && (
+              <DropdownMenuItem disabled={saving} onSelect={() => void save("view")}>
+                <MENU_ICONS.edit aria-hidden />
+                {quote ? t("quotes.builder.saveDraft") : t("quotes.builder.saveAsDraft")}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem disabled={saving || previewing} onSelect={() => void preview()}>
+              <MENU_ICONS.view aria-hidden />
+              {t("quotes.builder.previewPdf")}
+            </DropdownMenuItem>
+          </>
+        }
+      >
           <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
             {t("quotes.builder.cancel")}
           </Button>

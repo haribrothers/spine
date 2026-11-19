@@ -114,7 +114,8 @@ test.describe("US-OPS-54 · get around the web app from tabs along the bottom of
   test("a record opened from a link, not from Spine, goes back to its list", async ({ page, seededOrg: _ }) => {
     await page.goto("/invoices");
     await page.waitForLoadState("networkidle");
-    const href = await page.locator('a[href^="/invoices/"]').first().getAttribute("href");
+    // A record from the list (New invoice is a builder, with Cancel rather than Back, US-OPS-59).
+    const href = await page.getByTestId("phone-list").locator('a[href^="/invoices/"]').first().getAttribute("href");
     await page.goto(href!);
     await page.getByTestId("app-top-bar").getByRole("button", { name: "Back" }).click();
     await expect(page).toHaveURL(/\/invoices$/);

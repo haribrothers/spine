@@ -28,6 +28,7 @@ import { apiClient, ApiError } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import type { CreditNote, Creditable, CreditNotePreview } from "./types";
 import { t, useT } from "../../../lib/i18n";
+import { useIsPhone } from "../../../lib/use-is-phone";
 
 type Mode = "lines" | "amount";
 
@@ -96,6 +97,8 @@ export function CreateCreditNoteDialog({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // US-OPS-59: on a phone the invoice's lines are cards, one under another, not a wide table.
+  const phone = useIsPhone();
 
   useEffect(() => {
     if (!open) return;
@@ -199,15 +202,86 @@ export function CreateCreditNoteDialog({
 
               {mode === "amount" && (
                 <div className="flex flex-wrap items-end gap-4">
-                  <FormField label={t("invoices.createCreditNote.amount")} helperText={t("invoices.createCreditNote.taxIncluded")} className="w-60">
+                  <FormField label={t("invoices.createCreditNote.amount")} helperText={t("invoices.createCreditNote.taxIncluded")} className="w-60 max-md:w-full">
                     {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} aria-label={t("invoices.createCreditNote.amountToCredit")} />}
                   </FormField>
-                  <p className="mb-6 max-w-sm flex-1 text-[12.5px] leading-snug text-on-surface-muted">
+                  <p className="mb-6 max-w-sm flex-1 text-[12.5px] leading-snug text-on-surface-muted max-md:mb-0">
                     {t("invoices.createCreditNote.spreadNote")}
                   </p>
                 </div>
               )}
 
+              {phone ? (
+                <ul className="flex flex-col gap-2" data-testid="credit-lines">
+                  {creditable.lines.map((line) => {
+                    const done = BigInt(line.leftAmount) <= 0n;
+                    const part = partFor(line.invoiceLineId);
+                    const on = ticked.has(line.invoiceLineId);
+                    const sub = done ? t("invoices.createCreditNote.fullyCredited") : [mode === "amount" ? `${line.taxRatePercentage}%` : null, line.hsnSac ? t("invoices.createCreditNote.hsnSac", { code: line.hsnSac }) : null].filter(Boolean).join(" · ");
+                    return (
+                      <li key={line.invoiceLineId} className={cn("flex flex-col gap-2 rounded-lg border border-border px-3.5 py-3", done && "text-on-surface-muted")}>
+                        <div className="flex items-start gap-3">
+                          {mode === "lines" && (
+                            <Checkbox
+                              checked={on}
+                              disabled={done}
+                              className="mt-0.5"
+                              aria-label={t("invoices.createCreditNote.creditLine", { name: line.name })}
+                              onCheckedChange={(v) =>
+                                setTicked((current) => {
+                                  const next = new Set(current);
+                                  if (v === true) next.add(line.invoiceLineId);
+                                  else next.delete(line.invoiceLineId);
+                                  return next;
+                                })
+                              }
+                            />
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span className={cn("block text-[15px] font-semibold leading-snug", done ? "text-on-surface-muted" : "text-on-surface")}>{line.name}</span>
+                            {sub && <span className="block text-[12.5px] text-on-surface-muted">{sub}</span>}
+                          </span>
+                          <span className="shrink-0 text-[15px] font-semibold tabular-nums text-on-surface">{part ? money(part.lineTotalAmount) : "—"}</span>
+                        </div>
+                        {mode === "lines" ? (
+                          done ? (
+                            <span className="text-[13px]">{t("invoices.createCreditNote.leftOf", { left: 0, total: line.quantity })}</span>
+                          ) : on ? (
+                            <span className="flex items-center gap-2 text-[13px] text-on-surface-muted">
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                max={line.leftQuantity}
+                                step="any"
+                                value={quantities[line.invoiceLineId] ?? ""}
+                                onChange={(e) => setQuantities((q) => ({ ...q, [line.invoiceLineId]: e.target.value }))}
+                                aria-label={t("invoices.createCreditNote.howMany", { name: line.name })}
+                                className="w-24 text-right tabular-nums"
+                              />
+                              {t("invoices.createCreditNote.ofLeft", { n: line.leftQuantity })}
+                            </span>
+                          ) : (
+                            <span className="text-[13px] text-on-surface-muted">{t("invoices.createCreditNote.leftOf", { left: line.leftQuantity, total: line.quantity })}</span>
+                          )
+                        ) : null}
+                        <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-[13px] tabular-nums text-on-surface-muted">
+                          {mode === "amount" && (
+                            <>
+                              <dt>{t("invoices.createCreditNote.colLeftToCredit")}</dt>
+                              <dd className="text-right">{money(line.leftAmount)}</dd>
+                            </>
+                          )}
+                          <dt>{mode === "lines" ? t("invoices.createCreditNote.colRate") : t("invoices.createCreditNote.colBeforeTax")}</dt>
+                          <dd className="text-right">{mode === "lines" ? money(line.unitPriceAmount) : part ? money(part.lineSubtotalAmount) : "—"}</dd>
+                          <dt>{t("invoices.createCreditNote.colTax")}</dt>
+                          <dd className="text-right">{mode === "lines" ? `${line.taxRatePercentage}%` : part ? money(part.lineTaxAmount) : "—"}</dd>
+                        </dl>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
               <ScrollX label={t("ui.scrollX.label")} className="rounded-md border border-border" data-testid="credit-lines">
                 <table className="w-full min-w-155 border-collapse text-[13px]">
                   <thead>
@@ -289,6 +363,7 @@ export function CreateCreditNoteDialog({
                   </tbody>
                 </table>
               </ScrollX>
+              )}
 
               <FormField label={t("invoices.createCreditNote.reason")} helperText={t("invoices.createCreditNote.reasonHelp")}>
                 {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("invoices.createCreditNote.reasonPlaceholder")} />}
@@ -311,7 +386,7 @@ export function CreateCreditNoteDialog({
                     </div>
                   )}
                 </div>
-                <dl className="ml-auto grid w-72 grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 text-[13px]" data-testid="credit-totals">
+                <dl className="ml-auto grid w-72 grid-cols-[1fr_auto] max-md:w-full gap-x-6 gap-y-1.5 text-[13px]" data-testid="credit-totals">
                   <dt className="text-on-surface-muted">{t("invoices.createCreditNote.subtotal")}</dt>
                   <dd className="text-right tabular-nums">{preview ? money(preview.subtotalAmount) : "—"}</dd>
                   {(preview?.taxLines.length ? preview.taxLines : [{ label: t("invoices.createCreditNote.tax"), amount: preview?.taxAmount ?? "0" }]).map((taxLine) => (
@@ -326,10 +401,12 @@ export function CreateCreditNoteDialog({
               </div>
             </>
           )}
+          {/* On a phone the footer is the bar at the top, with room only for its buttons. */}
+          {phone && <p className="text-[12px] text-on-surface-muted">{t("invoices.createCreditNote.footerNote")}</p>}
         </DialogBody>
 
         <DialogFooter className="flex-wrap items-center">
-          <span className="mr-auto max-w-xs text-[12px] text-on-surface-muted">{t("invoices.createCreditNote.footerNote")}</span>
+          {!phone && <span className="mr-auto max-w-xs text-[12px] text-on-surface-muted">{t("invoices.createCreditNote.footerNote")}</span>}
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
             {t("invoices.createCreditNote.cancel")}
           </Button>

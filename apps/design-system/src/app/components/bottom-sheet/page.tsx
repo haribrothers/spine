@@ -57,6 +57,7 @@ export default function BottomSheetPage() {
             { prop: "description", type: "string — read, not shown" },
             { prop: "height", type: "\"auto\" | \"full\"" },
             { prop: "footer · headerAction", type: "ReactNode" },
+            { prop: "headerLeading", type: "ReactNode", description: "A button on the left of the header (Cancel); the title is centred (US-OPS-59)." },
           ]}
         />
       </DocSection>

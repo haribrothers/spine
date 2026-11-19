@@ -5845,3 +5845,18 @@ Automated: `us-ops-58.spec.ts`, `us-ops-58-phone.a11y.test.tsx`, `action-bar.a11
 7. A job's milestones are rows: name and its share on the left, the amount and status on the right, ⋯ with Mark complete, Raise invoice or View invoice, and View history.
 8. Payments, activity and attachments inside a record are rows that fit the screen; nothing scrolls sideways.
 9. Regression, from 768px up: each record's header, its buttons and More menu, the breadcrumb, the figures in one row, the lines table and the milestone list are as they were.
+
+## 290. Build a quote or invoice on my phone (US-OPS-59, Phase 12)
+
+Automated: `us-ops-59.spec.ts`, `us-ops-59-phone.a11y.test.tsx`. At 390×844 with touch, open New quote, then a draft quote's Edit, New invoice, New vendor bill, New vendor credit, Issue credit note on an invoice, and New recurring invoice and New recurring bill:
+
+1. The builder fills the screen: no tabs at the bottom, Cancel at the top left with the title centred, no search or notifications; every field is one under another and nothing scrolls sideways.
+2. Lines are cards: item and amount, description, "3 × $450.00" (and "10% off"), the tax ("Sales Tax 15%"). A new quote's empty first line isn't shown as a card.
+3. Add item opens a sheet: Cancel · New line · Done, then Item (search the catalogue; a bundle adds its lines), Description, Quantity, Unit price, Discount %, Tax, Price includes tax (and HSN/SAC, supply type with GST; Account on a bill), and what the line comes to. Cancel adds nothing; Done adds the card.
+4. Tap a card: the same sheet, "Line 2 of 3", with Move up, Move down (disabled at the ends) and Delete at the bottom. Change the quantity and Cancel: nothing changed. Change it and Done: the card shows it.
+5. The bar at the bottom: the total; tap it for the subtotal and tax. The main button (Save and send, Save and issue, Save and record) and ⋯ with Save as draft and Preview PDF (no preview on bills). Recording a bill still asks first.
+6. Tap into a field (the title, a line's quantity): the bar and the tabs step aside while the keyboard is up, and come back after.
+7. Change something and tap Cancel (or the phone's back): "Leave without saving?" — Keep editing keeps your change; Leave goes back.
+8. Credit note: each invoice line is a card with its tick box and, once ticked, its quantity. Recurring invoice and bill: their lines are cards with the same sheet.
+9. Dark mode: the cards, sheet and bar use the dark surfaces.
+10. Regression, from 768px up: the builders' line rows (drag handle, columns, row menu), the bar with Subtotal, Tax, Total, Cancel, Preview PDF and Save buttons, and the credit note's table are as they were.

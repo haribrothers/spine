@@ -405,14 +405,14 @@
 
 /* US-OPS-54 — the tab bar along the bottom steps aside while a full-screen sheet is open,
    and on a touch screen while a text field has focus (the keyboard is up). A record's action
-   bar above it (US-OPS-58) does the same. */
+   bar above it (US-OPS-58) and a builder's bar (US-OPS-59) do the same. */
 @media (max-width: 767.98px) {
   body:has([data-phone-fullscreen]) :is([data-tabbar], [data-action-bar-slot]) {
     display: none;
   }
 }
 @media (max-width: 767.98px) and (pointer: coarse) {
-  body:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="file"]), textarea, [contenteditable="true"]):focus) :is([data-tabbar], [data-action-bar-slot]) {
+  body:has(:is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="file"]), textarea, [contenteditable="true"]):focus) :is([data-tabbar], [data-action-bar-slot], [data-builder-bar]) {
     display: none;
   }
 }
