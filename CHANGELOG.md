@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-11-19 — US-OPS-58: read and act on a record on a phone
+
+- **The top of a record:** under 768px a record shows its number and status, then the amount that matters (an invoice's or bill's balance due while there is one, else its total; a payment's amount; a credit's amount left), then the contact. The breadcrumb gives way to the top bar's back arrow. This is a new `RecordHeader` in `@spine/ui`. The due line sits under the amount, so on an invoice or bill it leaves the meta line on a phone.
+- **One main action at the bottom:** the next step for the record's state (Send reminder, Issue invoice, Record payment, Record bill, Approve, Invoice a milestone) is a full-width button in a new `ActionBar`. It renders into an `ActionBarSlot` that the shell places between the page and the tab bar, so it never covers the page, and it steps aside with the tab bar for full-screen dialogs and the keyboard.
+- **Everything else under ⋯:** the record's More menu opens from the top bar as an action sheet headed by its number and a line about it (`usePhoneRecordMenu`; `DropdownMenuContent` gets `sheetDescription`). Buttons that sit beside More on a desktop (Edit, Preview PDF, Raise variation) are in it too, and focus returns to ⋯ when it closes.
+- **Figures, tabs and lines:** figures are two per row in a new `RecordFigures`. Tabs scroll the chosen one into view, including when the page opens on it (`?tab=crew`) and when counts arrive. A quote's or invoice's lines are cards ("4 × $650.00", "Tax 18%") with the totals under them. A job's milestones, and the invoices a payment paid or bills a vendor payment paid, are phone rows.
+- **Pages:** invoice, quote, credit note, job, contact, payment, vendor bill, expense, vendor credit and vendor payment. Recurring schedules have no record page (they're a list with a dialog), so there's nothing to change there. The contact page keeps its own header (logo and name under the shell's title); its Edit is the bar and the rest are under ⋯. With five figures a credit note's desktop strip is now one row of five.
+- **Tests and docs:** `us-ops-58.spec.ts`, `us-ops-58-phone.a11y.test.tsx`, `action-bar.a11y.test.tsx` and `record-header.a11y.test.tsx`. The US-OPS-61 invoice check now looks for Issue invoice in the bar and Edit and Preview PDF under ⋯. Docs: ActionBar and RecordHeader built (89 web components), DropdownMenu and Tabs updated, the design-system pages and the phone guide; QA section 289. `@spine/ui` now lists `react-dom` (the bar's portal), which the workspace already had.
+
 ### 2026-11-19 — US-OPS-57: a list's figures, filters and main action on the first screen of a phone
 
 - **Figures as chips:** under 768px a list's summary cards are compact chips (label and figure) in one row that scrolls sideways, so the first rows are on the first screen. A card that filters still does when tapped. This is a new `ChipStrip` in `@spine/ui`. When its cards are only figures (journals), the row is a focusable, named region so a keyboard can scroll it.

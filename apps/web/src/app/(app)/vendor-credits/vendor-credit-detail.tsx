@@ -18,6 +18,9 @@ import {
   Spinner,
   cn,
   useConfirm,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
 } from "@spine/ui";
 import { SUPPLY_CLASS_LABELS, SUPPLY_TYPE_LABELS, placeOfSupplyLabel } from "@spine/shared";
 import { ArrowRightLeft, Banknote, Building2, CalendarDays, ChevronDown, File, FileCheck, HardHat, Hash, MapPin, MoreHorizontal, Pencil } from "lucide-react";
@@ -28,6 +31,7 @@ import { MENU_ICONS } from "../../../lib/menu-icons";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { HistorySection } from "../../../components/history-section";
 import { calendarDate } from "../quotes/quotes-list-state";
@@ -73,6 +77,8 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
   const canRecord = useCapability("vendor_credits.record");
   const canApply = useCapability("vendor_credits.apply");
   const canVoidRight = useCapability("vendor_credits.void");
@@ -179,25 +185,30 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const primary = isDraft && canRecord ? { label: t("vendorCredits.detail.recordCredit"), icon: <FileCheck size={14} aria-hidden />, onClick: () => void record() } : left && canApply ? { label: t("vendorCredits.detail.applyToBills"), icon: <ArrowRightLeft size={14} aria-hidden />, onClick: () => setApplyOpen(true) } : null;
 
   const figure = (label: string, value: string, sub: string, testId: string, tone?: string) => (
-    <div className="flex flex-col gap-1 border-b border-border px-5 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0" data-testid={testId}>
+    <div className="flex min-w-0 flex-col gap-1 px-5 py-4" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className={cn("text-[19px] font-bold leading-tight tabular-nums", tone ?? "text-on-surface")}>{value}</span>
       <span className="text-[12px] text-on-surface-muted">{sub}</span>
     </div>
   );
   const liveRefunds = refunds.filter((r) => !r.deletedAt);
+  // US-OPS-58: the key amount at the top on a phone — what's left to use while there is some, else the total.
+  const headerAmount = { label: left ? t("vendorCredits.detail.leftToUse") : t("vendorCredits.detail.total"), value: money(left ? credit.balanceAmount : credit.totalAmount) };
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("vendorCredits.detail.breadcrumbPurchases") }, { label: t("vendorCredits.detail.breadcrumbVendorCredits"), href: "/vendor-credits" }, { label: title }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
+        <RecordHeader
+          title={title}
+          badges={
+            <>
               <CreditStateBadge credit={credit} testId="credit-state" />
               {credit.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorCredits.detail.openingBalance")}</Badge>}
-            </div>
+            </>
+          }
+          amount={headerAmount}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="credit-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
@@ -240,57 +251,81 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                 </span>
               )}
             </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="credit-actions">
-            {canEdit && (
-              <Button variant="secondary" asChild>
-                <Link href={`/vendor-credits/${credit.id}/edit`}>
-                  <Pencil size={14} aria-hidden />
-                  {t("vendorCredits.detail.edit")}
-                </Link>
-              </Button>
-            )}
-            {left && canApply && (
-              <Button variant="secondary" onClick={() => setRefundOpen(true)} disabled={busy}>
-                <Banknote size={14} aria-hidden />
-                {t("vendorCredits.detail.recordRefund")}
-              </Button>
-            )}
-            {primary && (
-              <Button onClick={primary.onClick} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : primary.icon}
-                {primary.label}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  {t("vendorCredits.detail.more")} <ChevronDown size={14} />
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="credit-actions">
+              {canEdit && (
+                <Button variant="secondary" asChild>
+                  <Link href={`/vendor-credits/${credit.id}/edit`}>
+                    <Pencil size={14} aria-hidden />
+                    {t("vendorCredits.detail.edit")}
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("vendorCredits.detail.viewHistory")}
-                </DropdownMenuItem>
-                {(canVoid || canDelete) && <DropdownMenuSeparator />}
-                {canVoid && (
-                  <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
-                    <MENU_ICONS.void aria-hidden />
-                    {t("vendorCredits.detail.voidCredit")}
+              )}
+              {left && canApply && (
+                <Button variant="secondary" onClick={() => setRefundOpen(true)} disabled={busy}>
+                  <Banknote size={14} aria-hidden />
+                  {t("vendorCredits.detail.recordRefund")}
+                </Button>
+              )}
+              {primary && (
+                <ActionBar>
+                  <Button onClick={primary.onClick} disabled={busy}>
+                    {busy ? <Spinner size="sm" /> : primary.icon}
+                    {primary.label}
+                  </Button>
+                </ActionBar>
+              )}
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary">
+                    {t("vendorCredits.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={title}
+                  sheetDescription={left ? t("vendorCredits.detail.sheetLeft", { vendor, amount: money(credit.balanceAmount) }) : (credit.contactName ?? undefined)}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && canEdit && (
+                    <DropdownMenuItem asChild>
+                      <Link href={`/vendor-credits/${credit.id}/edit`}>
+                        <MENU_ICONS.edit aria-hidden />
+                        {t("vendorCredits.detail.edit")}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {more.phone && left && canApply && (
+                    <DropdownMenuItem onSelect={() => setRefundOpen(true)} disabled={busy}>
+                      <MENU_ICONS.refund aria-hidden />
+                      {t("vendorCredits.detail.recordRefund")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("vendorCredits.detail.viewHistory")}
                   </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem destructive onSelect={() => void remove()}>
-                    <MENU_ICONS.delete aria-hidden />
-                    {t("vendorCredits.detail.deleteDraft")}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/vendor-credits/${credit.id}/history`} subjectLabel={t("vendorCredits.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                  {(canVoid || canDelete) && <DropdownMenuSeparator />}
+                  {canVoid && (
+                    <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
+                      <MENU_ICONS.void aria-hidden />
+                      {t("vendorCredits.detail.voidCredit")}
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem destructive onSelect={() => void remove()}>
+                      <MENU_ICONS.delete aria-hidden />
+                      {t("vendorCredits.detail.deleteDraft")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/vendor-credits/${credit.id}/history`} subjectLabel={t("vendorCredits.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        />
       </div>
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
@@ -303,14 +338,15 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
       )}
 
       {!isDraft && (
-        <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-4" data-testid="credit-figures">
+        // US-OPS-58: two per row on a phone.
+        <RecordFigures columns={4} data-testid="credit-figures">
           {/* eslint-disable i18next/no-literal-string -- test ids and tone classes, not copy */}
           {figure(t("vendorCredits.detail.total"), money(credit.totalAmount), t("vendorCredits.detail.totalSub", { lines: t("vendorCredits.detail.lines", { count: items.length }), tax: money(credit.taxAmount) }), "fig-total")}
           {figure(t("vendorCredits.detail.appliedToBills"), money(applied), allocations.length ? t("vendorCredits.detail.billCount", { count: allocations.length }) : t("vendorCredits.detail.notAppliedYet"), "fig-applied")}
           {figure(t("vendorCredits.detail.refunded"), money(refunded), liveRefunds.length ? t("vendorCredits.detail.refundCount", { count: liveRefunds.length }) : t("vendorCredits.detail.noRefunds"), "fig-refunded")}
           {figure(t("vendorCredits.detail.leftToUse"), isVoid ? "—" : money(credit.balanceAmount), isVoid ? t("vendorCredits.detail.void") : left ? t("vendorCredits.detail.applyOrRefund") : t("vendorCredits.detail.allUsed"), "fig-left", left ? "text-primary" : undefined)}
           {/* eslint-enable i18next/no-literal-string */}
-        </div>
+        </RecordFigures>
       )}
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">

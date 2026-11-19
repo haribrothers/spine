@@ -16,6 +16,8 @@ export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 export interface DropdownMenuContentProps extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> {
   /** US-OPS-60: on a phone, the menu is an action sheet headed by what it acts on ("INV-0044"). */
   sheetTitle?: string;
+  /** US-OPS-58: a line under the sheet's title ("Sahyadri Retail · $13,25,514.50 due"). */
+  sheetDescription?: string;
 }
 
 /**
@@ -24,7 +26,7 @@ export interface DropdownMenuContentProps extends React.ComponentPropsWithoutRef
  * destructive item in the danger colour (it still asks first, D-218), and a Cancel at the end.
  */
 export const DropdownMenuContent = forwardRef<React.ElementRef<typeof DropdownMenuPrimitive.Content>, DropdownMenuContentProps>(
-  ({ className, sideOffset = 4, sheetTitle, children, ...props }, ref) => {
+  ({ className, sideOffset = 4, sheetTitle, sheetDescription, children, ...props }, ref) => {
     const t = useT();
     const phone = usePhone();
     return (
@@ -40,7 +42,10 @@ export const DropdownMenuContent = forwardRef<React.ElementRef<typeof DropdownMe
           {...props}
         >
           {phone && sheetTitle ? (
-            <DropdownMenuPrimitive.Label className="border-b border-border px-4 py-3 text-center text-[13px] font-semibold text-on-surface">{sheetTitle}</DropdownMenuPrimitive.Label>
+            <DropdownMenuPrimitive.Label className="border-b border-border px-4 py-3 text-center text-[13px] font-semibold text-on-surface">
+              {sheetTitle}
+              {sheetDescription ? <span className="block text-[12.5px] font-normal text-on-surface-muted">{sheetDescription}</span> : null}
+            </DropdownMenuPrimitive.Label>
           ) : null}
           {children}
           {phone ? (

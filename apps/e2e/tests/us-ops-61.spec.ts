@@ -66,9 +66,14 @@ test.describe("US-OPS-61 · fix what's broken on a phone today", () => {
     await page.waitForLoadState("networkidle");
     await page.getByText("Draft", { exact: true }).first().click();
     await page.waitForURL(/\/invoices\/.+/);
-    const actions = page.getByTestId("invoice-actions");
-    for (const name of [/^Edit$/, /^Preview PDF$/, /^Issue invoice$/, /^More/]) {
-      const b = (await actions.getByRole("button", { name }).or(actions.getByRole("link", { name })).first().boundingBox())!;
+    // Since US-OPS-58: Issue invoice is the bar at the bottom; Edit and Preview PDF are under ⋯.
+    const issue = (await page.locator("[data-action-bar]").getByRole("button", { name: /^Issue invoice$/ }).boundingBox())!;
+    expect(issue.x).toBeGreaterThanOrEqual(0);
+    expect(issue.x + issue.width).toBeLessThanOrEqual(PHONE.width);
+    await page.getByTestId("app-top-bar").getByRole("button", { name: "More actions" }).click();
+    const menu = page.getByRole("menu");
+    for (const name of [/^Edit$/, /^Preview PDF$/]) {
+      const b = (await menu.getByRole("menuitem", { name }).boundingBox())!;
       expect({ name: name.source, left: b.x >= 0, right: b.x + b.width <= PHONE.width }).toEqual({ name: name.source, left: true, right: true });
     }
   });

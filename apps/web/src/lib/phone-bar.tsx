@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Ellipsis } from "lucide-react";
 import { BottomSheet } from "@spine/ui";
 import { useIsPhone } from "./use-is-phone";
@@ -82,6 +82,48 @@ export function PhoneMoreActions({ children }: { children: React.ReactNode }) {
     </BottomSheet>
   );
 }
+/**
+ * US-OPS-58 — a record's More menu. From 768px up it's the page's own More button and its menu.
+ * On a phone the top bar's ⋯ opens the same menu (an action sheet, US-OPS-60) and the page hides
+ * its More button. Spread `menu` on the `DropdownMenu` and `content` on its `DropdownMenuContent`;
+ * `phone` says when to add the actions that are buttons on the desktop (Edit, Download PDF).
+ */
+export function usePhoneRecordMenu() {
+  const t = useT();
+  const phone = useIsPhone();
+  const [open, setOpen] = useState(false);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  usePhoneBarAction(
+    phone ? (
+      <button
+        ref={moreRef}
+        type="button"
+        aria-label={t("common.phone.moreActions.open")}
+        aria-haspopup="menu"
+        onClick={() => setOpen(true)}
+        className="flex h-11 w-11 items-center justify-center rounded-full text-on-surface hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <Ellipsis size={22} aria-hidden />
+      </button>
+    ) : null,
+    [phone],
+    "more",
+  );
+  return {
+    phone,
+    menu: { open, onOpenChange: setOpen },
+    // The page's More button is hidden on a phone, so focus goes back to the ⋯ that opened it.
+    content: phone
+      ? {
+          onCloseAutoFocus: (event: Event) => {
+            event.preventDefault();
+            moreRef.current?.focus();
+          },
+        }
+      : {},
+  };
+}
+
 /**
  * US-OPS-56 — Select mode for a list with bulk actions: on a phone the top bar has Select
  * (then Done), and rows show their checkboxes only while selecting. Done clears the selection

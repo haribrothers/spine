@@ -31,7 +31,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuSub, 
 
 ## Phone (under 768px, [D-283](../../prd/12-decisions.md))
 
-- Built (US-OPS-60): `DropdownMenuContent` is marked `data-phone-sheet="action"`. The preset's CSS docks it 8px from the bottom edge over a dimmed page, rows are 52px with 20px icons, and a Cancel item ends it. `sheetTitle` puts what it acts on at the top.
+- Built (US-OPS-60): `DropdownMenuContent` is marked `data-phone-sheet="action"`. The preset's CSS docks it 8px from the bottom edge over a dimmed page, rows are 52px with 20px icons, and a Cancel item ends it. `sheetTitle` puts what it acts on at the top, and `sheetDescription` a line under it ("Sahyadri Retail · $13,255.50 due", US-OPS-58).
 - Under 768px a menu opens as an `ActionSheet` from the bottom, with each item's icon (D-222) and Cancel; destructive items use the danger colour and still ask first (US-OPS-60).
 
 ## Exports

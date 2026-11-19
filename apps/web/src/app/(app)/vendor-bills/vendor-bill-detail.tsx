@@ -19,6 +19,9 @@ import {
   Spinner,
   cn,
   useConfirm,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
 } from "@spine/ui";
 import { ArrowRightLeft, Banknote, Building2, CalendarDays, ChevronDown, Clock, FileCheck, HardHat, MapPin, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -26,6 +29,7 @@ import { HistorySection } from "../../../components/history-section";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 import { AttachmentsSection } from "../../../components/attachments-section";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { formatMoney, orgLocaleTag } from "../../../lib/money";
@@ -78,6 +82,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const canEditRight = useCanEditOwnership(bill?.createdByUserId ?? null, { own: "vendor_bills.edit_own", others: "vendor_bills.edit_others" });
   const canDeleteRight = useCanEditOwnership(bill?.createdByUserId ?? null, { own: "vendor_bills.delete_own", others: "vendor_bills.delete_others" });
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
 
   const load = useCallback(() => {
     apiClient
@@ -187,26 +193,39 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const primary: Action | null = isDraft && canRecord ? { key: "record", label: t("vendorBills.detail.recordBill"), icon: <FileCheck size={14} aria-hidden />, onClick: () => void handleRecord() } : owed && canPay ? { key: "pay", label: t("vendorBills.detail.payBill"), icon: <Banknote size={14} aria-hidden />, onClick: () => setPayOpen(true) } : null;
 
   const figure = (label: string, value: string, sub: string, testId: string, tone?: string) => (
-    <div className="flex flex-col gap-1 border-b border-border px-5 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0" data-testid={testId}>
+    <div className="flex min-w-0 flex-col gap-1 px-5 py-4" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className={cn("text-[19px] font-bold leading-tight tabular-nums", tone ?? "text-on-surface")}>{value}</span>
       <span className="text-[12px] text-on-surface-muted">{sub}</span>
     </div>
   );
 
+  // US-OPS-58: the key amount at the top on a phone — the balance due while it's owed, else the total.
+  const headerAmount = {
+    label: owed ? t("vendorBills.detail.balanceDue") : t("vendorBills.detail.total"),
+    value: money(owed ? bill.balanceDue : bill.totalAmount),
+    // The due line moves here from the meta line on a phone: "Due 14 Nov · 5 days late".
+    note: owed && bill.dueDate ? [t("vendorBills.detail.due", { date: calendarDate(bill.dueDate.slice(0, 10), today, locale) }), late].filter(Boolean).join(" · ") : undefined,
+    tone: state === "overdue" ? ("overdue" as const) : state === "paid" ? ("paid" as const) : ("default" as const),
+  };
+  const canApplyCredit = owed && canApply && openCredit > 0n;
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("vendorBills.detail.breadcrumbPurchases") }, { label: t("vendorBills.detail.breadcrumbVendorBills"), href: "/vendor-bills" }, { label: bill.billNumber }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{bill.billNumber}</h1>
+        <RecordHeader
+          title={bill.billNumber}
+          badges={
+            <>
               <Badge className={BILL_STATE_CLASS[state]} data-testid="bill-state">
                 {BILL_STATE_LABELS[state]}
               </Badge>
               {bill.isOpening && <Badge className="bg-draft-bg text-draft">{t("vendorBills.detail.openingBalance")}</Badge>}
-            </div>
+            </>
+          }
+          amount={headerAmount}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="bill-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
@@ -219,7 +238,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                 {t("vendorBills.detail.billDate", { date: calendarDate(bill.date.slice(0, 10), today, locale) })}
               </span>
               {bill.dueDate && (
-                <span className="inline-flex items-center gap-1.5">
+                <span className={cn("inline-flex items-center gap-1.5", owed && "max-md:hidden")}>
                   <Clock size={14} aria-hidden />
                   {t("vendorBills.detail.due", { date: calendarDate(bill.dueDate.slice(0, 10), today, locale) })}
                   {late && <span className={cn("font-medium", state === "overdue" ? "text-overdue" : "text-due-soon")}>· {late}</span>}
@@ -241,76 +260,100 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                 </span>
               )}
             </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="bill-actions">
-            {canEdit && (
-              <Button variant="secondary" asChild>
-                <Link href={`/vendor-bills/${bill.id}/edit`}>
-                  <Pencil size={14} aria-hidden />
-                  {t("vendorBills.detail.edit")}
-                </Link>
-              </Button>
-            )}
-            {owed && canApply && openCredit > 0n && (
-              <Button variant="secondary" onClick={() => setCreditOpen(true)} disabled={busy}>
-                <ArrowRightLeft size={14} aria-hidden />
-                {t("vendorBills.detail.applyCredit")}
-              </Button>
-            )}
-            {primary && (
-              <Button onClick={primary.onClick} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : primary.icon}
-                {primary.label}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  {t("vendorBills.detail.more")} <ChevronDown size={14} />
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="bill-actions">
+              {canEdit && (
+                <Button variant="secondary" asChild>
+                  <Link href={`/vendor-bills/${bill.id}/edit`}>
+                    <Pencil size={14} aria-hidden />
+                    {t("vendorBills.detail.edit")}
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("vendorBills.detail.viewHistory")}
-                </DropdownMenuItem>
-                {canManageRecurring && !bill.isOpening && (
-                  <DropdownMenuItem onSelect={() => setRecurringOpen(true)}>
-                    <MENU_ICONS.makeRecurring aria-hidden />
-                    {t("vendorBills.detail.makeRecurring")}
+              )}
+              {canApplyCredit && (
+                <Button variant="secondary" onClick={() => setCreditOpen(true)} disabled={busy}>
+                  <ArrowRightLeft size={14} aria-hidden />
+                  {t("vendorBills.detail.applyCredit")}
+                </Button>
+              )}
+              {primary && (
+                <ActionBar>
+                  <Button onClick={primary.onClick} disabled={busy}>
+                    {busy ? <Spinner size="sm" /> : primary.icon}
+                    {primary.label}
+                  </Button>
+                </ActionBar>
+              )}
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary">
+                    {t("vendorBills.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={bill.billNumber}
+                  sheetDescription={owed ? t("vendorBills.detail.sheetDue", { vendor: bill.contactName ?? t("vendorBills.deleteConfirm.theVendor"), amount: money(bill.balanceDue) }) : (bill.contactName ?? undefined)}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && canEdit && (
+                    <DropdownMenuItem asChild>
+                      <Link href={`/vendor-bills/${bill.id}/edit`}>
+                        <MENU_ICONS.edit aria-hidden />
+                        {t("vendorBills.detail.edit")}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {more.phone && canApplyCredit && (
+                    <DropdownMenuItem onSelect={() => setCreditOpen(true)} disabled={busy}>
+                      <MENU_ICONS.applyCredit aria-hidden />
+                      {t("vendorBills.detail.applyCredit")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("vendorBills.detail.viewHistory")}
                   </DropdownMenuItem>
-                )}
-                {canCreate && !bill.isOpening && (
-                  <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/new?from=${bill.id}`)}>
-                    <MENU_ICONS.duplicate aria-hidden />
-                    {t("vendorBills.detail.duplicate")}
-                  </DropdownMenuItem>
-                )}
-                {/* US-PUR-40: a credit from this bill, its lines copied to edit down. */}
-                {canCredit && bill.status === "recorded" && !bill.isOpening && (
-                  <DropdownMenuItem onSelect={() => router.push(`/vendor-credits/new?billId=${bill.id}`)}>
-                    <MENU_ICONS.issueCreditNote aria-hidden />
-                    {t("vendorBills.detail.recordVendorCredit")}
-                  </DropdownMenuItem>
-                )}
-                {(canVoid || canDelete) && <DropdownMenuSeparator />}
-                {canVoid && (
-                  <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
-                    <MENU_ICONS.void aria-hidden />
-                    {t("vendorBills.detail.voidBill")}
-                  </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem destructive onSelect={() => void handleDelete()}>
-                    <MENU_ICONS.delete aria-hidden />
-                    {t("vendorBills.detail.deleteDraft")}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/vendor-bills/${bill.id}/history`} subjectLabel={t("vendorBills.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                  {canManageRecurring && !bill.isOpening && (
+                    <DropdownMenuItem onSelect={() => setRecurringOpen(true)}>
+                      <MENU_ICONS.makeRecurring aria-hidden />
+                      {t("vendorBills.detail.makeRecurring")}
+                    </DropdownMenuItem>
+                  )}
+                  {canCreate && !bill.isOpening && (
+                    <DropdownMenuItem onSelect={() => router.push(`/vendor-bills/new?from=${bill.id}`)}>
+                      <MENU_ICONS.duplicate aria-hidden />
+                      {t("vendorBills.detail.duplicate")}
+                    </DropdownMenuItem>
+                  )}
+                  {/* US-PUR-40: a credit from this bill, its lines copied to edit down. */}
+                  {canCredit && bill.status === "recorded" && !bill.isOpening && (
+                    <DropdownMenuItem onSelect={() => router.push(`/vendor-credits/new?billId=${bill.id}`)}>
+                      <MENU_ICONS.issueCreditNote aria-hidden />
+                      {t("vendorBills.detail.recordVendorCredit")}
+                    </DropdownMenuItem>
+                  )}
+                  {(canVoid || canDelete) && <DropdownMenuSeparator />}
+                  {canVoid && (
+                    <DropdownMenuItem destructive onSelect={() => setVoidOpen(true)}>
+                      <MENU_ICONS.void aria-hidden />
+                      {t("vendorBills.detail.voidBill")}
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem destructive onSelect={() => void handleDelete()}>
+                      <MENU_ICONS.delete aria-hidden />
+                      {t("vendorBills.detail.deleteDraft")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/vendor-bills/${bill.id}/history`} subjectLabel={t("vendorBills.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        />
       </div>
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
@@ -325,7 +368,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-4" data-testid="bill-figures">
+      {/* US-OPS-58: two per row on a phone. */}
+      <RecordFigures columns={4} data-testid="bill-figures">
         {/* eslint-disable i18next/no-literal-string -- test ids and tone classes, not copy */}
         {figure(t("vendorBills.detail.total"), money(bill.totalAmount), t("vendorBills.detail.totalSub", { lines: t("vendorBills.detail.lines", { count: items.length }), tax: money(bill.taxAmount) }), "fig-total")}
         {figure(t("vendorBills.detail.paid"), money(paid), paid > 0n ? t("vendorBills.detail.byPayment") : t("vendorBills.detail.nothingPaid"), "fig-paid")}
@@ -337,7 +381,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         )}
         {figure(t("vendorBills.detail.balanceDue"), bill.status === "void" ? "—" : money(bill.balanceDue), bill.status === "void" ? t("vendorBills.detail.void") : late ?? (BigInt(bill.balanceDue) > 0n ? t("vendorBills.detail.owed") : t("vendorBills.detail.paidInFull")), "fig-balance", state === "overdue" ? "text-overdue" : owed ? "text-due-soon" : undefined)}
         {/* eslint-enable i18next/no-literal-string */}
-      </div>
+      </RecordFigures>
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">

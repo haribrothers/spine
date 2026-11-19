@@ -25,6 +25,8 @@ import {
   RichTextContent,
   Spinner,
   useConfirm,
+  ActionBar,
+  RecordHeader,
 } from "@spine/ui";
 import { CalendarDays, ChevronDown, Clock, Download, GitBranch, HardHat, Link2, MapPin, Pencil, Receipt, Send, User } from "lucide-react";
 import Link from "next/link";
@@ -51,6 +53,7 @@ import { AttachmentsSection } from "../../../components/attachments-section";
 import { SectionLink } from "../../../components/section-link";
 import { useLoadFailure } from "../../../lib/use-load-failure";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
  * `quote_conversion_guard` setting is "warn" and this quote already has a
@@ -118,6 +121,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     body: ConversionGuardBody;
   } | null>(null);
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
   const hasEditCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.edit_own", others: "quotes.edit_others" });
   const hasDeleteCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.delete_own", others: "quotes.delete_others" });
   const hasSendCapability = useCapability("quotes.send");
@@ -478,24 +483,60 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       </Button>
     );
 
+  // US-OPS-58: on a phone the buttons beside More (Edit, Download PDF, Revise) are items in its menu.
+  const PHONE_MENU_ICONS: Record<string, typeof MENU_ICONS.edit> = { edit: MENU_ICONS.edit, pdf: MENU_ICONS.download, revise: MENU_ICONS.revise, job: MENU_ICONS.convertToJob };
+  const phoneMenuItem = (a: Action) => {
+    const Icon = PHONE_MENU_ICONS[a.key] ?? MENU_ICONS.open;
+    return a.href ? (
+      <DropdownMenuItem key={a.key} asChild>
+        {a.external ? (
+          <a href={a.href} target="_blank" rel="noreferrer">
+            <Icon aria-hidden />
+            {a.label}
+          </a>
+        ) : (
+          <Link href={a.href}>
+            <Icon aria-hidden />
+            {a.label}
+          </Link>
+        )}
+      </DropdownMenuItem>
+    ) : (
+      <DropdownMenuItem key={a.key} onSelect={a.onClick}>
+        <Icon aria-hidden />
+        {a.label}
+      </DropdownMenuItem>
+    );
+  };
+
+  // US-OPS-58: the key amount at the top on a phone — the quote's total.
+  const headerAmount = { label: t("quotes.detail.total"), value: formatMoney(BigInt(quote.totalAmount), quote.currency) };
+
   return (
     <div className="flex flex-col gap-5">
       {/* US-QUO-31: the number is the page title; the breadcrumb leads back to Quotes. */}
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("quotes.breadcrumb.sales") }, { label: t("quotes.breadcrumb.quotes"), href: "/quotes" }, { label: quote.number ?? t("quotes.detail.draftQuote") }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{quote.number ?? t("quotes.detail.draftQuote")}</h1>
+        <RecordHeader
+          title={quote.number ?? t("quotes.detail.draftQuote")}
+          badges={
+            <>
               <Badge className={STATUS_BADGE_CLASS[quote.status]}>{QUOTE_STATUS_LABELS[quote.status]}</Badge>
               {quote.isExpired && <Badge className="bg-overdue-bg text-overdue">{t("quotes.status.expired")}</Badge>}
               <ViewedChip quote={quote} now={today} />
-            </div>
-            {quote.title && (
-              <p className="text-[15px] font-medium text-on-surface" data-testid="quote-title">
-                {quote.title}
-              </p>
-            )}
+            </>
+          }
+          subtitle={
+            <>
+              {quote.title && (
+                <p className="text-[15px] font-medium text-on-surface" data-testid="quote-title">
+                  {quote.title}
+                </p>
+              )}
+            </>
+          }
+          amount={headerAmount}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="quote-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
@@ -531,76 +572,82 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               )}
               <span>{t("quotes.detail.version", { version: quote.version })}</span>
             </p>
-          </div>
-
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="quote-actions">
-            {/* eslint-disable-next-line i18next/no-literal-string -- button variants */}
-            {secondary.map((a) => renderAction(a, "secondary"))}
-            {/* eslint-disable-next-line i18next/no-literal-string -- button variants */}
-            {primary && renderAction(primary, "primary")}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" disabled={busy}>
-                  {t("quotes.detail.more")} <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canDuplicate && (
-                  <DropdownMenuItem onSelect={handleDuplicate}>
-                    <MENU_ICONS.duplicate aria-hidden />
-                    {t("quotes.detail.duplicateAsDraft")}
-                  </DropdownMenuItem>
-                )}
-                {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
-                  <DropdownMenuItem onSelect={() => setBundleOpen(true)}>
-                    <MENU_ICONS.saveBundle aria-hidden />
-                    {t("quotes.detail.saveAsBundle")}
-                  </DropdownMenuItem>
-                )}
-                {quote.status === "sent" && hasSendCapability && (
-                  <DropdownMenuItem onSelect={() => setSendDialog("resend")}>
-                    <MENU_ICONS.email aria-hidden />
-                    {t("quotes.detail.emailAgain")}
-                  </DropdownMenuItem>
-                )}
-                {canCopyLink && primary?.key !== "link" && (
-                  <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast, (title, m) => setError(`${title} ${m}`))}>
-                    <MENU_ICONS.copyLink aria-hidden />
-                    {t("quotes.detail.copyLink")}
-                  </DropdownMenuItem>
-                )}
-                {canRevise && primary?.key !== "revise" && !secondary.some((a) => a.key === "revise") && (
-                  <DropdownMenuItem onSelect={() => void handleRevise()}>
-                    <MENU_ICONS.revise aria-hidden />
-                    {t("quotes.detail.revise")}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("quotes.detail.viewHistory")}
-                </DropdownMenuItem>
-                {canDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
-                      <MENU_ICONS.delete aria-hidden />
-                      {t("quotes.detail.deleteDraft")}
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="quote-actions">
+              {secondary.map((a) => renderAction(a, "secondary"))}
+              {primary && <ActionBar>{renderAction(primary, "primary")}</ActionBar>}
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" disabled={busy}>
+                    {t("quotes.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={quote.number ?? t("quotes.detail.draftQuote")}
+                  sheetDescription={quote.contactName ? t("quotes.detail.sheetTotal", { contact: quote.contactName, amount: headerAmount.value }) : headerAmount.value}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && secondary.map((a) => phoneMenuItem(a))}
+                  {canDuplicate && (
+                    <DropdownMenuItem onSelect={handleDuplicate}>
+                      <MENU_ICONS.duplicate aria-hidden />
+                      {t("quotes.detail.duplicateAsDraft")}
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel={t("quotes.detail.thisQuote")} open={historyOpen} onOpenChange={setHistoryOpen} />
-            <SaveBundleDialog
-              open={bundleOpen}
-              onOpenChange={setBundleOpen}
-              quoteId={quote.id}
-              lines={quote.lines ?? []}
-              currency={quote.currency}
-              onSaved={(bundle) => showToast(t("quotes.detail.bundleSavedTitle"), t("quotes.detail.bundleSavedDescription", { name: bundle.name }))}
-            />
-          </div>
-        </div>
+                  )}
+                  {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
+                    <DropdownMenuItem onSelect={() => setBundleOpen(true)}>
+                      <MENU_ICONS.saveBundle aria-hidden />
+                      {t("quotes.detail.saveAsBundle")}
+                    </DropdownMenuItem>
+                  )}
+                  {quote.status === "sent" && hasSendCapability && (
+                    <DropdownMenuItem onSelect={() => setSendDialog("resend")}>
+                      <MENU_ICONS.email aria-hidden />
+                      {t("quotes.detail.emailAgain")}
+                    </DropdownMenuItem>
+                  )}
+                  {canCopyLink && primary?.key !== "link" && (
+                    <DropdownMenuItem onSelect={() => void copyCustomerLink(quote.id, showToast, (title, m) => setError(`${title} ${m}`))}>
+                      <MENU_ICONS.copyLink aria-hidden />
+                      {t("quotes.detail.copyLink")}
+                    </DropdownMenuItem>
+                  )}
+                  {canRevise && primary?.key !== "revise" && !secondary.some((a) => a.key === "revise") && (
+                    <DropdownMenuItem onSelect={() => void handleRevise()}>
+                      <MENU_ICONS.revise aria-hidden />
+                      {t("quotes.detail.revise")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("quotes.detail.viewHistory")}
+                  </DropdownMenuItem>
+                  {canDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem destructive onSelect={() => setDeleteOpen(true)}>
+                        <MENU_ICONS.delete aria-hidden />
+                        {t("quotes.detail.deleteDraft")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel={t("quotes.detail.thisQuote")} open={historyOpen} onOpenChange={setHistoryOpen} />
+              <SaveBundleDialog
+                open={bundleOpen}
+                onOpenChange={setBundleOpen}
+                quoteId={quote.id}
+                lines={quote.lines ?? []}
+                currency={quote.currency}
+                onSaved={(bundle) => showToast(t("quotes.detail.bundleSavedTitle"), t("quotes.detail.bundleSavedDescription", { name: bundle.name }))}
+              />
+            </div>
+          }
+        />
       </div>
 
       {error && (

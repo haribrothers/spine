@@ -1,7 +1,7 @@
 "use client";
 
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { cn } from "../lib/cn";
 
 export const Tabs = TabsPrimitive.Root;
@@ -9,19 +9,44 @@ export const Tabs = TabsPrimitive.Root;
 export const TabsList = forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    // US-OPS-61: under 768px the row scrolls sideways rather than wrapping, so no label or count
-    // lands on another. The underline becomes an inset shadow there, because a scrolling box
-    // would clip the triggers' -1px overlap with a real border.
-    className={cn(
-      "flex items-center gap-4 border-b border-border max-md:overflow-x-auto max-md:overflow-y-hidden max-md:border-b-0 max-md:shadow-[inset_0_-1px_0_var(--color-border)] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const listRef = useRef<React.ElementRef<typeof TabsPrimitive.List>>(null);
+  useImperativeHandle(ref, () => listRef.current!, []);
+  // US-OPS-58: when the row scrolls sideways, the chosen tab is scrolled into view — when the
+  // page opens on it (?tab=costing), when it changes and when the tabs' counts arrive. Only the
+  // row scrolls, never the page.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const reveal = () => {
+      if (list.scrollWidth <= list.clientWidth) return;
+      const active = list.querySelector<HTMLElement>('[data-state="active"]');
+      if (!active) return;
+      const box = list.getBoundingClientRect();
+      const tab = active.getBoundingClientRect();
+      if (tab.left < box.left) list.scrollLeft -= box.left - tab.left + 16;
+      else if (tab.right > box.right) list.scrollLeft += tab.right - box.right + 16;
+    };
+    reveal();
+    const observer = new MutationObserver(reveal);
+    // Counts that arrive later widen the tabs, so their changes are watched too.
+    observer.observe(list, { subtree: true, attributes: true, attributeFilter: ["data-state"], childList: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <TabsPrimitive.List
+      ref={listRef}
+      // US-OPS-61: under 768px the row scrolls sideways rather than wrapping, so no label or count
+      // lands on another. The underline becomes an inset shadow there, because a scrolling box
+      // would clip the triggers' -1px overlap with a real border.
+      className={cn(
+        "flex items-center gap-4 border-b border-border max-md:overflow-x-auto max-md:overflow-y-hidden max-md:border-b-0 max-md:shadow-[inset_0_-1px_0_var(--color-border)] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 TabsList.displayName = "TabsList";
 
 export const TabsTrigger = forwardRef<

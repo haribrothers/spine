@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { FileText, HardHat, House, Menu, Search, Wallet } from "lucide-react";
-import { AppShell, AppShellAreaNav, AppShellContent, AppShellPhoneBar, AppShellSidebar, BottomTabBar, SpineLogo, type BottomTabBarItem } from "@spine/ui";
+import { ActionBarSlot, AppShell, AppShellAreaNav, AppShellContent, AppShellPhoneBar, AppShellSidebar, BottomTabBar, SpineLogo, type BottomTabBarItem } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { MoreSheet } from "./more-sheet";
@@ -301,6 +301,8 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
           <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />
         ) : null}
       </AppShellContent>
+      {/* US-OPS-58: a record's main action, in a bar above the tab bar. */}
+      {isPhone ? <ActionBarSlot /> : null}
       {isPhone && !isBuilder(path) ? (
         <BottomTabBar
           items={tabs}

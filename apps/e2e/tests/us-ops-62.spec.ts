@@ -12,8 +12,8 @@ import { PANES, appRoutes, settle } from "./routes";
  *
  * A check that waits for the story that builds what it looks for is listed in WAITING_FOR, by
  * story, and skipped; the wave that ships the story deletes its line. "main action on the first
- * screen" checks every page that marks its main action (`data-main-action`: the lists' floating
- * button since US-OPS-57, a record's action bar with US-OPS-58).
+ * screen" checks every page that marks its main action: a list's floating button
+ * (`data-main-action`, US-OPS-57) or a record's action bar (`data-action-bar`, US-OPS-58).
  */
 const WAITING_FOR: Partial<Record<Check, string>> = {};
 
@@ -84,7 +84,7 @@ async function checkPage(page: Page, route: string, failures: Failure[], { appSh
   if (appShell && !builder && on("tab bar") && !(await page.getByRole("navigation", { name: "Main" }).isVisible())) fail("tab bar", "not shown");
 
   if (on("main action on the first screen")) {
-    const main = page.locator("[data-main-action]").first();
+    const main = page.locator("[data-main-action], [data-action-bar]").first();
     if ((await main.count()) > 0) {
       const b = await main.boundingBox();
       if (!b || b.y < 0 || b.y + b.height > PHONE.height) fail("main action on the first screen", b ? `at y=${Math.round(b.y)}` : "hidden");

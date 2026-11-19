@@ -25,7 +25,11 @@ import {
   FormField,
   Spinner,
   Textarea,
-  useConfirm, ScrollX } from "@spine/ui";
+  useConfirm, ScrollX, ListRow,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
+} from "@spine/ui";
 import type { EmailOverride, PaymentAppliedTo } from "@spine/shared";
 import { ArrowRightLeft, Banknote, CalendarDays, ChevronDown, Download, Hash, Landmark, Mail, MoreHorizontal, Undo2, User } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -46,6 +50,7 @@ import { ActionError } from "../../../components/action-error";
 import { SectionLink } from "../../../components/section-link";
 import { useLoadFailure } from "../../../lib/use-load-failure";
 import { t, useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type PaymentState = "applied" | "credit" | "refunded";
@@ -84,6 +89,8 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   const [unapplying, setUnapplying] = useState<PaymentAppliedTo | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const showToast = useToast();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const canApply = useCapability("payments.apply_credit");
   const canRefund = useCapability("payments.refund");
@@ -163,6 +170,28 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   const method = PAYMENT_METHOD_LABELS[payment.method];
   const date = calendarDate(payment.date.slice(0, 10), today, locale);
   const appliedTo = payment.appliedTo ?? [];
+  // A row's menu: open the invoice, move this payment off it. Shared by the table and, on a phone, its rows (US-OPS-58).
+  const rowMenu = (a: (typeof appliedTo)[number]) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" aria-label={t("payments.detail.actionsFor", { number: a.invoiceNumber ?? t("payments.detail.thisInvoice") })} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+              <MoreHorizontal size={16} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => router.push(`/invoices/${a.invoiceId}`)}>
+              <MENU_ICONS.open aria-hidden />
+              {t("payments.detail.openInvoice", { number: a.invoiceNumber ?? t("payments.detail.invoiceLower") })}
+            </DropdownMenuItem>
+            {canMoveOff(a) && (
+              <DropdownMenuItem onSelect={() => setUnapplying(a)}>
+                <MENU_ICONS.moveOff aria-hidden />
+                {t("payments.detail.moveOff", { number: a.invoiceNumber ?? t("payments.detail.thisInvoice") })}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+  );
 
   type Action = { key: string; label: string; icon: React.ReactNode; onClick?: () => void; href?: string };
   const pdf: Action = { key: "pdf", label: t("payments.detail.downloadPdf"), icon: <Download size={14} aria-hidden />, href: `${API_URL}/payments/${payment.id}/pdf` };
@@ -190,8 +219,29 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
   const secondaryButtons = secondary.map((a) => render(a, "secondary"));
   const primaryButton = render(primary, "primary");
 
+  // US-OPS-58: on a phone the buttons beside More (Download PDF, Refund) are items in its menu.
+  const PHONE_MENU_ICONS: Record<string, typeof MENU_ICONS.edit> = { pdf: MENU_ICONS.download, refund: MENU_ICONS.refund, apply: MENU_ICONS.applyCredit, email: MENU_ICONS.email };
+  const phoneMenuItem = (a: Action) => {
+    const Icon = PHONE_MENU_ICONS[a.key] ?? MENU_ICONS.open;
+    return a.href ? (
+      <DropdownMenuItem key={a.key} asChild>
+        <a href={a.href} target="_blank" rel="noreferrer">
+          <Icon aria-hidden />
+          {a.label}
+        </a>
+      </DropdownMenuItem>
+    ) : (
+      <DropdownMenuItem key={a.key} onSelect={a.onClick}>
+        <Icon aria-hidden />
+        {a.label}
+      </DropdownMenuItem>
+    );
+  };
+  // US-OPS-58: the key amount at the top on a phone — what was received.
+  const headerAmount = { label: t("payments.detail.figReceived"), value: money(payment.amount) };
+
   const figure = (label: string, value: string, sub: React.ReactNode, testId: string, tone?: string) => (
-    <div key={testId} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-b-0 sm:[&:not(:last-child)]:border-r" data-testid={testId}>
+    <div key={testId} className="flex min-w-0 flex-col gap-1 p-4" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className={cn("text-[19px] font-bold leading-tight tabular-nums", tone ?? "text-on-surface")}>{value}</span>
       <span className="text-[12px] text-on-surface-muted">{sub}</span>
@@ -215,14 +265,15 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("payments.detail.breadcrumbBilling") }, { label: t("payments.detail.breadcrumbPayments"), href: "/payments" }, { label: title }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
-              <Badge className={STATE_BADGE[state]} data-testid="payment-state">
-                {PAYMENT_STATE_LABELS[state]}
-              </Badge>
-            </div>
+        <RecordHeader
+          title={title}
+          badges={
+            <Badge className={STATE_BADGE[state]} data-testid="payment-state">
+              {PAYMENT_STATE_LABELS[state]}
+            </Badge>
+          }
+          amount={headerAmount}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="payment-meta">
               <span className="inline-flex items-center gap-1.5">
                 <User size={14} aria-hidden />
@@ -247,47 +298,55 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                 </span>
               )}
             </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="payment-actions">
-            {secondaryButtons}
-            {primaryButton}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  {t("payments.detail.more")} <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canSend && primary.key !== "email" && (
-                  <DropdownMenuItem onSelect={() => setEmailOpen(true)}>
-                    <MENU_ICONS.email aria-hidden />
-                    {t("payments.detail.emailReceipt")}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("payments.detail.viewHistory")}
-                </DropdownMenuItem>
-                {canDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem destructive onSelect={() => void deletePayment()}>
-                      <MENU_ICONS.delete aria-hidden />
-                      {t("payments.detail.deletePayment")}
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="payment-actions">
+              {secondaryButtons}
+              <ActionBar>{primaryButton}</ActionBar>
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary">
+                    {t("payments.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={title}
+                  sheetDescription={payment.contactName ? t("payments.detail.sheetReceived", { contact: payment.contactName, amount: money(payment.amount) }) : money(payment.amount)}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the buttons beside More are in the menu too. */}
+                  {more.phone && secondary.map((a) => phoneMenuItem(a))}
+                  {canSend && primary.key !== "email" && (
+                    <DropdownMenuItem onSelect={() => setEmailOpen(true)}>
+                      <MENU_ICONS.email aria-hidden />
+                      {t("payments.detail.emailReceipt")}
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel={t("payments.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("payments.detail.viewHistory")}
+                  </DropdownMenuItem>
+                  {canDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem destructive onSelect={() => void deletePayment()}>
+                        <MENU_ICONS.delete aria-hidden />
+                        {t("payments.detail.deletePayment")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel={t("payments.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        />
       </div>
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
-      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3")} data-testid="payment-figures">
-        {figures}
-      </div>
+      {/* US-OPS-58: two per row on a phone. */}
+      <RecordFigures data-testid="payment-figures">{figures}</RecordFigures>
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
@@ -296,6 +355,27 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
             {appliedTo.length === 0 ? (
               <p className="px-4 pb-4 text-[13px] text-on-surface-muted">{t("payments.detail.notAppliedAny", { name: payment.contactName ?? t("payments.detail.theCustomer") })}</p>
             ) : (
+              more.phone ? (
+                // US-OPS-58: on a phone each invoice it paid is a row.
+                <ul className="border-t border-border" data-testid="applied-to-rows">
+                  {appliedTo.map((a) => (
+                    <ListRow
+                      key={a.allocationId}
+                      data-testid="applied-to-row"
+                      title={
+                        <SectionLink href={`/invoices/${a.invoiceId}`} className="text-on-surface">
+                          {a.invoiceNumber ?? t("payments.detail.invoice")}
+                        </SectionLink>
+                      }
+                      badge={a.invoiceType === "advance" ? <span className="text-[12px] text-on-surface-muted">{t("payments.detail.deposit")}</span> : undefined}
+                      subtitle={t("payments.detail.rowDetail", { total: money(a.invoiceTotal), date: calendarDate(a.at.slice(0, 10), today, locale) })}
+                      trailing={money(a.amount)}
+                      trailingSub={BigInt(a.invoiceBalance) > 0n ? t("payments.detail.rowStillOwes", { amount: money(a.invoiceBalance) }) : <span className="font-medium text-paid">{t("payments.detail.paid")}</span>}
+                      action={rowMenu(a)}
+                    />
+                  ))}
+                </ul>
+              ) : (
               <ScrollX label={t("ui.scrollX.label")}>
                 <table className="w-full text-[13.5px]">
                   <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
@@ -324,31 +404,14 @@ export function PaymentDetail({ paymentId }: { paymentId: string }) {
                         <td className="px-4 py-2.5 text-right tabular-nums">{BigInt(a.invoiceBalance) > 0n ? money(a.invoiceBalance) : <span className="font-medium text-paid">{t("payments.detail.paid")}</span>}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-right">{calendarDate(a.at.slice(0, 10), today, locale)}</td>
                         <td className="px-2 py-2.5 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button type="button" aria-label={t("payments.detail.actionsFor", { number: a.invoiceNumber ?? t("payments.detail.thisInvoice") })} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
-                                <MoreHorizontal size={16} />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => router.push(`/invoices/${a.invoiceId}`)}>
-                                <MENU_ICONS.open aria-hidden />
-                                {t("payments.detail.openInvoice", { number: a.invoiceNumber ?? t("payments.detail.invoiceLower") })}
-                              </DropdownMenuItem>
-                              {canMoveOff(a) && (
-                                <DropdownMenuItem onSelect={() => setUnapplying(a)}>
-                                  <MENU_ICONS.moveOff aria-hidden />
-                                  {t("payments.detail.moveOff", { number: a.invoiceNumber ?? t("payments.detail.thisInvoice") })}
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {rowMenu(a)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </ScrollX>
+              )
             )}
           </Card>
           {payment.notes && (

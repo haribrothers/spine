@@ -5831,3 +5831,17 @@ Automated: `us-ops-57.spec.ts`, `chip-strip.a11y.test.tsx`, `filter-sheet.a11y.t
 4. The main action (New invoice, New quote, Record payment, Add contact…) is a round button above the tabs with its label; scroll the list and it shrinks to +, then comes back. With a screen reader it's still read by its name. Scroll to the end: the last row is above it, not under it.
 5. ⋯ at the top opens the page's other actions (Recurring invoices, Refresh list, Import, Export), each the full width; choosing one closes the sheet. On Receivables, tap Export there: its menu (CSV, Excel, PDF, Print) opens.
 6. Regression, from 768px up: the cards are the grid they were, the filters sit in their row with Clear filters, and New invoice and the other buttons are on the right.
+
+## 289. Read and act on a record on my phone (US-OPS-58, Phase 12)
+
+Automated: `us-ops-58.spec.ts`, `us-ops-58-phone.a11y.test.tsx`, `action-bar.a11y.test.tsx`, `record-header.a11y.test.tsx`; the US-OPS-61 invoice actions check. At 390×844 with touch, open an overdue invoice, then a draft invoice, a quote, a job, a contact, a payment, a credit note, a vendor bill, a vendor credit, a vendor payment and an expense:
+
+1. The top shows the number (or name) and its status, then the key amount (an overdue invoice: "Balance due", the amount in red and "Due … · Overdue N days"), then the contact and the other details. There's no breadcrumb; the back arrow at the top returns to the list.
+2. The next step for its state (Send reminder, Issue invoice on a draft, Record payment, Invoice a milestone on a job) is one full-width button at the bottom, above the tabs. Scroll to the end: it doesn't cover the last section. With the keyboard open in a field, the bar and the tabs step aside.
+3. ⋯ at the top opens the record's other actions as an action sheet headed by its number (and on an invoice "contact · amount due"), with each action's icon and Cancel. A draft invoice's Edit and Preview PDF are there. Void or Delete still asks first. Escape or Cancel closes it and puts focus back on ⋯.
+4. Figures (an invoice's Total, Paid, Balance due; a job's Contract, Billed, Cost, Margin, Complete) are two per row; a last one on its own spans the row.
+5. A job's tabs are one row that scrolls sideways with each count beside its label. Open a job with `?tab=crew`: the Crew tab is in view and chosen.
+6. A quote's or invoice's lines are cards: item and amount, description, "4 × $650.00" (and "10% off"), "Tax 18%"; headings sit between them as small titles; Subtotal, tax, Total (and Paid, Balance due) are under them.
+7. A job's milestones are rows: name and its share on the left, the amount and status on the right, ⋯ with Mark complete, Raise invoice or View invoice, and View history.
+8. Payments, activity and attachments inside a record are rows that fit the screen; nothing scrolls sideways.
+9. Regression, from 768px up: each record's header, its buttons and More menu, the breadcrumb, the figures in one row, the lines table and the milestone list are as they were.

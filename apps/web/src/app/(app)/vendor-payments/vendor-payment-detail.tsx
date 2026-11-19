@@ -20,7 +20,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Spinner,
-  useConfirm, ScrollX } from "@spine/ui";
+  useConfirm, ScrollX, ListRow,
+  ActionBar,
+  RecordFigures,
+  RecordHeader,
+} from "@spine/ui";
 import { ArrowRightLeft, Building2, CalendarDays, ChevronDown, Download, Hash, Landmark, Mail } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
@@ -32,6 +36,7 @@ import { AttachmentsSection } from "../../../components/attachments-section";
 import { ActionError } from "../../../components/action-error";
 import { useToast } from "../../../components/toast-host";
 import { useT } from "../../../lib/i18n";
+import { usePhoneRecordMenu } from "../../../lib/phone-bar";
 import { calendarDate } from "../quotes/quotes-list-state";
 import { RemittanceEmailDialog } from "./remittance-email-dialog";
 import { VendorPaymentActivity } from "./vendor-payment-activity";
@@ -57,6 +62,8 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
   const router = useRouter();
   const showToast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
+  // US-OPS-58: on a phone the top bar's ⋯ opens the More menu.
+  const more = usePhoneRecordMenu();
   const [payment, setPayment] = useState<VendorPaymentDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<{ title: string; message: string } | null>(null);
@@ -180,15 +187,23 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
   const emailWhyNot = !mail ? null : !mail.ready ? t("vendorPayments.detail.setUpEmail") : !mail.to ? t("vendorPayments.detail.addEmail", { vendor }) : null;
   const full = payment.paidTo.filter((b) => BigInt(b.billBalance) === 0n);
   const part = payment.paidTo.filter((b) => BigInt(b.billBalance) > 0n);
+  const downloadButton = (
+    <Button variant={emailIsNext ? "secondary" : "primary"} onClick={() => void download()} disabled={downloading}>
+      {downloading ? <Spinner size="sm" /> : <Download size={14} aria-hidden />}
+      {t("vendorPayments.detail.downloadRemittance")}
+    </Button>
+  );
   const billsSub = [full.length ? t("vendorPayments.detail.inFull", { bills: full.map((b) => b.billNumber).join(", ") }) : null, part.length ? t("vendorPayments.detail.partOf", { bills: part.map((b) => b.billNumber).join(", ") }) : null].filter(Boolean).join(", ");
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
         <Breadcrumb items={[{ label: t("vendorPayments.detail.breadcrumbPurchases") }, { label: t("vendorPayments.detail.breadcrumbVendorPayments"), href: "/vendor-payments" }, { label: number }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
-            <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{number}</h1>
+        <RecordHeader
+          title={number}
+          // US-OPS-58: the key amount at the top on a phone — what was paid.
+          amount={{ label: t("vendorPayments.detail.paid"), value: money(payment.amount) }}
+          meta={
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="vendor-payment-meta">
               <span className="inline-flex items-center gap-1.5">
                 <Building2 size={14} aria-hidden />
@@ -217,75 +232,109 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
                 </span>
               )}
             </p>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:w-full max-md:shrink" data-testid="vendor-payment-actions">
-            <Button variant={emailIsNext ? "secondary" : "primary"} onClick={() => void download()} disabled={downloading}>
-              {downloading ? <Spinner size="sm" /> : <Download size={14} aria-hidden />}
-              {t("vendorPayments.detail.downloadRemittance")}
-            </Button>
-            {emailIsNext && (
-              <Button onClick={() => setEmailOpen(true)}>
-                <Mail size={14} aria-hidden />
-                {t("vendorPayments.detail.emailRemittance")}
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary">
-                  {t("vendorPayments.detail.more")} <ChevronDown size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canEmail && !emailIsNext && (
-                  <DropdownMenuItem disabled={Boolean(emailWhyNot) || payment.paidTo.length === 0} onSelect={() => setEmailOpen(true)}>
-                    <MENU_ICONS.email aria-hidden />
-                    <span className="flex flex-col">
-                      {t("vendorPayments.detail.emailRemittance")}
-                      {emailWhyNot && <span className="text-[11.5px]">{emailWhyNot}</span>}
-                    </span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
-                  <MENU_ICONS.history aria-hidden />
-                  {t("vendorPayments.detail.viewHistory")}
-                </DropdownMenuItem>
-                {canDelete && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem destructive onSelect={() => void remove()}>
-                      <MENU_ICONS.delete aria-hidden />
-                      {t("vendorPayments.detail.deletePayment")}
+          }
+          actions={
+            <div className="flex shrink-0 flex-wrap items-center gap-2 max-md:hidden" data-testid="vendor-payment-actions">
+              {/* US-OPS-58: the next step (Email remittance advice, else Download) is the phone's bottom bar. */}
+              {emailIsNext ? downloadButton : <ActionBar>{downloadButton}</ActionBar>}
+              {emailIsNext && (
+                <ActionBar>
+                  <Button onClick={() => setEmailOpen(true)}>
+                    <Mail size={14} aria-hidden />
+                    {t("vendorPayments.detail.emailRemittance")}
+                  </Button>
+                </ActionBar>
+              )}
+              <DropdownMenu {...more.menu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary">
+                    {t("vendorPayments.detail.more")} <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sheetTitle={number}
+                  sheetDescription={t("vendorPayments.detail.sheetPaid", { vendor, amount: money(payment.amount) })}
+                  {...more.content}
+                >
+                  {/* US-OPS-58: on a phone the button beside More is in the menu too. */}
+                  {more.phone && emailIsNext && (
+                    <DropdownMenuItem onSelect={() => void download()} disabled={downloading}>
+                      <MENU_ICONS.download aria-hidden />
+                      {t("vendorPayments.detail.downloadRemittance")}
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel={t("vendorPayments.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
-          </div>
-        </div>
+                  )}
+                  {canEmail && !emailIsNext && (
+                    <DropdownMenuItem disabled={Boolean(emailWhyNot) || payment.paidTo.length === 0} onSelect={() => setEmailOpen(true)}>
+                      <MENU_ICONS.email aria-hidden />
+                      <span className="flex flex-col">
+                        {t("vendorPayments.detail.emailRemittance")}
+                        {emailWhyNot && <span className="text-[11.5px]">{emailWhyNot}</span>}
+                      </span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+                    <MENU_ICONS.history aria-hidden />
+                    {t("vendorPayments.detail.viewHistory")}
+                  </DropdownMenuItem>
+                  {canDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem destructive onSelect={() => void remove()}>
+                        <MENU_ICONS.delete aria-hidden />
+                        {t("vendorPayments.detail.deletePayment")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel={t("vendorPayments.detail.historySubject")} open={historyOpen} onOpenChange={setHistoryOpen} />
+            </div>
+          }
+        />
       </div>
 
       {actionError && <ActionError {...actionError} onDismiss={() => setActionError(null)} />}
 
-      <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-2" data-testid="vendor-payment-figures">
-        <div className="flex flex-col gap-0.5 px-4 py-3">
+      {/* US-OPS-58: two per row on a phone. */}
+      <RecordFigures data-testid="vendor-payment-figures">
+        <div className="flex min-w-0 flex-col gap-0.5 px-4 py-3">
           <span className="text-[12px] text-on-surface-muted">{t("vendorPayments.detail.paid")}</span>
           <span className="text-[20px] font-semibold tabular-nums text-on-surface">{money(payment.amount)}</span>
           <span className="text-[12px] text-on-surface-muted">
             {method} · {date}
           </span>
         </div>
-        <div className="flex flex-col gap-0.5 border-t border-border px-4 py-3 sm:border-l sm:border-t-0">
+        <div className="flex min-w-0 flex-col gap-0.5 px-4 py-3">
           <span className="text-[12px] text-on-surface-muted">{t("vendorPayments.detail.billsPaid")}</span>
           <span className="text-[20px] font-semibold text-on-surface">{payment.paidTo.length === 1 ? payment.paidTo[0]!.billNumber : t("vendorPayments.detail.billCount", { count: payment.paidTo.length })}</span>
           <span className="text-[12px] text-on-surface-muted">{billsSub || "—"}</span>
         </div>
-      </div>
+      </RecordFigures>
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Card className="p-0" data-testid="vendor-payment-paid-to">
             <h3 className="px-4 pb-2 pt-4 text-[14px] font-semibold text-on-surface">{t("vendorPayments.detail.paidTo")}</h3>
+            {more.phone ? (
+              // US-OPS-58: on a phone each bill it paid is a row.
+              <ul className="border-t border-border" data-testid="paid-to-rows">
+                {payment.paidTo.map((b) => (
+                  <ListRow
+                    key={b.allocationId}
+                    data-testid="paid-to-row"
+                    title={
+                      <SectionLink href={`/vendor-bills/${b.billId}`} className="text-on-surface">
+                        {b.billNumber}
+                      </SectionLink>
+                    }
+                    subtitle={b.dueDate ? t("vendorPayments.detail.rowDetail", { total: money(b.billTotal), due: calendarDate(b.dueDate, today, locale) }) : money(b.billTotal)}
+                    trailing={money(b.amount)}
+                    trailingSub={BigInt(b.billBalance) > 0n ? t("vendorPayments.detail.rowStillOwes", { amount: money(b.billBalance) }) : <span className="font-medium text-paid">{t("vendorPayments.detail.paid")}</span>}
+                  />
+                ))}
+              </ul>
+            ) : (
             <ScrollX label={t("ui.scrollX.label")}>
               <table className="w-full text-[13.5px]">
                 <thead className="bg-surface-sunken text-[12px] text-on-surface-muted">
@@ -315,6 +364,7 @@ export function VendorPaymentDetail({ paymentId }: { paymentId: string }) {
                 </tbody>
               </table>
             </ScrollX>
+            )}
           </Card>
           <AttachmentsSection entityType="vendor_payment" entityId={payment.id} />
           {payment.notes && (
