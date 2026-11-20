@@ -2322,11 +2322,6 @@
       "expenseUpdated": "Expense updated",
       "stillWaiting": "{{label}} is still waiting for approval."
     },
-    "status": {
-      "submitted": "Submitted",
-      "approved": "Approved",
-      "rejected": "Rejected"
-    },
     "paidBy": {
       "company": "Company",
       "employee": "Employee (reimbursable)"
@@ -2695,11 +2690,6 @@
     }
   },
   "invoices": {
-    "status": {
-      "draft": "Draft",
-      "issued": "Issued",
-      "void": "Void"
-    },
     "paymentMethod": {
       "cash": "Cash",
       "bankTransfer": "Bank transfer",
@@ -2707,10 +2697,6 @@
       "card": "Card",
       "upi": "UPI",
       "other": "Other"
-    },
-    "paymentStatus": {
-      "partiallyPaid": "Partially paid",
-      "paid": "Paid"
     },
     "state": {
       "draft": "Draft",
@@ -8613,11 +8599,6 @@
     }
   },
   "vendorBills": {
-    "statuses": {
-      "draft": "Draft",
-      "recorded": "Recorded",
-      "void": "Void"
-    },
     "methods": {
       "cash": "Cash",
       "bankTransfer": "Bank transfer",

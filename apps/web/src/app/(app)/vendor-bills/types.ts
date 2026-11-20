@@ -71,12 +71,6 @@ export interface VendorBill {
   lines?: VendorBillLine[];
 }
 
-export const VENDOR_BILL_STATUS_LABELS: Record<VendorBillStatus, string> = {
-  draft: t("vendorBills.statuses.draft"),
-  recorded: t("vendorBills.statuses.recorded"),
-  void: t("vendorBills.statuses.void"),
-};
-
 /** Minimal shape used by the vendor-only contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */
 export interface ContactOption {
   id: string;

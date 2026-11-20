@@ -98,12 +98,6 @@ export interface Invoice {
   taxLines?: { label: string; amount: string }[];
 }
 
-export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
-  draft: t("invoices.status.draft"),
-  issued: t("invoices.status.issued"),
-  void: t("invoices.status.void"),
-};
-
 /** Minimal shape used by the contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */
 export interface ContactOption {
   id: string;
@@ -274,10 +268,3 @@ export interface CreditNotePreview {
   creditPart: string;
   lines: { invoiceLineId: string | null; lineSubtotalAmount: string; lineTaxAmount: string; lineTotalAmount: string }[];
 }
-
-/** US-PAY-13 — shown next to the status badge once anything has been paid. */
-export const PAYMENT_STATUS_LABELS: Record<Invoice["paymentStatus"], string | null> = {
-  unpaid: null,
-  partially_paid: t("invoices.paymentStatus.partiallyPaid"),
-  paid: t("invoices.paymentStatus.paid"),
-};

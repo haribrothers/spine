@@ -52,5 +52,5 @@ Spine is a self-hosted business management app for small service and project bus
 - [qa-script.md](qa-script.md) — the manual QA script, by area.
 - [DESIGN.md](DESIGN.md) — design token source (front matter) used to generate the Tailwind preset.
 - [archive/spine-prd.md](archive/spine-prd.md) — the original single-file PRD, kept for history. Story ids there (`S-xx.yy`) appear as "Legacy:" lines in the feature files.
-- `CHANGELOG.md` (repo root) — build history.
+- `CHANGELOG.md` (repo root) — build history, current month; [changelog/](changelog/) holds earlier months.
 - [research/competitor-analysis-zoho-books-tallyprime.md](research/competitor-analysis-zoho-books-tallyprime.md) — the Zoho Books and TallyPrime comparison behind Phases 8–9 and the roadmap (D-133).

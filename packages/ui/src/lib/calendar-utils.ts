@@ -4,10 +4,6 @@ import {
   addWeeks,
   differenceInCalendarDays,
   isBefore,
-  isEqual,
-  isWithinInterval,
-  max as maxDate,
-  min as minDate,
   startOfDay,
 } from "date-fns";
 
@@ -349,16 +345,6 @@ export function layoutOverlappingEvents(instances: CalendarEventInstance[]): Cal
   return results;
 }
 
-/** Snaps a Date's time-of-day to the nearest multiple of `minutes` (used while dragging to create/move/resize). */
-export function snapToMinutes(date: Date, minutes: number): Date {
-  const ms = minutes * 60 * 1000;
-  return new Date(Math.round(date.getTime() / ms) * ms);
-}
-
-export function clampDate(date: Date, low: Date, high: Date): Date {
-  return maxDate([low, minDate([high, date])]);
-}
-
 export function eventSpansMultipleDays(instance: CalendarEventInstance): boolean {
   return differenceInCalendarDays(startOfDay(instance.occurrenceEnd), startOfDay(instance.occurrenceStart)) > 0;
 }
@@ -367,16 +353,4 @@ export function isInstanceWithinDay(instance: CalendarEventInstance, day: Date):
   const dayStart = startOfDay(day);
   const dayEnd = addDays(dayStart, 1);
   return instance.occurrenceStart < dayEnd && instance.occurrenceEnd > dayStart;
-}
-
-export function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
-  return aStart < bEnd && aEnd > bStart;
-}
-
-export function isSameInstant(a: Date, b: Date): boolean {
-  return isEqual(a, b);
-}
-
-export function isWithinRange(date: Date, start: Date, end: Date): boolean {
-  return isWithinInterval(date, { start, end });
 }
