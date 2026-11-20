@@ -20,6 +20,14 @@ What landed, newest first. Add an entry with every change, in the format at the 
 
 ## Completed
 
+### 2026-11-20 — Cleanup: a shorter changelog, dead code and unused dependencies removed
+
+- **Changelog:** August to October move unchanged to `docs/changelog/<yyyy-mm>.md`, and the old Status and Next up notes (still describing Phase 4) to `docs/changelog/early-status-notes.md`. This file keeps a current Status, Next up and this month (1.3 MB → 82 KB). `docs/progress.md`'s headline now says where Phase 12 stands.
+- **Dead files:** `scripts/seed.ts` (a one-line re-export; seeding runs `apps/api/src/db/seed/index.ts`), the field app's `PlannedTab` (its last tab was filled on 2026-10-09) and `apps/api/src/db/verify-primary-owners.ts` (a one-off check after the August backfill migration).
+- **Dead code:** five unused calendar helpers in `@spine/ui`, four status-label maps in the web app that the badges no longer read (with their 11 `en.json` keys), `MoneyAccountLine`, `memberLabel`, `NOT_FOUND_TITLE`, and the `OutboxKind` and `MeetingMutationScope` types. Nothing that runs changes.
+- **Dependencies stay for now.** About ten are unused (among them `recharts` in the web app and `clsx`, `class-variance-authority` and `tailwind-merge` in the design-system app), but any change to `pnpm-lock.yaml` makes pnpm resolve React 19.2.8 next to the native packages' 19.2.3, and every `@spine/ui-native` and field-app test then fails with "Invalid hook call". The lockfile as committed works; pinning one React for the native packages comes first.
+- **`.gitignore`** lists `.env.backup` itself rather than relying on a global ignore.
+
 ### 2026-11-19 — Fix: the release's E2E on CI (1.0.0-beta.6)
 
 - **Phone rows:** a row's title and status badge stay on one line again, and the title truncates if it must. Letting badges wrap under the title put the invoice list's status on a second line with CI's fonts, by a few pixels. The quotes list shows just the status on a phone (without "Viewed"), so the number isn't squeezed. Titles still never wrap.

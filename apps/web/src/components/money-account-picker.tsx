@@ -85,15 +85,3 @@ export function MoneyAccountPicker({
     </FormField>
   );
 }
-
-/** The account a recorded payment or approved expense used, read-only beside its method. */
-export function MoneyAccountLine({ direction, account }: { direction: "in" | "out"; account: { name: string } | null | undefined }) {
-  const t = useT();
-  if (!account) return null;
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[12px] font-medium text-on-surface-muted">{direction === "in" ? t("banking.picker.paidInto") : t("banking.picker.paidFrom")}</span>
-      <span className="text-[14px] text-on-surface">{account.name}</span>
-    </div>
-  );
-}

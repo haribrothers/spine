@@ -72,7 +72,5 @@ export type OutboxItem =
   | (Base & { kind: "expense"; payload: ExpensePayload; result: { expenseId: string } | null })
   | (Base & { kind: "completion"; payload: CompletionPayload; result: { alreadyCompletedBy: string | null; alreadyCompleted: boolean } | null });
 
-export type OutboxKind = OutboxItem["kind"];
-
 /** Biggest upload the server takes (D-053). */
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;

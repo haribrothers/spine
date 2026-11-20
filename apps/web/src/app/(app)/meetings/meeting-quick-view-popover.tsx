@@ -26,13 +26,6 @@ const RESPONSES = ["accepted", "tentative", "declined"] as const;
 const DAY_FORMAT = "EEEE, MMMM d";
 const TIME_FORMAT = "h:mm a";
 
-interface Member {
-  id: string;
-  userId: string;
-  name: string;
-  email: string;
-}
-
 /** "Weekly on weekdays"-style summary — not exact RFC 5545 text, just enough for a quick-glance popover. */
 function describeRecurrence(rule: CalendarRecurrenceRule): string {
   const interval = rule.interval && rule.interval > 1 ? rule.interval : undefined;
@@ -227,8 +220,4 @@ export function MeetingQuickViewPopover({
       )}
     </div>
   );
-}
-
-export function memberLabel(members: Member[], userId: string | null): string | undefined {
-  return userId ? members.find((m) => m.userId === userId)?.name : undefined;
 }

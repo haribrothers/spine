@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@spine/ui";
 import { t as translate, useT } from "../lib/i18n";
 
-export const NOT_FOUND_TITLE = translate("common.notFound.title");
 export const NOT_FOUND_MESSAGE = translate("common.notFound.message");
 
 /**

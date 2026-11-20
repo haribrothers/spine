@@ -3,7 +3,6 @@ import type { CalendarEventColor, CalendarRecurrenceRule } from "@spine/ui";
 export type MeetingVisibility = "private" | "org";
 export type MeetingAttendeeStatus = "invited" | "accepted" | "declined" | "tentative";
 export type MeetingOccurrenceExceptionStatus = "modified" | "cancelled";
-export type MeetingMutationScope = "series" | "occurrence";
 
 /** PRD S-01.14 — mirrors apps/api's meeting_occurrence_exceptions row shape. */
 export interface MeetingOccurrenceException {
