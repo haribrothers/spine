@@ -1,6 +1,6 @@
 # Progress
 
-Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Phases 0–10 are built (Phase 10 merged on 2026-10-19); Phases 11 (Connected agents, [D-256](prd/12-decisions.md)) and 12 (Packaging & 1.0) are next. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 moved after them ([D-133](prd/12-decisions.md); it's Phase 12 since [D-256](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Phases 0–11 are built. Phase 12 (Packaging & 1.0) is in beta (`1.0.0-beta.6`, 2026-11-19): every story but US-MOB-29 is done, and the `v1.0.0` tag waits on the accountant's sign-off in [accounting-review](accounting-review.md). Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 moved after them ([D-133](prd/12-decisions.md); it's Phase 12 since [D-256](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
 
 ## Phase 0 · Foundation
 

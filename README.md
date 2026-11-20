@@ -80,7 +80,7 @@ The user guide and the self-hosting guide are at [spine.h4loom.com/docs](https:/
 
 ## Status
 
-Spine is at 1.0 beta: every module above is built and in use, and the 1.0 release is being finished (packaging, the docs site, translations). [`CHANGELOG.md`](CHANGELOG.md) lists what landed in each phase, and [`docs/progress.md`](docs/progress.md) what's open.
+Spine is at 1.0 beta: every module above is built and in use, and the 1.0 release is being finished (packaging, the docs site, translations). [`CHANGELOG.md`](CHANGELOG.md) lists what landed (earlier months are in [`docs/changelog/`](docs/changelog/)), and [`docs/progress.md`](docs/progress.md) what's open.
 
 ## Tech stack
 

@@ -12,6 +12,7 @@ storybook-static/
 *.tsbuildinfo
 .env
 .env.local
+.env.backup
 .DS_Store
 coverage/
 .data/
