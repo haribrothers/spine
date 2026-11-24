@@ -1,0 +1,60 @@
+---
+title: Add site photos to a job
+description: Upload photos of the site to a job, look through them full size, and delete one added by mistake.
+sidebar:
+  order: 12
+---
+
+Site photos keep a record of progress and the condition of the site. Photos added on the web, taken in the field app, or attached when a milestone is completed all collect on the job's **Photos** tab.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Add and delete own job photos**. Field crew can always add photos to the jobs they're assigned to. Anyone who can open the job can see its photos.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs**, open the job and choose the **Photos** tab. You can also choose **More › Add photos** at the top of the job.
+2. **Add photos** — Press **Add photos** and choose one or more images, or drop them onto the tab. Use JPEG, PNG, HEIC or WebP files, up to 10 MB each.
+3. **Wait for the uploads** — Each photo shows its own progress. If one fails, it says why, and the others still upload.
+</Steps>
+
+<Screenshot id="jobs-photos" alt="A job's Photos tab with photos grouped under Site photos and under the milestones they were added with" />
+
+A file over 10 MB is refused with "This file is over 10 MB. Upload a smaller copy, or split the PDF." Make the photo smaller and add it again.
+
+## How photos are grouped
+
+Photos you add here go under **Site photos**. Photos attached when a milestone was completed go under that milestone's name, with when it was completed (for example "Site preparation · completed 7 Aug"). With no photos at all, the tab says "No photos yet. Photos taken when a milestone is completed show here too."
+
+## Look through photos
+
+<Steps>
+1. **Open a photo** — Click any photo. It opens full size with its caption, who added it and when.
+2. **Move between photos** — Use **Previous photo** and **Next photo**, or the ← and → keys.
+3. **Save the original** — Press **Download**.
+4. **Close it** — Press **Close**, or Esc.
+</Steps>
+
+## From the phone
+
+Crew take photos in the field app's camera and tag them to a job, and optionally a milestone. Without signal, the photos are saved on the phone and sent when it's back online. Photos are kept in the app, not in the phone's camera roll, and location data is removed from them.
+
+## Delete a photo added by mistake
+
+<Steps>
+1. **Find the photo** — On the **Photos** tab, hover over it (or tab to it) and open its **⋯** menu. In the full-size view, the button is next to **Download**.
+2. **Choose Delete photo** — "Delete this photo?" tells you what happens: "It's removed from the job and deleted from storage. The job's activity keeps a note that it was removed."
+3. **Confirm** — Press **Delete photo**. "Photo deleted" confirms it, and the job's **Activity** shows "Photo removed" with who removed it.
+</Steps>
+
+Who can delete a photo:
+
+- **Your own photo**, while the job is **Active** or **On hold** and the photo's milestone isn't invoiced. A milestone's photos stay deletable after it's completed, since they're added at that moment.
+- **Someone else's photo**: Owners, and Staff whose Team has **Delete others' job photos**. Field crew can delete only their own.
+- **A locked photo** — on a **Completed** or **Cancelled** job, or with a milestone that's been invoiced — only an Owner can delete, and they must give a **Reason**. The job's activity keeps it. The Photos tab says when a milestone's photos are locked.
+
+If you can't delete a photo, **Delete photo** isn't in its menu.
+
+<Aside type="caution">A deleted photo can't be brought back from Spine. It stays in any backup made before you deleted it.</Aside>
+
+Photos are never public: Spine checks that the person may see the job each time a photo is opened or downloaded.

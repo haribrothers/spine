@@ -1,0 +1,90 @@
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { createExpenseCategorySchema, updateExpenseCategorySchema } from "@spine/shared";
+import { RequireCapability } from "../../auth/require-capability.decorator";
+import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
+import { requireOrgId } from "../org/settings.controller";
+import { ExpenseCategoriesService } from "./expense-categories.service";
+
+/**
+ * GET routes open to any authenticated member (Field needs to pick a
+ * category when submitting an expense) — mutation gated on the own/others
+ * split (PRD §9), matching CatalogController's own any-can-read/
+ * owner+staff-can-write posture. `purchases.manage` is replaced by
+ * `expense_categories.edit_own`/`edit_others`/`delete_own`/`delete_others`,
+ * checked in `ExpenseCategoriesService` via `requireOwnershipCapability`.
+ */
+@Controller("expense-categories")
+export class ExpenseCategoriesController {
+  constructor(private readonly expenseCategoriesService: ExpenseCategoriesService) {}
+
+  @Get()
+  async list(@Session() session: UserSession, @Query("includeArchived") includeArchived?: string) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.list(orgId, { includeArchived: includeArchived === "true" });
+  }
+
+  /** US-PUR-46 (D-228) — how many expenses use each category and what was approved this month. Owners and Staff only: Field never sees other people's money (07-security). */
+  @Get("usage")
+  @OrgRoles(["owner", "staff"])
+  async usage(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.usage(orgId);
+  }
+
+  @Get(":id")
+  async getOne(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.getOne(orgId, id);
+  }
+
+  /** `GET /expense-categories/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "expense_category"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.getHistory(orgId, id);
+  }
+
+  @Post()
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("expense_categories.edit_own")
+  @UseInterceptors(IdempotencyInterceptor)
+  async create(@Session() session: UserSession, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = createExpenseCategorySchema.parse(body);
+    return this.expenseCategoriesService.create(orgId, session.user.id, input);
+  }
+
+  @Put(":id")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = updateExpenseCategorySchema.parse(body);
+    return this.expenseCategoriesService.update(orgId, id, session.user.id, input);
+  }
+
+  @Post(":id/archive")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async archive(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.archive(orgId, id, session.user.id);
+  }
+
+  @Post(":id/restore")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async restore(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.restore(orgId, id, session.user.id);
+  }
+
+  @Delete(":id")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async delete(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expenseCategoriesService.delete(orgId, id, session.user.id);
+  }
+}

@@ -1,0 +1,35 @@
+---
+title: Log a day's labour
+description: Record a crew's day on a job as trades, headcounts and day rates, without names or hours.
+sidebar:
+  order: 9
+---
+
+When a crew works a day on a job, you can log the cost as headcount times day rate instead of a single amount. You enter each trade, how many workers, and the day rate; the app adds it up. It goes to the office for approval like any expense, and it's saved on the phone if there's no signal.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Field members can always log their own expenses. Owners can too. Staff need **Submit/edit own expenses** from their Team. Labour is always for a job, so it needs the **Jobs & field** module.</Aside>
+
+<Steps>
+1. **Start a new expense** — Press **Log expense** on Today, or **+** (iPhone) or **Log expense** (Android) on **Expenses**.
+2. **Switch to labour** — At the top, choose **Headcount × day rate** instead of **Amount**. The category for direct labour is chosen for you.
+3. **Choose the job** — Pick the **Job**. It's required: "Labour is always for a job — choose one."
+4. **Add each trade** — Under **Trades**, enter the **Trade**, the number of **Workers** and the **Day rate**. Each row shows its total. Press **Add trade** for another row. A trade you've used before is suggested with its last day rate.
+5. **Check the total** — **Total for the day** adds up every row.
+6. **Submit** — Fill in the **Date** and **Description** if you need to, then press **Submit**.
+</Steps>
+
+The form reminds you: "Labour is always for a job. Only trades, headcounts and day rates — no names or hours."
+
+## If a row is incomplete
+
+A row with no trade, no workers or no day rate shows "Every row needs a trade, at least one worker and a day rate." Fill it in, or remove the row.
+
+## What happens next
+
+The expense shows under **Waiting to sync** until it sends, then as **Submitted** on the **Expenses** tab. Your office approves it, and its cost counts towards the job.
+
+<Aside type="tip">The app never asks who worked or for how many hours. It records only trades, headcounts and day rates.</Aside>
+
+<Aside type="note">**Read receipt** isn't offered in labour mode. Switching to labour stops a receipt that's being read.</Aside>

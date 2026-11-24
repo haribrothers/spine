@@ -1,0 +1,44 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Combobox } from "@spine/ui";
+import { apiClient } from "../../../lib/api-client";
+import type { ContactOption } from "./types";
+import { useT } from "../../../lib/i18n";
+
+/**
+ * Contact picker for the quote builder — reuses `Combobox` (search-as-you-
+ * type over a potentially long contact list) rather than `Select`, per the
+ * task brief. Fetches `/contacts` itself (no archived contacts offered —
+ * a quote shouldn't be created against a contact the org has archived).
+ */
+export function ContactPicker({
+  value,
+  onValueChange,
+  ...field
+}: {
+  value: string;
+  onValueChange: (contactId: string) => void;
+  /** The form field's id and ARIA attributes, so its label names the picker. */
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
+  "aria-required"?: boolean;
+}) {
+  const t = useT();
+  const [contacts, setContacts] = useState<ContactOption[]>([]);
+
+  useEffect(() => {
+    apiClient
+      .get<ContactOption[]>("/contacts?picker=1")
+      .then(setContacts)
+      .catch(() => {});
+  }, []);
+
+  const options = useMemo(
+    () => contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name })),
+    [contacts],
+  );
+
+  return <Combobox {...field} options={options} value={value || undefined} onValueChange={onValueChange} placeholder={t("quotes.contactPicker.placeholder")} />;
+}

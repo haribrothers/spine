@@ -1,0 +1,29 @@
+"use client";
+
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Check, Minus } from "lucide-react";
+import { forwardRef } from "react";
+import { cn } from "../lib/cn";
+
+export const Checkbox = forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    // US-OPS-61: keeps its own size on a phone; its 44px tap area is drawn around it.
+    data-tap-area=""
+    className={cn(
+      "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border border-border-strong bg-surface transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50",
+      className,
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator className="text-on-primary">
+      {/* US-CAT-12: "indeterminate" (some of a page selected) shows a dash. */}
+      {props.checked === "indeterminate" ? <Minus size={13} strokeWidth={3} /> : <Check size={13} strokeWidth={3} />}
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+));
+
+Checkbox.displayName = "Checkbox";

@@ -1,0 +1,42 @@
+# US-AI-10 — read my receipt on the phone: "Read receipt" fills the amount,
+# date, category and description, each "Suggested by AI", and the expense
+# submits as usual. Needs AI on for the demo business with a provider that
+# reads images, and a receipt photo in the phone's library:
+#   xcrun simctl addmedia booted hp-fuel-receipt.jpg   (iOS)
+#   adb push hp-fuel-receipt.jpg /sdcard/Pictures/ && adb shell am broadcast \
+#     -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/hp-fuel-receipt.jpg
+# Run like us-mob-13-expense.yaml.
+appId: com.h4loom.spine
+---
+- runFlow: _sign-in.yaml
+- tapOn: "Expenses"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "expenses-add"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "expenses-log"
+- extendedWaitUntil:
+    visible: "Amount \\(.*\\)"
+    timeout: 15000
+- runFlow: _choose-receipt.yaml
+- assertVisible: "Read receipt"
+- tapOn:
+    id: "receipt-read"
+# The read, under a minute even on a slow model.
+- extendedWaitUntil:
+    visible: "Filled in from your receipt\\. Check the amount, date and category before you submit\\."
+    timeout: 60000
+- assertVisible: "Suggested by AI"
+- assertVisible: ".* · read by AI"
+- assertVisible: "Read again"
+- tapOn: "Submit"
+- extendedWaitUntil:
+    visible: "(SUBMITTED BY YOU|Submitted by you)"
+    timeout: 30000

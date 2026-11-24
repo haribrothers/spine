@@ -1,0 +1,53 @@
+---
+title: Add a bank, cash or card account
+description: Set up each of your bank accounts, cash boxes and business cards in Spine, and choose the default.
+sidebar:
+  order: 1
+---
+
+Add each place your business keeps money — every bank account, the cash box and each business card — so payments and expenses are recorded where the money really is. Spine creates a ledger account for each one, so you don't need to touch the chart of accounts.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners only. Adding, editing and setting the default account are always Owner-only.
+</Aside>
+
+<Steps>
+
+1. **Open Banking** — Choose **Banking** under **Money** in the sidebar. Your Spine starts with **Bank Account** (marked **Default**) and **Cash in Hand**.
+
+2. **Press Add account** — It's on the right of the filter bar.
+
+3. **Choose the type** — Under **Type**, pick **Bank account**, **Cash** or **Credit card**.
+
+4. **Name it** — Enter a **Name**, such as "First Coastal — Operating". For a bank account or card, add the **Bank name** and the **Last 4 digits** so you can tell accounts apart.
+
+5. **Choose whether it's the default** — Tick **Use as default for new payments** if payments and expenses should start with this account. You can still change it on each one.
+
+6. **Save** — Press **Add account**. The toast reads **Account added** and the account is listed with a balance of 0.00.
+
+</Steps>
+
+<Screenshot id="banking-add-account" alt="The Add account dialog with Type, Name, Bank name, Last 4 digits and Use as default for new payments" />
+
+## What happens next
+
+The dialog shows the ledger account Spine will create. A bank or cash account is an asset. A credit card is a liability: its balance is what's owed on the card.
+
+If you were using these accounts before Spine, enter each one's balance on your cutover date in **Settings › Opening balances**.
+
+<Aside type="caution">
+  Each money account needs its own name. If the name is taken, Spine says "You already have an account called …" — choose another name.
+</Aside>
+
+## Change an account or the default
+
+Open an account's row menu on **Banking** and choose **Edit** to change its name, bank or last four digits, then press **Save changes**. You can also choose **Edit account** under **More** in its register.
+
+To make another account the default, choose **Set as default** in its row menu. Only one account is the default; the toast names the account it replaces.
+
+<Aside type="tip">
+  The default is what new payments start with. Spine also remembers the account you last used on each kind of form. See [Choose the account on a payment](../choose-the-account-on-a-payment/).
+</Aside>

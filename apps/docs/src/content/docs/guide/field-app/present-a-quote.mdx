@@ -1,0 +1,34 @@
+---
+title: Present a quote and take the customer's signature
+description: Show a quote full-screen on your phone and record the customer's acceptance with their name and signature.
+sidebar:
+  order: 11
+---
+
+When you're with the customer, you can show them a quote on your phone and let them accept it there and then. They type their name and sign on the screen. Spine records the signature, the time and you as the staff member present, tells the office straight away and locks the quote's price.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Field members, on jobs they're on. Owners. Staff whose Team has **Accept a quote in person**. The quotes you can present are the job's own quote and its variation orders, while they're waiting for the customer. Needs a connection.</Aside>
+
+<Steps>
+1. **Open the job** — Under **Quotes to present**, each quote waiting for the customer shows when it was sent. Press **Present**.
+2. **Hand over the phone** — The quote opens full-screen with "Hand the phone to your customer". It shows your business, the quote number, **Prepared for**, **Valid until**, the lines, **Subtotal**, each tax line as on the PDF, **Total** and **Notes**.
+3. **Accept** — The customer presses **Accept quote**.
+4. **Name and signature** — The customer types their name in **Your name** and signs in the box under **Sign below**. **Clear** starts the signature again. Above the button is the statement they're agreeing to: "By signing, I accept this quote for _total_ on behalf of _customer_. Spine records your signature, the time and the _business_ staff member present (_your name_)."
+5. **Sign** — The customer presses **Accept and sign**. It stays greyed out until there's a name and a signature.
+</Steps>
+
+You see **Quote accepted**, the number and total, "Signed by _name_ at _time_." and that the office has been told and the quote is now locked. Press **Back to job**.
+
+## What happens next
+
+Owners and office staff get "Quote _number_ was accepted in person." in their notifications at once. The office then carries on from the accepted quote on the web, for example applying a variation order to the job.
+
+## With no signal
+
+Pressing **Present** offline shows "Quotes need a connection": "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again." Press **Try again** once you have signal, or **Back to job**. Photos, expenses and milestone updates still work offline.
+
+<Aside type="danger">An accepted quote is locked. It can't be changed or un-accepted from the phone. Check the total with the customer before they sign.</Aside>
+
+<Aside type="tip">If the customer isn't ready, press **Done** to close the quote and go back to the job. To record a no, see [Record a quote the customer declines](../record-a-declined-quote/).</Aside>

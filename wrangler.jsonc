@@ -1,0 +1,19 @@
+// US-SITE-14 (D-274) — the public site as Cloudflare serves it: a Worker with
+// only static assets, built by Workers Builds from `pnpm site:build`. The
+// domain isn't named here: it's the Worker's custom domain in the dashboard
+// (docs/release.md › The website and docs).
+{
+  "name": "spine-site",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./apps/site/dist",
+    // A missing page gets the nearest 404.html: the docs' own under /docs/, the home page's elsewhere.
+    "not_found_handling": "404-page"
+  },
+  "workers_dev": true,
+  "preview_urls": true,
+  // `wrangler preview` (Workers Builds' default for a branch) needs this block, even empty.
+  "previews": {},
+  // Telemetry off.
+  "send_metrics": false
+}

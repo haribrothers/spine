@@ -1,0 +1,43 @@
+---
+title: Choose when your daily digest arrives
+description: Turn the morning summary email on or off, and choose the time and days it arrives.
+sidebar:
+  order: 5
+---
+
+The daily digest is one email each morning with what needs you today and what happened yesterday, so you know your day before you open Spine. It's on for Owners at 7:00 AM, Monday to Friday, and off for everyone else until they turn it on.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Everyone, for their own digest. Spine needs email set up to send it; see [Email](../../../self-hosting/email/).</Aside>
+
+<Steps>
+
+1. **Open your notification settings** — Open your user menu, choose **Settings**, then **Notifications** under **Your account**.
+
+2. **Switch it on or off** — Under **Daily digest**, use the **Email me a summary each morning** switch.
+
+3. **Choose the time** — Pick **Send at**, any half hour from 5:00 AM to 11:00 AM. Times are in the business's time zone, named under the choices.
+
+4. **Choose the days** — Pick **Days**: **Monday to Friday** or **Every day**.
+
+</Steps>
+
+Changes save as you make them. The toast confirms, for example "Daily digest on: Monday to Friday." or "Daily digest turned off."
+
+<Screenshot id="notifications-settings-pane" alt="Settings, Your account, Notifications: the Browser notifications, Daily digest and Meeting reminders sections" />
+
+## What's in the digest
+
+- **The subject** says how much needs you, such as "Your Spine day: 6 things need you · Mon 5 Oct".
+- **What needs you** — the same counts as the attention list on your dashboard.
+- **Today** — your meetings and milestones.
+- **Yesterday** — money received, quotes accepted and quotes viewed.
+- **Open dashboard** — a button to go straight to Spine.
+
+Field users' digests never contain money figures.
+
+<Aside type="tip">The digest is only sent on days with something to report. If nothing needs you and nothing happened yesterday, no email arrives.</Aside>
+
+The footer says why you got it and where to turn it off or change the time.

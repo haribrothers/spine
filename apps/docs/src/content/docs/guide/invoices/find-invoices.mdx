@@ -1,0 +1,49 @@
+---
+title: Find invoices and see what's overdue
+description: Use the Invoices list's cards, filters and search to find an invoice, then read where it stands.
+sidebar:
+  order: 5
+---
+
+The Invoices list shows what you're owed, what's late and what's come in, and lets you act on an invoice without opening it. Each invoice's own page tells its whole story: what was billed, what's been paid, and everything that happened to it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Invoices**. Row actions show only when you have the right for them.
+</Aside>
+
+<Steps>
+
+1. **Open Invoices** — Go to **Billing › Invoices**. The list is newest first.
+
+2. **Read the cards** — **Outstanding** is everything still owed on issued invoices. **Overdue** is what's past its due date. **Due in 7 days** is what falls due this week. **Paid this month** is what payments this month paid against invoices.
+
+3. **Narrow the list** — Press **Outstanding**, **Overdue** or **Due in 7 days** to show only those invoices; press it again to clear it. Or use **Status** (Draft, Due, Overdue, Part paid, Paid, Void) and **Contact**.
+
+4. **Search** — Type in **Search invoices, lines or jobs**. It matches the number, the customer, a line's name, or the job's number or name.
+
+5. **Open an invoice** — Click its row.
+
+</Steps>
+
+<Screenshot id="invoices-overdue" alt="The Invoices list with the Overdue card pressed, showing only overdue invoices with Overdue in the Due column" />
+
+## Reading a row
+
+Each row shows one status: **Draft**, **Due**, **Part paid**, **Paid**, **Overdue** or **Void**. The **Due** column reads "in 5 days", "today", "Overdue 6 days" or "Paid 2 Oct". A part-paid invoice has a small bar showing how much is paid. A progress invoice shows "Progress claim 3" under its number, and a deposit shows "Deposit".
+
+The row's menu offers what fits: **View**, **Edit**, **Issue**, **Record payment**, **Email invoice**, **Send reminder**, **Download PDF**, **Duplicate**, **Void** or **Delete**. Actions you can't undo open the invoice's page with that step's dialog, so nothing happens in one click.
+
+## Reading an invoice's page
+
+- The header shows the number, status, customer, issue and due dates, and the quote or job it came from.
+- One main button offers the next step: **Issue invoice** for a draft, **Send reminder** when it's overdue, **Record payment** while it has a balance, otherwise **Download PDF**. Everything else is beside it or under **More**.
+- A strip shows **Total**, **Paid**, **Credited** (when there is any) and **Balance due**.
+- The lines table has the totals under it, then payments, credit notes and attachments.
+- **Activity** lists what happened, newest first: created, issued, emailed, reminded, paid, credited and voided, with who and when. **View history** shows every field change.
+
+<Aside type="tip">
+  Your search, filters and page are kept in the address. Press Back after opening an invoice, or bookmark the list, and you return to the same view. **Clear filters** resets it. The refresh button (**Refresh list**) reloads it in place, and so does coming back to the tab after 30 seconds away.
+</Aside>

@@ -1,0 +1,52 @@
+---
+title: Approve or reject an expense
+description: Review a submitted expense next to its receipt, then approve it so it posts, or reject it with a reason.
+sidebar:
+  order: 19
+---
+
+Approval is the check before an expense counts. Approving posts it to your books: the category's expense account and input tax go up, and the account it was paid from goes down. Rejecting posts nothing and tells the submitter why, so they can fix it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **See everyone's expenses** plus **Approve expense** (to approve) or **Reject expense** (to reject). Staff can't approve or reject their own expenses — someone else must. Owners can. The **Approvals** module must be on in Settings › Modules; when it's off, expenses post as soon as they're submitted.
+</Aside>
+
+<Steps>
+
+1. **Open the expense** — Go to **Expenses** and press the **Waiting for approval** card, then open an expense. Its page opens at its own address.
+
+2. **Check it against the receipt** — The receipt is previewed beside the details: the photo, or the first page of a PDF. Open it full size if you need to. The strip shows **Amount**, **Tax**, **Paid from** and **Billable**, with the description and, for labour, each row.
+
+3. **Approve** — Press **Approve**. "Approve this expense?" shows the account it's paid from (**Paid from**), which you can change, and an optional **Comment** the submitter sees. Press **Approve** to confirm.
+
+4. **Or reject** — Press **Reject**. "Reject this expense?" asks for the **Reason** — "Why is this being rejected?". Press **Reject** to confirm.
+
+</Steps>
+
+<Screenshot id="purchases-expense-page" alt="An expense's page with the receipt preview beside the details, the Amount, Tax, Paid from and Billable strip, and Approve and Reject" />
+
+## What happens next
+
+- **Approved:** a toast says it's approved and posted to your books. The expense gets its number and reads **Approved**. The submitter is told in Spine and by email ("Expense approved — &lt;category&gt;").
+- **Rejected:** "Expense rejected" — it isn't posted. The submitter sees your reason on the expense and can [fix and resubmit it](../fix-and-resubmit-a-rejected-expense/).
+
+If you leave the reason empty, you see "Say why it's rejected, so it can be fixed."
+
+## Work through the queue
+
+Press **Approve and next** instead of **Approve**. After you confirm, the next expense waiting for approval opens, oldest first. When there are none left, Spine says "That was the last one waiting for approval."
+
+To approve a whole batch from the list, see [Approve several expenses at once](../approve-several-expenses-at-once/).
+
+## Your own expenses
+
+As Staff, when you open your own waiting expense, **Approve** and **Reject** aren't offered, and the page says "Someone else needs to approve your own expense." You can still edit or delete it while it waits.
+
+<Aside type="danger">
+  Approving can't be undone. An approved expense has posted to your books and can't be edited or deleted.
+</Aside>
+
+The expense's **Activity** keeps a record of each step — submitted, edited, rejected with the comment, resubmitted, approved with the account, and billed — with who and when.

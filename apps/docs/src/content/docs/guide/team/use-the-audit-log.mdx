@@ -1,0 +1,42 @@
+---
+title: Use the audit log
+description: See every change in the business, who made it and when, filter it, export it, and read a Team's history.
+sidebar:
+  order: 14
+---
+
+The audit log lists every change to records in your business, newest first — documents, payments, people, Teams, settings, AI requests and agent requests. Use it to find out who did something, or why someone can or can't do something. Entries can't be edited or deleted.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Staff who open the page are told it's only available to owners.</Aside>
+
+<Steps>
+
+1. **Open the audit log** — In the sidebar, go to **Team › Audit log**.
+
+2. **Filter it** — Use **From** and **To** for dates, **Person** for who made the change, **Record type** (such as **User**, **Team**, **AI request** or **Agent request**) and **Action**.
+
+3. **Read the entries** — Each row has **When**, **Who**, **Action**, **Record** and **Details**. Press a record to open it. Changes made by a customer, such as accepting a quote online, or by Spine itself show "Customer or system".
+
+4. **Page through** — The log shows 50 entries at a time, such as "1–50 of 312 entries", with **Previous** and **Next**.
+
+5. **Export it** — Press **Export CSV** to download the entries that match your filters, for an accountant or auditor.
+
+</Steps>
+
+<Screenshot id="team-audit-log" alt="The Audit log page with the From, To, Person, Record type and Action filters, Export CSV and the When, Who, Action, Record and Details columns" />
+
+## What's recorded about people and Teams
+
+- **People** — promotions, demotions, Staff and Field changes, deactivations and reactivations, transfers of primary ownership and passwords set by an Owner (never the password), as record type **User**.
+- **Teams** — created (and from which Team), renamed, people added or removed, permissions turned on or off, and deleted, as record type **Team**.
+
+## See a Team's history
+
+Open the Team from **Team › Teams** and choose the **History** tab. It lists the changes newest first, such as "Priya Raman turned on Reconcile accounts and View bank balances · 12 Oct, 10:42". Press **Open in audit log →** for the full log filtered to this Team.
+
+<Screenshot id="team-team-history" alt="A Team's History tab listing who changed the Team and how, with Open in audit log" />
+
+<Aside type="tip">To see what AI or a connected agent did, choose the record type **AI request** or **Agent request**. See [The AI assistant](../../ai-assistant/) and [Connected agents](../../connected-agents/).</Aside>

@@ -1,0 +1,40 @@
+---
+title: Close or reopen a period
+description: Close a date range so nobody can post anything dated inside it, and reopen it if a correction is needed.
+sidebar:
+  order: 4
+---
+
+Once you've filed a tax return or finished a year with your accountant, the figures for that period shouldn't change. Closing a period does that: "Close a period so nobody can post a new journal entry dated inside it — filed figures stay filed."
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Chart of accounts** — Open your user menu, choose **Settings**, pick **Chart of accounts** under **Money & tax**, and scroll to **Period close**.
+
+2. **Add the period** — Pick the **Start** and **End** dates (they start on this month) and press **Add period**. It's listed with **Open**.
+
+3. **Close it** — Press **Close** on its row. It shows **Closed**.
+
+4. **Reopen it if you need to** — Press **Reopen** on a closed period to allow postings inside it again.
+
+</Steps>
+
+<Screenshot id="accounts-period-close" alt="Settings, Chart of accounts, Period close: Start and End dates, Add period, and a list of periods marked Open or Closed" />
+
+## What a closed period stops
+
+Anything that would post an entry dated inside it is refused — issuing an invoice, recording a payment, approving an expense, paying a bill, voiding a document. The message says the date "falls within a closed fiscal period". Change the date, or reopen the period first.
+
+## Good to know
+
+- **Periods can't overlap.** Adding a period that overlaps one you already have is refused.
+- **Reopening is recorded.** The audit log shows who reopened a period and when.
+- **Locking your opening balances closes a period for you,** ending the day before your cutover date. Unlocking them reopens it. See [Check and lock your opening balances](../lock-opening-balances/).
+- **Your financial year** doesn't close itself; add and close the period when you're ready. See [Set your financial year](../../settings/financial-year/).
+
+<Aside type="caution">Corrections after a period is closed are usually posted in the current period with a journal, not by reopening. Reopen only when you need to fix the period itself, and close it again when you're done.</Aside>

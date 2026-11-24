@@ -1,0 +1,2 @@
+ALTER TABLE "quotes" ADD COLUMN "pdf_file_id" uuid;--> statement-breakpoint
+ALTER TABLE "quotes" ADD CONSTRAINT "quotes_pdf_file_id_files_id_fk" FOREIGN KEY ("pdf_file_id") REFERENCES "public"."files"("id") ON DELETE set null ON UPDATE no action;

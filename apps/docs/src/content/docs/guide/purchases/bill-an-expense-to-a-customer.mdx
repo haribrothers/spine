@@ -1,0 +1,44 @@
+---
+title: Bill an expense to a customer
+description: Pass an approved, billable expense on to the job's customer as a draft invoice, so the cost is recovered.
+sidebar:
+  order: 22
+---
+
+Some costs are the customer's to pay — a permit fee, a skip hire, materials bought for their job. Mark the expense **Billable to a customer** when it's submitted. Once it's approved, Spine can put it on a new draft invoice for the job's customer in one step, and marks the expense billed so it isn't billed twice.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Bill expense to customer**. The expense must be approved, billable and tagged to a job. Field users can't bill expenses.
+</Aside>
+
+<Steps>
+
+1. **Find what's ready to bill** — Go to **Expenses** and press the **Ready to bill** card. It lists approved, billable expenses that aren't on an invoice yet.
+
+2. **Open the expense** — Its **Billable** figure reads "Ready to bill to the job's customer", and **Bill to customer** is the main action. You can also choose **Bill to customer** from the row's menu on the list.
+
+3. **Press Bill to customer** — "Bill this expense to the customer?" says a new draft invoice for the full amount is made for the job's customer, and the expense is marked billed. You'll go to the invoice to check and send it.
+
+4. **Create the invoice** — Press **Create invoice**.
+
+</Steps>
+
+A toast says "Invoice drafted" and the new draft invoice opens, with the expense as a line. Check it, add anything else, then issue and send it as usual — see [Invoices](../../invoices/).
+
+Back on the expense, the state reads **Billed** and **Billable** reads "Billed on" with the invoice number as a link. **Bill to customer** isn't offered again. The expense's **Activity** adds "Billed on" the invoice.
+
+## When it can't be billed this way
+
+- **No job.** A billable expense with no job has no customer to bill. The page says "This expense is billable but has no job, so there's no customer to bill it to. Add it to an invoice by hand."
+- **Not approved yet.** While it's waiting, **Billable** reads "Billed once approved".
+- **Not billable.** **Billable** reads "Not billed to a customer" and no billing action is offered.
+
+<Aside type="caution">
+  The draft invoice isn't sent to anyone until you issue and send it. Check its line and the customer before you do.
+</Aside>
+
+<Aside type="tip">
+  The **Ready to bill** card on the Expenses list is the quickest way to find costs still to pass on before you invoice a job.
+</Aside>

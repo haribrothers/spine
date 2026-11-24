@@ -1,0 +1,75 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, TrendBarChart } from "@spine/ui";
+import Link from "next/link";
+import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
+import { useT } from "../../../../lib/i18n";
+
+/** One row per pipeline stage, in board order (US-CRM-19: the organisation's own stages). */
+interface StageSummaryRow {
+  stageId: string;
+  name: string;
+  kind: "open" | "won" | "lost";
+  count: number;
+  totalValue: string;
+}
+
+/**
+ * S-09.11 (dashboard v2) — pipeline by stage. Bar length is deal value
+ * (not lead count) by default, since "how much is in proposal" matters
+ * more for forecasting than "how many" — matches the requirements draft's
+ * own reasoning. Uses `@spine/ui`'s `TrendBarChart` in horizontal
+ * orientation, same component the revenue trend widget uses.
+ */
+export function PipelineByStageChart() {
+  const t = useT();
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
+  const [rows, setRows] = useState<StageSummaryRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    apiClient
+      .get<StageSummaryRow[]>("/leads/summary-by-stage")
+      .then(setRows)
+      .catch(() => setFailed(true));
+  }, []);
+
+  if (failed) {
+    return null;
+  }
+
+  const chartData = (rows ?? []).map((r) => {
+    const amount = r.totalValue === "0" ? 0n : BigInt(r.totalValue);
+    return {
+      key: r.stageId,
+      label: r.name,
+      value: Number(amount) / 100,
+      formattedValue: `${formatMoney(amount, currency)} · ${r.count}`,
+    };
+  });
+
+  return (
+    <Card data-testid="pipeline-by-stage">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between text-[15px]">
+          {t("dashboard.widgets.pipelineByStage")}
+          <Link href="/leads" className="text-[13px] font-normal text-primary hover:underline">
+            {t("dashboard.pipeline.viewBoard")}
+          </Link>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!rows || !orgCurrency ? (
+          <WidgetSkeleton kind="bars" rows={5} />
+        ) : (
+          <TrendBarChart data={chartData} orientation="horizontal" emptyState={t("dashboard.pipeline.empty")} />
+        )}
+      </CardContent>
+    </Card>
+  );
+}

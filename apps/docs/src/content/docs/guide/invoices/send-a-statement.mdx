@@ -1,0 +1,50 @@
+---
+title: Send a customer a statement
+description: Email a customer one PDF listing their invoices, payments and credits, with the balance they owe.
+sidebar:
+  order: 17
+---
+
+A statement brings everything a customer owes into one document, so they can check it against their records and pay in one go. It lists each invoice, payment and credit in a period with a running balance, and shows how old the unpaid amounts are.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **View receivables**. Without it, **Send statement** isn't shown.
+</Aside>
+
+<Steps>
+
+1. **Open the customer** — Go to **Contacts** and open the customer. You can also choose **Send statement** from the customer's row in **Receivables**.
+
+2. **Press Send statement** — **Send a statement** opens.
+
+3. **Choose the period** — Pick **Period**: **Last 30 days**, **Last 90 days**, **This year** or **Custom** (then pick **From** and **To date**).
+
+4. **Choose what to show** — Under **Show**, pick **Open invoices only** or **All activity**.
+
+5. **Check the summary** — It shows the opening balance, **Invoiced**, **Paid and credited** and **Balance due** for the period.
+
+6. **Check the email** — Check **To**, **Subject** and **Message**.
+
+7. **Send** — Press **Send statement**. To get the PDF without emailing it, press **Download PDF** instead.
+
+</Steps>
+
+<Screenshot id="invoices-statement" alt="The Send a statement dialog with Period, Show, the summary of opening balance, invoiced, paid and credited and balance due, and the To and Message fields" />
+
+A toast says "Statement sent to" the address, and the contact's timeline records it.
+
+## What the statement shows
+
+- A header with your business, "STATEMENT", the period, "Statement for" the customer with their address, and **Balance due**.
+- A table with **Date**, **Reference**, **Type**, **Charges**, **Payments** and **Balance**, starting from the opening balance. Credit notes show as credits, and refunds as charges.
+- An aging strip: **Current**, **1–30 days**, **31–60 days**, **61–90 days** and **90+ days**.
+- Your [payment instructions](../payment-instructions/), at the bottom, if you've set them.
+
+With **Open invoices only**, paid invoices and their payments are left out, and there's no opening balance.
+
+<Aside type="caution">
+  For a customer with no invoices, **Send statement** is turned off with "No invoices for this customer yet." If the email doesn't arrive, ask whoever runs your Spine to check [email settings](../../../self-hosting/email/).
+</Aside>

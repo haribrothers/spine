@@ -1,0 +1,41 @@
+---
+title: Log an expense with a receipt
+description: Photograph a receipt and submit what you spent on the spot, so it isn't lost and you're paid back.
+sidebar:
+  order: 8
+---
+
+Log fuel, materials or meals as soon as you pay, with a photo of the receipt. The expense goes to your office for approval. With no signal, it's saved on the phone and sent later. If your business uses the AI assistant, the app can read the receipt and fill in the form for you.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Field members can always log their own expenses. Owners can too. Staff need **Submit/edit own expenses** from their Team. Reading the receipt with AI needs the **AI assistant** on, with **Read bills and receipts** switched on in **Settings › AI assistant**; Staff also need **Use AI features**.</Aside>
+
+<Steps>
+1. **Start a new expense** — Press **Log expense** on Today, or on **Expenses** press **+** (iPhone) or **Log expense** (Android). **Scan receipt** on Today opens the receipt camera straight away.
+2. **Add the receipt** — Under **Receipt**, choose **Take a photo** or **Choose a photo**. The camera shows a frame: "Fit the whole receipt inside the frame".
+3. **Read it with AI (optional)** — Press **Read receipt**. **Amount**, **Date**, **Category** and **Description** fill in, each tagged **Suggested by AI**. Check them; you can change any of them.
+4. **Fill in the rest** — Enter **Amount** (in your business's currency), choose a **Category**, the **Job** it's for (or **No job**), the **Date**, and **Paid by**: **Me — pay me back** or **Company**. Add a **Description**. **Job** isn't there when **Jobs & field** is off.
+5. **Submit** — Press **Submit**.
+</Steps>
+
+"Your office approves it before it's paid back. No signal? It's saved and sent later." You don't choose which account paid; your office sets that when it approves.
+
+## What happens next
+
+The expense shows under **Waiting to sync** on Expenses until it sends, then as **Submitted**. See [Check your expenses](../check-your-expenses/).
+
+## If something's missing
+
+- No category: "Choose a category."
+- No amount, or zero: "Enter an amount above zero."
+- A receipt photo that's too big: "This photo is over 10 MB. Retake it closer, or choose a smaller one." You see this before the expense is saved.
+
+## About reading receipts
+
+- **Read receipt** needs a connection. Offline, it's shown greyed out with "Needs a connection — fill it in, or read it later."
+- It only fills in what you haven't typed yet. If there's more it could change, it offers **Replace my entries (_n_)**.
+- If the receipt is in another currency, the amount isn't filled in. Enter it in your business's currency.
+- It never changes **Job** or **Paid by**.
+
+<Aside type="tip">For a crew's day of work, switch from **Amount** to **Headcount × day rate**. See [Log a day's labour](../log-labour/).</Aside>

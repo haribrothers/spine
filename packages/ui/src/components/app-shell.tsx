@@ -1,0 +1,171 @@
+"use client";
+
+import { cn } from "../lib/cn";
+import { Breadcrumb, type BreadcrumbItem } from "./breadcrumb";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarNavItem,
+} from "./sidebar";
+
+/**
+ * The shared persistent app shell (sidebar + main content region) that every
+ * signed-in area of Spine renders inside — first consumed by /dashboard and
+ * /settings. Deliberately built as a compound component (AppShell.Sidebar,
+ * .Header, .Content) rather than one prop-heavy component, matching the
+ * codebase's existing Card/Sidebar/DataTable granularity: each consuming
+ * page composes its own nav sections, breadcrumb, and header rather than
+ * configuring a monolith through a giant props object.
+ *
+ * AppShell itself is just the outer flex row + full-height frame;
+ * AppShellSidebar wraps Sidebar with the collapse state + user-menu footer
+ * slot; AppShellContent is the scrollable main region; AppShellHeader is an
+ * optional breadcrumb + title + description + action row for pages that
+ * want it (a page can skip it and lay out its own header instead).
+ */
+export function AppShell({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  // US-OPS-54 (D-283): under 768px the top bar, the area row, the content and the tab bar stack in a column.
+  return <div data-print="flow" className={cn("flex h-screen w-full flex-col overflow-hidden bg-background md:flex-row", className)} {...props} />;
+}
+
+export interface AppShellNavItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+export interface AppShellNavSection {
+  label: string;
+  items: AppShellNavItem[];
+}
+
+export interface AppShellSidebarProps {
+  /** Logo/wordmark rendered in the sidebar header, swaps to a compact mark when collapsed — caller decides what that looks like. */
+  logo: React.ReactNode;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+  sections: AppShellNavSection[];
+  /** Renders each item's href against the current path to compute active state — pass a plain equality/`startsWith` check from the consuming app's router (e.g. Next's `usePathname`). */
+  isActive: (href: string) => boolean;
+  /**
+   * Renders the actual link element for a nav item (e.g. a Next.js
+   * `<Link href={item.href}>{children}</Link>`) — kept generic so
+   * @spine/ui doesn't depend on next/link. AppShellSidebar wraps the
+   * returned element in `SidebarNavItem asChild` for icon/label/active
+   * styling, so `renderLink` only needs to forward `children` through to
+   * its anchor.
+   */
+  renderLink: (item: AppShellNavItem, children: React.ReactNode) => React.ReactNode;
+  /** Pinned-to-bottom user menu content (avatar + name + dropdown) — fully caller-supplied since it depends on session data and the dropdown menu's own actions. */
+  userMenu?: React.ReactNode;
+  /** US-OPS-48 — shown under the logo, above the nav (the app's search field, or its icon when collapsed). */
+  search?: React.ReactNode;
+}
+
+/**
+ * The left nav rail: header (logo + collapse toggle), grouped nav sections,
+ * and a pinned footer for the user menu. Nav content is entirely
+ * caller-supplied (`sections`) — AppShell has no opinion on what pages
+ * exist, only how they're laid out.
+ */
+export function AppShellSidebar({
+  logo,
+  collapsed,
+  onCollapsedChange,
+  sections,
+  isActive,
+  renderLink,
+  userMenu,
+  search,
+}: AppShellSidebarProps) {
+  return (
+    <Sidebar collapsed={collapsed} className="hidden h-full shrink-0 md:flex">
+      <SidebarHeader collapsed={collapsed} onCollapsedChange={onCollapsedChange} logo={logo} />
+      {search ? <div className={cn("shrink-0 px-2 pt-2", collapsed && "flex justify-center")}>{search}</div> : null}
+      <SidebarContent>
+        {sections.map((section) => (
+          <SidebarGroup key={section.label} collapsed={collapsed}>
+            <SidebarGroupLabel collapsed={collapsed}>{section.label}</SidebarGroupLabel>
+            {section.items.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <SidebarNavItem key={item.href} active={active} collapsed={collapsed} asChild>
+                  {renderLink(
+                    item,
+                    <>
+                      <span className="shrink-0 [&_svg]:h-[18px] [&_svg]:w-[18px]">{item.icon}</span>
+                      {/* Kept in the DOM (not unmounted) when collapsed so the
+                          icon-only rail still has an accessible name — see the
+                          matching fix/comment in sidebar.tsx's SidebarNavItem. */}
+                      <span className={cn("truncate", collapsed && "sr-only")}>{item.label}</span>
+                    </>,
+                  )}
+                </SidebarNavItem>
+              );
+            })}
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      {userMenu ? <SidebarFooter>{userMenu}</SidebarFooter> : null}
+    </Sidebar>
+  );
+}
+
+export interface AppShellHeaderProps {
+  breadcrumb?: BreadcrumbItem[];
+  title: string;
+  description?: string;
+  /** Top-right primary action slot — typically a single Button, per docs/DESIGN.md's one-primary-action rule. */
+  action?: React.ReactNode;
+  className?: string;
+}
+
+/** Breadcrumb + page title + description + optional primary action, above a page's content. */
+export function AppShellHeader({ breadcrumb, title, description, action, className }: AppShellHeaderProps) {
+  return (
+    <div className={cn("mb-6 flex flex-col gap-3", className)}>
+      {breadcrumb && breadcrumb.length > 0 ? <Breadcrumb items={breadcrumb} /> : null}
+      {/* US-OPS-14: under 768px the actions wrap onto their own row, under the title. */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+        <div className="flex min-w-0 flex-col gap-1">
+          {/* US-OPS-54: under 768px the top bar shows the title, so it's here for screen readers only. */}
+          <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface max-md:sr-only">{title}</h1>
+          {description ? <p className="text-[14px] text-on-surface-muted max-md:hidden">{description}</p> : null}
+        </div>
+        {action ? <div className="flex min-w-0 flex-wrap items-center gap-2 md:shrink-0">{action}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+export interface AppShellContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Opts this page out of the design system's default 1200px reading-width
+   * cap — for pages whose content is wide by nature (a multi-column board,
+   * a dense table) rather than form/prose content, where capping width just
+   * wastes screen real estate on a large monitor. The page's own inner
+   * content is still free to declare its own min-width and scroll
+   * independently (e.g. Kanban) — this prop only removes the outer cap,
+   * it doesn't guarantee everything fits without scrolling.
+   */
+  fullWidth?: boolean;
+  /** App-wide notices (`Banner`) shown full-width above the page, outside the width cap. */
+  banner?: React.ReactNode;
+  /** The scrolling `<main>`, e.g. to keep a list's scroll for the back arrow (US-OPS-54). */
+  ref?: React.Ref<HTMLElement>;
+}
+
+/** The scrollable main content region, capped to the design system's 1200px max-width container by default — see `fullWidth` to opt out. */
+export function AppShellContent({ className, fullWidth = false, banner, children, ...props }: AppShellContentProps) {
+  return (
+    <main data-print="flow" className={cn("min-h-0 min-w-0 flex-1 overflow-y-auto", className)} {...props}>
+      {banner}
+      {/* On a phone, room under the last row for a floating main action (52px + its gap, US-OPS-57). */}
+      <div className={cn("mx-auto w-full p-4 md:p-6 lg:p-8 max-md:has-[[data-main-action]]:pb-[76px]", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{children}</div>
+    </main>
+  );
+}

@@ -1,0 +1,49 @@
+---
+title: See who owes you money
+description: Use Receivables to see what each customer owes, how late it is, and export it for your accountant.
+sidebar:
+  order: 9
+---
+
+**Receivables** shows what customers owe you and how late it is, so you can decide who to call first. Its totals come straight from your books, so they agree with your reports.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **View receivables**. Without it, the page says there's no access. Field users never see it.
+</Aside>
+
+<Steps>
+
+1. **Open Receivables** — Choose **Receivables** in the sidebar. The description says "What customers owe you, by how late it is" and the date it's as of.
+
+2. **Pick a view** — **By customer** (open first) adds up each customer. **By invoice** lists every open invoice.
+
+3. **Narrow it by age** — Press the **Current**, **Overdue** or **90+ days** card, press an age on the bar, or use the age filter (**All ages**, **Overdue**, **Current**, **1–30 days**, **31–60 days**, **61–90 days**, **90+ days**). Press the card again to show everything. The cards and bar always show every age; only the list narrows.
+
+4. **Search** — On **By customer**, search matches the customer's name; on **By invoice**, the number or customer.
+
+</Steps>
+
+<Screenshot id="payments-receivables" alt="Receivables By customer, with the age cards, the age bar and each customer's overdue and total owed" />
+
+## By customer
+
+Each customer who owes has one row: how many open invoices, the oldest ("45 days late" or **Not due yet**), **Overdue**, **Total owed**, **Credit to use** and **Last reminded** (or **Never**). The most overdue money comes first. Expand a row to see their open invoices, oldest due first. A totals row adds up overdue, owed and credit.
+
+## By invoice
+
+Each row has the invoice number (with its job, and **Deposit** for a deposit invoice), the customer, the due date with when they were last reminded, how late it is in words ("12 days late", "Due in 5 days" or **No due date**) and the **Balance due**. The most days late comes first. Use **Columns** to show **Issued**, **Invoice total** and **Paid so far**.
+
+<Screenshot id="payments-receivables-invoices" alt="Receivables By invoice, with how late each invoice is and when the customer was last reminded" />
+
+## Export for your accountant
+
+Press **Export** on either tab and choose **CSV** to download one row per invoice on screen with its age. Amounts are plain numbers with the currency in its own column. If you've chosen an age, the file has only that age. The same menu offers **Excel (.xlsx)**, **PDF** and **Print**.
+
+<Aside type="note" title="Retention isn't counted here">
+  Retention held on jobs isn't in these totals. A note under the age bar says how much is held, with **See jobs**. It's owed once you release it on the job.
+</Aside>
+
+Your tab, age, search and sort are kept in the address, so you can open an invoice and go Back to the same view. **Refresh list** reloads it.

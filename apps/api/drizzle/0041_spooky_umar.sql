@@ -1,0 +1,3 @@
+ALTER TABLE "expense_categories" ADD COLUMN "created_by_user_id" text;--> statement-breakpoint
+ALTER TABLE "expense_categories" ADD CONSTRAINT "expense_categories_created_by_user_id_user_id_fk" FOREIGN KEY ("created_by_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "expense_categories_created_by_idx" ON "expense_categories" USING btree ("created_by_user_id");

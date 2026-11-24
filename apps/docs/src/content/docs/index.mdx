@@ -1,0 +1,24 @@
+---
+title: Spine documentation
+description: How to use Spine, install and run it on your own server, and work on its code.
+template: splash
+hero:
+  title: Spine documentation
+  tagline: How to use Spine, run it on your own server, and work on its code.
+  actions:
+    - text: Install in 5 minutes
+      link: get-started/install/
+      variant: primary
+    - text: Read the user guide
+      link: guide/
+      variant: secondary
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+<CardGrid>
+  <LinkCard title="Get started" href="get-started/what-is-spine/" description="What Spine does, installing it, and your first invoice." />
+  <LinkCard title="User guide" href="guide/" description="Every task, step by step, for owners, office staff and field crew." />
+  <LinkCard title="Self-hosting" href="self-hosting/install/" description="Install, configure, back up and upgrade your server." />
+  <LinkCard title="Developers" href="developers/architecture/" description="How Spine is built, local setup, the ledger and testing." />
+</CardGrid>

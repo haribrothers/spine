@@ -1,0 +1,55 @@
+---
+title: Find or delete a vendor payment
+description: Find a payment to a vendor, see which bills it paid, and delete one recorded by mistake.
+sidebar:
+  order: 8
+---
+
+The Vendor payments list shows money paid out and what each payment paid. Each payment has its own page with the bills it paid. If a payment was recorded by mistake, you can delete it: the bills owe again and a reversing entry is posted.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Vendor Payments**. Deleting needs **Delete own vendor payments** (a payment you recorded) or **Delete others' vendor payments**. Field users never see vendor payments.
+</Aside>
+
+## Find a payment
+
+Go to **Vendor Payments**. The cards show **Paid this month**, **Paid last month** and **To pay** — the balance on overdue bills. Pressing **To pay** opens Vendor bills filtered to overdue.
+
+Each row has the number with the reference under it, the date, the vendor, the method with the account under it, the amount and the bills it paid. The newest comes first. Filter by vendor, method or date (All time, This month, Last month, Last 90 days, This financial year), or search numbers, references, vendors or bills.
+
+You can also press ⌘K (Ctrl K on Windows) and type a payment's number, its reference or the vendor's name. Matches show in a **Vendor payments** group.
+
+<Screenshot id="purchases-vendor-payments-list" alt="The Vendor payments list with the Paid this month, Paid last month and To pay cards above the table of payments" />
+
+## Read a payment's page
+
+Open a payment to see its page. Under the title: the vendor, the date, the method, "Paid from" the account, and the reference. The strip shows **Paid** and **Bills paid**. **Paid to** lists each bill with its date, its total, what this payment put on it, what it still owes ("Paid" at zero) and its due date. **Activity** lists when it was recorded, each bill it paid and any remittance advice emailed.
+
+<Screenshot id="purchases-vendor-payment-page" alt="A vendor payment's page with the Paid and Bills paid strip, the Paid to table and the Activity panel" />
+
+## Delete a payment
+
+<Steps>
+
+1. **Open the payment** — Open it from the list or from a bill's **Payments**.
+
+2. **Choose Delete payment** — Open **More** and choose **Delete payment**.
+
+3. **Read what happens** — "Delete VPY-0012?" says it's removed for good, how much each bill will owe again, and that a reversing entry posts today. **Go back** does nothing.
+
+4. **Confirm** — Press **Delete payment**.
+
+</Steps>
+
+The list opens with "VPY-0012 deleted" in a toast. Each bill's balance returns, and the bills' Activity says the payment was deleted.
+
+<Aside type="danger">
+  Deleting a payment can't be undone. Record it again if you need it back.
+</Aside>
+
+<Aside type="caution">
+  A payment matched to a bank statement line can't be deleted yet. The dialog says "VPY-0012 is matched to a bank statement line. Unmatch it in Banking first, then delete it" with a link to the account. See [Banking](../../banking/).
+</Aside>

@@ -1,0 +1,57 @@
+---
+title: Send a payment reminder
+description: Remind a customer about an overdue invoice, or remind several customers at once.
+sidebar:
+  order: 7
+---
+
+A payment reminder emails the customer the balance still due, with the invoice PDF attached. You can send one from an overdue invoice, or tick several invoices in the list and remind every customer in one go. To have Spine send reminders for you on a schedule, see [Turn on automatic payment reminders](../reminders/).
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Send a payment reminder**. Without it, reminder actions are hidden, in the list and on the invoice.
+</Aside>
+
+## Remind one customer
+
+<Steps>
+
+1. **Open the overdue invoice** — Go to **Invoices**, press the **Overdue** card, and open the invoice. Or choose **Send reminder** from its row menu.
+
+2. **Press Send reminder** — It's the main button on an overdue invoice. **Send payment reminder — INV-0012** opens with the customer and the amount due.
+
+3. **Check the email** — Check **To**, **Subject** and **Message**, and keep **Attach the invoice PDF** ticked.
+
+4. **Send** — Press **Send reminder**.
+
+</Steps>
+
+A toast says **Reminder sent**, and the invoice's **Activity** shows **Reminder sent** with your name. If it fails, you'll see "Could not send this reminder."
+
+## Remind several customers at once
+
+<Steps>
+
+1. **Tick the invoices** — In the Invoices list, tick the rows you want to chase. A bar shows how many are selected and how much is outstanding.
+
+2. **Press Send reminders** — The button, for example **Send reminders (3)**, counts only the invoices that can be reminded: issued, with a balance, and not reminded today.
+
+3. **Confirm** — **Send 3 payment reminders?** says how many customers get the email and how many ticked invoices are skipped. Press **Send reminders**, or **Go back** to send nothing.
+
+</Steps>
+
+<Screenshot id="invoices-overdue" alt="The Invoices list with the Overdue card pressed, showing only overdue invoices with Overdue in the Due column" />
+
+When it finishes, a toast says, for example, "3 reminders sent", and lists any invoice that was skipped with the reason. Press **Clear** to untick everything.
+
+## Good to know
+
+- **Send reminder** on an invoice's page and in its row menu is offered only when the invoice is overdue. A fully paid invoice can't be reminded.
+- Sending reminders for several invoices, and automatic reminders, skip an invoice that was already reminded today, by hand or automatically.
+- In India, if the balance has changed since the invoice was issued, the reminder says what to pay instead of the amount on the PDF's UPI QR code.
+
+<Aside type="tip">
+  You can also chase customers from **Receivables**. See [Payments and receivables](../../payments/).
+</Aside>

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "accounts-add-account",
+    "path": "/dashboard?settings=accounts",
+    "alt": "The Add account dialog with Code, Name and Type, and Cancel and Add account",
+    "click": "Add account",
+    "wait": "e.g. 6950"
+  },
+  {
+    "id": "accounts-chart",
+    "path": "/dashboard?settings=accounts",
+    "alt": "Settings, Chart of accounts: accounts grouped under Assets, Liabilities, Equity, Income and Expenses, with System badges and Rename buttons",
+    "wait": "System accounts can't be renamed."
+  },
+  {
+    "id": "accounts-period-close",
+    "path": "/dashboard?settings=accounts",
+    "alt": "Settings, Chart of accounts, Period close: Start and End dates, Add period, and a list of periods marked Open or Closed",
+    "wait": "Period close"
+  },
+  {
+    "id": "accounts-opening-balances",
+    "path": "/opening-balances",
+    "alt": "Opening balances, Account balances: the cutover date, Debits, Credits and Opening Balance Adjustments cards, and the Debit and Credit grid",
+    "wait": "Account balances"
+  }
+]

@@ -1,0 +1,33 @@
+---
+/** US-SITE-02 — the install commands from the docs' "Install in 5 minutes", with a copy button. */
+import Icon from "./Icon.astro";
+import { home } from "../locales/en/home";
+import { docs } from "../lib/links";
+
+const t = home.install;
+---
+
+<section id="install" class="sec sec-tail" aria-labelledby="install-title">
+  <div class="wrap">
+    <div class="install" data-reveal>
+      <div>
+        <h2 id="install-title" class="h2">{t.title}</h2>
+        <p class="sub">{t.body}</p>
+        <div class="cta cta-start">
+          <a class="btn btn-p" href={docs.selfHosting}>{t.selfHosting}</a>
+          <a class="btn btn-s" href={docs.guide}>{t.guide}</a>
+        </div>
+      </div>
+      <div class="shell">
+        <div class="shell-h">
+          <span class="mono">{t.terminal}</span>
+          <button type="button" class="copybtn" data-copy="install-cmd" data-copied-text={t.copied} aria-label={t.copyLabel}>
+            <Icon name="copy" size="sm" /><span class="lbl">{t.copy}</span>
+          </button>
+          <span class="sr-only" role="status" data-copy-status></span>
+        </div>
+        <pre class="mono" role="region" tabindex="0" aria-label={t.commandsLabel}><code id="install-cmd">{t.commands.map((c, i) => <><span class="p" aria-hidden="true">$ </span>{c}{i < t.commands.length - 1 && "\n"}</>)}</code></pre>
+      </div>
+    </div>
+  </div>
+</section>

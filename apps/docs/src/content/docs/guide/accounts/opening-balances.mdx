@@ -1,0 +1,43 @@
+---
+title: Enter your opening balances
+description: Set your cutover date and enter what each account held, so your Balance Sheet is right from the day you start.
+sidebar:
+  order: 5
+---
+
+If you're moving from other software, opening balances bring in "what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need." Starting a brand-new business? You may only need your bank balance and the owner's capital.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Opening balances** — In **Settings**, pick **Opening balances** under **Money & tax** and press **Bring in opening balances** (or **Open opening balances** once you've started). You can also press **Set up** on the **Opening balances** card on the Set up Spine page.
+
+2. **Choose the cutover date** — On **Account balances**, set **Cutover date**: the first day you use Spine for real. It starts at the beginning of your current financial year. The balances you enter are "as of" the day before.
+
+3. **Enter each balance** — Every account has a **Debit** and a **Credit** box, grouped by type. Copy the figures from your old trial balance on the day before the cutover date: assets and expenses are usually debits; liabilities, equity and income are usually credits.
+
+4. **Check the difference** — The cards show your total **Debits**, **Credits** and **Opening Balance Adjustments**. "nothing left to explain" means they match.
+
+5. **Press Save balances** — "Saved. The Balance Sheet on … shows these balances."
+
+</Steps>
+
+<Screenshot id="accounts-opening-balances" alt="Opening balances, Account balances: the cutover date, Debits, Credits and Opening Balance Adjustments cards, and the Debit and Credit grid" />
+
+## Accounts you don't type into
+
+Accounts Receivable and Retention Receivable show "From opening invoices", Accounts Payable shows "From opening bills" and Customer Advances shows "From opening credit", each with its total. Their balances are built from the unpaid documents you bring in one by one — see [Bring in unpaid customer invoices and credit](../bring-in-customer-invoices/) and [Bring in unpaid vendor bills and credits](../bring-in-vendor-bills/).
+
+## If the totals don't match
+
+You can still save. The difference sits in Opening Balance Adjustments: "Your old books didn't balance, or a figure is missing. The difference sits in Opening Balance Adjustments until you fix it." Find the missing figure, correct it and save again.
+
+<Aside type="caution">If documents already exist dated before the cutover date, you can't save: "3 documents are dated before the cutover date. Pick a date on or before …, or move those documents." Pick an earlier cutover date, or change those documents' dates.</Aside>
+
+## What Spine does
+
+Saving posts one entry dated the day before the cutover date. Each save replaces the last one until you lock. When everything matches, [check and lock your opening balances](../lock-opening-balances/).

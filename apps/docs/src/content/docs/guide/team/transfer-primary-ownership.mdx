@@ -1,0 +1,40 @@
+---
+title: Transfer primary ownership
+description: Hand the Primary Owner status to another Owner, so the business always has one clear administrator.
+sidebar:
+  order: 10
+---
+
+The Primary Owner is the super-admin of your Spine. Nobody else can demote or deactivate them, change their password or remove them. There's always exactly one, and the status only moves when the Primary Owner transfers it — for example when the business changes hands.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only the Primary Owner, from their own row. The person you transfer to must already be an Owner.</Aside>
+
+<Steps>
+
+1. **Make sure there's another Owner** — If there isn't, [promote a Staff member to Owner](../change-someones-role/) first.
+
+2. **Open your own row** — Go to **Team › Users**. Your row is marked **You** and **Primary Owner**. Open its menu and choose **Transfer primary ownership…**.
+
+3. **Choose the new Primary Owner** — In "Transfer primary ownership", pick them from **Select an owner**.
+
+4. **Transfer** — Press **Transfer**. The toast says "Primary ownership transferred" and names the new Primary Owner.
+
+</Steps>
+
+## What happens next
+
+- The person you chose shows the **Primary Owner** badge.
+- You stay an Owner, with the same full access. From now on, other Owners can demote you, like any other Owner.
+
+<Aside type="caution">Only the new Primary Owner can transfer the status again. If you might want it back, agree that with them first.</Aside>
+
+## If there are no other Owners
+
+The dialog says: "There are no other Owners yet. Promote a Staff member to Owner first, then you can transfer primary ownership to them."
+
+## What other Owners see on the Primary Owner's row
+
+The Primary Owner's row has no **Deactivate** and no **Demote to Staff**, for anyone. **Change password** is never offered on an Owner's row; the Primary Owner's menu says only they can change their own password, from Profile.

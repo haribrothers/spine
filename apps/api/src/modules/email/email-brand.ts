@@ -1,0 +1,73 @@
+import { Logger } from "@nestjs/common";
+import { and, eq, inArray } from "drizzle-orm";
+import { resolveDocumentBranding } from "@spine/shared";
+import type { Database } from "../../db/client";
+import { organization, settings } from "../../db/schema";
+import type { EmailBrand } from "./email-layout";
+
+type FileReader = (orgId: string, fileId: string) => Promise<{ bytes: Buffer; mimeType: string }>;
+
+/**
+ * The logo is read through `FilesService` (and so the storage driver), which
+ * registers itself here when it starts. A module-level hook rather than DI:
+ * Better Auth's emails (auth.ts) live outside Nest, and Notifications →
+ * Files → Notifications would otherwise be a cycle. Without it, emails show
+ * the business name only.
+ */
+let readFile: FileReader | null = null;
+export function registerEmailLogoReader(reader: FileReader): void {
+  readFile = reader;
+}
+
+const logger = new Logger("EmailBrand");
+
+interface BusinessProfile {
+  name?: string;
+  logoUrl?: string;
+  address?: string;
+}
+
+/**
+ * The business as its emails show it: name and address from
+ * `business_profile`, colour and footer text from `branding` (US-SET-10,
+ * when set), the organisation's name as a fallback.
+ */
+export async function loadEmailBrand(db: Database, orgId: string): Promise<EmailBrand> {
+  const rows = await db
+    .select({ key: settings.key, value: settings.value })
+    .from(settings)
+    .where(and(eq(settings.orgId, orgId), inArray(settings.key, ["business_profile", "branding", "currency"])));
+  const profile = (rows.find((r) => r.key === "business_profile")?.value ?? {}) as BusinessProfile;
+  // US-SET-10: the same colour and footer as the PDFs (Spine Blue unless a readable colour is saved).
+  const branding = resolveDocumentBranding(rows.find((r) => r.key === "branding")?.value);
+  const currencySetting = rows.find((r) => r.key === "currency")?.value as { locale?: string; code?: string } | undefined;
+  const locale = currencySetting?.locale || "en-US";
+
+  let name = profile.name?.trim();
+  if (!name) {
+    const [org] = await db.select({ name: organization.name }).from(organization).where(eq(organization.id, orgId));
+    name = org?.name?.trim() || "Spine";
+  }
+
+  const footer = [name, profile.address?.replace(/\s*\n\s*/g, ", ").trim(), branding.footer].filter(Boolean).join(" · ");
+  return {
+    name,
+    color: branding.color,
+    footer,
+    locale,
+    currency: currencySetting?.code || "USD",
+    logo: await loadLogo(orgId, profile.logoUrl),
+  };
+}
+
+async function loadLogo(orgId: string, logoUrl: string | undefined): Promise<EmailBrand["logo"]> {
+  const fileId = logoUrl?.match(/\/files\/([0-9a-fA-F-]{36})/)?.[1];
+  if (!fileId || !readFile) return undefined;
+  try {
+    const { bytes, mimeType } = await readFile(orgId, fileId);
+    return { content: bytes, contentType: mimeType };
+  } catch (err) {
+    logger.warn(`Email sent without the logo: ${(err as Error).message}`);
+    return undefined;
+  }
+}

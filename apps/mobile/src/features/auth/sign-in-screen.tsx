@@ -1,0 +1,201 @@
+import { useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import * as WebBrowser from "expo-web-browser";
+import { Button, FloatingLabelField, FormRow, FormSection, FullWidthButton, OutlinedTextField, Spinner } from "@spine/ui-native";
+import { useSession } from "../../lib/session/session-provider";
+import { discoverServer, SignInError, type SignInField } from "../../lib/session/sign-in";
+import { SignInCompactLogo, SignInHero, useKeyboardOpen } from "./sign-in-hero";
+import { t as translate, useT } from "../../lib/i18n";
+
+type Errors = Partial<Record<SignInField, string>>;
+
+/**
+ * US-MOB-01 · `MobSignIn` / `MobSignInAndroid` — the Spine logo on its
+ * illustration, then server, email and password. While the keyboard is up
+ * the illustration folds to the horizontal logo (`MobSignInKeyboard`) so the
+ * fields and "Sign in" stay in view. Errors sit under the field they're about; "Forgot password?" opens the
+ * server's reset page in the phone's browser (D-052, US-AUTH-09). A removed
+ * membership comes back here with its notice (US-MOB-02).
+ */
+export const SERVER_HINT = translate("mobileApp.signIn.serverHint");
+
+export function SignInScreen() {
+  const t = useT();
+  const { state, signIn } = useSession();
+  const signedOut = state.status === "signedOut" ? state : undefined;
+  // EXPO_PUBLIC_DEFAULT_SERVER pre-fills the field in development (.env.development.example).
+  const [server, setServer] = useState(signedOut?.lastServer ?? process.env.EXPO_PUBLIC_DEFAULT_SERVER ?? "");
+  const [email, setEmail] = useState(signedOut?.lastEmail ?? "");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
+  const [busy, setBusy] = useState(false);
+  const passwordRef = useRef(null);
+  const keyboardOpen = useKeyboardOpen();
+
+  async function submit() {
+    const next: Errors = {};
+    if (!server.trim()) next.server = t("mobileApp.signIn.errors.serverEmpty");
+    if (!email.trim()) next.email = t("mobileApp.signIn.errors.emailEmpty");
+    if (!password) next.password = t("mobileApp.signIn.errors.passwordEmpty");
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    setBusy(true);
+    const result = await signIn(server, email, password);
+    setBusy(false);
+    if (!result.ok) {
+      setErrors(result.field === "password" ? { email: "", password: result.message } : { [result.field]: result.message });
+    }
+  }
+
+  async function forgotPassword() {
+    try {
+      const info = await discoverServer(server);
+      setErrors({});
+      await WebBrowser.openBrowserAsync(`${info.appUrl}/forgot-password`);
+    } catch (error) {
+      if (error instanceof SignInError) setErrors({ server: error.message });
+    }
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="flex-grow px-5 pb-8">
+          <View className="-mx-5">{keyboardOpen ? <View className="px-5"><SignInCompactLogo /></View> : <SignInHero />}</View>
+          <View className="gap-2 px-1">
+            <Text accessibilityRole="header" className={`text-[30px] text-on-surface dark:text-on-surface-dark ${Platform.OS === "android" ? "" : "font-bold"}`}>
+              {t("mobileApp.signIn.title")}
+            </Text>
+            <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">{t("mobileApp.signIn.intro")}</Text>
+          </View>
+
+          {signedOut?.notice ? (
+            <View className="mt-6 rounded-lg bg-overdue-bg px-4 py-3 dark:bg-overdue-bg-dark" accessibilityRole="alert">
+              <Text className="text-[14px] font-medium text-overdue dark:text-overdue-dark">{signedOut.notice}</Text>
+            </View>
+          ) : null}
+
+          {Platform.OS === "android" ? (
+            // US-MOB-20 · `MobSignInAndroid`: Material outlined fields, each error under its field, the password with a show/hide eye.
+            <View className="mt-6 gap-4">
+              <OutlinedTextField
+                label={t("mobileApp.signIn.server")}
+                value={server}
+                onChangeText={setServer}
+                error={Boolean(errors.server)}
+                helperText={errors.server ?? SERVER_HINT}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="url"
+                keyboardType="url"
+                returnKeyType="next"
+                testID="sign-in-server"
+              />
+              <OutlinedTextField
+                label={t("mobileApp.signIn.email")}
+                value={email}
+                onChangeText={setEmail}
+                error={errors.email !== undefined}
+                helperText={errors.email || undefined}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                returnKeyType="next"
+                testID="sign-in-email"
+              />
+              <OutlinedTextField
+                label={t("mobileApp.signIn.password")}
+                value={password}
+                onChangeText={setPassword}
+                error={Boolean(errors.password)}
+                helperText={errors.password}
+                secureTextEntry
+                autoComplete="current-password"
+                returnKeyType="go"
+                onSubmitEditing={submit}
+                inputRef={passwordRef}
+                testID="sign-in-password"
+              />
+            </View>
+          ) : (
+            <View className="mt-6 gap-2">
+              <FormSection title={t("mobileApp.signIn.yourAccount")}>
+                <FormRow error={errors.server}>
+                  <FloatingLabelField
+                    label={t("mobileApp.signIn.server")}
+                    value={server}
+                    onChangeText={setServer}
+                    error={Boolean(errors.server)}
+                    forceTextField
+                    autoCapitalize="none"
+                    autoComplete="url"
+                    returnKeyType="next"
+                    testID="sign-in-server"
+                  />
+                </FormRow>
+                <FormRow error={errors.email || undefined}>
+                  <FloatingLabelField
+                    label={t("mobileApp.signIn.email")}
+                    value={email}
+                    onChangeText={setEmail}
+                    error={errors.email !== undefined}
+                    keyboardType="email"
+                    forceTextField
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    returnKeyType="next"
+                    testID="sign-in-email"
+                  />
+                </FormRow>
+                <FormRow error={errors.password} last>
+                  <FloatingLabelField
+                    label={t("mobileApp.signIn.password")}
+                    value={password}
+                    onChangeText={setPassword}
+                    error={Boolean(errors.password)}
+                    secureTextEntry
+                    autoComplete="current-password"
+                    returnKeyType="go"
+                    onSubmitEditing={submit}
+                    inputRef={passwordRef}
+                    testID="sign-in-password"
+                  />
+                </FormRow>
+              </FormSection>
+              <Text className="px-1 text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">
+                {SERVER_HINT}
+              </Text>
+            </View>
+          )}
+
+          {errors.form ? (
+            <Text accessibilityRole="alert" className="mt-4 px-1 text-[13px] text-overdue dark:text-overdue-dark">
+              {errors.form}
+            </Text>
+          ) : null}
+
+          <View className="mt-7 gap-3">
+            {busy ? (
+              <View className="h-12 items-center justify-center">
+                <Spinner label={t("mobileApp.signIn.signingIn")} />
+              </View>
+            ) : (
+              <FullWidthButton label={t("mobileApp.signIn.title")} onPress={submit} testID="sign-in-submit" />
+            )}
+            <View className="items-center">
+              <Button variant="ghost" label={t("mobileApp.signIn.forgotPassword")} onPress={forgotPassword} testID="sign-in-forgot" />
+            </View>
+          </View>
+
+          <View className="flex-1 justify-end pt-10">
+            <Text className="text-center text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">
+              {t("mobileApp.signIn.staySignedIn")}
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}

@@ -1,0 +1,944 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785947818020,
+      "tag": "0000_soft_silvermane",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785947824574,
+      "tag": "0001_ledger_integrity_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786001504522,
+      "tag": "0002_cloudy_silver_centurion",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786007945940,
+      "tag": "0003_ancient_silver_fox",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786017251821,
+      "tag": "0004_empty_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786025554547,
+      "tag": "0005_new_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786027686007,
+      "tag": "0006_polite_arclight",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786033987272,
+      "tag": "0007_real_galactus",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786046035186,
+      "tag": "0008_flat_ma_gnuci",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786047342604,
+      "tag": "0009_loud_calypso",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786105408449,
+      "tag": "0010_fast_mad_thinker",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786114660296,
+      "tag": "0011_rare_magneto",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786117391169,
+      "tag": "0012_curly_tyrannus",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786123051898,
+      "tag": "0013_sweet_toro",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786126060986,
+      "tag": "0014_reflective_dark_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786132362640,
+      "tag": "0015_bright_layla_miller",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786169537431,
+      "tag": "0016_dry_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786212244399,
+      "tag": "0017_cultured_jackal",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786224885959,
+      "tag": "0018_mature_phil_sheldon",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786226337685,
+      "tag": "0019_outstanding_nocturne",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786226371623,
+      "tag": "0020_payment_allocation_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786296324555,
+      "tag": "0021_classy_dragon_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786296324556,
+      "tag": "0022_backfill_primary_owner_and_default_team",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786299563333,
+      "tag": "0023_cheerful_senator_kelly",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786341218576,
+      "tag": "0024_fancy_makkari",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786348166589,
+      "tag": "0025_colorful_archangel",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786348875774,
+      "tag": "0026_wakeful_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786369972617,
+      "tag": "0027_powerful_kabuki",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786375270316,
+      "tag": "0028_flowery_blue_shield",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786375312565,
+      "tag": "0029_vendor_payment_allocation_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786380103585,
+      "tag": "0030_purple_doctor_octopus",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786509688692,
+      "tag": "0031_skinny_angel",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786519742697,
+      "tag": "0032_meeting_visibility_attendees",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786519853875,
+      "tag": "0033_backfill_meetings_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786783370598,
+      "tag": "0034_meeting_occurrence_exceptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1787938628107,
+      "tag": "0035_real_molten_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1787939112219,
+      "tag": "0036_split_contacts_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1787939999000,
+      "tag": "0037_split_catalog_from_contacts_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787940949731,
+      "tag": "0038_panoramic_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1787941500000,
+      "tag": "0039_split_leads_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787942200000,
+      "tag": "0040_split_quotes_meetings_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787943478764,
+      "tag": "0041_spooky_umar",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1787944200000,
+      "tag": "0042_split_purchases_expenses_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1787947398026,
+      "tag": "0043_lowly_the_renegades",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1787950000000,
+      "tag": "0044_split_invoices_payments_credit_notes_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1787953000000,
+      "tag": "0045_split_dashboard_view_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1787956000000,
+      "tag": "0046_add_contacts_manage_persons_addresses",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788028825940,
+      "tag": "0047_fearless_romulus",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788031000000,
+      "tag": "0048_add_jobs_assign_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788029431128,
+      "tag": "0049_narrow_tyger_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1788033000000,
+      "tag": "0050_add_quotes_accept_in_person_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791111823026,
+      "tag": "0051_files_storage_driver",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791117333436,
+      "tag": "0052_files_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791123335172,
+      "tag": "0053_issued_pdf_file_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791123344320,
+      "tag": "0054_drop_pdf_file_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1791130731781,
+      "tag": "0055_idempotency_user_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791131161107,
+      "tag": "0056_exact_decimals",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791131655887,
+      "tag": "0057_payment_advance_allocations",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1791132772162,
+      "tag": "0058_ledger_integrity_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1791138365308,
+      "tag": "0059_invoice_payment_instructions",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1791139697471,
+      "tag": "0060_job_names_from_quotes",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1791139829120,
+      "tag": "0061_job_numbers",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1791141713398,
+      "tag": "0062_org_name_from_business",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1791182029466,
+      "tag": "0063_lead_stages",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1791182045557,
+      "tag": "0064_lead_stage_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1791185286588,
+      "tag": "0065_catalog_bundles",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1791192759526,
+      "tag": "0066_invoice_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1791193793321,
+      "tag": "0067_recurring_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1791194703205,
+      "tag": "0068_recurring_invoice_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1791201506930,
+      "tag": "0069_job_cost_budget",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1791204721536,
+      "tag": "0070_job_percent_complete",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1791205740324,
+      "tag": "0071_invoice_progress_claim",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1791207543855,
+      "tag": "0072_expense_labour_lines",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1791218343737,
+      "tag": "0073_user_daily_digest",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1791219540644,
+      "tag": "0074_audit_log_entity_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1791220343820,
+      "tag": "0075_data_exports",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1791221601339,
+      "tag": "0076_search_trigram",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1791263995115,
+      "tag": "0077_money_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791265569347,
+      "tag": "0078_money_account_on_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1791266214430,
+      "tag": "0079_bank_transfers",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1791266661073,
+      "tag": "0080_bank_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1791269239952,
+      "tag": "0081_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1791270410687,
+      "tag": "0082_attachments_file_set_null",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1791271517936,
+      "tag": "0083_credit_note_credit",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791272053534,
+      "tag": "0084_customer_refunds",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1791272905560,
+      "tag": "0085_vendor_credits",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1791273439493,
+      "tag": "0086_vendor_credit_allocations",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1791273903282,
+      "tag": "0087_vendor_refunds",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1791274587104,
+      "tag": "0088_tax_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791288638738,
+      "tag": "0089_bank_statement_lines",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1791288799117,
+      "tag": "0090_statement_line_row",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1791289145413,
+      "tag": "0091_bank_reconciliations",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1791290385310,
+      "tag": "0092_journal_line_reconciliation",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1791295937930,
+      "tag": "0093_opening_balances",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1791296531583,
+      "tag": "0094_opening_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1791297332702,
+      "tag": "0095_opening_bills",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1791298063223,
+      "tag": "0096_manual_journals",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1791300558728,
+      "tag": "0097_favourite_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1791310296834,
+      "tag": "0098_dashboard_basis",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1791310843189,
+      "tag": "0099_recurring_bills",
+      "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1791346547819,
+      "tag": "0100_tax_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1791347587677,
+      "tag": "0101_supply_class",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1791348477127,
+      "tag": "0102_gst_registration",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1791349299228,
+      "tag": "0103_place_of_supply",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1791350331612,
+      "tag": "0104_hsn_sac",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1791353590673,
+      "tag": "0105_rate_supply_class",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1791363932747,
+      "tag": "0106_upi_qr_amount",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1791388915673,
+      "tag": "0107_modules_for_existing_installs",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1791399108981,
+      "tag": "0108_demo_isolation",
+      "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1791477139820,
+      "tag": "0109_notification_detail",
+      "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1791527712156,
+      "tag": "0110_quote_signature",
+      "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1791627810171,
+      "tag": "0111_pipeline_that_works",
+      "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1791647653139,
+      "tag": "0112_quote_title",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1791697795380,
+      "tag": "0113_credit_note_line_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "7",
+      "when": 1791703397685,
+      "tag": "0114_email_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1791737353379,
+      "tag": "0115_demo_purchases",
+      "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1791745817900,
+      "tag": "0116_expense_category_guidance",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1791788299271,
+      "tag": "0117_email_kind_remittance",
+      "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1791800462841,
+      "tag": "0118_banking_demo",
+      "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1791807106734,
+      "tag": "0119_invitation_teams",
+      "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1791812694358,
+      "tag": "0120_password_set_by_owner",
+      "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1791814636922,
+      "tag": "0121_demo_teams_invites",
+      "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1791820027678,
+      "tag": "0122_team_description",
+      "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "7",
+      "when": 1791830666425,
+      "tag": "0123_team_open_sections",
+      "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1791876028840,
+      "tag": "0124_email_changed",
+      "breakpoints": true
+    },
+    {
+      "idx": 125,
+      "version": "7",
+      "when": 1791896447301,
+      "tag": "0125_search_more",
+      "breakpoints": true
+    },
+    {
+      "idx": 126,
+      "version": "7",
+      "when": 1792252866701,
+      "tag": "0126_ai_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1792255081651,
+      "tag": "0127_ai_use_and_assisted",
+      "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1792422109554,
+      "tag": "0128_ai_bank_suggestions",
+      "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1792437521480,
+      "tag": "0129_better_auth_1_7",
+      "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1792472840327,
+      "tag": "0130_connected_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1792475747926,
+      "tag": "0131_audit_via",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1792476381483,
+      "tag": "0132_agent_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1794669916107,
+      "tag": "0133_job_photo_removal",
+      "breakpoints": true
+    }
+  ]
+}

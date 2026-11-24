@@ -1,0 +1,21 @@
+[
+  {
+    "id": "notifications-drawer",
+    "path": "/dashboard",
+    "alt": "The Notifications panel open from the bell, titled Recent activity across the org., with Mark all read and recent notifications, each with a message, time and link",
+    "click": "Notifications",
+    "wait": "Recent activity across the org."
+  },
+  {
+    "id": "notifications-settings-pane",
+    "path": "/dashboard?settings=notifications",
+    "alt": "Settings, Your account, Notifications: the Browser notifications, Daily digest and Meeting reminders sections",
+    "wait": "Email me a summary each morning"
+  },
+  {
+    "id": "notifications-business-reminders",
+    "path": "/dashboard?settings=meeting-reminder-lead-time",
+    "alt": "Settings, Meeting reminders: the business default lead time with 5, 15, 30 and 60 minutes before",
+    "wait": "15 minutes before"
+  }
+]

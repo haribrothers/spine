@@ -1,0 +1,8 @@
+[
+  {
+    "id": "ai-assistant-settings",
+    "path": "/dashboard?settings=ai",
+    "alt": "Settings, AI assistant: the on/off switch and the Provider card with Local or OpenAI-compatible and Anthropic Claude",
+    "wait": "Anthropic Claude"
+  }
+]

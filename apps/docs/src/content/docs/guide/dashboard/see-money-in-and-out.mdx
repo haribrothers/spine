@@ -1,0 +1,39 @@
+---
+title: See money in and out
+description: Read the monthly chart of income and expenses, or money in and out, to see whether the business is cash positive.
+sidebar:
+  order: 4
+---
+
+The wide chart under the key figures shows a pair of bars for each month: what came in and what went out. On the accrual basis it's **Income and expenses**; switch to the cash basis and it becomes **Money in and out**, counting only money that actually moved. Either way you see at a glance whether the business is ahead.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View dashboard summary**.</Aside>
+
+<Steps>
+
+1. **Pick the range** — Choose **3M**, **6M** or **12M**. It starts at 12 months.
+2. **Read the totals** — Above the chart: what came in, what went out and the **Net** for the range. A positive net shows in green, a negative one in red, always with its sign.
+3. **Read the bars** — One pair per month. The legend names each series: **Income** and **Expenses** on the accrual basis, or "Money in (payments received)" and "Money out (bills, expenses)" on the cash basis.
+4. **Check one month** — Hover over or focus a month to see its in, out and net amounts.
+
+</Steps>
+
+<Screenshot id="dashboard-money-in-out" alt="The Income and expenses chart with 3M, 6M and 12M, the totals and net above it, and a pair of bars for each month" />
+
+## Choose the basis
+
+The **Accrual / Cash** switch in the dashboard's header changes this chart and **Profit this month** together:
+
+- **Accrual** counts income when you invoice and costs when you're billed.
+- **Cash** counts money received from customers and money paid out on bills and expenses, from your bank and cash accounts.
+
+See [Switch between accrual and cash](../switch-between-accrual-and-cash/).
+
+## Before you have any figures
+
+A new business sees "Income and expenses appear after your first invoice, bill or expense." On the cash basis it reads "Money in and out appears after your first payment or bill."
+
+<Aside type="tip">This chart always sits straight after the key figures and spans the full width, wherever it is in your layout. For more detail, open [Profit & Loss](../../reports/) or the Cash Flow report.</Aside>

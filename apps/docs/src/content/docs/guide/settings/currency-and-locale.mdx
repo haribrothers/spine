@@ -1,0 +1,37 @@
+---
+title: Change your currency and locale
+description: Set the one currency your business uses and how dates and numbers look across Spine.
+sidebar:
+  order: 5
+---
+
+Spine uses one currency for every quote, invoice, bill and report. The locale decides how dates and numbers are written — ₹1,25,000.00 in India, $125,000.00 in the US. Both were set during setup; you can change them here.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Currency & locale** — Open your user menu, choose **Settings**, and pick **Currency & locale** under **Business**. It says "Used for every document and report."
+
+2. **Choose the currency** — Pick from **Common currencies** (USD, EUR, GBP, AUD, CAD, INR, AED, SGD, NZD, ZAR) or type a **Currency** code. It's a three-letter ISO 4217 code, such as USD, EUR or INR.
+
+3. **Choose the locale** — Pick from **Common locales** (for example en-US, en-GB or en-IN) or type a **Locale**. It "Controls date and number formatting."
+
+4. **Press Save** — A "Saved" message appears. New documents and reports use the new settings.
+
+</Steps>
+
+<Screenshot id="settings-currency" alt="Settings, Currency & locale: the currency and locale fields with their common choices, and Save" />
+
+## Good to know
+
+- **One currency only.** Spine doesn't do multi-currency. Pick the currency you invoice and keep your books in.
+- **Issued documents keep their currency.** An issued quote or invoice keeps the amounts and currency it was issued with.
+- **The locale is about how things look.** It doesn't change any amount, tax or date — only how they're written on screen and on documents.
+
+<Aside type="caution">Set your currency before you issue your first documents. Changing it later doesn't convert any amounts already in your books.</Aside>
+
+Your financial year is a separate setting: see [Set your financial year](../financial-year/).

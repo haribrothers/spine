@@ -1,0 +1,52 @@
+---
+title: Read a bill or receipt with AI
+description: Have AI fill in a vendor bill from the vendor's PDF or photo, or an expense from a receipt, on the web or the phone.
+sidebar:
+  order: 6
+---
+
+Instead of typing a vendor's bill or a receipt, let AI read it. The document is attached to the record, the fields fill in for you to check, and nothing is saved until you press the form's own button.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Use AI features** and the right to create the bill or submit the expense. Field users can read their own receipts in the field app. AI and **Read bills and receipts** must be on in **Settings › AI assistant**.</Aside>
+
+## Read a vendor's bill
+
+<Steps>
+
+1. **Start a new vendor bill** — In **Vendor Bills**, press **New vendor bill**.
+
+2. **Press Read from document** — It's in the header card. Choose or drop the vendor's PDF or photo. It's attached to the bill either way. This can take up to 30 seconds; you can keep working on the bill.
+
+3. **Check what filled in** — The vendor, bill number, dates, currency and lines fill in, each marked **Suggested by AI**. Spine matches the vendor and items to yours and works out the totals itself.
+
+4. **Save it** — Press **Save as draft** or **Save and record** (which asks first, as usual).
+
+</Steps>
+
+- **A new vendor** is offered as "New vendor: *name*". Nothing is created until you confirm it.
+- **Totals that don't agree** — Spine says what the document says and what the lines add up to. Check the lines before saving.
+- **A possible duplicate** — if the bill number matches one of this vendor's bills, you see the duplicate warning before saving.
+- **A PDF or photo already attached** offers **Read** too.
+
+## Read a receipt into an expense
+
+<Steps>
+
+1. **Add the receipt** — On the expense form, add the receipt as the first file.
+
+2. **Press Read receipt** — It's under the receipt's preview. Date, amount, currency, tax, category and description fill in, marked **Suggested by AI**. The category is always one of yours, or left empty.
+
+3. **Submit** — Check it and press **Submit expense**. Approval works as usual.
+
+</Steps>
+
+## On the phone (field app)
+
+On the **New expense** screen, photograph the receipt and tap **Read receipt**. Amount, date, category and description fill in, marked **Suggested by AI**; change anything before submitting. Offline, the button shows "Needs a connection — fill it in, or read it later." and the expense queues as usual.
+
+<Aside type="caution">**Read receipt** isn't offered in Labour mode. On a record you're fixing, AI only fills empty fields and offers **Replace my entries** for the rest. A model that can't read images can't read photos; you'll be asked to choose one that can, or enter it by hand.</Aside>
+
+See [Purchases](../../purchases/) for bills and expenses.

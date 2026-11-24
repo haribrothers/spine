@@ -1,0 +1,2 @@
+ALTER TABLE "contact_persons" ADD COLUMN "logo_file_id" uuid;--> statement-breakpoint
+ALTER TABLE "contact_persons" ADD CONSTRAINT "contact_persons_logo_file_id_files_id_fk" FOREIGN KEY ("logo_file_id") REFERENCES "public"."files"("id") ON DELETE set null ON UPDATE no action;

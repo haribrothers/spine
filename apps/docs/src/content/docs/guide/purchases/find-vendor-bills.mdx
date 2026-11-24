@@ -1,0 +1,48 @@
+---
+title: Find vendor bills and see what's due
+description: Use the Vendor bills list, its cards, filters and search to find a bill and see what to pay next.
+sidebar:
+  order: 4
+---
+
+The Vendor bills list shows every bill with what's left to pay and when it's due, so nothing is paid late. The cards at the top add up what you owe and point you at what needs doing.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Open Vendor Bills**. Field users can't see vendor bills.
+</Aside>
+
+<Steps>
+
+1. **Open the list** — Go to **Vendor Bills**. The newest bill comes first.
+
+2. **Read the cards** — **To pay** is the balance on recorded bills. **Overdue** and **Due in 7 days** show the amount and how many bills. **Drafts to record** counts drafts not yet posted.
+
+3. **Narrow it down** — Press **Overdue**, **Due in 7 days** or **Drafts to record** to show only those bills; press it again to clear. Or use the filters on the left of the filter bar: state, vendor ("All vendors") and job ("All jobs").
+
+4. **Search** — Type a bill number, vendor or job in **Search bill numbers, vendors or jobs**.
+
+5. **Open a bill** — Press its number, or open the row's menu and choose **View**.
+
+</Steps>
+
+Each row shows the bill number, the vendor, the bill date, the due date with how late it is, the job, the state in words, the total and the balance. A void bill's balance shows "—". **Columns** lets you choose which columns show.
+
+Your filters, card, search, sort and page are kept in the address, so you can share the view or come back to it.
+
+## Act from a row
+
+The row's menu offers **View**, **Edit** and **Record** for a draft, **Pay bill** while money is owed, **Duplicate**, **Void** for a recorded bill and **Delete** for a draft. You only see the actions your Team allows. **Record**, **Void** and **Delete** ask first.
+
+## See a job's bills
+
+Choose a job in the job filter to list only bills tagged to it. The cards count only those bills. If none are tagged to the job, you see "No vendor bills on this job".
+
+From a job's **Costing** tab, press **View bills and expenses** under **Cost** to open this list filtered to that job, with a link to the same filter on Expenses. See [Jobs](../../jobs/).
+
+<Aside type="tip">
+  **Recurring bills** and **New vendor bill** sit on the right of the filter bar, beside **Updated** and the refresh button.
+</Aside>
+
+If there are no bills yet, the page says "No vendor bills yet" and explains that you save a bill as a draft, then record it when it's ready to post.

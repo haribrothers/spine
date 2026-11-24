@@ -1,0 +1,43 @@
+---
+title: Turn on browser notifications
+description: Get a notification from your operating system when something needs you, even when Spine isn't the tab you're looking at.
+sidebar:
+  order: 4
+---
+
+Browser notifications show your Spine notifications as alerts on your computer or phone, even with the Spine tab closed. They're extra to the bell and email — turning them off doesn't affect either. You turn them on for each device and browser separately.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Everyone, for their own devices. Your Spine server needs push keys set up; see [Configuration](../../../self-hosting/configuration/).</Aside>
+
+<Steps>
+
+1. **Open your notification settings** — Open your user menu, choose **Settings**, then **Notifications** under **Your account**.
+
+2. **Find Browser notifications** — It reads "Not enabled on this device" and "Turn this on to receive push notifications on this device."
+
+3. **Press Turn on** — Your browser asks whether Spine may show notifications. Allow it.
+
+4. **Check it's on** — The section reads "Enabled on this device" and "This device will receive push notifications."
+
+</Steps>
+
+<Screenshot id="notifications-settings-pane" alt="Settings, Your account, Notifications: the Browser notifications, Daily digest and Meeting reminders sections" />
+
+## What happens next
+
+When a notification is created for you, your operating system shows it with its message. Click it to open Spine at the record it's about.
+
+## Several devices
+
+Turn it on in each browser you use. Turning it off on one — press **Turn off** — doesn't stop the others.
+
+## If it doesn't turn on
+
+- **"Blocked by the browser"** — you blocked notifications for Spine earlier. Re-enable them in your browser's site settings, then come back and press **Turn on**.
+- **"This browser doesn't support push notifications."** — use a different browser on this device.
+- **"Browser notifications aren't configured on this Spine instance."** — whoever runs your Spine server needs to set a VAPID keypair. The bell and emails still work.
+
+<Aside type="tip">On a phone, Field users get their notifications in the field app. See [See notifications on the phone](../see-notifications-on-the-phone/).</Aside>

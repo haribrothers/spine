@@ -1,0 +1,48 @@
+---
+title: Refund a customer
+description: Pay back a customer's credit or overpayment and record the money leaving your account.
+sidebar:
+  order: 5
+---
+
+When a customer holds credit you won't use — an overpayment, an unused deposit, or the extra on a credit note — you can pay it back. Recording the refund lowers their credit and takes the money out of the account you paid it from, so your bank balance stays right.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Refund customers**. This right is off for General Staff unless an Owner turns it on, because money leaves the business. Without it, **Refund** is hidden.
+</Aside>
+
+<Steps>
+
+1. **Start the refund** — Press **Refund** on a payment with credit left, on a credit note with credit remaining, or on the customer's contact page. The **Refund** dialog opens with the customer's name.
+
+2. **Choose the credit** — Under **Refund from**, pick the payment or credit note the money comes from. It shows how much credit it holds.
+
+3. **Fill in the details** — Enter the **Amount** (up to that credit), the **Date**, **Paid from** (the account the money left), the **Method** and an optional **Reference**.
+
+4. **Tell the customer (optional)** — Tick **Send refund confirmation** to email them that you've refunded the amount.
+
+5. **Record it** — Press **Record refund**. The toast reads, for example, **Refunded $250.00 to Maple Ridge Homes**.
+
+</Steps>
+
+<Screenshot id="payments-refund" alt="The Refund dialog with Refund from, Amount, Date, Paid from and Method" />
+
+## What happens next
+
+- The customer's credit drops by the amount refunded. A payment whose credit is all paid back reads **Refunded**.
+- The money shows leaving the **Paid from** account in its register.
+- The refund appears under **Refunds** on the payment's page and in its **Activity**.
+- The customer's statement shows the refund as a line of its own.
+
+## Delete a refund
+
+If you recorded a refund by mistake, open the payment and press **Delete refund** next to it under **Refunds**. Spine asks first: "Delete this refund?" Confirm, and the refund is reversed in your books and the amount goes back into the customer's credit. The refund stays in the list, marked **Deleted**.
+
+<Aside type="caution">
+  A refund that's part of a finished bank reconciliation can't be deleted. Undo that reconciliation first. See [Banking](../../banking/).
+</Aside>
+
+If the dialog says the customer has no credit to refund, there's nothing to pay back yet.

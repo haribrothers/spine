@@ -1,0 +1,45 @@
+---
+title: The AI assistant
+description: What Spine's optional AI assistant does, how it's switched on, what it sends and how it stays under your control.
+sidebar:
+  order: 1
+---
+
+The AI assistant helps fill in forms. It reads a vendor's bill or a receipt into the bill or expense form, drafts the email that goes with a quote or invoice, drafts quote lines from a customer's enquiry and suggests bank matches while you reconcile. It never saves, sends or posts anything by itself: you check what it filled in and press the normal button.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners switch AI on and set it up, in **Settings › AI assistant**. Then Owners, Staff whose Team has **Use AI features**, and Field users reading their own receipts can use it. It's off on a new Spine.</Aside>
+
+## The main ideas
+
+- **Off means off.** With AI switched off, no AI button, suggestion or prompt appears anywhere, and Spine sends nothing to any AI service.
+- **Your provider, your choice.** Use a model on your own network, so nothing leaves it, or a cloud service such as Anthropic Claude with your business's own API key.
+- **You see what's sent.** Each feature lists exactly what it sends. Bank account numbers, tax IDs and GSTINs, UPI IDs, passwords and keys are never sent.
+- **Marked until you change it.** Everything AI fills in says **Suggested by AI** until you edit it. AI only fills empty fields; it offers **Replace my entries** for the rest.
+- **Forms work without it.** If the provider is down, slow or the budget is used up, you fill the form in by hand as usual.
+- **A budget you set.** Cap the tokens used each month so a cloud bill never surprises you.
+- **Recorded.** Every AI request is in the audit log, without the text of the request or reply.
+
+<Screenshot id="ai-assistant-settings" alt="Settings, AI assistant: the on/off switch and the Provider card with Local or OpenAI-compatible and Anthropic Claude" />
+
+## Tasks
+
+- [Turn on the AI assistant](./turn-on-the-ai-assistant/) — connect a provider and switch AI on.
+- [Choose which AI features are on](./choose-which-ai-features-are-on/) — and see what each one sends.
+- [Set a monthly AI budget](./set-a-monthly-ai-budget/) — and see this month's usage.
+- [Let a Team use AI](./let-a-team-use-ai/) — the **Use AI features** permission.
+- [Read a bill or receipt with AI](./read-a-bill-or-receipt-with-ai/) — on the web and on the phone.
+- [Draft a customer email with AI](./draft-a-customer-email-with-ai/) — including reminder tone.
+- [Draft quote lines with AI](./draft-quote-lines-with-ai/) — from a customer's enquiry.
+- [Get AI suggestions while reconciling](./get-ai-suggestions-while-reconciling/) — for the lines the rules can't settle.
+- [Check how AI is used](./check-how-ai-is-used/) — the audit log and each record's Activity.
+
+## When AI doesn't answer
+
+If the provider doesn't answer within 30 seconds, the control says "AI didn't answer. Fill this in by hand or try again." with **Try again**. What you've typed stays, and you can save the form by hand. A request you cancel fills nothing. If AI returns a value Spine can't use, that field stays empty and the rest fills in.
+
+## Related
+
+- [Connected agents](../connected-agents/) — using Spine from your own AI agent, such as Claude or ChatGPT. That's separate from the assistant and doesn't use its provider or budget.

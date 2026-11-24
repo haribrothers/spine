@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+ <HEADER>
+  <TALLYREQUEST>Import Data</TALLYREQUEST>
+ </HEADER>
+ <BODY>
+  <IMPORTDATA>
+   <REQUESTDESC>
+    <REPORTNAME>All Masters</REPORTNAME>
+   </REQUESTDESC>
+   <REQUESTDATA>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="HDFC Current" ACTION="Create">
+      <NAME.LIST><NAME>HDFC Current</NAME></NAME.LIST>
+      <PARENT>Bank Accounts</PARENT>
+     </LEDGER>
+    </TALLYMESSAGE>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="Output Tax Payable" ACTION="Create">
+      <NAME.LIST><NAME>Output Tax Payable</NAME></NAME.LIST>
+      <PARENT>Duties &amp; Taxes</PARENT>
+     </LEDGER>
+    </TALLYMESSAGE>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="Sales &#8212; Services" ACTION="Create">
+      <NAME.LIST><NAME>Sales &#8212; Services</NAME></NAME.LIST>
+      <PARENT>Sales Accounts</PARENT>
+     </LEDGER>
+    </TALLYMESSAGE>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="Cost of Materials" ACTION="Create">
+      <NAME.LIST><NAME>Cost of Materials</NAME></NAME.LIST>
+      <PARENT>Direct Expenses</PARENT>
+     </LEDGER>
+    </TALLYMESSAGE>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="Input Tax Receivable" ACTION="Create">
+      <NAME.LIST><NAME>Input Tax Receivable</NAME></NAME.LIST>
+      <PARENT>Duties &amp; Taxes</PARENT>
+     </LEDGER>
+    </TALLYMESSAGE>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="Lakeview Homes LLP" ACTION="Create">
+      <NAME.LIST><NAME>Lakeview Homes LLP</NAME></NAME.LIST>
+      <PARENT>Sundry Debtors</PARENT>
+      <ISBILLWISEON>Yes</ISBILLWISEON>
+      <ADDRESS.LIST TYPE="String">
+       <ADDRESS>8 Indiranagar 2nd Stage</ADDRESS>
+       <ADDRESS>Bengaluru 560038</ADDRESS>
+      </ADDRESS.LIST>
+      <LEDSTATENAME>Karnataka</LEDSTATENAME>
+      <COUNTRYNAME>India</COUNTRYNAME>
+      <GSTREGISTRATIONTYPE>Regular</GSTREGISTRATIONTYPE>
+      <PARTYGSTIN>29AABFL0000B1ZA</PARTYGSTIN>
+     </LEDGER>
+    </TALLYMESSAGE>
+    <TALLYMESSAGE xmlns:UDF="TallyUDF">
+     <LEDGER NAME="Shree Cement Traders" ACTION="Create">
+      <NAME.LIST><NAME>Shree Cement Traders</NAME></NAME.LIST>
+      <PARENT>Sundry Creditors</PARENT>
+      <ISBILLWISEON>Yes</ISBILLWISEON>
+      <ADDRESS.LIST TYPE="String">
+       <ADDRESS>Peenya Industrial Area</ADDRESS>
+      </ADDRESS.LIST>
+      <LEDSTATENAME>Karnataka</LEDSTATENAME>
+      <COUNTRYNAME>India</COUNTRYNAME>
+      <GSTREGISTRATIONTYPE>Unregistered</GSTREGISTRATIONTYPE>
+     </LEDGER>
+    </TALLYMESSAGE>
+   </REQUESTDATA>
+  </IMPORTDATA>
+ </BODY>
+</ENVELOPE>

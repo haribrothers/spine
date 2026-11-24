@@ -1,0 +1,54 @@
+---
+title: Set meeting reminders
+description: Choose how long before a meeting Spine reminds you, set the business default, and choose which meetings the dashboard shows.
+sidebar:
+  order: 8
+---
+
+Spine reminds you shortly before a meeting starts, so you're never caught out. The business has a default reminder time, and each person can choose their own.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Anyone can set their own reminder time. Only Owners set the business default and choose which meetings the dashboard shows.</Aside>
+
+## Who gets a reminder
+
+You get one "starting soon" reminder, by every channel you have turned on, when:
+
+- you organise the meeting, or
+- you're invited and answered **Accepted** or **Tentative**.
+
+If you declined, you get no reminder. A recurring meeting reminds you once for each occurrence, and not for a cancelled one. If a meeting's time changes after you were reminded, you're reminded again before the new time.
+
+## Choose your own reminder time
+
+<Steps>
+1. **Open your notifications** — Open **Settings** and choose **Notifications** under **Your account**.
+2. **Pick a time** — Under **Meeting reminders**, choose **5 min**, **15 min**, **30 min** or **60 min**, or the business default (shown as "Business default · 15 min").
+3. **Check it** — Spine says, for example, "You'll be reminded 30 minutes before." and "Meeting reminders saved."
+</Steps>
+
+## Set the business default
+
+<Steps>
+1. **Open the setting** — Open **Settings** and choose **Meeting reminders** under **Sales & meetings**.
+2. **Pick a time** — Choose **5 minutes before**, **15 minutes before**, **30 minutes before** or **60 minutes before**. It starts at 15 minutes.
+3. **Save** — Press **Save**. Everyone who hasn't chosen their own time uses it.
+</Steps>
+
+<Screenshot id="meetings-reminders" alt="The Meeting reminders settings with the default lead time options from 5 to 60 minutes before" />
+
+## Choose which meetings the dashboard shows
+
+The dashboard's upcoming meetings can show each person's own meetings, or every meeting in the business.
+
+<Steps>
+1. **Open the setting** — Open **Settings** and choose **Upcoming meetings** under **Sales & meetings**.
+2. **Choose** — Choose **Only my meetings** ("Each person's dashboard shows only the meetings they organize.") or **Every org meeting**, which suits a small team that plans as one calendar.
+3. **Save** — Press **Save**. Every Staff dashboard follows your choice.
+</Steps>
+
+Field users always see only their own meetings, whatever you choose. See [Dashboard](../../dashboard/).
+
+<Aside type="tip">Reminders by email and browser need those channels to be working. See [Notifications](../../notifications/) and, for your server's email, [Email](../../../self-hosting/email/).</Aside>

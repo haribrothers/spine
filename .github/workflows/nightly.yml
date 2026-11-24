@@ -1,0 +1,19 @@
+name: Nightly
+
+# US-OPS-04, US-OPS-50 (NFR-REL-03, NFR-MNT-02, D-262) — backup, restore and
+# upgrade are checked every night once the repo is public (Actions minutes are
+# free then). Until then they're checked on every release tag (ci.yml).
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  self-hosting:
+    name: Self-hosting checks
+    if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
+    uses: ./.github/workflows/self-hosting.yml

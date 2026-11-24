@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "theme_preference" text DEFAULT 'system' NOT NULL;

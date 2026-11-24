@@ -1,0 +1,71 @@
+name: spine-dev
+
+# Local development infrastructure only — Postgres and MailDev as containers,
+# with ports published to the host so `apps/api`/`apps/web` run natively
+# via `pnpm dev` (fast HMR, no image rebuild per change) and just point at
+# these. This is NOT what self-hosters deploy — see docker-compose.yml for
+# the production stack (which builds and runs api/web as containers behind
+# Caddy). Usage: `pnpm dev:infra:up` / `pnpm dev:infra:down` (see README.md).
+#
+# Files use the local storage driver (apps/api/.data/files), so no storage
+# container is needed. `COMPOSE_PROFILES=rustfs pnpm dev:infra:up` adds RustFS to
+# test the s3 driver (D-103).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spine
+      POSTGRES_PASSWORD: spine
+      POSTGRES_DB: spine
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - spine_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: spine
+      RUSTFS_SECRET_KEY: spinespine
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - spine_dev_rustfs:/data
+    mem_limit: 1g
+    profiles: ["rustfs"]
+
+  # Dev-only SMTP catcher for quote emails (F3 Stage 2) — not a real mail
+  # server, nothing is ever actually delivered. Point apps/api's SMTP_HOST/
+  # SMTP_PORT at 127.0.0.1:1025 (see .env.example) and read what "sent" at
+  # http://localhost:1080. Entirely optional: SMTP left unconfigured is the
+  # default graceful-degradation path (email queues, quote still issues) —
+  # this container just lets you see the email land locally instead of only
+  # inferring it worked from pg-boss job state.
+  maildev:
+    image: maildev/maildev
+    restart: unless-stopped
+    # The image ships its own baked-in healthcheck (a `wget` probe), which
+    # reports "unhealthy" in `docker ps` in this environment regardless of
+    # MAILDEV_WEB_PORT — the service itself is fully functional (verified: a
+    # real SMTP send landed and was visible in the web UI, and `GET /api/
+    # healthz` succeeds from the host), it's specifically the in-container
+    # wget probe that fails. Disabled here rather than chased further —
+    # nothing else in this compose file depends on the healthcheck passing,
+    # and a permanently-red "unhealthy" status is more confusing during dev
+    # than no status at all.
+    healthcheck:
+      disable: true
+    ports:
+      - "127.0.0.1:1080:1080"
+      - "127.0.0.1:1025:1025"
+
+volumes:
+  spine_dev_pgdata:
+  spine_dev_rustfs:

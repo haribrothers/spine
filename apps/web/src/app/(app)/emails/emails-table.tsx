@@ -1,0 +1,225 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Badge, DataTable, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, cn, type TableColumn, type TableSort } from "@spine/ui";
+import { EMAIL_KIND_LABELS, EMAIL_LOG_STATUS_LABELS, emailRecordHref, type EmailLogEntry, type EmailLogStatus } from "@spine/shared";
+import { MoreHorizontal } from "lucide-react";
+import { orgLocaleTag } from "../../../lib/money";
+import { calendarDate } from "../quotes/quotes-list-state";
+import { MENU_ICONS } from "../../../lib/menu-icons";
+import { useT } from "../../../lib/i18n";
+import { emailNote } from "./emails-list-state";
+
+/** The time a row was sent or queued, e.g. "10:42 AM". */
+const TIME_FORMAT: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
+
+const STATUS_CLASS: Record<EmailLogStatus, string> = {
+  queued: "bg-draft-bg text-draft",
+  retrying: "bg-due-soon-bg text-due-soon",
+  sending: "bg-info-bg text-primary",
+  sent: "bg-paid-bg text-paid",
+  failed: "bg-overdue-bg text-overdue",
+  cancelled: "bg-draft-bg text-draft line-through",
+};
+
+/**
+ * US-SET-27/28 (D-220) — the email log's table: when, to whom, the kind and
+ * subject (with the error, the next try or who cancelled under it), the
+ * record, the status in words and the attempts, with a row menu: Retry now
+ * and Cancel for a queued email (each asks first, in the explorer), and the
+ * record to open.
+ */
+export function EmailsTable({
+  emails,
+  now,
+  sort,
+  onSortChange,
+  page,
+  onPageChange,
+  toolbarStart,
+  onRetry,
+  onCancel,
+}: {
+  emails: EmailLogEntry[];
+  now: Date;
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort | null) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  toolbarStart?: React.ReactNode;
+  onRetry: (email: EmailLogEntry) => void;
+  onCancel: (email: EmailLogEntry) => void;
+}) {
+  const t = useT();
+  const locale = orgLocaleTag();
+  const columns: TableColumn<EmailLogEntry>[] = [
+    {
+      key: "when",
+      // US-OPS-56: on a phone, a mail app's row: who it's to, its status, the subject, and on the right the time today or the date before.
+      phone: "trailingSub",
+      phoneRender: (row) => {
+        const at = row.sentAt ?? row.queuedAt;
+        const day = new Date(at);
+        return day.toDateString() === now.toDateString() ? day.toLocaleTimeString(locale, TIME_FORMAT) : calendarDate(at, now, locale);
+      },
+      header: t("emails.columns.when"),
+      render: (row) => {
+        const at = row.sentAt ?? row.queuedAt;
+        const day = new Date(at);
+        const today = day.toDateString() === now.toDateString();
+        return (
+          <div className="flex flex-col whitespace-nowrap">
+            <span className="font-medium text-on-surface">{day.toLocaleTimeString(locale, TIME_FORMAT)}</span>
+            <span className="text-[12px] text-on-surface-muted">{today ? t("emails.table.today") : calendarDate(at, now, locale)}</span>
+          </div>
+        );
+      },
+      sortValue: (row) => row.sentAt ?? row.queuedAt,
+    },
+    {
+      key: "to",
+      phone: "title",
+      phoneRender: (row) => row.toName || row.toAddress || t("emails.table.noAddress"),
+      header: t("emails.columns.to"),
+      render: (row) => (
+        <div className="flex max-w-60 flex-col">
+          <span className="truncate" title={row.toAddress}>
+            {row.toAddress || <span className="italic text-on-surface-muted">{t("emails.table.noAddress")}</span>}
+          </span>
+          {row.toName && <span className="truncate text-[12px] text-on-surface-muted">{row.toName}</span>}
+        </div>
+      ),
+      sortValue: (row) => row.toAddress,
+    },
+    {
+      key: "subject",
+      phone: "subtitle",
+      phoneRender: (row) => row.subject,
+      header: t("emails.columns.subject"),
+      render: (row) => {
+        const note = emailNote(row, locale);
+        return (
+          <div className="flex max-w-[26rem] flex-col whitespace-normal" data-testid="email-subject">
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="shrink-0 rounded-sm border border-border px-1.5 text-[11.5px] font-medium leading-5 text-on-surface-muted">{EMAIL_KIND_LABELS[row.kind]}</span>
+              <span className="truncate font-medium text-on-surface" title={row.subject}>
+                {row.subject}
+              </span>
+            </span>
+            {note && <span className={cn("text-[12px]", note.error ? "text-overdue" : "text-on-surface-muted")}>{note.text}</span>}
+          </div>
+        );
+      },
+      sortValue: (row) => row.subject,
+    },
+    {
+      key: "record",
+      phone: "hidden",
+      header: t("emails.columns.record"),
+      render: (row) => {
+        const href = emailRecordHref(row.entityType, row.entityId);
+        if (!row.recordLabel) return <span className="text-on-surface-muted">—</span>;
+        return href ? (
+          <Link href={href} className="whitespace-nowrap text-primary hover:underline">
+            {row.recordLabel}
+          </Link>
+        ) : (
+          row.recordLabel
+        );
+      },
+      sortValue: (row) => row.recordLabel ?? "",
+    },
+    {
+      key: "status",
+      phone: "badge",
+      header: t("emails.columns.status"),
+      render: (row) => (
+        <Badge className={STATUS_CLASS[row.status]} data-testid="email-status">
+          {EMAIL_LOG_STATUS_LABELS[row.status]}
+        </Badge>
+      ),
+      sortValue: (row) => row.status,
+    },
+    {
+      key: "attempts",
+      phone: "hidden",
+      header: t("emails.columns.attempts"),
+      render: (row) => (
+        <span className="whitespace-nowrap tabular-nums text-on-surface-muted">
+          {t("emails.table.attempts", { attempts: row.attempts, max: row.maxAttempts })}
+        </span>
+      ),
+      sortValue: (row) => row.attempts,
+    },
+    {
+      key: "actions",
+      phone: "action",
+      header: "",
+      render: (row) => (
+        <div className="flex justify-end">
+          <EmailRowActions email={row} onRetry={onRetry} onCancel={onCancel} />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      data={emails}
+      rowKey={(row) => row.id}
+      configurablePageSize
+      toolbarStart={toolbarStart}
+      sort={sort}
+      onSortChange={onSortChange}
+      page={page}
+      onPageChange={onPageChange}
+    />
+  );
+}
+
+/** Retry now and Cancel for a queued email; the record to open, where it can be sent again. */
+function EmailRowActions({ email, onRetry, onCancel }: { email: EmailLogEntry; onRetry: (email: EmailLogEntry) => void; onCancel: (email: EmailLogEntry) => void }) {
+  const t = useT();
+  const router = useRouter();
+  const href = emailRecordHref(email.entityType, email.entityId);
+  const record = href && email.recordLabel;
+  if (!email.canRetry && !email.canCancel && !record) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("emails.table.actionsFor", { address: email.toAddress || t("emails.table.noAddressLower") })}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
+        >
+          <MoreHorizontal size={16} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {email.canRetry && (
+          <DropdownMenuItem onSelect={() => onRetry(email)}>
+            <MENU_ICONS.retry aria-hidden />
+            {t("emails.table.retryNow")}
+          </DropdownMenuItem>
+        )}
+        {record && (
+          <DropdownMenuItem onSelect={() => router.push(href)}>
+            <MENU_ICONS.open aria-hidden />
+            {t("emails.table.open", { record: email.recordLabel ?? "" })}
+          </DropdownMenuItem>
+        )}
+        {email.canCancel && (
+          <>
+            {(email.canRetry || record) && <DropdownMenuSeparator />}
+            <DropdownMenuItem destructive onSelect={() => onCancel(email)}>
+              <MENU_ICONS.cancel aria-hidden />
+              {t("emails.table.cancel")}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

@@ -1,0 +1,120 @@
+# Spine's self-hosted stack. scripts/install.sh sets it up and starts it.
+# From a clone, `docker compose build` builds the api, web and proxy images
+# from source instead of pulling them.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spine
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spine}
+      POSTGRES_DB: spine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    profiles: ["minimal", "full"]
+
+  api:
+    # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
+    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.6}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    # Attachments, photos, logos and issued PDFs (local storage driver, D-102).
+    # `docker compose down -v` deletes this volume — back it up with the database.
+    volumes:
+      - spine_files:/data/files
+      # US-OPS-50 (D-264): a database snapshot before each upgrade's migrations (the last three).
+      - spine_snapshots:/data/snapshots
+    # US-OPS-05: ready once the database and the job queue answer (GET /health/ready).
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:' + (process.env.PORT || 4000) + '/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    profiles: ["minimal", "full"]
+
+  web:
+    # The release's image (US-OPS-01, US-OPS-51); scripts/install.sh pulls it.
+    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.6}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    restart: unless-stopped
+    # US-OPS-05: starts once the API is ready, not merely started.
+    depends_on:
+      api:
+        condition: service_healthy
+    env_file: .env
+    # US-OPS-51: the web server calls the API inside the stack; browsers use <APP_URL>/api.
+    environment:
+      API_URL: http://api:4000
+    profiles: ["minimal", "full"]
+
+  caddy:
+    # Caddy with Spine's routing built in (D-280; docker/Caddyfile in the
+    # repo), so this file needs nothing beside it. Your own routing: mount a Caddyfile over
+    # /etc/caddy/Caddyfile in docker-compose.override.yml.
+    image: ghcr.io/haribrothers/spine-proxy:${SPINE_VERSION:-1.0.0-beta.6}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.proxy
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    # D-279: one port, plain HTTP, for any address (http://localhost:7746 and
+    # http://<this machine's IP>:7746). SPINE_PORT picks another port, or
+    # 127.0.0.1:7746 for this machine only. With a domain, ./install.sh also
+    # publishes 80 and 443 in docker-compose.override.yml for the certificate.
+    ports:
+      - "${SPINE_PORT:-7746}:7746"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:7746}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    profiles: ["minimal", "full"]
+
+  # Optional self-hosted S3 store (D-103) for owners who want STORAGE_DRIVER=s3
+  # without a cloud account: `docker compose --profile minimal --profile rustfs up -d`,
+  # then S3_ENDPOINT=http://rustfs:9000 and your own S3_ACCESS_KEY/S3_SECRET_KEY.
+  # No ports are published: only the API reaches it. Pinned; revisit once its
+  # single-disk issues close.
+  rustfs:
+    image: rustfs/rustfs:1.0.1
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-}
+    volumes:
+      - rustfs_data:/data
+    mem_limit: 1g
+    profiles: ["rustfs"]
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    profiles: ["full"]
+
+volumes:
+  pgdata:
+  spine_files:
+  spine_snapshots:
+  rustfs_data:
+  caddy_data:
+  caddy_config:

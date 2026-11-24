@@ -1,0 +1,47 @@
+FROM node:22-alpine AS base
+# See docker/Dockerfile.api's identical comment — better-auth declares
+# better-sqlite3 as a peer dep even though this app never uses it, and
+# pnpm still needs a C toolchain + Python to build its native addon.
+RUN apk add --no-cache python3 make g++
+RUN corepack enable
+
+FROM base AS deps
+WORKDIR /repo
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/ui/package.json packages/ui/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/config/package.json packages/config/package.json
+COPY apps/docs/package.json apps/docs/package.json
+# `canvas` is a test-only dependency (jsdom in packages/ui's tests) that
+# still lands here through peer dependencies; nothing in production loads
+# it, and it can't compile on Alpine without cairo/pango, so skip its build
+# (only in this image — dev machines still build it for the UI tests).
+RUN node -e 'const f="package.json",p=JSON.parse(require("fs").readFileSync(f));p.pnpm.neverBuiltDependencies=["canvas"];require("fs").writeFileSync(f,JSON.stringify(p,null,2))'
+RUN pnpm install --frozen-lockfile --filter @spine/web... --filter @spine/docs
+
+FROM base AS build
+WORKDIR /repo
+COPY --from=deps /repo /repo
+COPY . .
+# US-OPS-51: one image for every install. The browser reaches the API on the
+# page's own origin under /api (Caddy), whatever the domain; the web server's
+# own calls use API_URL at runtime (docker-compose.yml points it at the api
+# container).
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+# US-OPS-01: Next.js's standalone output holds the server and only the files it uses.
+ENV NEXT_OUTPUT=standalone
+# US-SITE-12 (D-110): this version's user guide, served by the web app at /help, offline.
+RUN pnpm --filter @spine/docs build:help
+RUN pnpm --filter @spine/web... build
+
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
+COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
+COPY --from=build --chown=node:node /repo/apps/web/.next/static apps/web/.next/static
+COPY --from=build --chown=node:node /repo/apps/web/public apps/web/public
+USER node
+EXPOSE 3000
+CMD ["node", "apps/web/server.js"]

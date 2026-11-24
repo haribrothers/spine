@@ -1,0 +1,6 @@
+{
+  "extends": "@spine/config/tsconfig/expo",
+  "compilerOptions": {
+    "types": ["jest", "node"]
+  }
+}

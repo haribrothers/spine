@@ -1,0 +1,92 @@
+[
+  {
+    "id": "quotes-list",
+    "path": "/quotes",
+    "alt": "The Quotes list with the Open, Expiring in 7 days, Won this month and Win rate cards above the table",
+    "wait": "Win rate"
+  },
+  {
+    "id": "quotes-list-filters",
+    "path": "/quotes",
+    "alt": "The Quotes list toolbar with the Status and Contact filters, the search box and a row's Viewed count",
+    "wait": "Valid until"
+  },
+  {
+    "id": "quotes-builder",
+    "path": "/quotes/new",
+    "alt": "The quote builder with the title, contact and Valid until fields, compact line rows and the totals bar at the bottom",
+    "wait": "Valid until"
+  },
+  {
+    "id": "quotes-more-menu",
+    "path": "/quotes/{quote}",
+    "alt": "A quote's More menu with Duplicate as new draft, Save lines as a bundle… and View history",
+    "click": "More",
+    "wait": "Save lines as a bundle…"
+  },
+  {
+    "id": "quotes-settings-documents",
+    "path": "/dashboard?settings=documents",
+    "alt": "Settings, Documents with Quote chosen and the Quotes valid for field",
+    "click": "Quote",
+    "wait": "Quotes valid for"
+  },
+  {
+    "id": "quotes-detail-pdf",
+    "path": "/quotes/{quote}",
+    "alt": "A quote's page with the Download PDF button beside the next-step button",
+    "wait": "PDF"
+  },
+  {
+    "id": "quotes-detail-approval",
+    "path": "/quotes/{quote}",
+    "alt": "A draft quote's page with the discount approval banner and the Approve discount button",
+    "wait": "approval threshold"
+  },
+  {
+    "id": "quotes-send",
+    "path": "/quotes/{quote}",
+    "alt": "The Send quote dialog with To, Subject, Message and Attach the quote PDF",
+    "click": "Send quote",
+    "wait": "Attach the quote PDF"
+  },
+  {
+    "id": "quotes-detail",
+    "path": "/quotes/{quote}",
+    "alt": "A sent quote's page with the lines table, the totals, and the Activity and Related panels",
+    "wait": "Activity"
+  },
+  {
+    "id": "quotes-revise",
+    "path": "/quotes/{quote}",
+    "alt": "The Revise this quote? confirmation over a sent quote's page",
+    "click": "Revise",
+    "wait": "Revise this quote?"
+  },
+  {
+    "id": "quotes-detail-accepted",
+    "path": "/quotes/{quote}",
+    "alt": "An accepted quote's page with Convert to invoice as the main button and Convert to job beside it",
+    "wait": "Convert to invoice"
+  },
+  {
+    "id": "quotes-settings-conversion",
+    "path": "/dashboard?settings=quote-conversion-guard",
+    "alt": "Settings, Repeat quote conversion with the Warn, Block and Off choices",
+    "wait": "Warn (recommended)"
+  },
+  {
+    "id": "quotes-duplicate",
+    "path": "/quotes/{quote}",
+    "alt": "A quote's More menu open with Duplicate as new draft at the top",
+    "click": "More",
+    "wait": "Duplicate as new draft"
+  },
+  {
+    "id": "quotes-delete",
+    "path": "/quotes/{quote}",
+    "alt": "A draft quote's More menu with Delete draft at the bottom",
+    "click": "More",
+    "wait": "Delete draft"
+  }
+]

@@ -1,0 +1,51 @@
+---
+title: Choose whether prices include tax
+description: Set whether new lines treat the price as including tax, and switch it on one line when you need to.
+sidebar:
+  order: 4
+---
+
+Some businesses quote prices with tax already in them; others add tax on top. Spine lets you set the default for your business, and each line on a document can still go the other way.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners set the default in Settings › Tax. Anyone who can edit a quote, invoice, vendor bill or variation order can change it on a line.</Aside>
+
+## Set the default
+
+<Steps>
+
+1. **Open Settings › Tax** — Open your account menu, choose **Settings**, then **Tax**.
+2. **Turn on Prices include tax by default** — The helper reads "New quote/invoice lines default to tax-inclusive pricing. Each line can still override this." Turn it off to add tax on top of prices.
+
+</Steps>
+
+<Screenshot id="tax-prices-include" alt="The Prices include tax by default switch in Settings › Tax" />
+
+The setting changes new lines only. Lines already on documents keep how they were priced.
+
+## What it does to a line
+
+A line priced 115.00 with a 15% rate:
+
+| Setting | Net | Tax | Total |
+|---|---|---|---|
+| Prices include tax (on) | 100.00 | 15.00 | 115.00 |
+| Tax added on top (off) | 115.00 | 17.25 | 132.25 |
+
+## Change it on one line
+
+<Steps>
+
+1. **Open the draft** — Open the quote, invoice, vendor bill or variation order you're editing.
+2. **Tick or untick Price includes tax** — On the line, change **Price includes tax**. That line's net, tax and total recompute. Other lines don't change.
+3. **Save** — Each line keeps its own setting when you reopen the document.
+
+</Steps>
+
+## Change a line's tax rate
+
+A line from a catalogue item starts with the item's tax. Pick a different rate or group on the line and the line uses it; the catalogue item stays as it was.
+
+<Aside type="tip">Tax is worked out for each line and rounded once, half-up, so totals match what a calculator gives for each line.</Aside>

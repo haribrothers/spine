@@ -1,0 +1,36 @@
+---
+title: Read your key figures
+description: Read the cash, profit, receivables and overdue figures at the top of the dashboard, with their trend and comparison with last month.
+sidebar:
+  order: 2
+---
+
+The row of key figures tells you how the business stands in four numbers. Each card shows the figure, a line of the last 8 weeks and how it compares with last month, so a number never sits on its own. The row stays pinned in place: you can't move or hide it.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View dashboard summary**. Staff without it see a different set of figures from the rights they do hold. Field crew don't see this row.</Aside>
+
+<Steps>
+
+1. **Read the four cards** — **Cash position**, **Profit this month**, **Receivables** and **Overdue**.
+2. **Read the comparison** — Under each figure, a line of the last 8 weeks and a change such as "▲ +8.2% vs last month". If last month had no figure, it reads "No data last month".
+3. **Read the extra lines** — **Receivables** adds "Current *amount* · overdue *amount*". **Overdue** says how many invoices are overdue.
+4. **Click a card** — Open the report behind it: **Cash position** opens the Balance Sheet, **Profit this month** opens Profit & Loss, **Receivables** opens Receivables, and **Overdue** opens Receivables filtered to overdue.
+
+</Steps>
+
+<Screenshot id="dashboard-key-figures" alt="The key figures row with Cash position, Profit this month, Receivables and Overdue, each with its 8-week line and change against last month" />
+
+## Reading the colours
+
+A change is green when it's good for the business (cash and profit up, receivables and overdue down) and red when it isn't. The arrow and the sign are always there too, so you never need the colour to read it.
+
+Each card has its own icon and a light tint: a wallet for cash, a trend line for profit, coins for receivables, and an alert for overdue. A very large amount steps down in size so the whole figure fits on one line.
+
+## Profit on a cash basis
+
+**Profit this month** follows the **Accrual / Cash** switch in the dashboard's header. On the cash basis, the card says "cash basis" under the figure. See [Switch between accrual and cash](../switch-between-accrual-and-cash/).
+
+<Aside type="tip">Payables sit on their own card further down, beside the other books cards. See [Check the books cards](../check-the-books-cards/).</Aside>

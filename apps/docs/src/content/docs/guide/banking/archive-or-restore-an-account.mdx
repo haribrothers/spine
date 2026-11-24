@@ -1,0 +1,42 @@
+---
+title: Archive or restore an account
+description: Take an account you no longer use out of the pickers while keeping its history, and bring it back if you need it.
+sidebar:
+  order: 2
+---
+
+When you close a bank account or stop using a card, archive it in Spine. It stops appearing in the account pickers on payments, expenses and transfers, but its register, reconciliations and ledger history stay.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners only.
+</Aside>
+
+<Steps>
+
+1. **Empty the account first** — The balance must be zero. If money is left, [move it to another account](../move-money-between-accounts/) first.
+
+2. **Choose Archive** — On **Banking**, open the account's row menu and choose **Archive**.
+
+3. **Confirm** — "Archive …?" says the account leaves the pickers and keeps its history. Press **Archive account**, or **Go back** to keep it.
+
+</Steps>
+
+<Screenshot id="banking-archive" alt="The Banking page's Archived tab, where archived accounts are listed and can be restored" />
+
+The toast reads **Account archived** and the account moves to the **Archived** tab.
+
+## When you can't archive an account
+
+- **It still has money in it.** Spine says "Move the … out of this account before archiving it." and nothing changes.
+- **It's the default account.** Spine says "Choose another default account first." Choose **Set as default** on another account, then archive this one.
+
+## Restore an account
+
+Open the **Archived** tab, open the account's row menu and choose **Restore**. The toast reads **Account restored** and the account is back in the pickers.
+
+<Aside type="tip">
+  You can still open an archived account's register to look back at what moved through it. Choose **Open register** in its row menu.
+</Aside>

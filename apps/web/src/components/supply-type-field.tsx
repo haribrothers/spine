@@ -1,0 +1,117 @@
+"use client";
+
+import { useId } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import { SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, supplyClassTaxError, type SupplyClass } from "@spine/shared";
+import { t as translate } from "../lib/i18n";
+
+/** The rate a line's chosen taxes add up to, for deciding whether it's taxed. */
+export function lineTaxPercent(rates: readonly { percent: number | string }[]): number {
+  return rates.reduce((sum, r) => sum + Number(r.percent), 0);
+}
+
+/**
+ * US-TAX-11 — keeps a line's supply type in step with its tax: a line that
+ * gains tax becomes taxable; one that loses it takes its 0% rate's type
+ * (D-182), else keeps an exempt or non-taxable type, else takes its item's,
+ * else zero-rated. Exempt and non-taxable stay put under tax so the
+ * conflict shows.
+ */
+export function supplyClassForTax(current: SupplyClass | null, taxPercent: number, itemClass?: SupplyClass | null, rateClass?: SupplyClass | null): SupplyClass {
+  if (taxPercent > 0) return current === "exempt" || current === "non_taxable" ? current : "taxable";
+  if (rateClass) return rateClass;
+  if (current && current !== "taxable") return current;
+  return itemClass && itemClass !== "taxable" ? itemClass : "zero_rated";
+}
+
+/**
+ * Applies a line edit and, when it changed the tax or the catalogue item,
+ * moves the supply type with it (unless the edit set the supply type itself).
+ */
+export function withSupplyClass<L extends { type: string; catalogItemId: string | null; taxRateId: string | null; supplyClass: SupplyClass | null }>(
+  line: L,
+  patch: Partial<L>,
+  taxPercent: number,
+  item: { supplyClass: SupplyClass } | undefined,
+  rates: readonly { id: string; supplyClass?: SupplyClass | null }[] = [],
+): L {
+  if (line.type !== "item" || "supplyClass" in patch) return line;
+  const pickedItem = "catalogItemId" in patch && item;
+  if (!pickedItem && !("taxRateId" in patch || "taxGroupId" in patch || "taxRatePercentage" in patch)) return line;
+  // D-182: a 0% rate says whether it's zero-rated, exempt or outside tax — unless the item just picked says so.
+  const rateClass = pickedItem && item.supplyClass !== "taxable" ? null : (rates.find((r) => r.id === line.taxRateId)?.supplyClass ?? null);
+  return { ...line, supplyClass: supplyClassForTax(pickedItem ? item.supplyClass : line.supplyClass, taxPercent, item?.supplyClass, rateClass) };
+}
+
+/** Shown when a line has no tax, or when its type says it shouldn't. */
+export function showsSupplyType(supplyClass: SupplyClass | null, taxPercent: number): boolean {
+  return taxPercent === 0 || (supplyClass !== null && supplyClass !== "taxable");
+}
+
+/** US-TAX-11 — "Supply type" on a document line or catalogue item, with the exempt-with-tax message. */
+export function SupplyTypeField({
+  value,
+  taxPercent,
+  onChange,
+  label = translate("catalog.supplyTypeField.label"),
+  labelClassName = "text-[11px] font-medium text-on-surface-muted",
+  compact = false,
+}: {
+  value: SupplyClass | null;
+  taxPercent: number;
+  onChange: (value: SupplyClass) => void;
+  label?: string;
+  labelClassName?: string;
+  /** US-QUO-34: one cell in the quote builder's line grid, named for screen readers only. */
+  compact?: boolean;
+}) {
+  const id = useId();
+  const error = supplyClassTaxError(value, taxPercent);
+  if (compact) {
+    return (
+      <div className="flex min-w-0 flex-col gap-1">
+        <Select value={value ?? "zero_rated"} onValueChange={(v) => onChange(v as SupplyClass)}>
+          <SelectTrigger aria-label={label} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} className="h-8 text-[13px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SUPPLY_CLASSES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {SUPPLY_CLASS_LABELS[c]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {error && (
+          <p id={`${id}-error`} role="alert" className="text-[12px] text-overdue">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <span id={`${id}-label`} className={labelClassName}>
+        {label}
+      </span>
+      <Select value={value ?? "zero_rated"} onValueChange={(v) => onChange(v as SupplyClass)}>
+        <SelectTrigger aria-labelledby={`${id}-label`} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {SUPPLY_CLASSES.map((c) => (
+            <SelectItem key={c} value={c}>
+              {SUPPLY_CLASS_LABELS[c]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-[12px] text-overdue">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}

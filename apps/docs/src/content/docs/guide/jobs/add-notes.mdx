@@ -1,0 +1,35 @@
+---
+title: Add notes to a job
+description: Leave notes on a job so the office and the crew share what's happening on site.
+sidebar:
+  order: 13
+---
+
+Job notes are a running log everyone on the job can read: a delivery that's late, a change the customer asked for on site, access instructions for the next visit. Each note shows who wrote it and when.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Add own job notes**. Field crew can always add notes to the jobs they're assigned to. Anyone who can open the job can read its notes.</Aside>
+
+<Steps>
+1. **Open the job** — Go to **Jobs**, open the job and choose the **Notes** tab.
+2. **Write the note** — Type in **Add a note about this job…**.
+3. **Add it** — Press **Add**. The note appears at the top of the list with your name and the time.
+</Steps>
+
+<Screenshot id="jobs-notes" alt="A job's Notes tab with the note box, the Add button and earlier notes with their authors and times" />
+
+With no notes yet, the tab says "No notes yet." The tab's count shows how many notes the job has.
+
+If a note can't be saved, you see "Could not add this note." Your text stays in the box, so you can press **Add** again.
+
+## Notes in other places
+
+- **The job's own Notes field**, in **New job** and **Edit job**, is one description that shows under the job's header. Use it for what stays true about the job, and the **Notes** tab for what happens over time.
+- **Completion notes** you add when you [mark a milestone complete](../mark-a-milestone-complete/) show under that milestone on the **Milestones** tab, not on the **Notes** tab.
+- Notes added appear in the job's **Activity** panel: see [See what happened on a job](../see-job-activity/).
+
+<Aside type="caution">A note can't be edited or deleted once it's added. Each note has its own history, so you can see who added it and when.</Aside>
+
+<Aside type="tip">Don't put passwords, alarm codes or card numbers in job notes. Everyone who can open the job, including its field crew, can read them.</Aside>

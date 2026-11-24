@@ -1,0 +1,473 @@
+name: CI
+
+# Runs on pull requests into main, on a release tag (v*) and on demand.
+# Work happens on a phase branch; `pnpm verify` runs every check locally
+# first, E2E included, and the PR stays a draft (no minutes) until that's
+# green — CI confirms, it shouldn't discover.
+#
+# Tuned for a private repo's Actions-minutes budget:
+# - pull requests run lint, typecheck, unit and integration; the E2E suite
+#   runs locally in `pnpm verify` before every PR, and in CI only before a
+#   release (a v* tag) or on demand (D-260);
+# - docs-only changes skip everything, and each suite runs only when the
+#   code it covers changed (a mobile-only change runs lint, typecheck and
+#   unit tests alone; a change only to the home page or the docs site runs
+#   the Sites job alone);
+# - lint, typecheck and unit tests run first (a few minutes); integration
+#   and E2E (when it runs) then run side by side, and the first of them to
+#   fail cancels the other;
+# - integration stops at five failing tests and E2E at five failing specs;
+# - draft PRs and superseded runs are skipped, and installs, Turbo results
+#   and Playwright browsers are cached.
+# After a failure, use "Re-run failed jobs", not "Re-run all jobs".
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  # D-260: a release tag runs everything, E2E included.
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+# A new push to the same PR cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  # Decides what changed. A skipped job counts as passing for a required
+  # check, so skipping by path keeps main's protection working (a
+  # workflow-level paths-ignore would leave the required checks waiting forever).
+  changes:
+    name: Detect changes
+    # Draft PRs don't use minutes; marking the PR "Ready for review" starts the run.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      # Code outside the two sites: the full lint, typecheck and unit job. The design
+      # tokens feed every app, and the API reference under apps/docs is checked
+      # against the API, so both count as app code.
+      app: ${{ github.event_name != 'pull_request' || steps.app.outputs.app == 'true' || steps.suites.outputs.tokens == 'true' || steps.suites.outputs.openapi == 'true' }}
+      integration: ${{ github.event_name != 'pull_request' || steps.suites.outputs.integration == 'true' }}
+      # US-SITE-01: the docs site and the home page, built and link-checked when they change.
+      sites: ${{ github.event_name != 'pull_request' || steps.suites.outputs.sites == 'true' }}
+      # D-260: E2E runs before a release or on demand, never on a pull request.
+      e2e: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: app
+        if: github.event_name == 'pull_request'
+        with:
+          predicate-quantifier: every
+          filters: |
+            app:
+              - "**"
+              - "!**/*.md"
+              - "!.vscode/**"
+              - "!LICENSE"
+              - "!apps/site/**"
+              - "!apps/docs/**"
+              - "!scripts/site/**"
+              - "!scripts/us-site-14.test.mjs"
+              - "!scripts/us-site-02.test.mjs"
+              - "!wrangler.jsonc"
+      # What the integration suite exercises; the field app and its native
+      # packages are covered by the unit tests alone.
+      - uses: dorny/paths-filter@v3
+        id: suites
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            shared: &shared
+              - "packages/shared/**"
+              - "packages/config/**"
+              - "package.json"
+              - "pnpm-lock.yaml"
+              - "turbo.json"
+              - ".github/workflows/**"
+            integration:
+              - *shared
+              - "apps/api/**"
+              - ".env.test"
+            sites:
+              - *shared
+              - "apps/docs/**"
+              - "apps/site/**"
+              - "scripts/site/**"
+              - "scripts/us-site-14.test.mjs"
+              - "scripts/us-site-02.test.mjs"
+              - "wrangler.jsonc"
+              - "packages/config/tokens.json"
+            tokens:
+              - "packages/config/tokens.json"
+            openapi:
+              - "apps/docs/openapi.json"
+
+  static:
+    name: Lint, typecheck and unit
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    # About 15 minutes with the audit, the API reference check and the two sites' builds (Phase 12).
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        # Node 22: the test tooling needs it (jsdom 30 requires ^22.22.2, undici 8 >=22.19).
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-test-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-test-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # lint/typecheck/test depend on ^build, so Turbo builds the shared
+      # packages they need. The apps' production builds run once, in the E2E job.
+      # US-OPS-18 (NFR-SEC-04): fails on any high or critical advisory in a production
+      # dependency; reviewed exceptions are in package.json's pnpm.auditConfig (docs/security-review.md).
+      - name: Dependency audit
+        run: pnpm audit --prod --audit-level high
+
+      - name: Lint
+        run: pnpm turbo run lint --cache-dir=.turbo
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --cache-dir=.turbo
+
+      # Unit tests need no database. @spine/e2e's "test" is the Playwright suite (the E2E job).
+      - name: Unit tests
+        run: pnpm turbo run test --cache-dir=.turbo --filter=!@spine/e2e
+
+      # The release and install scripts' own tests (US-OPS-51).
+      - name: Script tests
+        run: pnpm test:scripts
+
+      # US-SITE-10: the API reference is generated from the API; a stale openapi.json fails.
+      - name: API reference is up to date
+        run: pnpm --filter @spine/api openapi ../docs/openapi.json && git diff --exit-code -- apps/docs/openapi.json
+
+      # US-SITE-01, US-SITE-14: the home page with the docs under /docs/; a broken internal link fails the build.
+      - name: Build the docs site and home page
+        if: needs.changes.outputs.sites == 'true'
+        run: pnpm site:build
+
+  # A change only to the home page, the docs site or how they publish: their
+  # own checks and build, without the rest of the workspace (a few minutes).
+  sites:
+    name: Sites
+    needs: changes
+    if: needs.changes.outputs.sites == 'true' && needs.changes.outputs.app != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # The same install Cloudflare's build runs (docs/release.md).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @spine/site... --filter @spine/docs...
+
+      # Lint and typecheck are both `astro check` in the two sites.
+      - name: Check the sites
+        run: pnpm --filter @spine/site --filter @spine/docs lint
+
+      # US-SITE-14: the addresses come from public-site.ts and the Worker serves the build's folder.
+      # US-SITE-02: the home page's copy, links, theme and example job, on its own build.
+      - name: Site script tests
+        run: node --test scripts/us-site-14.test.mjs scripts/us-site-02.test.mjs
+
+      # US-SITE-01, US-SITE-14: the home page with the docs under /docs/; a broken internal link fails the build.
+      - name: Build the docs site and home page
+        run: pnpm site:build
+
+  integration:
+    name: Integration
+    needs: [changes, static]
+    if: needs.changes.outputs.integration == 'true'
+    runs-on: ubuntu-latest
+    # The integration suite grows each phase (about 14 minutes by Phase 9).
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: write # cancels the run when this job fails
+    env:
+      DATABASE_URL: postgres://spine:spine@localhost:5432/spine
+      AUTH_SECRET: ci-test-secret-not-for-production-use-only
+      APP_URL: http://localhost:3000
+      # Tests sign up a fresh organisation per case (US-AUTH-08 keeps sign-up closed otherwise).
+      SPINE_ALLOW_OPEN_SIGNUP: "true"
+      # No request to GitHub Releases from tests (US-OPS-06).
+      UPDATE_CHECK: "off"
+      # The s3 storage-driver tests run against S3Mock (US-OPS-27); uploads
+      # elsewhere use the default local driver.
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: spine
+      S3_ACCESS_KEY: ci
+      S3_SECRET_KEY: ci
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: spine
+          POSTGRES_PASSWORD: spine
+          POSTGRES_DB: spine
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      # Test-only S3-compatible store; accepts any credentials.
+      s3:
+        image: adobe/s3mock:5
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: spine
+        ports:
+          - 9000:9090
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Restore Turbo cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .turbo
+          key: turbo-test-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-test-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace dependencies
+        run: pnpm turbo run build --cache-dir=.turbo --filter=@spine/api^...
+
+      # US-OPS-03/04's backup tests dump and restore with the database's own major version;
+      # the runner image's default client is newer than the PostgreSQL 16 service.
+      - name: PostgreSQL 16 client tools
+        run: |
+          # From PostgreSQL's own apt repository (PGDG), which has every supported major version.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-common >/dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y --no-install-recommends postgresql-client-16 >/dev/null
+          echo /usr/lib/postgresql/16/bin >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
+
+      - name: Run DB migrations
+        run: pnpm --filter @spine/api db:migrate
+
+      # --bail: a broken branch fails the same way everywhere, so five failing tests are enough to act on.
+      - name: Integration tests
+        run: pnpm --filter @spine/api test:integration --bail=5
+
+      - name: Stop the rest of the run
+        if: failure()
+        run: gh run cancel ${{ github.run_id }} --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # Required by main's branch protection under this name: passes when lint,
+  # typecheck, unit and (when it ran) integration all passed, or, for a change
+  # only to the sites, when the Sites job passed.
+  unit-and-integration:
+    name: Unit and integration
+    needs: [changes, static, integration, sites]
+    if: always() && needs.changes.result == 'success' && (needs.changes.outputs.app == 'true' || needs.changes.outputs.sites == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check results
+        run: |
+          echo "Lint, typecheck and unit: ${{ needs.static.result }}"
+          echo "Integration: ${{ needs.integration.result }}"
+          echo "Sites: ${{ needs.sites.result }}"
+          if [ "${{ needs.changes.outputs.app }}" = "true" ]; then
+            [ "${{ needs.static.result }}" = "success" ] || exit 1
+            case "${{ needs.integration.result }}" in success|skipped) ;; *) exit 1 ;; esac
+          else
+            [ "${{ needs.sites.result }}" = "success" ] || exit 1
+          fi
+
+  # D-260: runs on a release tag or on demand. On a pull request it's
+  # skipped, which main's branch protection counts as passing.
+  e2e:
+    name: E2E
+    # Starts once lint, typecheck and unit pass, alongside integration.
+    needs: [changes, static]
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    # D-241, D-260: the suite takes 30–40 minutes on this runner, plus 5 of setup.
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write # cancels the run when this job fails
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: spine
+          POSTGRES_PASSWORD: spine
+          POSTGRES_DB: spine_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      maildev:
+        image: maildev/maildev
+        ports:
+          - 1080:1080
+          - 1025:1025
+      # No storage service: .env.e2e uses the local storage driver (US-OPS-27).
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-e2e-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-e2e-${{ runner.os }}-
+            turbo-test-${{ runner.os }}-
+
+      # Playwright starts the API and web app with their own build commands,
+      # which expect the workspace packages they import (@spine/shared, @spine/sdk) to be built.
+      - name: Build workspace dependencies
+        run: pnpm turbo run build --cache-dir=.turbo --filter=@spine/api^... --filter=@spine/web^...
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @spine/e2e install-browsers
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @spine/e2e exec playwright install-deps chromium
+
+      # D-241: Next.js keeps its build cache between runs, so the E2E build only redoes what changed.
+      - name: Cache the web app's build
+        uses: actions/cache@v4
+        with:
+          path: apps/web/.next-e2e/cache
+          key: next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/web/src/**', 'apps/web/public/**', 'apps/web/next.config.*', 'packages/ui/src/**', 'packages/shared/src/**', 'packages/config/**') }}
+          restore-keys: |
+            next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            next-e2e-${{ runner.os }}-
+
+      # US-SITE-02's spec serves the built home page and docs (it skips without them).
+      - name: Build the website
+        run: pnpm site:build
+
+      # Stops after five failing specs (maxFailures in playwright.config.ts).
+      - name: Run E2E suite
+        run: pnpm --filter @spine/e2e test
+        env:
+          CI: "true"
+
+      # Kept only when something fails or runs out of time, and only for 3 days, to save artifact storage.
+      - name: Upload Playwright report
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Stop the rest of the run
+        if: failure()
+        run: gh run cancel ${{ github.run_id }} --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # US-OPS-04, US-OPS-50 (NFR-REL-03, NFR-MNT-02): with this commit's images,
+  # back up a seeded install and restore it into a clean one, and upgrade the
+  # previous release to this one. With E2E: release tags and manual runs only
+  # (D-260); nightly.yml also runs it once the repo is public.
+  self-hosting:
+    name: Self-hosting checks
+    needs: [changes, static]
+    if: needs.changes.outputs.e2e == 'true'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/self-hosting.yml
+
+  # US-OPS-51 (D-262): on a v* tag, once every check above passed, publish the
+  # images and the GitHub release. Skipped on pull requests and manual runs.
+  release:
+    name: Release
+    needs: [static, integration, e2e, self-hosting]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/release.yml
+    secrets: inherit

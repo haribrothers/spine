@@ -1,0 +1,52 @@
+---
+title: Build a quote
+description: Create a draft quote with items, sections, discounts and tax, then save it until it's ready to send.
+sidebar:
+  order: 3
+---
+
+A quote starts as a draft. You can change it as often as you like, and the customer sees nothing until you send it. Totals update as you type, with tax worked out line by line.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **Create/edit own quotes**. To change a draft someone else made, you also need **Edit others' quotes**.</Aside>
+
+<Steps>
+
+1. **Start the quote** — Go to **Quotes** and press **New quote**.
+
+2. **Fill in the top** — Give it a **Title (optional)**, such as "Bathroom refit — 2nd floor", so you can tell a customer's quotes apart. Choose the **Contact** (required) and the **Currency**. **Valid until** starts at today plus your usual number of days; press **+15 days**, **+30 days** or **+60 days** to change it, or clear it.
+
+3. **Add item lines** — In **Item**, type to search your catalogue and pick an item. Its price and tax fill in, and you can change them. Set **Qty**, **Rate**, **Disc. %** and **Tax**. The **Amount** and the totals update straight away.
+
+4. **Add a line that isn't in the catalogue** — Type its name and choose **Use “name” as a one-off line**. Tick **Also save to catalogue** to add it as a catalogue item when you save the quote.
+
+5. **Add sections** — Press **Add heading** for a section title, or **Add text line** for a paragraph. They have no quantity or price and add nothing to the totals.
+
+6. **Add notes and terms** — **Notes** are shown to the customer on the quote. Put payment terms and conditions in **Terms & conditions**.
+
+7. **Save** — Press **Save as draft** (on a draft you're editing, **Save draft**). You land on the quote's page.
+
+</Steps>
+
+<Screenshot id="quotes-builder" alt="The quote builder with the title, contact and Valid until fields, compact line rows and the totals bar at the bottom" />
+
+## Working with lines
+
+- **Add description** under an item adds a second, lighter line of detail.
+- Drag a row by its handle, or use **Move up** and **Move down** in the row's menu (or Alt + ↑/↓).
+- **Price includes tax** and **Remove line** are in the row's menu.
+- Press Enter in the last row's Amount or Tax field to start a new row.
+
+The bar at the bottom stays in view, with the totals, **Cancel**, **Preview PDF**, **Save draft** and **Save and send**. **Save and send** saves the draft and opens the send dialog; you see it only if you may send quotes and no discount needs approval.
+
+<Aside type="caution">
+If you leave with unsaved changes, Spine asks **Leave without saving?** Press **Keep editing** to stay, or **Leave** to discard them. Without a contact, saving says "Select a contact before saving."
+</Aside>
+
+<Aside type="tip">
+When the AI assistant is switched on, **Draft lines with AI** beside **Add item** suggests lines from a customer's enquiry. Nothing is added until you tick lines and press **Add to quote**.
+</Aside>
+
+A quote started with **Create quote** on a won lead has the lead's contact and says which lead it's for. To add a standard package in one go, see [Save and reuse lines as a bundle](../save-and-reuse-lines-as-a-bundle/).

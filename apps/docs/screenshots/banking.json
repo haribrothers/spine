@@ -1,0 +1,74 @@
+[
+  {
+    "id": "banking-accounts",
+    "path": "/banking",
+    "alt": "The Banking page with its Active and Archived tabs, the Bank and cash, Owed on cards, Not yet reconciled and Last reconciled cards, and the list of accounts",
+    "wait": "Bank and cash"
+  },
+  {
+    "id": "banking-add-account",
+    "path": "/banking",
+    "alt": "The Add account dialog with Type, Name, Bank name, Last 4 digits and Use as default for new payments",
+    "click": "Add account",
+    "wait": "Use as default for new payments"
+  },
+  {
+    "id": "banking-archive",
+    "path": "/banking?tab=archived",
+    "alt": "The Banking page's Archived tab, where archived accounts are listed and can be restored",
+    "wait": "Archived"
+  },
+  {
+    "id": "banking-paid-into",
+    "path": "/payments",
+    "alt": "The Record a payment dialog with the Paid into account picker",
+    "click": "Record payment",
+    "wait": "Paid into"
+  },
+  {
+    "id": "banking-register",
+    "path": "/banking/{bankAccount}",
+    "alt": "An account's register with Balance in Spine, Money in, Money out and Unreconciled cards and the list of entries",
+    "wait": "Balance in Spine"
+  },
+  {
+    "id": "banking-transfer",
+    "path": "/banking",
+    "alt": "The Transfer between accounts dialog with From, To, Amount, Date and Reference",
+    "click": "Transfer",
+    "wait": "Transfer between accounts"
+  },
+  {
+    "id": "banking-money-out",
+    "path": "/banking",
+    "alt": "The Money out dialog with From account, Date, Category shortcuts, Amount, Tax and Description",
+    "click": "Money out",
+    "wait": "From account"
+  },
+  {
+    "id": "banking-import",
+    "path": "/banking/{bankAccount}/reconcile",
+    "alt": "The Import statement dialog, ready for you to choose the bank's CSV file",
+    "click": "Import statement",
+    "wait": "Choose file"
+  },
+  {
+    "id": "banking-reconcile",
+    "path": "/banking/{bankAccount}/reconcile",
+    "alt": "The reconcile page with statement lines on the left, unreconciled Spine entries on the right, and the Statement closing balance, Cleared in Spine and Difference cards",
+    "wait": "Statement end date"
+  },
+  {
+    "id": "banking-reconcile-create",
+    "path": "/banking/{bankAccount}/reconcile",
+    "alt": "The Create from statement line drawer with its Record it as options",
+    "click": "Create",
+    "wait": "Record it as"
+  },
+  {
+    "id": "banking-reconciliations",
+    "path": "/banking/{bankAccount}/reconciliations",
+    "alt": "An account's Reconciliations list with statement end dates, closing balances, entries matched and the Latest one",
+    "wait": "Reconciliations"
+  }
+]

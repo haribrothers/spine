@@ -1,0 +1,42 @@
+---
+title: Edit, archive or delete a contact
+description: Change a contact's details, hide one you no longer use, or remove one added by mistake.
+sidebar:
+  order: 3
+---
+
+Edit a contact when its details change. Archive a contact you no longer work with: it leaves your lists and pickers but keeps all its history. Delete only a contact you added by mistake.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners. Staff need **Create/edit own contacts** to edit contacts they added, and **Edit others' contacts** for everyone else's. Archiving, restoring and deleting need **Archive/delete own contacts** or **Archive/delete others' contacts** in the same way.</Aside>
+
+## Edit a contact
+
+<Steps>
+1. **Open the contact** — Go to **Contacts** and open it, or choose **Edit** from the row's menu.
+2. **Change the details** — Press **Edit**. Change the type, name, email, phone, tax ID or website.
+3. **Save** — Press **Save**. A "Contact updated" toast shows.
+</Steps>
+
+<Screenshot id="contacts-detail" alt="A contact's page with Send statement, Edit, Archive and Delete at the top and the Timeline tab open" />
+
+To add a logo, press **Upload logo** on the contact's picture. To see who changed what, press **View history**. Each change reads as a sentence, such as "Sarah Mendes changed the phone from +1-555-0107 to +1-555-0177".
+
+## Pause automatic reminders for one customer
+
+If your business sends automatic payment reminders, a customer's page has **Pause automatic reminders**. Turn it on and the customer won't get automatic reminders until you turn it off again. A toast says "Reminders paused" or "Reminders on".
+
+## Archive or restore a contact
+
+On the contact's page, press **Archive**, or choose **Archive** from the row's menu in the list. A toast says "Contact archived". To bring it back, filter the list by **Archived**, open the contact and press **Restore**.
+
+## Delete a contact
+
+<Steps>
+1. **Choose Delete** — On the contact's page, press **Delete**, or choose **Delete** from the row's menu.
+2. **Confirm** — Spine asks "Delete …?" and explains that this permanently removes the contact and its persons and addresses. Press **Delete** to go ahead, or **Cancel**.
+</Steps>
+
+<Aside type="danger" title="Deleting can't be undone">The contact, its people and its addresses are removed for good. A contact linked to quotes, invoices, payments or bills can't be deleted: you see "Could not delete contact." Archive it instead.</Aside>

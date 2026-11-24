@@ -1,0 +1,21 @@
+[
+  {
+    "id": "setup-set-up-spine",
+    "path": "/setup",
+    "alt": "The Set up Spine page: counts of done, to do and not needed, and cards such as Business details and logo, Tax and Chart of accounts",
+    "wait": "Business details and logo"
+  },
+  {
+    "id": "setup-demo-data-loaded",
+    "path": "/dashboard?settings=data",
+    "alt": "Settings, Demo data pane: Demo data is loaded, naming Riverstone Builders, with Delete all demo data",
+    "wait": "Demo data is loaded"
+  },
+  {
+    "id": "setup-delete-demo-confirm",
+    "path": "/dashboard?settings=data",
+    "alt": "The Delete all demo data? confirmation, with Cancel and Delete demo data",
+    "click": "Delete all demo data",
+    "wait": "Delete all demo data?"
+  }
+]

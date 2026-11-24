@@ -1,0 +1,105 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
+import Link from "next/link";
+import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
+import { formatMoney } from "../../../../lib/money";
+import { useT } from "../../../../lib/i18n";
+
+interface JobProfitabilityRow {
+  jobId: string;
+  name: string;
+  currency: string;
+  margin: string;
+  marginPct: number | null;
+}
+
+interface JobProfitabilityReport {
+  jobs: JobProfitabilityRow[];
+}
+
+function MarginRow({ job }: { job: JobProfitabilityRow }) {
+  const margin = BigInt(job.margin);
+  const negative = margin < 0n;
+  const widthPct = job.marginPct === null ? 0 : Math.min(100, Math.abs(job.marginPct));
+  return (
+    <Link href={`/reports`} className="flex flex-col gap-1 rounded-sm px-1 py-1.5 hover:bg-surface-secondary">
+      <div className="flex min-w-0 items-center justify-between gap-3 text-[13px]">
+        <span className="min-w-0 truncate text-on-surface" title={job.name}>{job.name}</span>
+        <span className={`shrink-0 whitespace-nowrap tabular-nums ${negative ? "text-overdue" : "text-paid"}`}>
+          {formatMoney(margin, job.currency)}
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+        <div className={`h-full rounded-full ${negative ? "bg-overdue" : "bg-paid"}`} style={{ width: `${widthPct}%` }} />
+      </div>
+    </Link>
+  );
+}
+
+/**
+ * S-09.11 (dashboard v2) — job profitability, top 3 / bottom 3 by margin
+ * %. Reuses GET /reports/job-profitability verbatim (already sorted by
+ * margin descending) — no new backend. Each row's bar uses the semantic
+ * paid/overdue palette by margin sign, not the categorical accent, same
+ * rule as the AR aging donut.
+ */
+export function JobProfitabilityRanked() {
+  const t = useT();
+  const [report, setReport] = useState<JobProfitabilityReport | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    apiClient
+      .get<JobProfitabilityReport>("/reports/job-profitability?status=all")
+      .then(setReport)
+      .catch(() => setFailed(true));
+  }, []);
+
+  if (failed) {
+    return null;
+  }
+
+  const jobs = report?.jobs ?? [];
+  const top = jobs.slice(0, 3);
+  const bottom = jobs.length > 3 ? jobs.slice(-3).reverse() : [];
+
+  return (
+    <Card data-testid="job-profitability">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between text-[15px]">
+          {t("dashboard.widgets.jobProfitability")}
+          <Link href="/reports/job-profitability" className="text-[13px] font-normal text-primary hover:underline">
+            {t("dashboard.common.viewAll")}
+          </Link>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {!report ? (
+          <WidgetSkeleton kind="bars" rows={3} />
+        ) : jobs.length === 0 ? (
+          <p className="py-4 text-center text-[13px] text-on-surface-muted">{t("dashboard.jobProfitability.empty")}</p>
+        ) : (
+          <>
+            <div className="flex flex-col gap-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">{t("dashboard.jobProfitability.topPerformers")}</p>
+              {top.map((job) => (
+                <MarginRow key={job.jobId} job={job} />
+              ))}
+            </div>
+            {bottom.length > 0 && (
+              <div className="flex flex-col gap-1">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">{t("dashboard.jobProfitability.needsAttention")}</p>
+                {bottom.map((job) => (
+                  <MarginRow key={job.jobId} job={job} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

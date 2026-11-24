@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Spine Showcase",
+    "slug": "spine-showcase-native",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "spine-showcase-native",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spine.showcasenative"
+    },
+    "android": {
+      "package": "com.spine.showcasenative",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store", "./plugins/withAndroidLargeHeap.js"]
+  }
+}

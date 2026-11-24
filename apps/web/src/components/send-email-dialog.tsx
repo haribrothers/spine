@@ -1,0 +1,172 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Alert, AlertDescription, Button, Checkbox, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, RichTextEditor, Spinner } from "@spine/ui";
+import { emailBodyText, unknownPlaceholder, unknownPlaceholderMessage, type EmailDraft, type EmailOverride } from "@spine/shared";
+import { apiClient } from "../lib/api-client";
+import { AiField } from "./ai-suggested-tag";
+import { EmailAiDraftBar, emailMessageHelp, useEmailAiDraft } from "./email-ai-draft";
+import { useT } from "../lib/i18n";
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * US-SET-21 (D-153) — the "Send" dialog for a customer email: To, Subject
+ * and Message (rich text, D-189) start from the email's template with the document's details
+ * filled in, and can be changed for this one email. `onSend` gets only what
+ * the dialog holds; the caller posts it to the document's send route.
+ * US-AI-11 — the details Spine filled in are highlighted, and "Draft with
+ * AI" offers a draft to use or not.
+ */
+export function SendEmailDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  draftPath,
+  sendLabel,
+  pdfLabel,
+  onSend,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description?: string;
+  /** e.g. `/email-drafts/invoice/<id>`. */
+  draftPath: string;
+  sendLabel: string;
+  /** "Attach the invoice PDF" — shown when the email can carry one. */
+  pdfLabel?: string;
+  onSend: (email: Required<Pick<EmailOverride, "to" | "subject" | "message">> & { attachPdf: boolean }) => Promise<void>;
+}) {
+  const t = useT();
+  const [draft, setDraft] = useState<EmailDraft | null>(null);
+  const [to, setTo] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [attachPdf, setAttachPdf] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
+  const [sending, setSending] = useState(false);
+  // `/email-drafts/<type>/<id>`: the document AI drafts for.
+  const documentId = draftPath.split("/").at(-1) ?? "";
+  const aiInput = useMemo(() => (draft ? { type: draft.type, documentId } : null), [draft, documentId]);
+  const ai = useEmailAiDraft({
+    input: aiInput,
+    fields: { subject, message },
+    apply: (next) => {
+      setSubject(next.subject);
+      setMessage(next.message);
+    },
+  });
+  const { reset: resetAi } = ai;
+  const highlights = useMemo(() => [...new Set([...(draft?.values ?? []), ...(ai.used?.draft.values ?? [])])], [draft, ai.used]);
+
+  useEffect(() => {
+    if (!open) return;
+    resetAi();
+    setDraft(null);
+    setLoadError(null);
+    setError(null);
+    setTouched(false);
+    setAttachPdf(true);
+    apiClient
+      .get<EmailDraft>(draftPath)
+      .then((d) => {
+        setDraft(d);
+        setTo(d.to ?? "");
+        setSubject(d.subject);
+        setMessage(d.message);
+      })
+      .catch((err) => setLoadError(err instanceof Error ? err.message : t("common.sendEmail.loadFailed")));
+  }, [open, draftPath, resetAi, t]);
+
+  const placeholderError = (text: string) => {
+    const name = draft ? unknownPlaceholder(text, draft.type) : null;
+    return name === null ? undefined : unknownPlaceholderMessage(name);
+  };
+  const toError = !to.trim() ? t("common.sendEmail.toRequired") : EMAIL.test(to.trim()) ? undefined : t("common.sendEmail.toInvalid");
+  const subjectError = !subject.trim() ? t("common.sendEmail.subjectRequired") : placeholderError(subject);
+  const messageError = !emailBodyText(message) ? t("common.sendEmail.messageRequired") : placeholderError(message);
+
+  async function send() {
+    setTouched(true);
+    if (toError || subjectError || messageError) return;
+    setSending(true);
+    setError(null);
+    try {
+      await onSend({ to: to.trim(), subject: subject.trim(), message: message.trim(), attachPdf: draft?.hasPdf ? attachPdf : false });
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.sendEmail.sendFailed"));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description && <DialogDescription>{description}</DialogDescription>}
+        </DialogHeader>
+        <DialogBody className="flex flex-col gap-4">
+          {(loadError || error) && (
+            <Alert variant="critical">
+              <AlertDescription>{loadError ?? error}</AlertDescription>
+            </Alert>
+          )}
+          {!draft && !loadError ? (
+            <div className="flex justify-center py-8">
+              <Spinner />
+            </div>
+          ) : draft ? (
+            <>
+              <FormField label={t("common.sendEmail.to")} required errorText={touched ? toError : undefined}>
+                {(field) => <Input {...field} type="email" required={false} value={to} onChange={(e) => setTo(e.target.value)} autoComplete="email" />}
+              </FormField>
+              <EmailAiDraftBar state={ai} type={draft.type} />
+              <AiField suggested={ai.subjectDrafted} label={t("common.sendEmail.draftedByAi")}>
+                <FormField label={t("common.sendEmail.subject")} errorText={touched || placeholderError(subject) ? subjectError : undefined}>
+                  {(field) => <Input {...field} required={false} maxLength={200} value={subject} onChange={(e) => setSubject(e.target.value)} />}
+                </FormField>
+              </AiField>
+              <AiField suggested={ai.messageDrafted} label={t("common.sendEmail.draftedByAi")}>
+                <FormField label={t("common.sendEmail.message")} helperText={emailMessageHelp(draft.type)} errorText={touched || placeholderError(message) ? messageError : undefined}>
+                  {(field) => (
+                    <RichTextEditor
+                      id={field.id}
+                      aria-describedby={field["aria-describedby"]}
+                      aria-invalid={field["aria-invalid"]}
+                      aria-label={t("common.sendEmail.message")}
+                      className="[&_.ProseMirror]:min-h-40"
+                      value={message}
+                      onValueChange={setMessage}
+                      highlights={highlights}
+                    />
+                  )}
+                </FormField>
+              </AiField>
+              {draft.hasPdf && pdfLabel && (
+                <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[14px] text-on-surface">
+                  <Checkbox checked={attachPdf} onCheckedChange={(v) => setAttachPdf(v === true)} />
+                  {pdfLabel}
+                </label>
+              )}
+            </>
+          ) : null}
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={sending}>
+            {t("common.actions.cancel")}
+          </Button>
+          <Button onClick={() => void send()} disabled={!draft || sending}>
+            {sending ? <Spinner size="sm" /> : sendLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

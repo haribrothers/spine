@@ -1,0 +1,484 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`US-NTF-11 · every email type uses the branded layout > expense: matches its snapshot 1`] = `
+{
+  "subject": "Expense approved — Fuel & Vehicle",
+  "text": "Riverstone Builders
+
+Expense approved — Fuel & Vehicle
+
+Expense BXP-0001 (Fuel & Vehicle, $85.00) was approved.
+
+View expense: https://spine.example/expenses/e1
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District
+You're getting this because you're a member of Riverstone Builders.",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > expense: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Expense approved — Fuel &amp; Vehicle</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Expense approved — Fuel &amp; Vehicle</h1>
+
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Expense BXP-0001 (Fuel &amp; Vehicle, $85.00) was approved.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/expenses/e1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View expense</a></td></tr></table>
+
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District<br>You&#39;re getting this because you&#39;re a member of Riverstone Builders.</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > invitation: matches its snapshot 1`] = `
+{
+  "subject": "Alex Morgan invited you to join Riverstone Builders on Spine",
+  "text": "Riverstone Builders
+
+Join Riverstone Builders on Spine
+
+Alex Morgan invited you to join Riverstone Builders as staff.
+
+Accept invitation: https://spine.example/accept-invite/inv1
+
+If you weren't expecting this, you can ignore this email — nothing happens until you accept.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > invitation: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Join Riverstone Builders on Spine</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Join Riverstone Builders on Spine</h1>
+
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Alex Morgan invited you to join Riverstone Builders as staff.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/accept-invite/inv1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">Accept invitation</a></td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">If you weren&#39;t expecting this, you can ignore this email — nothing happens until you accept.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > invoice: matches its snapshot 1`] = `
+{
+  "subject": "Riverstone Builders sent you an invoice (INV-0007)",
+  "text": "Riverstone Builders
+
+Your invoice is ready
+
+Hi Alan,
+Here's invoice INV-0007 from Riverstone Builders, attached as a PDF.
+
+Invoice: INV-0007
+Total: $2,200.00
+Balance due: $2,200.00
+Due: 17 Oct 2026
+
+The invoice is attached as a PDF. Questions? Reply to this email.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > invoice: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your invoice is ready</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;">Riverstone Builders sent you an invoice (INV-0007).</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your invoice is ready</h1>
+<p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s invoice INV-0007 from Riverstone Builders, attached as a PDF.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The invoice is attached as a PDF. Questions? Reply to this email.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > meetingInvite: matches its snapshot 1`] = `
+{
+  "subject": "You've been invited: Site walk",
+  "text": "Riverstone Builders
+
+You've been invited: Site walk
+
+You've been invited to "Site walk".
+
+View meeting: https://spine.example/meetings?id=m1
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District
+You're getting this because you're a member of Riverstone Builders.",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > meetingInvite: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>You&#39;ve been invited: Site walk</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">You&#39;ve been invited: Site walk</h1>
+
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">You&#39;ve been invited to &quot;Site walk&quot;.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/meetings?id=m1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View meeting</a></td></tr></table>
+
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District<br>You&#39;re getting this because you&#39;re a member of Riverstone Builders.</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > meetingReminder: matches its snapshot 1`] = `
+{
+  "subject": "Starting soon: Site walk",
+  "text": "Riverstone Builders
+
+Starting soon: Site walk
+
+"Site walk" starts at 17 Oct 2026, 09:00 UTC.
+
+View meeting: https://spine.example/meetings?id=m1
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District
+You're getting this because you're a member of Riverstone Builders.",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > meetingReminder: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Starting soon: Site walk</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Starting soon: Site walk</h1>
+
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">&quot;Site walk&quot; starts at 17 Oct 2026, 09:00 UTC.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/meetings?id=m1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View meeting</a></td></tr></table>
+
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District<br>You&#39;re getting this because you&#39;re a member of Riverstone Builders.</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > milestone: matches its snapshot 1`] = `
+{
+  "subject": "Milestone completed — Excavation & footings",
+  "text": "Riverstone Builders
+
+Milestone completed — Excavation & footings
+
+Milestone "Excavation & footings" on job "Phase 2 townhomes - foundations" was marked completed.
+
+View job: https://spine.example/jobs/j1
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District
+You're getting this because you're a member of Riverstone Builders.",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > milestone: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Milestone completed — Excavation &amp; footings</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Milestone completed — Excavation &amp; footings</h1>
+
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Milestone &quot;Excavation &amp; footings&quot; on job &quot;Phase 2 townhomes - foundations&quot; was marked completed.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/jobs/j1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View job</a></td></tr></table>
+
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District<br>You&#39;re getting this because you&#39;re a member of Riverstone Builders.</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > passwordReset: matches its snapshot 1`] = `
+{
+  "subject": "Reset your Spine password",
+  "text": "Riverstone Builders
+
+Reset your password
+
+Hi Sam,
+Someone asked to reset the password for this Spine account. Choose a new one with the button below.
+
+Choose a new password: https://spine.example/reset-password?token=t
+
+The link works once and expires in 1 hour. Choosing a new password signs you out on your other devices. If you didn't ask for this, you can ignore this email — your password stays the same.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > passwordReset: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Reset your password</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Reset your password</h1>
+<p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Sam,</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Someone asked to reset the password for this Spine account. Choose a new one with the button below.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/reset-password?token=t" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">Choose a new password</a></td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The link works once and expires in 1 hour. Choosing a new password signs you out on your other devices. If you didn&#39;t ask for this, you can ignore this email — your password stays the same.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > paymentNotice: matches its snapshot 1`] = `
+{
+  "subject": "Riverstone Builders received your payment (PAY-0002)",
+  "text": "Riverstone Builders
+
+Thanks — we've received your payment
+
+Hi Alan,
+Riverstone Builders has received your payment of $2,500.00.
+
+Payment: PAY-0002
+Amount: $2,500.00
+Applied to invoices: $2,200.00
+Held as credit: $300.00
+
+Questions? Reply to this email.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > paymentNotice: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Thanks — we&#39;ve received your payment</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Thanks — we&#39;ve received your payment</h1>
+<p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Riverstone Builders has received your payment of $2,500.00.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Payment</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">PAY-0002</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Amount</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,500.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Applied to invoices</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Held as credit</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$300.00</td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">Questions? Reply to this email.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > paymentReceived: matches its snapshot 1`] = `
+{
+  "subject": "Payment received from Alan Brooks",
+  "text": "Riverstone Builders
+
+Payment received from Alan Brooks
+
+Alan Brooks paid $2,500.00 (PAY-0002).
+
+View payment: https://spine.example/payments/p1
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District
+You're getting this because you're a member of Riverstone Builders.",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > paymentReceived: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Payment received from Alan Brooks</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Payment received from Alan Brooks</h1>
+
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Alan Brooks paid $2,500.00 (PAY-0002).</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/payments/p1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View payment</a></td></tr></table>
+
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District<br>You&#39;re getting this because you&#39;re a member of Riverstone Builders.</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > quote: matches its snapshot 1`] = `
+{
+  "subject": "Riverstone Builders sent you a quote (QUO-0004)",
+  "text": "Riverstone Builders
+
+Your quote is ready
+
+Hi Alan,
+Here's our quote. You can read it, accept it or decline it online — no account needed.
+
+Quote: QUO-0004
+Total: $510.00
+Valid until: 17 Oct 2026
+
+View quote: https://spine.example/quote/tok
+
+The quote is also attached as a PDF. Questions? Reply to this email.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > quote: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your quote is ready</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;">Riverstone Builders sent you a quote (QUO-0004).</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your quote is ready</h1>
+<p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s our quote. You can read it, accept it or decline it online — no account needed.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Quote</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">QUO-0004</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$510.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Valid until</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/quote/tok" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View quote</a></td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The quote is also attached as a PDF. Questions? Reply to this email.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > receipt: matches its snapshot 1`] = `
+{
+  "subject": "Riverstone Builders sent you a receipt (PAY-0002)",
+  "text": "Riverstone Builders
+
+Your receipt
+
+Hi Alan,
+Here's your receipt for a payment of $2,200.00, attached as a PDF.
+
+Receipt: PAY-0002
+Amount: $2,200.00
+
+Questions? Reply to this email.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > receipt: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your receipt</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your receipt</h1>
+<p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s your receipt for a payment of $2,200.00, attached as a PDF.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Receipt</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">PAY-0002</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Amount</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">Questions? Reply to this email.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > reminder: matches its snapshot 1`] = `
+{
+  "subject": "Reminder: invoice INV-0007 is 3 days overdue",
+  "text": "Riverstone Builders
+
+Invoice INV-0007 is 3 days overdue
+
+Hi Alan,
+This is a friendly reminder that invoice INV-0007 is 3 days overdue. If you've already paid, thank you — please ignore this email.
+
+Invoice: INV-0007
+Total: $2,200.00
+Balance due: $2,200.00
+Due: 17 Oct 2026
+
+The invoice is attached as a PDF. Questions? Reply to this email.
+
+--
+Riverstone Builders · 14 Harbour Road, Marina District",
+}
+`;
+
+exports[`US-NTF-11 · every email type uses the branded layout > reminder: matches its snapshot 2`] = `
+"<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Invoice INV-0007 is 3 days overdue</title></head>
+<body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;">Invoice INV-0007 is 3 days overdue.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
+<tr><td style="padding:28px 32px 8px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Invoice INV-0007 is 3 days overdue</h1>
+<p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">This is a friendly reminder that invoice INV-0007 is 3 days overdue. If you&#39;ve already paid, thank you — please ignore this email.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
+<p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The invoice is attached as a PDF. Questions? Reply to this email.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
+</table>
+</td></tr></table>
+</body></html>"
+`;

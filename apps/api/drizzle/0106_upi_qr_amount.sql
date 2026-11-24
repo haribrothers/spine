@@ -1,0 +1,1 @@
+ALTER TABLE "invoices" ADD COLUMN "upi_qr_amount" bigint;

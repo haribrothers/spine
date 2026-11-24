@@ -1,0 +1,110 @@
+# Spine on Coolify (https://spine.h4loom.com/docs/self-hosting/coolify/). Paste this as a Docker
+# Compose resource ("Docker Compose Empty"), give the caddy service your
+# domain, fill in the settings Coolify lists, and deploy.
+#
+# Coolify's proxy holds ports 80 and 443 and handles HTTPS; Spine's own Caddy
+# sits behind it on port 80 (no published ports) and keeps Spine's routing:
+# /api/auth/* and the rest of /api/* to the API, everything else to the web
+# app. Coolify generates AUTH_SECRET and the database password once and keeps
+# them (SERVICE_PASSWORD_*). Keep a copy of AUTH_SECRET somewhere safe: a
+# restore needs the same one.
+#
+# Keep in step with ../../docker-compose.yml (scripts/us-ops-52.test.mjs checks it).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spine
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_DB: spine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: ghcr.io/haribrothers/spine-api:${SPINE_VERSION:-1.0.0-beta.6}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://spine:${SERVICE_PASSWORD_POSTGRES}@db:5432/spine
+      AUTH_SECRET: ${SERVICE_PASSWORD_64_AUTH}
+      APP_URL: ${SERVICE_URL_CADDY}
+      API_URL: ${SERVICE_URL_CADDY}/api
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-spine}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      CURRENCY: ${CURRENCY:-USD}
+      LOCALE: ${LOCALE:-en-US}
+      TZ: ${TZ:-UTC}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_REQUESTS: ${LOG_REQUESTS:-on}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      BACKUP_REMOTE: ${BACKUP_REMOTE:-}
+      BACKUP_REMOTE_ENDPOINT: ${BACKUP_REMOTE_ENDPOINT:-}
+      BACKUP_REMOTE_REGION: ${BACKUP_REMOTE_REGION:-auto}
+      BACKUP_REMOTE_ACCESS_KEY: ${BACKUP_REMOTE_ACCESS_KEY:-}
+      BACKUP_REMOTE_SECRET_KEY: ${BACKUP_REMOTE_SECRET_KEY:-}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      UPDATE_CHECK: ${UPDATE_CHECK:-}
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@localhost}
+      MOBILE_MIN_VERSION: ${MOBILE_MIN_VERSION:-}
+    volumes:
+      - spine_files:/data/files
+      - spine_snapshots:/data/snapshots
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:' + (process.env.PORT || 4000) + '/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  web:
+    image: ghcr.io/haribrothers/spine-web:${SPINE_VERSION:-1.0.0-beta.6}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      APP_URL: ${SERVICE_URL_CADDY}
+      API_URL: http://api:4000
+
+  caddy:
+    # Caddy with Spine's routing built in (D-280).
+    image: ghcr.io/haribrothers/spine-proxy:${SPINE_VERSION:-1.0.0-beta.6}
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    environment:
+      # Coolify routes the domain you give this service to its port 80.
+      - SERVICE_URL_CADDY_80
+      - SITE_ADDRESS=:80
+      - TRUSTED_PROXIES=private_ranges
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  spine_files:
+  spine_snapshots:
+  caddy_data:
+  caddy_config:

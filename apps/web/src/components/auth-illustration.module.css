@@ -1,0 +1,216 @@
+/* US-AUTH-13, US-AUTH-14 (D-207) — the signed-out pages' illustration: people and Spine's own cards on
+   a soft brand panel. Colours come from tokens (brand and illustration colours, constant in both themes);
+   sizes follow the panel (container units), so nothing drifts out of place at other widths. Motion runs
+   only when the person hasn't asked for less. */
+.panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-brand-teal) 9%, var(--color-background)) 0%,
+    color-mix(in srgb, var(--color-brand-sky) 11%, var(--color-background)) 58%,
+    var(--color-surface-sunken) 100%
+  );
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(color-mix(in srgb, var(--color-brand-deep) 11%, transparent) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+/* The scene stays together on wide screens: a centred stage, and every size follows it (container units). */
+.stage {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: min(100%, 700px);
+  transform: translateX(-50%);
+  container-type: size;
+}
+.caption {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  top: 30px;
+  z-index: 4;
+}
+
+/* The ground the people stand on, in the mark's layer colours. */
+.ground {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: -150px;
+  height: 260px;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    var(--color-brand-layer-top-from),
+    var(--color-brand-layer-mid-from) 45%,
+    var(--color-brand-layer-base-from)
+  );
+  opacity: 0.55;
+}
+:global([data-theme="dark"]) .ground {
+  opacity: 0.28;
+}
+
+/* People: navy ink, white skin and an outfit per person, from the illustration tokens. */
+.team {
+  position: absolute;
+  left: 6%;
+  right: 7%;
+  bottom: 18px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.person {
+  --h: min(42cqh, 62cqw);
+  position: relative;
+  height: var(--h);
+}
+.team .person:nth-child(2) {
+  --h: min(40cqh, 58cqw);
+}
+.team .person:nth-child(3) {
+  --h: min(40cqh, 58cqw);
+}
+.solo {
+  --h: min(52cqh, 56cqw);
+  position: absolute;
+  right: 4%;
+  bottom: 0;
+  z-index: 3;
+}
+.figure {
+  position: relative;
+  display: block;
+  height: 100%;
+  width: auto;
+  overflow: visible;
+}
+.mint {
+  --illustration-outfit: var(--color-illustration-outfit-mint);
+}
+.sky {
+  --illustration-outfit: var(--color-illustration-outfit-sky);
+}
+.periwinkle {
+  --illustration-outfit: var(--color-illustration-outfit-periwinkle);
+}
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  width: calc(var(--h) * 0.47);
+  height: calc(var(--h) * 0.47);
+  transform: translateX(-50%);
+  border-radius: 50%;
+}
+.solo .halo {
+  top: 2%;
+  width: calc(var(--h) * 0.78);
+  height: calc(var(--h) * 0.78);
+}
+.mint .halo {
+  background: linear-gradient(160deg, var(--color-brand-layer-top-from), var(--color-brand-layer-top-to));
+  opacity: 0.5;
+}
+.sky .halo {
+  background: linear-gradient(160deg, var(--color-brand-layer-mid-from), var(--color-brand-layer-mid-to));
+  opacity: 0.6;
+}
+.periwinkle .halo {
+  background: linear-gradient(160deg, var(--color-brand-layer-base-from), var(--color-brand-layer-base-to));
+  opacity: 0.45;
+}
+:global([data-theme="dark"]) .halo {
+  opacity: 0.7;
+}
+
+/* Cards: Spine's own surfaces with placeholder lines, never names or amounts. */
+.card {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  width: min(226px, 42cqw);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  padding: 12px 14px;
+}
+:global([data-theme="dark"]) .card {
+  border: 1px solid var(--color-border);
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(240px, 46cqw);
+}
+.today {
+  width: min(290px, 56cqw);
+}
+.swap {
+  display: inline-grid;
+  margin-left: auto;
+}
+.swap > * {
+  grid-area: 1 / 1;
+}
+
+/* The first status shows until the story reaches it; with less motion, only the final one shows. */
+.swap > :first-child {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .person {
+    animation: rise 0.7s var(--d, 0s) cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+  }
+  .card {
+    animation:
+      enter 0.6s var(--d, 0s) cubic-bezier(0.2, 0.9, 0.25, 1.12) both,
+      float 7s var(--fd, 2s) ease-in-out infinite;
+  }
+  .swap > :first-child {
+    opacity: 1;
+    animation: out 0.3s var(--sd) ease-out forwards;
+  }
+  .swap > :last-child {
+    opacity: 0;
+    animation: fade 0.3s var(--sd) ease-out forwards;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+}
+@keyframes float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes out {
+  to {
+    opacity: 0;
+  }
+}

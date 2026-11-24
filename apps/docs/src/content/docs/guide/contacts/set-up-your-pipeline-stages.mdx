@@ -1,0 +1,41 @@
+---
+title: Set up your pipeline stages
+description: Rename, reorder, add or delete the stages that make up the columns of your pipeline board.
+sidebar:
+  order: 13
+---
+
+Your pipeline's stages are the columns on the board. Make them match how your business sells, such as "Site visit booked" before "Quote sent". Won and Lost always stay last, so reports can tell a closed lead from an open one.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners only. The **Leads & meetings** module must be on.</Aside>
+
+<Steps>
+1. **Open the stages** — Open **Settings** and choose **Pipeline stages** under **Sales & meetings**. Each stage is a row with its name, its kind (**Open**, **Won** or **Lost**) and how many leads it holds.
+2. **Rename a stage** — Type the new name in its row. Leads stay in the stage.
+3. **Add a stage** — Press **+ Add stage**. A "New stage" row is added after your open stages; type its name.
+4. **Reorder** — Drag a row, or use its move up and move down buttons, to put the open stages in the order leads move through them.
+5. **Save** — Press **Save**. The board shows the new names and order.
+</Steps>
+
+<Screenshot id="contacts-lead-stages" alt="The Pipeline stages settings with a row per stage showing its name, kind and lead count, and + Add stage below" />
+
+## Delete a stage
+
+<Steps>
+1. **Press delete** — Press the delete button on the stage's row.
+2. **Choose where its leads go** — If the stage has leads, Spine asks "Delete "…"?" and "Move 3 leads to:". Choose a stage, then press **Delete stage**. A stage with no leads leaves the list straight away.
+3. **Save** — Press **Save**. The leads are now in the stage you chose.
+</Steps>
+
+Leads are never deleted with a stage: they move when you save the stages.
+
+## Limits
+
+- You can have up to 12 stages. At 12, **+ Add stage** is greyed out with "Up to 12 stages."
+- **Won** and **Lost** can be renamed, but not moved or deleted. They show a lock.
+- Renaming **Won** or **Lost** doesn't affect reports. Spine knows a closed lead by the stage's kind, not its name.
+
+<Aside type="tip">If saving fails, you see "Couldn't save the stages. Try again." and your changes stay on screen.</Aside>

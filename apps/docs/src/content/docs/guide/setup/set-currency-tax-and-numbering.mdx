@@ -1,0 +1,39 @@
+---
+title: Set your currency, tax and numbering
+description: Use the Money and Documents stages of setup to choose your currency, financial year, tax and document numbers.
+sidebar:
+  order: 3
+---
+
+The **Money** and **Documents** stages decide how every amount looks, which period your reports cover, which tax your first quote uses and what number your first invoice gets. The preview beside the form shows an example amount, your tax line and your first invoice number before you save.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only the Owner running setup.</Aside>
+
+<Steps>
+
+1. **Choose your currency and locale** — On **Currency & locale**, pick from the common currencies or type a **Currency** code (ISO 4217, e.g. USD, EUR, INR). Then pick or type a **Locale**, which controls how dates and numbers look — ₹1,25,000.00 in India, $125,000.00 in the US. Press **Continue**.
+
+2. **Set your financial year** — Under **Financial year starts on**, pick the **Month** and **Day**. Reports and year-end use this date. Press **Continue**.
+
+3. **Pick your tax country** — On **Tax**, choose where your business is registered for tax: India (GST), United Kingdom (VAT), Australia (GST), New Zealand (GST), United Arab Emirates (VAT), Saudi Arabia (VAT), or **Another country — I'll add my own rates**. Spine adds the preset country's rates. A business in the United States, or anywhere not listed, chooses **Another country — I'll add my own rates**. Press **Continue**.
+
+4. **Finish the tax step** — For India, **GST details** asks for your GST registration; choose **Not registered yet — skip this step** if you aren't. For another country, **Default tax rate** asks for **Tax name** (e.g. VAT, GST, Sales Tax) and **Rate (%)**; that rate becomes the default for new lines.
+
+5. **Set your document numbering** — **Document numbering** has a row for each document type (Quote, Invoice, Credit Note, Receipt, Expense, Job, Vendor Payment and more) with **Prefix**, **Padding** and **Starting number**. Press **Continue**.
+
+</Steps>
+
+## Good to know
+
+- **One currency.** Spine uses one currency for everything. There's no multi-currency.
+- **Numbers never reset.** Your quote and invoice numbers carry on from one financial year to the next. The financial year only changes the periods reports show.
+- **Continuing an old series.** Moving from another system? Set the starting number to where your old numbers stopped — say 1042 — and your first invoice is INV-1042, with the padding you chose.
+- **Each number is given once, in order, and never reused.** Spine gives out the next number when a document is issued, never when it's a draft, so there are no gaps.
+- **You choose tax per line.** The default rate is where new lines start. You can pick any rate on each line of a quote or invoice.
+
+<Aside type="tip">Change these later in **Settings › Currency & locale**, **Settings › Financial year**, **Settings › Tax** and **Settings › Numbering**. See [Set your document numbers](../../settings/numbering/) and [Tax](../../tax/).</Aside>
+
+Next: [Review your accounts and invite your team](../review-accounts-and-invite-your-team/).

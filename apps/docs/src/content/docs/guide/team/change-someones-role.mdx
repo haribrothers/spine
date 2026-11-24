@@ -1,0 +1,47 @@
+---
+title: Change someone's role
+description: Move a person between Staff and Field, promote a Staff member to Owner, or demote an Owner back to Staff.
+sidebar:
+  order: 9
+---
+
+People's jobs change. A crew member moves into the office, or a manager becomes a partner. Change their role instead of inviting them again — their sign-in and their history stay with them. Every role change asks first, says what happened in a toast and is recorded in the audit log.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners. Every change below starts from the person's row menu on **Team › Users**.</Aside>
+
+## Change between Staff and Field
+
+<Steps>
+
+1. **Open the person's menu** — On **Team › Users**, open the row menu and choose **Change to Staff** (for a Field member) or **Change to Field** (for a Staff member).
+
+2. **Read the confirm** — "Change Marcus Webb to Staff?" says they'll have their Teams' access instead of Field access. Under **Teams they'll be on**, tick their Teams; **General Staff** is ticked to start with. Changing to Field says they'll only see the jobs they're assigned to, without money, and names the Teams they'll come off.
+
+3. **Confirm** — The change applies the next time they open Spine.
+
+</Steps>
+
+An Owner can't be changed to Field directly. Demote them to Staff first.
+
+## Promote a Staff member to Owner
+
+<Steps>
+
+1. **Choose Promote to Owner** — It's only on Staff members' menus. To promote a Field member, change them to Staff first.
+
+2. **Confirm with Make owner** — "Make *name* an owner?" explains that Owners have full access to everything in the business — every record and report, plus Users, Teams and Settings — and that Team permissions no longer apply to them. Press **Make owner**, or **Cancel** to change nothing.
+
+</Steps>
+
+The toast says "*name* is an owner" and they can open everything now.
+
+## Demote an Owner to Staff
+
+Choose **Demote to Staff** on another Owner's menu. "Demote *name* to Staff?" explains they lose Owner access at once and keep any Teams they're on; with none, they can't open anything until you add them to one. Press **Demote**.
+
+<Aside type="caution">You can't demote the Primary Owner or yourself — the menu doesn't offer it. The Primary Owner can hand over their status first; see [Transfer primary ownership](../transfer-primary-ownership/).</Aside>
+
+<Aside type="tip">After any change, choose **What they can open** to check the result. See [Check what someone can open](../check-what-someone-can-open/).</Aside>

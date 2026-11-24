@@ -1,0 +1,41 @@
+---
+title: Create missing entries from a statement line
+description: Record a payment, expense, transfer or other entry straight from a statement line while you reconcile.
+sidebar:
+  order: 9
+---
+
+Sometimes the bank statement has a line Spine doesn't know about yet: a customer paid without telling you, a bank charge, a card payment you forgot to record. You can record it straight from the line while you reconcile. Spine matches the new entry to the line, so you don't lose your place.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Reconcile accounts**. Each kind of entry also needs its own right — for example **Record own payments** for a customer payment, or **Record transfers and other money in or out** for a transfer. Options you can't use aren't shown.
+</Aside>
+
+<Steps>
+
+1. **Find the unmatched line** — On the reconcile page, find the line under **To do** and press **Create**. The **Create from statement line** drawer shows its date, description and amount.
+
+2. **Choose what it was** — Under **Record it as**, pick one:
+   - Money in: **Customer payment**, **Transfer from another account** or **Other money in**.
+   - Money out: **Vendor payment**, **Expense**, **Transfer to another account**, **Other money out** or **Tax payment**.
+
+3. **Record an expense in the drawer** — For **Expense**, the amount and date come from the line. Choose a **Category**, check **Paid from**, add a **Description** and, if it belongs to a job, a **Job** (it then counts as job cost). Press **Save and match**.
+
+4. **Or continue to the full form** — For anything else, press **Continue**. The usual form opens with the line's amount, date and account filled in — for example the **Record a payment** dialog for a customer payment, where you choose the customer and tick the invoices. Finish that form as usual.
+
+</Steps>
+
+<Screenshot id="banking-reconcile-create" alt="The Create from statement line drawer with its Record it as options" />
+
+## What happens next
+
+The entry is recorded and posted like any other, and the line is matched to it. The toast says it was recorded and matched.
+
+<Aside type="caution" title="If the match doesn't save">
+  If Spine can't find the new entry on this account up to the statement end date, or the match doesn't save, it tells you. The entry is still recorded — select the line and match it by hand.
+</Aside>
+
+If the drawer says you can't record any of these entries, ask an Owner, or exclude the line if it shouldn't be in the books. See [Reconcile an account](../reconcile-an-account/).

@@ -1,0 +1,103 @@
+import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { LucideIcon } from "lucide-react-native";
+import Home from "lucide-react-native/icons/house";
+import Briefcase from "lucide-react-native/icons/briefcase";
+import { FloatingTabBar } from "./floating-tab-bar";
+import { TabBarIcon } from "./tab-bar";
+import { lightColors, darkColors } from "../tokens";
+
+/**
+ * `BottomTabBarProps` is normally supplied by React Navigation itself when
+ * it calls the `tabBar` render prop — this test constructs the minimal
+ * shape by hand (two routes, one focused) rather than mounting a real
+ * `Tab.Navigator`, since `FloatingTabBar`'s own logic (which colors, which
+ * label, which accessibility state) is what's under test, not React
+ * Navigation's routing.
+ */
+function makeIconOption(icon: LucideIcon) {
+  function IconOption(props: { focused: boolean; color: string; size: number }) {
+    return <TabBarIcon icon={icon} {...props} />;
+  }
+  return IconOption;
+}
+
+function makeProps(overrides: { focusedIndex?: number } = {}) {
+  const navigate = jest.fn();
+
+  const props: BottomTabBarProps = {
+    state: {
+      index: overrides.focusedIndex ?? 0,
+      routes: [
+        { key: "home-key", name: "Home" },
+        { key: "jobs-key", name: "Jobs" },
+      ],
+    } as BottomTabBarProps["state"],
+    descriptors: {
+      "home-key": { options: { title: "Home", tabBarIcon: makeIconOption(Home) } },
+      "jobs-key": { options: { title: "Jobs", tabBarIcon: makeIconOption(Briefcase) } },
+    } as unknown as BottomTabBarProps["descriptors"],
+    navigation: { emit: () => ({ defaultPrevented: false }), navigate } as unknown as BottomTabBarProps["navigation"],
+    insets: { top: 0, bottom: 20, left: 0, right: 0 },
+  };
+
+  return { props, navigate };
+}
+
+describe("FloatingTabBar", () => {
+  it("marks the focused tab as selected and shows every tab's label (icon above, label below)", async () => {
+    const { props } = makeProps({ focusedIndex: 0 });
+    render(<FloatingTabBar {...props} resolvedMode="light" />);
+    await waitFor(() => expect(screen.getByText("Home")).toBeTruthy());
+    expect(screen.getByText("Jobs")).toBeTruthy();
+
+    const homeButton = screen.getByLabelText("Home");
+    expect(homeButton.props.accessibilityState).toMatchObject({ selected: true });
+
+    const jobsButton = screen.getByLabelText("Jobs");
+    expect(jobsButton.props.accessibilityState).toMatchObject({ selected: false });
+  });
+
+  it("navigates to the tapped tab", async () => {
+    const { props, navigate } = makeProps({ focusedIndex: 0 });
+    render(<FloatingTabBar {...props} resolvedMode="light" />);
+    await waitFor(() => expect(screen.getByLabelText("Jobs")).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText("Jobs"));
+    expect(navigate).toHaveBeenCalledWith("Jobs");
+  });
+
+  it("resolves the focused/unfocused colors from the design tokens (passed into each tab's icon)", async () => {
+    // The active-tab highlight itself is a shared Animated.View positioned
+    // from measured onLayout results, which don't fire under
+    // react-test-renderer's fake layout engine — so color resolution is
+    // asserted via the color each tab's tabBarIcon actually receives
+    // instead, which exercises the same isFocused ? primary : onSurfaceMuted
+    // branch without depending on real layout.
+    let capturedColors: string[] = [];
+    const captureIcon = jest.fn((props: { color: string }) => {
+      capturedColors.push(props.color);
+      return null;
+    });
+
+    const light = makeProps({ focusedIndex: 0 });
+    light.props.descriptors = {
+      "home-key": { options: { title: "Home", tabBarIcon: captureIcon } },
+      "jobs-key": { options: { title: "Jobs", tabBarIcon: captureIcon } },
+    } as unknown as BottomTabBarProps["descriptors"];
+    const { unmount } = render(<FloatingTabBar {...light.props} resolvedMode="light" />);
+    await waitFor(() => screen.getByLabelText("Home"));
+    expect(capturedColors).toEqual([lightColors.primary, lightColors.onSurfaceMuted]);
+    unmount();
+
+    capturedColors = [];
+    const dark = makeProps({ focusedIndex: 0 });
+    dark.props.descriptors = {
+      "home-key": { options: { title: "Home", tabBarIcon: captureIcon } },
+      "jobs-key": { options: { title: "Jobs", tabBarIcon: captureIcon } },
+    } as unknown as BottomTabBarProps["descriptors"];
+    render(<FloatingTabBar {...dark.props} resolvedMode="dark" />);
+    await waitFor(() => screen.getByLabelText("Home"));
+    expect(capturedColors).toEqual([darkColors.primary, darkColors.onSurfaceMuted]);
+  });
+});

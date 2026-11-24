@@ -1,0 +1,205 @@
+"use client";
+
+import { AI_FEATURE_OFF_ERROR, MODULE_OFF_ERROR, PASSWORD_CHANGE_REQUIRED_ERROR } from "@spine/shared";
+import { t } from "./i18n";
+
+/**
+ * Thin browser-side fetch wrapper for `/org/*` endpoints — first of its
+ * kind in apps/web (auth so far only used `authClient`/`get-session.ts`,
+ * neither of which is a general API client). Always sends credentials
+ * (cookie session) and, for mutating verbs, a fresh `Idempotency-Key` per
+ * logical call so a network retry doesn't double-apply a write — matching
+ * the pattern established API-side in
+ * apps/api/src/common/idempotency.interceptor.ts.
+ */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+/**
+ * Thrown instead of a plain `Error` so a caller that needs more than the
+ * message string — e.g. QuoteConversionGuardService's 409 response, which
+ * carries a structured `{ existing: {...} }` body the UI needs to render a
+ * real confirmation dialog — can `instanceof ApiError` and read `.status`/
+ * `.body`. Extends `Error` (not a bare class) specifically so every
+ * existing `catch (err) { err instanceof Error ? err.message : ... }` call
+ * site in this codebase keeps working completely unchanged — this is
+ * additive, not a breaking change to the client's error shape.
+ */
+/** Fired on `window` when the API refuses an action (403); `PermissionToast` listens for it. */
+export const FORBIDDEN_EVENT = "spine:forbidden";
+export const FORBIDDEN_MESSAGE = t("common.apiErrors.forbidden");
+
+/**
+ * Fired on `window` when the API answers 401 (the session ended);
+ * `SessionExpiredDialog` listens for it. `detail.mutation` is true for a
+ * create, change or delete, which is never retried automatically.
+ */
+export const SESSION_EXPIRED_EVENT = "spine:session-expired";
+export const SESSION_EXPIRED_MESSAGE = t("common.apiErrors.sessionExpired");
+
+function signalSessionExpired(mutation: boolean) {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { mutation } }));
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly body: unknown,
+    /** US-OPS-13 — the API's `X-Request-Id` (US-OPS-07), the error page's reference. */
+    public readonly requestId?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function idempotencyKey(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function request<T>(
+  method: "GET" | "PUT" | "POST" | "DELETE",
+  path: string,
+  body?: unknown,
+  /** US-AI-07 — an AI request's "Cancel" aborts it; the caller gets the `AbortError`. */
+  signal?: AbortSignal,
+): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (method !== "GET") {
+    headers["Idempotency-Key"] = idempotencyKey();
+  }
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    credentials: "include",
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal,
+  });
+
+  if (!res.ok) {
+    const requestId = res.headers.get("X-Request-Id") ?? undefined;
+    let message = t("common.apiErrors.requestFailed", { status: res.status });
+    let data: unknown;
+    try {
+      data = await res.json();
+      const parsed = data as { message?: string } | undefined;
+      message = parsed?.message ?? message;
+    } catch {
+      // response wasn't JSON — keep the generic message
+    }
+    // US-TEAM-24: an Owner set this password — choose your own first.
+    if (res.status === 403 && (data as { error?: string } | undefined)?.error === PASSWORD_CHANGE_REQUIRED_ERROR) {
+      sendToChoosePassword();
+      throw new ApiError(message, res.status, data, requestId);
+    }
+    // US-SET-24, US-AI-03: a switched-off module or AI feature isn't a permission problem — its own message says what to do.
+    const refusal = (data as { error?: string } | undefined)?.error;
+    const moduleOff = res.status === 403 && (refusal === MODULE_OFF_ERROR || refusal === AI_FEATURE_OFF_ERROR);
+    if (res.status === 403 && !moduleOff) {
+      // US-OPS-12: a refusal is explained, never shown as a raw error.
+      message = FORBIDDEN_MESSAGE;
+      if (method !== "GET" && typeof window !== "undefined") window.dispatchEvent(new Event(FORBIDDEN_EVENT));
+    }
+    if (res.status === 401) {
+      // US-AUTH-12: the page stays as it is; the dialog asks to log in again.
+      if (method !== "GET") message = SESSION_EXPIRED_MESSAGE;
+      signalSessionExpired(method !== "GET");
+    }
+    throw new ApiError(message, res.status, data, requestId);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  return (await res.json()) as T;
+}
+
+/**
+ * Multipart upload — separate from `request()` since that always
+ * JSON-stringifies the body and sets `Content-Type: application/json`,
+ * neither of which is right for `multipart/form-data` (the browser must
+ * set its own `Content-Type` with the multipart boundary; letting `fetch`
+ * derive it from a `FormData` body, not setting it manually, is required).
+ * Still sends a fresh `Idempotency-Key` per call, matching every other
+ * mutating request.
+ */
+async function upload<T>(path: string, file: File, fields?: Record<string, string>): Promise<T> {
+  const formData = new FormData();
+  formData.append("file", file);
+  for (const [name, value] of Object.entries(fields ?? {})) formData.append(name, value);
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Idempotency-Key": idempotencyKey() },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = t("common.apiErrors.uploadFailed", { status: res.status });
+    try {
+      const data = await res.json();
+      message = data?.message ?? message;
+    } catch {
+      // response wasn't JSON — keep the generic message
+    }
+    if (res.status === 403) {
+      message = FORBIDDEN_MESSAGE;
+      if (typeof window !== "undefined") window.dispatchEvent(new Event(FORBIDDEN_EVENT));
+    }
+    if (res.status === 401) {
+      message = SESSION_EXPIRED_MESSAGE;
+      signalSessionExpired(true);
+    }
+    throw new Error(message);
+  }
+  return (await res.json()) as T;
+}
+
+/**
+ * US-INV-24 — a request whose answer is a file (a ZIP, a PDF): a POST when
+ * `body` is given, else a GET. Returns the bytes and the response headers.
+ * Errors are reported the same way as `request()`.
+ */
+async function download(path: string, body?: unknown): Promise<{ blob: Blob; headers: Headers }> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    credentials: "include",
+    headers: body === undefined ? {} : { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let message = t("common.apiErrors.downloadFailed", { status: res.status });
+    try {
+      const data = await res.json();
+      message = data?.message ?? message;
+    } catch {
+      // response wasn't JSON — keep the generic message
+    }
+    if (res.status === 403) message = FORBIDDEN_MESSAGE;
+    if (res.status === 401) {
+      message = SESSION_EXPIRED_MESSAGE;
+      signalSessionExpired(true);
+    }
+    throw new ApiError(message, res.status, undefined);
+  }
+  return { blob: await res.blob(), headers: res.headers };
+}
+
+export const apiClient = {
+  get: <T>(path: string) => request<T>("GET", path),
+  put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
+  post: <T>(path: string, body?: unknown, options?: { signal?: AbortSignal }) => request<T>("POST", path, body, options?.signal),
+  delete: <T>(path: string, body?: unknown) => request<T>("DELETE", path, body),
+  upload: <T>(path: string, file: File, fields?: Record<string, string>) => upload<T>(path, file, fields),
+  download: (path: string, body?: unknown) => download(path, body),
+};
+
+/** US-TEAM-24 (D-233) — sends the browser to "Choose your own password", coming back here afterwards. */
+function sendToChoosePassword() {
+  if (typeof window === "undefined" || window.location.pathname === "/choose-password") return;
+  window.location.assign(`/choose-password?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+}

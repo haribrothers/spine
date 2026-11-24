@@ -1,0 +1,48 @@
+---
+title: Void an invoice
+description: Cancel an issued invoice that shouldn't exist, with a reason, and reverse it in your books.
+sidebar:
+  order: 10
+---
+
+Void an invoice when it should never have been issued: the wrong customer, a duplicate, or work that was called off. Voiding keeps the invoice, its number and its lines, marks it **Void** with your reason, and posts a reversing entry so it no longer counts in your books.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Void an invoice**. Without it, **Void invoice** is hidden.
+</Aside>
+
+<Steps>
+
+1. **Open the invoice** — Go to **Invoices** and open the issued invoice.
+
+2. **Choose Void invoice** — Open **More** and choose **Void invoice**. From the list, choose **Void** in the row's menu; the invoice opens with the same dialog.
+
+3. **Give a reason** — **Void this invoice?** explains that it posts a reversing entry and can't be undone. Enter the **Reason**.
+
+4. **Confirm** — Press **Void invoice**.
+
+</Steps>
+
+<Screenshot id="invoices-void" alt="The Void this invoice? dialog with the required Reason box and the Void invoice button" />
+
+## What happens next
+
+- A toast says **Invoice voided**.
+- The invoice shows **Void**, with "Voided on" the date and your reason. Its **Activity** records who voided it.
+- In the Invoices list it shows **Void**, and its balance shows "—".
+- Nothing is deleted. The number stays used, so your sequence has no gaps.
+- It's no longer counted as owed, reminded or included in your receivables.
+
+<Aside type="danger">
+  Voiding can't be undone. If the customer still owes part of the invoice, [issue a credit note](../issue-a-credit-note/) for the part that's wrong instead.
+</Aside>
+
+## When you can't void
+
+- **No reason** — you'll see "A reason is required to void an invoice."
+- **Payments are on it** — Spine refuses with "Cannot void an invoice with payments allocated against it". Issue a credit note instead. If the payment was put on this invoice by mistake, move it off first; see [Payments and receivables](../../payments/).
+- **A draft** — a draft isn't issued, so there's nothing to void. [Delete it](../edit-or-delete-a-draft-invoice/) instead.
+- **An opening balance** — invoices brought in from your old system can't be voided.

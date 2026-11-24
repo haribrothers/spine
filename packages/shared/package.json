@@ -1,0 +1,33 @@
+{
+  "name": "@spine/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./money": "./dist/money/index.js",
+    "./tax": "./dist/tax/index.js",
+    "./schemas": "./dist/schemas/index.js",
+    "./mobile": "./dist/mobile.js",
+    "./password": "./dist/password.js",
+    "./i18n": "./dist/i18n/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "i18next": "26.5.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@spine/config": "workspace:*",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.7"
+  }
+}

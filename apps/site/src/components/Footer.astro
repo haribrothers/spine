@@ -1,0 +1,25 @@
+---
+/** US-SITE-02 — the licence (AGPL-3.0, D-263), the docs and their older versions. */
+import logoLight from "../assets/logo-light.svg";
+import logoDark from "../assets/logo-dark.svg";
+import Icon from "./Icon.astro";
+import { home } from "../locales/en/home";
+import { LICENCE_URL, REPO_URL, docs } from "../lib/links";
+
+const t = home.footer;
+---
+
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-in">
+      <img class="logo logo-l" src={logoLight.src} width="68" height="20" alt="Spine" />
+      <img class="logo logo-d" src={logoDark.src} width="68" height="20" alt="Spine" />
+      <span>{t.licence} <a href={LICENCE_URL}>{t.licenceLink}</a></span>
+      <nav aria-label={t.label}>
+        <a href={docs.home}>{t.docs}</a>
+        <a href={docs.versions}>{t.versions}</a>
+        <a class="nav-gh" href={REPO_URL}><Icon name="github" />{t.github}</a>
+      </nav>
+    </div>
+  </div>
+</footer>

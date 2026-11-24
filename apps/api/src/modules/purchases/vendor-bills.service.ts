@@ -1,0 +1,712 @@
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { BulkResult, createVendorBillSchema, PossibleDuplicateVendorBill, updateVendorBillSchema, VendorBillActivityEntry } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
+import { and, eq, desc, ne, sql } from "drizzle-orm";
+import type { z } from "zod";
+import { DATABASE } from "../../db/db.module";
+import type { Database, Transaction } from "../../db/client";
+import { vendorBills, vendorBillLines, vendorCreditAllocations, vendorCredits, contacts, accounts, auditLog, user, vendorPayments, vendorPaymentAllocations, jobs } from "../../db/schema";
+import { AuditLogService, aiMark } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
+import { LedgerService } from "../ledger/ledger.service";
+import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
+import { attachmentCounts } from "../attachments/attachments.service";
+
+export type CreateVendorBillInput = z.infer<typeof createVendorBillSchema>;
+export type UpdateVendorBillInput = z.infer<typeof updateVendorBillSchema>;
+
+export interface ComputedLine {
+  sortOrder: number;
+  type: "item" | "heading" | "text";
+  catalogItemId: string | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unitPriceAmount: bigint;
+  unitPriceCurrency: string;
+  accountId: string | null;
+  taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
+  lineSubtotalAmount: bigint;
+  lineTaxAmount: bigint;
+  lineTotalAmount: bigint;
+}
+
+interface ComputedTotals {
+  lines: ComputedLine[];
+  subtotalAmount: bigint;
+  taxAmount: bigint;
+  totalAmount: bigint;
+}
+
+/**
+ * Server-side computation of every line and document total — the ONLY
+ * place vendor bill totals are computed, mirroring computeQuoteTotals/
+ * computeInvoiceTotals exactly (same "round once at line level, half up"
+ * rule, same FEAT-08 taxRateId/taxGroupId-resolves-via-TaxResolverService
+ * behaviour). No discount concept here — PRD's own vendor_bill_lines shape
+ * has no discount field, unlike quote/invoice lines; a vendor's own
+ * discount, if any, is reflected directly in the unit price.
+ */
+export async function computeBillTotals(
+  orgId: string,
+  currency: string,
+  lines: CreateVendorBillInput["lines"],
+  taxResolver: TaxResolverService,
+): Promise<ComputedTotals> {
+  let subtotalAmount = 0n;
+  let taxAmount = 0n;
+  let totalAmount = 0n;
+
+  const computed: ComputedLine[] = await Promise.all(
+    lines.map(async (line, index) => {
+      if (line.type !== "item") {
+        return {
+          sortOrder: index,
+          type: line.type,
+          catalogItemId: line.catalogItemId ?? null,
+          name: line.name,
+          description: line.description ?? null,
+          quantity: 0,
+          unitPriceAmount: 0n,
+          unitPriceCurrency: currency,
+          accountId: null,
+          taxRatePercentage: 0,
+          taxRateId: null,
+          taxGroupId: null,
+          isTaxInclusive: false,
+          supplyClass: null,
+          hsnSac: null,
+          lineSubtotalAmount: 0n,
+          lineTaxAmount: 0n,
+          lineTotalAmount: 0n,
+        };
+      }
+
+      const resolved = line.taxRateId || line.taxGroupId
+        ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
+        : {
+            rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
+            blendedPercentage: line.taxRatePercentage,
+          };
+
+      // US-TAX-11: an exempt or non-taxable line carries no tax.
+      const supplyError = supplyClassTaxError(line.supplyClass, resolved.blendedPercentage);
+      if (supplyError) throw new BadRequestException(supplyError);
+
+      // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
+      const computed = computeDocumentLine({
+        quantity: line.quantity,
+        unitPriceAmount: line.unitPriceAmount,
+        currency,
+        rates: resolved.rates,
+        inclusive: line.isTaxInclusive,
+      });
+      const netAmount = computed.netAmount;
+      const taxResult = computed.tax;
+
+      subtotalAmount += netAmount;
+      taxAmount += taxResult.taxAmount.amount;
+      totalAmount += taxResult.total.amount;
+
+      return {
+        sortOrder: index,
+        type: "item" as const,
+        catalogItemId: line.catalogItemId ?? null,
+        name: line.name,
+        description: line.description ?? null,
+        quantity: line.quantity,
+        unitPriceAmount: line.unitPriceAmount,
+        unitPriceCurrency: currency,
+        accountId: line.accountId ?? null,
+        taxRatePercentage: resolved.blendedPercentage,
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass ?? ("supplyClass" in resolved ? resolved.supplyClass : null)),
+        hsnSac: line.hsnSac ?? null,
+        taxRateId: line.taxRateId ?? null,
+        taxGroupId: line.taxGroupId ?? null,
+        isTaxInclusive: line.isTaxInclusive,
+        lineSubtotalAmount: netAmount,
+        lineTaxAmount: taxResult.taxAmount.amount,
+        lineTotalAmount: taxResult.total.amount,
+      };
+    }),
+  );
+
+  return { lines: computed, subtotalAmount, taxAmount, totalAmount };
+}
+
+async function insertLines(tx: Transaction, billId: string, lines: ComputedLine[]) {
+  if (!lines.length) return;
+  await tx.insert(vendorBillLines).values(
+    lines.map((line) => ({
+      billId,
+      sortOrder: line.sortOrder,
+      type: line.type,
+      catalogItemId: line.catalogItemId,
+      name: line.name,
+      description: line.description,
+      quantity: line.quantity,
+      unitPriceAmount: line.unitPriceAmount,
+      unitPriceCurrency: line.unitPriceCurrency,
+      accountId: line.accountId,
+      taxRatePercentage: line.taxRatePercentage,
+      taxRateId: line.taxRateId,
+      taxGroupId: line.taxGroupId,
+      isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac,
+      lineSubtotalAmount: line.lineSubtotalAmount,
+      lineTaxAmount: line.lineTaxAmount,
+      lineTotalAmount: line.lineTotalAmount,
+    })),
+  );
+}
+
+/**
+ * PRD FEAT-07 (S-07.1, S-07.5) — vendor bill CRUD, `record()` (the posting
+ * action, §7.2 "Vendor bill recorded": debit Expense/COGS + Input Tax,
+ * credit Accounts Payable), and `void()` with a reversing entry. Mirrors
+ * InvoicesService's own create/issue/void shape almost exactly — see that
+ * file's doc comments for the full transaction-boundary reasoning
+ * (row-lock + status re-check + numbering + posting + audit log, all in
+ * one transaction; vendor bill's own number is user-entered, never
+ * allocated via NumberingService, per that module's own doc comment).
+ */
+@Injectable()
+export class VendorBillsService {
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly auditLog: AuditLogService,
+    private readonly ledger: LedgerService,
+    private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
+  ) {}
+
+  async list(orgId: string, options: { status?: string; contactId?: string; jobId?: string }) {
+    const conditions = [eq(vendorBills.orgId, orgId)];
+    if (options.contactId) conditions.push(eq(vendorBills.contactId, options.contactId));
+    if (options.jobId) conditions.push(eq(vendorBills.jobId, options.jobId));
+
+    const rows = await this.db
+      .select({ bill: vendorBills, contactName: contacts.name, jobName: jobs.name })
+      .from(vendorBills)
+      .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .leftJoin(jobs, eq(vendorBills.jobId, jobs.id))
+      .where(and(...conditions))
+      .orderBy(desc(vendorBills.createdAt));
+
+    let result = rows.map((r) => ({
+      ...r.bill,
+      contactName: r.contactName,
+      // US-PUR-32/34: the job's name on the page and the list.
+      jobName: r.jobName,
+      balanceDue: r.bill.totalAmount - r.bill.amountPaid - r.bill.creditedAmount,
+    }));
+
+    if (options.status) {
+      result = result.filter((b) => b.status === options.status);
+    }
+
+    // US-OPS-33: the paperclip on the list.
+    const counts = await attachmentCounts(this.db, orgId, "vendor_bill", result.map((b) => b.id));
+    return result.map((b) => ({ ...b, attachmentCount: counts.get(b.id) ?? 0 }));
+  }
+
+  async getOne(orgId: string, id: string) {
+    const [row] = await this.db
+      .select({ bill: vendorBills, contactName: contacts.name, jobName: jobs.name })
+      .from(vendorBills)
+      .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .leftJoin(jobs, eq(vendorBills.jobId, jobs.id))
+      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)));
+    if (!row) {
+      throw new NotFoundException("Vendor bill not found");
+    }
+
+    const lines = await this.db
+      .select()
+      .from(vendorBillLines)
+      .where(eq(vendorBillLines.billId, id))
+      .orderBy(vendorBillLines.sortOrder);
+
+    // US-PUR-25: the vendor credits used against this bill.
+    const creditsApplied = await this.db
+      .select({ id: vendorCreditAllocations.id, vendorCreditId: vendorCredits.id, number: vendorCredits.number, vendorReference: vendorCredits.vendorReference, amount: vendorCreditAllocations.amount })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorCredits, eq(vendorCredits.id, vendorCreditAllocations.vendorCreditId))
+      .where(eq(vendorCreditAllocations.billId, id));
+
+    return {
+      ...row.bill,
+      contactName: row.contactName,
+      jobName: row.jobName,
+      balanceDue: row.bill.totalAmount - row.bill.amountPaid - row.bill.creditedAmount,
+      lines,
+      creditsApplied,
+    };
+  }
+
+  /** `GET /vendor-bills/:id/history` — confirms the bill exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "vendor_bill", id);
+  }
+
+  /**
+   * US-PUR-32 (D-225) — what happened to the bill, newest first: created,
+   * recorded (with the total posted) and voided (with the reason) from the
+   * audit log; each payment and vendor credit put against it from their
+   * allocations, with who made them.
+   */
+  async activity(orgId: string, id: string): Promise<VendorBillActivityEntry[]> {
+    const bill = await this.getOne(orgId, id);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const entries: VendorBillActivityEntry[] = [];
+    const audit = await this.db
+      .select({ action: auditLog.action, changes: auditLog.changes, at: auditLog.createdAt, actorName: user.name, via: auditLog.via })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, "vendor_bill"), eq(auditLog.entityId, id)));
+    for (const row of audit) {
+      if (row.action === "created") entries.push({ type: "created", at: iso(row.at), actorName: row.actorName ?? null, ...aiMark(row.changes), ...(row.via ? { via: row.via } : {}) });
+      else if (row.action === "recorded") entries.push({ type: "recorded", at: iso(row.at), actorName: row.actorName ?? null, amount: bill.totalAmount.toString() });
+      else if (row.action === "voided") {
+        const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; to: unknown }[];
+        const reason = changes.find((c) => c.field === "voidReason")?.to;
+        entries.push({ type: "voided", at: iso(row.at), actorName: row.actorName ?? null, detail: typeof reason === "string" ? reason : bill.voidReason });
+      }
+      // US-PUR-50: a deleted payment keeps its "Paid" line, and says when it was deleted.
+      else if (row.action === "payment_deleted") {
+        const changes = (Array.isArray(row.changes) ? row.changes : []) as { field: string; from: unknown }[];
+        const from = (field: string) => changes.find((c) => c.field === field)?.from;
+        const number = typeof from("payment") === "string" ? (from("payment") as string) : null;
+        const amount = typeof from("amount") === "string" ? (from("amount") as string) : null;
+        const paidAt = from("paidAt");
+        if (typeof paidAt === "string") entries.push({ type: "paid", at: paidAt, actorName: null, amount, detail: number });
+        entries.push({ type: "payment_deleted", at: iso(row.at), actorName: row.actorName ?? null, amount, detail: number });
+      }
+    }
+    const paid = await this.db
+      .select({ amount: vendorPaymentAllocations.amount, at: vendorPaymentAllocations.createdAt, paymentId: vendorPayments.id, number: vendorPayments.number, actorName: user.name })
+      .from(vendorPaymentAllocations)
+      .innerJoin(vendorPayments, eq(vendorPayments.id, vendorPaymentAllocations.vendorPaymentId))
+      .leftJoin(user, eq(vendorPayments.createdByUserId, user.id))
+      .where(and(eq(vendorPaymentAllocations.orgId, orgId), eq(vendorPaymentAllocations.billId, id)));
+    for (const p of paid) entries.push({ type: "paid", at: iso(p.at), actorName: p.actorName ?? null, amount: p.amount.toString(), detail: p.number, linkId: p.paymentId });
+    const credited = await this.db
+      .select({ amount: vendorCreditAllocations.amount, at: vendorCreditAllocations.createdAt, creditId: vendorCredits.id, number: vendorCredits.number, actorName: user.name })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorCredits, eq(vendorCredits.id, vendorCreditAllocations.vendorCreditId))
+      .leftJoin(user, eq(vendorCreditAllocations.createdByUserId, user.id))
+      .where(eq(vendorCreditAllocations.billId, id));
+    for (const c of credited) entries.push({ type: "credit_applied", at: iso(c.at), actorName: c.actorName ?? null, amount: c.amount.toString(), detail: c.number, linkId: c.creditId });
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /**
+   * US-PUR-35 — this vendor's bills (not void) with the same number,
+   * ignoring case and spaces: a warning before entering a bill twice; the
+   * caller can still save.
+   */
+  async possibleDuplicates(orgId: string, query: { contactId: string; billNumber: string; excludeId?: string }): Promise<PossibleDuplicateVendorBill[]> {
+    const wanted = query.billNumber.replace(/\s+/g, "").toLowerCase();
+    if (!wanted) return [];
+    const rows = await this.db
+      .select()
+      .from(vendorBills)
+      .where(
+        and(
+          eq(vendorBills.orgId, orgId),
+          eq(vendorBills.contactId, query.contactId),
+          ne(vendorBills.status, "void"),
+          sql`lower(regexp_replace(${vendorBills.billNumber}, '[[:space:]]', '', 'g')) = ${wanted}`,
+          query.excludeId ? ne(vendorBills.id, query.excludeId) : undefined,
+        ),
+      )
+      .orderBy(desc(vendorBills.date))
+      .limit(3);
+    return rows.map((b) => ({
+      id: b.id,
+      billNumber: b.billNumber,
+      date: new Date(b.date).toISOString().slice(0, 10),
+      totalAmount: b.totalAmount.toString(),
+      currency: b.currency,
+      status: b.status,
+    }));
+  }
+
+  /**
+   * US-PUR-36 — records each draft in its own transaction (P11), so one
+   * that can't be recorded doesn't stop the rest; the skipped ones say why.
+   */
+  async bulkRecord(orgId: string, ids: string[], actorUserId: string): Promise<BulkResult> {
+    const done: string[] = [];
+    const skipped: BulkResult["skipped"] = [];
+    const rows = await this.db.select({ id: vendorBills.id, billNumber: vendorBills.billNumber, status: vendorBills.status }).from(vendorBills).where(eq(vendorBills.orgId, orgId));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    for (const id of [...new Set(ids)]) {
+      const bill = byId.get(id);
+      if (!bill) {
+        skipped.push({ id, label: null, reason: "Not found." });
+        continue;
+      }
+      if (bill.status === "recorded") {
+        skipped.push({ id, label: bill.billNumber, reason: "It's already recorded." });
+        continue;
+      }
+      if (bill.status === "void") {
+        skipped.push({ id, label: bill.billNumber, reason: "It's void." });
+        continue;
+      }
+      try {
+        await this.record(orgId, id, actorUserId);
+        done.push(id);
+      } catch (err) {
+        skipped.push({ id, label: bill.billNumber, reason: err instanceof Error ? err.message : "It couldn't be recorded." });
+      }
+    }
+    return { done, skipped };
+  }
+
+  /** `recurring` (US-PUR-30): the recurring bill and run date that created it — unique together, so a run never makes a second bill for one date. */
+  async create(orgId: string, actorUserId: string, input: CreateVendorBillInput, isDemo = false, recurring?: { recurringBillId: string; recurringRunOn: string }) {
+    const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
+    if (!contact) {
+      throw new BadRequestException("Contact not found");
+    }
+
+    const totals = await computeBillTotals(orgId, input.currency, input.lines, this.taxResolver);
+    // US-TAX-13: the vendor's state, unless one is given.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "purchase");
+
+    const created = await this.db.transaction(async (tx) => {
+      const [bill] = await tx
+        .insert(vendorBills)
+        .values({
+          orgId,
+          contactId: input.contactId,
+          jobId: input.jobId ?? null,
+          status: "draft",
+          billNumber: input.billNumber,
+          date: input.date,
+          dueDate: input.dueDate ?? null,
+          currency: input.currency,
+          subtotalAmount: totals.subtotalAmount,
+          taxAmount: totals.taxAmount,
+          totalAmount: totals.totalAmount,
+          notes: input.notes ?? null,
+          createdByUserId: actorUserId,
+          isDemo,
+          // US-AI-06 (D-166)
+          aiAssisted: input.aiAssisted === true,
+          recurringBillId: recurring?.recurringBillId ?? null,
+          recurringRunOn: recurring?.recurringRunOn ?? null,
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
+        })
+        .returning();
+
+      await insertLines(tx, bill!.id, totals.lines);
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "vendor_bill",
+        entityId: bill!.id,
+        contactId: input.contactId,
+        changes: [{ field: "status", from: null, to: "draft" }, ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])],
+      });
+
+      return bill;
+    });
+
+    return this.getOne(orgId, created!.id);
+  }
+
+  /** Updates a DRAFT bill in place. A recorded bill is immutable per the architecture rules — only void() may transition it further. Full-replace on lines, same convention as QuotesService/InvoicesService.update. */
+  async update(orgId: string, id: string, actorUserId: string, input: UpdateVendorBillInput) {
+    const [existing] = await this.db.select().from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Vendor bill not found");
+    }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "vendor_bills.edit_own",
+      others: "vendor_bills.edit_others",
+    });
+    if (existing.status !== "draft") {
+      throw new BadRequestException("Only a draft vendor bill can be edited");
+    }
+
+    const currency = input.currency ?? existing.currency;
+    const totals = input.lines !== undefined ? await computeBillTotals(orgId, currency, input.lines, this.taxResolver) : null;
+    // US-TAX-13: the vendor's state decides intra- or inter-state; a new vendor (or a draft from before GST) takes the vendor's.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "purchase",
+    );
+
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(vendorBills)
+        .set({
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
+          ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
+          ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
+          ...(input.billNumber !== undefined ? { billNumber: input.billNumber } : {}),
+          ...(input.date !== undefined ? { date: input.date } : {}),
+          ...(input.dueDate !== undefined ? { dueDate: input.dueDate } : {}),
+          ...(input.currency !== undefined ? { currency: input.currency } : {}),
+          ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.aiAssisted ? { aiAssisted: true } : {}),
+          ...(totals
+            ? { subtotalAmount: totals.subtotalAmount, taxAmount: totals.taxAmount, totalAmount: totals.totalAmount }
+            : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(vendorBills.id, id))
+        .returning();
+
+      if (input.lines !== undefined && totals) {
+        await tx.delete(vendorBillLines).where(eq(vendorBillLines.billId, id));
+        await insertLines(tx, id, totals.lines);
+      }
+
+      const { lines: _lines, aiAssisted: _ai, ...scalarInput } = input;
+      const changes = [...AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>), ...(input.aiAssisted ? [{ field: "aiAssisted", from: null, to: true }] : [])];
+      if (changes.length) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "updated",
+          entityType: "vendor_bill",
+          entityId: id,
+          contactId: row?.contactId ?? existing.contactId,
+          changes,
+        });
+      }
+
+      return row;
+    });
+
+    return this.getOne(orgId, updated!.id);
+  }
+
+  /**
+   * §7.2 "Vendor bill recorded": debit Expense/COGS (per-line, grouped by
+   * each line's own snapshotted `accountId`, falling back to the org's
+   * default expense account — mirrors InvoicesService.issue's own
+   * resolveRevenuePostingLines grouping, except no catalog-item lookup is
+   * needed here since vendor_bill_lines already snapshots `accountId`
+   * directly at add-time) + debit Input Tax Receivable, credit Accounts
+   * Payable for the total.
+   */
+  async record(orgId: string, id: string, actorUserId: string, fallbackAccountId?: string) {
+    const [preCheck] = await this.db.select().from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Vendor bill not found");
+    }
+
+    const resolvedFallbackAccountId = fallbackAccountId ?? (await this.resolveDefaultExpenseAccount(orgId));
+
+    const result = await this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(vendorBills)
+        .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)))
+        .for("update");
+      if (!existing) {
+        throw new NotFoundException("Vendor bill not found");
+      }
+      if (existing.status !== "draft") {
+        throw new BadRequestException("Only a draft vendor bill can be recorded");
+      }
+      if (existing.totalAmount <= 0n) {
+        throw new BadRequestException("Cannot record a vendor bill with a zero or negative total");
+      }
+
+      const lines = await tx
+        .select({ accountId: vendorBillLines.accountId, lineSubtotalAmount: vendorBillLines.lineSubtotalAmount })
+        .from(vendorBillLines)
+        .where(and(eq(vendorBillLines.billId, id), eq(vendorBillLines.type, "item")));
+
+      const byAccount = new Map<string, bigint>();
+      for (const line of lines) {
+        if (line.lineSubtotalAmount === 0n) continue;
+        const resolvedAccountId = line.accountId ?? resolvedFallbackAccountId;
+        byAccount.set(resolvedAccountId, (byAccount.get(resolvedAccountId) ?? 0n) + line.lineSubtotalAmount);
+      }
+
+      const apAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsPayable");
+
+      const postingLines: { accountId: string; debit: bigint; credit: bigint; contactId: string; jobId?: string | null }[] = [
+        ...Array.from(byAccount.entries()).map(([accountId, amount]) => ({
+          accountId,
+          debit: amount,
+          credit: 0n,
+          contactId: existing.contactId,
+          jobId: existing.jobId,
+        })),
+      ];
+
+      if (existing.taxAmount > 0n) {
+        const inputTaxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "inputTaxReceivable");
+        postingLines.push({ accountId: inputTaxAccountId, debit: existing.taxAmount, credit: 0n, contactId: existing.contactId, jobId: existing.jobId });
+      }
+
+      postingLines.push({ accountId: apAccountId, debit: 0n, credit: existing.totalAmount, contactId: existing.contactId, jobId: existing.jobId });
+
+      const recordedAt = new Date();
+      const journalEntryId = await this.ledger.postEntry(tx, {
+        orgId,
+        date: new Date(existing.date).toISOString().slice(0, 10),
+        narration: `Vendor bill ${existing.billNumber} recorded`,
+        sourceType: "vendor_bill",
+        sourceId: id,
+        lines: postingLines,
+      });
+
+      const [row] = await tx
+        .update(vendorBills)
+        .set({
+          status: "recorded",
+          recordedAt,
+          journalEntryId,
+          updatedAt: recordedAt,
+          // US-TAX-13: snapshotted when recorded.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "purchase", tx)),
+        })
+        .where(eq(vendorBills.id, id))
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "recorded",
+        entityType: "vendor_bill",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "status", from: "draft", to: "recorded" }],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, result!.id);
+  }
+
+  /** Mirrors InvoicesService.void exactly — reversing entry, blocked if any payment has been allocated. */
+  async void(orgId: string, id: string, actorUserId: string, reason: string) {
+    const [preCheck] = await this.db.select().from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Vendor bill not found");
+    }
+    // US-RPT-18: an opening bill is removed in Opening balances (while unlocked).
+    if (preCheck.isOpening) throw new BadRequestException("An opening bill can't be voided. Remove it in Settings › Opening balances.");
+
+    const result = await this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(vendorBills)
+        .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)))
+        .for("update");
+      if (!existing) {
+        throw new NotFoundException("Vendor bill not found");
+      }
+      if (existing.status !== "recorded") {
+        throw new BadRequestException("Only a recorded vendor bill can be voided");
+      }
+      if (existing.amountPaid > 0n) {
+        throw new BadRequestException("Cannot void a vendor bill with payments allocated against it");
+      }
+      if (existing.creditedAmount > 0n) {
+        throw new BadRequestException("Remove the vendor credits applied to this bill before voiding it.");
+      }
+      if (!existing.journalEntryId) {
+        throw new BadRequestException("This vendor bill has no journal entry to reverse");
+      }
+
+      const voidedAt = new Date();
+      const voidJournalEntryId = await this.ledger.reverseEntry(tx, existing.journalEntryId, {
+        orgId,
+        date: voidedAt.toISOString().slice(0, 10),
+        narration: `Vendor bill ${existing.billNumber} voided: ${reason}`,
+        sourceType: "vendor_bill_void",
+        sourceId: id,
+      });
+
+      const [row] = await tx
+        .update(vendorBills)
+        .set({ status: "void", voidedAt, voidedByUserId: actorUserId, voidReason: reason, voidJournalEntryId, updatedAt: voidedAt })
+        .where(eq(vendorBills.id, id))
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "voided",
+        entityType: "vendor_bill",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [
+          { field: "status", from: "recorded", to: "void" },
+          { field: "voidReason", from: null, to: reason },
+        ],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, result!.id);
+  }
+
+  /** A draft can be hard-deleted — nothing references it yet. A recorded/void bill can never be deleted, matching InvoicesService.delete's exact posture. */
+  async delete(orgId: string, id: string, actorUserId: string) {
+    const [existing] = await this.db.select().from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Vendor bill not found");
+    }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "vendor_bills.delete_own",
+      others: "vendor_bills.delete_others",
+    });
+    if (existing.status !== "draft") {
+      throw new BadRequestException("Only a draft vendor bill can be deleted");
+    }
+
+    await this.db.transaction(async (tx) => {
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "vendor_bill",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "status", from: existing.status, to: null }],
+      });
+      await tx.delete(vendorBillLines).where(eq(vendorBillLines.billId, id));
+      await tx.delete(vendorBills).where(eq(vendorBills.id, id));
+    });
+    return { id };
+  }
+
+  /** Fallback expense account (code 6900, "Other Expenses") for a bill line with no resolved accountId — mirrors InvoicesService.resolveDefaultRevenueAccount's exact reasoning and error shape. */
+  private async resolveDefaultExpenseAccount(orgId: string): Promise<string> {
+    const [row] = await this.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6900")));
+    if (!row) {
+      throw new BadRequestException(
+        "No default expense account found (expected code 6900, 'Other Expenses'). Pass fallbackAccountId explicitly or restore this account.",
+      );
+    }
+    return row.id;
+  }
+}

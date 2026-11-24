@@ -1,0 +1,50 @@
+---
+title: Chase customers from Receivables
+description: Send reminders, record payments, apply credit and send statements without leaving Receivables.
+sidebar:
+  order: 10
+---
+
+Once you know who owes you, you can act straight from **Receivables**: remind a customer, record a payment that's arrived, or send them a statement. Each action asks first where it should, and the page refreshes when it's done.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **View receivables**. Each action also needs its own right: **Record own payments** to record a payment, **Apply payment credit** to apply credit, **Send a payment reminder** to remind, and **View receivables** to send a statement. Actions you can't do aren't shown.
+</Aside>
+
+## Act on one invoice
+
+Open an invoice row's menu on **By invoice** (or under an expanded customer). It offers:
+
+- **Record payment** — the **Record a payment** dialog for that customer, with this invoice ticked. See [Record a payment](../record-a-payment/).
+- **Apply credit** — while the customer has credit. See [Apply customer credit to an invoice](../apply-customer-credit-to-an-invoice/).
+- **Send reminder** — the reminder dialog, which asks before sending. If it can't be sent, the menu says why: "Already reminded today." or "The customer has no email address."
+- **Download PDF** and **Open invoice**.
+
+## Act on one customer
+
+Open a customer row's menu on **By customer**. It offers **Send statement** (see [Send a customer a statement](../send-a-customer-statement/)), **Record payment** (with the customer chosen) and **Open contact**.
+
+## Remind several customers at once
+
+<Steps>
+
+1. **Tick the invoices** — On **By invoice**, tick each invoice to chase.
+
+2. **Press Send reminders** — The bar shows how many are selected. Press **Send reminders (3)**, with your count.
+
+3. **Check the confirmation** — "Send 3 payment reminders?" says each customer gets the reminder email with the invoice attached, straight away. It names any invoices it will skip and why.
+
+4. **Confirm** — Press **Send reminders**. The toast reads, for example, **3 reminders sent**, and the selection clears.
+
+</Steps>
+
+<Screenshot id="payments-receivables-remind" alt="Receivables By invoice, with a tick box on each invoice for sending reminders to several customers at once" />
+
+<Aside type="caution" title="Customers get these straight away">
+  Reminders are emailed as soon as you confirm. Check the list before you press **Send reminders**.
+</Aside>
+
+When an action finishes, the page refreshes in place and the toast says what happened. If something fails, Spine says so above the list. Email has to be set up for reminders to go out — see [Email](../../../self-hosting/email/).

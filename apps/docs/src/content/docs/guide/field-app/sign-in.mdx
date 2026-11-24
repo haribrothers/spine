@@ -1,0 +1,40 @@
+---
+title: Sign in on your phone
+description: Connect the field app to your company's Spine with your server address, email and password.
+sidebar:
+  order: 2
+---
+
+The field app works with your own company's Spine server, so signing in asks for three things: the server address, your email and your password. You stay signed in on the phone until you sign out, so you don't type passwords on site.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone with an active Spine account in your business. Use the email your office invited you with.</Aside>
+
+<Steps>
+1. **Open Sign in** — Open the app. After the welcome screen (or if you signed out), you see **Sign in** and "Use the email your office invited you with."
+2. **Enter the server** — In **Server**, type the link you open Spine with on a computer.
+3. **Enter your details** — Fill in **Email** and **Password**.
+4. **Sign in** — Press **Sign in**. You land on **Today**.
+</Steps>
+
+## If sign-in doesn't work
+
+Each message shows under the field it's about, and what you typed stays.
+
+- "Can't reach that server. Check the address — it's the link you open Spine with on a computer." The address is wrong or the server isn't answering. Check it against the link on a computer.
+- "That email and password don't match. Check both, or reset your password." Check both, or reset your password.
+- "You're offline. Connect to Wi-Fi or mobile data to sign in." Signing in needs a connection.
+- "Too many sign-in attempts. Wait a minute, then try again."
+
+## Forgot your password
+
+Press **Forgot password?**. Your server's reset page opens in the phone's browser. Follow the emailed link, then sign in with the new password.
+
+## If an Owner set your password
+
+An Owner can set a new password for you if you're locked out. The next time you sign in with it, the app shows **Choose your own password** before anything else. Enter a **New password** and **Confirm password** — "At least 8 characters, not the one you were given." — and press **Save and continue**.
+
+<Aside type="tip">You don't need to sign in each day. When you reopen the app days later, you go straight to Today, until you sign out or your session ends.</Aside>
+
+<Aside type="caution">If your office removes your access, the app signs you out the next time it talks to the server and says "Your access to _business_ was removed."</Aside>

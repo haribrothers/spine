@@ -1,0 +1,14 @@
+[
+  {
+    "id": "connected-agents-settings",
+    "path": "/dashboard?settings=agents",
+    "alt": "Settings, Connected agents: the on/off switch and the pane's description of what agents can and can't do",
+    "wait": "Let people use Spine from AI agents like Claude and ChatGPT."
+  },
+  {
+    "id": "connected-agents-my-connections",
+    "path": "/dashboard?settings=my-connected-agents",
+    "alt": "Settings, Your account, Connected agents: your connected agents, or none yet, and the connector address with Copy address",
+    "wait": "Copy address"
+  }
+]

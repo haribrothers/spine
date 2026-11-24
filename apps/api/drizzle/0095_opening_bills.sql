@@ -1,0 +1,1 @@
+ALTER TABLE "vendor_bills" ADD COLUMN "is_opening" boolean DEFAULT false NOT NULL;

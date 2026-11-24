@@ -1,0 +1,23 @@
+{
+  "extends": "@spine/config/tsconfig/base",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "rootDir": "./src",
+    /**
+     * Internal relative imports here use real ".ts" extensions (e.g.
+     * `from "./money/money.ts"`) rather than this repo's usual extensionless
+     * style — Node's native TS type-stripping (`nest start --watch`'s dev
+     * runtime for apps/api) treats this "type": "module" package as real
+     * ESM once resolution crosses the node_modules symlink boundary, and
+     * Node's ESM resolver refuses extensionless directory imports
+     * (`ERR_UNSUPPORTED_DIR_IMPORT`). Bundlers (webpack/Next.js/Turbopack)
+     * don't have this restriction, so apps/web was never affected — this
+     * only ever broke apps/api, and only once a module actually imported
+     * @spine/shared for the first time (Contacts, here).
+     */
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src"]
+}

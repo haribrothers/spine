@@ -1,0 +1,56 @@
+---
+title: Fill in a bill or expense with AI
+description: Let the AI assistant read a vendor's bill or a receipt into the form, then check it before you save.
+sidebar:
+  order: 2
+---
+
+If your business has switched on the AI assistant, Spine can read the vendor's PDF or photo into the bill page, or a receipt into the expense form. You check what it filled in and save as usual. AI never saves, records or submits anything by itself — nothing happens until you press the normal button.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Use AI features** plus the right to enter that record (**Create/edit own vendor bills** for a bill, **Submit/edit own expenses** for an expense). An Owner must first switch on the AI assistant in Settings › AI assistant, with **Read bills and receipts** on. Field users can read the receipt on their own expense in the field app.
+</Aside>
+
+## Read a vendor's bill
+
+<Steps>
+
+1. **Open a new bill** — Go to **Vendor Bills** and press **New vendor bill**.
+
+2. **Read the document** — In the header card, press **Read from document** and choose or drop the vendor's PDF or photo. It's attached to the bill either way. Reading can take up to 30 seconds; you can keep working.
+
+3. **Check what it filled in** — The vendor, bill number, dates, currency and lines fill in, each marked **Suggested by AI**. Lines are matched to your catalogue items where one fits, accounts come from the vendor's last bill, and tax rates are matched to yours by percentage. Spine works out the totals itself.
+
+4. **Save** — Press **Save as draft** or **Save and record**.
+
+</Steps>
+
+A few things to look out for:
+
+- If the vendor isn't one of your contacts, you see "New vendor: &lt;name&gt;". Nothing is added until you choose it and confirm **Add vendor**, and only if you can add contacts.
+- If the document's total differs from the lines, you see "The document says … ; the lines add up to … . Check the lines before saving."
+- If the bill number matches one of this vendor's bills, the duplicate warning shows before anything is saved.
+- A PDF or photo already under **Attachments** offers **Read** too.
+- On a draft you're editing, only empty fields fill in. Press **Replace my entries** to take the rest.
+
+## Read a receipt
+
+<Steps>
+
+1. **Add the receipt** — In **Submit an expense**, add the receipt photo or PDF (the first file you add).
+
+2. **Read it** — Press **Read receipt** under its preview. The date, amount, currency, tax, category and description fill in, marked **Suggested by AI**.
+
+3. **Check and submit** — Change anything that's wrong, then press **Submit expense**.
+
+</Steps>
+
+The category is always one of yours — from this merchant's past expenses, or by the category's name and what it's for. If none fits, Category stays empty. **Read receipt** isn't offered when you enter an expense as headcount × day rate.
+
+<Aside type="caution">
+  A model that can't read images can still read PDFs with text, but not photos. If AI doesn't answer, the file stays attached and you can fill the form in by hand.
+</Aside>
+
+Records saved after AI filled them in say so in their Activity, for example "Created as a draft · filled in with AI".

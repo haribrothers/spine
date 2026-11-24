@@ -1,0 +1,45 @@
+---
+title: Edit, duplicate, archive or delete an item
+description: Change an item's details, copy it as a new item, hide one you no longer sell, or remove one for good.
+sidebar:
+  order: 4
+---
+
+Keep the catalogue tidy as your prices and services change. Edit an item when its price goes up, duplicate one to add a variation, and archive what you no longer sell so pickers stay short.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Owners. Staff need **Create/edit own catalogue** to edit or duplicate items they added, and **Edit others' catalogue** for everyone else's. Archiving, restoring and deleting need **Archive/delete own catalogue** or **Archive/delete others' catalogue** in the same way.</Aside>
+
+## Edit an item
+
+<Steps>
+1. **Open it** — Go to **Catalogue**, open the item's menu and choose **Edit**. The **Edit item** drawer opens.
+2. **Check where it's used** — The drawer says "Used on 4 quotes and 2 invoices · last quoted 3 Oct 2026", or "Not used on a quote or invoice yet."
+3. **Change it** — Change the details, price, tax or accounts.
+4. **Save** — Press **Save item**. An "Item updated" toast shows.
+</Steps>
+
+A new price or tax applies to new lines only. Quotes and invoices you've already made keep the price and tax they were made with. Press **View history** in the drawer to see who changed what.
+
+## Duplicate an item
+
+Open the item's menu and choose **Duplicate**. The **Add item** drawer opens filled in from that item, named "… (copy)". Change what's different and press **Save item**. The original stays as it was.
+
+## Archive or restore an item
+
+Open the item's menu and choose **Archive**. An "Item archived" toast shows. The item leaves the list and the pickers on quotes, invoices and bills, but nothing about it is lost.
+
+To bring it back, filter by **Archived** status, open its menu and choose **Restore**.
+
+## Delete an item
+
+<Steps>
+1. **Choose Delete** — Open the item's menu and choose **Delete**.
+2. **Read the confirmation** — Spine asks "Delete …?". For an item that's been used, it says how many documents it's on, and that they keep their own copy of the line.
+3. **Confirm** — Press **Delete**, or **Cancel**. An "Item deleted" toast shows.
+</Steps>
+
+<Aside type="danger" title="Deleting can't be undone">The item is removed for good. Quotes and invoices that used it are unchanged. If you might sell it again, archive it instead.</Aside>
+
+If you don't see **Edit** or **Delete** in an item's menu, a colleague added it and your Team can change only your own items.

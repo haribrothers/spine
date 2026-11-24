@@ -1,0 +1,45 @@
+---
+title: Void a vendor bill
+description: Take a recorded bill entered in error off your books with a reversing entry and a reason.
+sidebar:
+  order: 5
+---
+
+A recorded bill can't be edited or deleted. If it was entered in error — the wrong vendor, a bill entered twice — you void it. Voiding posts a reversing entry, so what you owed comes off your books, and the bill stays in the list marked **Void** with the reason, as a trail.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Void a vendor bill**. Without it, **Void bill** doesn't show.
+</Aside>
+
+<Steps>
+
+1. **Open the bill** — Go to **Vendor Bills** and open the recorded bill.
+
+2. **Choose Void bill** — Open **More** and choose **Void bill**. From the list, open the row's menu and choose **Void**.
+
+3. **Give a reason** — "Void RTE-3302?" says how much comes off your books. Enter the **Reason**, for example "Entered twice".
+
+4. **Confirm** — Press **Void bill**.
+
+</Steps>
+
+A toast says the bill is voided and that a reversing entry took it off your books. The bill's page shows **Void**, the date and your reason, and its balance reads "—". If the bill was tagged to a job, its cost comes off that job too.
+
+If you leave the reason empty, you see "Give a reason for voiding this bill.".
+
+## When you can't void a bill
+
+- **It has payments.** Delete the payments first — see [Find or delete a vendor payment](../find-or-delete-a-vendor-payment/) — then void the bill.
+- **It has vendor credits applied.** Remove the credits from the bill first, on the credit's page.
+- **It's a draft.** A draft hasn't posted anything. Delete it instead: **More** › **Delete draft**.
+- **It's an opening bill** brought in from your old system. Remove it in Settings › Opening balances.
+
+<Aside type="danger">
+  Voiding can't be undone. If you need the bill back, enter it again as a new bill.
+</Aside>
+
+<Aside type="tip">
+  If the bill was only partly wrong — an overcharge, goods sent back — don't void it. [Record a vendor credit](../record-a-vendor-credit/) for the difference instead.
+</Aside>

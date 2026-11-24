@@ -1,0 +1,37 @@
+---
+title: Check the books cards
+description: Read the Payables, Accounts, Ready to bill, Tax this period and Top expenses cards, and open the report behind each.
+sidebar:
+  order: 5
+---
+
+Five dashboard cards keep an eye on your books: what you owe vendors, where your cash sits, what you could invoice today, the tax you'll owe this period and where your money goes. Each card links to its full report.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners see every card. Staff need **View payables** for Payables, **View bank balances and registers** for Accounts, **View receivables** for Ready to bill, and **View financial statements** for Tax this period and Top expenses. A card you can't see isn't on your dashboard at all.</Aside>
+
+<Screenshot id="dashboard-books-cards" alt="The Payables, Accounts, Ready to bill, Tax this period and Top expenses cards on an Owner's dashboard" />
+
+## Payables
+
+What you owe vendors: **Current**, **Overdue** and **Total**, with a bar of current against overdue. Below it are the bills due in the next 7 days and the oldest overdue bill. Click **Overdue** to open Payables filtered to overdue bills. See [Purchases](../../purchases/).
+
+## Accounts
+
+Each active bank, cash and card account with its balance and "Reconciled to *date*" or "Not reconciled". A card account's balance shows as owed. Click an account to open its register, or **Banking** for all of them. See [Banking](../../banking/).
+
+## Ready to bill
+
+Work you could invoice today: "Completed milestones not invoiced" and "Approved billable expenses not billed", each with a count and amount. Click milestones to see the jobs with completed milestones, then open a job to invoice them. Click expenses to open the billable expenses list. With nothing to bill, it reads "Nothing waiting to be billed." If the **Jobs & field** module is off, only billable expenses show.
+
+## Tax this period
+
+**Collected**, **Input tax** and **Net payable** for the current month or quarter, following the **Return period** in **Settings › Tax**. Under the figures it says what you've paid for the period, or "nothing paid yet". Click the card to open the Tax Summary for that period. See [Tax](../../tax/).
+
+## Top expenses
+
+Your five largest expense accounts as labelled bars with amount and percentage, plus **Other**. Choose **This month**, **This quarter** or **This financial year**. Click a bar to see the entries behind it. With nothing spent, it reads "No expenses in this period."
+
+<Aside type="tip">When three figures don't fit side by side on a narrow card, such as Payables or Tax this period, they stack, each with its label.</Aside>

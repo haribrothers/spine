@@ -1,0 +1,129 @@
+---
+/**
+ * US-SITE-02 — the headline, the two ways in, and the dashboard rebuilt in
+ * HTML (D-275) so it follows the reader's theme and animates: the window
+ * settles flat as you scroll, the figures count up, and the business events
+ * of the example job arrive at its corner.
+ */
+import mark from "../assets/mark.svg";
+import Icon from "./Icon.astro";
+import { home } from "../locales/en/home";
+import { docs } from "../lib/links";
+
+const t = home.hero;
+const app = home.app;
+const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <div data-reveal><span class="eyebrow"><b>{t.badge}</b>{t.badgeRest}</span></div>
+    <h1 id="hero-title" class="h1" data-reveal style="--d: 80ms">{t.titleStart} <span class="u">{t.titleMark}</span></h1>
+    <p class="lede" data-reveal style="--d: 160ms">{t.lede}</p>
+    <div class="cta" data-reveal style="--d: 240ms">
+      <a class="btn btn-p" href={docs.install}>{t.install}<Icon name="arrow" /></a>
+      <a class="btn btn-s" href={docs.guide}>{t.guide}</a>
+    </div>
+
+    <div class="stage" data-reveal style="--d: 320ms">
+      <div class="glow"></div>
+      <div class="win" role="img" aria-label={app.label}>
+        <div class="win-bar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="url"><Icon name="lock" size="sm" />{app.url}</div>
+        </div>
+        <div class="app">
+          <div class="side">
+            <div class="side-org"><img src={mark.src} width="22" height="22" alt="" />{app.org}</div>
+            {
+              app.nav.map((item) =>
+                "heading" in item ? (
+                  <div class="side-h">{item.heading}</div>
+                ) : (
+                  <div class:list={["side-i", "on" in item && "on"]}>
+                    <Icon name={item.icon} />
+                    {item.label}
+                  </div>
+                ),
+              )
+            }
+          </div>
+          <div class="main">
+            <div class="greet">
+              <p class="greet-h">{app.greeting}</p>
+              <p>{app.date}</p>
+            </div>
+            <div class="kpis">
+              {
+                app.kpis.map((k) => (
+                  <div class="kpi">
+                    <span>{k.label}</span>
+                    <strong class="num" data-count={k.value}>{money(k.value)}</strong>
+                    <em class={`t-${k.tone}`}>{k.tag}</em>
+                  </div>
+                ))
+              }
+            </div>
+            <div class="cols">
+              <div class="card">
+                <div class="card-h">{app.attention}<span class="pill t-over">{app.rows.length}</span></div>
+                {
+                  app.rows.map((r) => (
+                    <div class="row">
+                      <span class={`row-ic t-${r.tone}`}><Icon name={r.icon} /></span>
+                      <div class="row-t">
+                        <b>{r.title}</b>
+                        <span>{r.detail}</span>
+                      </div>
+                      <span class="mini-btn">{r.action}</span>
+                    </div>
+                  ))
+                }
+              </div>
+              <div class="card">
+                <div class="card-h">{app.today}</div>
+                {
+                  app.agenda.map((a) => (
+                    <div class="today">
+                      <i class={`bar-${a.tone}`} />
+                      <div>
+                        <b>{a.title}</b>
+                        <div class="muted">{a.detail}</div>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toasts" aria-hidden="true">
+        {
+          home.events.map((e) => (
+            <div class="toast">
+              <span class={`row-ic t-${e.tone}`}><Icon name={e.icon} /></span>
+              <div>
+                <b>{e.title}</b>
+                <span>{e.detail}</span>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <div class="chip-l" aria-hidden="true">
+        <div class="jl muted"><span>{home.entryChip.title}</span><span class="pill t-paid">{home.entryChip.tag}</span></div>
+        {
+          home.entryChip.lines.map((l) => (
+            <div class="jl mono">
+              <span>{l.side} {l.account}</span>
+              <span>{l.amount}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,49 @@
+---
+title: Apply a customer's credit to an invoice
+description: Use a deposit, an overpayment or a credit note's credit to reduce what a customer owes on an invoice.
+sidebar:
+  order: 12
+---
+
+A customer can hold credit with you: a deposit they paid, a payment that wasn't put against an invoice, or the extra from a credit note. Applying that credit to an invoice lowers its balance due. No money moves; the credit is used up by the same amount.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">
+  Owners, and Staff whose Team has **Apply payment credit**. **Apply credit** only shows when the customer has credit and the invoice is issued with a balance.
+</Aside>
+
+## When you issue the invoice
+
+If the customer has credit, pressing **Issue invoice** asks **Apply this customer's credit?** instead of the usual question. It says how much credit they have from payments and credit notes.
+
+- Press **Apply credit and issue** to use it now. The invoice, and its UPI QR code if it has one, then asks only for what's still owed. The toast says how much credit was applied.
+- Press **Issue without credit** to leave the credit for later.
+
+Either answer issues the invoice.
+
+## On an issued invoice
+
+<Steps>
+
+1. **Open the invoice** — Go to **Invoices** and open the issued invoice.
+
+2. **Choose Apply credit** — Open **More** and choose **Apply credit**. The dialog says how much is owed and lists each source of credit, such as a payment or a credit note, with how much is available.
+
+3. **Check the amounts** — Spine fills in an amount for each source, up to what the invoice owes. Change them if you want to use less. An amount can't go above what its source has, and the dialog shows the total you're applying.
+
+4. **Apply** — Press **Apply credit**.
+
+</Steps>
+
+A toast says **Credit applied**, and the invoice's strip shows the amount under **Credited**. Its **Activity** records **Credit applied**.
+
+<Aside type="tip">
+  You can also start from the credit itself: from a payment with credit left (see [Payments and receivables](../../payments/)), or from a credit note (see [Use a credit note's credit](../use-a-credit-notes-credit/)).
+</Aside>
+
+## If it won't apply
+
+- "Enter an amount to apply." — every amount is zero.
+- "You can apply up to … to INV-0012." — you entered more than the invoice owes.
+- "This customer has no credit to apply." — there's nothing to use.

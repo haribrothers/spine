@@ -1,0 +1,27 @@
+# US-MOB-04 / US-MOB-05 / US-JOB-16 — the Jobs tab lists the jobs the demo
+# Field user is on; a job opens with its site, contact, milestones, photos
+# and quotes to present. Run like us-mob-01-sign-in.yaml.
+appId: com.h4loom.spine
+---
+- runFlow: _sign-in.yaml
+- tapOn: "Jobs"
+- extendedWaitUntil:
+    visible: "(ASSIGNED TO YOU|Assigned to you) · .*"
+    timeout: 15000
+- assertVisible: "Only jobs your office has put you on the crew for. Pull down to refresh."
+- tapOn: "Office block — structural works.*"
+- extendedWaitUntil:
+    visible: "(MILESTONES|Milestones)"
+    timeout: 15000
+- assertVisible: "DEMO-JOB-001 · .*"
+- assertVisible: "Directions.*"
+- assertVisible: "Mark .* complete"
+- assertNotVisible: ".*₹.*"
+- scrollUntilVisible:
+    element: "(QUOTES TO PRESENT|Quotes to present)"
+    direction: DOWN
+- scrollUntilVisible:
+    element: "(PHOTOS|Photos) · .*"
+    direction: UP
+- tapOn: "See all"
+- assertVisible: "Photos · .*"

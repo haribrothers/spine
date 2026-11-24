@@ -1,0 +1,44 @@
+---
+title: Present a quote on site with the field app
+description: Show a quote full-screen on your phone and record the customer's signature, or their decline, on the spot.
+sidebar:
+  order: 13
+---
+
+On site, you can hand your phone to the customer with the quote on screen. They read it, type their name and sign, and the acceptance reaches the office straight away with the signature as proof. If they decide against it, you record the decline the same way.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Field users, in the field app, on jobs they're assigned to. Owners and Staff signed in to the field app can too; Staff need **Accept a quote in person**. Needs the **Jobs & field** module (Settings › Modules) and a live connection.</Aside>
+
+## Present and accept
+
+<Steps>
+
+1. **Open the job** — In the field app, open the job from **Today** or **Jobs**. Under **Quotes to present** you see the job's quotes that are waiting for the customer.
+
+2. **Tap Present** — Tap **Present** with the quote number. The quote opens full-screen with "Hand the phone to your customer", your business, the quote number, **Prepared for** with the customer, the validity date, the lines, the Subtotal, each tax line, the Total and the notes.
+
+3. **Hand over the phone** — The bar at the bottom offers **Decline** and **Accept quote**.
+
+4. **Let the customer sign** — After **Accept quote**, the customer types their name in **Your name** and signs in the box under **Sign below** (**Clear** starts again). The statement above says they accept the quote for its total, and that Spine records their signature, the time and your name as the staff member present.
+
+5. **Record it** — Tap **Accept and sign**. It stays disabled until there's a name and a signature. You then see **Quote accepted**, who signed and when, and **Back to job**.
+
+</Steps>
+
+Owners and office staff get the in-app notification straight away, and the quote is locked. On the web, the quote's page shows **Accepted on site**, who signed, who witnessed it, and the signature with **View signature full size**.
+
+## Record a decline
+
+Tap **Decline**. A sheet titled **Decline quote** says the office is told straight away. Add a **Reason (optional)**, then tap **Decline quote**, or **Cancel** to go back.
+
+## Without a connection
+
+<Aside type="caution">
+Accepting a quote locks the price, so it has to reach the office straight away. Offline, tapping **Present** shows **Quotes need a connection**. Move somewhere with signal or Wi-Fi and tap **Try again**, or tap **Back to job**. Photos, expenses and milestone updates still work offline.
+</Aside>
+
+If the quote was answered or replaced while you had it open, you see **This quote was already answered**. Go back to the job to see what changed.
+
+Tap **Done** to close the quote and go back to the job.

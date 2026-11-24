@@ -1,0 +1,42 @@
+---
+title: Check what someone can open
+description: See one person's role, Teams and the sections they can work in, view or not open.
+sidebar:
+  order: 8
+---
+
+When someone says they can't find a page or a button, check their access from Users. The drawer shows exactly what Spine lets them open — the same rules the server enforces.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Find the person** — Go to **Team › Users**. Search by name or email, or filter by **Role**.
+
+2. **Open What they can open** — Open their row menu and choose **What they can open**. You can also choose it from a member's menu on a Team's **Members** tab.
+
+3. **Read the drawer** — "What *name* can open" shows their role and Teams, then each section of Spine as **Can work here**, **View only** or **Can't open**, and how many permissions they have in each group.
+
+4. **Change what they can do** — Each Team has an **Edit on *Team* →** link that opens its permissions. Or close the drawer and choose **Manage Teams** to change which Teams they're on.
+
+</Steps>
+
+## What the drawer says for each role
+
+- **Owner** — "Owners can open everything, including Users, Teams and Settings."
+- **Field** — "Field access is fixed: the jobs they're assigned to, their meetings and their own expenses — no money."
+- **Staff on one or more Teams** — the Teams they're on, and "everything any of them allows" when there are several.
+- **Staff on no Team** — they can't open anything until you add them to one.
+
+## What the words mean
+
+- **Can work here** — the section is in their sidebar and they can do at least one thing in it.
+- **View only** — the section is in their sidebar, but they can see records, not change them.
+- **Can't open** — the section isn't in their sidebar, and its pages and records are refused.
+
+<Aside type="tip">The **Teams** column on Users gives a quick view without opening the drawer: Team chips for Staff, "Everything" for Owners, "Field access" for Field, and "No Team — can't open anything" in the warning colour.</Aside>
+
+See [Choose what a Team can do](../choose-what-a-team-can-do/) to change a Team's sections and permissions.

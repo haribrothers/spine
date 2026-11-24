@@ -1,0 +1,273 @@
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { and, eq, inArray } from "drizzle-orm";
+import { DATABASE } from "../../db/db.module";
+import type { Database, Transaction } from "../../db/client";
+import { accounts, bankReconciliations, bankStatementLineMatches, bankStatementLines, creditNotes, expenses, invoices, journalEntries, journalLines, moneyAccounts, payments, vendorBills, vendorCredits, vendorPayments } from "../../db/schema";
+import { RECONCILED_ENTRY_LOCKED } from "@spine/shared";
+import { orgMoneySettings } from "../../common/money-format";
+import { PeriodsService } from "./periods.service";
+
+/**
+ * PRD §7.2 posting rules reference system accounts by name/role, not a
+ * fixed id — every org gets its own copy of `DEFAULT_CHART_OF_ACCOUNTS`
+ * (db/seed/chart-of-accounts.ts) seeded with these exact codes, so any
+ * domain service can resolve "the AR account for this org" by code without
+ * hardcoding an id. Matches the seed file's own codes exactly.
+ */
+export const SYSTEM_ACCOUNT_CODES = {
+  accountsReceivable: "1100",
+  retentionReceivable: "1150",
+  inputTaxReceivable: "1200",
+  accountsPayable: "2000",
+  outputTaxPayable: "2100",
+  customerAdvances: "2200",
+  // US-RPT-16 (D-137)
+  openingBalanceAdjustments: "3900",
+} as const;
+
+export type SystemAccountKey = keyof typeof SYSTEM_ACCOUNT_CODES;
+
+/** One side of a balanced entry — exactly one of debit/credit must be nonzero, matching journal_lines' own `journal_lines_one_sided` CHECK constraint. */
+export interface PostingLine {
+  accountId: string;
+  debit: bigint;
+  credit: bigint;
+  contactId?: string | null;
+  jobId?: string | null;
+}
+
+export interface PostEntryInput {
+  orgId: string;
+  date: Date | string;
+  narration?: string | null;
+  sourceType: string;
+  sourceId: string;
+  lines: PostingLine[];
+  /** US-ONB-17 (D-191) — set by a reversal from its original; otherwise read from the source document. */
+  isDemo?: boolean;
+}
+
+/**
+ * US-ONB-17 (D-191) — the documents that can be demo data, by the source
+ * type they post under. Voids, deletes and credit applied post under the
+ * document's own type with a suffix and the document's id.
+ */
+const DEMO_SOURCES = [
+  { prefix: "credit_note", table: creditNotes },
+  { prefix: "vendor_payment", table: vendorPayments },
+  { prefix: "vendor_bill", table: vendorBills },
+  // US-ONB-30: a demo vendor credit, and its void.
+  { prefix: "vendor_credit", table: vendorCredits },
+  { prefix: "invoice", table: invoices },
+  { prefix: "payment", table: payments },
+  { prefix: "expense", table: expenses },
+] as const;
+
+/**
+ * The one place that writes `journal_entries`/`journal_lines` — every
+ * domain module (Invoices, Payments, and later Purchases/Expenses) posts
+ * through this service rather than inserting rows itself, per Spine's
+ * "posting rules live in one module" rule. `postEntry` does NOT open its
+ * own transaction — callers always pass the same open `tx` as the business
+ * document write that caused the posting (e.g. InvoicesService.issue's own
+ * transaction), per Spine's "in the same transaction as the business
+ * document it originates from." The DB's own deferred constraint trigger
+ * (drizzle/0001_ledger_integrity_triggers.sql) is the actual enforcement of
+ * "debits == credits" — this method's own balance check is a fast, early,
+ * app-level rejection with a clearer error message, not a substitute for it.
+ */
+@Injectable()
+export class LedgerService {
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly periodsService: PeriodsService,
+  ) {}
+
+  /**
+   * Resolves this org's system accounts by their well-known codes
+   * (`SYSTEM_ACCOUNT_CODES`) in one query. Throws if any requested account
+   * is missing — every org gets these seeded at creation
+   * (`seedChartOfAccounts`), so a miss here means the org's chart of
+   * accounts is corrupt/incomplete, not a normal "not configured yet" case
+   * a caller should degrade gracefully around; posting must not silently
+   * skip a leg of a balanced entry for a missing account.
+   */
+  async resolveSystemAccounts(
+    orgIdOrTx: Database | Transaction,
+    orgId: string,
+    keys: SystemAccountKey[],
+  ): Promise<Record<SystemAccountKey, string>> {
+    const db = orgIdOrTx;
+    const codes = keys.map((key) => SYSTEM_ACCOUNT_CODES[key]);
+    const rows = await db
+      .select({ id: accounts.id, code: accounts.code })
+      .from(accounts)
+      .where(and(eq(accounts.orgId, orgId), inArray(accounts.code, codes)));
+
+    const byCode = new Map(rows.map((row) => [row.code, row.id]));
+    const result = {} as Record<SystemAccountKey, string>;
+    for (const key of keys) {
+      const code = SYSTEM_ACCOUNT_CODES[key];
+      const id = byCode.get(code);
+      if (!id) {
+        throw new InternalServerErrorException(
+          `Chart of accounts is missing system account ${code} (${key}) for this organisation`,
+        );
+      }
+      result[key] = id;
+    }
+    return result;
+  }
+
+  /** Convenience for a single system account, when a caller only needs one. */
+  async resolveSystemAccount(db: Database | Transaction, orgId: string, key: SystemAccountKey): Promise<string> {
+    const result = await this.resolveSystemAccounts(db, orgId, [key]);
+    return result[key];
+  }
+
+  /**
+   * Posts one balanced journal entry. Must be called with `tx` being the
+   * same open transaction as the business-document write it originates
+   * from — see this class's own doc comment. Returns the new entry's id so
+   * the caller can store it (e.g. `invoices.journalEntryId`).
+   */
+  async postEntry(tx: Transaction, input: PostEntryInput): Promise<string> {
+    const nonZeroLines = input.lines.filter((line) => line.debit > 0n || line.credit > 0n);
+    if (nonZeroLines.length < 2) {
+      throw new InternalServerErrorException(
+        `Refusing to post journal entry for ${input.sourceType}:${input.sourceId} — fewer than two non-zero lines`,
+      );
+    }
+
+    const totalDebits = nonZeroLines.reduce((sum, line) => sum + line.debit, 0n);
+    const totalCredits = nonZeroLines.reduce((sum, line) => sum + line.credit, 0n);
+    if (totalDebits !== totalCredits) {
+      throw new InternalServerErrorException(
+        `Refusing to post unbalanced journal entry for ${input.sourceType}:${input.sourceId} — debits ${totalDebits} != credits ${totalCredits}`,
+      );
+    }
+
+    const dateStr = typeof input.date === "string" ? input.date : input.date.toISOString().slice(0, 10);
+
+    // S-09.8 — "nobody back-dates entries into a closed period." Checked
+    // inside the same transaction as the posting itself, using `tx` (not
+    // `this.db`), so a period closed concurrently mid-transaction is still
+    // caught rather than racing the write. Note every domain service today
+    // posts with `date: new Date()` (issue/record/approve time, not a
+    // user-editable backdate field) — so in practice this guard blocks
+    // "post anything new while today falls in a closed range" rather than
+    // literally rejecting a chosen past date, but it satisfies the same
+    // intent: once a period is closed, no new activity can land inside
+    // that date range either.
+    if (await this.periodsService.isDateClosed(tx, input.orgId, dateStr)) {
+      throw new BadRequestException(
+        `Cannot post a journal entry dated ${dateStr} — that date falls within a closed fiscal period`,
+      );
+    }
+
+    const isDemo = input.isDemo ?? (await this.isDemoSource(tx, input.sourceType, input.sourceId));
+    const [entry] = await tx
+      .insert(journalEntries)
+      .values({
+        orgId: input.orgId,
+        date: dateStr,
+        narration: input.narration ?? null,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        isDemo,
+      })
+      .returning();
+
+    await tx.insert(journalLines).values(
+      nonZeroLines.map((line) => ({
+        entryId: entry!.id,
+        accountId: line.accountId,
+        debit: line.debit,
+        credit: line.credit,
+        contactId: line.contactId ?? null,
+        jobId: line.jobId ?? null,
+      })),
+    );
+
+    return entry!.id;
+  }
+
+  /**
+   * S-05.8, per the rule "corrections are reversing entries, never edits" —
+   * posts a mirror-image entry for every line of `originalEntryId` (debit
+   * and credit swapped) with a fresh `sourceType`/`sourceId` and links the
+   * original via `journal_entries.reversedById`. The original entry's own
+   * rows are never touched (the DB's immutability triggers would reject an
+   * UPDATE/DELETE on committed journal_lines anyway — this is the
+   * correct, intended path, not a workaround for that guard).
+   */
+  async reverseEntry(
+    tx: Transaction,
+    originalEntryId: string,
+    reversal: { orgId: string; date: Date | string; narration?: string | null; sourceType: string; sourceId: string },
+  ): Promise<string> {
+    const originalLines = await tx.select().from(journalLines).where(eq(journalLines.entryId, originalEntryId));
+    if (!originalLines.length) {
+      throw new InternalServerErrorException(`Cannot reverse journal entry ${originalEntryId} — it has no lines`);
+    }
+    await this.releaseFromReconciliations(tx, reversal.orgId, originalLines);
+    const [original] = await tx.select({ isDemo: journalEntries.isDemo }).from(journalEntries).where(eq(journalEntries.id, originalEntryId));
+
+    const reversedEntryId = await this.postEntry(tx, {
+      isDemo: original?.isDemo ?? false,
+      orgId: reversal.orgId,
+      date: reversal.date,
+      narration: reversal.narration,
+      sourceType: reversal.sourceType,
+      sourceId: reversal.sourceId,
+      lines: originalLines.map((line) => ({
+        accountId: line.accountId,
+        debit: line.credit,
+        credit: line.debit,
+        contactId: line.contactId,
+        jobId: line.jobId,
+      })),
+    });
+
+    await tx.update(journalEntries).set({ reversedById: reversedEntryId }).where(eq(journalEntries.id, originalEntryId));
+
+    return reversedEntryId;
+  }
+
+  /** Whether the document an entry is posted for is demo data (US-ONB-17). */
+  private async isDemoSource(tx: Transaction, sourceType: string, sourceId: string): Promise<boolean> {
+    const source = DEMO_SOURCES.find((s) => sourceType === s.prefix || sourceType.startsWith(`${s.prefix}_`));
+    if (!source) return false;
+    const [row] = await tx.select({ isDemo: source.table.isDemo }).from(source.table).where(eq(source.table.id, sourceId));
+    return row?.isDemo ?? false;
+  }
+
+  /**
+   * US-BANK-10 (invariant 10) — a document whose money-account line is part
+   * of a finished reconciliation can't be voided or deleted until that
+   * reconciliation is undone. A line matched in one still in progress is
+   * unmatched (its statement line goes back to unmatched) so nothing points
+   * at an entry that's been reversed.
+   */
+  private async releaseFromReconciliations(tx: Transaction, orgId: string, lines: (typeof journalLines.$inferSelect)[]) {
+    const reconciled = lines.find((l) => l.reconciliationId);
+    if (reconciled) {
+      const [rec] = await tx
+        .select({ endDate: bankReconciliations.statementEndDate, account: moneyAccounts.name })
+        .from(bankReconciliations)
+        .innerJoin(moneyAccounts, eq(moneyAccounts.id, bankReconciliations.moneyAccountId))
+        .where(eq(bankReconciliations.id, reconciled.reconciliationId!));
+      const { locale } = await orgMoneySettings(this.db, orgId);
+      const date = new Date(`${rec!.endDate}T00:00:00Z`).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+      throw new BadRequestException(RECONCILED_ENTRY_LOCKED(rec!.account, date));
+    }
+    const matched = await tx
+      .select({ statementLineId: bankStatementLineMatches.statementLineId })
+      .from(bankStatementLineMatches)
+      .where(inArray(bankStatementLineMatches.journalLineId, lines.map((l) => l.id)));
+    if (!matched.length) return;
+    const statementLineIds = [...new Set(matched.map((m) => m.statementLineId))];
+    await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.statementLineId, statementLineIds));
+    await tx.update(bankStatementLines).set({ status: "unmatched", reconciliationId: null }).where(and(inArray(bankStatementLines.id, statementLineIds), eq(bankStatementLines.status, "matched")));
+  }
+}

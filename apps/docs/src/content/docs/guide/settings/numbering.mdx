@@ -1,0 +1,40 @@
+---
+title: Set your document numbers
+description: Choose the prefix, padding and starting number for each kind of document, or carry on the series from your old system.
+sidebar:
+  order: 9
+---
+
+Every issued document gets a permanent number — INV-0001, QUO-0001 and so on. Here you choose how those numbers look and where each series starts. If you're moving from another system, you can carry on from where your old numbers stopped.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Only Owners.</Aside>
+
+<Steps>
+
+1. **Open Settings › Numbering** — Open your user menu, choose **Settings**, and pick **Numbering** under **Documents & emails**. The pane is titled **Document numbering**: "Prefix and starting number for each document type."
+
+2. **Find the document type** — There's a row for **Quote**, **Invoice**, **Credit Note**, **Receipt**, **Expense**, **Job**, **Vendor Payment**, **Vendor Credit** and **Journal**.
+
+3. **Set the prefix** — **Prefix** is the letters before the number, such as `INV` or `TAX`.
+
+4. **Set the padding** — **Padding** is how many digits the number has. With padding 4, invoice 7 is `INV-0007`.
+
+5. **Set the starting number** — **Starting number** is the number the next document of that type gets. To carry on an old series that ended at 1041, enter 1042.
+
+6. **Press Save** — A "Saved" message appears. The next document issued uses the new settings.
+
+</Steps>
+
+<Screenshot id="settings-numbering" alt="Settings, Numbering: a row per document type with Prefix, Padding and Starting number, and Save" />
+
+## How numbers are given out
+
+- **Only when a document is issued.** Drafts have no number, so deleting a draft never leaves a gap.
+- **Once, in order, never reused.** A voided invoice keeps its number; the next invoice gets the next one.
+- **They don't reset each year.** Numbers carry on across financial years.
+- **Demo data has its own series.** Demo documents are numbered `DEMO-INV-0001` and so on, so your own series is untouched.
+
+<Aside type="caution">Don't set a starting number at or below a number you've already issued for that document type. Two documents would end up with the same number. If you're not sure, open the list (for example **Invoices**) and check the highest number first.</Aside>

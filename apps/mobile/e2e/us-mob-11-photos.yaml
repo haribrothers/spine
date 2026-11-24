@@ -1,0 +1,55 @@
+# US-MOB-11 / US-MOB-14 — take site photos for a job: the camera explainer,
+# two shots, review with a caption, save; they reach the job. Android only:
+# the iOS Simulator has no camera. Run like us-mob-07-offline.yaml.
+appId: com.h4loom.spine
+---
+- runFlow: _sign-in.yaml
+- tapOn: "Jobs"
+- tapOn: "Office block — structural works.*"
+- extendedWaitUntil:
+    visible: "(MILESTONES|Milestones)"
+    timeout: 15000
+- tapOn:
+    id: "job-add-photos"
+# The explainer comes before the system's own question (skipped once allowed).
+- runFlow:
+    when:
+      visible: "Allow camera access"
+    commands:
+      - assertVisible: "Progress photos tagged to the job"
+      - tapOn: "Continue"
+      - runFlow:
+          when:
+            visible: "While using the app"
+          commands:
+            - tapOn: "While using the app"
+- extendedWaitUntil:
+    visible:
+      id: "camera-shutter"
+    timeout: 15000
+- tapOn:
+    id: "camera-shutter"
+- extendedWaitUntil:
+    visible: "1 taken · saved on this phone"
+    timeout: 15000
+- tapOn:
+    id: "camera-shutter"
+- extendedWaitUntil:
+    visible: "2 taken · saved on this phone"
+    timeout: 15000
+- tapOn:
+    id: "camera-done"
+- assertVisible: "2 photos"
+- tapOn:
+    id: "review-caption"
+- inputText: "Rebar for the north wall"
+- tapOn:
+    id: "review-save"
+- extendedWaitUntil:
+    visible: "(PHOTOS|Photos) · .*"
+    timeout: 30000
+# They reach the office: the pill on Today says so.
+- tapOn: "Today"
+- extendedWaitUntil:
+    visible: "All synced.*"
+    timeout: 60000

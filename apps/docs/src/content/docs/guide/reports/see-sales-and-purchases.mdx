@@ -1,0 +1,46 @@
+---
+title: See sales and purchases
+description: See who buys the most and what sells, and where your money goes by category and by vendor.
+sidebar:
+  order: 8
+---
+
+Four analysis reports answer everyday questions: which customers bring in the most, which items sell, which costs are growing, and which vendors you spend the most with. Each is for a date range and lists the largest first.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Owners, and Staff whose Team has **View financial statements**.</Aside>
+
+## Sales by customer and by item
+
+<Steps>
+
+1. **Open the report** — Go to **Reports** and choose **Sales by customer** under Sales. **Sales by item** is the next tab.
+2. **Set the range** — Choose **From** and **To**.
+3. **Read Sales by customer** — Each customer shows the number of **Invoices**, **Sales before tax**, **Tax**, **Total with tax** and **% of sales**, net of credit notes.
+4. **Read Sales by item** — Each catalogue item, and a row for items not from the catalogue, shows **Quantity**, **Sales before tax** and **Average price**.
+5. **Click a row** — See the issued invoices in the range for that customer or item, and click a number to open one.
+
+</Steps>
+
+<Screenshot id="reports-sales-by-customer" alt="Sales by customer with the figure cards and a table of customers, largest first, with invoices, sales before tax, tax and share of sales" />
+
+<Aside type="note">Item figures read invoice lines, because the ledger keeps amounts, not quantities. They're before any whole-invoice discount; Sales by customer is the ledger figure.</Aside>
+
+## Expenses by category and purchases by vendor
+
+<Steps>
+
+1. **Open the report** — Choose **Expenses by category** under Purchases. **Purchases by vendor** is the next tab.
+2. **Read Expenses by category** — Each expense account shows its **Amount**, **% of total** and a bar, from bills, expenses, journals and money out.
+3. **Read Purchases by vendor** — Each vendor shows its number of **Bills**, **Before tax**, **Tax** and the total, net of vendor credits.
+4. **Click a row** — A category opens its journal entries. A vendor lists its recorded bills in the range.
+
+</Steps>
+
+<Screenshot id="reports-expenses-by-category" alt="Expenses by category with each expense account's amount, share of total and a bar, largest first" />
+
+With nothing in the range, you see "No sales in this period", "No expenses in this period" or "No bills in this period". Pick other dates.
+
+The dashboard's **Top expenses** card shows the same categories at a glance; see [Dashboard](../../dashboard/).

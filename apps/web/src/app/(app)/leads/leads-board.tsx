@@ -1,0 +1,802 @@
+"use client";
+
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { replaceQuery } from "../../../lib/replace-query";
+import { useFillHeight } from "../../../lib/use-fill-height";
+import { useIsPhone } from "../../../lib/use-is-phone";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  EmptyState,
+  FilterSheet,
+  FloatingActionButton,
+  Input,
+  type FilterChip,
+  KanbanBoard,
+  KanbanColumn,
+  MultiSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  cn,
+} from "@spine/ui";
+import { LOST_REASON_LABELS, type LeadStage, type LostReason } from "@spine/shared";
+import { ArrowUpDown, ChevronsRightLeft, Plus, RefreshCw, Search, SlidersHorizontal, Target } from "lucide-react";
+import { type Contact, type Lead } from "../contacts/types";
+import { STAGE_DOT_CLASS, useLeadStages } from "../contacts/use-lead-stages";
+import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
+import { apiClient } from "../../../lib/api-client";
+import { useT } from "../../../lib/i18n";
+import { authClient } from "../../../lib/auth-client";
+import { useCapability } from "../../../lib/capabilities-context";
+import { PhoneMoreActions } from "../../../lib/phone-bar";
+import type { MemberRow } from "../../../lib/members";
+import { formatMoney } from "../../../lib/money";
+import { LeadCard, LeadRow } from "./lead-card";
+import { LeadDrawer } from "./lead-drawer";
+import { LeadLostDialog, LeadWonDialog } from "./lead-closed-dialogs";
+import { useToast } from "../../../components/toast-host";
+import { PipelineSummaryLine, PipelineSummaryStrip } from "./pipeline-summary";
+import {
+  CLOSED_WINDOW_DAYS,
+  SORTERS,
+  SORT_LABELS,
+  byClosedNewest,
+  closedWithin,
+  hasPipelineFilters,
+  matchesPipeline,
+  parsePipelineState,
+  pipelineQuery,
+  pipelineSummary,
+  totalsByCurrency,
+  type PipelineState,
+  type SortKey,
+} from "./pipeline-state";
+
+const BOARD_VIEW_STORAGE_KEY = "spine.leads.view-settings";
+const ALL = "__all__";
+
+interface ViewSettings {
+  showValue: boolean;
+  showSource: boolean;
+}
+
+const DEFAULT_VIEW_SETTINGS: ViewSettings = { showValue: true, showSource: true };
+
+/** Open stages share the width down to this; past it, the board scrolls sideways (US-CRM-24: six open stages fit at 1280 px). */
+const OPEN_COLUMN_MIN_WIDTH = 128;
+const CLOSED_COLUMN_MIN_WIDTH = 200;
+
+/** The board runs from its top to the bottom of the window (every column full height), never shorter than this. */
+const BOARD_MIN_HEIGHT = 420;
+
+function Totals({ leads, empty }: { leads: Lead[]; empty?: string }) {
+  const totals = totalsByCurrency(leads);
+  if (totals.length === 0) return empty ? <>{empty}</> : null;
+  return (
+    <span className="flex flex-col">
+      {totals.map(([currency, total]) => (
+        <span key={currency}>{formatMoney(total, currency)}</span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * S-01.5, rebuilt by US-CRM-24 to 28 (D-211) — the org-wide pipeline.
+ * Open stages share the width and run full height; Won and Lost are slim
+ * columns with the last 30 days that open on press. A summary strip sits
+ * above; cards show the owner, days in stage, the next follow-up and a
+ * nudge for cold leads, and have a "⋯" menu to move them without
+ * dragging. Moving to Lost asks why, moving to Won offers a quote. A lead
+ * opens in a drawer. Filters, search and sort live in the address
+ * (D-210), and the board refreshes on request or when the tab comes back.
+ * Everything is worked out from the leads already loaded — `GET /leads`
+ * returns every lead in the organisation.
+ */
+export function LeadsBoard() {
+  const t = useT();
+  const router = useRouter();
+  const showToast = useToast();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { data: session } = authClient.useSession();
+  const me = session?.user?.id ?? null;
+  const canCreate = useCapability("leads.edit_own");
+  const canQuote = useCapability("quotes.edit_own");
+  const canMoveOwn = useCapability("leads.edit_own");
+  const canMoveOthers = useCapability("leads.edit_others");
+  const canDeleteOwn = useCapability("leads.delete_own");
+  const canDeleteOthers = useCapability("leads.delete_others");
+
+  const [state, setState] = useState<PipelineState>(() => parsePipelineState(new URLSearchParams(searchParams.toString())));
+  const [leads, setLeads] = useState<Lead[] | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [currency, setCurrency] = useState("USD");
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [announcement, setAnnouncement] = useState("");
+  const [viewSettings, setViewSettings] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // US-OPS-56: the stage shown on a phone.
+  const isPhone = useIsPhone();
+  const [phoneStageId, setPhoneStageId] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null);
+  const [createStage, setCreateStage] = useState<string | undefined>(undefined);
+  const [lostLead, setLostLead] = useState<Lead | null>(null);
+  const lostToasted = useRef(false);
+  const [wonLead, setWonLead] = useState<Lead | null>(null);
+  const [deleteLead, setDeleteLead] = useState<Lead | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const loading = useRef(false);
+  // US-QUO-33: `?lead=<id>` (a quote's Related panel) opens that lead in the drawer.
+  const leadParam = searchParams.get("lead");
+  useEffect(() => {
+    if (!leadParam) return;
+    setDrawerLeadId(leadParam);
+    setDrawerOpen(true);
+  }, [leadParam]);
+  // US-OPS-42: `?new=1` (search's "Add lead") opens an empty drawer.
+  const newParam = searchParams.get("new") === "1";
+  useEffect(() => {
+    if (!newParam || !canCreate) return;
+    setDrawerLeadId(null);
+    setCreateStage(undefined);
+    setDrawerOpen(true);
+  }, [newParam, canCreate]);
+  const { stages, error: stagesError, reload: reloadStages } = useLeadStages();
+  const board = useFillHeight({ minHeight: BOARD_MIN_HEIGHT });
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(BOARD_VIEW_STORAGE_KEY);
+      if (stored) setViewSettings({ ...DEFAULT_VIEW_SETTINGS, ...JSON.parse(stored) });
+    } catch {
+      // ignore a missing or malformed stored value, keep defaults
+    }
+  }, []);
+
+  function updateViewSetting(key: keyof ViewSettings, value: boolean) {
+    setViewSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      try {
+        window.localStorage.setItem(BOARD_VIEW_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // storage unavailable; the setting still applies for this visit
+      }
+      return next;
+    });
+  }
+
+  /** Sets part of the board state and writes it to the address (no history entry per keystroke). */
+  function update(patch: Partial<PipelineState>) {
+    const next = { ...state, ...patch };
+    setState(next);
+    const query = pipelineQuery(next);
+    replaceQuery(pathname, query);
+  }
+
+  /** The first load shows the placeholder; a refresh keeps the board on screen. */
+  const load = useCallback(
+    async (mode: "first" | "refresh") => {
+      if (loading.current) return;
+      loading.current = true;
+      if (mode === "refresh") setRefreshing(true);
+      try {
+        const [leadRows, contactRows] = await Promise.all([
+          apiClient.get<Lead[]>("/leads"),
+          apiClient.get<Contact[]>("/contacts?picker=1&includeArchived=true").catch(() => [] as Contact[]),
+        ]);
+        setLeads(leadRows);
+        setContacts(contactRows);
+        setRefreshFailed(false);
+        setUpdatedAt(Date.now());
+        setNow(Date.now());
+        if (mode === "refresh") {
+          reloadStages();
+          setAnnouncement(t("leads.board.updated"));
+        }
+      } catch (err) {
+        if (mode === "first") setError(err instanceof Error ? err.message : t("leads.board.loadFailed"));
+        else setRefreshFailed(true);
+      } finally {
+        loading.current = false;
+        setRefreshing(false);
+      }
+    },
+    [reloadStages, t],
+  );
+
+  useEffect(() => {
+    void load("first");
+    apiClient
+      .get<MemberRow[]>("/org/members")
+      .then(setMembers)
+      .catch(() => setMembers([]));
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => res.value?.code && setCurrency(res.value.code))
+      .catch(() => {});
+  }, [load]);
+
+  // US-CRM-28: back on the tab after 30 s or more, refresh quietly.
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    function onVisibility() {
+      if (document.visibilityState === "hidden") hiddenAt = Date.now();
+      else if (hiddenAt !== null && Date.now() - hiddenAt >= REFRESH_ON_RETURN_MS) void load("refresh");
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [load]);
+
+  // "Updated 2 min ago" and days in stage move on by themselves.
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const contactsById = useMemo(() => new Map(contacts.map((c) => [c.id, c])), [contacts]);
+  const memberNames = useMemo(() => new Map(members.map((m) => [m.userId, m.name])), [members]);
+  const ownerName = (lead: Lead) => (lead.ownerUserId ? (memberNames.get(lead.ownerUserId) ?? null) : null);
+  const contactName = (lead: Lead) => contactsById.get(lead.contactId)?.name ?? null;
+
+  const visible = useMemo(
+    () => (leads ?? []).filter((lead) => matchesPipeline(lead, contactsById.get(lead.contactId)?.name ?? "", state, me, now)),
+    [leads, contactsById, state, me, now],
+  );
+  const summary = useMemo(() => pipelineSummary(leads ?? [], now), [leads, now]);
+
+  const stageOptions = useMemo(() => (stages ?? []).map((s) => ({ value: s.id, label: s.name })), [stages]);
+  const sources = useMemo(() => [...new Set((leads ?? []).flatMap((l) => (l.source ? [l.source] : [])))].sort((a, b) => a.localeCompare(b)), [leads]);
+  const activeMembers = useMemo(() => members.filter((m) => m.isActive).sort((a, b) => a.name.localeCompare(b.name)), [members]);
+
+  // Measure again once the toolbar and summary are on screen.
+  const ready = leads !== null && stages !== null;
+  const measureBoard = board.measure;
+  useLayoutEffect(() => {
+    if (ready) measureBoard();
+  }, [ready, measureBoard]);
+
+  function canEdit(lead: Lead) {
+    return lead.createdByUserId !== null && lead.createdByUserId === me ? canMoveOwn : canMoveOthers;
+  }
+  function canDelete(lead: Lead) {
+    return lead.createdByUserId !== null && lead.createdByUserId === me ? canDeleteOwn : canDeleteOthers;
+  }
+
+  function replaceLead(lead: Lead) {
+    setLeads((prev) => {
+      if (!prev) return [lead];
+      return prev.some((l) => l.id === lead.id) ? prev.map((l) => (l.id === lead.id ? lead : l)) : [lead, ...prev];
+    });
+  }
+
+  /** After a lead lands in a closed stage: ask why it was lost, or offer a quote for a win. */
+  function afterMove(lead: Lead) {
+    if (lead.stageKind === "lost" && lead.lostReason) toastLost(lead, lead.lostReason);
+    else if (lead.stageKind === "lost") setLostLead(lead);
+    else if (lead.stageKind === "won" && canQuote) setWonLead(lead);
+  }
+
+  async function moveLead(lead: Lead, stage: LeadStage) {
+    if (lead.stageId === stage.id) return;
+    if (!canEdit(lead)) {
+      setAnnouncement(t("leads.board.cantMove"));
+      return;
+    }
+    const moved: Lead = { ...lead, stageId: stage.id, stageName: stage.name, stageKind: stage.kind, stageChangedAt: new Date().toISOString(), lostReason: null, lostNote: null };
+    replaceLead(moved);
+    setAnnouncement(t("leads.board.movedTo", { stage: stage.name }));
+    try {
+      const saved = await apiClient.put<Lead>(`/leads/${lead.id}`, { stageId: stage.id });
+      replaceLead(saved);
+      setUpdatedAt(Date.now());
+      afterMove(saved);
+    } catch {
+      replaceLead(lead);
+      setAnnouncement(t("leads.board.moveFailed", { title: lead.title ?? t("leads.board.theLead") }));
+    }
+  }
+
+  /** US-OPS-38: a lead marked lost says so — with its reason, or where to add one. */
+  function toastLost(lead: Lead, reason: LostReason | null) {
+    const title = lead.title ?? t("leads.board.theLeadCapital");
+    showToast(t("leads.board.markedLost"), reason ? t("leads.board.lostWithReason", { title, reason: LOST_REASON_LABELS[reason].toLowerCase() }) : t("leads.board.lostWithoutReason", { title, stage: lead.stageName }));
+  }
+
+  async function saveLostReason(reason: LostReason | null, note: string) {
+    if (!lostLead) return;
+    const saved = await apiClient.put<Lead>(`/leads/${lostLead.id}`, { lostReason: reason, lostNote: note || null });
+    replaceLead(saved);
+    lostToasted.current = true;
+    toastLost(saved, reason);
+  }
+
+  /** Skip (or Save, which has already said so) closes the reason dialog. */
+  function closeLostDialog() {
+    if (lostLead && !lostToasted.current) toastLost(lostLead, null);
+    lostToasted.current = false;
+    setLostLead(null);
+  }
+
+  function createQuote(lead: Lead) {
+    router.push(`/quotes/new?leadId=${lead.id}`);
+  }
+
+  function openCreate(stageId?: string) {
+    setDrawerLeadId(null);
+    setCreateStage(stageId);
+    setDrawerOpen(true);
+  }
+
+  function openLead(lead: Lead) {
+    setMenuFor(null);
+    setDrawerLeadId(lead.id);
+    setDrawerOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!deleteLead) return;
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/leads/${deleteLead.id}`);
+      setLeads((prev) => prev?.filter((l) => l.id !== deleteLead.id) ?? prev);
+      setAnnouncement(t("leads.board.deletedAnnouncement", { title: deleteLead.title ?? t("leads.board.theLead") }));
+      showToast(t("leads.board.deleted"), t("leads.board.deletedDescription", { title: deleteLead.title ?? t("leads.board.theLeadCapital") }));
+      if (drawerLeadId === deleteLead.id) setDrawerOpen(false);
+      setDeleteLead(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function toggleExpanded(stageId: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(stageId)) next.delete(stageId);
+      else next.add(stageId);
+      return next;
+    });
+  }
+
+  if (error || stagesError) {
+    return (
+      <Alert variant="critical">
+        <AlertDescription>{error ?? stagesError}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!leads || !stages) {
+    return (
+      <div className="flex flex-col gap-4" aria-busy="true" aria-label={t("leads.board.loading")}>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-[84px] rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-10 rounded-md" />
+        <div className="flex gap-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-96 flex-1 rounded-lg" />
+          ))}
+          <Skeleton className="h-96 w-14 rounded-lg" />
+          <Skeleton className="h-96 w-14 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
+  const drawerLead = drawerLeadId ? (leads.find((l) => l.id === drawerLeadId) ?? null) : null;
+  const filtered = hasPipelineFilters(state);
+  const shownStages = state.stages.length ? stages.filter((s) => state.stages.includes(s.id)) : stages;
+  /** A stage's leads as the board shows them: a closed stage shows the last 30 days unless it's filtered on. */
+  const leadsIn = (stage: LeadStage) => {
+    const closed = stage.kind !== "open";
+    const inStage = visible.filter((l) => l.stageId === stage.id && (!closed || state.stages.length > 0 || closedWithin(l, CLOSED_WINDOW_DAYS, now)));
+    return inStage.sort(closed ? byClosedNewest : SORTERS[state.sort]);
+  };
+  const phoneStage = shownStages.find((s) => s.id === phoneStageId) ?? shownStages.find((s) => s.kind === "open") ?? shownStages[0];
+  const ownerValue = state.owner || ALL;
+
+  const searchField = (
+    <div className="relative">
+      <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-muted" />
+      <Input
+        value={state.q}
+        onChange={(e) => update({ q: e.target.value })}
+        placeholder={t("leads.board.searchPlaceholder")}
+        aria-label={t("leads.board.searchAria")}
+        className="w-48 pl-8 max-md:w-full"
+      />
+    </div>
+  );
+  // US-OPS-57: on a phone each filter that's on is a chip with × under the search.
+  const ownerLabel = state.owner === "me" ? t("leads.board.myLeads") : state.owner === "unassigned" ? t("leads.board.unassigned") : activeMembers.find((m) => m.userId === state.owner)?.name;
+  const filterChips: FilterChip[] = [
+    ...state.stages.map((id) => ({ key: `stage-${id}`, label: stageOptions.find((o) => o.value === id)?.label ?? id, onRemove: () => update({ stages: state.stages.filter((s) => s !== id) }) })),
+    ...(state.owner ? [{ key: "owner", label: ownerLabel ?? state.owner, onRemove: () => update({ owner: "" }) }] : []),
+    ...(state.source ? [{ key: "source", label: state.source, onRemove: () => update({ source: "" }) }] : []),
+    ...(state.overdue ? [{ key: "overdue", label: t("leads.summary.overdue"), onRemove: () => update({ overdue: false }) }] : []),
+  ];
+  const stageChips = (
+    <div role="tablist" aria-label={t("leads.board.stagesLabel")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="pipeline-stage-chips">
+      {shownStages.map((stage) => {
+        const chosen = stage.id === phoneStage?.id;
+        return (
+          <button
+            key={stage.id}
+            type="button"
+            role="tab"
+            aria-selected={chosen}
+            onClick={() => setPhoneStageId(stage.id)}
+            className={cn(
+              "inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              chosen ? "border-primary bg-info-bg text-primary" : "border-border-strong bg-surface text-on-surface",
+            )}
+          >
+            {stage.name}
+            <span className={cn("text-[12px] font-semibold", chosen ? "text-primary" : "text-on-surface-muted")}>{leadsIn(stage).length}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* US-OPS-57 (D-283): on a phone the stages come first, then the figures in one line. */}
+      {isPhone && leads.length > 0 && stageChips}
+      {isPhone ? (
+        <PipelineSummaryLine summary={summary} currency={currency} />
+      ) : (
+        <PipelineSummaryStrip summary={summary} currency={currency} overdueActive={state.overdue} onOverdueToggle={() => update({ overdue: !state.overdue })} />
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* US-OPS-57: on a phone, search and Filters in one row; the filters, sort and view in a sheet. */}
+        <FilterSheet
+          className="flex flex-wrap items-center gap-2"
+          search={isPhone ? searchField : undefined}
+          chips={filterChips}
+          onClearAll={() => update({ q: "", stages: [], owner: "", source: "", overdue: false })}
+        >
+          {!isPhone && searchField}
+          <MultiSelect options={stageOptions} value={state.stages} onValueChange={(next) => update({ stages: next })} placeholder={t("leads.board.allStages")} aria-label={t("leads.board.filterByStage")} className="w-32" />
+          <Select value={ownerValue} onValueChange={(v) => update({ owner: v === ALL ? "" : v })}>
+            <SelectTrigger aria-label={t("leads.board.filterByOwner")} className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{t("leads.board.allOwners")}</SelectItem>
+              <SelectItem value="me">{t("leads.board.myLeads")}</SelectItem>
+              {activeMembers.map((m) => (
+                <SelectItem key={m.userId} value={m.userId}>
+                  {m.name}
+                </SelectItem>
+              ))}
+              <SelectItem value="unassigned">{t("leads.board.unassigned")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={state.source || ALL} onValueChange={(v) => update({ source: v === ALL ? "" : v })}>
+            <SelectTrigger aria-label={t("leads.board.filterBySource")} className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{t("leads.board.allSources")}</SelectItem>
+              {sources.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+              {state.source && !sources.includes(state.source) && <SelectItem value={state.source}>{state.source}</SelectItem>}
+            </SelectContent>
+          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary">
+                <ArrowUpDown size={14} aria-hidden />
+                {SORT_LABELS[state.sort]}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel>{t("leads.board.sortBy")}</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={state.sort} onValueChange={(v) => update({ sort: v as SortKey })}>
+                {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                  <DropdownMenuRadioItem key={key} value={key}>
+                    {SORT_LABELS[key]}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary">
+                <SlidersHorizontal size={14} aria-hidden />
+                {t("leads.board.view")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel>{t("leads.board.cardDetails")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <label className="flex items-center gap-2 px-2 py-1.5 text-[13px] text-on-surface">
+                <input type="checkbox" checked={viewSettings.showValue} onChange={(e) => updateViewSetting("showValue", e.target.checked)} />
+                {t("leads.board.showValue")}
+              </label>
+              <label className="flex items-center gap-2 px-2 py-1.5 text-[13px] text-on-surface">
+                <input type="checkbox" checked={viewSettings.showSource} onChange={(e) => updateViewSetting("showSource", e.target.checked)} />
+                {t("leads.board.showSource")}
+              </label>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </FilterSheet>
+        <div className="ml-auto flex items-center gap-2">
+          {updatedAt !== null && (
+            <span className="whitespace-nowrap text-[12px] text-on-surface-muted max-md:hidden" data-testid="pipeline-updated">
+              {refreshing ? t("leads.board.updating") : updatedLabel(updatedAt, now)}
+            </span>
+          )}
+          <PhoneMoreActions>
+            {isPhone ? (
+              <Button variant="secondary" aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                <RefreshCw size={16} aria-hidden />
+                {t("leads.board.refresh")}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label={t("leads.board.refresh")} aria-busy={refreshing} disabled={refreshing} onClick={() => void load("refresh")}>
+                    <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("leads.board.refresh")}</TooltipContent>
+              </Tooltip>
+            )}
+          </PhoneMoreActions>
+          {canCreate && (
+            <FloatingActionButton>
+              <Button onClick={() => openCreate()}>
+                <Plus size={14} aria-hidden />
+                {t("leads.board.addLead")}
+              </Button>
+            </FloatingActionButton>
+          )}
+        </div>
+      </div>
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      {refreshFailed && (
+        <Alert variant="critical">
+          <AlertDescription>{t("leads.board.refreshFailed")}</AlertDescription>
+        </Alert>
+      )}
+
+      {leads.length === 0 ? (
+        <div className="rounded-lg border border-border bg-surface">
+          <EmptyState
+            icon={<Target />}
+            title={t("leads.board.emptyTitle")}
+            description={t("leads.board.emptyDescription")}
+            action={canCreate ? <Button onClick={() => openCreate()}>{t("leads.board.addLead")}</Button> : undefined}
+          />
+        </div>
+      ) : filtered && visible.length === 0 ? (
+        <div className="rounded-lg border border-border bg-surface">
+          <EmptyState
+            icon={<Target />}
+            title={t("leads.board.noMatchTitle")}
+            description={t("leads.board.noMatchDescription")}
+            action={
+              <Button variant="secondary" onClick={() => update({ q: "", stages: [], owner: "", source: "", overdue: false })}>
+                {t("leads.board.clearFilters")}
+              </Button>
+            }
+          />
+        </div>
+      ) : isPhone ? (
+        // US-OPS-56 (D-283): on a phone one stage at a time — its leads one under another, the
+        // stages as chips above that scroll sideways (with each stage's count). Moving a lead is
+        // in its ⋯ (an action sheet on a phone).
+        <div className="flex flex-col gap-3" data-testid="pipeline-phone">
+          {phoneStage ? (
+            <div role="tabpanel" aria-label={phoneStage.name}>
+            <ul className="-mx-4 border-y border-border bg-surface" data-testid="pipeline-phone-rows">
+              {leadsIn(phoneStage).map((lead) => (
+                <LeadRow
+                  key={lead.id}
+                  lead={lead}
+                  contactName={contactName(lead)}
+                  ownerName={ownerName(lead)}
+                  stages={stages}
+                  now={now}
+                  showValue={viewSettings.showValue}
+                  showSource={viewSettings.showSource}
+                  canMove={canEdit(lead)}
+                  canDelete={canDelete(lead)}
+                  menuOpen={menuFor === lead.id}
+                  onMenuOpenChange={(open) => setMenuFor(open ? lead.id : null)}
+                  onOpen={() => openLead(lead)}
+                  onMove={(target) => void moveLead(lead, target)}
+                  onDelete={() => setDeleteLead(lead)}
+                />
+              ))}
+              {leadsIn(phoneStage).length === 0 && <li className="px-4 py-6 text-center text-[13px] text-on-surface-muted">{t("leads.board.noLeadsInStage")}</li>}
+            </ul>
+            </div>
+          ) : null}
+          <p className="text-center text-[12.5px] text-on-surface-muted">{t("leads.board.moveHint")}</p>
+        </div>
+      ) : (
+        <div ref={board.ref} style={board.height ? { height: board.height } : undefined} className="min-h-[420px]" data-testid="pipeline-board">
+          <KanbanBoard>
+            {shownStages.map((stage) => {
+              const closed = stage.kind !== "open";
+              // A closed stage chosen in the stage filter shows all its leads; otherwise the last 30 days.
+              const stageLeads = visible.filter((l) => l.stageId === stage.id && (!closed || state.stages.length > 0 || closedWithin(l, CLOSED_WINDOW_DAYS, now)));
+              stageLeads.sort(closed ? byClosedNewest : SORTERS[state.sort]);
+              const dot = <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", STAGE_DOT_CLASS[stage.color])} />;
+              const onDrop = (cardId: string) => {
+                const lead = leads.find((l) => l.id === cardId);
+                if (lead) void moveLead(lead, stage);
+              };
+              const recent = closed && state.stages.length === 0;
+
+              if (recent && !expanded.has(stage.id)) {
+                const totals = totalsByCurrency(stageLeads);
+                const totalText = totals.map(([c, amount]) => formatMoney(amount, c)).join(" + ");
+                return (
+                  <KanbanColumn
+                    key={stage.id}
+                    collapsed
+                    title={stage.name}
+                    accent={dot}
+                    meta={stageLeads.length}
+                    subtitle={t("leads.board.closedSubtitle", { total: totalText || formatMoney(0n, currency), days: CLOSED_WINDOW_DAYS })}
+                    expandLabel={`${t("leads.board.expand", { stage: stage.name, count: stageLeads.length, days: CLOSED_WINDOW_DAYS })}${totalText ? `, ${totalText}` : ""}`}
+                    onExpand={() => toggleExpanded(stage.id)}
+                    onDrop={onDrop}
+                    data-stage={stage.name}
+                  />
+                );
+              }
+
+              return (
+                <KanbanColumn
+                  key={stage.id}
+                  title={recent ? t("leads.board.recentTitle", { stage: stage.name, days: CLOSED_WINDOW_DAYS }) : stage.name}
+                  accent={dot}
+                  meta={stageLeads.length}
+                  subtitle={<Totals leads={stageLeads} empty={formatMoney(0n, currency)} />}
+                  minWidth={closed ? CLOSED_COLUMN_MIN_WIDTH : OPEN_COLUMN_MIN_WIDTH}
+                  headerAction={
+                    recent ? (
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-on-surface-muted" aria-label={t("leads.board.hide", { stage: stage.name })} onClick={() => toggleExpanded(stage.id)}>
+                        <ChevronsRightLeft size={15} aria-hidden />
+                      </Button>
+                    ) : undefined
+                  }
+                  className={stage.kind === "lost" ? "bg-surface-sunken" : undefined}
+                  onDrop={onDrop}
+                  data-stage={stage.name}
+                >
+                  {stageLeads.map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      contactName={contactName(lead)}
+                      ownerName={ownerName(lead)}
+                      stages={stages}
+                      now={now}
+                      showValue={viewSettings.showValue}
+                      showSource={viewSettings.showSource}
+                      canMove={canEdit(lead)}
+                      canDelete={canDelete(lead)}
+                      menuOpen={menuFor === lead.id}
+                      onMenuOpenChange={(open) => setMenuFor(open ? lead.id : null)}
+                      onOpen={() => openLead(lead)}
+                      onMove={(target) => void moveLead(lead, target)}
+                      onDelete={() => setDeleteLead(lead)}
+                    />
+                  ))}
+                  {stageLeads.length === 0 && (
+                    <p className="rounded-md border border-dashed border-border-strong px-2 py-3.5 text-center text-[12.5px] text-on-surface-muted">
+                      {recent ? t(stage.kind === "won" ? "leads.board.nothingWon" : "leads.board.nothingLost", { days: CLOSED_WINDOW_DAYS }) : t("leads.board.noLeadsInStage")}
+                    </p>
+                  )}
+                  {recent && stageLeads.length > 0 && (
+                    <p className="px-1 py-1.5 text-[12px] text-on-surface-muted">{t(stage.kind === "won" ? "leads.board.olderWon" : "leads.board.olderLost", { stage: stage.name })}</p>
+                  )}
+                  {canCreate && stage.kind === "open" && (
+                    <Button variant="ghost" size="sm" className="justify-start text-on-surface-muted" onClick={() => openCreate(stage.id)}>
+                      <Plus size={14} aria-hidden />
+                      {t("leads.board.addLead")}
+                    </Button>
+                  )}
+                </KanbanColumn>
+              );
+            })}
+          </KanbanBoard>
+        </div>
+      )}
+
+      <LeadDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        lead={drawerLead}
+        contacts={contacts}
+        leads={leads}
+        stages={stages}
+        members={members}
+        defaultStageId={createStage}
+        onSaved={(saved, previousStageId) => {
+          replaceLead(saved);
+          setUpdatedAt(Date.now());
+          if (previousStageId !== saved.stageId) afterMove(saved);
+        }}
+        onDeleteRequest={setDeleteLead}
+        onCreateQuote={createQuote}
+      />
+
+      <LeadLostDialog lead={lostLead} contactName={lostLead ? contactName(lostLead) : null} onSave={saveLostReason} onClose={closeLostDialog} />
+      <LeadWonDialog
+        lead={wonLead}
+        contactName={wonLead ? contactName(wonLead) : null}
+        ownerName={wonLead ? ownerName(wonLead) : null}
+        onCreateQuote={(lead) => {
+          setWonLead(null);
+          createQuote(lead);
+        }}
+        onClose={() => setWonLead(null)}
+      />
+
+      <AlertDialog open={deleteLead !== null} onOpenChange={(open) => !open && setDeleteLead(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("leads.board.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("leads.board.deleteDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{t("leads.board.cancel")}</AlertDialogCancel>
+            <AlertDialogAction variant="danger" disabled={deleting} onClick={confirmDelete}>
+              {deleting ? <Spinner size="sm" /> : t("leads.board.deleteLead")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

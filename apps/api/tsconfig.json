@@ -1,0 +1,11 @@
+{
+  "extends": "@spine/config/tsconfig/nestjs",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "jsx": "react-jsx"
+  },
+  "include": ["src"]
+}

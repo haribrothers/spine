@@ -1,0 +1,60 @@
+---
+title: Settings and data export
+description: Where Spine's settings live, who can change them, and a page for each setting — your own account and the business's.
+sidebar:
+  order: 1
+---
+
+**Settings** holds your own account and, for Owners, everything about how the business runs: its profile and branding, money and tax, documents and emails, sales and meetings, and your data. Open it from your user menu (your name in the sidebar) and choose **Settings**.
+
+import { Aside } from "@astrojs/starlight/components";
+import Screenshot from "../../../../components/Screenshot.astro";
+
+<Aside type="note" title="Who can do this">Everyone sees **Your account**. Only Owners see the business's settings — managing settings is Owner-only, always. Staff and Field users see only Your account, and the business settings can't be changed from their sign-in.</Aside>
+
+<Screenshot id="settings-overview" alt="The Settings dialog, its grouped list on the left and Business profile open on the right" />
+
+## Finding your way around
+
+- **Groups.** The list is grouped: **Your account**, **Business**, **Money & tax**, **Documents & emails**, **Sales & meetings**, **Data** and **Team**. The Team group's **Users**, **Teams**, **Audit log** and **Email log** close Settings and open that page.
+- **Search settings.** Type what you're after — "prefix", "logo", "signature", "SMTP". Spine finds panes by what's inside them and shows the matching phrase ("Matches: invoice prefix"). Press Enter to open the first result. If nothing matches you see "No matching settings." with **Clear search**.
+- **Come back to the same place.** The address keeps the open pane, so refreshing or sharing the link opens it again.
+- **Unsaved changes.** A pane you've changed but not saved shows a dot. Leaving it asks "Discard unsaved changes to …?" with **Keep editing** and **Discard**.
+- **On a phone,** Settings fills the screen and shows the list first; **Back to settings** returns to it.
+- **Switched-off modules** take their panes with them, so you only see settings for what you use.
+
+## Business
+
+- [Change your business profile](./business-profile/) · [Choose your theme and document colour](./branding/) · [Change your industry template](./industry-template/) · [Change your currency and locale](./currency-and-locale/) · [Switch modules on or off](./modules/)
+- **AI assistant** and **Connected agents** have their own panes here: see [The AI assistant](../ai-assistant/) and [Connected agents](../connected-agents/).
+
+## Money & tax
+
+- [Set your financial year](./financial-year/) · [Tell customers how to pay](./payment-instructions/)
+- **Tax** and **GST** (India only): see [Tax](../tax/).
+- **Chart of accounts** and **Opening balances**: see [Review your chart of accounts](../accounts/chart-of-accounts/) and [Enter your opening balances](../accounts/opening-balances/).
+
+## Documents & emails
+
+- [Set your document numbers](./numbering/) · [Choose what your documents show](./documents/) · [Write the emails customers get](./emails/) · [Check the emails Spine has sent](./email-log/) · [Send payment reminders automatically](./automatic-reminders/)
+
+## Sales & meetings
+
+- [Change your pipeline stages](./pipeline-stages/) · [Choose what happens when a quote is converted again](./repeat-quote-conversion/) · [Set meeting defaults for the business](./meeting-defaults/)
+
+## Data
+
+- [Export all your data](./data-export/)
+- **Demo data**: see [Explore Spine with a demo business](../setup/explore-with-demo-data/) and [Delete the demo data](../setup/delete-demo-data/).
+
+## Your account
+
+- [Change your profile and sign-in email](./your-profile/) · [Change your password and sign out other devices](./password-and-security/) · [Choose how Spine notifies you](./notifications/)
+- **Connected agents** under Your account lists the AI agents you've connected yourself — see [Connected agents](../connected-agents/).
+- **About Spine** shows which version of Spine your business runs.
+
+## Team
+
+**Users**, **Teams** and **Audit log** open their own pages — see [Team and permissions](../team/). **Email log** opens the list of emails Spine has sent — see [Check the emails Spine has sent](./email-log/).
+
+<Aside type="tip">Most panes have a **Save** button and say "Saved" when it works. Changes apply to new records; documents already issued keep what they were issued with.</Aside>

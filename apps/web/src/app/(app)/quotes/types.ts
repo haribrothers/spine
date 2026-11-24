@@ -1,0 +1,145 @@
+import type { SupplyClass } from "@spine/shared";
+import { t } from "../../../lib/i18n";
+/** Mirrors apps/api/src/db/schema/quotes.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following contacts/catalog's own precedent. */
+export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected";
+export type QuoteLineType = "item" | "heading" | "text";
+export type QuoteEmailStatus = "pending" | "sent" | "failed";
+
+export interface QuoteLine {
+  id: string;
+  quoteId: string;
+  sortOrder: number;
+  type: QuoteLineType;
+  catalogItemId: string | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+  /** Minor units, serialized as a string over JSON — see MoneyInput's `value: bigint` contract; parse with `BigInt(...)`. */
+  unitPriceAmount: string;
+  unitPriceCurrency: string;
+  discountPercentage: number;
+  taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
+  lineSubtotalAmount: string;
+  lineTaxAmount: string;
+  lineTotalAmount: string;
+}
+
+export interface Quote {
+  id: string;
+  orgId: string;
+  contactId: string;
+  /** US-TAX-13 — GST place of supply and the supply type it gave. */
+  placeOfSupply: string | null;
+  supplyType: "intra" | "inter" | "export" | null;
+  contactName: string | null;
+  number: string | null;
+  /** US-QUO-30 — an optional name for the quote. */
+  title: string | null;
+  status: QuoteStatus;
+  parentQuoteId: string | null;
+  version: number;
+  validUntil: string | null;
+  currency: string;
+  subtotalAmount: string;
+  discountAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  discountRequiresApproval: boolean;
+  approvedByUserId: string | null;
+  approvedAt: string | null;
+  notes: string | null;
+  termsAndConditions: string | null;
+  createdByUserId: string | null;
+  sentAt: string | null;
+  /** Set once the PDF generated at send time is persisted (Stage 2, S-03.3/S-03.4) — null on a draft, and possibly still null on a sent quote if persistence itself failed (logged server-side, not fatal). The "Download PDF" affordance doesn't need this directly — `GET /quotes/:id/pdf` renders live regardless — but it's useful to know a durable copy exists. */
+  issuedPdfFileId: string | null;
+  /** null until QuotesService.send() sets it to "pending" right before enqueuing the email job; the worker (quote-email.worker.ts) owns every transition after that. See quotes.ts's schema comment for why "failed" can appear mid-retry, not only after retries are exhausted. */
+  emailStatus: QuoteEmailStatus | null;
+  /** Set only when emailStatus is "failed" — the most recent attempt's error message. */
+  emailError: string | null;
+  /** Set once the worker's SMTP send call actually succeeds — may lag sentAt (which marks when the quote was issued) by however long the queue took to process the job. */
+  emailSentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Computed server-side at read time — see QuotesService's own comment on why "expired" is never stored. */
+  isExpired: boolean;
+  /** True once a later version's parentQuoteId points back at this quote. */
+  isSuperseded: boolean;
+  supersededByQuoteId?: string | null;
+  /** The version-1 ancestor's id, walked server-side from parentQuoteId — every version of "the same quote" shares this value, used by quotes-table.tsx to group rows (item 4, user feedback). */
+  rootQuoteId: string;
+  /** US-QUO-29 — the customer's views of the link (list rows only). */
+  viewCount?: number;
+  lastViewedAt?: string | null;
+  /** US-QUO-28 — the quote's line names, for search (list rows only). */
+  lineNames?: string[];
+  /** US-CRM-26 — the lead the quote is for. */
+  leadId?: string | null;
+  lines?: QuoteLine[];
+  /** When the customer answered (link or on site), and what they said. */
+  respondedAt?: string | null;
+  responseComment?: string | null;
+  /** US-QUO-20 — "in_person" for an answer recorded on a phone or in the app; else it came through the link. */
+  acceptanceMethod?: "public_link" | "in_person" | null;
+  /** Who recorded an on-site answer (the witness). */
+  acceptedByName?: string | null;
+  /** US-QUO-19 — what an on-site acceptance captured. */
+  acceptedSignerName?: string | null;
+  signatureFileId?: string | null;
+}
+
+export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
+  draft: t("quotes.status.draft"),
+  sent: t("quotes.status.sent"),
+  accepted: t("quotes.status.accepted"),
+  rejected: t("quotes.status.rejected"),
+};
+
+/** Minimal shape used by the contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */
+export interface ContactOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+}
+
+/** Minimal shape used by the catalog-item picker in the line editor. */
+export interface CatalogItemOption {
+  id: string;
+  name: string;
+  description: string | null;
+  unit: string;
+  defaultPriceAmount: string;
+  defaultPriceCurrency: string;
+  defaultTaxRatePercentage: number;
+  defaultTaxRateId: string | null;
+  defaultTaxGroupId: string | null;
+  /** US-TAX-13 — the inter-state counterpart of the default tax. */
+  interTaxRateId?: string | null;
+  interTaxGroupId?: string | null;
+  hsnSac?: string | null;
+  supplyClass: SupplyClass;
+  archivedAt: string | null;
+}
+
+/** FEAT-08 — used by the line editor's tax picker. Mirrors apps/api's TaxRatesService/TaxGroupsService row shapes. */
+export interface TaxRateOption {
+  id: string;
+  name: string;
+  rate: number;
+  isCompound: boolean;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass?: SupplyClass | null;
+  archivedAt: string | null;
+}
+
+export interface TaxGroupOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+  taxRates: TaxRateOption[];
+}

@@ -1,0 +1,39 @@
+---
+title: Use catalogue items on quotes and invoices
+description: Pick an item or bundle on a document line, change its price for one customer, or add a one-off line.
+sidebar:
+  order: 8
+---
+
+On a quote, invoice or bill line, type to search the catalogue and pick an item. Its name, description, price and tax are copied onto the line. You can change them on that line without touching the catalogue.
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+<Aside type="note" title="Who can do this">Anyone who can build the document, such as Staff whose Team has **Create/edit own quotes**. Items can be picked even by people who can't open the catalogue. Saving a new item from a line needs **Create/edit own catalogue**.</Aside>
+
+<Steps>
+1. **Start a line** — On the quote or invoice, go to an empty line and type in **Item** ("Item name — type to search the catalogue").
+2. **Pick a match** — The list shows matching **Items** with their price and unit, and **Bundles** with the lines they add, such as "Adds 3 lines: …". Choose one.
+3. **Check the line** — The name, description, unit price and default tax fill in. For a bundle, each of its items is added as a line.
+4. **Change it if you need to** — Change the quantity, price or tax on this line. The catalogue item doesn't change.
+</Steps>
+
+## Add a line that isn't in the catalogue
+
+<Steps>
+1. **Type the name** — Type a name that matches no item. The list offers "Use "…" as a one-off line".
+2. **Save it for next time** — To add it to the catalogue as well, tick **Also save to catalogue**.
+3. **Choose the line** — Choose the one-off line, and fill in its price and tax.
+</Steps>
+
+When you save the quote, a line marked **Also save to catalogue** that has a price becomes a new item, with unit "each" and the line's tax. A line without a price stays a one-off line. Without the right to add catalogue items, **Also save to catalogue** isn't shown, but one-off lines still work.
+
+## Documents keep their own copy
+
+- A document copies the item's details when you add the line. If you change the item's price later, existing quotes and invoices still show the old price.
+- An issued invoice never changes: its PDF a year later is the same as the day you issued it.
+- Deleting or archiving an item doesn't change the documents that used it.
+
+<Aside type="tip">Archived items don't show in the picker. To use one again, restore it first. See [Edit, duplicate, archive or delete an item](../edit-duplicate-archive-or-delete-an-item/).</Aside>
+
+For building and sending quotes, see [Quotes](../../quotes/). For invoices, see [Invoices and credit notes](../../invoices/).

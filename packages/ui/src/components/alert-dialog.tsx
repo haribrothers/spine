@@ -1,0 +1,110 @@
+"use client";
+
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+import { forwardRef } from "react";
+import { cn } from "../lib/cn";
+
+export const AlertDialog = AlertDialogPrimitive.Root;
+export const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
+
+const AlertDialogOverlay = forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Overlay
+    ref={ref}
+    className={cn("fixed inset-0 z-[var(--z-overlay)] bg-scrim", className)}
+    {...props}
+  />
+));
+AlertDialogOverlay.displayName = "AlertDialogOverlay";
+
+/**
+ * A modal requiring explicit confirmation before a critical/destructive
+ * action (e.g. voiding an invoice), per docs/DESIGN.md — unlike Dialog,
+ * always renders an explicit Cancel action alongside the primary one.
+ * Reach for this specifically when an action can't be undone. The confirm
+ * button (`AlertDialogAction`) is primary by default; pass
+ * `variant="danger"` for delete, void, deactivate and remove (D-058).
+ */
+export const AlertDialogContent = forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Portal>
+    <AlertDialogOverlay />
+    <AlertDialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-1/2 top-1/2 z-[var(--z-modal)] w-[calc(100%-32px)] max-w-md md:w-full -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface p-5 shadow-overlay focus:outline-none",
+        className,
+      )}
+      {...props}
+    />
+  </AlertDialogPrimitive.Portal>
+));
+AlertDialogContent.displayName = "AlertDialogContent";
+
+export function AlertDialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("mb-4 flex flex-col gap-1", className)} {...props} />;
+}
+
+export const AlertDialogTitle = forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Title ref={ref} className={cn("text-[16px] font-semibold text-on-surface", className)} {...props} />
+));
+AlertDialogTitle.displayName = "AlertDialogTitle";
+
+export const AlertDialogDescription = forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Description ref={ref} className={cn("text-[13px] text-on-surface-muted", className)} {...props} />
+));
+AlertDialogDescription.displayName = "AlertDialogDescription";
+
+/** US-OPS-60: a confirmation stays a small alert in the middle of a phone, its buttons full width, the action on top. */
+export function AlertDialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("mt-5 flex items-center justify-end gap-2 max-md:flex-col-reverse max-md:items-stretch max-md:[&>*]:w-full", className)} {...props} />;
+}
+
+export const AlertDialogCancel = forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Cancel
+    ref={ref}
+    className={cn(
+      "inline-flex h-10 items-center justify-center rounded-md border border-border-strong bg-transparent px-4 text-[13px] font-semibold text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+      className,
+    )}
+    {...props}
+  />
+));
+AlertDialogCancel.displayName = "AlertDialogCancel";
+
+export interface AlertDialogActionProps extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action> {
+  /**
+   * US-OPS-10 (D-058): `primary` unless the action deletes, voids,
+   * deactivates or removes something — then `danger`.
+   */
+  variant?: "primary" | "danger";
+}
+
+export const AlertDialogAction = forwardRef<React.ElementRef<typeof AlertDialogPrimitive.Action>, AlertDialogActionProps>(
+  ({ className, variant = "primary", ...props }, ref) => (
+    <AlertDialogPrimitive.Action
+      ref={ref}
+      data-variant={variant}
+      className={cn(
+        "inline-flex h-10 items-center justify-center rounded-md px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-50",
+        variant === "danger" ? "bg-overdue text-on-danger hover:opacity-90" : "bg-primary text-on-primary hover:bg-primary-hover",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+AlertDialogAction.displayName = "AlertDialogAction";
