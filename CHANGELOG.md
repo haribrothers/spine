@@ -4,7 +4,7 @@ What landed, newest first. Add an entry with every change, in the format at the 
 
 ## Status
 
-**1.0.0-beta.6**, released 2026-11-19. Phases 0–11 are built. Every Phase 12 (Packaging & 1.0) story is done except US-MOB-29, which comes after the 1.0 tag. The security review was signed off on 2026-11-15.
+**1.0.0-beta.7**, released 2026-11-24. Phases 0–11 are built. Every Phase 12 (Packaging & 1.0) story is done except US-MOB-29, which comes after the 1.0 tag. The security review was signed off on 2026-11-15.
 
 ## Next up
 
@@ -12,6 +12,11 @@ What landed, newest first. Add an entry with every change, in the format at the 
 - After the tag: US-MOB-29, the field app in the App Store and Play Store. Later work is planned in [`ROADMAP.md`](ROADMAP.md).
 
 ## Completed
+
+### 2026-11-24 — Version 1.0.0-beta.7
+
+- **Version 1.0.0-beta.7**, the first release from the fresh repository: the cleanup below, with release notes in `.github/release-notes/v1.0.0-beta.7.md`. The version, the download commands, the three Compose files' default image tag and the API reference's version say `1.0.0-beta.7`.
+- **Earlier betas** (1.0.0-beta.1 to beta.6) are no longer listed on GitHub; their images stay on `ghcr.io`, so their installs keep running and upgrade as before.
 
 ### 2026-11-24 — Cleanup: the repository holds the product; the specification moves out
 

@@ -245,7 +245,7 @@ export const home = {
     // The README's "Install in 5 minutes" (US-OPS-19): the release's files by tag, then the installer (D-279).
     commands: [
       "mkdir spine && cd spine",
-      "v=v1.0.0-beta.6",
+      "v=v1.0.0-beta.7",
       'for f in install.sh backup.sh restore.sh upgrade.sh docker-compose.yml env.example; do curl -fsSLO "https://github.com/haribrothers/spine/releases/download/$v/$f"; done',
       "chmod +x *.sh",
       "./install.sh",
